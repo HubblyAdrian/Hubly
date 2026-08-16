@@ -12608,10 +12608,21 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="bk-step-title" style="margin-top:14px;"><span class="bk-title-ico" aria-hidden="true">👤</span> Your info</div>
           <div class="bk-step-sub">Almost there! Let’s get your details to confirm your booking.</div>
 
+          <!-- ONE column, and DOM order IS the visual order. This was two columns
+               (name/email/consent left, privacy note/phone/notes right). The CSS
+               stacked them into one column, but tab follows the DOM, so tabbing
+               out of Email landed on the SMS checkbox and Phone came after it.
+               Anything that reorders these fields visually must reorder them
+               here, not with CSS. -->
           <div class="bk-info-compose">
             <div class="bk-info-primary">
               <div class="field"><label>Full name *</label><input type="text" id="bk-name" placeholder="John Smith" autocomplete="name"></div>
-              <div class="field"><label>Email address *</label><input type="email" id="bk-email" placeholder="john.smith@email.com" autocomplete="email"></div>
+              <div class="field"><label>Email address *</label><input type="email" id="bk-email" placeholder="john.smith@email.com" autocomplete="email">
+                <div class="bk-field-hint" id="bk-info-blurb">🛡 We respect your privacy. Your information will only be used for booking and service updates.</div>
+              </div>
+              <div class="field"><label>Phone number *</label><input type="tel" id="bk-phone" placeholder="(801) 555-1234" autocomplete="tel" oninput="formatPhone(this);refreshBookingSmsConsent()" onblur="refreshBookingSmsConsent()">
+                <div class="bk-phone-hint">We’ll text you to confirm your appointment.</div>
+              </div>
               <label class="bk-sms-consent" for="bk-sms-consent">
                 <input type="checkbox" id="bk-sms-consent">
                 <span class="bk-sms-body">
@@ -12620,15 +12631,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 </span>
               </label>
               <p id="bk-sms-known" class="hidden" style="margin:0;padding:10px 12px;border-radius:10px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:12px;line-height:1.4;color:#166534;">SMS updates already enabled for this number.</p>
-            </div>
-            <div class="bk-info-side">
-              <div class="bk-info-card">
-                <div class="bk-info-ico" aria-hidden="true">🛡</div>
-                <p id="bk-info-blurb">We respect your privacy. Your information will only be used for booking and service updates.</p>
-              </div>
-              <div class="field"><label>Phone number *</label><input type="tel" id="bk-phone" placeholder="(801) 555-1234" autocomplete="tel" oninput="formatPhone(this);refreshBookingSmsConsent()" onblur="refreshBookingSmsConsent()">
-                <div class="bk-phone-hint">We’ll text you to confirm your appointment.</div>
-              </div>
               <div class="bk-info-notes">
                 <div class="field">
                   <label>Anything else? <span style="font-weight:500;color:var(--ink-3)">(optional)</span></label>
@@ -13135,7 +13137,10 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/photography-projects.js?v=projects-16"></script>
 <!-- ceo-demo.js loads on-demand only for owner-authorized /hubly-ceo -->
 <script defer src="/booking-wizard/ui.js"></script>
-<link rel="stylesheet" href="/booking-wizard/mock-skin.css?v=bk-pkg-flow-3">
+<!-- Bump ?v= whenever mock-skin.css changes. Without it a returning customer
+     keeps the cached stylesheet and never sees the fix — the step 3 width
+     change lives in that file, not in this one. -->
+<link rel="stylesheet" href="/booking-wizard/mock-skin.css?v=bk-step3-width-1">
 <script defer src="/themes/registry.js"></script>
 <script defer src="/themes/modern.js"></script>
 <script defer src="/themes/bold.js"></script>
@@ -41803,6 +41808,29 @@ function formatVehicleFull(year,make,model,color,vtype){
   return bits.join(' · ');
 }
 
+/**
+ * What to tell a customer when payment was required and checkout would not open.
+ *
+ * Every branch here ends with the booking NOT created. The wording differs only
+ * so the customer knows whether to retry, refresh, or contact the business —
+ * never to soften the fact that they are not booked.
+ */
+function bookingPaymentFailureMessage(payload){
+  const code=String(payload?.code||'');
+  // The page predates server-side pricing, so it sent no service_id. The form is
+  // state-backed, so a refresh keeps what they typed.
+  if(code==='stale_client'){
+    return payload?.error||'This page is out of date. Refresh and your details will still be here.';
+  }
+  // The business has not finished connecting Stripe. Not the customer's fault
+  // and not something they can retry into working — say so, and point them at
+  // the business rather than leaving them tapping a dead button.
+  if(code==='not_configured'||code==='not_ready'){
+    return 'Card payment isn’t available for this business yet, so we couldn’t take your payment. Your details are saved — please contact them to confirm.';
+  }
+  if(code==='already_paid')return 'This booking has already been paid.';
+  return 'We couldn’t start the payment, so you have not been charged and your booking isn’t confirmed. Please try again — your details are saved.';
+}
 async function submitBooking(){
   const btn=document.getElementById('bk-confirm-btn');
   const btnLabel=btn?.textContent||'Confirm & book';
@@ -41909,7 +41937,15 @@ async function submitBooking(){
       const wantsOnlinePay=(m.pay==='full'||(m.pay==='deposit'&&depositViaStripe)||S.bkPayType==='online');
       const chargeKind=m.pay==='deposit'?'deposit':'full';
       const amountDollars=m.pay==='deposit'?Number(m.depositAmt||0):Number(m.total||0);
-      if(wantsOnlinePay&&amountDollars>=0.5&&!S._abandonedBookingReqId){
+      // Whether a lead row exists has NOTHING to do with whether money is owed.
+      // This used to read `&& !S._abandonedBookingReqId`, and step 3's
+      // writeAbandonedBookingRequest() sets that id on every booking that
+      // reaches step 4 through the Next button — so the entire checkout block
+      // was skipped for essentially every website booking. The customer was
+      // shown "Pay $X & book", the booking was created, and no money moved.
+      // Payment is now decided by the resolved rule and the server's
+      // requires_checkout, and by nothing else.
+      if(wantsOnlinePay&&amountDollars>=0.5){
         try{
           const dbClient=await waitForDb();
           if(btn)btn.textContent='Opening secure payment…';
@@ -41940,6 +41976,12 @@ async function submitBooking(){
               vehicle_tier:vehicleTier,
               discount_percent:Number(S.bkDiscountPercent)||0,
               amount_dollars:amountDollars,
+              // Adopt the lead row step 3 already wrote instead of inserting a
+              // second one. create-booking-checkout reuses this row, promotes it
+              // out of 'abandoned', and the webhook marks it paid — so the lead
+              // BECOMES the booking. complete_abandoned_booking then happens on
+              // return from Stripe rather than instead of going there.
+              booking_request_id:S._abandonedBookingReqId||null,
               booking:payload,
               success_url:returnBase,
               cancel_url:returnBase,
@@ -41955,25 +41997,33 @@ async function submitBooking(){
             return;
           }
           // Server computed that nothing is owed (or less than Stripe's 50c
-          // minimum). Do not open a checkout and do not round up — fall through
-          // and complete the booking as pay-in-person.
+          // minimum). This is the ONLY outcome that may complete the booking
+          // without a payment: the server itself says nothing is due, so
+          // pay-in-person is the correct, honest result.
           if(payPayload?.no_payment_required){
             console.info('[price-channel] no payment required:',payPayload.reason,payPayload.computed_cents);
-          }
-          // The page was loaded before the server-pricing deploy, so it did not
-          // send a service_id. Give the customer the action, not the failure —
-          // the booking form is state-backed, so a refresh keeps their details.
-          if(payPayload?.code==='stale_client'){
+          }else{
+            // Payment WAS required and checkout did not open. Never complete the
+            // booking here. The customer was shown "Pay $X & book"; creating a
+            // confirmed, unpaid booking tells them and the business that money
+            // moved when it did not — the single worst failure this flow has.
+            //
+            // Refusing costs the booking, not the lead: step 3 already wrote
+            // their name, phone, service and date as a lead row, so the owner
+            // still sees them and can follow up.
+            console.warn('create-booking-checkout failed — booking NOT created:',
+              payPayload?.code||payPayload?.error||payErr?.message||'unknown');
             if(btn){btn.textContent=btnLabel;btn.disabled=false;}
-            toast(payPayload.error||'This page is out of date. Refresh and your details will still be here.');
+            toast(bookingPaymentFailureMessage(payPayload));
             return;
           }
-          if(payPayload?.code!=='not_ready'&&payPayload?.code!=='not_configured'){
-            console.warn('create-booking-checkout',payPayload?.error||payErr?.message);
-          }
-          // Fall through to unpaid booking request when Connect isn't ready.
         }catch(e){
-          console.warn('Stripe checkout skipped',e);
+          // Network/transport failure reaching the checkout function. Same rule:
+          // payment was required, so this is a failure, not a booking.
+          console.warn('create-booking-checkout unreachable — booking NOT created:',e&&e.message);
+          if(btn){btn.textContent=btnLabel;btn.disabled=false;}
+          toast('We couldn’t reach the payment page. Check your connection and try again — your details are saved.');
+          return;
         }
       }
       try{

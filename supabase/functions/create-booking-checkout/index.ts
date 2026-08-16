@@ -248,10 +248,12 @@ Deno.serve(async (req: Request) => {
     }
 
     let reqId = bookingRequestId;
+    // Set only when adopting a lead row that is still 'abandoned' — see below.
+    let promoteFromAbandoned = false;
     if (reqId) {
       const { data: existing, error: exErr } = await admin
         .from("booking_requests")
-        .select("id,business_id,payment_status")
+        .select("id,business_id,payment_status,status")
         .eq("id", reqId)
         .maybeSingle();
       if (exErr || !existing || existing.business_id !== businessId) {
@@ -260,6 +262,15 @@ Deno.serve(async (req: Request) => {
       if (existing.payment_status === "paid") {
         return jsonRes({ error: "This booking is already paid", code: "already_paid" }, 409);
       }
+      // The website flow now hands us the lead row written at step 3 so the lead
+      // BECOMES the booking instead of a second row being inserted beside it.
+      // That row is still 'abandoned', and neither the update below nor the
+      // webhook touches `status` — so without this it would end up paid but
+      // never a real booking.
+      //
+      // Promote ONLY from 'abandoned'. A row that is already pending/accepted
+      // must not be dragged backwards by a retry of checkout.
+      promoteFromAbandoned = String(existing.status || "") === "abandoned";
     } else {
       const payload = {
         business_id: businessId,
@@ -364,6 +375,9 @@ Deno.serve(async (req: Request) => {
       amount_due_cents: amountCents,
       currency: "usd",
       stripe_checkout_session_id: session.id,
+      // Same state the freshly-inserted path above starts in: a real pending
+      // booking awaiting payment. Only ever applied to an 'abandoned' row.
+      ...(promoteFromAbandoned ? { status: "pending" } : {}),
     }).eq("id", reqId);
 
     if (!session.url) return jsonRes({ error: "No Checkout URL returned" }, 500);

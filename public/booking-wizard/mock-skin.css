@@ -242,7 +242,17 @@
 .booking-shell.bk-mock .bk-sq-mode .bk-step-inner,
 .booking-shell.bk-mock .bk-step-inner{
   max-width:none;
-  margin:18px 20px 20px;
+  /* `auto` on the sides, not a fixed 20px. The base rule is `margin:0 auto`;
+     overriding it with `18px 20px 20px` pinned the panel to the left edge, so
+     any step with a max-width (steps 3 and 4 cap at 720px) rendered flush left
+     with the remaining width empty. Horizontal auto keeps it centred at every
+     width and is identical to 20px when the panel is the constraint. */
+  margin:18px auto 20px;
+  /* `width` keeps the 20px-a-side gutter that the old fixed margin provided,
+     while `margin:auto` does the centring. Steps 3/4 additionally cap at 720px
+     (#bk-step-3 .bk-step-inner, id beats these three classes), so they centre
+     inside the panel instead of hugging the left edge. */
+  width:calc(100% - 40px);
   border-radius:22px;
   border:1px solid var(--bk-mock-border);
   box-shadow:0 12px 40px rgba(15,23,42,.06);
@@ -475,10 +485,22 @@
 .booking-shell.bk-mock #bk-step-2 .field{margin-bottom:8px}
 .booking-shell.bk-mock #bk-step-2 .bk-lbl{margin-top:6px;margin-bottom:6px;font-size:11px}
 
-/* Your info + Review: readable measure — stop full-bleed long lines */
+/* Your info + Review: readable measure — stop full-bleed long lines.
+   28rem (448px) was far tighter than the 720px the panel gives these two steps,
+   so the form sat in a narrow left-hand strip with the rest of the panel empty
+   and the body scrolled internally because the content had nowhere to go.
+   Measured, not guessed: at a 1710px viewport the inner resolved to 720px while
+   this rule held the body at 448px and the inputs at 408px.
+
+   The earlier attempt raised max-width on `#bk-step-3 .bk-step-inner` in
+   hubly.html's inline CSS. It had no effect on the body, because THIS file loads
+   after it and `.booking-shell.bk-mock #bk-step-3 .bk-step-body` (2 classes +
+   1 id + 1 class) outspecifies `#bk-step-3 .bk-step-body`. A width fix for this
+   shell has to be made here. */
 .booking-shell.bk-mock #bk-step-3 .bk-step-body,
 .booking-shell.bk-mock #bk-step-4 .bk-step-body{
-  max-width:28rem;
+  max-width:none;
+  width:100%;
 }
 .booking-shell.bk-mock #bk-step-3 .field{margin-bottom:12px}
 .booking-shell.bk-mock #bk-step-3 .field-row{gap:12px}
@@ -489,6 +511,12 @@
 }
 .booking-shell.bk-mock #bk-step-3 .bk-sms-main{display:block;color:#334155}
 .booking-shell.bk-mock #bk-step-3 .bk-sms-fine{display:block;margin-top:4px;font-size:11px;color:#94a3b8}
+/* The privacy note is helper text under Email now, not a card in a second
+   column. It sat between Email and Phone in the DOM, which is what put the SMS
+   checkbox in the tab path before Phone. */
+.booking-shell.bk-mock #bk-step-3 .bk-field-hint{
+  margin-top:5px;font-size:11px;line-height:1.4;color:#94a3b8;
+}
 .booking-shell.bk-mock #bk-step-3 .bk-info-card{
   display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start;
   padding:10px 12px;border-radius:12px;background:#f8fafc;border:1px solid #e8eef6;
