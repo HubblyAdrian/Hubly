@@ -129,17 +129,23 @@ export async function createDestinationCheckout(opts: {
   const currency = (opts.currency || "usd").toLowerCase();
   const form: Record<string, string | number | boolean> = {
     mode: "payment",
-    // Dynamic payment methods: Stripe uses the payment method configuration set
-    // on the platform account (Cards, Apple Pay, Google Pay, Link, ...) instead
-    // of a list hardcoded here. Omitting this field entirely behaves the same
-    // way — it is stated explicitly because the current behaviour otherwise
-    // depends on a field's ABSENCE, which is easy to "fix" by mistake.
+    // Dynamic payment methods are the DEFAULT for a Checkout Session, and they
+    // are expressed by the ABSENCE of `payment_method_types`. Stripe then uses
+    // the payment method configuration on the platform account (Cards, Apple
+    // Pay, Google Pay, Link, ...).
     //
     // DO NOT add `payment_method_types[...]`. Setting it overrides the dashboard
     // configuration and silently drops every wallet — Apple Pay, Google Pay and
     // Link would stop appearing at checkout with no error anywhere. New payment
     // methods belong in the Stripe dashboard, not in this file.
-    "automatic_payment_methods[enabled]": true,
+    //
+    // DO NOT add `automatic_payment_methods[enabled]` either. It is a
+    // PaymentIntent parameter and is NOT valid on Checkout Sessions: f13c751
+    // added it here to "state the current default", and Stripe rejected every
+    // session with `Received unknown parameter: automatic_payment_methods`,
+    // breaking all card checkout until it was removed. There is no parameter
+    // that states this default — the default is the omission, and this comment
+    // is the only safe way to record it.
     success_url: opts.successUrl,
     cancel_url: opts.cancelUrl,
     "line_items[0][price_data][currency]": currency,
