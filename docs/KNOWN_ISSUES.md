@@ -6,6 +6,42 @@ what would settle it.
 
 ---
 
+## Saving a package re-lays out the canvas under the owner's cursor
+
+**Status:** open, not fixed
+**Found:** 2026-08-16, while verifying the canvas package-payment control
+
+`applyWsPeService()` ends with `renderSvcEditorList()` + `renderWebsitePreview()`.
+Both redraw the whole packages section, so the moment a save lands, every package
+card, the popover, and the `+ Add service` tile move. The page can also scroll,
+because the section's height changes when a card's content does.
+
+The owner does not get a warning, and nothing about the interaction suggests the
+target moved. Clicking twice in the same spot hits two different things.
+
+**This is not hypothetical.** Verifying the payment control on a live business
+produced three writes nobody asked for — a `pay_in_full` override on a package
+that was never opened, a stray override on another, and an entirely new blank
+package created by a second click landing on `+ Add service`. It was noticed only
+because the resulting catalog was inspected field-by-field afterwards. An owner
+doing the same thing sees a package list that looks roughly right and has no
+reason to audit it, so the wrong payment terms sit there until a customer is
+charged under them.
+
+Severity is higher than a normal layout-jump annoyance because the surface is
+dense with destructive and money-affecting controls sitting close together:
+`Save`, `Cancel`, `Delete package`, `+ Add service`, and now the payment rule.
+
+**What would settle it:** keep the card geometry stable across a save — update
+the edited card in place rather than re-rendering the section (the same fix shape
+as `applyPayModeSelection` in `journey.js`, which replaced a full
+`renderSettings()` for exactly this reason). Failing that, at minimum do not
+re-render while a popover is open, and never let the popover's own buttons change
+position as its contents grow or shrink — the deposit block appearing already
+moves `Save` by ~21px.
+
+---
+
 ## Optional-chained provider flags default to "yes" when the provider is missing
 
 **Status:** open, deliberately not fixed
@@ -177,23 +213,62 @@ done < /tmp/files.txt
 Run it at the baseline commit and at HEAD, then `diff` the two outputs. A new
 `TS####` on any line is a regression even when the total is identical.
 
-**2 · A check that silently checks nothing.** The first attempt at the audit
-above built a space-joined file list and ran `deno check $FILES`. A trailing
-space made Deno treat all sixteen paths as ONE module specifier; it emitted a
-single `TS2307 Cannot find module 'file:///…%20…%20…'` and the script reported
-"1 error, unchanged" — a clean bill of health from a command that had checked
-nothing. It was caught only because the error TEXT looked wrong, not because
-the count did.
+**2 · A check that silently checked nothing.** The first attempt at the audit
+above matched zero of what it claimed to match and reported success. That failure
+recurred three more times the same day and now has its own entry — see
+*Checks that silently check nothing* below.
 
-A verification command that silently checks nothing and reports success is
-worse than no check, because it converts an unknown into a false assurance.
-Guard against it:
+---
 
-- Assert the checker saw what you think it saw — file count in, results out.
-- Read at least one error message in full; never pattern-match on counts alone.
-- Prefer a loop over one file at a time to a single command over a joined list.
-- If a check reports "clean" for something known to be broken, distrust the
-  check before trusting the result.
+## Checks that silently check nothing
+
+**Status:** standing practice, adopted 2026-08-16 after FOUR occurrences in one
+day
+
+The most dangerous verification result is not a failure. It is a success
+produced by a command that examined nothing, because it converts an unknown into
+a false assurance — and every later decision is then made on the strength of a
+check that never ran.
+
+Four instances, one day, four different mechanisms:
+
+| # | The check | Why it matched nothing | What it reported |
+|---|---|---|---|
+| 1 | `deno check $FILES` over sixteen Edge Functions | a **trailing space** made Deno read all sixteen paths as ONE module specifier | "1 error, unchanged" — clean |
+| 2 | grep for `renderSettings()` to confirm a call site was gone | the surviving match was **inside a comment**, not code | "still present" — wrong both ways |
+| 3 | grep of `app-marketplace.js` for the Integrations fix | right string, **wrong file** — the page is drawn by `journey.js` | "fix is present" |
+| 4 | `grep "^not ok"` to diff test-failure identity before/after | node's runner emits `✖`, **not TAP `not ok`** — 0 lines both sides | "IDENTICAL — no new failures" |
+
+They look unrelated. They are the same error: **the check's own scope was never
+verified, so an empty result was read as a clean result.** In every case a
+zero/unchanged count was accepted as evidence, when zero was actually the
+signature of the check not running.
+
+Number 4 is the clearest form. Diffing two empty files always succeeds. The
+comparison was real, the diff was real, and it proved nothing — and it was
+covering the *error-identity* practice adopted specifically to stop this class of
+mistake, which is how thin the protection is when the tool itself isn't checked.
+
+**The rule: prove the check has non-empty scope before trusting what it says.**
+
+- **Assert the denominator.** Print how many files/lines/cases the check
+  examined. `before: 0 after: 0` must fail loudly, never read as agreement. If a
+  comparison can pass on two empty inputs, it is not yet a comparison.
+- **Calibrate on a known positive.** Run the check against something that MUST
+  match. If `grep -c` for a string you can see with your own eyes returns 0, the
+  grep is wrong, not the file.
+- **Read one full result, not just the count.** Numbers 1 and 2 were caught by
+  looking at the actual text; the counts alone looked fine in both.
+- **Match the tool's real output format**, confirmed by eye — not the format it
+  ought to have. (`✖` vs `not ok`.)
+- **Grep code, not comments** — check the match's context before concluding.
+- **Prefer a loop over one item at a time** to one command over a joined list.
+- **A "clean" result for something known to be broken indicts the check first.**
+
+Corollary for reporting: never say "verified" on the strength of an empty
+result. Say what was examined and how many — *"82 failure lines, identical before
+and after"* is a claim that can be wrong, and therefore worth something.
+*"No differences"* is not.
 
 ---
 
@@ -249,6 +324,36 @@ Anything in the second list needs a real device. Say so explicitly in the
 commit rather than implying the browser check covered it — a fix verified at a
 narrow desktop width and described as "verified on mobile" is the same false
 assurance as a check that silently checks nothing (see the entry above).
+
+### HARD RULE: browser automation never writes to production business data
+
+**Adopted 2026-08-16.** Not a guideline. There is no verification goal that
+outranks it.
+
+Browser automation may **read and click through** production. It must **never
+commit a write** — no `Save`, no `Publish`, no `Delete`, no form submit, no
+action that persists to a real business's rows.
+
+If verifying something genuinely requires a write:
+
+1. **Ask.** The user performs it and reports what happened.
+2. Or use a business created for testing, never a live one.
+
+Never decide on your own that a write is "small enough", "on the user's own
+business", or "reversible". The reversibility is the point being tested and it
+cannot be assumed in advance — on 2026-08-16 a verification write created a
+package and two payment overrides on a live business, and was recoverable only
+because an early readback happened to have captured the prior state. Nothing
+guaranteed that. The next one may not be caught at all, because the failure mode
+is silent: the data looks plausible afterwards.
+
+"It was caught and reverted" is not evidence the practice is safe. It is one
+sample of a practice whose failures are invisible by construction.
+
+Stating the limitation is always available: *"the control renders and the click
+path works; the save path needs a write, which I have not performed."* That is a
+complete and honest verification result. Manufacturing the write to avoid an
+incomplete-sounding report is how a live business gets edited.
 
 ### Never click stale coordinates on a surface that re-renders
 
@@ -380,3 +485,7 @@ answer.
 
 **Ask before verifying:** which file does the user's page load, and does my
 change exist in the deployed copy of that file?
+
+Grepping the wrong file is also one of the four cases in *Checks that silently
+check nothing* above — the `Resend` count of 0 was the check reporting its own
+scope was wrong, and it was read as a fact about the code.
