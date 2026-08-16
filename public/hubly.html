@@ -16520,10 +16520,28 @@ function ccRenderLog(){
     if(!cardsByIdx[c.afterMessageIndex])cardsByIdx[c.afterMessageIndex]=[];
     cardsByIdx[c.afterMessageIndex].push(c.data);
   });
-  log.innerHTML=st.messages.map((m,i)=>
-    `<div class="ws-chat-msg ${m.role==='user'?'customer':'assistant'}"><span class="ws-chat-bubble-text">${escapeHtml(m.content)}</span></div>`+
-    (cardsByIdx[i]||[]).map(ccBookingConfirmationCardHtml).join('')
-  ).join('')+(st.error?`<div class="ws-chat-error">${escapeHtml(st.error)}</div>`:'');
+  // `st.messages` is the server's full conversation history, and it is NOT a
+  // render list. Alongside user/assistant turns it carries role:"system"
+  // entries — `CAPABILITY RESULT for <capability>.<action>: {...}` plus the
+  // instruction that follows them (hubly-conversation/index.ts:618 and :897).
+  // Those are model context and must stay in the array, because the client
+  // sends it straight back as history on the next turn.
+  //
+  // This used to render every entry, styling anything that wasn't "user" as an
+  // assistant bubble — so tool payloads and internal instructions were printed
+  // verbatim on public business sites. Allowlist the two conversational roles;
+  // anything else renders as nothing.
+  //
+  // Mapped over the FULL array rather than filtered: st.bookingConfirmations
+  // stores `afterMessageIndex` as an index into st.messages, so removing
+  // entries would slide every confirmation card onto the wrong bubble. Cards
+  // are still emitted for a skipped index so one can never be swallowed.
+  log.innerHTML=st.messages.map((m,i)=>{
+    const cards=(cardsByIdx[i]||[]).map(ccBookingConfirmationCardHtml).join('');
+    const role=String((m&&m.role)||'');
+    if(role!=='user'&&role!=='assistant')return cards;
+    return `<div class="ws-chat-msg ${role==='user'?'customer':'assistant'}"><span class="ws-chat-bubble-text">${escapeHtml(m&&m.content)}</span></div>`+cards;
+  }).join('')+(st.error?`<div class="ws-chat-error">${escapeHtml(st.error)}</div>`:'');
   log.scrollTop=log.scrollHeight;
 }
 function ccAppendCustomerAndTyping(text){
