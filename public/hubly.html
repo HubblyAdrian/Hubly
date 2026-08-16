@@ -43852,45 +43852,52 @@ async function upsertCustomer(data,opts){
     // in-memory fallback ever ran. Found while wiring Phase 3's Create
     // Membership flow through this exact function.
     const dbc=getDb();
+    // NOTHING HERE READS THE ROW BACK.
+    //
+    // Both writes used `.select().single()`. `customers` holds real PII and
+    // deliberately has no broad SELECT policy, so PostgREST executed the write,
+    // then filtered the RETURNING clause to zero rows, and `.single()` raised
+    // PGRST116 "Cannot coerce the result to a single JSON object" — AFTER the
+    // row was already committed. Confirmed against production: the customer row
+    // existed, exactly once, while this function reported failure three times.
+    //
+    // So the write is not the fragile part; depending on reading it back is.
+    // The id is generated here and every column is already in `payload`, which
+    // means the local record can be built without the server's answer. The
+    // anonymous branch always did this — it is now simply what both do.
     if(c&&c._persisted){
-      const {data:updated,error}=await realtimeAwareWrite({table:'customers',id:c.id,write:()=>dbc.from('customers').update(payload).eq('id',c.id).select().single()});
+      const {error}=await realtimeAwareWrite({table:'customers',id:c.id,write:()=>dbc.from('customers').update(payload).eq('id',c.id)});
       if(error)throw error;
-      Object.assign(c,mapCustRow(updated));
+      Object.assign(c,mapCustRow({...payload,id:c.id}));
       await syncMembershipToTable(dbc,currentBusiness.id,c.id,recurringPlan);
       return c;
-    }else if(currentUser){
-      const {data:inserted,error}=await realtimeAwareWrite({table:'customers',id:(res)=>res&&res.data&&res.data.id,write:()=>dbc.from('customers').insert({...payload,business_id:currentBusiness.id}).select().single()});
-      if(error)throw error;
-      const row=mapCustRow(inserted);
-      if(c){Object.assign(c,row)}else{c=row;S.customers.push(c);updateCustDL()}
-      await syncMembershipToTable(dbc,currentBusiness.id,row.id,recurringPlan);
-      return c;
-    }else{
-      // Anonymous caller (e.g. the public booking flow) — customers has no
-      // SELECT policy for anon, only INSERT, deliberately (real PII: name/
-      // phone/email — no public read access, same posture as booking_requests
-      // which was fixed the same way). insert().select() would fail under
-      // RLS-under-RETURNING even with a working INSERT policy, so generate
-      // the id client-side and insert without .select(), mirroring
-      // writeAbandonedBookingRequest's booking_requests pattern.
-      const newId=crypto.randomUUID();
-      const insertPayload={...payload,id:newId,business_id:currentBusiness.id};
-      const {error}=await dbc.from('customers').insert(insertPayload);
-      if(error)throw error;
-      const row=mapCustRow({...insertPayload,created_at:new Date().toISOString()});
-      if(c){Object.assign(c,row)}else{c=row;S.customers.push(c);updateCustDL()}
-      return c;
     }
+    const newId=crypto.randomUUID();
+    const insertPayload={...payload,id:newId,business_id:currentBusiness.id};
+    const {error}=await realtimeAwareWrite({table:'customers',id:newId,write:()=>dbc.from('customers').insert(insertPayload)});
+    if(error)throw error;
+    const row=mapCustRow({...insertPayload,created_at:new Date().toISOString()});
+    if(c){Object.assign(c,row)}else{c=row;S.customers.push(c);updateCustDL()}
+    // Memberships are an owner-side concern; the public booking flow never
+    // carries a recurring plan and has no rights on that table.
+    if(currentUser)await syncMembershipToTable(dbc,currentBusiness.id,row.id,recurringPlan);
+    return c;
   }catch(e){
     if(opts.silent)console.warn('upsertCustomer failed (silent)',e?.message||e);
     else toast('⚠️ Could not save customer. check connection and try again');
-    if(!c){c={id:Date.now()+Math.random(),...payload};S.customers.push(c);updateCustDL()}
-    c.notes=stripCustomerMetaNotes(c.notes);
-    c.recurringPlan=recurringPlan||c.recurringPlan||null;
-    c.customerType=payload.customer_type||c.customerType||'one_off';
-    c.statusOverride=statusOverride||c.statusOverride||'auto';
-    c.smsConsent=smsConsent||c.smsConsent||false;
-    return c;
+    // DO NOT fabricate a customer. This used to mint one with
+    // `id: Date.now()+Math.random()` and push it into S.customers, which is
+    // worse than failing: a float is not a customers.id, so anything that links
+    // to it (a job, a membership, a booking) points at a row that does not
+    // exist, the record vanishes on the next reload, and the UI meanwhile shows
+    // a customer that was never saved.
+    //
+    // A caller that already had a persisted customer gets it back untouched —
+    // it is still a real row, just not updated. A caller that had none gets
+    // null, which every call site already handles (`if(c&&c.id)`), because
+    // "no customer was created" is the truth.
+    if(c&&c._persisted)return c;
+    return null;
   }
 }
 // The one canonical "create a brand-new customer" entry point — everything
