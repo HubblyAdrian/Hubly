@@ -38424,7 +38424,15 @@ function renderWebsite(prefix){
   if(!prefix){
     applyBlueprintPerformance();
     applyHomepageSectionOrder();
-    seedGalleryFromBlueprint(false);
+    // seedGalleryFromBlueprint(false) used to run here. Removed: a render must
+    // never write. This was the one seeding call that fired on EVERY render,
+    // for the life of the account, rather than once during setup — so any time
+    // the guards in seedGalleryFromBlueprint fell open (S._ownerUploadedMedia
+    // reset at :18912/:26365/:27397/:32556, or an empty portfolioUrls), stock
+    // Unsplash photos were re-written into the business as its own work.
+    // 9 of 19 production businesses carry blueprint stock; 5 of those have no
+    // real photos at all. The remaining 14 seeding call sites are setup-time
+    // and deliberately untouched here.
   }
   if(isEditorViewOpen())syncBizToWebsiteHero();
   const p=prefix||'ws';
