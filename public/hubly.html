@@ -6703,24 +6703,12 @@ html{scroll-behavior:smooth}
 /* Booking: keep floating chat bubble (no mid-flow help card). Hide nudge teaser only. */
 body:has(#p-booking.active) #ws-chat-teaser,
 body.ws-booking-open #ws-chat-teaser{display:none!important}
-/* Keep chat FAB clear of the Continue row */
-body:has(#p-booking.active) .ws-chat-widget,
-body.ws-booking-open .ws-chat-widget{
-  z-index:1200;
-  bottom:calc(84px + env(safe-area-inset-bottom,0px));
-  right:16px;
-}
-@media(max-width:720px){
-  body:has(#p-booking.active) .ws-chat-widget,
-  body.ws-booking-open .ws-chat-widget{
-    right:12px;
-    bottom:calc(92px + env(safe-area-inset-bottom,0px));
-  }
-  body:has(#p-booking.active) .bk-step-foot,
-  body.ws-booking-open .bk-step-foot{
-    padding-right:68px;
-  }
-}
+/* The chat FAB used to be nudged up and the action bar padded 68px to the
+   right so the two would not collide during booking. Both are gone: the widget
+   is hidden outright while the booking flow is open (see .ws-chat-widget rule
+   near the ws-booking-open block), and the reserved 68px was squeezing
+   "Confirm & book" for a bubble that is no longer there. Nudging only moved
+   the collision to a different screen size. */
 /* Trade buckets (detailing Interior / Exterior / Wax…): labeled + sideways strip */
 .ws-gal-album-rail{
   display:flex;gap:12px;overflow-x:auto;padding:2px 2px 10px;
@@ -8561,7 +8549,37 @@ body.ws-booking-open .ws-chat-widget{
 body.ws-booking-open{overflow:hidden}
 body.ws-booking-open #ws-backdrop{display:block}
 body.ws-booking-open #p-booking-landing.active,
-body.ws-booking-open #p-booking.active{position:fixed;inset:0;z-index:950;max-width:100%;animation:wsBkIn .32s ease}
+body.ws-booking-open #p-booking.active{
+  position:fixed;inset:0;z-index:950;max-width:100%;animation:wsBkIn .32s ease;
+  /* inset:0 already pins all four edges. .booking-shell's height:100dvh would
+     otherwise WIN and make the overlay shorter than the box inset:0 defines —
+     dvh is the dynamic viewport, so when the mobile toolbar is showing the
+     shell ends above the real bottom and the business site shows through the
+     gap underneath it. That gap is what looked like a clipped footer: the
+     action bar was never cut, the page behind it was visible below the shell.
+     height:100% here means "the inset box", so the overlay always fills it. */
+  height:100%;max-height:100%;
+}
+
+/* The site's own sticky Book Now bar is fixed to the viewport bottom
+   (.ws-sticky-cta, z-index 150) and nothing suppressed it while booking was
+   open, so it sat in the gap above — two stacked sticky bars at the payment
+   step. It is meaningless during booking anyway: the customer is already in
+   the flow it starts. */
+body.ws-booking-open .ws-sticky-cta,
+body:has(#p-booking.active) .ws-sticky-cta,
+body:has(#p-booking-landing.active) .ws-sticky-cta{display:none!important}
+
+/* The floating chat bubble sat at z-index 1200 — above the booking overlay —
+   and overlapped "Confirm & book". A floating element must never cover the
+   primary action at the payment step, and nudging it up only moves the
+   collision to a different screen size. Hidden for the duration; the customer
+   is mid-booking and the flow has its own back/exit controls. */
+body.ws-booking-open .ws-chat-widget,
+body:has(#p-booking.active) .ws-chat-widget,
+body:has(#p-booking-landing.active) .ws-chat-widget{display:none!important}
+body.ws-booking-open .ws-back-top,
+body:has(#p-booking.active) .ws-back-top{display:none!important}
 @keyframes wsBkIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 .ws-bk-close{display:none;position:fixed;top:14px;right:14px;z-index:960;width:40px;height:40px;border-radius:50%;border:1px solid var(--border);background:#fff;color:var(--ink);font-size:22px;line-height:1;cursor:pointer;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(15,23,42,.12)}
 body.ws-booking-open .ws-bk-close{display:flex}
