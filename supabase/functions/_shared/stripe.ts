@@ -129,6 +129,17 @@ export async function createDestinationCheckout(opts: {
   const currency = (opts.currency || "usd").toLowerCase();
   const form: Record<string, string | number | boolean> = {
     mode: "payment",
+    // Dynamic payment methods: Stripe uses the payment method configuration set
+    // on the platform account (Cards, Apple Pay, Google Pay, Link, ...) instead
+    // of a list hardcoded here. Omitting this field entirely behaves the same
+    // way — it is stated explicitly because the current behaviour otherwise
+    // depends on a field's ABSENCE, which is easy to "fix" by mistake.
+    //
+    // DO NOT add `payment_method_types[...]`. Setting it overrides the dashboard
+    // configuration and silently drops every wallet — Apple Pay, Google Pay and
+    // Link would stop appearing at checkout with no error anywhere. New payment
+    // methods belong in the Stripe dashboard, not in this file.
+    "automatic_payment_methods[enabled]": true,
     success_url: opts.successUrl,
     cancel_url: opts.cancelUrl,
     "line_items[0][price_data][currency]": currency,
@@ -212,6 +223,21 @@ export function appBaseUrl() {
   );
 }
 
+/**
+ * Every business site lives on its own subdomain (<slug>.myhubly.app), which is
+ * where customers actually check out. The allowlist below used to be exact-match
+ * only, so a customer paying from kestrel.myhubly.app had their success_url
+ * rewritten to the fallback and landed on the platform app after paying instead
+ * of back on the business's own site.
+ *
+ * Matched as a SINGLE DNS label before the apex — deliberately not
+ * `host.endsWith(".myhubly.app")`. A suffix test is the shape that goes wrong
+ * later: it would also accept `a.b.myhubly.app`, and the same habit applied to a
+ * domain we don't fully control accepts anything an attacker can create a
+ * hostname under. One label, DNS charset, anchored both ends.
+ */
+const HUBLY_SUBDOMAIN_RE = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.myhubly\.app$/;
+
 export function sanitizeAppReturnUrl(raw: unknown): string {
   const fallback = `${appBaseUrl()}/app`;
   const s = String(raw || "").trim();
@@ -227,7 +253,10 @@ export function sanitizeAppReturnUrl(raw: unknown): string {
       "127.0.0.1",
     ]);
     const host = u.hostname.toLowerCase();
-    if (!allowed.has(host) && !host.endsWith(".vercel.app")) return fallback;
+    const ok = allowed.has(host) ||
+      HUBLY_SUBDOMAIN_RE.test(host) ||
+      host.endsWith(".vercel.app");
+    if (!ok) return fallback;
     if (u.protocol !== "https:" && u.protocol !== "http:") return fallback;
     return u.toString();
   } catch {
