@@ -41685,9 +41685,11 @@ async function applyDiscount(){
     toast(t('discountApplied').replace('{n}',String(S.bkDiscountPercent)));
     return;
   }
-  if(v.toUpperCase()==='HUBLY10'){
-    S.bkDiscountPercent=10;S.bkDiscountCode='HUBLY10';buildOrderSummary();toast(t('discountApplied').replace('{n}','10'));return;
-  }
+  // A hardcoded platform-wide 'HUBLY10' used to grant 10% off here, on every
+  // business site, whether or not the owner had created any code. Removed: only
+  // codes a business actually created may be honoured. Production usage was 0
+  // (checked against booking_requests.notes before deleting), so no live
+  // customer relied on it.
   clearBookingPromo();
   buildOrderSummary();
   toast(t('discountInvalid'));
