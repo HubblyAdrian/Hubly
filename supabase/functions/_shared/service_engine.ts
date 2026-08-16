@@ -386,11 +386,18 @@ function migrateLegacyService(
       choice: "customer_choice",
       card: "card_on_file",
     };
-    payment = {
-      rule: ruleMap[ps] || "pay_after_service",
-      deposit_type: String(raw.depositType || "pct") === "flat" ? "flat" : "pct",
-      deposit_val: Number(raw.depositVal ?? 25) || 25,
-    };
+    // Only carry sub-fields the owner actually set. This used to hard-code
+    // pct/25 onto every legacy conversion, which meant a package saying merely
+    // "take a deposit" always claimed 25% — so it could never inherit the
+    // account's own percentage, and an owner who changed their default saw
+    // nothing change on those packages. An absent sub-field is the signal that
+    // resolveBookingPayment should fall back (booking_engine.ts).
+    payment = { rule: ruleMap[ps] || "pay_after_service" };
+    if (raw.depositType === "flat" || raw.depositType === "pct") {
+      payment.deposit_type = raw.depositType;
+    }
+    const rawDep = Number(raw.depositVal);
+    if (Number.isFinite(rawDep) && rawDep > 0) payment.deposit_val = rawDep;
   }
 
   return {

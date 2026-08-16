@@ -14650,7 +14650,13 @@ function buildServiceCatalogFromEditor(){
     if(s.payment&&typeof s.payment==='object')payment=s.payment;
     else if(s.paymentSetting){
       const ruleMap={full:'pay_in_full',pay_in_full:'pay_in_full',deposit:'deposit',later:'pay_after_service',choice:'customer_choice',card:'card_on_file'};
-      payment={rule:ruleMap[String(s.paymentSetting).toLowerCase()]||'pay_after_service',deposit_type:String(s.depositType||'pct')==='flat'?'flat':'pct',deposit_val:Number(s.depositVal??25)||25};
+      // Send only what the owner actually set. An omitted deposit_type/
+      // deposit_val inherits the account default server-side; hard-coding
+      // pct/25 here would make every "deposit" package claim 25% forever.
+      payment={rule:ruleMap[String(s.paymentSetting).toLowerCase()]||'pay_after_service'};
+      if(s.depositType==='flat'||s.depositType==='pct')payment.deposit_type=s.depositType;
+      const dvNum=Number(s.depositVal);
+      if(Number.isFinite(dvNum)&&dvNum>0)payment.deposit_val=dvNum;
     }
     return {
       id:String(s.id||('svc-'+Date.now()+'-'+i)),
@@ -32065,6 +32071,50 @@ function renderPkgHubEdit(){
     `}`;
 }
 
+/**
+ * The account default, in the owner's own words — "Pay after service",
+ * "Deposit · 25%", and so on.
+ *
+ * The per-package payment control offers "use my default", but until now it
+ * did not say WHAT the default was, so choosing it was a guess. Naming it means
+ * an owner can leave every package alone and still know what will be charged.
+ */
+function accountPaymentLabel(){
+  const v=String(S.paymentSetting||'later').toLowerCase();
+  if(v==='full'||v==='pay_in_full'||v==='upfront')return t('fullPayment');
+  if(v==='choice')return t('clientChoiceOpt');
+  if(v==='card'||v==='card_on_file')return 'Card on file';
+  if(v==='deposit'){
+    const flat=String(S.depositType||'pct')==='flat';
+    const val=Number(S.depositVal??25)||25;
+    return t('depositHold')+' · '+(flat?('$'+val):(val+'%'));
+  }
+  return t('payInPersonOpt');
+}
+/**
+ * What a package's blank deposit fields will actually resolve to.
+ *
+ * Type and amount inherit INDEPENDENTLY (resolveBookingPayment in
+ * booking_engine.ts), so all four combinations are real and the hint has to
+ * describe the one in front of the owner — not a generic "uses default", which
+ * is wrong the moment either field is filled in.
+ */
+function svcDepositHint(svc){
+  const ownType=!!(svc&&(svc.depositType==='flat'||svc.depositType==='pct'));
+  const ownVal=!!(svc&&svc.depositVal!=null&&svc.depositVal!=='');
+  if(ownType&&ownVal)return '';
+  const acctFlat=String(S.depositType||'pct')==='flat';
+  const acctVal=Number(S.depositVal??25)||25;
+  if(!ownType&&!ownVal){
+    return 'Leave blank to use your default: '+(acctFlat?('$'+acctVal):(acctVal+'%'));
+  }
+  if(!ownType){
+    return 'Type follows your default ('+(acctFlat?'flat amount':'percent')+')';
+  }
+  // Type chosen here, amount blank: the account's NUMBER is reused, read under
+  // this package's type — so a default of 25 becomes $25 on a flat package.
+  return 'Amount follows your default ('+acctVal+') — '+(svc.depositType==='flat'?('$'+acctVal):(acctVal+'%'))+' on this package';
+}
 function renderSvcEditorList(){
   const el=document.getElementById('svc-editor-list');
   if(!el)return;
@@ -32176,7 +32226,7 @@ function renderSvcEditorList(){
           <div style="margin-bottom:10px;">
             <label style="font-size:11px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:6px;">${t('howClientsPay')}</label>
             <select onchange="S.editorSvcs[${i}].paymentSetting=this.value;renderSvcEditorList()" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;">
-              <option value="" ${!svc.paymentSetting?'selected':''}>${t('useDefaultPayment')}</option>
+              <option value="" ${!svc.paymentSetting?'selected':''}>${t('useDefaultPayment')} (${accountPaymentLabel()})</option>
               <option value="full" ${svc.paymentSetting==='full'?'selected':''}>${t('fullPayment')}</option>
               <option value="deposit" ${svc.paymentSetting==='deposit'?'selected':''}>${t('depositHold')}</option>
               <option value="later" ${svc.paymentSetting==='later'?'selected':''}>${t('payInPersonOpt')}</option>
@@ -32184,10 +32234,11 @@ function renderSvcEditorList(){
             </select>
           </div>
           ${svc.paymentSetting==='deposit'?`
-          <div class="field-row" style="margin-bottom:10px;">
-            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('depositType')}</label><select onchange="S.editorSvcs[${i}].depositType=this.value" style="width:100%;padding:8px;font-size:12px;"><option value="pct" ${(svc.depositType||'pct')==='pct'?'selected':''}>${t('pctPercent')}</option><option value="flat" ${svc.depositType==='flat'?'selected':''}>${t('flatAmount')}</option></select></div>
-            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('depositAmt')}</label><input type="number" value="${svc.depositVal||25}" oninput="S.editorSvcs[${i}].depositVal=this.value" style="padding:8px;font-size:12px;"></div>
-          </div>`:''}
+          <div class="field-row" style="margin-bottom:4px;">
+            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('depositType')}</label><select onchange="S.editorSvcs[${i}].depositType=this.value;renderSvcEditorList()" style="width:100%;padding:8px;font-size:12px;"><option value="" ${!svc.depositType?'selected':''}>Use default</option><option value="pct" ${svc.depositType==='pct'?'selected':''}>${t('pctPercent')}</option><option value="flat" ${svc.depositType==='flat'?'selected':''}>${t('flatAmount')}</option></select></div>
+            <div class="field" style="margin:0;"><label style="font-size:10px;">${t('depositAmt')}</label><input type="number" value="${svc.depositVal!=null&&svc.depositVal!==''?svc.depositVal:''}" placeholder="${Number(S.depositVal??25)||25}" oninput="S.editorSvcs[${i}].depositVal=this.value;renderSvcEditorList()" style="padding:8px;font-size:12px;"></div>
+          </div>
+          ${svcDepositHint(svc)?`<div style="font-size:10px;color:var(--ink-3);margin:0 0 10px;">${svcDepositHint(svc)}</div>`:'<div style="margin-bottom:10px;"></div>'}`:''}
         </details>
         <button class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);margin-top:10px;" onclick="deleteSvc(${svc.id})">Delete package</button>
       </div>
