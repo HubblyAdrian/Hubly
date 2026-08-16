@@ -219,6 +219,62 @@ order by 3 desc;
 
 ---
 
+## "This changes nothing" is a claim, and it needs testing like any other
+
+**Status:** standing practice, adopted 2026-08-16 after it broke every card payment
+**Cost:** all card checkout, from the f13c751 deploy until it was found
+
+`createDestinationCheckout` relied on dynamic payment methods, which a Checkout
+Session gets from the *absence* of `payment_method_types`. Behaviour depending on
+a missing field is genuinely fragile — someone "fixing" it by adding the field
+would silently drop Apple Pay, Google Pay and Link. So f13c751 made the default
+explicit:
+
+```ts
+"automatic_payment_methods[enabled]": true,   // "no behaviour change —
+                                              //  it states the current default"
+```
+
+`automatic_payment_methods` is a **PaymentIntent** parameter. It is not valid on
+a Checkout Session, and Stripe rejected every request:
+
+```
+{"error":"Received unknown parameter: automatic_payment_methods"}
+```
+
+Website bookings (`create-booking-checkout`) and store orders
+(`create-store-checkout`) both build their session here, so no customer could pay
+by card from that deploy onward. The commit message said no behaviour change, and
+the change was never exercised against Stripe, because "no-op" reads as "nothing
+to test".
+
+**The diagnosis is not "be careful with Stripe params".** It is that *no-op* was
+treated as a category exempt from verification. A claim that a change is inert is
+one of the strongest claims you can make about code — it asserts something about
+every input, including the ones you did not think of — and it is the one most
+often accepted without evidence, precisely because it sounds humble.
+
+**Rules:**
+
+- **A no-op change ships with the same proof as any other.** "States the existing
+  default", "pure refactor", "comment-only + one line", "makes implicit explicit"
+  — each needs one execution showing the behaviour is unchanged. If the change is
+  truly inert, that proof is cheap; if it is expensive, the change is not inert.
+- **Making an implicit default explicit is a REAL change.** The old code sent no
+  field; the new code sent one. Those are different requests. "The default is X"
+  and "the API accepts a parameter that sets X" are separate facts, and the second
+  needs checking in the API reference for *that resource* — parameters are not
+  portable between resources that look related (PaymentIntent vs Checkout
+  Session).
+- **When behaviour depends on an absence, record it in a comment, not in code.**
+  A comment cannot be rejected by an API. That is what the file does now, with an
+  explicit DO-NOT for both `payment_method_types` and `automatic_payment_methods`.
+- **Watch for the shape:** a defensive comment paired with a defensive line of
+  code. The comment was right and worth keeping; making it executable is what
+  broke production.
+
+---
+
 ## Verification practice: diff error IDENTITY, never counts
 
 **Status:** standing practice, adopted 2026-08-16 after it hid two real bugs
