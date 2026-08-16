@@ -376,6 +376,36 @@
     },
   };
 
+  /**
+   * The NEUTRAL recipe — what Smart Quote asks when the trade is not known.
+   *
+   * recipeId() used to fall back to `detailing` for anything unrecognised, so a
+   * business with no business_type was asked for its VEHICLE TYPE and how dirty
+   * the vehicle was. That was latent while the businesses table defaulted
+   * business_type to 'detailing'; removing that default (migration
+   * 20260815170000) made it live, and the neutral 'generic' blueprint shipped
+   * the same day maps here too.
+   *
+   * Same principle as the generic Business Blueprint: no trade nouns, no
+   * trade-specific questions, and nothing that moves the price. Packages and
+   * contact details are universal — everything else is a guess.
+   */
+  const NEUTRAL_RECIPE = {
+    accent: '#4A5160',
+    title: 'Quote',
+    subtitle: 'Pick what you need and we will price it.',
+    includes: [],
+    tip: '',
+    steps: [
+      { id: 'packages', title: 'Choose what you need', blurb: 'Pick one or more.' },
+      { id: 'customer', title: 'Your details', blurb: 'Name, phone, and email — so we can send this quote.' },
+      { id: 'review', title: 'Review & send', blurb: 'Confirm the estimate.' },
+    ],
+    // Deliberately empty: a field we invent here becomes a question no owner
+    // asked for, and a modifier that silently changes the price.
+    fields: {},
+  };
+
   const ALIASES = {
     'window-cleaning': 'windows',
     windows: 'windows',
@@ -387,11 +417,15 @@
     'pressure-washing': 'pressure_washing',
   };
 
+  const NEUTRAL_RECIPE_ID = 'generic';
+
   function recipeId(businessType) {
     const raw = String(businessType || '').toLowerCase().trim();
     if (RECIPES[raw]) return raw;
     if (ALIASES[raw]) return ALIASES[raw];
-    return 'detailing';
+    // Was `return 'detailing'` — an unknown trade inherited auto-detailing's
+    // questions and its price modifiers. Unknown means unknown.
+    return NEUTRAL_RECIPE_ID;
   }
 
   function deepClone(o) {
@@ -643,7 +677,10 @@
   function resolveConfig(opts) {
     const o = opts || {};
     const trade = recipeId(o.businessType);
-    const base = deepClone(RECIPES[trade] || RECIPES.detailing);
+    // No `|| RECIPES.detailing` fallback: recipeId() already returns the neutral
+    // id for anything unknown, and a second detailing default here would put it
+    // straight back.
+    const base = deepClone(RECIPES[trade] || NEUTRAL_RECIPE);
     const fromBp = o.blueprint && o.blueprint.smartQuote ? deepClone(o.blueprint.smartQuote) : {};
     const owner = o.ownerConfig && typeof o.ownerConfig === 'object' ? deepClone(o.ownerConfig) : {};
 
@@ -1336,6 +1373,8 @@
 
   global.HublySmartQuote = {
     RECIPES,
+    NEUTRAL_RECIPE,
+    NEUTRAL_RECIPE_ID,
     CONTACT_FIELDS,
     TILE_ART,
     QUICK_QUOTE_FLOW_DEFAULTS,
