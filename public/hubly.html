@@ -35721,11 +35721,77 @@ function editServiceFromPreview(svcId,anchor){
     <input type="text" class="ws-pe-inp" id="ws-pe-svc-desc" placeholder="Short description" value="${escPeHtml(svc.desc||'')}">
     <textarea class="ws-pe-inp" id="ws-pe-svc-inc" rows="3" placeholder="What's included (one per line)">${escPeHtml((svc.includesList&&svc.includesList.length?svc.includesList:(typeof getSvcIncludes==='function'?getSvcIncludes(svc):[])).join('\n'))}</textarea>
     <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin:6px 0;"><input type="checkbox" id="ws-pe-svc-pop" ${svc.popular?'checked':''}> Mark as popular</label>
+    ${peSvcPaymentHtml(svc)}
     <div class="ws-pe-pop-actions">
       <button type="button" class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deletePeSvc()">Delete</button>
       <button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button>
       <button type="button" class="btn btn-ink btn-sm" onclick="applyWsPeService()">Save</button>
     </div>`,true);
+  // The hint depends on the account default, so it is rendered after the popover
+  // is in the DOM rather than baked into the template string.
+  try{updatePeSvcDepositHint();}catch(e){}
+}
+/**
+ * Payment terms for ONE package, on the canvas card.
+ *
+ * This control already existed — inside the collapsed "Payment & more options"
+ * <details> in #svc-editor-list, in an accordion (#ed-services, data-sheet
+ * "settings") that nothing in the editor rail opens: goEdSettingsNav('packages')
+ * calls closeEdSheet() and sends the owner to the canvas instead. So the
+ * per-package resolver shipped in e494e91/0225c13 read a field no owner had any
+ * way to write, and every package silently used the account default.
+ *
+ * It writes the SAME svc.paymentSetting / depositType / depositVal the accordion
+ * writes; serviceCatalogFromEditor turns those into service.payment, which
+ * resolveBookingPayment already reads. No new storage, no new field.
+ *
+ * accountPaymentLabel() and svcDepositHint() are reused rather than reworded, so
+ * the two surfaces cannot state different inheritance rules.
+ */
+function peSvcPaymentHtml(svc){
+  const esc=typeof escPeHtml==='function'?escPeHtml:(s)=>String(s==null?'':s);
+  const pay=String(svc.paymentSetting||'');
+  const acctVal=Number(S.depositVal??25)||25;
+  const dv=(svc.depositVal!=null&&svc.depositVal!=='')?svc.depositVal:'';
+  // "Client's choice" is not offered as a new pick here, but IS rendered when a
+  // package already has it — otherwise saving from this surface would silently
+  // downgrade an existing choice package to the account default.
+  return `<div class="ws-pe-pop-lbl" style="margin-top:12px;">${esc(t('howClientsPay'))}</div>
+    <select class="ws-pe-inp" id="ws-pe-svc-pay" onchange="togglePeSvcPayment(this.value)">
+      <option value="" ${!pay?'selected':''}>${esc(t('useDefaultPayment')+' ('+accountPaymentLabel()+')')}</option>
+      <option value="full" ${pay==='full'?'selected':''}>${esc(t('fullPayment'))}</option>
+      <option value="deposit" ${pay==='deposit'?'selected':''}>${esc(t('depositHold'))}</option>
+      <option value="later" ${pay==='later'?'selected':''}>${esc(t('payInPersonOpt'))}</option>
+      ${pay==='choice'?`<option value="choice" selected>${esc(t('clientChoiceOpt'))}</option>`:''}
+    </select>
+    <div id="ws-pe-svc-dep" style="display:${pay==='deposit'?'block':'none'};">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+        <select class="ws-pe-inp" id="ws-pe-svc-dtype" onchange="updatePeSvcDepositHint()">
+          <option value="" ${!svc.depositType?'selected':''}>Use default</option>
+          <option value="pct" ${svc.depositType==='pct'?'selected':''}>${esc(t('pctPercent'))}</option>
+          <option value="flat" ${svc.depositType==='flat'?'selected':''}>${esc(t('flatAmount'))}</option>
+        </select>
+        <input type="number" class="ws-pe-inp" id="ws-pe-svc-dval" placeholder="${esc(acctVal)}" value="${esc(dv)}" oninput="updatePeSvcDepositHint()">
+      </div>
+      <div id="ws-pe-svc-dhint" style="font-size:11px;color:var(--ink-3);margin:-4px 0 10px;"></div>
+    </div>`;
+}
+function togglePeSvcPayment(v){
+  const box=document.getElementById('ws-pe-svc-dep');
+  if(box)box.style.display=v==='deposit'?'block':'none';
+  updatePeSvcDepositHint();
+}
+/** Same inheritance wording as the accordion — one helper, two surfaces. */
+function updatePeSvcDepositHint(){
+  const el=document.getElementById('ws-pe-svc-dhint');
+  if(!el)return;
+  const draft={
+    depositType:document.getElementById('ws-pe-svc-dtype')?.value||'',
+    depositVal:document.getElementById('ws-pe-svc-dval')?.value||'',
+  };
+  const txt=typeof svcDepositHint==='function'?svcDepositHint(draft):'';
+  el.textContent=txt||'';
+  el.style.display=txt?'block':'none';
 }
 function togglePeSvcPricing(v){
   const flat=document.getElementById('ws-pe-svc-flat');
@@ -35795,6 +35861,19 @@ function applyWsPeService(){
   if(typeof syncSvcIncludes==='function')syncSvcIncludes(svc,lines);
   else svc.includes=lines.join('\n');
   svc.popular=!!document.getElementById('ws-pe-svc-pop')?.checked;
+  // Payment terms. Blank stays blank on purpose — serviceCatalogFromEditor only
+  // emits deposit_type for 'pct'/'flat' and deposit_val for a finite value > 0,
+  // so an empty field inherits the account default server-side rather than
+  // freezing today's default onto the package.
+  const paySel=document.getElementById('ws-pe-svc-pay');
+  if(paySel){
+    svc.paymentSetting=paySel.value||'';
+    // Deposit sub-fields are read even when the rule is not 'deposit' (the block
+    // is hidden, not removed), so switching away and back does not lose them —
+    // same as the accordion, which also only hides them.
+    svc.depositType=document.getElementById('ws-pe-svc-dtype')?.value||'';
+    svc.depositVal=document.getElementById('ws-pe-svc-dval')?.value||'';
+  }
   closeWsPePop();
   try{scheduleEditorCatalogPersist();}catch(e){
     try{if(typeof syncEditorPackagesToServices==='function')syncEditorPackagesToServices();}catch(e2){}
