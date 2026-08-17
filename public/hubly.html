@@ -15662,6 +15662,13 @@ async function loadJobs(){
     return {
     id: 'req_'+r.id,
     reqId: r.id,
+    // Money state, carried onto the pseudo-job so the auto-accept sweeper can
+    // judge whether this booking owes anything. loadJobs selects '*', so these
+    // arrive on the row already — they were simply never mapped.
+    paymentRule: r.payment_rule || null,
+    amountRequiredCents: r.amount_required_cents,
+    amountPaidCents: r.amount_paid_cents,
+    paymentStatus: r.payment_status || null,
     customer: r.customer_name,
     service: r.service_name,
     date: normalizeJobDate(r.requested_date),
@@ -42197,7 +42204,17 @@ async function submitBooking(){
             S._chatbotHandoffConversationId=null;
           }
           // Known / returning customers → Jobs immediately when owner is signed in
-          if(skipLeads&&currentUser&&insertedReqId&&typeof acceptBookingRequest==='function'){
+          // Same rule as the sweeper. This branch is only reached when no Stripe
+          // session opened — but that is NOT the same as nothing being owed: a
+          // deposit the owner collects by text or phone opens no session and is
+          // still money the customer has not paid.
+          const owesHere=bookingOwesUnpaid({
+            paymentRule:payload.payment_rule,
+            amountRequiredCents:payload.amount_required_cents,
+            amountPaidCents:null,
+            paymentStatus:payload.payment_status||null,
+          });
+          if(skipLeads&&currentUser&&insertedReqId&&owesHere===false&&typeof acceptBookingRequest==='function'){
             try{
               await loadJobs();
               await acceptBookingRequest(insertedReqId,{silent:true});
@@ -45280,6 +45297,49 @@ function countPriorBookings({name,phone,email}={}){
     return false;
   }).length;
 }
+/**
+ * Does this booking still owe money nobody has paid?
+ *
+ *   false -> settled. Nothing owed, or what was owed has been paid.
+ *   true  -> owes money that has not been paid.
+ *   null  -> UNKNOWN. Not enough recorded to say either way.
+ *
+ * Callers must treat null as "do not proceed". The two failure modes are not
+ * symmetrical: refusing wrongly costs an owner one click on Accept, while
+ * accepting wrongly puts confirmed work on the calendar for money that never
+ * arrived, and tells the customer they are booked.
+ *
+ * WHY NOT payment_status ALONE. `payment_status` defaults to 'none' at the
+ * column level, so 'none' means "nobody ever wrote this" just as often as it
+ * means "nothing was owed" — 22 of 24 production rows carried it before
+ * payment_rule existed. Reading 'none' as settled would auto-accept every
+ * unwritten row, which is the exact bug this guard exists to prevent.
+ */
+function bookingOwesUnpaid(j){
+  if(!j)return null;
+  const rule=String(j.paymentRule||'').toLowerCase();
+  // Pay-after-service and card-on-file owe nothing AT BOOKING TIME. The money
+  // comes later, in person, and waiting for it would block every ordinary
+  // booking on a business that does not take payment upfront — which is most of
+  // them.
+  if(rule==='pay_after_service'||rule==='card_on_file')return false;
+
+  const required=Number(j.amountRequiredCents);
+  const paid=Number(j.amountPaidCents);
+  if(Number.isFinite(required)&&j.amountRequiredCents!=null){
+    if(required<=0)return false;
+    if(Number.isFinite(paid)&&paid>=required)return false;
+    // A deposit booking is settled once the DEPOSIT clears, not the balance —
+    // amount_required_cents holds the deposit for those, not the total.
+    return String(j.paymentStatus||'').toLowerCase()==='paid'?false:true;
+  }
+
+  // No recorded requirement. Fall back only to signals that are unambiguous.
+  const ps=String(j.paymentStatus||'').toLowerCase();
+  if(ps==='paid')return false;              // money confirmed
+  if(ps==='pending_checkout')return true;   // a session opened, so money was owed
+  return null;                              // 'none', null, anything else: unknown
+}
 function shouldSkipLeadsBoard(contact={},notes=''){
   const n=String(notes||'');
   if(/\[RETURNING:yes\]/i.test(n)||/\[RPJOB:/i.test(n)||/\[CUST:recurring\]/i.test(n)||/\[CUST:returning\]/i.test(n))return true;
@@ -45295,7 +45355,21 @@ let _autoAcceptingRebooks=false;
 async function autoAcceptSkipLeadBookings(){
   if(_autoAcceptingRebooks||!currentBusiness||!currentUser)return;
   const pending=(S.jobs||[]).filter(j=>j.status==='pending'&&j.reqId&&!j.isMembershipSignup&&!j.isBlock);
-  const toAccept=pending.filter(j=>shouldSkipLeadsBoard({name:j.customer,phone:j.phone,email:j.email},j.notes));
+  // A returning customer skips the Leads board — but ONLY if the booking does
+  // not owe money nobody has paid. Auto-accepting an unpaid booking puts
+  // confirmed work on the business's calendar for money that never arrived, and
+  // it happens silently: this sweeper runs on every loadJobs(), so the owner
+  // never sees a decision being made.
+  //
+  // `=== false` on purpose. bookingOwesUnpaid returns null when the row does not
+  // record enough to judge, and unknown must NOT auto-accept — the cost of
+  // refusing is one click on Accept, the cost of accepting wrongly is unpaid
+  // work presented as confirmed. Unknown drains on its own as new bookings carry
+  // payment_rule and amount_required_cents.
+  const toAccept=pending.filter(j=>
+    shouldSkipLeadsBoard({name:j.customer,phone:j.phone,email:j.email},j.notes)
+    && bookingOwesUnpaid(j)===false
+  );
   if(!toAccept.length)return;
   _autoAcceptingRebooks=true;
   let n=0;
