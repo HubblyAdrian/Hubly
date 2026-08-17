@@ -205,14 +205,28 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   background:var(--bg);opacity:0;transition:opacity .35s ease;
 }
 .hc-app.is-active{display:flex;opacity:1}
-.hc-app-left{flex:1 1 56%;min-width:0;display:flex;flex-direction:column;border-right:1px solid var(--line);transition:flex-basis .35s ease}
-.hc-app-right{flex:1 1 44%;min-width:0;display:flex;flex-direction:column;overflow:hidden;background:#0d0f16;transition:flex-basis .35s ease}
+/* Chat is FULL WIDTH until there is something real to render. The canvas is not
+   merely empty before that — it does not exist. An empty panel apologising for
+   itself is a worse first impression than no panel, and it makes the split read
+   as a layout that was always half-finished rather than as the site arriving. */
+.hc-app-left{flex:1 1 100%;min-width:0;display:flex;flex-direction:column;border-right:0;transition:flex-basis .45s cubic-bezier(.22,.61,.36,1)}
+/* display:none, so no width is reserved and nothing is painted. display cannot
+   be transitioned, which is why ARRIVAL is animated below rather than here. */
+.hc-app-right{display:none;flex:1 1 0%;min-width:0;flex-direction:column;overflow:hidden;background:#0d0f16;transition:flex-basis .45s cubic-bezier(.22,.61,.36,1)}
 /* Once there's a real site to look at, the canvas becomes the point — "the
    visible change is the explanation" only works if it has the room to be
    seen. Chat stays comfortable to read, just no longer fighting for equal
    space with the thing it's actually describing. */
-.hc-app.hc-has-draft .hc-app-left{flex:0 1 30%;min-width:340px}
-.hc-app.hc-has-draft .hc-app-right{flex:1 1 70%}
+.hc-app.hc-has-draft .hc-app-left{flex:0 1 30%;min-width:340px;border-right:1px solid var(--line)}
+/* The site arriving: fades and settles in from the right as the chat gives up
+   the space. One motion, not a panel that was always sitting there. */
+.hc-app.hc-has-draft .hc-app-right{display:flex;flex:1 1 70%;animation:hcCanvasArrive .5s cubic-bezier(.22,.61,.36,1) both}
+@keyframes hcCanvasArrive{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+/* Asked not to be moved: appear, don't slide. */
+@media (prefers-reduced-motion:reduce){
+  .hc-app-left,.hc-app-right{transition:none}
+  .hc-app.hc-has-draft .hc-app-right{animation:none}
+}
 .hc-thread{flex:1;overflow-y:auto;padding:36px clamp(22px,4vw,60px) 18px;display:flex;flex-direction:column;gap:22px}
 .hc-msg{max-width:640px;font-size:16px;line-height:1.65;white-space:pre-wrap}
 .hc-msg.hubly{color:var(--ink)}
@@ -253,13 +267,8 @@ body.hc-active #categories,body.hc-active .footer{display:none}
    draft exists, this is a real iframe onto the real renderer at its real
    <slug>.myhubly.app URL — not a mockup. */
 .hc-canvas{flex:1;display:flex;flex-direction:column;min-height:0}
-.hc-canvas-empty{
-  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  text-align:center;gap:12px;padding:30px;color:var(--ink-3);
-}
-.hc-canvas-empty svg{width:30px;height:30px;opacity:.4}
-.hc-canvas-empty h3{font-family:var(--display);font-size:15px;color:rgba(245,246,248,.8);font-weight:700}
-.hc-canvas-empty p{font-size:13px;max-width:32ch;line-height:1.5}
+/* .hc-canvas-empty removed: the panel is hidden until a site exists, so there
+   is no empty state to style. Nothing renders that class any more. */
 .hc-canvas-url{
   display:flex;align-items:center;gap:8px;padding:11px 16px;
   border-bottom:1px solid var(--line);font-size:11.5px;color:var(--ink-3);
@@ -816,12 +825,9 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     var root = document.getElementById('hcCanvas');
     if(!root) return;
     if(!hc.draftBusiness || !hc.draftBusiness.url){
-      root.innerHTML =
-        '<div class="hc-canvas-empty">' +
-          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>' +
-          '<h3>Nothing to show yet</h3>' +
-          '<p>As soon as there\'s something real to build, it\'ll come alive right here.</p>' +
-        '</div>';
+      // Nothing to render, so render nothing. CSS keeps the panel itself hidden
+      // until .hc-has-draft, so there is no empty state to write copy for.
+      root.innerHTML = '';
       return;
     }
     var url = hc.draftBusiness.url;
