@@ -145,6 +145,48 @@ const LEAD_GUIDANCE: Record<string, string> = {
   reviews:   "Lead with proof from real customers, before any claim the business makes about itself.",
 };
 
+/**
+ * How a section is BUILT, as opposed to what it is about.
+ *
+ * Choosing different sections did not produce different pages. Grooming,
+ * photography and detailing each picked a distinct set — 13-21% overlap — and
+ * all three still looked identical, because every section came out the same
+ * shape: heading and paragraph on the left, a grid of bordered cards on the
+ * right. The model had one way to render anything, so structural variety
+ * collapsed back into one page.
+ *
+ * A card grid is the safe default and the model reaches for it when nothing
+ * else is named. So the alternatives have to be named, and — critically — the
+ * classes that make them possible have to be in the prompt's styling list.
+ * Half of these were impossible until 2026-08-17: aspect-*, object-cover,
+ * relative/absolute/inset-0 and the gradient tokens were all accepted by the
+ * validator and never mentioned to the model, which is why a photography hero
+ * asked for an image frame and got `min-h-screen` — a full-viewport grey box —
+ * as the only height token it had ever been offered.
+ */
+const LAYOUT_BLOCK = `SECTION LAYOUT — vary the SHAPE, not just the subject.
+
+The fastest way to make three different businesses look like one template is to
+give every section the same shape. A heading, a paragraph, and a row of bordered
+cards is the default your instincts will reach for. It is fine ONCE on a page.
+It is not fine four times.
+
+Shapes available with the class vocabulary above:
+- Full-bleed statement — a section with a background wash (bg-gradient-to-b, from-brand-800) and nothing but a short, confident line of type at large size. No cards, no columns. Use it to break rhythm between two dense sections.
+- Text over image — a relative section, an absolute inset-0 image or placeholder behind it, a scrim, and the copy on top. This is the strongest hero shape for a visual trade.
+- Two-column split — copy in one column, a single proportioned image (aspect-[4/3], object-cover) in the other. Not three cards; one image.
+- Numbered process strip — a horizontal row of steps with big numerals and no card chrome, connected by spacing rather than boxes. Right for how-it-works.
+- Alternating stack — image left / text right, then text left / image right, repeating. Right for services where each item deserves its own room.
+- Wide comparison — a two-column table-like block (before/after, us/them, tier A/tier B) built from a grid, not from cards.
+- List with dividers — plain rows separated by border-b, no boxes at all. Right for FAQ and for long service lists.
+- Card grid — the default. Genuinely right for a set of 3-6 peer items with no natural order.
+
+RULES
+- Use at least THREE different shapes on a page. A page where every section is a card grid has failed even if the sections themselves are well chosen.
+- The hero should not be the same shape as the section under it.
+- Cards are for peer items. If the things are not peers, do not put them in cards.
+- Photographs and placeholders: give the frame an aspect-* class. Never min-h-screen on a picture frame.`;
+
 /** The structural vocabulary as prompt text. `leadWith` comes from section_order[0]. */
 export function buildPageStructureBlock(leadWith?: unknown): string {
   const want = String(leadWith || "").trim().toLowerCase();
@@ -164,10 +206,12 @@ RULES
 - You may build a section that isn't listed. The list is a starting point, not a boundary.
 - Two businesses in different trades must not come out structurally similar. If your section set would suit a generic "local service business", you haven't chosen — go back and choose.
 - Never invent facts to fill a section. No made-up prices, no fabricated certifications, no invented years-in-business, no imaginary awards. If you don't have what a section needs, pick a different section.
-- Photos: the business has not uploaded any images yet, and you must never invent an image URL. When a section wants photos — before-and-after, portfolio, team — build the real structure with honest captions and empty framed placeholders (a div with an aspect ratio and bg-ink-100), so the owner drops their photos straight in. Do not skip a section purely because the photos aren't there yet.
+- Photos: the business has not uploaded any images yet, and you must never invent an image URL. When a section wants photos — before-and-after, portfolio, team — build the real structure with honest captions and empty framed placeholders: a div with bg-ink-100 AND an explicit aspect class (aspect-[4/3], aspect-square, aspect-video). Never min-h-screen on a placeholder — that produces a full-viewport grey rectangle. Do not skip a section purely because the photos aren't there yet.
 - The reserved Hubly elements are separate from this list and are governed by the rule above them: include one only because your own reasoning justifies it here.
 
 Two different trades, to show the shape of a real choice — do not copy either:
 - Wedding DJ: hero → portfolio (sets and past weddings) → how-it-works (booking to the night itself) → faq (the questions couples actually ask) → pricing → closing-cta. No service-area section; no guarantees section.
-- Tree surgeon: hero → services (each with what's included) → credentials (insurance and certification, which is the whole decision) → service-area → before-after → guarantees → closing-cta. No portfolio section; no team section.`;
+- Tree surgeon: hero → services (each with what's included) → credentials (insurance and certification, which is the whole decision) → service-area → before-after → guarantees → closing-cta. No portfolio section; no team section.
+
+${LAYOUT_BLOCK}`;
 }

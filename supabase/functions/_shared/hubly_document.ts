@@ -689,9 +689,14 @@ STYLING — every value must be one of these exact tokens (space-separated in "c
 - Font weight: font-{${FONT_WEIGHTS.join(",")}}; also font-serif, font-sans, font-mono, italic
 - Tracking: tracking-{${TRACKING.join(",")}}; leading: leading-{${LEADING.join(",")}}
 - Color roles (not raw hex — these map to the business's real brand color + a neutral scale): ${COLOR_ROLES.map((c) => `text-${c}/bg-${c}/border-${c}`).join(", ")}
-- Layout: flex, grid, block, hidden, flex-row, flex-col, items-{center,start,end}, justify-{center,between,start,end,around}, grid-cols-{${GRID_COLS.join(",")}}, col-span-{1..12}
-- Sizing: max-w-{${MAX_WIDTHS.join(",")}}, w-{${WIDTH_FRACTIONS.join(",")}}, h-{full}, min-h-screen
+- Layout: flex, grid, block, inline-block, hidden, flex-row, flex-col, flex-wrap, items-{center,start,end}, justify-{center,between,start,end,around}, grid-cols-{${GRID_COLS.join(",")}}, col-span-{1..12}
+- Sizing: max-w-{${MAX_WIDTHS.join(",")}}, w-{${WIDTH_FRACTIONS.join(",")}}, h-{${WIDTH_FRACTIONS.join(",")}}, min-h-screen
+- Proportion: aspect-{${ASPECTS.join(",")}} — USE THESE to size an image or an image placeholder. min-h-screen makes a box a whole viewport tall and is for a full-height hero SECTION only; putting it on a picture frame produces a giant grey rectangle, which is the single most common way one of these pages comes out broken.
+- Media fit: object-cover, object-contain, overflow-hidden — object-cover on an <img> inside an aspect-* box is how a photo fills its frame without distorting
+- Positioning: relative, absolute, inset-0 — an absolute child with inset-0 inside a relative parent fills it exactly. This is how you put text OVER a full-bleed image, or lay a scrim across one
+- Text transform: uppercase, lowercase, capitalize
 - Radius/shadow/border: rounded, rounded-{${RADII.join(",")}}, shadow, shadow-{md,lg,xl}, border, border-2
+- Gradients: bg-gradient-to-{r,b,br} with from-brand-{500,600,700,800} and to-brand-{600,700,800,900} — for a hero wash or a scrim that keeps text readable over an image
 - Responsive: prefix any of the above with sm:/md:/lg: for breakpoint variants
 Class tokens not on this list are rejected, not approximated — pick the closest real token.
 
