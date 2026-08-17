@@ -141,6 +141,18 @@ Deno.serve(async (req) => {
     const booking = payload.record;
     if (!booking) return new Response(JSON.stringify({ ok: true, skipped: 'no record' }));
 
+    // A row with status 'abandoned' is a LEAD, not a booking. It is written the
+    // moment the customer reaches step 3, so notifying on it told owners "New
+    // booking request" for everyone who merely started the form — and, because
+    // the trigger fired AFTER INSERT, it arrived minutes BEFORE any payment.
+    // Callers now invoke this once the booking is real; this guard makes that
+    // property hold even if something calls it early.
+    if (String(booking.status || '') === 'abandoned') {
+      return new Response(JSON.stringify({ ok: true, skipped: 'abandoned lead, not a booking' }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
     const { data: business } = await supabase
       .from('businesses')
@@ -177,6 +189,23 @@ Deno.serve(async (req) => {
     const gcalLink = googleCalendarLink({ summary: eventSummary, location: booking.address || '', description: eventDescription, start, end });
 
     // ---- Notify the detailer ----
+    // Payment state, stated from the columns rather than inferred. payment_status
+    // defaults to 'none' at the column level, so 'none' is treated as "not known
+    // to be paid" and never rendered as a claim that nothing was owed.
+    const money = (c: number) => `$${(Math.max(0, Math.round(Number(c) || 0)) / 100).toFixed(2)}`;
+    const paidCents = Number(booking.amount_paid_cents) || 0;
+    const requiredCents = booking.amount_required_cents == null
+      ? null
+      : Number(booking.amount_required_cents);
+    const isPaid = String(booking.payment_status || '') === 'paid' && paidCents > 0;
+    const paymentLine = isPaid
+      ? `${money(paidCents)} paid`
+      : (requiredCents !== null && requiredCents > 0
+        ? `${money(requiredCents)} due \u2014 not yet paid`
+        : (String(booking.payment_rule || '') === 'pay_after_service'
+          ? 'Pay after service'
+          : ''));
+
     const ownerBody = `
       <div style="font-size:15px;color:#333;margin-bottom:18px;">You've got a new booking request from <b>${booking.customer_name}</b>.</div>
       ${detailRow('\u{1F527}', 'Service', booking.service_name)}
@@ -184,12 +213,18 @@ Deno.serve(async (req) => {
       ${detailRow('\u{1F4C5}', 'When', when.full)}
       ${detailRow('\u{1F4CD}', 'Address', booking.address || '')}
       ${detailRow('\u{1F4DE}', 'Contact', `${booking.customer_phone}${booking.customer_email ? ' \u2022 ' + booking.customer_email : ''}`)}
+      ${detailRow('\u{1F4B3}', 'Payment', paymentLine)}
       ${detailRow('\u{1F4DD}', 'Notes', cleanNotes)}
     `;
     const ownerHtml = emailShell({
       accentColor: accent,
-      headline: '\u{1F514} New booking request',
-      subhead: `From ${booking.customer_name}`,
+      // A paid booking is committed work, not a request awaiting a decision, and
+      // the email should not ask the owner to weigh something the customer has
+      // already paid for.
+      headline: isPaid ? '\u{2705} New booking \u2014 paid' : '\u{1F514} New booking request',
+      subhead: isPaid
+        ? `${booking.customer_name} \u2022 ${money(paidCents)} paid`
+        : `From ${booking.customer_name}`,
       bodyHtml: ownerBody,
       ctaText: 'Open Hubly Dashboard',
       // Was the marketing homepage: an owner tapping this from their phone

@@ -235,6 +235,14 @@ export async function createJobFromBookingRequest(
     if (updErr) console.warn("[booking_job] status update failed", reqId, updErr.message);
   }
 
+  // Tell the business, now that the booking is real work on their calendar.
+  // Only for a job we actually created — a redelivered Stripe event or the
+  // reconcile sweep finding the same booking must not re-email them.
+  if (created) {
+    const { notifyBookingReal } = await import("./booking_notify_call.ts");
+    await notifyBookingReal(admin, reqId, opts.reason === "payment" ? "paid" : "created");
+  }
+
   console.info(
     "[booking_job]",
     JSON.stringify({ reason: opts.reason, booking_request_id: reqId, job_id: jobId, created }),

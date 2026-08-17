@@ -42198,6 +42198,18 @@ async function submitBooking(){
           console.warn('booking_requests insert failed:',error.message);
           toast('Saved on this device — we’ll sync when you’re back online');
         }else{
+          // Tell the business. This path is the pay-in-person booking: no Stripe
+          // session opened, so the server-side notify in createJobFromBookingRequest
+          // never runs for it. Previously a database trigger covered this — badly,
+          // firing at step 3 on the abandoned lead row instead of here.
+          // Fire-and-forget: an email problem must not disturb a completed booking.
+          try{
+            if(insertedReqId){
+              dbClient.functions.invoke('booking-notify',{
+                body:{record:{...payload,id:insertedReqId},hubly_notify_reason:'created'},
+              }).catch(e=>console.warn('booking-notify failed',e&&e.message));
+            }
+          }catch(e){console.warn('booking-notify skipped',e&&e.message);}
           if(S.bkDiscountCode)markPromoUsedLocal(S.bkDiscountCode,phone,email);
           if(S._chatbotHandoffConversationId){
             markChatbotConversationBooked(S._chatbotHandoffConversationId);
