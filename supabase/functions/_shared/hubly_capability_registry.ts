@@ -55,6 +55,7 @@ import {
 } from "./hubly_document.ts";
 import { adminClient } from "./marketplace_provider.ts";
 import { getWebsiteAvailability, createWebsiteBookingJob } from "./hubly_booking_execution.ts";
+import { paletteById, palettePromptList, sectionOrderFor } from "./site_identity.ts";
 
 const APP_ORIGIN = (Deno.env.get("HUBLY_APP_ORIGIN") || "").trim() || "https://myhubly.app";
 
@@ -1124,6 +1125,23 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
                 "four already exist in production because this was left vague. Only ask for a " +
                 "name if you genuinely cannot derive anything meaningful from what they said.",
             },
+            palette: {
+              type: "string",
+              description:
+                "Pick ONE palette id that suits this business — never a hex colour, only an id " +
+                "from this list: " + palettePromptList() + ". Choose for the trade and how it wants " +
+                "to feel, not for your own preference. Omitting this leaves the site on the default " +
+                "navy, which is what made every Hubly site look identical.",
+            },
+            leadWith: {
+              type: "string",
+              description:
+                "Which section the page leads with: \"services\", \"portfolio\", \"about\" or " +
+                "\"reviews\". Lead with what sells THIS business — a photographer's work IS the " +
+                "pitch, so \"portfolio\"; a groomer's customer wants to know what you do and what " +
+                "it costs, so \"services\". Never lead with \"reviews\" or \"portfolio\" for a " +
+                "brand-new business that has neither yet. Defaults to services-first.",
+            },
             businessType: {
               type: "string",
               description:
@@ -1172,10 +1190,25 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           // in the browser tab. A neutral, honest title (just the name)
           // beats that every time; updateDraft can always make it richer
           // once the business is actually understood.
+          // Visual identity, chosen for THIS business. Without it every site
+          // inherits the same column defaults — brand_color '#1a3a6e' and
+          // section_order services/portfolio/reviews/about — which is why dog
+          // grooming, photography and detailing all produced the same page with
+          // different words. The palette is selected by id from a curated list,
+          // never free hex: a model picking arbitrary colours will eventually
+          // produce something illegible, and nobody reviews it before a stranger
+          // sees their new site.
+          const chosen = paletteById((args as Record<string, unknown>)?.palette);
+          const sections = sectionOrderFor((args as Record<string, unknown>)?.leadWith);
+          const identityPatch: Record<string, unknown> = { section_order: sections };
+          if (chosen) {
+            identityPatch.brand_color = chosen.brand;
+            identityPatch.bg_color = chosen.background;
+          }
           await callBusinessRpc("patch_business_in_progress", {
             p_id: r.id,
             p_draft_token: r.draft_token,
-            p_patch: {},
+            p_patch: identityPatch,
             p_website_meta: { seoTitle: name },
           });
           const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
