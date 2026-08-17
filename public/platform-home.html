@@ -585,6 +585,40 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   // persists it either. This is what makes the canvas real instead of a mockup.
   var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, showLogoFab: false };
 
+  // ── Draft claim session ───────────────────────────────────────────────────
+  // A draft belongs to nobody until it is claimed. hubly-conversation returns a
+  // short-lived signed GRANT the first time it creates one; this exchanges it
+  // for an httpOnly cookie on myhubly.app so the claim survives a magic-link
+  // round trip — including one opened on a different device, because the server
+  // remembers the binding, not the browser.
+  //
+  // Deliberately NOT the draft_token. That token is in hc.draftBusiness because
+  // the server is stateless and the client threads draft state back every turn
+  // to authorise edits — it has to be there. The grant is a different thing:
+  // 10 minutes, one business, claim-only, worthless once exchanged. It is never
+  // stored in JS.
+  //
+  // The cookie is set by /api/draft-session (same origin). It cannot be set by
+  // the Edge Function: that is *.supabase.co, so the cookie would be
+  // third-party and SameSite=Lax would never send it back.
+  var hcGrantExchanged = false;
+  function hcExchangeDraftGrant(grant){
+    if(!grant || hcGrantExchanged) return;
+    hcGrantExchanged = true;              // one exchange per page; the grant is single-use
+    try{
+      fetch('/api/draft-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',       // required for Set-Cookie to stick
+        body: JSON.stringify({ grant: grant })
+      }).then(function(r){
+        if(!r.ok) hcGrantExchanged = false;   // allow a retry on a later turn
+      }).catch(function(){ hcGrantExchanged = false; });
+    }catch(e){ hcGrantExchanged = false; }
+    // The grant is not retained anywhere. Nothing reads it again.
+  }
+
+
   function hcMergePatch(base, patch){
     if(!patch || typeof patch !== 'object') return base;
     var next = {};
@@ -994,6 +1028,9 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         if(data.draftBusiness && data.draftBusiness.id && data.draftBusiness.url){
           hc.draftBusiness = data.draftBusiness;
         }
+        // Exchange the claim grant the moment a draft appears, so whoever just
+        // built this can keep it.
+        if(data.draftGrant) hcExchangeDraftGrant(data.draftGrant);
         // generateDocument just started (real:false, raw.status==='building')
         // — the page doesn't exist yet, so there's nothing for the normal
         // render/refresh branches below to show. Highest priority: this
@@ -1135,6 +1172,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
           hc.draftBusiness = data.draftBusiness;
           hcRefreshCanvasFrame();
         }
+        if(data && data.draftGrant) hcExchangeDraftGrant(data.draftGrant);
       })
       .catch(function(){ hc.busy = false; });
   }
