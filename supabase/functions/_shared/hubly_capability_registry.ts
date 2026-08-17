@@ -38,6 +38,7 @@
 // actually built, per "build on demand," not stubbed in speculatively.
 
 import { HublyAI, extractJson } from "./hubly_ai.ts";
+import { issueDraftGrant } from "./draft_grant.ts";
 import {
   validateStorefrontAst,
   storefrontCatalogPromptBlock,
@@ -1150,11 +1151,21 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_website_meta: { seoTitle: name },
           });
           const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
+          // A grant, so whoever just built this can claim it later. NOT
+          // r.draft_token: that is a permanent bearer credential for an
+          // unclaimed business and stays server-side, per the rule at
+          // hubly-conversation:591. The grant is 10 minutes, scoped to this
+          // business, and worthless once exchanged for an httpOnly cookie.
+          //
+          // Null when HUBLY_DRAFT_SECRET is unset — the site is still created,
+          // it simply cannot be claimed until the secret exists. Failing closed
+          // beats minting something unsigned.
+          const draftGrant = await issueDraftGrant(String(r.id));
           return {
             ok: true,
             real: true,
             summary: `Real business created and live at ${url} — this is a real, visitable site, not a mockup.`,
-            raw: { id: r.id, slug: r.slug, draftToken: r.draft_token, url },
+            raw: { id: r.id, slug: r.slug, draftToken: r.draft_token, url, draftGrant },
           };
         },
       },

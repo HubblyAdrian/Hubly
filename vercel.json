@@ -1,6 +1,7 @@
 {
   "version": 2,
   "routes": [
+    { "src": "/api/draft-session$", "dest": "/api/draft-session.js" },
     { "src": "/api/notify$", "dest": "/api/notify.js" },
     { "src": "/api/notify-signup$", "dest": "/api/notify-signup.js" },
     { "src": "/api/notify-readiness$", "dest": "/api/notify-readiness.js" },

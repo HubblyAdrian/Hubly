@@ -593,6 +593,11 @@ Deno.serve(async (req) => {
   // browser renders its confirmation card from this alone, never from the
   // model's own reply text.
   let bookingConfirmation: unknown = null;
+  // The claim grant for a business created THIS turn. Curated onto the response
+  // exactly like bookingConfirmation, and for the same reason: `raw` stays
+  // server-side. This is the ONLY draft field that leaves — never draftToken,
+  // which is a permanent bearer credential for an unclaimed business.
+  let draftGrant: string | null = null;
   // Storefront Builder — the layout produced by generate/patchStorefront, surfaced to the
   // editor so it can apply it to the live preview and publish it. Presentation only.
   let storefrontAstOut: unknown = undefined;
@@ -882,6 +887,19 @@ Deno.serve(async (req) => {
           bookingConfirmation = (result.raw as Record<string, unknown>).confirmation;
         }
 
+        // A draft was created this turn — hand the browser its 10-minute claim
+        // grant so it can be exchanged for an httpOnly cookie. Reads ONLY
+        // draftGrant out of raw; draftToken sits beside it in the same object
+        // and must never be surfaced.
+        if (
+          result.ok && result.real && result.raw &&
+          typeof result.raw === "object" &&
+          "draftGrant" in (result.raw as Record<string, unknown>)
+        ) {
+          const g = (result.raw as Record<string, unknown>).draftGrant;
+          if (typeof g === "string" && g) draftGrant = g;
+        }
+
         // Storefront Builder — surface the generated/patched layout to the editor.
         if (
           capabilityName === "storefront" &&
@@ -924,6 +942,7 @@ Deno.serve(async (req) => {
         ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
         ...(draftBusiness ? { draftBusiness } : {}),
         ...(bookingConfirmation ? { bookingConfirmation } : {}),
+        ...(draftGrant ? { draftGrant } : {}),
         ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),
       });
     }
@@ -939,6 +958,7 @@ Deno.serve(async (req) => {
       ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
       ...(draftBusiness ? { draftBusiness } : {}),
       ...(bookingConfirmation ? { bookingConfirmation } : {}),
+      ...(draftGrant ? { draftGrant } : {}),
         ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),
     });
   } catch (err) {
