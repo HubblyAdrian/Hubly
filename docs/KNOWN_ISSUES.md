@@ -628,6 +628,44 @@ first — if the count is 0, the test is decorative.
 
 ---
 
+## `HUBLY_DOCUMENT_GENERATION_ENABLED` does not do what its name implies
+
+**Status:** standing correction, written 2026-08-17
+**Believed for months:** that it gates document generation, and that turning it
+on would enable `designRationale` and produce varied site designs.
+
+It does neither. `website.generateDocument` runs **regardless of the flag** —
+the capability handler never reads it. The flag is consumed in exactly one
+place, `hubly-conversation`'s system prompt, where it switches which *guidance*
+the model receives:
+
+```ts
+const DOCUMENT_GENERATION_ENABLED = (Deno.env.get("HUBLY_DOCUMENT_GENERATION_ENABLED") || "").trim() === "true";
+…
+${DOCUMENT_GENERATION_ENABLED ? `There is no template or direction to pick anymore…` : ``}
+${LEGACY_LAYOUT_DIRECTIONS}
+```
+
+On → the model is told not to propose layout directions. Off → it is given the
+legacy list of 12 named directions. **It is a prompt switch, not a feature gate**,
+and it adds no per-business design of any kind.
+
+It is unset in production and has never run there.
+
+**Why this mattered.** It was one of two proposed fixes for "every AI-built site
+looks identical". Enabling it would have changed the model's instructions on the
+path that builds every new site — untested, in production — while doing nothing
+about the actual cause, which was that `start_business_in_progress` set no
+visual identity and every business inherited the same column defaults.
+
+**The general rule:** a flag's name is a claim about behaviour, and claims get
+verified. Read every site that consumes the variable before enabling or removing
+it. "Never run in production" plus "we are not certain what it changes" is the
+worst pair to act on, in either direction — and the temptation is to enable it,
+because the name sounds like the thing you want.
+
+---
+
 ## A dependency can be invisible to a search for the thing itself
 
 **Status:** standing rule, written 2026-08-17 after it produced two wrong
