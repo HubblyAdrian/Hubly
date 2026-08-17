@@ -628,6 +628,87 @@ first — if the count is 0, the test is decorative.
 
 ---
 
+## The repo does not describe production
+
+**Status:** standing note, written 2026-08-17 after it caused a live outage
+**Cost:** owner booking emails were dead for ~40 minutes
+
+Five Edge Functions were deployed and ACTIVE with **no file in this repository**:
+`booking-notify` (v33), `ai-advisor` (v31),
+`ai-advisorsuper-handlerai-advisor` (v26), `hire-crm` (v17),
+`mission-control` (v16) — plus three `_shared` modules, one of them 1,671 lines.
+They were imported verbatim in `ddbdc1d`.
+
+And the thing that called the most important of them was invisible to every
+codebase search, because it is not code:
+
+```sql
+CREATE TRIGGER booking_request_notify
+  AFTER INSERT ON public.booking_requests FOR EACH ROW
+  EXECUTE FUNCTION supabase_functions.http_request(
+    'https://…/functions/v1/booking-notify', 'POST', …)
+```
+
+A row in `pg_trigger`. `grep` cannot see it. Neither can reading every file in
+the project.
+
+### What it cost
+
+`api/notify.js` was deleted as dead on a search showing zero callers. It had sent
+an owner booking email **25 minutes earlier**. The search was calibrated — a
+known-present string returned three files, proving the tool worked — and that
+calibration was then over-read as proof the negative was meaningful. Calibration
+shows the search functions; it cannot show that the caller resembles the thing
+being searched for.
+
+The check that would have settled it took one command: POST to the endpoint in
+production and see whether it answers. That check WAS run — after the deletion,
+to confirm the deletion had worked, reading the resulting `200 text/html`
+(the SPA catch-all) as "gone". Run first, it would have shown a live JSON
+endpoint.
+
+### The rules
+
+- **Read the deployed artefact. If you cannot read it, the check is
+  UNAVAILABLE** — say so. Never substitute repo source and report it as a
+  verification. Twice on 2026-08-16 a deployed Edge Function bundle failed to
+  download and the local file was grepped instead; both times the result looked
+  like a clean check. That is the exact habit that let five functions hide.
+- **Absence of a caller in the repo is not absence of a caller.** Callers live in
+  `pg_trigger`, `cron.job`, external webhooks, and other people's systems.
+  Before deleting any endpoint, ask what is deployed and what is scheduled:
+
+  ```bash
+  supabase functions list --project-ref <ref>          # deployed, incl. orphans
+  ```
+  ```sql
+  select c.relname, t.tgname, pg_get_triggerdef(t.oid)   -- DB → Edge Function
+    from pg_trigger t join pg_class c on c.oid=t.tgrelid
+   where not t.tgisinternal and pg_get_triggerdef(t.oid) ilike '%http_request%';
+  select jobname, schedule, command from cron.job;       -- scheduled callers
+  ```
+- **Probe before deleting, not after.** A live endpoint answers. The probe that
+  confirms a deletion worked is the same probe that would have prevented it.
+- **`supabase functions list` is the source of truth for what exists.** The
+  filesystem is a subset, and nothing warns you which parts are missing.
+
+### The wider consequence
+
+Three separate implementations of the owner booking email existed
+simultaneously — `booking-notify` (live), `_shared/booking_notifications.ts`,
+and `api/notify.js` — and the contradictory evidence (a subject from one, a
+header from another, a footer from neither) was the only reason the drift was
+found at all. Anything reasoned about Edge Function behaviour from repo source
+alone was, strictly, a claim about the repo.
+
+**Current inventory** (2026-08-17): one trigger calling an Edge Function
+(`booking_request_notify` → `booking-notify`), one cron
+(`hubly-recurring-maintain-30min`). Note there is NO cron for
+`google-calendar-maintain`, whose own header says it needs one every 15-30
+minutes — which is why Calendar sync has been dead since 2026-07-24.
+
+---
+
 ## Verification rule: grep the DEPLOYED artefact the user is actually looking at
 
 **Status:** standing practice, adopted 2026-08-16 after it would have caught two
