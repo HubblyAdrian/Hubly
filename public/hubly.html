@@ -41188,7 +41188,22 @@ async function writeAbandonedBookingRequest(opts={}){
     if(!error){
       S._abandonedBookingReqId=id;S._abandonedBookingPhone=leadPhone;
       if(!opts.silentNudge&&!asLead)showAbandonBookingNudge({name:leadName,email,id});
-      if(!asLead)maybeSendAbandonNudgeEmail({name:leadName,email,phone:leadPhone,date,addr});
+      // NO EMAIL HERE. This function runs from bkNext() the moment the customer
+      // clicks Next on step 3 — they have not abandoned anything, they are on
+      // their way to the review screen. Sending "you started booking but
+      // haven't confirmed yet · your spot isn't locked" at that instant told a
+      // customer they were unconfirmed seconds before they paid, and it was one
+      // of three emails a single completed booking generated.
+      //
+      // The in-app nudge above stays: "finish below to lock the time, we'll
+      // email you a link IF YOU LEAVE" is honest at this point, and becomes
+      // true once the email only fires on real abandonment.
+      //
+      // Actual abandonment is a server-side judgement — a row that reached this
+      // step and never reached payment, found later — so it belongs to step 4's
+      // reconciliation sweep, not to the customer's own browser mid-flow.
+      // maybeSendAbandonNudgeEmail() is left in place for that work to reuse,
+      // and currently has no caller by design.
       try{if(typeof loadJobs==='function')loadJobs();}catch(e){}
       return {ok:true,id,asLead};
     }
