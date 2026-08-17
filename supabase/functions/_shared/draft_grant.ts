@@ -125,7 +125,60 @@ export async function verifyDraftGrant(token: string): Promise<DraftGrantPayload
     if (!timingSafeEqual(toHex(mac), sigHex)) return null;
     const payload = JSON.parse(
       new TextDecoder().decode(base64urlDecode(payloadB64)),
-    ) as DraftGrantPayload;
+    ) as DraftGrantPayload & { purpose?: string };
+    // A grant has no purpose field. Anything carrying one is a different token
+    // type — today a claim assertion — and must not be usable here. The reverse
+    // direction is already blocked by verifyClaimAssertion's purpose check; this
+    // makes the pair symmetric so neither can ever borrow the other's authority.
+    if (payload.purpose) return null;
+    if (!payload.businessId || !Number.isFinite(payload.exp)) return null;
+    if (payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload;
+  } catch (_e) {
+    return null;
+  }
+}
+
+/**
+ * A claim assertion — Vercel vouching to Supabase that it saw a valid draft
+ * session cookie.
+ *
+ * The cookie is host-only on myhubly.app, so an Edge Function on *.supabase.co
+ * never receives it and cannot check it. Rather than copy the service-role key
+ * onto Vercel to do the work there, the same shared secret is used in the other
+ * direction: /api/draft-session verifies the cookie and mints this, and the
+ * claim function verifies it here.
+ *
+ * `purpose` is what stops the two token types being interchangeable. Without it
+ * a 10-minute draft grant would also authorise a claim, and a claim assertion
+ * would mint a cookie — each token would silently gain the other's authority.
+ */
+export type ClaimAssertionPayload = {
+  businessId: string;
+  exp: number;
+  purpose: "claim";
+};
+
+export async function verifyClaimAssertion(
+  token: string,
+): Promise<ClaimAssertionPayload | null> {
+  const secret = Deno.env.get("HUBLY_DRAFT_SECRET");
+  if (!secret || !token) return null;
+  const parts = String(token).split(".");
+  if (parts.length !== 2) return null;
+  const [payloadB64, sigHex] = parts;
+  try {
+    const mac = await crypto.subtle.sign(
+      "HMAC",
+      await hmacKey(secret),
+      new TextEncoder().encode(payloadB64),
+    );
+    if (!timingSafeEqual(toHex(mac), sigHex)) return null;
+    const payload = JSON.parse(
+      new TextDecoder().decode(base64urlDecode(payloadB64)),
+    ) as ClaimAssertionPayload;
+    // Purpose is checked, not assumed — a draft grant presented here must fail.
+    if (payload.purpose !== "claim") return null;
     if (!payload.businessId || !Number.isFinite(payload.exp)) return null;
     if (payload.exp < Math.floor(Date.now() / 1000)) return null;
     return payload;

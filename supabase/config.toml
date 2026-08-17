@@ -70,3 +70,9 @@ verify_jwt = false
 # signed portal session (checked in-function), not a Supabase JWT
 [functions.customer-portal]
 verify_jwt = false
+
+# Claiming a draft is done by someone with no account yet — the whole point.
+# 'start' is anonymous and authorised by a signed assertion from
+# /api/draft-session; 'finish' checks the Supabase session itself, in-function.
+[functions.claim-draft-business]
+verify_jwt = false

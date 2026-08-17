@@ -62,6 +62,19 @@ function verifySigned(secret, token) {
   } catch (e) { return null; }
 }
 
+/** Vercel vouching to Supabase that it saw a valid cookie.
+ *  Short — it is handed straight to the claim call, not stored.
+ *  `purpose` prevents it being replayed as a draft grant, and vice versa. */
+function signClaimAssertion(secret, businessId) {
+  const payload = {
+    businessId: String(businessId),
+    exp: Math.floor(Date.now() / 1000) + 5 * 60,
+    purpose: 'claim',
+  };
+  const payloadB64 = b64url(JSON.stringify(payload));
+  return `${payloadB64}.${hmacHex(secret, payloadB64)}`;
+}
+
 function signSession(secret, businessId) {
   const payload = {
     businessId: String(businessId),
@@ -97,9 +110,16 @@ module.exports = async (req, res) => {
   // build is pending without ever seeing the cookie itself.
   if (req.method === 'GET') {
     const payload = verifySigned(secret, readCookie(req, COOKIE_NAME));
-    return res.status(200).json(
-      payload ? { ok: true, businessId: payload.businessId } : { ok: false },
-    );
+    if (!payload) return res.status(200).json({ ok: false });
+    // The assertion goes out with the session because this endpoint is the ONLY
+    // thing that can read the cookie — it is host-only on myhubly.app, so the
+    // Supabase claim function never receives it. Rather than put the service
+    // role key on Vercel, Vercel signs a statement Supabase can verify.
+    return res.status(200).json({
+      ok: true,
+      businessId: payload.businessId,
+      assertion: signClaimAssertion(secret, payload.businessId),
+    });
   }
 
   // Clear it — used after a successful claim, and on explicit abandon.

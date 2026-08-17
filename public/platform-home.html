@@ -601,6 +601,169 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   // The cookie is set by /api/draft-session (same origin). It cannot be set by
   // the Edge Function: that is *.supabase.co, so the cookie would be
   // third-party and SameSite=Lax would never send it back.
+
+  // ── Keep this site: claim an unowned draft ────────────────────────────────
+  // A stranger built something real. It exists with no owner. This is the only
+  // path from "I made this" to "this is mine".
+  //
+  // Two independent facts are required and neither is enough alone: the draft
+  // session cookie (you built it) and a verified email (the address is yours).
+  // The cookie is httpOnly, so this code cannot read it — /api/draft-session
+  // reads it and returns a short-lived signed assertion instead.
+  //
+  // No route change: the modal opens over the builder, because the person is
+  // standing in front of the thing they just made and navigating away from it
+  // is how you lose them.
+  var hcClaim = { open: false, busy: false, sent: false, error: '', email: '' };
+
+  function hcClaimEl(){ return document.getElementById('hc-claim'); }
+
+  function hcRenderClaim(){
+    var el = hcClaimEl();
+    if(!el) return;
+    if(!hcClaim.open){ el.style.display = 'none'; el.innerHTML = ''; return; }
+    el.style.display = 'flex';
+    var body = hcClaim.sent
+      ? '<h2 style="margin:0 0 8px;font-size:20px;font-weight:800;">Check your email</h2>'
+        + '<p style="margin:0 0 18px;color:#555;line-height:1.5;">We sent a link to <b>' + hcEsc(hcClaim.email) + '</b>. '
+        + 'Open it on any device — your site will be waiting.</p>'
+        + '<button type="button" data-hc-claim="close" style="width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;background:#fff;font-weight:600;cursor:pointer;">Done</button>'
+      : '<h2 style="margin:0 0 8px;font-size:20px;font-weight:800;">Keep this site</h2>'
+        + '<p style="margin:0 0 16px;color:#555;line-height:1.5;">Enter your email and we\'ll send a link to save it to your account. No password needed.</p>'
+        + '<input id="hc-claim-email" type="email" inputmode="email" autocomplete="email" placeholder="you@yourbusiness.com" '
+        + 'style="width:100%;padding:12px;border-radius:10px;border:1.5px solid #ddd;font-size:15px;margin-bottom:10px;box-sizing:border-box;">'
+        + (hcClaim.error ? '<div style="color:#b91c1c;font-size:13px;margin-bottom:10px;">' + hcEsc(hcClaim.error) + '</div>' : '')
+        + '<button type="button" data-hc-claim="send" ' + (hcClaim.busy ? 'disabled' : '') + ' '
+        + 'style="width:100%;padding:12px;border-radius:10px;border:none;background:#111;color:#fff;font-weight:700;font-size:15px;cursor:pointer;opacity:' + (hcClaim.busy ? '.6' : '1') + ';">'
+        + (hcClaim.busy ? 'Sending…' : 'Email me a link') + '</button>'
+        + '<button type="button" data-hc-claim="close" style="width:100%;padding:10px;margin-top:8px;border:none;background:none;color:#777;font-size:13px;cursor:pointer;">Not now</button>';
+    el.innerHTML = '<div style="background:#fff;border-radius:16px;padding:24px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);">' + body + '</div>';
+    var input = document.getElementById('hc-claim-email');
+    if(input){ input.value = hcClaim.email; setTimeout(function(){ try{ input.focus(); }catch(e){} }, 30); }
+  }
+
+  function hcEsc(v){
+    return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function hcOpenClaim(){ hcClaim.open = true; hcClaim.error = ''; hcRenderClaim(); }
+  function hcCloseClaim(){ hcClaim.open = false; hcRenderClaim(); }
+
+  async function hcSendClaimLink(){
+    var input = document.getElementById('hc-claim-email');
+    var email = String((input && input.value) || '').trim();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+      hcClaim.error = 'Enter a valid email address'; hcRenderClaim(); return;
+    }
+    hcClaim.email = email; hcClaim.busy = true; hcClaim.error = ''; hcRenderClaim();
+    try{
+      // 1. Only /api/draft-session can read the httpOnly cookie. It returns a
+      //    5-minute signed assertion that Supabase can verify.
+      var sess = await fetch('/api/draft-session', { credentials: 'same-origin' }).then(function(r){ return r.json(); });
+      if(!sess || !sess.ok || !sess.assertion){
+        hcClaim.busy = false;
+        hcClaim.error = 'This build session has expired. Refresh the page and try again.';
+        hcRenderClaim(); return;
+      }
+      // 2. Record the binding BEFORE any email goes out, so the claim survives
+      //    the link being opened on a different device.
+      var started = await fetch(SUPA_URL + '/functions/v1/claim-draft-business', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY },
+        body: JSON.stringify({ action: 'start', email: email, assertion: sess.assertion })
+      }).then(function(r){ return r.json(); });
+      if(!started || !started.ok){
+        hcClaim.busy = false;
+        hcClaim.error = (started && started.error) || 'Could not start the claim. Try again.';
+        hcRenderClaim(); return;
+      }
+      // 3. Supabase owns verification end to end — this code never handles a
+      //    token that could sign anyone in.
+      var otp = await fetch(SUPA_URL + '/auth/v1/otp?redirect_to=' + encodeURIComponent(location.origin + location.pathname), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPA_ANON_KEY },
+        body: JSON.stringify({ email: email, create_user: true })
+      });
+      if(!otp.ok){
+        hcClaim.busy = false;
+        hcClaim.error = 'Could not send the email. Check the address and try again.';
+        hcRenderClaim(); return;
+      }
+      hcClaim.busy = false; hcClaim.sent = true; hcRenderClaim();
+    }catch(e){
+      hcClaim.busy = false;
+      hcClaim.error = 'Something went wrong. Try again.';
+      hcRenderClaim();
+    }
+  }
+
+  // Back from the magic link. Supabase puts the session in the URL fragment,
+  // which never reaches a server — this reads it, finishes the claim, then
+  // strips it so a shared or bookmarked URL carries no session.
+  async function hcConsumeClaimReturn(){
+    var hash = String(location.hash || '');
+    if(hash.indexOf('access_token=') < 0) return;
+    var token = '';
+    hash.replace(/^#/, '').split('&').forEach(function(kv){
+      var p = kv.split('=');
+      if(p[0] === 'access_token') token = decodeURIComponent(p[1] || '');
+    });
+    try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
+    if(!token) return;
+    try{
+      var res = await fetch(SUPA_URL + '/functions/v1/claim-draft-business', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + token },
+        body: JSON.stringify({ action: 'finish' })
+      }).then(function(r){ return r.json(); });
+      if(res && res.claimed){
+        // The draft is theirs. Clear the cookie — it authorises nothing now.
+        try{ fetch('/api/draft-session', { method: 'DELETE', credentials: 'same-origin' }); }catch(e){}
+        hcClaim.open = false; hcRenderClaim();
+        window.location.href = '/app';
+      }
+    }catch(e){ /* leave them on the builder rather than a dead end */ }
+  }
+
+  document.addEventListener('click', function(ev){
+    var t = ev.target && ev.target.closest && ev.target.closest('[data-hc-claim]');
+    if(!t) return;
+    var act = t.getAttribute('data-hc-claim');
+    if(act === 'send') hcSendClaimLink();
+    else if(act === 'close') hcCloseClaim();
+    else if(act === 'open') hcOpenClaim();
+  });
+  document.addEventListener('keydown', function(ev){
+    if(ev.key === 'Enter' && hcClaim.open && !hcClaim.sent && document.activeElement && document.activeElement.id === 'hc-claim-email'){
+      ev.preventDefault(); hcSendClaimLink();
+    }
+    if(ev.key === 'Escape' && hcClaim.open) hcCloseClaim();
+  });
+  try{ hcConsumeClaimReturn(); }catch(e){}
+
+
+  // The modal host and the button that opens it are created only once a draft
+  // actually exists — there is nothing to keep before that.
+  function hcEnsureClaimUi(){
+    if(!hc.draftBusiness) return;
+    if(!document.getElementById('hc-claim')){
+      var host = document.createElement('div');
+      host.id = 'hc-claim';
+      host.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:20px;';
+      host.addEventListener('click', function(e){ if(e.target === host) hcCloseClaim(); });
+      document.body.appendChild(host);
+    }
+    if(!document.getElementById('hc-keep-btn')){
+      var b = document.createElement('button');
+      b.id = 'hc-keep-btn';
+      b.type = 'button';
+      b.setAttribute('data-hc-claim', 'open');
+      b.textContent = 'Keep this site';
+      b.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:9998;padding:12px 18px;border-radius:999px;border:none;background:#111;color:#fff;font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.22);cursor:pointer;';
+      document.body.appendChild(b);
+    }
+  }
+
   var hcGrantExchanged = false;
   function hcExchangeDraftGrant(grant){
     if(!grant || hcGrantExchanged) return;
@@ -1031,6 +1194,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         // Exchange the claim grant the moment a draft appears, so whoever just
         // built this can keep it.
         if(data.draftGrant) hcExchangeDraftGrant(data.draftGrant);
+        hcEnsureClaimUi();
         // generateDocument just started (real:false, raw.status==='building')
         // — the page doesn't exist yet, so there's nothing for the normal
         // render/refresh branches below to show. Highest priority: this
