@@ -628,6 +628,74 @@ first — if the count is 0, the test is decorative.
 
 ---
 
+## `supabase functions download` is a WRITE, and it clobbers `_shared`
+
+**Status:** standing warning, written 2026-08-17 after it silently deleted ~1,900
+lines of that evening's work
+
+The command reads like an inspection. It is not. Downloading a function also
+rewrites every `_shared` module that function depends on, to whatever version it
+was **last deployed with** — which for an old function is old code.
+
+Downloading five orphaned functions left this sitting in the working tree,
+uncommitted and unannounced:
+
+```
+stripe.ts                  -161 lines   (that evening's Stripe account branding
+                                          and on_behalf_of support, gone)
+hubly_brain_memory.ts      -962 lines
+hubly_ai.ts               1136 changed
+hubly_brain_dna.ts         -264
+… 7 more files
+                          ~1,900 deletions total
+```
+
+Nothing failed. Nothing warned. `deno check` passed, because the older code is
+perfectly valid code. It surfaced only because `git status` was read after an
+unrelated commit and showed eleven modified files nobody had touched.
+
+Had any function been deployed from that tree, it would have shipped the older
+`_shared` and quietly reverted the evening's work in production — and the commit
+that did it would have looked unrelated.
+
+**The rule: after ANY `supabase functions download`, run `git status` and
+`git diff` before doing anything else.** Treat it as a destructive operation on
+`_shared`, because it is one.
+
+```bash
+supabase functions download <fn> --use-api
+git status --porcelain          # expect ONLY the new function directory
+git diff --stat supabase/functions/_shared/   # expect EMPTY
+git checkout -- supabase/functions/_shared/   # if not: restore, then re-add
+                                              # deliberately what you wanted
+```
+
+Never deploy from a tree that has had a download in it without checking this
+first. The blast radius is every function sharing those modules, not the one
+downloaded.
+
+### The pattern, which is the part worth remembering
+
+**The fix for one invisibility problem created another.**
+
+Five Edge Functions existed in production and in no repository — invisible. The
+correct response was to download them so the repo described reality. That
+download then silently deleted current work, and *that* deletion was invisible
+too: no error, no warning, valid code, passing typecheck.
+
+This is not bad luck. A remediation is a change, and changes need the same
+scepticism as the thing they are fixing — more, because they are performed with
+the confidence of someone who has just understood the problem. The same evening
+produced two other instances: deleting `api/notify.js` to remove a
+marker-leaking duplicate took down live owner emails, and a migration written
+specifically to distinguish "never asked" from "declined" shipped five rows
+recording a decline that never happened.
+
+**Verify the remediation as hard as you verified the diagnosis.** The moment
+after you fix something is when you are least likely to look.
+
+---
+
 ## The repo does not describe production
 
 **Status:** standing note, written 2026-08-17 after it caused a live outage
