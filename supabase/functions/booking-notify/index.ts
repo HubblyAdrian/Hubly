@@ -1,4 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { stripBookingMachineTags } from '../_shared/booking_notes.ts';
+
+/** Same convention as the OAuth callbacks: appBaseUrl() + "/app". */
+function appBaseUrl() {
+  return (Deno.env.get('HUBLY_APP_URL') || '').trim().replace(/\/$/, '') || 'https://myhubly.app';
+}
 
 const RESEND_KEY = Deno.env.get('RESEND_API_KEY')!;
 const RESEND_FROM = Deno.env.get('RESEND_FROM_EMAIL') || 'Hubly <notifications@notifications.myhubly.app>';
@@ -153,7 +159,11 @@ Deno.serve(async (req) => {
       : (booking.vehicle_type || '');
 
     const eventSummary = `${booking.service_name} — ${business.name}`;
-    const eventDescription = `${booking.service_name} with ${business.name}. Vehicle: ${vehicleLine}${booking.notes ? '. Notes: ' + booking.notes : ''}`;
+    // Notes are stripped BEFORE they reach the .ics. This description is copied
+    // into whatever calendar imports the file, so a marker here does not just
+    // look wrong in one email — it lands in the owner's calendar permanently.
+    const cleanNotes = stripBookingMachineTags(booking.notes);
+    const eventDescription = `${booking.service_name} with ${business.name}. Vehicle: ${vehicleLine}${cleanNotes ? '. Notes: ' + cleanNotes : ''}`;
     const { ics, start, end } = buildICS({
       uid: booking.id || crypto.randomUUID(),
       summary: eventSummary,
@@ -174,7 +184,7 @@ Deno.serve(async (req) => {
       ${detailRow('\u{1F4C5}', 'When', when.full)}
       ${detailRow('\u{1F4CD}', 'Address', booking.address || '')}
       ${detailRow('\u{1F4DE}', 'Contact', `${booking.customer_phone}${booking.customer_email ? ' \u2022 ' + booking.customer_email : ''}`)}
-      ${detailRow('\u{1F4DD}', 'Notes', booking.notes || '')}
+      ${detailRow('\u{1F4DD}', 'Notes', cleanNotes)}
     `;
     const ownerHtml = emailShell({
       accentColor: accent,
@@ -182,7 +192,10 @@ Deno.serve(async (req) => {
       subhead: `From ${booking.customer_name}`,
       bodyHtml: ownerBody,
       ctaText: 'Open Hubly Dashboard',
-      ctaHref: 'https://myhubly.app',
+      // Was the marketing homepage: an owner tapping this from their phone
+      // landed on the public site and had to navigate in. /app is the app shell,
+      // which handles the auth redirect itself.
+      ctaHref: appBaseUrl() + '/app',
     });
 
     // ---- Notify the customer ----
