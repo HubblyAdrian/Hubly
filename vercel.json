@@ -1,6 +1,7 @@
 {
   "version": 2,
   "routes": [
+    { "src": "/api/notify$", "dest": "/api/notify.js" },
     { "src": "/api/notify-signup$", "dest": "/api/notify-signup.js" },
     { "src": "/api/notify-readiness$", "dest": "/api/notify-readiness.js" },
     { "src": "/api/support-chat$", "dest": "/api/support-chat.js" },
