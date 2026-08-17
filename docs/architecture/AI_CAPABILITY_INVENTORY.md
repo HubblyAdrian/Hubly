@@ -41,7 +41,8 @@ still be blocked by an environment variable one layer above it. Enumerating
 list, not only the code.** This audit listed `website.generateDocument` and
 `website.patchDocument` as LIVE; `HUBLY_DOCUMENT_GENERATION_ENABLED` is not set
 on the production project, so both are blocked at `hubly-conversation`'s
-dispatch gate and have never rendered a page for a real visitor.
+dispatch gate. `business_documents` holds 8 rows — one business, 2026-08-10,
+one generation and seven patches — and nothing since.
 
 ---
 
@@ -92,7 +93,7 @@ sms, email: NONE.**
 | Creative Director | 🟡 | ✗ | ✗ | — | `creative-director` deployed. Only caller: `hubly.html` |
 | Build a website | 🟢 | ✓ | ✓ | see note | `business.startDraft` + `business.updateDraft` + `business.setServices` write `businesses` columns; `public/hubly.html` renders the live site client-side. **This is the only path that has ever built a real site** |
 | Edit a website | 🟢 | ✓ | ✓ | see note | `business.updateDraft` only — copy, colour, section order, services |
-| Hubly Document generate / patch | ⚫ | ✗ | ✗ | — | `website.generateDocument`, `website.patchDocument` — **shipped dark.** `HUBLY_DOCUMENT_GENERATION_ENABLED` is unset in production, so both are blocked at the dispatch gate. Built, deployed, correct, unreachable |
+| Hubly Document generate / patch | ⚫ | ✗ | ✗ | — | `website.generateDocument`, `website.patchDocument` — **shipped dark.** `HUBLY_DOCUMENT_GENERATION_ENABLED` is unset in production, so both are blocked at the dispatch gate. `business_documents` holds 8 rows, one business, all 2026-08-10. Built, deployed, correct, switched off |
 | Set services | 🟢 | ✓ | ✓ | see note | `business.setServices` |
 | Booking availability / create | 🟢 | ✓ | ✓ | see note | `booking.getAvailability`, `booking.create` |
 | Store / products | 🟢 | ✓ | ✓ | see note | `storefront.*` → owner-gated `commerce-api` |

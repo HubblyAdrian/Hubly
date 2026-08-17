@@ -946,8 +946,16 @@ prompt advertised.
 **There is exactly one entry point.** `generateAndValidateDocument` and
 `buildDocumentSchemaPromptBlock` are called from `hubly_capability_registry.ts`
 and nowhere else; no deployed function imports `hubly_document.ts` directly; the
-flag is read in one file. So this is not "mostly off" — the Hubly Document has
-never rendered a page for a real visitor.
+flag is read in one file. So this is not "mostly off" — there is one switch and
+it is down.
+
+**It has run exactly once.** `business_documents` holds 8 rows, all belonging to
+a single business (`c1981783…`), all created on 2026-08-10 within seven minutes:
+one `ai` generation followed by seven `patch` versions. One test session, and
+nothing since. (An earlier draft of this entry said "never rendered a page for a
+real visitor". That was inference, and the row count disproves it — the
+measured claim is one business, one day, zero since. Counting the rows took one
+request and should have come before the sentence, not after it.)
 
 **What actually builds every live site:** `business.startDraft` +
 `updateDraft` + `setServices` write `businesses` columns, and
