@@ -85,3 +85,89 @@ export function sectionOrderFor(leadWith: unknown): SiteSection[] {
 export function palettePromptList(): string {
   return SITE_PALETTES.map((p) => `"${p.id}" — ${p.feel}; suits ${p.suits}`).join("; ");
 }
+
+// ---------------------------------------------------------------------------
+// Page structure — the third and largest half of the sameness.
+//
+// The Hubly Document has no section types. renderHublyDocument is a generic
+// recursive walker over semantic tags, and `section_order` appears nowhere in
+// it — that column drives the OTHER website system (generate-site, hubly.html).
+// So on the AI path a "section" is nothing more than a <section> the model
+// chose to write, and structure is decided entirely by the prompt.
+//
+// That is why every AI site had the same three sections whatever the trade:
+// the format spec described tags and utility classes and never once said the
+// page could contain anything other than services, reviews and about. The
+// model wasn't ignoring guidance; there wasn't any.
+//
+// A vocabulary costs nothing to extend — no renderer branch, no validator
+// entry, no theme work — because these are generic tags, not components. The
+// only things that cost are the five reserved elements in HUBLY_RESERVED_TAGS.
+// Add ideas here freely; add reserved elements very reluctantly.
+// ---------------------------------------------------------------------------
+
+export type SectionIdea = { id: string; what: string; when: string };
+
+/**
+ * Ideas, not a checklist. The instruction that ships with this list matters as
+ * much as the list: pick what suits THIS business, skip the rest, and never
+ * emit all of them. A vocabulary offered without a selection rule just becomes
+ * a longer identical page.
+ */
+export const SECTION_IDEAS: SectionIdea[] = [
+  { id: "hero",           what: "headline, one line of substance, one clear next step",            when: "always — the only mandatory section" },
+  { id: "services",       what: "what you actually do, each with what's included and who it's for", when: "almost any service business; make the items specific, not three generic cards" },
+  { id: "why-us",         what: "the two or three real reasons to pick this business over the next one", when: "when there is a genuine differentiator — mobile, licensed, family-run, 20 years. Skip if you'd have to invent one" },
+  { id: "before-after",   what: "visual proof of the transformation, paired and captioned",         when: "work with a dramatic visible result — grooming, detailing, cleaning, landscaping, restoration, renovation" },
+  { id: "how-it-works",   what: "three or four numbered steps from enquiry to done",                when: "when the process is unfamiliar or is itself the hesitation — mobile, in-home, first-time customers, anything people haven't bought before" },
+  { id: "service-area",   what: "the towns and neighbourhoods actually covered, named",             when: "mobile or travelling businesses, or anywhere 'do you come to me?' is the first question" },
+  { id: "pricing",        what: "real prices or honest ranges, with what changes them",             when: "when prices are known and simple enough to state. Never invent a number" },
+  { id: "guarantees",     what: "insurance, satisfaction policy, re-do promise, licensing",         when: "when trust is the barrier — anyone entering a home, handling a pet, a child or an expensive object" },
+  { id: "faq",            what: "the questions customers actually ask, answered plainly",           when: "when there are real objections worth answering; three good ones beat eight filler ones" },
+  { id: "team",           what: "who the customer will actually meet",                              when: "owner-operated and trust-led work, especially in someone's home" },
+  { id: "portfolio",      what: "the work itself, given room",                                      when: "when the work IS the pitch — photography, design, building, hair, tattoo" },
+  { id: "credentials",    what: "certifications, insurance, memberships, years in trade",           when: "regulated or safety-critical trades" },
+  { id: "who-its-for",    what: "the specific customer this is and isn't right for",                when: "specialists, and anyone who benefits from turning the wrong customer away" },
+  { id: "closing-cta",    what: "one last unambiguous next step",                                   when: "usually — a page that ends without one wastes everything above it" },
+];
+
+/**
+ * What the business leads with, as a prompt instruction.
+ *
+ * Derived from businesses.section_order[0] so the choice startDraft already
+ * made drives BOTH website systems from one stored value, rather than the AI
+ * path silently ignoring it (which is what happened until 2026-08-17).
+ */
+const LEAD_GUIDANCE: Record<string, string> = {
+  services:  "Lead with what this business does and what it costs — that is what its customers want first.",
+  portfolio: "Lead with the work itself. For this business the work IS the pitch, so show it before explaining it.",
+  about:     "Lead with who this business is. Trust is the barrier here, so establish the person before the service.",
+  reviews:   "Lead with proof from real customers, before any claim the business makes about itself.",
+};
+
+/** The structural vocabulary as prompt text. `leadWith` comes from section_order[0]. */
+export function buildPageStructureBlock(leadWith?: unknown): string {
+  const want = String(leadWith || "").trim().toLowerCase();
+  const lead = LEAD_GUIDANCE[want] || LEAD_GUIDANCE.services;
+  const ideas = SECTION_IDEAS.map((s) => `- ${s.id}: ${s.what}. Use when: ${s.when}`).join("\n");
+  return `PAGE STRUCTURE — decide it, don't default to it.
+
+Below is a vocabulary of sections you can build from generic tags. It is a menu, not a form to fill in. Choose the ones this specific business needs, in the order that serves ITS customer, and leave out everything else. A page with six well-chosen sections beats one with twelve dutiful ones.
+
+${ideas}
+
+${lead}
+
+RULES
+- Pick roughly five to eight. Never all of them, and never the same set you would pick for a different trade.
+- Order for this business, not by the list order above. The list is alphabetical-ish by nothing; it implies no sequence.
+- You may build a section that isn't listed. The list is a starting point, not a boundary.
+- Two businesses in different trades must not come out structurally similar. If your section set would suit a generic "local service business", you haven't chosen — go back and choose.
+- Never invent facts to fill a section. No made-up prices, no fabricated certifications, no invented years-in-business, no imaginary awards. If you don't have what a section needs, pick a different section.
+- Photos: the business has not uploaded any images yet, and you must never invent an image URL. When a section wants photos — before-and-after, portfolio, team — build the real structure with honest captions and empty framed placeholders (a div with an aspect ratio and bg-ink-100), so the owner drops their photos straight in. Do not skip a section purely because the photos aren't there yet.
+- The reserved Hubly elements are separate from this list and are governed by the rule above them: include one only because your own reasoning justifies it here.
+
+Two different trades, to show the shape of a real choice — do not copy either:
+- Wedding DJ: hero → portfolio (sets and past weddings) → how-it-works (booking to the night itself) → faq (the questions couples actually ask) → pricing → closing-cta. No service-area section; no guarantees section.
+- Tree surgeon: hero → services (each with what's included) → credentials (insurance and certification, which is the whole decision) → service-area → before-after → guarantees → closing-cta. No portfolio section; no team section.`;
+}

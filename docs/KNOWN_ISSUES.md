@@ -930,3 +930,53 @@ change exist in the deployed copy of that file?
 Grepping the wrong file is also one of the four cases in *Checks that silently
 check nothing* above — the `Resend` count of 0 was the check reporting its own
 scope was wrong, and it was read as a fact about the code.
+
+---
+
+## The Hubly Document path is shipped dark, and two documents said otherwise
+
+**Found 2026-08-17.** `HUBLY_DOCUMENT_GENERATION_ENABLED` **is not set on the
+production project.** Confirmed against `supabase secrets list`: 27 secrets,
+that name is not among them. `DOCUMENT_GENERATION_ENABLED` is therefore `false`,
+and `hubly-conversation` blocks `website.generateDocument` and
+`website.patchDocument` at the dispatch gate — the third of three enforcement
+points, and the only one that matters, since it runs regardless of what the
+prompt advertised.
+
+**There is exactly one entry point.** `generateAndValidateDocument` and
+`buildDocumentSchemaPromptBlock` are called from `hubly_capability_registry.ts`
+and nowhere else; no deployed function imports `hubly_document.ts` directly; the
+flag is read in one file. So this is not "mostly off" — the Hubly Document has
+never rendered a page for a real visitor.
+
+**What actually builds every live site:** `business.startDraft` +
+`updateDraft` + `setServices` write `businesses` columns, and
+`public/hubly.html` renders them client-side. Proven by fetching three live
+draft sites — each returns ~2.83 MB, which is the SPA shell, not server-rendered
+document HTML.
+
+### Two documents were wrong because of it
+
+`AI_CAPABILITY_INVENTORY.md` listed `website.generateDocument` and
+`website.patchDocument` as 🟢 LIVE, and `HUBLY_HOME_SPEC.md` built its
+"Change something on my site" chip on `patchDocument`. Both were verified
+against the registry and against the deployed function — and the registry is
+the wrong authority for this question, because a capability can be present,
+correct, deployed, and switched off by an environment variable one layer above
+it. **The audit's own rule — implemented ≠ reachable — has a third term:
+reachable ≠ enabled.** Enumerating `name:` declarations cannot see a feature
+flag. Check the deployed secret list too.
+
+### It also inverted a correction
+
+Earlier the same day, `section_order` was found absent from
+`renderHublyDocument` and the `leadWith` half of the palette work was reported
+as doing nothing. That was true of the Document renderer and false of
+production, which does not use the Document renderer. The correction was
+right about the code and wrong about the users. `section_order` is read by
+`hubly.html`, so `leadWith` was the half that already worked.
+
+**The rule:** before reporting that a code path is or isn't doing something for
+users, establish that the path runs for users at all. A flag, a gate, or a
+second implementation can make a perfectly correct reading of the code a
+perfectly wrong statement about production.

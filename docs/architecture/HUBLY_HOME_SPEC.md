@@ -55,8 +55,8 @@ capability that can complete the whole action.
 
 | Chip | Capability behind it |
 |---|---|
-| "Build my website" | `business.startDraft` → `website.generateDocument` |
-| "Change something on my site" | `website.patchDocument`, `business.updateDraft` |
+| "Build my website" | `business.startDraft` → `business.updateDraft` → `business.setServices` |
+| "Change something on my site" | `business.updateDraft` |
 | "Set up what I sell" | `business.setServices` |
 | "Take bookings" | `booking.getAvailability`, `booking.create` |
 | "Set up my store" | `storefront.*` |
@@ -105,6 +105,16 @@ the preview appears when the site does. No empty panel apologising for itself.
 or in anything the AI offers, until it is verified LIVE in a re-run of the
 capability inventory. This section exists so the ambition is recorded, not so it
 can be built from.
+
+## Blocked by a flag, not by missing work
+
+**Hubly Document generation and patching.** `website.generateDocument` and
+`website.patchDocument` are complete, deployed and correct, and
+`HUBLY_DOCUMENT_GENERATION_ENABLED` is unset in production, so
+`hubly-conversation` refuses to dispatch either. Turning them on is a secret,
+not a build — but it is a real behaviour change for every new site, so it is
+a decision, not a chore. Until it is taken, no chip, widget or AI reply may
+depend on a Hubly Document existing.
 
 ## Near — built but not reachable by the AI
 

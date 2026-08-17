@@ -55,7 +55,7 @@ import {
 } from "./hubly_document.ts";
 import { adminClient } from "./marketplace_provider.ts";
 import { getWebsiteAvailability, createWebsiteBookingJob } from "./hubly_booking_execution.ts";
-import { paletteById, palettePromptList, sectionOrderFor } from "./site_identity.ts";
+import { buildPageStructureBlock, paletteById, palettePromptList, sectionOrderFor } from "./site_identity.ts";
 
 const APP_ORIGIN = (Deno.env.get("HUBLY_APP_ORIGIN") || "").trim() || "https://myhubly.app";
 
@@ -763,9 +763,16 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!brief) {
             return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
           }
-          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color");
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,section_order");
           const schemaBlock = buildDocumentSchemaPromptBlock();
-          const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${schemaBlock}`;
+          // section_order[0] is what startDraft chose for this business to lead
+          // with. renderHublyDocument does not read section_order at all — that
+          // column drives the classic renderer — so on this path the choice has
+          // to reach the model as prompt text or it does nothing whatsoever,
+          // which is exactly what it did until 2026-08-17.
+          const leadWith = Array.isArray(bizRow?.section_order) ? bizRow.section_order[0] : undefined;
+          const structureBlock = buildPageStructureBlock(leadWith);
+          const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${schemaBlock}\n\n${structureBlock}`;
           // __benchmarkModel is intentionally absent from argsSchema/description —
           // the conversational AI never sees or sets it. Internal-only override
           // for the model benchmark harness so the exact same code path can be

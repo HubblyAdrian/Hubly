@@ -34,6 +34,15 @@ capability search that reads only the repo misses things in both directions.
 and working — and wired to nothing the AI can call. **A capability with no live
 call path is PARTIAL at best, never LIVE.**
 
+**3. Reachable ≠ enabled. (Added 2026-08-17, after this audit got one wrong.)**
+A capability can be in the registry, deployed, and correctly implemented, and
+still be blocked by an environment variable one layer above it. Enumerating
+`name:` declarations cannot see a feature flag. **Check the deployed secret
+list, not only the code.** This audit listed `website.generateDocument` and
+`website.patchDocument` as LIVE; `HUBLY_DOCUMENT_GENERATION_ENABLED` is not set
+on the production project, so both are blocked at `hubly-conversation`'s
+dispatch gate and have never rendered a page for a real visitor.
+
 ---
 
 ## The determining fact
@@ -81,7 +90,9 @@ sms, email: NONE.**
 | Send review request | 🟡 | ✗ | ✗ | — | Uses `send-customer-email`, owner-triggered from `hubly.html` |
 | Analyze photos | 🟡 | ✗ | ✗ | — | `analyze-photos` deployed. **Only caller: `hubly.html`**. Not registered |
 | Creative Director | 🟡 | ✗ | ✗ | — | `creative-director` deployed. Only caller: `hubly.html` |
-| Generate / edit website | 🟢 | ✓ | ✓ | see note | `business.startDraft`, `website.generateDocument`, `website.patchDocument` via `hubly-conversation` → registry |
+| Build a website | 🟢 | ✓ | ✓ | see note | `business.startDraft` + `business.updateDraft` + `business.setServices` write `businesses` columns; `public/hubly.html` renders the live site client-side. **This is the only path that has ever built a real site** |
+| Edit a website | 🟢 | ✓ | ✓ | see note | `business.updateDraft` only — copy, colour, section order, services |
+| Hubly Document generate / patch | ⚫ | ✗ | ✗ | — | `website.generateDocument`, `website.patchDocument` — **shipped dark.** `HUBLY_DOCUMENT_GENERATION_ENABLED` is unset in production, so both are blocked at the dispatch gate. Built, deployed, correct, unreachable |
 | Set services | 🟢 | ✓ | ✓ | see note | `business.setServices` |
 | Booking availability / create | 🟢 | ✓ | ✓ | see note | `booking.getAvailability`, `booking.create` |
 | Store / products | 🟢 | ✓ | ✓ | see note | `storefront.*` → owner-gated `commerce-api` |
@@ -100,9 +111,11 @@ Design against these and nothing else. All reached identically:
 `hubly-conversation` → `HUBLY_CAPABILITY_REGISTRY` → handler.
 
 1. **Build a real website** — `business.startDraft` creates a live site at
-   `<slug>.myhubly.app`
-2. **Edit that website** — `website.generateDocument`, `website.patchDocument`,
-   `business.updateDraft`
+   `<slug>.myhubly.app`, rendered by `public/hubly.html` from `businesses`
+   columns
+2. **Edit that website** — `business.updateDraft` (copy, brand colour,
+   section order) and `business.setServices`. **Not** `generateDocument` or
+   `patchDocument`: see the ⚫ row above, they are switched off in production
 3. **Set up services** — `business.setServices`
 4. **Bookings** — `booking.getAvailability`, `booking.create`
 5. **Store** — `storefront.*` (11 actions, owner-gated)
