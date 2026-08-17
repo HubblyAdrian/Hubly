@@ -1113,19 +1113,47 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         argsSchema: {
           type: "object",
           properties: {
-            name: { type: "string", description: "The business's real name, exactly as given." },
+            name: {
+              type: "string",
+              description:
+                "The business's real name if they gave one, exactly as given. If they have NOT " +
+                "given a name, DERIVE a descriptive one from what they actually said — " +
+                "'Mobile Dog Grooming in Lehi', 'Lehi Wedding Photography' — and pass that. " +
+                "NEVER invent a generic placeholder like 'Your Business', 'My Company' or " +
+                "'New Business': a site called Your Business is one nobody wants to keep, and " +
+                "four already exist in production because this was left vague. Only ask for a " +
+                "name if you genuinely cannot derive anything meaningful from what they said.",
+            },
             businessType: {
               type: "string",
               description:
                 "One short lowercase category if it's genuinely clear (e.g. \"detailing\", \"landscaping\", \"cleaning\", \"photography\", \"windows\", \"pressure_washing\"). Omit if unclear — never guess.",
             },
           },
-          required: ["name"],
+          // NOT required. The system prompt says "don't wait for a business name
+          // first — a real site with placeholder content beats a perfect question
+          // every time", and a schema demanding one directly contradicted it. The
+          // model resolved that contradiction two ways, both bad: invent "Your
+          // Business" (4 of 6 production drafts) or decline to build and answer
+          // conversationally instead — a stranger describes their business, gets
+          // advice, and leaves with nothing, invisibly, because it writes no row.
+          required: [],
         },
         handler: async (args) => {
           const name = String(args?.name || "").trim();
           if (!name) {
-            return { ok: false, real: false, summary: "No business name was given.", error: "missing_name" };
+            // Reached only if the model passed nothing at all. The RPC needs a
+            // name for the slug so it cannot be silently defaulted — but the fix
+            // is to derive one, never to fall back to a placeholder.
+            return {
+              ok: false,
+              real: false,
+              summary:
+                "Derive a name from what they told you (their trade and town is enough, e.g. " +
+                "'Mobile Dog Grooming in Lehi') and call this again. Do not use a generic " +
+                "placeholder, and do not stop to ask unless you truly have nothing to work from.",
+              error: "derive_name_and_retry",
+            };
           }
           const businessType = String(args?.businessType || "").trim() || undefined;
           const r = await callBusinessRpc("start_business_in_progress", {
