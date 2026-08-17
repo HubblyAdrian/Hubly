@@ -82,6 +82,10 @@ Deno.serve(async (req: Request) => {
     const clientAmountCents = dollarsToCents(body?.amount_dollars) ||
       Math.round(Number(body?.amount_cents) || 0);
     let amountCents = 0;
+    // The resolved payment rule for this booking, frozen onto the row below.
+    // Declared out here because the website branch and the marketplace branch
+    // resolve it from different places and both writes happen after them.
+    let summaryRule: string | null = null;
 
     const successUrl = sanitizeAppReturnUrl(body?.success_url);
     const cancelUrl = sanitizeAppReturnUrl(body?.cancel_url || body?.success_url);
@@ -163,6 +167,7 @@ Deno.serve(async (req: Request) => {
       const summary = buildPaymentSummary(bizRow as Record<string, unknown>, totalCents, {
         service: fullSvc ? { payment: fullSvc.payment ?? null } : null,
       });
+      summaryRule = summary.rule;
       amountCents = chargeKind === "full" ? totalCents : summary.charge_now_cents;
 
       // Nothing owed, or below Stripe's minimum: do not open a checkout and do
@@ -219,6 +224,9 @@ Deno.serve(async (req: Request) => {
       }
 
       const rule = String(mBook.payment_rule || "").toLowerCase();
+      // Marketplace already stores its own rule; carry it across rather than
+      // re-deriving, so the two tables cannot disagree about the same booking.
+      summaryRule = String(mBook.payment_rule || "") || null;
       chargeKind = rule === "pay_in_full" || rule === "full" ? "full" : "deposit";
       const price = Math.round(Number(mBook.price_cents) || 0);
       const deposit = Math.round(Number(mBook.deposit_cents) || 0);
@@ -295,6 +303,11 @@ Deno.serve(async (req: Request) => {
         amount_due_cents: amountCents,
         currency: "usd",
         deposit_cents: chargeKind === "deposit" ? amountCents : null,
+        // The server is authoritative here: buildPaymentSummary already resolved
+        // the rule (package override, then account default) and computed what is
+        // owed, so freeze both rather than letting the client's view of them win.
+        payment_rule: summaryRule,
+        amount_required_cents: amountCents,
       };
       const { data: inserted, error: insErr } = await admin
         .from("booking_requests")
@@ -378,6 +391,11 @@ Deno.serve(async (req: Request) => {
       amount_due_cents: amountCents,
       currency: "usd",
       stripe_checkout_session_id: session.id,
+      // Overwrite whatever the client wrote at insert. If the two ever disagree
+      // the server's resolution is the one that decided the actual charge, so it
+      // is the one the row must record.
+      payment_rule: summaryRule,
+      amount_required_cents: amountCents,
       // Same state the freshly-inserted path above starts in: a real pending
       // booking awaiting payment. Only ever applied to an 'abandoned' row.
       ...(promoteFromAbandoned ? { status: "pending" } : {}),

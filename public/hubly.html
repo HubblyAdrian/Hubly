@@ -41831,6 +41831,47 @@ function bookingPaymentFailureMessage(payload){
   if(code==='already_paid')return 'This booking has already been paid.';
   return 'We couldn’t start the payment, so you have not been charged and your booking isn’t confirmed. Please try again — your details are saved.';
 }
+/**
+ * The canonical payment rule for a booking, in the server's vocabulary.
+ *
+ * S.paymentSetting / svc.paymentSetting use the editor's short words ('full',
+ * 'later', ...); booking_requests.payment_rule stores the canonical PaymentRule
+ * union from _shared/booking_engine.ts. Same mapping as
+ * buildServiceCatalogFromEditor uses, kept in one place so the two cannot drift.
+ */
+function bookingPaymentRule(pay){
+  const map={
+    full:'pay_in_full', pay_in_full:'pay_in_full',
+    deposit:'deposit',
+    later:'pay_after_service', pay_after_service:'pay_after_service',
+    choice:'customer_choice', customer_choice:'customer_choice',
+    card:'card_on_file', card_on_file:'card_on_file',
+  };
+  return map[String(pay||'').toLowerCase()]||'pay_after_service';
+}
+/**
+ * What this booking OWES at booking time, in cents. 0 means nothing is owed.
+ *
+ * Deliberately the amount owed under the rule, NOT the amount Hubly happens to
+ * be able to collect. A deposit the owner collects by text or phone is still
+ * owed even though no Stripe session opens for it — recording 0 there would tell
+ * the sweeper the booking is settled when the customer has paid nothing.
+ *
+ * The consequence is worth stating: a text/call-collected deposit will never be
+ * marked paid by Hubly, so under a strict rule it would never auto-accept. That
+ * is a step 3 decision, not something to paper over by lying here.
+ */
+function bookingAmountRequiredCents(m){
+  const pay=String(m&&m.pay||'').toLowerCase();
+  if(pay==='later'||pay==='pay_after_service')return 0;
+  if(pay==='deposit')return Math.max(0,Math.round(Number(m.depositAmt||0)*100));
+  if(pay==='choice'||pay==='customer_choice'){
+    // Customer choice: only owed now if they actually chose to pay online.
+    return S.bkPayType==='online'?Math.max(0,Math.round(Number(m.total||0)*100)):0;
+  }
+  if(pay==='card'||pay==='card_on_file')return 0;
+  return Math.max(0,Math.round(Number(m.total||0)*100));
+}
 async function submitBooking(){
   const btn=document.getElementById('bk-confirm-btn');
   const btnLabel=btn?.textContent||'Confirm & book';
@@ -41931,6 +41972,15 @@ async function submitBooking(){
         // this is the real, structured value acceptBookingRequest carries
         // onto the job instead of guessing from job amount.
         deposit_cents: m.pay==='deposit'?Math.round(m.depositAmt*100):null,
+        // Freeze the rule that applied RIGHT NOW, and what it required. Both
+        // columns existed but nothing wrote them, so every booking had to be
+        // judged by inference — and `payment_status` defaults to 'none', which
+        // makes "nothing owed" and "nobody ever wrote this" indistinguishable.
+        // A business that later switches from deposit to pay-in-full must not
+        // re-judge its own old bookings, so this is captured per booking rather
+        // than read back from settings.
+        payment_rule: bookingPaymentRule(m.pay),
+        amount_required_cents: bookingAmountRequiredCents(m),
       };
       // Online card checkout via Stripe Connect (Stripe deposits / full / client chose online)
       const depositViaStripe=m.pay!=='deposit'||depositCollectMethod()==='stripe';
@@ -42061,6 +42111,19 @@ async function submitBooking(){
             }
           }else{
             insertedReqId=S._abandonedBookingReqId||null;
+            // complete_abandoned_booking is a SQL function with a fixed
+            // parameter list, so it cannot carry the two new columns. Write them
+            // here instead of changing the RPC signature — otherwise every
+            // booking that resumes a lead row (which is most of them, since
+            // step 3 always writes one) would be left with NULL rule and NULL
+            // required amount, i.e. unjudgeable by exactly the code that needs
+            // to judge it.
+            try{
+              await dbClient.from('booking_requests').update({
+                payment_rule: payload.payment_rule,
+                amount_required_cents: payload.amount_required_cents,
+              }).eq('id',insertedReqId);
+            }catch(e){console.warn('payment_rule backfill on resume failed',e&&e.message);}
           }
         }else if(canSelect){
           const {data:insertRow,error:insertErr}=await dbClient.from('booking_requests').insert(payload).select('id').single();
