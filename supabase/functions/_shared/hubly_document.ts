@@ -459,10 +459,22 @@ function escAttr(s: string): string {
   return escHtml(s);
 }
 
+/** Anchor ids are namespaced before they reach the DOM.
+ *
+ *  The document is injected with innerHTML into #hc-doc-root, which lives
+ *  inside hubly.html — a ~2.8MB SPA with its own id space. A document node
+ *  called "contact" or "services" would collide with the app's own elements,
+ *  so every id is emitted as "hd-<nodeid>" and in-page hrefs are rewritten to
+ *  match. Without this, `href="#anchor"` — which the prompt advertises and the
+ *  validator accepts — pointed at nothing at all, because renderAttrs never
+ *  emitted an `id` in the first place. */
+const ANCHOR_PREFIX = "hd-";
+
 function renderAttrs(attrs: Record<string, string>, id: string): string {
-  const parts = [`data-node="${escAttr(id)}"`];
+  const parts = [`data-node="${escAttr(id)}"`, `id="${escAttr(ANCHOR_PREFIX + id)}"`];
   for (const [k, v] of Object.entries(attrs)) {
-    parts.push(`${k}="${escAttr(v)}"`);
+    const value = k === "href" && v.startsWith("#") ? "#" + ANCHOR_PREFIX + v.slice(1) : v;
+    parts.push(`${k}="${escAttr(value)}"`);
   }
   return parts.join(" ");
 }
@@ -477,17 +489,36 @@ function renderReservedElement(node: HublyDocumentNode, ctx: RenderContext): str
   const wrap = (inner: string) => `<div data-node="${escAttr(node.id)}" data-hubly-element="${node.tag}" class="hubly-reserved${cls}">${inner}</div>`;
   switch (node.tag) {
     case "HublyBooking": {
-      const phone = ctx.businessPhone ? `<a href="tel:${escAttr(ctx.businessPhone)}" class="text-brand-600 font-semibold">${escHtml(ctx.businessPhone)}</a>` : "";
-      return wrap(`<p class="text-base text-ink-700">Online booking is coming online here. ${phone ? "Call or text " + phone + " to book for now." : "Contact us to book."}</p>`);
+      // Opens the same real booking wizard the classic renderer uses —
+      // wireHublyDocumentReserved in hubly.html binds the click.
+      const phone = ctx.businessPhone
+        ? `<a class="hd-alt-action" href="tel:${escAttr(ctx.businessPhone)}">or call ${escHtml(ctx.businessPhone)}</a>`
+        : "";
+      return wrap(`<div class="hd-booking">
+<a class="hd-primary-action" href="hubly:booking">Check availability</a>
+${phone}
+</div>`);
     }
     case "HublyReviews":
-      return wrap(`<p class="text-base text-ink-700">Customer reviews will appear here once connected.</p>`);
+      return wrap(`<div class="hd-empty-island" data-hd-empty="reviews"><p>Reviews from real customers appear here as they come in.</p></div>`);
     case "HublyCustomerPortal":
-      return wrap(`<p class="text-base text-ink-700">Customer portal coming online here.</p>`);
+      return wrap(`<div class="hd-empty-island" data-hd-empty="portal"><p>Existing customers will be able to sign in here.</p></div>`);
     case "HublyContactForm":
-      return wrap(`<p class="text-base text-ink-700">Contact form coming online here.</p>`);
+      // A real form, posting to the same booking_requests table the classic
+      // public site writes to, so a message lands on the owner's Leads board
+      // exactly like any other enquiry. Submission is wired client-side
+      // (innerHTML never executes script) by wireHublyDocumentReserved.
+      return wrap(`<form class="hd-form" data-hd-form="contact" novalidate>
+<div class="hd-field"><label for="hd-cf-name">Your name</label><input id="hd-cf-name" name="name" type="text" autocomplete="name" required></div>
+<div class="hd-field"><label for="hd-cf-email">Email</label><input id="hd-cf-email" name="email" type="email" autocomplete="email"></div>
+<div class="hd-field"><label for="hd-cf-phone">Phone</label><input id="hd-cf-phone" name="phone" type="tel" autocomplete="tel"></div>
+<div class="hd-field"><label for="hd-cf-message">What do you need?</label><textarea id="hd-cf-message" name="message" rows="4"></textarea></div>
+<p class="hd-form-note">We need an email or a phone number so we can reply.</p>
+<button class="hd-primary-action" type="submit">Send enquiry</button>
+<p class="hd-form-status" role="status" aria-live="polite"></p>
+</form>`);
     case "HublyMap":
-      return wrap(`<p class="text-base text-ink-700">Map coming online here.</p>`);
+      return wrap(`<div class="hd-empty-island" data-hd-empty="map"><p>A map of the service area appears here once an address is added.</p></div>`);
     default:
       return wrap("");
   }
@@ -513,11 +544,113 @@ function renderNode(node: HublyDocumentNode, ctx: RenderContext): string {
  *  a generated document's brand color never leaks into or collides with the
  *  admin dashboard's own --brand variable, which is a completely separate,
  *  already-real CSS custom property defined at :root for the app shell. */
+// ---------------------------------------------------------------------------
+// Page chrome — shell, not document.
+//
+// The generated document had no header, nav or logo, which is a straight
+// regression against the classic renderer: a visitor landing on a Hubly
+// Document page could not navigate it at all.
+//
+// Chrome is rendered AROUND the document rather than by it, deliberately. If
+// the model wrote its own header, every site would get a differently-shaped
+// one — a different logo treatment, a different nav, a different idea of where
+// the phone number goes — and the one part of a site that most benefits from
+// being consistent and predictable would become the most variable. It would
+// also be the part most likely to be quietly wrong, since the model does not
+// know which sections exist until it has finished writing them.
+//
+// So the nav is DERIVED from the finished document: the top-level sections
+// that actually exist, in the order the model put them, minus the hero. The
+// model never names a nav item and cannot invent one that goes nowhere.
+// ---------------------------------------------------------------------------
+
+const NAV_MAX_ITEMS = 5;
+/** Ids whose sentence-case form reads badly or wrongly in a nav. */
+const NAV_LABEL_OVERRIDES: Record<string, string> = {
+  faq: "FAQ",
+  faqs: "FAQ",
+  "how-it-works": "How it works",
+  "service-area": "Service area",
+  "closing-cta": "Get started",
+  inquire: "Enquire",
+};
+
+/** "how-mobile-grooming-works" -> "How mobile grooming works". Never invented,
+ *  always derived from an id that already exists in the rendered page. */
+function navLabel(id: string): string {
+  const key = id.toLowerCase();
+  if (NAV_LABEL_OVERRIDES[key]) return NAV_LABEL_OVERRIDES[key];
+  const words = key.replace(/[-_.]+/g, " ").replace(/\s+/g, " ").trim();
+  if (!words) return "";
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+type NavItem = { id: string; label: string };
+
+function deriveNav(root: HublyDocumentNode): NavItem[] {
+  const kids = Array.isArray(root.children) ? root.children : [];
+  const items: NavItem[] = [];
+  for (const child of kids) {
+    if (child.tag !== "section" && child.tag !== "article") continue;
+    const id = String(child.id || "");
+    // The hero is where the visitor already is; a nav link to it is noise.
+    if (!id || /^hero\b/i.test(id)) continue;
+    const label = navLabel(id);
+    // A nav item long enough to wrap is worse than no nav item.
+    if (!label || label.length > 24) continue;
+    items.push({ id, label });
+    if (items.length >= NAV_MAX_ITEMS) break;
+  }
+  return items;
+}
+
+/** Two initials from the business name, as a stand-in until a real logo is
+ *  uploaded. Deliberately not a generated image — an invented mark is worse
+ *  than an honest monogram. */
+function monogram(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "•";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+function renderChromeHeader(root: HublyDocumentNode, ctx: RenderContext): string {
+  const name = ctx.businessName || "";
+  const nav = deriveNav(root)
+    .map((n) => `<a class="hd-nav-link" href="#${escAttr(ANCHOR_PREFIX + n.id)}">${escHtml(n.label)}</a>`)
+    .join("");
+  const phone = ctx.businessPhone
+    ? `<a class="hd-chrome-phone" href="tel:${escAttr(ctx.businessPhone)}">${escHtml(ctx.businessPhone)}</a>`
+    : "";
+  // hubly:booking is resolved by wireHublyDocumentReserved in hubly.html —
+  // it opens the same real booking wizard the classic renderer uses.
+  const cta = `<a class="hd-chrome-cta" href="hubly:booking">Book now</a>`;
+  return `<header class="hd-chrome-header">
+<a class="hd-brand" href="#hd-top"><span class="hd-monogram">${escHtml(monogram(name))}</span><span class="hd-brand-name">${escHtml(name)}</span></a>
+<nav class="hd-nav">${nav}</nav>
+<div class="hd-chrome-actions">${phone}${cta}</div>
+</header>`;
+}
+
+function renderChromeFooter(ctx: RenderContext): string {
+  const name = ctx.businessName || "";
+  const phone = ctx.businessPhone
+    ? `<a class="hd-foot-link" href="tel:${escAttr(ctx.businessPhone)}">${escHtml(ctx.businessPhone)}</a>`
+    : "";
+  return `<footer class="hd-chrome-footer">
+<div class="hd-foot-name">${escHtml(name)}</div>
+<div class="hd-foot-meta">${phone}</div>
+</footer>`;
+}
+
 export function renderHublyDocument(document: HublyDocument, ctx: RenderContext): string {
   const raw = (ctx.businessBrandColor || "").trim();
   const brand = HEX_COLOR_RE.test(raw) ? raw : FALLBACK_BRAND_COLOR;
   const styleBlock = `<style>#hc-doc-root{--brand:${brand}}</style>`;
-  return styleBlock + renderNode(document.root, ctx);
+  return styleBlock +
+    renderChromeHeader(document.root, ctx) +
+    `<div id="hd-top" class="hd-doc-body">` + renderNode(document.root, ctx) + `</div>` +
+    renderChromeFooter(ctx);
 }
 
 // ---------------------------------------------------------------------------
@@ -542,7 +675,13 @@ ALLOWED TAGS (nothing else will be accepted): ${tags}
 Never: script, style, iframe, form, input, button, or any "on*"/"style" attribute — these are rejected outright, not filtered.
 
 RESERVED HUBLY ELEMENTS (you configure appearance only, never behavior): ${reserved}
-Use these for booking, reviews, customer portal, contact forms, and maps — never write your own <form> or interactive markup for these; place the reserved element instead. Their real data and functionality are Hubly's, not yours to invent.
+Never write your own <form> or interactive markup for these — place the reserved element instead. Their real data and functionality are Hubly's, not yours to invent. What each one actually is:
+- HublyBooking — Hubly's real, working online booking system: the customer picks a service, sees genuine availability, and books. It is fully built and live. It does NOT need services, prices or opening hours to exist before you place it — the owner sets those up right after this page is generated, and the element handles the not-yet-configured state itself. The question to ask is "does this business take appointments or jobs?", not "have the services been entered yet". For any business that books work in — grooming, detailing, trades, salons, photography, cleaning — booking is the thing that earns them money, and a page without it sends a ready customer away to find a phone number.
+- HublyContactForm — a real working enquiry form. Submissions land on the owner's leads board. Right for open-ended or quote-first enquiries ("tell me about your wedding date", "how big is the job?"), and for a business where the first step genuinely is a conversation rather than a booking.
+- HublyReviews — real customer reviews once connected. Shows an honest empty state until then.
+- HublyMap — the service area, once an address exists. Honest empty state until then.
+- HublyCustomerPortal — sign-in for existing customers. Only for businesses with ongoing client relationships.
+Booking and the contact form are not alternatives to each other and a page may carry both: booking for the customer who already knows what they want, the form for the one who has a question first. Choose on what this business's customers need — not on how much data happens to exist at this moment.
 
 STYLING — every value must be one of these exact tokens (space-separated in "class"), nothing invented:
 - Spacing: ${SPACING_PREFIXES.join("/")}-{${SPACING_SCALE.join(",")}} (e.g. "py-16", "px-8", "gap-6"); margin also allows "auto" (m-auto, mx-auto, my-auto) for centering — this is the ONLY non-numeric spacing value
@@ -580,7 +719,7 @@ REASONING: on nodes where you made a real design choice (not on every trivial sp
  *  doesn't use this — forcing a full rationale on a small targeted edit
  *  isn't what was tested or approved). */
 export function buildDesignRationaleInstructions(): string {
-  return `\n\nBEFORE you decide on the page's structure, think through — in your own words, as real text in the "designRationale" field below — what makes THIS business's page different from a generic template: which sections it actually needs (and which common ones it doesn't), what the visual/structural approach should emphasize given its specific character, and at least one deliberate way this page should NOT look like a default template. This includes deciding whether each reserved Hubly element (booking, reviews, contact form, map, customer portal) genuinely belongs on this page — only include one because your own stated reasoning justifies it for THIS business, never by default or because a similar business would typically have one; if you include one, your designRationale must say why. Then apply that reasoning when you build the tree.\n\nReturn a single JSON object: { "designRationale": "<3-6 sentences, your real reasoning, specific to this business>", "root": <the root node, exactly as specified above> } — "root" must still be exactly the ROOT node shape described above. Nothing else in the response.`;
+  return `\n\nBEFORE you decide on the page's structure, think through — in your own words, as real text in the "designRationale" field below — what makes THIS business's page different from a generic template: which sections it actually needs (and which common ones it doesn't), what the visual/structural approach should emphasize given its specific character, and at least one deliberate way this page should NOT look like a default template. This includes deciding whether each reserved Hubly element (booking, reviews, contact form, map, customer portal) genuinely belongs on this page — only include one because your own stated reasoning justifies it for THIS business, never by default or because a similar business would typically have one; if you include one, your designRationale must say why. Justify it on what this business's customers need to do, NOT on how much data has been entered so far — a booking element is not unjustified merely because services and prices have not been filled in yet, since the owner does that immediately after this page is built. Then apply that reasoning when you build the tree.\n\nReturn a single JSON object: { "designRationale": "<3-6 sentences, your real reasoning, specific to this business>", "root": <the root node, exactly as specified above> } — "root" must still be exactly the ROOT node shape described above. Nothing else in the response.`;
 }
 
 // ---------------------------------------------------------------------------

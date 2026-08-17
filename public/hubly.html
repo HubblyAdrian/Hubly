@@ -36,6 +36,7 @@
 <link rel="stylesheet" href="/journey-os/photography-projects.css?v=projects-16">
 <link rel="stylesheet" href="/journey-os/app-marketplace.css?v=projects-16">
 <link rel="stylesheet" href="/journey-os/hubly-document.css?v=1">
+<link rel="stylesheet" href="/journey-os/hubly-document-chrome.css?v=hd-chrome-1">
 <style>
 :root{
   --brand:#D9632D;--brand-dark:#B84E1F;--brand-light:#FDF0E8;
@@ -17353,7 +17354,18 @@ async function loadPublicProfile(slug){
       if(root)root.innerHTML=rendered;
       if(data.name)document.title=data.name;
       try{document.documentElement.setAttribute('data-theme','day');}catch(e){}
+      // The document branch used to return before currentBusiness was ever
+      // assigned, so anything in the page that needed to know WHICH business it
+      // was looking at had nothing to read. That was invisible while the
+      // reserved elements were inert placeholders; the moment the contact form
+      // and hubly:booking became real, both needed it. S.* is populated for the
+      // same reason — openBookingPage reads it.
+      currentBusiness=data;
+      S.biz=data.name||'';S.tag=data.tagline||'';S.phone=data.phone||'';
+      S.email=data.email||'';S.city=data.city||'';
+      S.color=data.brand_color||'#1a3a6e';S.bgColor=data.bg_color||'#f0f0ee';
       showP('p-hubly-document');
+      try{wireHublyDocumentReserved();}catch(e){console.warn('wireHublyDocumentReserved failed',e);}
       try{wireHublyDocumentClickToEdit();}catch(e){}
       return;
     }
@@ -52679,6 +52691,101 @@ if(document.readyState==='loading'){
   size, spacing) go through the conversational path today.
 -->
 <script>
+// Makes the Hubly Document's reserved elements real.
+//
+// The document is injected with innerHTML, so any <script> inside it never
+// runs — every behaviour in a generated page has to be bound from here. Before
+// this, HublyContactForm rendered the literal words "Contact form coming
+// online here", HublyBooking rendered "Online booking is coming online here",
+// and href="hubly:booking" / "hubly:contact" — both advertised to the model and
+// accepted by the validator — resolved to nothing at all. Every generated page
+// therefore ended on a dead placeholder exactly where its conversion belonged.
+//
+// Enquiries are written to booking_requests, the same table the classic public
+// site writes to, so a message from a Document page lands on the owner's Leads
+// board indistinguishably from any other enquiry. No new table, no new
+// endpoint, no second inbox to remember to check.
+function wireHublyDocumentReserved(){
+  var root = document.getElementById('hc-doc-root');
+  if(!root || root.getAttribute('data-hd-wired') === '1') return;
+  root.setAttribute('data-hd-wired', '1');
+
+  // hubly: scheme links — the header CTA and any the model wrote itself.
+  root.addEventListener('click', function(ev){
+    var a = ev.target && ev.target.closest ? ev.target.closest('a[href^="hubly:"]') : null;
+    if(!a) return;
+    ev.preventDefault();
+    var target = (a.getAttribute('href') || '').slice('hubly:'.length);
+    if(target === 'booking'){
+      try{ openBookingPage(''); }
+      catch(e){ console.warn('hubly:booking failed', e); }
+      return;
+    }
+    if(target === 'contact'){
+      var form = root.querySelector('[data-hd-form="contact"]');
+      if(form){ form.scrollIntoView({behavior:'smooth', block:'center'}); var f=form.querySelector('input'); if(f) f.focus({preventScroll:true}); }
+      else { try{ openBookingPage(''); }catch(e){} }
+    }
+  });
+
+  var form = root.querySelector('[data-hd-form="contact"]');
+  if(!form) return;
+  var status = form.querySelector('.hd-form-status');
+  var button = form.querySelector('button[type="submit"]');
+
+  function say(text, kind){
+    if(!status) return;
+    status.textContent = text;
+    status.className = 'hd-form-status' + (kind ? ' is-' + kind : '');
+  }
+
+  form.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    if(form.getAttribute('data-hd-sent') === '1') return;
+    var val = function(n){ var el = form.querySelector('[name="' + n + '"]'); return el ? String(el.value || '').trim() : ''; };
+    var name = val('name'), email = val('email'), phone = val('phone'), message = val('message');
+
+    if(!name){ say('Please add your name so we know who is asking.', 'error'); return; }
+    // One of the two is genuinely required: an enquiry nobody can reply to is
+    // worse than no enquiry, because the owner sees a lead and cannot act.
+    if(!email && !phone){ say('Please add an email or a phone number so we can reply.', 'error'); return; }
+
+    if(button){ button.disabled = true; }
+    say('Sending…');
+
+    (async function(){
+      try{
+        var dbClient = await waitForDb();
+        var biz = (typeof currentBusiness !== 'undefined' && currentBusiness) ? currentBusiness : null;
+        if(!biz || !biz.id){ say('Something went wrong on our end. Please try again.', 'error'); if(button) button.disabled=false; return; }
+        var payload = {
+          business_id: biz.id,
+          customer_name: name,
+          customer_phone: phone || null,
+          customer_email: email || null,
+          service_name: 'Website enquiry',
+          notes: message || '',
+          status: 'pending'
+        };
+        var res = await dbClient.from('booking_requests').insert(payload);
+        if(res && res.error){
+          console.warn('hubly document enquiry failed', res.error.message);
+          say('That did not send. Please try again, or call us instead.', 'error');
+          if(button) button.disabled = false;
+          return;
+        }
+        form.setAttribute('data-hd-sent', '1');
+        if(button) button.textContent = 'Sent';
+        say('Thanks, ' + name + '. We have got your message and will be in touch.', 'ok');
+      }catch(e){
+        console.warn('hubly document enquiry threw', e);
+        say('That did not send. Please try again, or call us instead.', 'error');
+        if(button) button.disabled = false;
+      }
+    })();
+  });
+}
+
 function wireHublyDocumentClickToEdit(){
   try{
     if(new URL(location.href).searchParams.get('hcEdit') !== '1') return;
