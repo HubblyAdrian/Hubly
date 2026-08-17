@@ -83,6 +83,32 @@ Deno.serve(async (req: Request) => {
           stripe_payment_intent_id: pi,
           paid_at: new Date().toISOString(),
         }).eq("id", bookingId);
+
+        // A paid booking is committed work, so it becomes a job here rather than
+        // waiting for the owner to click Accept on something the customer has
+        // already paid for. Until now this handler stamped payment fields and
+        // stopped: the money moved, the business had no job, nothing on the
+        // calendar, and no way to know the session existed.
+        //
+        // Idempotent on jobs.booking_request_id, so the reconcile sweep and a
+        // Stripe redelivery of this same event are both safe.
+        try {
+          const { createJobFromBookingRequest } = await import("../_shared/booking_job.ts");
+          const jobRes = await createJobFromBookingRequest(admin, {
+            bookingRequestId: bookingId,
+            reason: "payment",
+            amountDollars: amountTotal ? amountTotal / 100 : null,
+          });
+          if (!jobRes.ok) {
+            // Do NOT fail the webhook. The payment is recorded and Stripe must
+            // not retry purely because job creation had a bad moment — the
+            // reconcile sweep exists to pick this up. Logged loudly so it is
+            // visible rather than silent.
+            console.error("[stripe-webhook] paid but job not created", bookingId, jobRes.error);
+          }
+        } catch (e) {
+          console.error("[stripe-webhook] job creation threw", bookingId, (e as Error)?.message);
+        }
       } else if (sessionId) {
         await admin.from("booking_requests").update({
           payment_status: paymentStatus === "unpaid" ? "pending_checkout" : "paid",

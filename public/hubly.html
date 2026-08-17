@@ -43251,6 +43251,9 @@ async function _acceptBookingRequestInner(reqId,opts={}){
     notes:acceptNotes||null,status:'scheduled',fromBooking:true,
     vehicle:vehicleLabel,vehicleColor:j.vehicleColor||null,
     depositCents,depositStatus,durationHours,
+    // Link the job to the booking it came from, so payment-side creation and
+    // owner Accept cannot both produce a job for the same booking.
+    bookingRequestId:reqId,
   });
   if(result.error){if(!silent)toast('❌ '+result.error.message);return;}
   const data=result.job;
@@ -45012,6 +45015,13 @@ async function createJob(input,opts){
     deposit_status:input.depositStatus||'none',
     duration_hours:input.durationHours!=null?input.durationHours:null,
     recurring_schedule_id:input.recurringScheduleId||null,
+    // The booking this job came from. Payment now creates jobs too (the Stripe
+    // webhook, via _shared/booking_job.ts), so this is no longer just a nice
+    // reference — it is the key both creators deduplicate on. A job written
+    // without it is invisible to that check, and the same session lands on the
+    // business's calendar twice. The partial unique index
+    // jobs_booking_request_id_unique is what actually enforces it.
+    booking_request_id:input.bookingRequestId||null,
   };
   if(input.paid!=null)payload.paid=!!input.paid;
   var result=await persistJob(payload);
