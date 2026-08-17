@@ -628,6 +628,70 @@ first — if the count is 0, the test is decorative.
 
 ---
 
+## A dependency can be invisible to a search for the thing itself
+
+**Status:** standing rule, written 2026-08-17 after it produced two wrong
+conclusions in one session — one of which caused an outage
+
+Twice in one evening a grep was run correctly, returned an accurate result, and
+the conclusion drawn from it was wrong. Both times the reasoning was "nothing
+references this, so nothing depends on it."
+
+**Case 1 — `api/notify.js`.** Searched the repo for `api/notify`, found only the
+vercel.json route, deleted the endpoint as dead. Its caller was a row in
+`pg_trigger` calling an Edge Function — not code, not searchable. It had sent a
+live owner email 25 minutes earlier. Owner booking emails were dead for ~40
+minutes.
+
+**Case 2 — `draftBusiness.draftToken`.** Searched the client for `draftToken`,
+found nothing, concluded the field could be removed from the API response.
+`platform-home.html` depends on it completely — but **never names it**:
+
+```js
+hc.draftBusiness = data.draftBusiness;                    // stores the whole object
+body: JSON.stringify({ …, draftBusiness: hc.draftBusiness })   // sends it all back
+```
+
+The server then reads `draftBusiness.draftToken` to authorise every draft edit —
+logo upload, updateDraft, hero image, document patch. Removing it would have
+broken the entire iterative build flow. Caught before shipping, by checking one
+level further rather than by any search.
+
+### Why the searches could not have found it
+
+- **Case 1:** the caller was not in the codebase at all.
+- **Case 2:** the caller was in the codebase and referenced the field only
+  through an object it passed through whole. `grep draftToken` cannot see
+  `draftBusiness` being forwarded, because the field name never appears.
+
+Pass-through is the general shape: `{...obj}`, `JSON.stringify(obj)`,
+`Object.assign({}, obj)`, a whole row handed to a template, `select('*')`. Any of
+them carries every field without naming one.
+
+### The rule
+
+**A negative grep bounds where a name appears. It does not bound where a value
+is used.** Before removing anything from a payload, a response, a row or a
+public path, establish the dependency positively rather than inferring it from
+absence:
+
+- **Ask who receives the container**, not who names the field. Trace the object,
+  not the identifier.
+- **Probe the live thing.** A deployed endpoint answers; a field in a response
+  can be observed. For case 1 a single production POST would have settled it —
+  and it was eventually run, after the deletion, to confirm the deletion had
+  worked.
+- **Check the non-code callers**: `pg_trigger`, `cron.job`, webhooks, other
+  people's systems. See "The repo does not describe production".
+- **Prefer deprecate to delete.** Stop writing a field, watch for a while, then
+  remove it. Nothing tonight needed the removal to be immediate.
+
+The honest framing: both searches were sound. The error was treating "I looked
+and found nothing" as equivalent to "there is nothing" — and the confidence came
+from the search having been done carefully, which is exactly backwards.
+
+---
+
 ## `supabase functions download` is a WRITE, and it clobbers `_shared`
 
 **Status:** standing warning, written 2026-08-17 after it silently deleted ~1,900
