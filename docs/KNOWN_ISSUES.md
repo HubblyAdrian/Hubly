@@ -311,9 +311,9 @@ recurred three more times the same day and now has its own entry — see
 
 ---
 
-## Checks that silently check nothing — or quietly check the wrong thing
+## Checks that silently check nothing — or report a success that is not the whole story
 
-**Status:** standing practice, adopted 2026-08-16 after FIVE occurrences in one
+**Status:** standing practice, adopted 2026-08-16 after SIX occurrences in one
 day
 
 The most dangerous verification result is not a failure. It is a success
@@ -403,6 +403,62 @@ Corollary for reporting: never say "verified" on the strength of an empty
 result. Say what was examined and how many — *"82 failure lines, identical before
 and after"* is a claim that can be wrong, and therefore worth something.
 *"No differences"* is not.
+
+### Number 6: the failure was LOUD, the consequence was silent
+
+**2026-08-16.** The same class, arrived at from the opposite side. The first five
+were checks that reported success while examining nothing. This was a command
+that reported failure — clearly, in red — and the work still went out wrong,
+because nothing downstream was looking at what the failure had actually cost.
+
+```bash
+git rm -q api/notify.js                              # stages the deletion
+git add public/hubly.html vercel.json docs/… api/notify.js
+#   fatal: pathspec 'api/notify.js' did not match any files
+git commit -q -F - <<'MSG' … MSG                     # succeeds
+git push -q origin main && echo "pushed $(git rev-parse --short HEAD)"
+#   pushed 3692f88                                    ← looks like success
+```
+
+`git rm` had already staged and removed the file, so by the time `git add` named
+it the path no longer existed. **`git add` is all-or-nothing on a pathspec
+error**: it aborted having staged *none* of the three files that did exist. The
+commit then ran against the index as `git rm` left it and shipped only the
+deletion. Push succeeded. The reported sha was real. The commit contained a
+quarter of the change, and its message described work that was not in it — so
+the git log was actively wrong, which is worse than incomplete.
+
+The `fatal:` was right there in the output. It scrolled past because attention
+was on the last line, which said what was expected.
+
+**The rule: verify what a commit CONTAINS, never trust the push output.**
+
+```bash
+git show --stat --oneline HEAD      # the files that actually landed
+git status --porcelain              # what was left behind
+```
+
+Both, every time, before reporting a commit as done. `git status` is the half
+that catches this one: three modified files still sitting there after a
+"successful" push is unambiguous.
+
+Specific traps worth naming:
+
+- **Never pass a `git rm`'d path to a later `git add`.** It is guaranteed to
+  fail, and it takes the whole `add` down with it. Use `git add -A <dir>` or
+  stage the deletion and the edits in one `git add -A`.
+- **`&&` does not protect you across separate commands.** The failing `add` and
+  the succeeding `commit` were two statements; chaining only guards the one it
+  joins.
+- **A commit message is a claim about content, not a description of intent.**
+  When a commit lands partial, the message becomes a lie in the permanent record.
+  Fixing it means a follow-up commit that says so — as `0eebb79` does for
+  `3692f88` — not quietly moving on.
+
+The generalisation, which is the reason this sits next to the other five:
+**a visible error and a visible success in the same output are not equally
+visible.** The eye goes to the last line. Anything that reports success must be
+made to report *what* succeeded, or it will be read as reporting everything.
 
 ---
 
