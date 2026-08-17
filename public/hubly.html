@@ -40975,13 +40975,19 @@ async function bkNext(step){
   } else if(step===3){
     if(!document.getElementById('bk-name').value.trim()){toast('Enter your name');return}
     if(!document.getElementById('bk-phone').value.trim()){toast('Enter your phone number');return}
-    if(!document.getElementById('bk-sms-consent')?.checked&&!S.bkSmsConsent){
-      toast('Please agree to SMS updates so we can reach you about your booking');
-      document.getElementById('bk-sms-consent')?.focus();
-      return;
-    }
-    S.bkSmsConsent=true;
-    rememberSmsConsentLocal(document.getElementById('bk-phone')?.value||'');
+    // SMS consent is OPTIONAL. It used to block this step, which meant nobody
+    // could book without agreeing — and consent that cannot be declined is not
+    // consent, it is a checkbox. It also made every stored `true` worthless as
+    // evidence (0 rows have ever recorded a decline) and would have contaminated
+    // any marketing opt-in placed beside it, since TCPA express written consent
+    // must state it is not a condition of purchase.
+    //
+    // Declining costs the customer nothing here: the booking proceeds and the
+    // business reaches them by phone and email instead. Only the text channel is
+    // gated, and the Leads UI disables it rather than relying on the owner to
+    // notice.
+    S.bkSmsConsent=bkHasSmsConsent();
+    if(S.bkSmsConsent)rememberSmsConsentLocal(document.getElementById('bk-phone')?.value||'');
     buildOrderSummary();
     writeAbandonedBookingRequest();
     goToStep(3,4);
@@ -41092,6 +41098,39 @@ function persistBookingSmsConsent(name,phone,email){
 function bkHasSmsConsent(){
   return !!(document.getElementById('bk-sms-consent')?.checked||S.bkSmsConsent);
 }
+/**
+ * The exact SMS consent wording the customer saw — read from the element they
+ * saw it in, not from a copy of it.
+ *
+ * booking_requests.sms_consent_text exists to answer "what were they shown",
+ * which is the question in a TCPA dispute. A JS constant duplicating the markup
+ * would be a second source that can silently drift from the first, and then we
+ * would be storing words nobody was ever shown — worse than storing nothing,
+ * because it looks like evidence. Reading the live label makes the markup the
+ * single source and makes drift impossible by construction.
+ *
+ * Includes the business name, because `#bk-biz-consent` is substituted at render
+ * time and "SMS from Everlasting" is materially different from "SMS from Your
+ * Business" as a record of what was agreed to.
+ */
+function bkSmsConsentText(){
+  const el=document.querySelector('#bk-step-3 .bk-sms-consent')||document.querySelector('.bk-sms-consent');
+  if(!el)return '';
+  return String(el.textContent||'').replace(/\s+/g,' ').trim().slice(0,1000);
+}
+/** Consent fields for a booking_requests row, in one place so every writer agrees. */
+function bkConsentColumns(){
+  const consented=bkHasSmsConsent();
+  return {
+    sms_consent: consented,
+    sms_consent_at: consented?new Date().toISOString():null,
+    sms_consent_text: consented?(bkSmsConsentText()||null):null,
+    // Marketing is a separate, unticked-by-default, differently-worded opt-in
+    // that does not exist in this flow yet. Never inferred from the box above:
+    // "text me updates about my booking" cannot authorise promotional sends.
+    sms_marketing_consent: false,
+  };
+}
 // Phase 1 item C: captures a "tried to book" lead the moment name+phone
 // are known (end of Step 3), before the customer has actually submitted
 // anything -- a deliberate product/privacy tradeoff, signed off on
@@ -41182,6 +41221,10 @@ async function writeAbandonedBookingRequest(opts={}){
     address: addr||null,
     notes: saveNote||null,
     status: asLead?'pending':'abandoned',
+    // An abandoned booking becomes a lead the business can work. Whether it is a
+    // TEXTABLE lead is decided here and nowhere else — the Leads UI reads this
+    // column rather than re-deriving consent from notes.
+    ...bkConsentColumns(),
   };
   try{
     const {error}=await dbClient.from('booking_requests').insert(payload);
@@ -41236,12 +41279,9 @@ async function saveAndExitBooking(){
     try{goToStep(Number(S.bkStep)||1,3);}catch(e){}
     return;
   }
-  if(phone&&!bkHasSmsConsent()){
-    toast('Please agree to SMS updates on Your info, then Save & exit');
-    try{goToStep(Number(S.bkStep)||1,3);}catch(e){}
-    document.getElementById('bk-sms-consent')?.focus();
-    return;
-  }
+  // Consent is not required to save a lead either — the same reasoning as the
+  // step 3 gate. Refusing to save someone's details because they declined SMS
+  // discards a lead the business could have called or emailed.
   let result={ok:false};
   try{
     result=await writeAbandonedBookingRequest({allowSoft:true,source:'save_exit',silentNudge:true,asLead:true})||{ok:false};
@@ -41904,13 +41944,8 @@ async function submitBooking(){
     toast('Add your name and phone first');
     return;
   }
-  if(!bkHasSmsConsent()){
-    toast('Please agree to SMS updates so we can reach you about your booking');
-    try{goToStep(4,3);}catch(e){}
-    document.getElementById('bk-sms-consent')?.focus();
-    return;
-  }
-  S.bkSmsConsent=true;
+  // Optional — see bkNext step 3. Record what they actually chose.
+  S.bkSmsConsent=bkHasSmsConsent();
   persistBookingSmsConsent(name,phone,email);
   const date=document.getElementById('bk-date')?.value||'';
   const addr=resolveBookingAddress();
@@ -41920,9 +41955,9 @@ async function submitBooking(){
   const model=document.getElementById('bk-model')?.value||'';
   let notes='';
   try{
-    notes=[document.getElementById('bk-notes')?.value||'',typeof collectBkIntakeNotes==='function'?collectBkIntakeNotes():'',whereLabel?`Where: ${whereLabel}`:'','[SMS_CONSENT:yes]'].filter(Boolean).join(' · ');
+    notes=[document.getElementById('bk-notes')?.value||'',typeof collectBkIntakeNotes==='function'?collectBkIntakeNotes():'',whereLabel?`Where: ${whereLabel}`:'',bkHasSmsConsent()?'[SMS_CONSENT:yes]':'[SMS_CONSENT:no]'].filter(Boolean).join(' · ');
   }catch(e){
-    notes=[document.getElementById('bk-notes')?.value||'',whereLabel?`Where: ${whereLabel}`:'','[SMS_CONSENT:yes]'].filter(Boolean).join(' · ');
+    notes=[document.getElementById('bk-notes')?.value||'',whereLabel?`Where: ${whereLabel}`:'',bkHasSmsConsent()?'[SMS_CONSENT:yes]':'[SMS_CONSENT:no]'].filter(Boolean).join(' · ');
   }
 
   if(btn){btn.disabled=true;btn.textContent='Booking…';}
@@ -41996,6 +42031,10 @@ async function submitBooking(){
         // than read back from settings.
         payment_rule: bookingPaymentRule(m.pay),
         amount_required_cents: bookingAmountRequiredCents(m),
+        // Consent as a recorded fact with its evidence, not a string inside the
+        // customer's own notes. The [SMS_CONSENT:*] marker above stays for one
+        // deploy because parseBookingNoteMeta and bkHasSmsConsent still read it.
+        ...bkConsentColumns(),
       };
       // Online card checkout via Stripe Connect (Stripe deposits / full / client chose online)
       const depositViaStripe=m.pay!=='deposit'||depositCollectMethod()==='stripe';
@@ -44722,7 +44761,7 @@ async function renderAbandonedBookingsSection(){
   const body=document.getElementById('chats-panel-body');
   if(!body||!currentBusiness?.id)return;
   const {data,error}=await db.from('booking_requests')
-    .select('id,customer_name,customer_phone,customer_email,service_name,requested_date,requested_time,created_at')
+    .select('id,customer_name,customer_phone,customer_email,service_name,requested_date,requested_time,created_at,sms_consent')
     .eq('business_id',currentBusiness.id).eq('status','abandoned')
     .order('created_at',{ascending:false}).limit(20);
   if(error||!data?.length)return;
@@ -45468,7 +45507,7 @@ async function refreshLeadsSources(){
     (async()=>{
       try{
         const {data}=await db.from('booking_requests')
-          .select('id,customer_name,customer_phone,customer_email,service_name,address,notes,requested_date,requested_time,created_at,status')
+          .select('id,customer_name,customer_phone,customer_email,service_name,address,notes,requested_date,requested_time,created_at,status,sms_consent')
           .eq('business_id',currentBusiness.id).eq('status','abandoned')
           .order('created_at',{ascending:false}).limit(40);
         S.abandonedLeads=data||[];

@@ -7880,6 +7880,11 @@
         email: r.customer_email || r.email || '',
         address: r.address || '',
         service: service,
+        // Which channels this lead may actually be contacted on. smsConsent
+        // comes from the booking_requests column, never from parsing notes:
+        // TRUE only on an explicit yes, so NULL ("never asked") and false
+        // ("declined") both correctly mean "do not text".
+        smsConsent: r.sms_consent === true,
         source: 'abandoned',
         jobStatus: 'abandoned',
         isAbandoned: true,
@@ -9041,15 +9046,27 @@
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-detail-close" title="Close" aria-label="Close">✕</button>' +
       '</div>';
 
+    // Text and Recover Booking both send SMS, so both are gated on recorded
+    // transactional consent. DISABLED rather than badged: a warning beside a
+    // live button is advisory, and one tap is all a TCPA problem needs. Call and
+    // Email stay available — an abandoned booking is a lead the business can
+    // work regardless; only the text channel is gated.
+    var canText = !!(lead && lead.smsConsent === true && lead.phone);
+    var noTextWhy = (!lead || !lead.phone)
+      ? 'No phone on this lead'
+      : 'No SMS consent \u2014 call or email instead';
+    var textAttrs = canText
+      ? ' title="Text" aria-label="Text"'
+      : ' disabled aria-disabled="true" title="' + esc(noTextWhy) + '" aria-label="' + esc(noTextWhy) + '"';
     var quickActions = '<div class="jos-ld-qa">' +
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-call" title="Call" aria-label="Call">' +
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.7A2 2 0 0 1 4 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.6a2 2 0 0 1-.4 2.1L8.1 9.9a16 16 0 0 0 6 6l1.5-1.1a2 2 0 0 1 2.1-.4c.8.3 1.7.5 2.6.6A2 2 0 0 1 22 16.9z"/></svg></button>' +
-      '<button type="button" class="jos-icon-btn" data-jos-act="leads-sms" title="Text" aria-label="Text">' +
+      '<button type="button" class="jos-icon-btn' + (canText ? '' : ' is-disabled') + '" data-jos-act="leads-sms"' + textAttrs + '>' +
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button>' +
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-email" title="Email" aria-label="Email">' +
       '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="m22 6-10 7L2 6"/></svg></button>' +
       (recover
-        ? '<button type="button" class="jos-icon-btn jos-ld-qa-recover" data-jos-act="leads-recover-sms" title="Recover Booking" aria-label="Recover Booking">' +
+        ? '<button type="button" class="jos-icon-btn jos-ld-qa-recover' + (canText ? '' : ' is-disabled') + '"' + (canText ? '' : ' disabled aria-disabled="true"') + ' data-jos-act="leads-recover-sms" title="Recover Booking" aria-label="Recover Booking">' +
           '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>'
         : '') +
       '<button type="button" class="jos-icon-btn" data-jos-act="leads-more-menu" title="More" aria-label="More">⋯</button>' +
@@ -10739,6 +10756,14 @@
       }
       if (act === 'leads-recover-sms') {
         if (!lead) return toast('Select a lead first');
+        // Recovery is an SMS send, so it needs the same consent as leads-sms.
+        // This one matters more: it records an outbound message on the lead and
+        // marks them contacted, so firing it without consent both texts someone
+        // who declined AND writes a false record that it was legitimate.
+        if (lead.smsConsent !== true) {
+          return toast('This lead didn\u2019t agree to texts \u2014 call or email instead');
+        }
+        if (!lead.phone) return toast('No phone on this lead');
         var sms = leadRecoverySms(lead);
         mutateLead(function (l) {
           l.messages = l.messages || [];
@@ -11229,8 +11254,16 @@
         return;
       }
       if (act === 'leads-sms') {
-        if (lead && lead.phone) location.href = 'sms:' + String(lead.phone).replace(/\D/g, '');
-        else toast('No phone on this lead');
+        // Enforced here as well as in the render. `disabled` is a UI affordance,
+        // not a guard: this handler is reachable by keyboard, by a stale DOM
+        // after a re-render, and by anything dispatching the action directly.
+        // Consent is checked where the message is actually sent.
+        if (!lead || !lead.phone) { toast('No phone on this lead'); return; }
+        if (lead.smsConsent !== true) {
+          toast('This lead didn\u2019t agree to texts \u2014 call or email instead');
+          return;
+        }
+        location.href = 'sms:' + String(lead.phone).replace(/\D/g, '');
         return;
       }
       if (act === 'leads-email') {

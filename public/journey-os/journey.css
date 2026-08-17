@@ -643,3 +643,20 @@
   .jos-profile-acts{margin-left:0}
   .jos-mkt-3col{grid-template-columns:1fr}
 }
+
+/* Channel not available for this lead — SMS without recorded consent, or no
+   phone. Visibly inert rather than merely labelled: the owner should not be able
+   to tap it and find out afterwards. Pointer events off so the disabled title
+   still shows on hover but the click never lands. */
+.jos-icon-btn.is-disabled,
+.jos-icon-btn[disabled]{
+  opacity:.38;
+  cursor:not-allowed;
+  pointer-events:auto;
+}
+.jos-icon-btn.is-disabled:hover,
+.jos-icon-btn[disabled]:hover{
+  background:transparent;
+  border-color:inherit;
+  box-shadow:none;
+}
