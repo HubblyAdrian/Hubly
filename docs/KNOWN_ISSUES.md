@@ -988,3 +988,34 @@ right about the code and wrong about the users. `section_order` is read by
 users, establish that the path runs for users at all. A flag, a gate, or a
 second implementation can make a perfectly correct reading of the code a
 perfectly wrong statement about production.
+
+### Resolved 2026-08-17, and what it produced
+
+The flag was set to `true` and `hubly-conversation` redeployed — the constant
+is evaluated once at module load, so warm isolates keep the old value and the
+redeploy is part of the change, not a formality.
+
+Three trades were then rebuilt through the Document path from identical opening
+messages. Top-level section ids:
+
+| grooming | photography | detailing |
+|---|---|---|
+| hero | hero | hero |
+| services | portfolio | mobile-convenience |
+| how-mobile-grooming-works | services | what-to-expect |
+| local-trust | experience | how-it-works |
+| about | service-area | service-area |
+| faq | faq | faq |
+| contact | inquire | contact |
+
+**27% section-id overlap between any two trades**, and the shared ids are the
+ones that should be shared — hero, faq, contact. Against the classic renderer's
+"What we offer / What customers say / Meet X" on every site regardless of trade.
+Photography led with portfolio, which is `leadWith` arriving as prompt text.
+
+**This is the fourth instance today of the same mistake** — code read correctly,
+conclusion wrong, because nobody asked whether the path runs. The other three:
+`api/notify.js` (caller was a `pg_trigger` row), `calcBookingMoney`'s classic
+branch (114 combinations verified on a branch production never takes), and the
+marketplace facade fix (made in `app-marketplace.js`, page drawn by
+`journey.js`). See `AI_CAPABILITY_INVENTORY.md` for the table.

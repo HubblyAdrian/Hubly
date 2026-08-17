@@ -22,7 +22,7 @@ is the one failure that destroys trust permanently.
 
 So every claim below names the code path that invokes it **today**.
 
-## Two rules this audit applied
+## Three rules this audit applied
 
 **1. Production and repo are different things.** On 2026-08-16 five Edge
 Functions were found deployed with no repository file, a live endpoint was
@@ -40,9 +40,36 @@ still be blocked by an environment variable one layer above it. Enumerating
 `name:` declarations cannot see a feature flag. **Check the deployed secret
 list, not only the code.** This audit listed `website.generateDocument` and
 `website.patchDocument` as LIVE; `HUBLY_DOCUMENT_GENERATION_ENABLED` is not set
-on the production project, so both are blocked at `hubly-conversation`'s
-dispatch gate. `business_documents` holds 8 rows — one business, 2026-08-10,
+on the production project, so both were blocked at `hubly-conversation`'s
+dispatch gate. `business_documents` held 8 rows — one business, 2026-08-10,
 one generation and seven patches — and nothing since.
+
+**Resolved the same day:** the flag was set to `true` and `hubly-conversation`
+redeployed (the constant is read once at module load, so the redeploy is
+required, not optional). Three trades rebuilt through the path successfully.
+Both actions are now genuinely LIVE. The rule survives the fix — it is the
+audit method that was wrong, not just this one row.
+
+### The failure this rule is really about
+
+Reachable ≠ enabled is the fourth instance in a single day of the same
+underlying mistake: **the code was read correctly and the conclusion was wrong,
+because nobody asked whether that path runs.**
+
+| # | What was read correctly | What was never asked |
+|---|---|---|
+| 1 | `api/notify.js` had no caller in the codebase | whether a `pg_trigger` row called it — it did |
+| 2 | `calcBookingMoney`'s classic branch, across 114 combinations | whether production ever takes that branch — it never does |
+| 3 | the missing-facade fallback in `app-marketplace.js` | which file draws the page the owner sees — `journey.js` |
+| 4 | `renderHublyDocument` contains no `section_order`, and the registry lists `generateDocument` | whether that renderer serves visitors, and whether a flag blocks the action |
+
+Every one of these was a correct reading of real code. Rigour applied
+downstream of an unasked question produces confident wrong answers, which are
+more expensive than no answer, because they end the investigation.
+
+**Before concluding that code does or doesn't do something for users, prove the
+path runs for users.** A trigger, a flag, a second implementation, or a branch
+that never executes will each turn a correct reading into a false statement.
 
 ---
 
@@ -91,9 +118,9 @@ sms, email: NONE.**
 | Send review request | 🟡 | ✗ | ✗ | — | Uses `send-customer-email`, owner-triggered from `hubly.html` |
 | Analyze photos | 🟡 | ✗ | ✗ | — | `analyze-photos` deployed. **Only caller: `hubly.html`**. Not registered |
 | Creative Director | 🟡 | ✗ | ✗ | — | `creative-director` deployed. Only caller: `hubly.html` |
-| Build a website | 🟢 | ✓ | ✓ | see note | `business.startDraft` + `business.updateDraft` + `business.setServices` write `businesses` columns; `public/hubly.html` renders the live site client-side. **This is the only path that has ever built a real site** |
-| Edit a website | 🟢 | ✓ | ✓ | see note | `business.updateDraft` only — copy, colour, section order, services |
-| Hubly Document generate / patch | ⚫ | ✗ | ✗ | — | `website.generateDocument`, `website.patchDocument` — **shipped dark.** `HUBLY_DOCUMENT_GENERATION_ENABLED` is unset in production, so both are blocked at the dispatch gate. `business_documents` holds 8 rows, one business, all 2026-08-10. Built, deployed, correct, switched off |
+| Build a website | 🟢 | ✓ | ✓ | see note | `business.startDraft` + `business.updateDraft` + `business.setServices` write `businesses` columns; `public/hubly.html` renders the live site client-side. Since 2026-08-17 `startDraft` is normally followed by `website.generateDocument`, which supersedes this rendering for that business |
+| Edit a website | 🟢 | ✓ | ✓ | see note | `business.updateDraft` for row-level fields (copy, brand colour, section order); `website.patchDocument` for anything inside a generated document |
+| Hubly Document generate / patch | 🟢 | ✓ | ✓ | see note | `website.generateDocument`, `website.patchDocument`. **Was shipped dark until 2026-08-17** — `HUBLY_DOCUMENT_GENERATION_ENABLED` was unset, blocking both at the dispatch gate. Flag now set and `hubly-conversation` redeployed; three trades verified end to end. The document is rendered to the visitor by `loadPublicProfile` → `loadLatestBusinessDocumentHtml` in `hubly.html` |
 | Set services | 🟢 | ✓ | ✓ | see note | `business.setServices` |
 | Booking availability / create | 🟢 | ✓ | ✓ | see note | `booking.getAvailability`, `booking.create` |
 | Store / products | 🟢 | ✓ | ✓ | see note | `storefront.*` → owner-gated `commerce-api` |
@@ -115,8 +142,8 @@ Design against these and nothing else. All reached identically:
    `<slug>.myhubly.app`, rendered by `public/hubly.html` from `businesses`
    columns
 2. **Edit that website** — `business.updateDraft` (copy, brand colour,
-   section order) and `business.setServices`. **Not** `generateDocument` or
-   `patchDocument`: see the ⚫ row above, they are switched off in production
+   section order), `business.setServices`, and `website.patchDocument` once a
+   Hubly Document exists
 3. **Set up services** — `business.setServices`
 4. **Bookings** — `booking.getAvailability`, `booking.create`
 5. **Store** — `storefront.*` (11 actions, owner-gated)
