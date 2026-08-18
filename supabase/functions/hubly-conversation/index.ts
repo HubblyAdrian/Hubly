@@ -61,6 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
+import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, rebuildDocumentFromRecord, documentHasOwnerEdits, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
@@ -85,84 +86,6 @@ import {
 // opener with nothing specific to respond to (see isGenericOpener below).
 // Every turn after this one belongs entirely to the model — no scripted
 // flow beyond it.
-
-// The client renders every interimMessage and then `reply`. When the model
-// announces a capability in one round ("Building the full page now, it'll
-// appear in a moment") and then opens its final turn with the same sentence,
-// the owner sees it twice, verbatim, seconds apart. It reads like the request
-// fired twice.
-//
-// Deduped at the boundary rather than by asking the model not to repeat
-// itself: the model cannot know what the client already displayed, and a rule
-// it must carry across rounds is a rule it will eventually drop. Compared on
-// normalised text so casing or trailing punctuation still collapses.
-function normalizeForDedupe(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-}
-
-/** Dice coefficient over normalised word sets. Chosen over Jaccard because it
- *  weights overlap more generously, which suits short conversational lines
- *  where a few shared content words already mean something. */
-function similarity(a: string, b: string): number {
-  const A = new Set(normalizeForDedupe(a).split(" ").filter(Boolean));
-  const B = new Set(normalizeForDedupe(b).split(" ").filter(Boolean));
-  if (!A.size || !B.size) return 0;
-  let shared = 0;
-  for (const w of A) if (B.has(w)) shared++;
-  return (2 * shared) / (A.size + B.size);
-}
-
-/** THE THRESHOLD: 0.6. Measured against the repeats actually observed rather
- *  than picked for roundness. The photos prompt repeated near-verbatim scores
- *  ~0.95; two genuinely different lines in this product score under 0.2. 0.6
- *  sits in open space rather than on top of either cluster. */
-const DUPLICATE_THRESHOLD = 0.6;
-
-/** The exception the threshold cannot catch. "Building the first version now."
- *  and "Building the page now — it'll appear in a moment." are the SAME
- *  statement and score only ~0.43, because English offers many ways to say one
- *  thing. Two lines that both announce a build in progress are a repeat
- *  whatever their wording. */
-const PROGRESS_RE = /\b(building|creating|putting together|working on|generating)\b/i;
-const PAGE_RE = /\b(page|site|website|version|draft)\b/i;
-function isProgressAnnouncement(t: string): boolean {
-  return PROGRESS_RE.test(t) && PAGE_RE.test(t);
-}
-
-function isNearDuplicate(candidate: string, recent: string[]): boolean {
-  for (const prior of recent) {
-    if (similarity(candidate, prior) >= DUPLICATE_THRESHOLD) return true;
-    if (isProgressAnnouncement(candidate) && isProgressAnnouncement(prior)) return true;
-  }
-  return false;
-}
-
-/** Compared against the last few assistant messages, not only the previous one:
- *  the observed photos repeat was two turns apart. */
-const DEDUPE_WINDOW = 4;
-
-function dedupeConversationMessages(
-  interim: string[],
-  reply: string,
-  history: { role: string; content: unknown }[] = [],
-): { interim: string[]; reply: string } {
-  const recent: string[] = history
-    .filter((m) => m.role === "assistant" && typeof m.content === "string")
-    .slice(-DEDUPE_WINDOW)
-    .map((m) => m.content as string);
-
-  const kept: string[] = [];
-  for (const m of interim) {
-    if (!m || !m.trim()) continue;
-    if (isNearDuplicate(m, recent.concat(kept))) continue;
-    kept.push(m);
-  }
-  // The reply is dropped rather than an interim: the interim arrived first and
-  // was true when it arrived.
-  const replyIsDupe = !!reply && isNearDuplicate(reply, recent.concat(kept));
-  return { interim: kept, reply: replyIsDupe ? "" : reply };
-}
-
 
 const DETERMINISTIC_OPENING =
   "I'd love to help.\n\nBefore I make recommendations or build anything, I'd like to learn about your business.\n\nYou can paste a website, your Google Business Profile, Facebook page, Instagram, upload screenshots, or simply tell me you're starting from scratch.";
@@ -664,6 +587,18 @@ Deno.serve(async (req) => {
   );
 
   let history: HublyMessage[] = incoming.slice(-MAX_HISTORY);
+  // PRIOR turns only, snapshotted before this turn appends anything.
+  //
+  // `history` is mutated during the turn: every interim message is pushed at
+  // the invoke site and finalText is pushed before the response is built. So
+  // handing `history` to the dedupe compared each candidate against ITSELF,
+  // scored 1.0, and suppressed it — the transcript went completely silent on
+  // any turn that invoked a capability. Caught by reading the rendered thread,
+  // not the function's return value: the dedupe was working exactly as
+  // written, on the wrong input.
+  const priorAssistantSaid: string[] = incoming
+    .filter((m) => m.role === "assistant" && typeof m.content === "string")
+    .map((m) => m.content as string);
   // Fixed for the whole turn, including any internal capability rounds
   // below — those are server-internal continuations of this one user
   // message, not new input, so the relevance signal shouldn't shift mid-turn.
@@ -1113,7 +1048,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      const deduped = dedupeConversationMessages(interimMessages, finalText, history);
+      const deduped = dedupeConversationMessages(interimMessages, finalText, priorAssistantSaid);
       return jsonRes({
         ok: true,
         // rebuildSkippedNote is empty unless a rebuild was refused over the
