@@ -51,6 +51,8 @@ import {
   buildDocumentSchemaPromptBlock,
   buildDesignRationaleInstructions,
   applyPatchOps,
+  describePatchEffect,
+  humanPatchSummary,
   type HublyDocument,
 } from "./hubly_document.ts";
 import { adminClient } from "./marketplace_provider.ts";
@@ -463,6 +465,12 @@ export async function applyDirectDocumentPatch(
   if (!patchResult.ok) {
     return { ok: false, real: false, summary: "That edit could not be applied safely — nothing changed.", error: "patch_failed", raw: patchResult.errors };
   }
+    // Same guarantee as the conversational path: a click that changes nothing
+    // must not report that it changed something.
+    const directEffect = describePatchEffect(latest.document.root, patchResult.document.root);
+    if (!directEffect.changed) {
+      return { ok: false, real: false, summary: "That edit produced no change to the page.", error: "patch_no_effect" };
+    }
   const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color");
   const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined });
   const r = await callBusinessRpc("create_business_document", {
@@ -477,7 +485,7 @@ export async function applyDirectDocumentPatch(
     return { ok: false, real: false, summary: "The edit was computed but could not be saved.", error: "rpc_failed" };
   }
   const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
-  return { ok: true, real: true, summary: `Real edit applied — ${url} now reflects it (version ${r.version}).`, raw: { id: r.id, version: r.version, url } };
+  return { ok: true, real: true, summary: `Real edit applied — ${humanPatchSummary(directEffect)}. ${url} now reflects it (version ${r.version}).`, raw: { id: r.id, version: r.version, url } };
 }
 
 const HUBLY_DOMAIN = (Deno.env.get("HUBLY_PUBLIC_DOMAIN") || "").trim() || "myhubly.app";
@@ -857,6 +865,27 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!patchResult.ok) {
             return { ok: false, real: false, summary: "That edit could not be applied safely — nothing changed.", error: "patch_failed", raw: { errors: patchResult.errors, usage: patchResult.usage, patchMs, firstAttemptOk: patchResult.firstAttemptOk, firstAttemptErrors: patchResult.firstAttemptErrors } };
           }
+            // VERIFY THE EDIT LANDED BEFORE CLAIMING IT DID.
+            //
+            // "The ops applied" and "the page changed" are different facts, and
+            // this handler reported the second while checking only the first.
+            // An op aimed at a real-but-wrong node applies cleanly. So does
+            // setting a class that is already present. So does whatever the
+            // model invents when a request cannot be expressed in this format
+            // at all -- "make the background black", where no page-background
+            // knob exists. Each produced a confident "Real edit applied" over
+            // an unchanged page: three exchanges, three Dones, nothing moved.
+            const effect = describePatchEffect(latest.document.root, patchResult.document.root);
+            if (!effect.changed) {
+              return {
+                ok: false,
+                real: false,
+                summary:
+                  "Nothing on the page actually changed. The edit was computed and applied cleanly, but comparing the page before and after shows no difference, so this is something the page format cannot currently express rather than an edit that worked. Tell the owner plainly that you cannot make this change yet. Do not retry the same edit, and do not describe it as done.",
+                error: "patch_no_effect",
+                raw: { instruction, patchMs, usage: patchResult.usage },
+              };
+            }
           const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color");
           const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined });
           const r = await callBusinessRpc("create_business_document", {
@@ -874,7 +903,9 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           return {
             ok: true,
             real: true,
-            summary: `Real edit applied — ${url} now reflects it (version ${r.version}). Nothing else on the page changed.`,
+              // Say WHAT changed, not merely that something did. A wrong removal
+              // is obvious the moment it is named, invisible behind a generic "Done".
+              summary: `Real edit applied — ${humanPatchSummary(effect)}. ${url} now reflects it (version ${r.version}). Nothing else changed. Tell the owner specifically what changed, in those terms.`,
             raw: { id: r.id, version: r.version, url, usage: patchResult.usage, patchMs, firstAttemptOk: patchResult.firstAttemptOk, firstAttemptErrors: patchResult.firstAttemptErrors },
           };
         },

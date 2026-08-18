@@ -981,6 +981,126 @@ export type PatchOp =
   | { op: "add_node"; parentId: string; index: number; node: unknown }
   | { op: "replace_node"; id: string; node: unknown };
 
+/**
+ * WHAT A PATCH ACTUALLY DID — measured, not asserted.
+ *
+ * patchDocument used to report `ok: true, "Real edit applied"` whenever the ops
+ * applied cleanly and the row saved. Neither of those facts means the owner's
+ * page changed. An op that targets a real-but-wrong node applies perfectly. An
+ * update_attrs that sets a class already present applies perfectly. A request
+ * the format cannot express at all — "make the background black", when there is
+ * no page-background knob — becomes some op that applies perfectly and does
+ * nothing visible.
+ *
+ * The result was the worst failure this system can have: three exchanges, three
+ * confident "Done"s, and an unchanged page. An owner who is told their site
+ * changed and then looks at it has been given something worse than a refusal.
+ *
+ * So the handler now diffs the tree it started from against the tree it
+ * produced, and reports what genuinely moved. No change means no success
+ * message.
+ */
+export type PatchEffect = {
+  changed: boolean;
+  removed: { id: string; tag: string; label: string }[];
+  added: { id: string; tag: string; label: string }[];
+  textChanged: { id: string; from: string; to: string }[];
+  attrsChanged: { id: string; keys: string[] }[];
+};
+
+/** First readable text inside a node — what a person would call it. */
+function nodeLabel(n: HublyDocumentNode, depth = 0): string {
+  if (typeof n.children === "string") return n.children.trim().slice(0, 80);
+  if (depth > 5 || !Array.isArray(n.children)) return "";
+  for (const c of n.children) {
+    const t = nodeLabel(c, depth + 1);
+    if (t) return t;
+  }
+  return "";
+}
+
+function indexById(
+  n: HublyDocumentNode,
+  into: Map<string, HublyDocumentNode>,
+  parents?: Map<string, string | null>,
+  parentId: string | null = null,
+): Map<string, HublyDocumentNode> {
+  into.set(n.id, n);
+  parents?.set(n.id, parentId);
+  if (Array.isArray(n.children)) for (const c of n.children) indexById(c, into, parents, n.id);
+  return into;
+}
+
+/** True when an ancestor of `id` is itself in `gone`. Removing a section also
+ *  removes its heading; reporting both as separate removals is noise that
+ *  makes a real mistake harder to spot, not easier. */
+function hasRemovedAncestor(id: string, parents: Map<string, string | null>, gone: Set<string>): boolean {
+  let p = parents.get(id) ?? null;
+  while (p) {
+    if (gone.has(p)) return true;
+    p = parents.get(p) ?? null;
+  }
+  return false;
+}
+
+export function describePatchEffect(before: HublyDocumentNode, after: HublyDocumentNode): PatchEffect {
+  const aParents = new Map<string, string | null>();
+  const bParents = new Map<string, string | null>();
+  const a = indexById(before, new Map(), aParents);
+  const b = indexById(after, new Map(), bParents);
+  const effect: PatchEffect = { changed: false, removed: [], added: [], textChanged: [], attrsChanged: [] };
+
+  const goneIds = new Set([...a.keys()].filter((id) => !b.has(id)));
+  const newIds = new Set([...b.keys()].filter((id) => !a.has(id)));
+  for (const id of goneIds) {
+    if (hasRemovedAncestor(id, aParents, goneIds)) continue; // reported via its ancestor
+    const node = a.get(id)!;
+    effect.removed.push({ id, tag: node.tag, label: nodeLabel(node) });
+  }
+  for (const id of newIds) {
+    if (hasRemovedAncestor(id, bParents, newIds)) continue; // reported via its ancestor
+    const node = b.get(id)!;
+    effect.added.push({ id, tag: node.tag, label: nodeLabel(node) });
+  }
+  for (const [id, oldNode] of a) {
+    const newNode = b.get(id);
+    if (!newNode) continue;
+    if (typeof oldNode.children === "string" && typeof newNode.children === "string" && oldNode.children !== newNode.children) {
+      effect.textChanged.push({ id, from: oldNode.children.slice(0, 80), to: newNode.children.slice(0, 80) });
+    }
+    const keys = new Set([...Object.keys(oldNode.attrs || {}), ...Object.keys(newNode.attrs || {})]);
+    const diff = [...keys].filter((k) => (oldNode.attrs || {})[k] !== (newNode.attrs || {})[k]);
+    if (diff.length) effect.attrsChanged.push({ id, keys: diff });
+  }
+  // Counted from the raw id sets, not the de-duplicated report: a change is
+  // a change even when its description rolls up into an ancestor.
+  effect.changed = !!(goneIds.size || newIds.size || effect.textChanged.length || effect.attrsChanged.length);
+  return effect;
+}
+
+/** Plain-language description of a real change, for the owner. Concrete on
+ *  purpose: "removed the section 'Ready to make grooming easier'" lets someone
+ *  catch a wrong removal immediately, where a generic "Done" hides it. */
+export function humanPatchSummary(effect: PatchEffect): string {
+  const parts: string[] = [];
+  for (const r of effect.removed.slice(0, 3)) {
+    parts.push(r.label ? `removed the ${r.tag === "section" ? "section" : r.tag} "${r.label}"` : `removed a ${r.tag}`);
+  }
+  for (const x of effect.added.slice(0, 3)) {
+    parts.push(x.label ? `added "${x.label}"` : `added a ${x.tag}`);
+  }
+  for (const t of effect.textChanged.slice(0, 3)) {
+    parts.push(`changed the text "${t.from}" to "${t.to}"`);
+  }
+  if (effect.attrsChanged.length) {
+    const styling = effect.attrsChanged.filter((c) => c.keys.includes("class")).length;
+    if (styling) parts.push(`restyled ${styling} element${styling === 1 ? "" : "s"}`);
+  }
+  const extra = effect.removed.length + effect.added.length + effect.textChanged.length - 9;
+  if (extra > 0) parts.push(`and ${extra} more change${extra === 1 ? "" : "s"}`);
+  return parts.length ? parts.join(", ") : "no visible change";
+}
+
 export type PatchApplyResult =
   | { ok: true; document: HublyDocument; warnings: ValidationIssue[] }
   | { ok: false; errors: ValidationIssue[] };

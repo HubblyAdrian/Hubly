@@ -85,6 +85,36 @@ import {
 // opener with nothing specific to respond to (see isGenericOpener below).
 // Every turn after this one belongs entirely to the model — no scripted
 // flow beyond it.
+
+// The client renders every interimMessage and then `reply`. When the model
+// announces a capability in one round ("Building the full page now, it'll
+// appear in a moment") and then opens its final turn with the same sentence,
+// the owner sees it twice, verbatim, seconds apart. It reads like the request
+// fired twice.
+//
+// Deduped at the boundary rather than by asking the model not to repeat
+// itself: the model cannot know what the client already displayed, and a rule
+// it must carry across rounds is a rule it will eventually drop. Compared on
+// normalised text so casing or trailing punctuation still collapses.
+function normalizeForDedupe(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, " ").replace(/[.!\u2026]+$/g, "").trim();
+}
+
+function dedupeConversationMessages(interim: string[], reply: string): { interim: string[]; reply: string } {
+  const seen = new Set<string>();
+  const keptInterim: string[] = [];
+  for (const m of interim) {
+    const key = normalizeForDedupe(m);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    keptInterim.push(m);
+  }
+  const replyKey = normalizeForDedupe(reply);
+  // The reply is dropped rather than the interim: the interim arrived first,
+  // and was true when it arrived.
+  return { interim: keptInterim, reply: replyKey && seen.has(replyKey) ? "" : reply };
+}
+
 const DETERMINISTIC_OPENING =
   "I'd love to help.\n\nBefore I make recommendations or build anything, I'd like to learn about your business.\n\nYou can paste a website, your Google Business Profile, Facebook page, Instagram, upload screenshots, or simply tell me you're starting from scratch.";
 
@@ -957,12 +987,13 @@ Deno.serve(async (req) => {
             .map((c: any) => ({ id: c.id, name: c.name, character: typeof c.character === "string" ? c.character : "" }))
             .slice(0, 4)
         : [];
+      const deduped = dedupeConversationMessages(interimMessages, finalText);
       return jsonRes({
         ok: true,
-        reply: finalText,
+        reply: deduped.reply,
         messages: history,
         actions,
-        interimMessages,
+        interimMessages: deduped.interim,
         ...(concepts.length ? { concepts } : {}),
         ...(decision?.askInspiration === true ? { askInspiration: true } : {}),
         ...(decision?.askLogo === true ? { askLogo: true } : {}),
