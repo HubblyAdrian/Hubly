@@ -10236,7 +10236,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="welcome-composer">
         <div class="welcome-input-wrap" id="welcome-input-wrap">
           <textarea id="welcome-input" rows="2" placeholder="Type anything..." aria-label="What are we building today?" autocomplete="off" data-lpignore="true" data-form-type="other"></textarea>
-          <button type="button" class="welcome-mic" id="welcome-mic" title="Voice ready" aria-label="Voice input coming soon">
+          <button type="button" class="welcome-mic" id="welcome-mic" hidden title="Voice input" aria-label="Voice input coming soon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18" aria-hidden="true"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1"/><path d="M12 18v3"/></svg>
           </button>
           <button type="button" class="welcome-send" id="welcome-send" aria-label="Start building" disabled>
@@ -52156,7 +52156,11 @@ function welcomeExperienceMount(){
     send.addEventListener('click',()=>welcomeSubmit());
     document.getElementById('welcome-mic')?.addEventListener('click',()=>{
       const line=document.getElementById('welcome-hubly-line');
-      if(line)line.innerHTML="Voice is ready in the architecture — <strong>type for now</strong>, same conversation.";
+      // Hidden unless a browser can actually listen. The tooltip read "Voice
+      // ready" over a handler that only printed "type for now" — a label for a
+      // capability that does not exist. Nothing here dictates yet, so the
+      // honest state is no control at all.
+      if(line)line.textContent="Voice input isn't available yet — type and I'll pick it up from there.";
     });
   }
   // Rule #24 — consume Hubly Session (+ optional ?q=) from Landing.

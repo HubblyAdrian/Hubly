@@ -141,6 +141,44 @@ button.ask-icon-left:focus-visible{outline:2px solid var(--brand);outline-offset
 .ask-submit svg{width:18px;height:18px}
 
 /* Trust row */
+/* Audience cards — the two doors out of the hero. In the design and absent from
+   the markup until 2026-08-18: "FOR CONSUMERS" / "FOR BUSINESS OWNERS" returned
+   zero matches across every page in public/. */
+.aud-row{
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;
+  max-width:860px;margin:34px auto 0;width:100%;
+}
+.aud-card{
+  display:flex;flex-direction:column;gap:8px;text-align:left;text-decoration:none;
+  padding:22px 22px 20px;border-radius:16px;
+  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.10);
+  transition:border-color .16s ease,background .16s ease,transform .16s ease;
+}
+.aud-card:hover,.aud-card:focus-visible{
+  border-color:rgba(233,116,58,.55);background:rgba(255,255,255,.07);transform:translateY(-2px);outline:none;
+}
+.aud-kicker{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#e9743a}
+.aud-card h3{margin:0;font-size:19px;line-height:1.25;color:#fff;font-weight:700}
+.aud-card ul{margin:4px 0 0;padding:0 0 0 18px;display:grid;gap:5px}
+.aud-card li{font-size:13.5px;line-height:1.45;color:rgba(255,255,255,.78)}
+.aud-go{margin-top:6px;font-size:13px;font-weight:650;color:rgba(255,255,255,.92)}
+.aud-card:hover .aud-go{color:#e9743a}
+@media (max-width:720px){ .aud-row{grid-template-columns:1fr;max-width:420px} }
+
+/* Mic. Stays [hidden] unless the browser actually exposes SpeechRecognition. A
+   control that cannot listen is a label claiming a capability we do not have —
+   the same failure as the "Voice ready" tooltip in hubly.html. */
+.ask-mic{
+  position:absolute;right:56px;top:50%;transform:translateY(-50%);
+  width:34px;height:34px;display:grid;place-items:center;
+  background:none;border:0;border-radius:50%;cursor:pointer;
+  color:rgba(255,255,255,.58);transition:color .15s ease,background .15s ease;
+}
+.ask-mic:hover{color:#fff;background:rgba(255,255,255,.08)}
+.ask-mic[hidden]{display:none}
+.ask-mic svg{width:18px;height:18px}
+.ask-mic.is-listening{color:#e9743a;background:rgba(233,116,58,.16)}
+
 .trust-row{
   position:relative;z-index:1;
   display:grid;grid-template-columns:repeat(3,1fr);gap:20px;
@@ -444,6 +482,9 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         <span class="ask-icon-left" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>
         </span>
+        <button type="button" class="ask-mic" id="heroMic" aria-label="Speak instead of typing" title="Speak instead of typing" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"></path><path d="M5 11a7 7 0 0 0 14 0"></path><path d="M12 18v3"></path></svg>
+        </button>
         <button type="button" class="ask-submit" id="heroSubmit" aria-label="Continue">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
@@ -466,6 +507,29 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         <h3>Get it done, stress free</h3>
         <p>We handle the details</p>
       </div>
+
+    <div class="aud-row">
+      <a class="aud-card" href="/marketplace">
+        <span class="aud-kicker">For consumers</span>
+        <h3>The Hubly Marketplace</h3>
+        <ul>
+          <li>Find trusted local providers</li>
+          <li>Describe the job in your own words</li>
+          <li>Book and pay in one place</li>
+        </ul>
+        <span class="aud-go">Browse the marketplace &rarr;</span>
+      </a>
+      <a class="aud-card" href="/pro">
+        <span class="aud-kicker">For business owners</span>
+        <h3>Tools to grow your business</h3>
+        <ul>
+          <li>A real website, built in a conversation</li>
+          <li>Take bookings and payments</li>
+          <li>Sell products from your own store</li>
+        </ul>
+        <span class="aud-go">See the tools &rarr;</span>
+      </a>
+    </div>
     </div>
   </div>
 </section>
@@ -1158,6 +1222,59 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     thread.scrollTop = thread.scrollHeight;
     return div;
   }
+
+  // VOICE INPUT — real, or absent. Never a label without the capability.
+  //
+  // hubly.html ships a mic whose entire click handler swaps a line of text to
+  // say "Voice is ready in the architecture — type for now", under a tooltip
+  // reading "Voice ready". There is no SpeechRecognition anywhere in public/.
+  // That is a control claiming something the product cannot do.
+  //
+  // So this one feature-detects first and stays [hidden] when the browser has
+  // no SpeechRecognition. Where it IS supported the mic genuinely dictates into
+  // the hero input; where it is not, there is no mic to mislead anyone.
+  (function hcWireHeroMic(){
+    var mic = document.getElementById('heroMic');
+    var input = document.getElementById('heroInput');
+    if(!mic || !input) return;
+    var Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!Rec) return;                       // stays hidden — no false affordance
+    mic.hidden = false;
+
+    var rec = null, listening = false;
+    function stop(){
+      listening = false;
+      mic.classList.remove('is-listening');
+      mic.setAttribute('aria-label','Speak instead of typing');
+      try{ if(rec) rec.stop(); }catch(e){}
+    }
+    mic.addEventListener('click', function(){
+      if(listening){ stop(); return; }
+      try{
+        rec = new Rec();
+        rec.lang = navigator.language || 'en-US';
+        rec.interimResults = true;
+        rec.continuous = false;
+      }catch(e){ mic.hidden = true; return; }
+
+      var base = input.value ? input.value.replace(/\s+$/,'') + ' ' : '';
+      rec.onresult = function(ev){
+        var text = '';
+        for(var i = ev.resultIndex; i < ev.results.length; i++) text += ev.results[i][0].transcript;
+        input.value = base + text;
+      };
+      // A denied permission or a browser that says no must not leave the
+      // control stuck mid-listen with nothing happening.
+      rec.onerror = function(){ stop(); };
+      rec.onend = function(){ stop(); };
+      try{
+        rec.start();
+        listening = true;
+        mic.classList.add('is-listening');
+        mic.setAttribute('aria-label','Stop listening');
+      }catch(e){ stop(); }
+    });
+  })();
 
   function hcActivate(){
     if(hc.active) return;
