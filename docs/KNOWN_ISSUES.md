@@ -1057,8 +1057,8 @@ correctly-guarded policies into false alarms. Read `with_check` for INSERT and
 
 **Assume any path that reports success does not verify, until proven otherwise.**
 
-Five confirmed instances, all found the same way — by checking the result rather
-than the return value:
+Seven confirmed instances, all found the same way — by checking the result
+rather than the return value:
 
 | # | What reported success | What actually happened |
 |---|---|---|
@@ -1067,11 +1067,26 @@ than the return value:
 | 3 | "Done — the logo element was restyled" | no change to the page. Twice |
 | 4 | slug-availability check | RLS returned `[]`, read as "slug is free" |
 | 5 | `hostBrandImage` | three upload failures swallowed, a `data:` URI written |
+| 6 | click-to-edit fast path | a real edit landed and NOTHING was said — `reply: ""` returned unconditionally, `humanPatchSummary` computed and discarded |
+| 7 | `dedupeConversationMessages` | every message compared against itself, so the whole transcript was suppressed on any turn that invoked a capability |
 
 The shape is always the same: an operation returns 200, or a function returns a
 value, and the caller treats that as evidence of the outcome. It is not. A
 column write is not a rendered page; a 200 is not a row; a non-null return is
 not a successful upload.
+
+**6 and 7 are the same failure wearing the other coat: silent SUCCESS.** From
+the person's side there is no difference. You clicked something, the product
+said nothing, and you cannot tell whether it worked, whether it is still
+thinking, or whether you should try again. That ambiguity is what made "make
+the logo bigger" so infuriating — not the failures, the silence around them.
+
+So the rule has a second half. A path that reports to a person must not only
+verify the outcome, it must **say the outcome**, including when the outcome is
+"nothing changed". `CapabilityActionResult` now separates `summary` (what to
+log — versions, URLs, whether the work was real) from `humanNote` (what to
+say). Any action a person triggers DIRECTLY has no model turn to narrate it,
+so an action that sets no `humanNote` is an action that happens in silence.
 
 When touching any path that reports success to a person, verify against the
 thing the person cares about — the rendered result, the row that came back, the
