@@ -1852,8 +1852,10 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   // here; this is the only side that ever talks to the server, using the
   // exact same request shape hcCall already uses, just a leaner
   // server-side path (see hubly-conversation/index.ts: directEdit /
-  // directImageEdit short-circuit before the model loop — no chat message,
-  // no typing indicator, the canvas update is the whole response).
+  // directImageEdit short-circuit before the model loop — no typing
+  // indicator and no LLM call, but it does answer: the server sends back a
+  // humanNote, and dropping it on the floor here is what made a real edit
+  // land in silence.
   function hcSendDirectEdit(payload){
     if(hc.busy || !hc.draftBusiness) return;
     hc.busy = true;
@@ -1870,8 +1872,17 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
           hcRefreshCanvasFrame();
         }
         if(data && data.draftGrant) hcExchangeDraftGrant(data.draftGrant);
+        // SAY IT. The server computes exactly what changed and now returns it;
+        // this used to ignore the reply entirely, so an edit that worked and an
+        // edit that failed looked identical from the chair. Failures come back
+        // ok:false with their own sentence, which is the more important half.
+        if(data && data.reply) hcAppendMessage('hubly', data.reply);
+        else if(data && data.ok === false) hcAppendMessage('hubly', "That edit didn't go through — mind trying it again?");
       })
-      .catch(function(){ hc.busy = false; });
+      .catch(function(){
+        hc.busy = false;
+        hcAppendMessage('hubly', "That edit didn't reach me — mind trying it again?");
+      });
   }
 
   window.addEventListener('message', function(event){
