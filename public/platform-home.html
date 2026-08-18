@@ -237,7 +237,11 @@ button.ask-icon-left:focus-visible{outline:2px solid var(--brand);outline-offset
 /* Experience 1 — Hubly Conversation. No loading screen, no splash — the
    hero fades, this fades in over it. URL never changes, page never reloads. */
 .hero.hc-transforming .hero-copy{opacity:0;transform:translateY(-12px);transition:opacity .4s ease,transform .4s ease;pointer-events:none}
-body.hc-active #categories,body.hc-active .footer{display:none}
+/* The conversation view is fixed and covers the viewport, but the hero stayed in
+   the layout behind it — still focusable, still read by screen readers, and the
+   audience cards with it. Hidden once the app is active; this runs after
+   hcActivate's 420ms .hc-transforming animation, so it does not cut it short. */
+body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:none}
 /* Drop target — a visible edge and a dimmed pane, so it is obvious the chat
    will take the file rather than the browser navigating away from it. */
 .hc-app.hc-dragging{outline:2px dashed var(--brand,#D9632D);outline-offset:-10px;}
