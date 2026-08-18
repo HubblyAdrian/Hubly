@@ -137,44 +137,215 @@ export const RADII = ["none", "sm", "md", "lg", "xl", "2xl", "full"];
 export const ASPECTS = ["square", "video", "[3/4]", "[4/3]", "[16/9]"];
 export const WIDTH_FRACTIONS = ["full", "1/2", "1/3", "2/3", "1/4", "3/4"];
 
+/**
+ * THE CLASS VOCABULARY — one declaration, two consumers.
+ *
+ * This file's header has always claimed that what the model is told and what
+ * the validator enforces "must never be able to drift apart, because they're
+ * the same source." That was aspirational: the validator's token set was built
+ * by one block of code and the prompt's styling list was hand-written prose
+ * beside it. They drifted, and stayed drifted for months.
+ *
+ * ELEVEN families were accepted by the validator and never mentioned to the
+ * model: aspect-*, object-cover, object-contain, overflow-hidden, relative,
+ * absolute, inset-0, uppercase/lowercase/capitalize, flex-wrap, inline-block,
+ * and the whole gradient set. The cost was not theoretical. Told to build a
+ * photo placeholder "with an aspect ratio", the model had no aspect class in
+ * the vocabulary it had been shown, so it used min-h-screen — the only height
+ * token it had ever been offered — and produced a full-viewport grey rectangle
+ * in the hero of every visual business.
+ *
+ * So the two are now generated from ONE array. `tokens` feeds the validator,
+ * `prompt` feeds the model, and a family cannot exist without both because the
+ * type requires both. Adding a family to the validator without telling the
+ * model is no longer something you can do by forgetting.
+ *
+ * `prompt` uses compact notation (`p/px/py-{0,1,2…}`) rather than enumerating
+ * every token, deliberately — spacing alone is 196 tokens and a prompt that
+ * lists them all buys nothing. What the structure guarantees is that no FAMILY
+ * is silently missing, which is the failure that actually happened.
+ * verifyVocabularyCoverage() below checks the token level too.
+ */
+type ClassFamily = {
+  id: string;
+  /** Every token this family contributes to the validator. */
+  tokens: string[];
+  /** How the family is offered to the model. Required — see above. */
+  prompt: string;
+};
+
+const CLASS_FAMILIES: ClassFamily[] = [
+  {
+    id: "spacing",
+    tokens: SPACING_PREFIXES.flatMap((p) => SPACING_SCALE.map((v) => `${p}-${v}`)),
+    prompt: `Spacing: ${SPACING_PREFIXES.join("/")}-{${SPACING_SCALE.join(",")}} (e.g. "py-16", "px-8", "gap-6")`,
+  },
+  {
+    // margin "auto" is a distinct CSS value, not a spacing-scale number — real
+    // Tailwind only defines it for margin (m/mx/my), never padding or gap.
+    id: "margin-auto",
+    tokens: ["m-auto", "mx-auto", "my-auto"],
+    prompt: `Centering: m-auto, mx-auto, my-auto — the ONLY non-numeric spacing values`,
+  },
+  {
+    id: "text-size",
+    tokens: TEXT_SIZES.map((v) => `text-${v}`),
+    prompt: `Text size: text-{${TEXT_SIZES.join(",")}}`,
+  },
+  {
+    id: "font-weight",
+    tokens: FONT_WEIGHTS.map((v) => `font-${v}`),
+    prompt: `Font weight: font-{${FONT_WEIGHTS.join(",")}}`,
+  },
+  {
+    id: "font-family",
+    tokens: ["font-serif", "font-sans", "font-mono", "italic"],
+    prompt: `Typeface: font-serif, font-sans, font-mono, italic`,
+  },
+  {
+    id: "tracking",
+    tokens: TRACKING.map((v) => `tracking-${v}`),
+    prompt: `Tracking: tracking-{${TRACKING.join(",")}}`,
+  },
+  {
+    id: "leading",
+    tokens: LEADING.map((v) => `leading-${v}`),
+    prompt: `Leading: leading-{${LEADING.join(",")}}`,
+  },
+  {
+    id: "color",
+    tokens: COLOR_ROLES.flatMap((v) => [`text-${v}`, `bg-${v}`, `border-${v}`]),
+    prompt: `Color roles (not raw hex — these map to the business's real brand color + a neutral scale): ${COLOR_ROLES.map((c) => `text-${c}/bg-${c}/border-${c}`).join(", ")}`,
+  },
+  {
+    id: "text-align",
+    tokens: ["text-left", "text-center", "text-right"],
+    prompt: `Alignment: text-left, text-center, text-right`,
+  },
+  {
+    id: "text-transform",
+    tokens: ["uppercase", "lowercase", "capitalize"],
+    prompt: `Text transform: uppercase, lowercase, capitalize`,
+  },
+  {
+    id: "display",
+    tokens: ["flex", "grid", "block", "inline-block", "hidden"],
+    prompt: `Display: flex, grid, block, inline-block, hidden`,
+  },
+  {
+    id: "flexbox",
+    tokens: [
+      "flex-row", "flex-col", "flex-wrap",
+      "items-center", "items-start", "items-end",
+      "justify-center", "justify-between", "justify-start", "justify-end", "justify-around",
+    ],
+    prompt: `Flex: flex-row, flex-col, flex-wrap, items-{center,start,end}, justify-{center,between,start,end,around}`,
+  },
+  {
+    id: "grid",
+    tokens: [
+      ...GRID_COLS.map((v) => `grid-cols-${v}`),
+      ...COL_SPANS.map((v) => `col-span-${v}`),
+    ],
+    prompt: `Grid: grid-cols-{${GRID_COLS.join(",")}}, col-span-{${COL_SPANS.join(",")}}`,
+  },
+  {
+    id: "sizing",
+    tokens: [
+      ...MAX_WIDTHS.map((v) => `max-w-${v}`),
+      ...WIDTH_FRACTIONS.map((v) => `w-${v}`),
+      ...WIDTH_FRACTIONS.map((v) => `h-${v}`),
+      "min-h-screen",
+    ],
+    prompt: `Sizing: max-w-{${MAX_WIDTHS.join(",")}}, w-{${WIDTH_FRACTIONS.join(",")}}, h-{${WIDTH_FRACTIONS.join(",")}}, min-h-screen`,
+  },
+  {
+    id: "aspect",
+    tokens: ASPECTS.map((v) => `aspect-${v}`),
+    prompt: `Proportion: aspect-{${ASPECTS.join(",")}} — USE THESE to size an image or an image placeholder. min-h-screen makes a box a whole viewport tall and is for a full-height hero SECTION only; on a picture frame it produces a giant grey rectangle, which is the single most common way one of these pages comes out broken`,
+  },
+  {
+    id: "media-fit",
+    tokens: ["object-cover", "object-contain", "overflow-hidden"],
+    prompt: `Media fit: object-cover, object-contain, overflow-hidden — object-cover on an <img> inside an aspect-* box is how a photo fills its frame without distorting`,
+  },
+  {
+    id: "position",
+    tokens: ["relative", "absolute", "inset-0"],
+    prompt: `Positioning: relative, absolute, inset-0 — an absolute child with inset-0 inside a relative parent fills it exactly. This is how you put text OVER a full-bleed image, or lay a scrim across one`,
+  },
+  {
+    id: "radius",
+    tokens: ["rounded", ...RADII.map((v) => `rounded-${v}`)],
+    prompt: `Radius: rounded, rounded-{${RADII.join(",")}}`,
+  },
+  {
+    id: "shadow",
+    tokens: ["shadow", "shadow-md", "shadow-lg", "shadow-xl"],
+    prompt: `Shadow: shadow, shadow-{md,lg,xl}`,
+  },
+  {
+    id: "border",
+    tokens: ["border", "border-2"],
+    prompt: `Border: border, border-2`,
+  },
+  {
+    id: "gradient",
+    tokens: [
+      "bg-gradient-to-br", "bg-gradient-to-r", "bg-gradient-to-b",
+      "from-brand-500", "from-brand-600", "from-brand-700", "from-brand-800",
+      "to-brand-600", "to-brand-700", "to-brand-800", "to-brand-900",
+    ],
+    prompt: `Gradients: bg-gradient-to-{r,b,br} with from-brand-{500,600,700,800} and to-brand-{600,700,800,900} — for a hero wash or a scrim that keeps text readable over an image`,
+  },
+];
+
 function buildUtilityClassSet(): Set<string> {
   const s = new Set<string>();
-  for (const p of SPACING_PREFIXES) for (const v of SPACING_SCALE) s.add(`${p}-${v}`);
-  for (const v of TEXT_SIZES) s.add(`text-${v}`);
-  for (const v of FONT_WEIGHTS) s.add(`font-${v}`);
-  for (const v of TRACKING) s.add(`tracking-${v}`);
-  for (const v of LEADING) s.add(`leading-${v}`);
-  for (const v of COLOR_ROLES) { s.add(`text-${v}`); s.add(`bg-${v}`); s.add(`border-${v}`); }
-  for (const v of MAX_WIDTHS) s.add(`max-w-${v}`);
-  for (const v of GRID_COLS) s.add(`grid-cols-${v}`);
-  for (const v of COL_SPANS) s.add(`col-span-${v}`);
-  s.add("rounded"); // bare = default/medium radius
-  for (const v of RADII) s.add(`rounded-${v}`);
-  for (const v of ASPECTS) s.add(`aspect-${v}`);
-  for (const v of WIDTH_FRACTIONS) { s.add(`w-${v}`); s.add(`h-${v}`); }
-  [
-    "font-serif", "font-sans", "font-mono", "italic", "uppercase", "lowercase", "capitalize",
-    "text-left", "text-center", "text-right",
-    "flex", "grid", "block", "inline-block", "hidden",
-    "flex-row", "flex-col", "flex-wrap", "items-center", "items-start", "items-end",
-    "justify-center", "justify-between", "justify-start", "justify-end", "justify-around",
-    "min-h-screen", "object-cover", "object-contain", "overflow-hidden",
-    "shadow", "shadow-md", "shadow-lg", "shadow-xl",
-    "border", "border-2",
-    "relative", "absolute", "inset-0",
-    // margin "auto" is a distinct CSS value, not a spacing-scale number —
-    // real Tailwind only defines it for margin (m/mx/my), never padding or
-    // gap, so it's listed explicitly here rather than folded into the
-    // numeric SPACING_SCALE loop above.
-    "m-auto", "mx-auto", "my-auto",
-    "bg-gradient-to-br", "bg-gradient-to-r", "bg-gradient-to-b",
-    "from-brand-500", "from-brand-600", "from-brand-700", "from-brand-800",
-    "to-brand-600", "to-brand-700", "to-brand-800", "to-brand-900",
-  ].forEach((c) => s.add(c));
+  for (const family of CLASS_FAMILIES) for (const t of family.tokens) s.add(t);
   return s;
 }
 
 export const UTILITY_CLASSES = buildUtilityClassSet();
+
+/** The styling section of the prompt, generated from the same array the
+ *  validator is built from. */
+export function buildStylingPromptBlock(): string {
+  return CLASS_FAMILIES.map((f) => `- ${f.prompt}`).join("\n");
+}
+
+/**
+ * Fails loudly when the validator accepts something the model was never told
+ * about. This is the check that would have caught the aspect-* gap on the day
+ * it was introduced instead of months later.
+ *
+ * Two levels, because they catch different mistakes:
+ *   - a family with an empty prompt (someone added tokens and left the text)
+ *   - a token whose family prompt never mentions its head, e.g. adding
+ *     "sticky" to the position family without updating that family's text
+ *
+ * Returns problems rather than throwing, so callers choose: the test asserts
+ * it is empty, and buildDocumentSchemaPromptBlock logs rather than taking a
+ * live generation down over a prompt-wording issue.
+ */
+export function verifyVocabularyCoverage(): string[] {
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  for (const f of CLASS_FAMILIES) {
+    if (!f.prompt.trim()) problems.push(`family "${f.id}" has no prompt text`);
+    if (!f.tokens.length) problems.push(`family "${f.id}" contributes no tokens`);
+    for (const t of f.tokens) {
+      if (seen.has(t)) continue;
+      seen.add(t);
+      // "aspect-square" -> head "aspect"; bare tokens are their own head.
+      const head = t.includes("-") ? t.slice(0, t.indexOf("-")) : t;
+      if (!f.prompt.includes(head)) {
+        problems.push(`token "${t}" (family "${f.id}") is accepted by the validator but its family prompt never mentions "${head}"`);
+      }
+    }
+  }
+  return problems;
+}
 const RESPONSIVE_PREFIXES = ["sm:", "md:", "lg:"];
 
 function isValidClassToken(token: string): boolean {
@@ -194,14 +365,41 @@ const ALLOWED_MEDIA_ORIGINS = [
   "https://images.unsplash.com/",
 ];
 
+/**
+ * Hosts whose entire purpose is to capture a customer's intent somewhere Hubly
+ * cannot see it. A link to one of these turns a Hubly-built page into a
+ * funnel for a competing system: the business gets the booking, Hubly gets no
+ * lead, no record and nothing to follow up.
+ *
+ * This is a DENYLIST and denylists leak — someone can always self-host a form.
+ * It is here because the common cases are common, not because it is complete.
+ * The guarantee that actually holds is the document-level rule in
+ * validateHublyDocument: every generated page must contain a real Hubly intent
+ * element. This list stops the obvious ways to undermine that.
+ */
+const OFF_PLATFORM_CAPTURE_HOSTS = [
+  "calendly.com", "typeform.com", "docs.google.com", "forms.gle", "forms.office.com",
+  "jotform.com", "acuityscheduling.com", "squareup.com", "setmore.com", "booksy.com",
+  "wufoo.com", "formstack.com", "mailchi.mp", "hubspot.com", "square.site",
+];
+
+function isOffPlatformCaptureUrl(u: URL): boolean {
+  const host = u.hostname.toLowerCase().replace(/^www\./, "");
+  return OFF_PLATFORM_CAPTURE_HOSTS.some((h) => host === h || host.endsWith("." + h));
+}
+
 function isValidHref(href: string): boolean {
   if (HUBLY_HREF_SCHEME_RE.test(href)) return true;
   if (/^tel:\+?[0-9()\-.\s]+$/.test(href)) return true;
-  if (/^mailto:[^\s@]+@[^\s@]+\.[^\s@]+$/.test(href)) return true;
+  // mailto: is deliberately NOT accepted. An email address may appear as text
+  // — that is information, and useful. A clickable mailto is a lead-capture
+  // CTA that routes into someone's inbox instead of into Leads, which is the
+  // exact failure this rule exists to prevent. Use HublyContactForm.
   if (href.startsWith("#")) return true;
   try {
     const u = new URL(href);
-    return u.protocol === "https:" || u.protocol === "http:";
+    if (u.protocol !== "https:" && u.protocol !== "http:") return false;
+    return !isOffPlatformCaptureUrl(u);
   } catch {
     return false;
   }
@@ -260,7 +458,17 @@ function validateAttrs(tag: string, attrs: Record<string, unknown>, path: string
     }
     if (key === "href") {
       if (tag !== "a") { errors.push({ path, message: `"href" only allowed on <a>` }); continue; }
-      if (!isValidHref(val)) { errors.push({ path, message: `invalid or disallowed href: ${val}` }); continue; }
+      if (!isValidHref(val)) {
+        // Say WHY for the two cases the model will hit deliberately, so the
+        // one retry can actually repair them instead of guessing.
+        const why = val.startsWith("mailto:")
+          ? `mailto: links are not allowed — an enquiry sent by email never reaches Hubly. Show the address as plain text if it is useful information, and use HublyContactForm for the actual call to action`
+          : /^https?:/i.test(val)
+          ? `this link sends the customer to an off-platform booking or form service — use HublyBooking or HublyContactForm so the lead reaches the business inside Hubly`
+          : `invalid or disallowed href: ${val}`;
+        errors.push({ path, message: why });
+        continue;
+      }
       clean.href = val;
       continue;
     }
@@ -315,7 +523,7 @@ function validateReservedAttrs(tag: string, attrs: Record<string, unknown>, path
   return clean;
 }
 
-type WalkContext = { takenIds: Set<string>; h1Count: number; errors: ValidationIssue[]; warnings: ValidationIssue[] };
+type WalkContext = { takenIds: Set<string>; h1Count: number; intentElementCount: number; errors: ValidationIssue[]; warnings: ValidationIssue[] };
 
 function walkAndValidate(raw: unknown, path: string, ctx: WalkContext): HublyDocumentNode | null {
   if (!raw || typeof raw !== "object") {
@@ -331,6 +539,10 @@ function walkAndValidate(raw: unknown, path: string, ctx: WalkContext): HublyDoc
     return null;
   }
   if (tag === "h1") ctx.h1Count++;
+  // The two reserved elements that actually capture a customer's intent and
+  // route it into Hubly. HublyReviews/HublyMap/HublyCustomerPortal display or
+  // serve existing customers; neither turns a stranger into a lead.
+  if (tag === "HublyBooking" || tag === "HublyContactForm") ctx.intentElementCount++;
 
   const preferredId = typeof r.id === "string" ? r.id : "";
   const id = mintId(preferredId, ctx.takenIds);
@@ -393,10 +605,29 @@ export function validateHublyDocument(raw: unknown, meta: { businessId: string; 
   if (!raw || typeof raw !== "object") return { ok: false, errors: [{ path: "$", message: "document must be an object" }] };
   const r = raw as Record<string, unknown>;
   const rootRaw = r.root ?? raw; // tolerate a bare root node as input too
-  const ctx: WalkContext = { takenIds: new Set(), h1Count: 0, errors, warnings };
+  const ctx: WalkContext = { takenIds: new Set(), h1Count: 0, intentElementCount: 0, errors, warnings };
   const root = walkAndValidate(rootRaw, "$", ctx);
   if (ctx.h1Count !== 1) {
     errors.push({ path: "$", message: `document must contain exactly one <h1> (found ${ctx.h1Count})` });
+  }
+  // INTENT CAPTURE MUST ROUTE INTO HUBLY.
+  //
+  // A site that looks good and sends its enquiries somewhere Hubly cannot see
+  // leaves the business no better off. HublyContactForm writes booking_requests
+  // and lands in Leads; a mailto: link lands in an inbox and Hubly never learns
+  // the lead existed -- no record, no follow-up, nothing to chase. There were
+  // sixteen mailto: links across the documents generated before this rule,
+  // including one to a real business's real address.
+  //
+  // Enforced for `ai` generations only. A patch is an owner deliberately
+  // editing their own page, and blocking them from removing a form would be
+  // overriding the person who owns the business.
+  if (meta.generatedBy === "ai" && ctx.intentElementCount === 0) {
+    errors.push({
+      path: "$",
+      message:
+        "the page gives a visitor no way to make contact that Hubly can see. Include a HublyBooking or HublyContactForm element. A phone number is information, not a route into Hubly",
+    });
   }
   if (errors.length || !root) return { ok: false, errors };
   const document: HublyDocument = {
@@ -662,6 +893,14 @@ export function renderHublyDocument(document: HublyDocument, ctx: RenderContext)
 // ---------------------------------------------------------------------------
 
 export function buildDocumentSchemaPromptBlock(): string {
+  // Second line of defence behind tests/hubly-document-vocabulary.test.mjs.
+  // Logged rather than thrown: a prompt-wording gap should not take a live
+  // generation down, but it must never again be able to sit there unnoticed
+  // for months. This fires once per generation, into the function logs.
+  const coverage = verifyVocabularyCoverage();
+  if (coverage.length) {
+    console.error(`hubly-document vocabulary drift (${coverage.length}):`, coverage.slice(0, 8).join(" | "));
+  }
   const tags = [...ALLOWED_TAGS].join(", ");
   const reserved = [...HUBLY_RESERVED_TAGS].join(", ");
   return `HUBLY DOCUMENT FORMAT — the only output shape you may produce.
@@ -684,24 +923,18 @@ Never write your own <form> or interactive markup for these — place the reserv
 Booking and the contact form are not alternatives to each other and a page may carry both: booking for the customer who already knows what they want, the form for the one who has a question first. Choose on what this business's customers need — not on how much data happens to exist at this moment.
 
 STYLING — every value must be one of these exact tokens (space-separated in "class"), nothing invented:
-- Spacing: ${SPACING_PREFIXES.join("/")}-{${SPACING_SCALE.join(",")}} (e.g. "py-16", "px-8", "gap-6"); margin also allows "auto" (m-auto, mx-auto, my-auto) for centering — this is the ONLY non-numeric spacing value
-- Text size: text-{${TEXT_SIZES.join(",")}}
-- Font weight: font-{${FONT_WEIGHTS.join(",")}}; also font-serif, font-sans, font-mono, italic
-- Tracking: tracking-{${TRACKING.join(",")}}; leading: leading-{${LEADING.join(",")}}
-- Color roles (not raw hex — these map to the business's real brand color + a neutral scale): ${COLOR_ROLES.map((c) => `text-${c}/bg-${c}/border-${c}`).join(", ")}
-- Layout: flex, grid, block, inline-block, hidden, flex-row, flex-col, flex-wrap, items-{center,start,end}, justify-{center,between,start,end,around}, grid-cols-{${GRID_COLS.join(",")}}, col-span-{1..12}
-- Sizing: max-w-{${MAX_WIDTHS.join(",")}}, w-{${WIDTH_FRACTIONS.join(",")}}, h-{${WIDTH_FRACTIONS.join(",")}}, min-h-screen
-- Proportion: aspect-{${ASPECTS.join(",")}} — USE THESE to size an image or an image placeholder. min-h-screen makes a box a whole viewport tall and is for a full-height hero SECTION only; putting it on a picture frame produces a giant grey rectangle, which is the single most common way one of these pages comes out broken.
-- Media fit: object-cover, object-contain, overflow-hidden — object-cover on an <img> inside an aspect-* box is how a photo fills its frame without distorting
-- Positioning: relative, absolute, inset-0 — an absolute child with inset-0 inside a relative parent fills it exactly. This is how you put text OVER a full-bleed image, or lay a scrim across one
-- Text transform: uppercase, lowercase, capitalize
-- Radius/shadow/border: rounded, rounded-{${RADII.join(",")}}, shadow, shadow-{md,lg,xl}, border, border-2
-- Gradients: bg-gradient-to-{r,b,br} with from-brand-{500,600,700,800} and to-brand-{600,700,800,900} — for a hero wash or a scrim that keeps text readable over an image
+${buildStylingPromptBlock()}
 - Responsive: prefix any of the above with sm:/md:/lg: for breakpoint variants
 Class tokens not on this list are rejected, not approximated — pick the closest real token.
 
 IMAGES: <img> requires both "src" and "alt". "src" must be a real, already-uploaded Hubly asset URL you were given — never invent a URL.
-LINKS: <a href> accepts a real URL, tel:, mailto:, an in-page "#anchor", or the reserved schemes hubly:booking / hubly:contact for built-in flows. Never "javascript:" or an invented href.
+LINKS: <a href> accepts a real URL, tel:, an in-page "#anchor", or the reserved schemes hubly:booking / hubly:contact for built-in flows. Never "javascript:" or an invented href. mailto: is NOT accepted, and neither are links to Calendly, Google Forms, Typeform, Acuity or similar.
+
+CAPTURING INTENT — the rule this page exists to satisfy:
+Everything on this page that captures what a customer WANTS must route into Hubly. A visitor who books, enquires or asks a question has to end up as a real lead the business can see and follow up. An enquiry that arrives as an email or a phone call is a lead Hubly never learns about — no record, no reminder, nothing to chase.
+- The primary call to action in any section that asks the visitor to act MUST be a HublyBooking or HublyContactForm element, or an <a href="hubly:booking"> / <a href="hubly:contact"> link. Never a mailto:, never an external form.
+- A phone number is fine as INFORMATION — in a header, a footer, beside a form ("or call us on ..."). It must not be the only or the primary way to make contact.
+- Every page you generate must contain at least one HublyBooking or HublyContactForm. This is enforced by the validator, not a preference: a document without one is rejected.
 
 STRUCTURE: exactly one <h1> in the whole document — the hero headline. Every node needs a stable, human-readable "id" — dotted path convention, e.g. "services.item-2.title". You choose ids; the system deduplicates automatically, so don't worry about collisions.
 
