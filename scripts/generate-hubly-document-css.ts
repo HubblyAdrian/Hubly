@@ -232,8 +232,40 @@ function emitBaseRules() {
     ["bg-gradient-to-br", "background-image: linear-gradient(to bottom right, var(--hc-grad-from), var(--hc-grad-to));"],
     ["bg-gradient-to-r", "background-image: linear-gradient(to right, var(--hc-grad-from), var(--hc-grad-to));"],
     ["bg-gradient-to-b", "background-image: linear-gradient(to bottom, var(--hc-grad-from), var(--hc-grad-to));"],
+    // Added 2026-08-18 — see the ALLOWED_TAGS header in hubly_document.ts for
+    // how these were found. Every one is a static declaration; none holds state.
+    ["sticky", "position: sticky;"],
+    ["fixed", "position: fixed;"],
+    ["top-0", "top: 0;"],
+    ["bottom-0", "bottom: 0;"],
+    ["left-0", "left: 0;"],
+    ["right-0", "right: 0;"],
+    ["overflow-x-auto", "overflow-x: auto;"],
+    ["overflow-y-auto", "overflow-y: auto;"],
+    ["snap-x", "scroll-snap-type: x var(--hc-snap-strictness, proximity);"],
+    ["snap-mandatory", "--hc-snap-strictness: mandatory;"],
+    ["snap-start", "scroll-snap-align: start;"],
+    ["snap-center", "scroll-snap-align: center;"],
+    ["shrink-0", "flex-shrink: 0;"],
+    ["break-inside-avoid", "break-inside: avoid;"],
+    ["transition", "transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms;"],
+    ["duration-150", "transition-duration: 150ms;"],
+    ["duration-300", "transition-duration: 300ms;"],
+    ["duration-500", "transition-duration: 500ms;"],
+    ["opacity-0", "opacity: 0;"],
+    ["opacity-50", "opacity: 0.5;"],
+    ["opacity-100", "opacity: 1;"],
+    ["scale-95", "transform: scale(0.95);"],
+    ["scale-100", "transform: scale(1);"],
+    ["scale-105", "transform: scale(1.05);"],
+    ["translate-y-0", "transform: translateY(0);"],
+    ["translate-y-2", "transform: translateY(0.5rem);"],
+    ["translate-y-4", "transform: translateY(1rem);"],
   ];
   for (const [cls, decl] of layout) rule(cls, decl);
+
+    for (const n of ["2", "3", "4"]) rule(`columns-${n}`, `columns: ${n};`);
+    for (const z of ["10", "20", "30", "40", "50"]) rule(`z-${z}`, `z-index: ${z};`);
 
   for (const step of ["500", "600", "700", "800"]) {
     rule(`from-brand-${step}`, `--hc-grad-from: ${colorValue(`brand-${step}`)};`);
@@ -261,6 +293,20 @@ for (const [prefix, minWidth] of Object.entries(BREAKPOINTS)) {
   }
   lines.push("}");
 }
+
+  // Interaction variants. Same base declarations again, keyed to a pseudo-class
+  // rather than a breakpoint. This is CSS, not behaviour: nothing here holds
+  // state, and it covers the most ordinary affordance there is — a control that
+  // responds to the cursor. Its absence is why "reveal an Add to cart button on
+  // hover" came back as impossible when the visual half is one CSS rule.
+  for (const pseudo of ["hover", "focus"]) {
+    lines.push("");
+    for (const l of baseRuleLines) {
+      const m = l.match(/^#hc-doc-root \.(\S+) \{ (.+) \}$/);
+      if (!m) continue;
+      lines.push(`#hc-doc-root .${pseudo}\\:${m[1]}:${pseudo} { ${m[2]} }`);
+    }
+  }
 
 const outPath = new URL("../public/journey-os/hubly-document.css", import.meta.url).pathname;
 await Deno.writeTextFile(outPath, lines.join("\n") + "\n");

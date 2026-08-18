@@ -200,6 +200,11 @@ button.ask-icon-left:focus-visible{outline:2px solid var(--brand);outline-offset
    hero fades, this fades in over it. URL never changes, page never reloads. */
 .hero.hc-transforming .hero-copy{opacity:0;transform:translateY(-12px);transition:opacity .4s ease,transform .4s ease;pointer-events:none}
 body.hc-active #categories,body.hc-active .footer{display:none}
+/* Drop target — a visible edge and a dimmed pane, so it is obvious the chat
+   will take the file rather than the browser navigating away from it. */
+.hc-app.hc-dragging{outline:2px dashed var(--brand,#D9632D);outline-offset:-10px;}
+.hc-app.hc-dragging .hc-app-left{background:rgba(217,99,45,.04);}
+.hc-app.hc-dragging *{pointer-events:none;}
 .hc-app{
   display:none;position:fixed;inset:0;top:var(--nav-h);z-index:40;
   background:var(--bg);opacity:0;transition:opacity .35s ease;
@@ -1319,6 +1324,91 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   }
   hcWireFileInput('hcFileInput', 'image', 'Here\'s a screenshot for inspiration.');
   hcWireFileInput('hcPdfInput', 'document', 'Here\'s a PDF for inspiration.');
+
+  // Drag and drop onto the chat.
+  //
+  // Everything downstream of this already existed — hcFileToBase64,
+  // hcSendContent, and server-side uploadDraftLogo / uploadDraftHeroImage /
+  // uploadAndPatchDocumentImage. The only missing piece was a way to get a file
+  // in without hunting for a hidden <input>, and dropping a photo onto a chat
+  // is what people actually try first.
+  //
+  // This matters more than it looks. Asked to build ambitious pages, the model
+  // reported that the single thing it could not do was use a real photograph —
+  // "impossible because no uploaded Hubly asset URL was provided". Every
+  // generated site is full of honest grey placeholders waiting for exactly this.
+  (function hcWireDropTarget(){
+    var pane = document.getElementById('hcApp');
+    if(!pane) return;
+    var depth = 0; // dragenter/dragleave fire per child; count them or the overlay flickers
+
+    function isFileDrag(ev){
+      var dt = ev.dataTransfer;
+      if(!dt) return false;
+      if(dt.types && dt.types.length){
+        for(var i = 0; i < dt.types.length; i++) if(dt.types[i] === 'Files') return true;
+        return false;
+      }
+      return true;
+    }
+    function setDragging(on){
+      pane.classList.toggle('hc-dragging', !!on);
+    }
+
+    pane.addEventListener('dragenter', function(ev){
+      if(!isFileDrag(ev)) return;
+      ev.preventDefault();
+      depth++;
+      setDragging(true);
+    });
+    pane.addEventListener('dragover', function(ev){
+      if(!isFileDrag(ev)) return;
+      ev.preventDefault();               // without this the browser navigates to the file
+      ev.dataTransfer.dropEffect = 'copy';
+    });
+    pane.addEventListener('dragleave', function(ev){
+      if(!isFileDrag(ev)) return;
+      depth = Math.max(0, depth - 1);
+      if(!depth) setDragging(false);
+    });
+    pane.addEventListener('drop', function(ev){
+      if(!isFileDrag(ev)) return;
+      ev.preventDefault();
+      depth = 0;
+      setDragging(false);
+      if(hc.busy){
+        hcAppendMessage('hubly', "One moment — I'm still working on the last thing. Try that again in a second.");
+        return;
+      }
+      var files = (ev.dataTransfer && ev.dataTransfer.files) || [];
+      if(!files.length) return;
+      // One file per turn: each becomes a message, and several at once would
+      // fire several requests at a server that handles one turn at a time.
+      var file = files[0];
+      var isPdf = /pdf$/i.test(file.type || '') || /\.pdf$/i.test(file.name || '');
+      var isImage = /^image\//i.test(file.type || '');
+      if(!isImage && !isPdf){
+        hcAppendMessage('hubly', "I can work with images and PDFs — that one I can't read.");
+        return;
+      }
+      if(files.length > 1){
+        hcAppendMessage('hubly', "I'll take these one at a time — starting with " + (file.name || 'the first one') + ".");
+      }
+      hcFileToBase64(file).then(function(data){
+        var kind = isPdf ? 'document' : 'image';
+        var caption = isPdf ? "Here's a PDF." : "Here's a photo.";
+        hcSendContent(
+          [
+            { type: 'text', text: caption },
+            { type: kind, mediaType: file.type || (isPdf ? 'application/pdf' : 'image/png'), data: data }
+          ],
+          caption + ' (' + (file.name || 'file') + ')'
+        );
+      }).catch(function(){
+        hcAppendMessage('hubly', "That file couldn't be read — mind trying a different one?");
+      });
+    });
+  })();
 
   // Inline canvas edit — click headline/subhead/hero-image directly inside
   // the live preview. hubly.html (a separate origin) posts the new value

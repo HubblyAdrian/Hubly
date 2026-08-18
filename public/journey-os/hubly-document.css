@@ -385,6 +385,41 @@
 #hc-doc-root .bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--hc-grad-from), var(--hc-grad-to)); }
 #hc-doc-root .bg-gradient-to-r { background-image: linear-gradient(to right, var(--hc-grad-from), var(--hc-grad-to)); }
 #hc-doc-root .bg-gradient-to-b { background-image: linear-gradient(to bottom, var(--hc-grad-from), var(--hc-grad-to)); }
+#hc-doc-root .sticky { position: sticky; }
+#hc-doc-root .fixed { position: fixed; }
+#hc-doc-root .top-0 { top: 0; }
+#hc-doc-root .bottom-0 { bottom: 0; }
+#hc-doc-root .left-0 { left: 0; }
+#hc-doc-root .right-0 { right: 0; }
+#hc-doc-root .overflow-x-auto { overflow-x: auto; }
+#hc-doc-root .overflow-y-auto { overflow-y: auto; }
+#hc-doc-root .snap-x { scroll-snap-type: x var(--hc-snap-strictness, proximity); }
+#hc-doc-root .snap-mandatory { --hc-snap-strictness: mandatory; }
+#hc-doc-root .snap-start { scroll-snap-align: start; }
+#hc-doc-root .snap-center { scroll-snap-align: center; }
+#hc-doc-root .shrink-0 { flex-shrink: 0; }
+#hc-doc-root .break-inside-avoid { break-inside: avoid; }
+#hc-doc-root .transition { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+#hc-doc-root .duration-150 { transition-duration: 150ms; }
+#hc-doc-root .duration-300 { transition-duration: 300ms; }
+#hc-doc-root .duration-500 { transition-duration: 500ms; }
+#hc-doc-root .opacity-0 { opacity: 0; }
+#hc-doc-root .opacity-50 { opacity: 0.5; }
+#hc-doc-root .opacity-100 { opacity: 1; }
+#hc-doc-root .scale-95 { transform: scale(0.95); }
+#hc-doc-root .scale-100 { transform: scale(1); }
+#hc-doc-root .scale-105 { transform: scale(1.05); }
+#hc-doc-root .translate-y-0 { transform: translateY(0); }
+#hc-doc-root .translate-y-2 { transform: translateY(0.5rem); }
+#hc-doc-root .translate-y-4 { transform: translateY(1rem); }
+#hc-doc-root .columns-2 { columns: 2; }
+#hc-doc-root .columns-3 { columns: 3; }
+#hc-doc-root .columns-4 { columns: 4; }
+#hc-doc-root .z-10 { z-index: 10; }
+#hc-doc-root .z-20 { z-index: 20; }
+#hc-doc-root .z-30 { z-index: 30; }
+#hc-doc-root .z-40 { z-index: 40; }
+#hc-doc-root .z-50 { z-index: 50; }
 #hc-doc-root .from-brand-500 { --hc-grad-from: var(--brand); }
 #hc-doc-root .from-brand-600 { --hc-grad-from: color-mix(in srgb, var(--brand) 88%, black); }
 #hc-doc-root .from-brand-700 { --hc-grad-from: color-mix(in srgb, var(--brand) 74%, black); }
@@ -770,6 +805,41 @@
   #hc-doc-root .sm\:bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--hc-grad-from), var(--hc-grad-to)); }
   #hc-doc-root .sm\:bg-gradient-to-r { background-image: linear-gradient(to right, var(--hc-grad-from), var(--hc-grad-to)); }
   #hc-doc-root .sm\:bg-gradient-to-b { background-image: linear-gradient(to bottom, var(--hc-grad-from), var(--hc-grad-to)); }
+  #hc-doc-root .sm\:sticky { position: sticky; }
+  #hc-doc-root .sm\:fixed { position: fixed; }
+  #hc-doc-root .sm\:top-0 { top: 0; }
+  #hc-doc-root .sm\:bottom-0 { bottom: 0; }
+  #hc-doc-root .sm\:left-0 { left: 0; }
+  #hc-doc-root .sm\:right-0 { right: 0; }
+  #hc-doc-root .sm\:overflow-x-auto { overflow-x: auto; }
+  #hc-doc-root .sm\:overflow-y-auto { overflow-y: auto; }
+  #hc-doc-root .sm\:snap-x { scroll-snap-type: x var(--hc-snap-strictness, proximity); }
+  #hc-doc-root .sm\:snap-mandatory { --hc-snap-strictness: mandatory; }
+  #hc-doc-root .sm\:snap-start { scroll-snap-align: start; }
+  #hc-doc-root .sm\:snap-center { scroll-snap-align: center; }
+  #hc-doc-root .sm\:shrink-0 { flex-shrink: 0; }
+  #hc-doc-root .sm\:break-inside-avoid { break-inside: avoid; }
+  #hc-doc-root .sm\:transition { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+  #hc-doc-root .sm\:duration-150 { transition-duration: 150ms; }
+  #hc-doc-root .sm\:duration-300 { transition-duration: 300ms; }
+  #hc-doc-root .sm\:duration-500 { transition-duration: 500ms; }
+  #hc-doc-root .sm\:opacity-0 { opacity: 0; }
+  #hc-doc-root .sm\:opacity-50 { opacity: 0.5; }
+  #hc-doc-root .sm\:opacity-100 { opacity: 1; }
+  #hc-doc-root .sm\:scale-95 { transform: scale(0.95); }
+  #hc-doc-root .sm\:scale-100 { transform: scale(1); }
+  #hc-doc-root .sm\:scale-105 { transform: scale(1.05); }
+  #hc-doc-root .sm\:translate-y-0 { transform: translateY(0); }
+  #hc-doc-root .sm\:translate-y-2 { transform: translateY(0.5rem); }
+  #hc-doc-root .sm\:translate-y-4 { transform: translateY(1rem); }
+  #hc-doc-root .sm\:columns-2 { columns: 2; }
+  #hc-doc-root .sm\:columns-3 { columns: 3; }
+  #hc-doc-root .sm\:columns-4 { columns: 4; }
+  #hc-doc-root .sm\:z-10 { z-index: 10; }
+  #hc-doc-root .sm\:z-20 { z-index: 20; }
+  #hc-doc-root .sm\:z-30 { z-index: 30; }
+  #hc-doc-root .sm\:z-40 { z-index: 40; }
+  #hc-doc-root .sm\:z-50 { z-index: 50; }
   #hc-doc-root .sm\:from-brand-500 { --hc-grad-from: var(--brand); }
   #hc-doc-root .sm\:from-brand-600 { --hc-grad-from: color-mix(in srgb, var(--brand) 88%, black); }
   #hc-doc-root .sm\:from-brand-700 { --hc-grad-from: color-mix(in srgb, var(--brand) 74%, black); }
@@ -1156,6 +1226,41 @@
   #hc-doc-root .md\:bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--hc-grad-from), var(--hc-grad-to)); }
   #hc-doc-root .md\:bg-gradient-to-r { background-image: linear-gradient(to right, var(--hc-grad-from), var(--hc-grad-to)); }
   #hc-doc-root .md\:bg-gradient-to-b { background-image: linear-gradient(to bottom, var(--hc-grad-from), var(--hc-grad-to)); }
+  #hc-doc-root .md\:sticky { position: sticky; }
+  #hc-doc-root .md\:fixed { position: fixed; }
+  #hc-doc-root .md\:top-0 { top: 0; }
+  #hc-doc-root .md\:bottom-0 { bottom: 0; }
+  #hc-doc-root .md\:left-0 { left: 0; }
+  #hc-doc-root .md\:right-0 { right: 0; }
+  #hc-doc-root .md\:overflow-x-auto { overflow-x: auto; }
+  #hc-doc-root .md\:overflow-y-auto { overflow-y: auto; }
+  #hc-doc-root .md\:snap-x { scroll-snap-type: x var(--hc-snap-strictness, proximity); }
+  #hc-doc-root .md\:snap-mandatory { --hc-snap-strictness: mandatory; }
+  #hc-doc-root .md\:snap-start { scroll-snap-align: start; }
+  #hc-doc-root .md\:snap-center { scroll-snap-align: center; }
+  #hc-doc-root .md\:shrink-0 { flex-shrink: 0; }
+  #hc-doc-root .md\:break-inside-avoid { break-inside: avoid; }
+  #hc-doc-root .md\:transition { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+  #hc-doc-root .md\:duration-150 { transition-duration: 150ms; }
+  #hc-doc-root .md\:duration-300 { transition-duration: 300ms; }
+  #hc-doc-root .md\:duration-500 { transition-duration: 500ms; }
+  #hc-doc-root .md\:opacity-0 { opacity: 0; }
+  #hc-doc-root .md\:opacity-50 { opacity: 0.5; }
+  #hc-doc-root .md\:opacity-100 { opacity: 1; }
+  #hc-doc-root .md\:scale-95 { transform: scale(0.95); }
+  #hc-doc-root .md\:scale-100 { transform: scale(1); }
+  #hc-doc-root .md\:scale-105 { transform: scale(1.05); }
+  #hc-doc-root .md\:translate-y-0 { transform: translateY(0); }
+  #hc-doc-root .md\:translate-y-2 { transform: translateY(0.5rem); }
+  #hc-doc-root .md\:translate-y-4 { transform: translateY(1rem); }
+  #hc-doc-root .md\:columns-2 { columns: 2; }
+  #hc-doc-root .md\:columns-3 { columns: 3; }
+  #hc-doc-root .md\:columns-4 { columns: 4; }
+  #hc-doc-root .md\:z-10 { z-index: 10; }
+  #hc-doc-root .md\:z-20 { z-index: 20; }
+  #hc-doc-root .md\:z-30 { z-index: 30; }
+  #hc-doc-root .md\:z-40 { z-index: 40; }
+  #hc-doc-root .md\:z-50 { z-index: 50; }
   #hc-doc-root .md\:from-brand-500 { --hc-grad-from: var(--brand); }
   #hc-doc-root .md\:from-brand-600 { --hc-grad-from: color-mix(in srgb, var(--brand) 88%, black); }
   #hc-doc-root .md\:from-brand-700 { --hc-grad-from: color-mix(in srgb, var(--brand) 74%, black); }
@@ -1542,6 +1647,41 @@
   #hc-doc-root .lg\:bg-gradient-to-br { background-image: linear-gradient(to bottom right, var(--hc-grad-from), var(--hc-grad-to)); }
   #hc-doc-root .lg\:bg-gradient-to-r { background-image: linear-gradient(to right, var(--hc-grad-from), var(--hc-grad-to)); }
   #hc-doc-root .lg\:bg-gradient-to-b { background-image: linear-gradient(to bottom, var(--hc-grad-from), var(--hc-grad-to)); }
+  #hc-doc-root .lg\:sticky { position: sticky; }
+  #hc-doc-root .lg\:fixed { position: fixed; }
+  #hc-doc-root .lg\:top-0 { top: 0; }
+  #hc-doc-root .lg\:bottom-0 { bottom: 0; }
+  #hc-doc-root .lg\:left-0 { left: 0; }
+  #hc-doc-root .lg\:right-0 { right: 0; }
+  #hc-doc-root .lg\:overflow-x-auto { overflow-x: auto; }
+  #hc-doc-root .lg\:overflow-y-auto { overflow-y: auto; }
+  #hc-doc-root .lg\:snap-x { scroll-snap-type: x var(--hc-snap-strictness, proximity); }
+  #hc-doc-root .lg\:snap-mandatory { --hc-snap-strictness: mandatory; }
+  #hc-doc-root .lg\:snap-start { scroll-snap-align: start; }
+  #hc-doc-root .lg\:snap-center { scroll-snap-align: center; }
+  #hc-doc-root .lg\:shrink-0 { flex-shrink: 0; }
+  #hc-doc-root .lg\:break-inside-avoid { break-inside: avoid; }
+  #hc-doc-root .lg\:transition { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+  #hc-doc-root .lg\:duration-150 { transition-duration: 150ms; }
+  #hc-doc-root .lg\:duration-300 { transition-duration: 300ms; }
+  #hc-doc-root .lg\:duration-500 { transition-duration: 500ms; }
+  #hc-doc-root .lg\:opacity-0 { opacity: 0; }
+  #hc-doc-root .lg\:opacity-50 { opacity: 0.5; }
+  #hc-doc-root .lg\:opacity-100 { opacity: 1; }
+  #hc-doc-root .lg\:scale-95 { transform: scale(0.95); }
+  #hc-doc-root .lg\:scale-100 { transform: scale(1); }
+  #hc-doc-root .lg\:scale-105 { transform: scale(1.05); }
+  #hc-doc-root .lg\:translate-y-0 { transform: translateY(0); }
+  #hc-doc-root .lg\:translate-y-2 { transform: translateY(0.5rem); }
+  #hc-doc-root .lg\:translate-y-4 { transform: translateY(1rem); }
+  #hc-doc-root .lg\:columns-2 { columns: 2; }
+  #hc-doc-root .lg\:columns-3 { columns: 3; }
+  #hc-doc-root .lg\:columns-4 { columns: 4; }
+  #hc-doc-root .lg\:z-10 { z-index: 10; }
+  #hc-doc-root .lg\:z-20 { z-index: 20; }
+  #hc-doc-root .lg\:z-30 { z-index: 30; }
+  #hc-doc-root .lg\:z-40 { z-index: 40; }
+  #hc-doc-root .lg\:z-50 { z-index: 50; }
   #hc-doc-root .lg\:from-brand-500 { --hc-grad-from: var(--brand); }
   #hc-doc-root .lg\:from-brand-600 { --hc-grad-from: color-mix(in srgb, var(--brand) 88%, black); }
   #hc-doc-root .lg\:from-brand-700 { --hc-grad-from: color-mix(in srgb, var(--brand) 74%, black); }
@@ -1551,3 +1691,841 @@
   #hc-doc-root .lg\:to-brand-800 { --hc-grad-to: color-mix(in srgb, var(--brand) 60%, black); }
   #hc-doc-root .lg\:to-brand-900 { --hc-grad-to: color-mix(in srgb, var(--brand) 46%, black); }
 }
+
+#hc-doc-root .hover\:font-serif:hover { font-family: 'DM Sans', serif; }
+#hc-doc-root .hover\:font-sans:hover { font-family: 'Inter', sans-serif; }
+#hc-doc-root .hover\:font-mono:hover { font-family: ui-monospace, monospace; }
+#hc-doc-root .hover\:p-0:hover { padding: 0; }
+#hc-doc-root .hover\:p-1:hover { padding: 0.25rem; }
+#hc-doc-root .hover\:p-2:hover { padding: 0.5rem; }
+#hc-doc-root .hover\:p-3:hover { padding: 0.75rem; }
+#hc-doc-root .hover\:p-4:hover { padding: 1rem; }
+#hc-doc-root .hover\:p-5:hover { padding: 1.25rem; }
+#hc-doc-root .hover\:p-6:hover { padding: 1.5rem; }
+#hc-doc-root .hover\:p-8:hover { padding: 2rem; }
+#hc-doc-root .hover\:p-10:hover { padding: 2.5rem; }
+#hc-doc-root .hover\:p-12:hover { padding: 3rem; }
+#hc-doc-root .hover\:p-16:hover { padding: 4rem; }
+#hc-doc-root .hover\:p-20:hover { padding: 5rem; }
+#hc-doc-root .hover\:p-24:hover { padding: 6rem; }
+#hc-doc-root .hover\:p-32:hover { padding: 8rem; }
+#hc-doc-root .hover\:pt-0:hover { padding-top: 0; }
+#hc-doc-root .hover\:pt-1:hover { padding-top: 0.25rem; }
+#hc-doc-root .hover\:pt-2:hover { padding-top: 0.5rem; }
+#hc-doc-root .hover\:pt-3:hover { padding-top: 0.75rem; }
+#hc-doc-root .hover\:pt-4:hover { padding-top: 1rem; }
+#hc-doc-root .hover\:pt-5:hover { padding-top: 1.25rem; }
+#hc-doc-root .hover\:pt-6:hover { padding-top: 1.5rem; }
+#hc-doc-root .hover\:pt-8:hover { padding-top: 2rem; }
+#hc-doc-root .hover\:pt-10:hover { padding-top: 2.5rem; }
+#hc-doc-root .hover\:pt-12:hover { padding-top: 3rem; }
+#hc-doc-root .hover\:pt-16:hover { padding-top: 4rem; }
+#hc-doc-root .hover\:pt-20:hover { padding-top: 5rem; }
+#hc-doc-root .hover\:pt-24:hover { padding-top: 6rem; }
+#hc-doc-root .hover\:pt-32:hover { padding-top: 8rem; }
+#hc-doc-root .hover\:pb-0:hover { padding-bottom: 0; }
+#hc-doc-root .hover\:pb-1:hover { padding-bottom: 0.25rem; }
+#hc-doc-root .hover\:pb-2:hover { padding-bottom: 0.5rem; }
+#hc-doc-root .hover\:pb-3:hover { padding-bottom: 0.75rem; }
+#hc-doc-root .hover\:pb-4:hover { padding-bottom: 1rem; }
+#hc-doc-root .hover\:pb-5:hover { padding-bottom: 1.25rem; }
+#hc-doc-root .hover\:pb-6:hover { padding-bottom: 1.5rem; }
+#hc-doc-root .hover\:pb-8:hover { padding-bottom: 2rem; }
+#hc-doc-root .hover\:pb-10:hover { padding-bottom: 2.5rem; }
+#hc-doc-root .hover\:pb-12:hover { padding-bottom: 3rem; }
+#hc-doc-root .hover\:pb-16:hover { padding-bottom: 4rem; }
+#hc-doc-root .hover\:pb-20:hover { padding-bottom: 5rem; }
+#hc-doc-root .hover\:pb-24:hover { padding-bottom: 6rem; }
+#hc-doc-root .hover\:pb-32:hover { padding-bottom: 8rem; }
+#hc-doc-root .hover\:pl-0:hover { padding-left: 0; }
+#hc-doc-root .hover\:pl-1:hover { padding-left: 0.25rem; }
+#hc-doc-root .hover\:pl-2:hover { padding-left: 0.5rem; }
+#hc-doc-root .hover\:pl-3:hover { padding-left: 0.75rem; }
+#hc-doc-root .hover\:pl-4:hover { padding-left: 1rem; }
+#hc-doc-root .hover\:pl-5:hover { padding-left: 1.25rem; }
+#hc-doc-root .hover\:pl-6:hover { padding-left: 1.5rem; }
+#hc-doc-root .hover\:pl-8:hover { padding-left: 2rem; }
+#hc-doc-root .hover\:pl-10:hover { padding-left: 2.5rem; }
+#hc-doc-root .hover\:pl-12:hover { padding-left: 3rem; }
+#hc-doc-root .hover\:pl-16:hover { padding-left: 4rem; }
+#hc-doc-root .hover\:pl-20:hover { padding-left: 5rem; }
+#hc-doc-root .hover\:pl-24:hover { padding-left: 6rem; }
+#hc-doc-root .hover\:pl-32:hover { padding-left: 8rem; }
+#hc-doc-root .hover\:pr-0:hover { padding-right: 0; }
+#hc-doc-root .hover\:pr-1:hover { padding-right: 0.25rem; }
+#hc-doc-root .hover\:pr-2:hover { padding-right: 0.5rem; }
+#hc-doc-root .hover\:pr-3:hover { padding-right: 0.75rem; }
+#hc-doc-root .hover\:pr-4:hover { padding-right: 1rem; }
+#hc-doc-root .hover\:pr-5:hover { padding-right: 1.25rem; }
+#hc-doc-root .hover\:pr-6:hover { padding-right: 1.5rem; }
+#hc-doc-root .hover\:pr-8:hover { padding-right: 2rem; }
+#hc-doc-root .hover\:pr-10:hover { padding-right: 2.5rem; }
+#hc-doc-root .hover\:pr-12:hover { padding-right: 3rem; }
+#hc-doc-root .hover\:pr-16:hover { padding-right: 4rem; }
+#hc-doc-root .hover\:pr-20:hover { padding-right: 5rem; }
+#hc-doc-root .hover\:pr-24:hover { padding-right: 6rem; }
+#hc-doc-root .hover\:pr-32:hover { padding-right: 8rem; }
+#hc-doc-root .hover\:px-0:hover { padding-left: 0; padding-right: 0; }
+#hc-doc-root .hover\:px-1:hover { padding-left: 0.25rem; padding-right: 0.25rem; }
+#hc-doc-root .hover\:px-2:hover { padding-left: 0.5rem; padding-right: 0.5rem; }
+#hc-doc-root .hover\:px-3:hover { padding-left: 0.75rem; padding-right: 0.75rem; }
+#hc-doc-root .hover\:px-4:hover { padding-left: 1rem; padding-right: 1rem; }
+#hc-doc-root .hover\:px-5:hover { padding-left: 1.25rem; padding-right: 1.25rem; }
+#hc-doc-root .hover\:px-6:hover { padding-left: 1.5rem; padding-right: 1.5rem; }
+#hc-doc-root .hover\:px-8:hover { padding-left: 2rem; padding-right: 2rem; }
+#hc-doc-root .hover\:px-10:hover { padding-left: 2.5rem; padding-right: 2.5rem; }
+#hc-doc-root .hover\:px-12:hover { padding-left: 3rem; padding-right: 3rem; }
+#hc-doc-root .hover\:px-16:hover { padding-left: 4rem; padding-right: 4rem; }
+#hc-doc-root .hover\:px-20:hover { padding-left: 5rem; padding-right: 5rem; }
+#hc-doc-root .hover\:px-24:hover { padding-left: 6rem; padding-right: 6rem; }
+#hc-doc-root .hover\:px-32:hover { padding-left: 8rem; padding-right: 8rem; }
+#hc-doc-root .hover\:py-0:hover { padding-top: 0; padding-bottom: 0; }
+#hc-doc-root .hover\:py-1:hover { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+#hc-doc-root .hover\:py-2:hover { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+#hc-doc-root .hover\:py-3:hover { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+#hc-doc-root .hover\:py-4:hover { padding-top: 1rem; padding-bottom: 1rem; }
+#hc-doc-root .hover\:py-5:hover { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+#hc-doc-root .hover\:py-6:hover { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+#hc-doc-root .hover\:py-8:hover { padding-top: 2rem; padding-bottom: 2rem; }
+#hc-doc-root .hover\:py-10:hover { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+#hc-doc-root .hover\:py-12:hover { padding-top: 3rem; padding-bottom: 3rem; }
+#hc-doc-root .hover\:py-16:hover { padding-top: 4rem; padding-bottom: 4rem; }
+#hc-doc-root .hover\:py-20:hover { padding-top: 5rem; padding-bottom: 5rem; }
+#hc-doc-root .hover\:py-24:hover { padding-top: 6rem; padding-bottom: 6rem; }
+#hc-doc-root .hover\:py-32:hover { padding-top: 8rem; padding-bottom: 8rem; }
+#hc-doc-root .hover\:m-0:hover { margin: 0; }
+#hc-doc-root .hover\:m-1:hover { margin: 0.25rem; }
+#hc-doc-root .hover\:m-2:hover { margin: 0.5rem; }
+#hc-doc-root .hover\:m-3:hover { margin: 0.75rem; }
+#hc-doc-root .hover\:m-4:hover { margin: 1rem; }
+#hc-doc-root .hover\:m-5:hover { margin: 1.25rem; }
+#hc-doc-root .hover\:m-6:hover { margin: 1.5rem; }
+#hc-doc-root .hover\:m-8:hover { margin: 2rem; }
+#hc-doc-root .hover\:m-10:hover { margin: 2.5rem; }
+#hc-doc-root .hover\:m-12:hover { margin: 3rem; }
+#hc-doc-root .hover\:m-16:hover { margin: 4rem; }
+#hc-doc-root .hover\:m-20:hover { margin: 5rem; }
+#hc-doc-root .hover\:m-24:hover { margin: 6rem; }
+#hc-doc-root .hover\:m-32:hover { margin: 8rem; }
+#hc-doc-root .hover\:mt-0:hover { margin-top: 0; }
+#hc-doc-root .hover\:mt-1:hover { margin-top: 0.25rem; }
+#hc-doc-root .hover\:mt-2:hover { margin-top: 0.5rem; }
+#hc-doc-root .hover\:mt-3:hover { margin-top: 0.75rem; }
+#hc-doc-root .hover\:mt-4:hover { margin-top: 1rem; }
+#hc-doc-root .hover\:mt-5:hover { margin-top: 1.25rem; }
+#hc-doc-root .hover\:mt-6:hover { margin-top: 1.5rem; }
+#hc-doc-root .hover\:mt-8:hover { margin-top: 2rem; }
+#hc-doc-root .hover\:mt-10:hover { margin-top: 2.5rem; }
+#hc-doc-root .hover\:mt-12:hover { margin-top: 3rem; }
+#hc-doc-root .hover\:mt-16:hover { margin-top: 4rem; }
+#hc-doc-root .hover\:mt-20:hover { margin-top: 5rem; }
+#hc-doc-root .hover\:mt-24:hover { margin-top: 6rem; }
+#hc-doc-root .hover\:mt-32:hover { margin-top: 8rem; }
+#hc-doc-root .hover\:mb-0:hover { margin-bottom: 0; }
+#hc-doc-root .hover\:mb-1:hover { margin-bottom: 0.25rem; }
+#hc-doc-root .hover\:mb-2:hover { margin-bottom: 0.5rem; }
+#hc-doc-root .hover\:mb-3:hover { margin-bottom: 0.75rem; }
+#hc-doc-root .hover\:mb-4:hover { margin-bottom: 1rem; }
+#hc-doc-root .hover\:mb-5:hover { margin-bottom: 1.25rem; }
+#hc-doc-root .hover\:mb-6:hover { margin-bottom: 1.5rem; }
+#hc-doc-root .hover\:mb-8:hover { margin-bottom: 2rem; }
+#hc-doc-root .hover\:mb-10:hover { margin-bottom: 2.5rem; }
+#hc-doc-root .hover\:mb-12:hover { margin-bottom: 3rem; }
+#hc-doc-root .hover\:mb-16:hover { margin-bottom: 4rem; }
+#hc-doc-root .hover\:mb-20:hover { margin-bottom: 5rem; }
+#hc-doc-root .hover\:mb-24:hover { margin-bottom: 6rem; }
+#hc-doc-root .hover\:mb-32:hover { margin-bottom: 8rem; }
+#hc-doc-root .hover\:ml-0:hover { margin-left: 0; }
+#hc-doc-root .hover\:ml-1:hover { margin-left: 0.25rem; }
+#hc-doc-root .hover\:ml-2:hover { margin-left: 0.5rem; }
+#hc-doc-root .hover\:ml-3:hover { margin-left: 0.75rem; }
+#hc-doc-root .hover\:ml-4:hover { margin-left: 1rem; }
+#hc-doc-root .hover\:ml-5:hover { margin-left: 1.25rem; }
+#hc-doc-root .hover\:ml-6:hover { margin-left: 1.5rem; }
+#hc-doc-root .hover\:ml-8:hover { margin-left: 2rem; }
+#hc-doc-root .hover\:ml-10:hover { margin-left: 2.5rem; }
+#hc-doc-root .hover\:ml-12:hover { margin-left: 3rem; }
+#hc-doc-root .hover\:ml-16:hover { margin-left: 4rem; }
+#hc-doc-root .hover\:ml-20:hover { margin-left: 5rem; }
+#hc-doc-root .hover\:ml-24:hover { margin-left: 6rem; }
+#hc-doc-root .hover\:ml-32:hover { margin-left: 8rem; }
+#hc-doc-root .hover\:mr-0:hover { margin-right: 0; }
+#hc-doc-root .hover\:mr-1:hover { margin-right: 0.25rem; }
+#hc-doc-root .hover\:mr-2:hover { margin-right: 0.5rem; }
+#hc-doc-root .hover\:mr-3:hover { margin-right: 0.75rem; }
+#hc-doc-root .hover\:mr-4:hover { margin-right: 1rem; }
+#hc-doc-root .hover\:mr-5:hover { margin-right: 1.25rem; }
+#hc-doc-root .hover\:mr-6:hover { margin-right: 1.5rem; }
+#hc-doc-root .hover\:mr-8:hover { margin-right: 2rem; }
+#hc-doc-root .hover\:mr-10:hover { margin-right: 2.5rem; }
+#hc-doc-root .hover\:mr-12:hover { margin-right: 3rem; }
+#hc-doc-root .hover\:mr-16:hover { margin-right: 4rem; }
+#hc-doc-root .hover\:mr-20:hover { margin-right: 5rem; }
+#hc-doc-root .hover\:mr-24:hover { margin-right: 6rem; }
+#hc-doc-root .hover\:mr-32:hover { margin-right: 8rem; }
+#hc-doc-root .hover\:mx-0:hover { margin-left: 0; margin-right: 0; }
+#hc-doc-root .hover\:mx-1:hover { margin-left: 0.25rem; margin-right: 0.25rem; }
+#hc-doc-root .hover\:mx-2:hover { margin-left: 0.5rem; margin-right: 0.5rem; }
+#hc-doc-root .hover\:mx-3:hover { margin-left: 0.75rem; margin-right: 0.75rem; }
+#hc-doc-root .hover\:mx-4:hover { margin-left: 1rem; margin-right: 1rem; }
+#hc-doc-root .hover\:mx-5:hover { margin-left: 1.25rem; margin-right: 1.25rem; }
+#hc-doc-root .hover\:mx-6:hover { margin-left: 1.5rem; margin-right: 1.5rem; }
+#hc-doc-root .hover\:mx-8:hover { margin-left: 2rem; margin-right: 2rem; }
+#hc-doc-root .hover\:mx-10:hover { margin-left: 2.5rem; margin-right: 2.5rem; }
+#hc-doc-root .hover\:mx-12:hover { margin-left: 3rem; margin-right: 3rem; }
+#hc-doc-root .hover\:mx-16:hover { margin-left: 4rem; margin-right: 4rem; }
+#hc-doc-root .hover\:mx-20:hover { margin-left: 5rem; margin-right: 5rem; }
+#hc-doc-root .hover\:mx-24:hover { margin-left: 6rem; margin-right: 6rem; }
+#hc-doc-root .hover\:mx-32:hover { margin-left: 8rem; margin-right: 8rem; }
+#hc-doc-root .hover\:my-0:hover { margin-top: 0; margin-bottom: 0; }
+#hc-doc-root .hover\:my-1:hover { margin-top: 0.25rem; margin-bottom: 0.25rem; }
+#hc-doc-root .hover\:my-2:hover { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+#hc-doc-root .hover\:my-3:hover { margin-top: 0.75rem; margin-bottom: 0.75rem; }
+#hc-doc-root .hover\:my-4:hover { margin-top: 1rem; margin-bottom: 1rem; }
+#hc-doc-root .hover\:my-5:hover { margin-top: 1.25rem; margin-bottom: 1.25rem; }
+#hc-doc-root .hover\:my-6:hover { margin-top: 1.5rem; margin-bottom: 1.5rem; }
+#hc-doc-root .hover\:my-8:hover { margin-top: 2rem; margin-bottom: 2rem; }
+#hc-doc-root .hover\:my-10:hover { margin-top: 2.5rem; margin-bottom: 2.5rem; }
+#hc-doc-root .hover\:my-12:hover { margin-top: 3rem; margin-bottom: 3rem; }
+#hc-doc-root .hover\:my-16:hover { margin-top: 4rem; margin-bottom: 4rem; }
+#hc-doc-root .hover\:my-20:hover { margin-top: 5rem; margin-bottom: 5rem; }
+#hc-doc-root .hover\:my-24:hover { margin-top: 6rem; margin-bottom: 6rem; }
+#hc-doc-root .hover\:my-32:hover { margin-top: 8rem; margin-bottom: 8rem; }
+#hc-doc-root .hover\:gap-0:hover { gap: 0; }
+#hc-doc-root .hover\:gap-1:hover { gap: 0.25rem; }
+#hc-doc-root .hover\:gap-2:hover { gap: 0.5rem; }
+#hc-doc-root .hover\:gap-3:hover { gap: 0.75rem; }
+#hc-doc-root .hover\:gap-4:hover { gap: 1rem; }
+#hc-doc-root .hover\:gap-5:hover { gap: 1.25rem; }
+#hc-doc-root .hover\:gap-6:hover { gap: 1.5rem; }
+#hc-doc-root .hover\:gap-8:hover { gap: 2rem; }
+#hc-doc-root .hover\:gap-10:hover { gap: 2.5rem; }
+#hc-doc-root .hover\:gap-12:hover { gap: 3rem; }
+#hc-doc-root .hover\:gap-16:hover { gap: 4rem; }
+#hc-doc-root .hover\:gap-20:hover { gap: 5rem; }
+#hc-doc-root .hover\:gap-24:hover { gap: 6rem; }
+#hc-doc-root .hover\:gap-32:hover { gap: 8rem; }
+#hc-doc-root .hover\:m-auto:hover { margin: auto; }
+#hc-doc-root .hover\:mx-auto:hover { margin-left: auto; margin-right: auto; }
+#hc-doc-root .hover\:my-auto:hover { margin-top: auto; margin-bottom: auto; }
+#hc-doc-root .hover\:text-xs:hover { font-size: 0.75rem; }
+#hc-doc-root .hover\:text-sm:hover { font-size: 0.875rem; }
+#hc-doc-root .hover\:text-base:hover { font-size: 1rem; }
+#hc-doc-root .hover\:text-lg:hover { font-size: 1.125rem; }
+#hc-doc-root .hover\:text-xl:hover { font-size: 1.25rem; }
+#hc-doc-root .hover\:text-2xl:hover { font-size: 1.5rem; }
+#hc-doc-root .hover\:text-3xl:hover { font-size: 1.875rem; }
+#hc-doc-root .hover\:text-4xl:hover { font-size: 2.25rem; }
+#hc-doc-root .hover\:text-5xl:hover { font-size: 3rem; }
+#hc-doc-root .hover\:text-6xl:hover { font-size: 3.75rem; }
+#hc-doc-root .hover\:text-7xl:hover { font-size: 4.5rem; }
+#hc-doc-root .hover\:font-normal:hover { font-weight: 400; }
+#hc-doc-root .hover\:font-medium:hover { font-weight: 500; }
+#hc-doc-root .hover\:font-semibold:hover { font-weight: 600; }
+#hc-doc-root .hover\:font-bold:hover { font-weight: 700; }
+#hc-doc-root .hover\:font-black:hover { font-weight: 900; }
+#hc-doc-root .hover\:tracking-tighter:hover { letter-spacing: -0.05em; }
+#hc-doc-root .hover\:tracking-tight:hover { letter-spacing: -0.025em; }
+#hc-doc-root .hover\:tracking-normal:hover { letter-spacing: 0em; }
+#hc-doc-root .hover\:tracking-wide:hover { letter-spacing: 0.025em; }
+#hc-doc-root .hover\:tracking-wider:hover { letter-spacing: 0.05em; }
+#hc-doc-root .hover\:tracking-widest:hover { letter-spacing: 0.1em; }
+#hc-doc-root .hover\:leading-none:hover { line-height: 1; }
+#hc-doc-root .hover\:leading-tight:hover { line-height: 1.25; }
+#hc-doc-root .hover\:leading-snug:hover { line-height: 1.375; }
+#hc-doc-root .hover\:leading-normal:hover { line-height: 1.5; }
+#hc-doc-root .hover\:leading-relaxed:hover { line-height: 1.625; }
+#hc-doc-root .hover\:leading-loose:hover { line-height: 2; }
+#hc-doc-root .hover\:text-ink-900:hover { color: #141414; }
+#hc-doc-root .hover\:bg-ink-900:hover { background-color: #141414; }
+#hc-doc-root .hover\:border-ink-900:hover { border-color: #141414; }
+#hc-doc-root .hover\:text-ink-700:hover { color: #444444; }
+#hc-doc-root .hover\:bg-ink-700:hover { background-color: #444444; }
+#hc-doc-root .hover\:border-ink-700:hover { border-color: #444444; }
+#hc-doc-root .hover\:text-ink-400:hover { color: #888888; }
+#hc-doc-root .hover\:bg-ink-400:hover { background-color: #888888; }
+#hc-doc-root .hover\:border-ink-400:hover { border-color: #888888; }
+#hc-doc-root .hover\:text-ink-100:hover { color: #bbbbbb; }
+#hc-doc-root .hover\:bg-ink-100:hover { background-color: #bbbbbb; }
+#hc-doc-root .hover\:border-ink-100:hover { border-color: #bbbbbb; }
+#hc-doc-root .hover\:text-white:hover { color: #ffffff; }
+#hc-doc-root .hover\:bg-white:hover { background-color: #ffffff; }
+#hc-doc-root .hover\:border-white:hover { border-color: #ffffff; }
+#hc-doc-root .hover\:text-brand-100:hover { color: color-mix(in srgb, var(--brand) 12%, white); }
+#hc-doc-root .hover\:bg-brand-100:hover { background-color: color-mix(in srgb, var(--brand) 12%, white); }
+#hc-doc-root .hover\:border-brand-100:hover { border-color: color-mix(in srgb, var(--brand) 12%, white); }
+#hc-doc-root .hover\:text-brand-300:hover { color: color-mix(in srgb, var(--brand) 40%, white); }
+#hc-doc-root .hover\:bg-brand-300:hover { background-color: color-mix(in srgb, var(--brand) 40%, white); }
+#hc-doc-root .hover\:border-brand-300:hover { border-color: color-mix(in srgb, var(--brand) 40%, white); }
+#hc-doc-root .hover\:text-brand-500:hover { color: var(--brand); }
+#hc-doc-root .hover\:bg-brand-500:hover { background-color: var(--brand); }
+#hc-doc-root .hover\:border-brand-500:hover { border-color: var(--brand); }
+#hc-doc-root .hover\:text-brand-600:hover { color: color-mix(in srgb, var(--brand) 88%, black); }
+#hc-doc-root .hover\:bg-brand-600:hover { background-color: color-mix(in srgb, var(--brand) 88%, black); }
+#hc-doc-root .hover\:border-brand-600:hover { border-color: color-mix(in srgb, var(--brand) 88%, black); }
+#hc-doc-root .hover\:text-brand-700:hover { color: color-mix(in srgb, var(--brand) 74%, black); }
+#hc-doc-root .hover\:bg-brand-700:hover { background-color: color-mix(in srgb, var(--brand) 74%, black); }
+#hc-doc-root .hover\:border-brand-700:hover { border-color: color-mix(in srgb, var(--brand) 74%, black); }
+#hc-doc-root .hover\:text-brand-800:hover { color: color-mix(in srgb, var(--brand) 60%, black); }
+#hc-doc-root .hover\:bg-brand-800:hover { background-color: color-mix(in srgb, var(--brand) 60%, black); }
+#hc-doc-root .hover\:border-brand-800:hover { border-color: color-mix(in srgb, var(--brand) 60%, black); }
+#hc-doc-root .hover\:text-brand-900:hover { color: color-mix(in srgb, var(--brand) 46%, black); }
+#hc-doc-root .hover\:bg-brand-900:hover { background-color: color-mix(in srgb, var(--brand) 46%, black); }
+#hc-doc-root .hover\:border-brand-900:hover { border-color: color-mix(in srgb, var(--brand) 46%, black); }
+#hc-doc-root .hover\:max-w-xs:hover { max-width: 20rem; }
+#hc-doc-root .hover\:max-w-sm:hover { max-width: 24rem; }
+#hc-doc-root .hover\:max-w-md:hover { max-width: 28rem; }
+#hc-doc-root .hover\:max-w-lg:hover { max-width: 32rem; }
+#hc-doc-root .hover\:max-w-xl:hover { max-width: 36rem; }
+#hc-doc-root .hover\:max-w-2xl:hover { max-width: 42rem; }
+#hc-doc-root .hover\:max-w-3xl:hover { max-width: 48rem; }
+#hc-doc-root .hover\:max-w-4xl:hover { max-width: 56rem; }
+#hc-doc-root .hover\:max-w-5xl:hover { max-width: 64rem; }
+#hc-doc-root .hover\:max-w-6xl:hover { max-width: 72rem; }
+#hc-doc-root .hover\:max-w-7xl:hover { max-width: 80rem; }
+#hc-doc-root .hover\:max-w-full:hover { max-width: 100%; }
+#hc-doc-root .hover\:grid-cols-1:hover { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+#hc-doc-root .hover\:grid-cols-2:hover { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#hc-doc-root .hover\:grid-cols-3:hover { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#hc-doc-root .hover\:grid-cols-4:hover { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+#hc-doc-root .hover\:grid-cols-5:hover { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+#hc-doc-root .hover\:grid-cols-6:hover { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+#hc-doc-root .hover\:grid-cols-12:hover { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+#hc-doc-root .hover\:col-span-1:hover { grid-column: span 1 / span 1; }
+#hc-doc-root .hover\:col-span-2:hover { grid-column: span 2 / span 2; }
+#hc-doc-root .hover\:col-span-3:hover { grid-column: span 3 / span 3; }
+#hc-doc-root .hover\:col-span-4:hover { grid-column: span 4 / span 4; }
+#hc-doc-root .hover\:col-span-5:hover { grid-column: span 5 / span 5; }
+#hc-doc-root .hover\:col-span-6:hover { grid-column: span 6 / span 6; }
+#hc-doc-root .hover\:col-span-7:hover { grid-column: span 7 / span 7; }
+#hc-doc-root .hover\:col-span-8:hover { grid-column: span 8 / span 8; }
+#hc-doc-root .hover\:col-span-9:hover { grid-column: span 9 / span 9; }
+#hc-doc-root .hover\:col-span-10:hover { grid-column: span 10 / span 10; }
+#hc-doc-root .hover\:col-span-11:hover { grid-column: span 11 / span 11; }
+#hc-doc-root .hover\:col-span-12:hover { grid-column: span 12 / span 12; }
+#hc-doc-root .hover\:rounded:hover { border-radius: 0.25rem; }
+#hc-doc-root .hover\:rounded-none:hover { border-radius: 0; }
+#hc-doc-root .hover\:rounded-sm:hover { border-radius: 0.125rem; }
+#hc-doc-root .hover\:rounded-md:hover { border-radius: 0.375rem; }
+#hc-doc-root .hover\:rounded-lg:hover { border-radius: 0.5rem; }
+#hc-doc-root .hover\:rounded-xl:hover { border-radius: 0.75rem; }
+#hc-doc-root .hover\:rounded-2xl:hover { border-radius: 1rem; }
+#hc-doc-root .hover\:rounded-full:hover { border-radius: 9999px; }
+#hc-doc-root .hover\:aspect-square:hover { aspect-ratio: 1 / 1; }
+#hc-doc-root .hover\:aspect-video:hover { aspect-ratio: 16 / 9; }
+#hc-doc-root .hover\:aspect-\[3\/4\]:hover { aspect-ratio: 3 / 4; }
+#hc-doc-root .hover\:aspect-\[4\/3\]:hover { aspect-ratio: 4 / 3; }
+#hc-doc-root .hover\:aspect-\[16\/9\]:hover { aspect-ratio: 16 / 9; }
+#hc-doc-root .hover\:w-full:hover { width: 100%; }
+#hc-doc-root .hover\:h-full:hover { height: 100%; }
+#hc-doc-root .hover\:w-1\/2:hover { width: 50%; }
+#hc-doc-root .hover\:h-1\/2:hover { height: 50%; }
+#hc-doc-root .hover\:w-1\/3:hover { width: 33.333333%; }
+#hc-doc-root .hover\:h-1\/3:hover { height: 33.333333%; }
+#hc-doc-root .hover\:w-2\/3:hover { width: 66.666667%; }
+#hc-doc-root .hover\:h-2\/3:hover { height: 66.666667%; }
+#hc-doc-root .hover\:w-1\/4:hover { width: 25%; }
+#hc-doc-root .hover\:h-1\/4:hover { height: 25%; }
+#hc-doc-root .hover\:w-3\/4:hover { width: 75%; }
+#hc-doc-root .hover\:h-3\/4:hover { height: 75%; }
+#hc-doc-root .hover\:italic:hover { font-style: italic; }
+#hc-doc-root .hover\:uppercase:hover { text-transform: uppercase; }
+#hc-doc-root .hover\:lowercase:hover { text-transform: lowercase; }
+#hc-doc-root .hover\:capitalize:hover { text-transform: capitalize; }
+#hc-doc-root .hover\:text-left:hover { text-align: left; }
+#hc-doc-root .hover\:text-center:hover { text-align: center; }
+#hc-doc-root .hover\:text-right:hover { text-align: right; }
+#hc-doc-root .hover\:flex:hover { display: flex; }
+#hc-doc-root .hover\:grid:hover { display: grid; }
+#hc-doc-root .hover\:block:hover { display: block; }
+#hc-doc-root .hover\:inline-block:hover { display: inline-block; }
+#hc-doc-root .hover\:hidden:hover { display: none; }
+#hc-doc-root .hover\:flex-row:hover { flex-direction: row; }
+#hc-doc-root .hover\:flex-col:hover { flex-direction: column; }
+#hc-doc-root .hover\:flex-wrap:hover { flex-wrap: wrap; }
+#hc-doc-root .hover\:items-center:hover { align-items: center; }
+#hc-doc-root .hover\:items-start:hover { align-items: flex-start; }
+#hc-doc-root .hover\:items-end:hover { align-items: flex-end; }
+#hc-doc-root .hover\:justify-center:hover { justify-content: center; }
+#hc-doc-root .hover\:justify-between:hover { justify-content: space-between; }
+#hc-doc-root .hover\:justify-start:hover { justify-content: flex-start; }
+#hc-doc-root .hover\:justify-end:hover { justify-content: flex-end; }
+#hc-doc-root .hover\:justify-around:hover { justify-content: space-around; }
+#hc-doc-root .hover\:min-h-screen:hover { min-height: 100vh; }
+#hc-doc-root .hover\:object-cover:hover { object-fit: cover; }
+#hc-doc-root .hover\:object-contain:hover { object-fit: contain; }
+#hc-doc-root .hover\:overflow-hidden:hover { overflow: hidden; }
+#hc-doc-root .hover\:shadow:hover { box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+#hc-doc-root .hover\:shadow-md:hover { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+#hc-doc-root .hover\:shadow-lg:hover { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+#hc-doc-root .hover\:shadow-xl:hover { box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+#hc-doc-root .hover\:border:hover { border-width: 1px; border-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .hover\:border-2:hover { border-width: 2px; border-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .hover\:relative:hover { position: relative; }
+#hc-doc-root .hover\:absolute:hover { position: absolute; }
+#hc-doc-root .hover\:inset-0:hover { top: 0; right: 0; bottom: 0; left: 0; }
+#hc-doc-root .hover\:bg-gradient-to-br:hover { background-image: linear-gradient(to bottom right, var(--hc-grad-from), var(--hc-grad-to)); }
+#hc-doc-root .hover\:bg-gradient-to-r:hover { background-image: linear-gradient(to right, var(--hc-grad-from), var(--hc-grad-to)); }
+#hc-doc-root .hover\:bg-gradient-to-b:hover { background-image: linear-gradient(to bottom, var(--hc-grad-from), var(--hc-grad-to)); }
+#hc-doc-root .hover\:sticky:hover { position: sticky; }
+#hc-doc-root .hover\:fixed:hover { position: fixed; }
+#hc-doc-root .hover\:top-0:hover { top: 0; }
+#hc-doc-root .hover\:bottom-0:hover { bottom: 0; }
+#hc-doc-root .hover\:left-0:hover { left: 0; }
+#hc-doc-root .hover\:right-0:hover { right: 0; }
+#hc-doc-root .hover\:overflow-x-auto:hover { overflow-x: auto; }
+#hc-doc-root .hover\:overflow-y-auto:hover { overflow-y: auto; }
+#hc-doc-root .hover\:snap-x:hover { scroll-snap-type: x var(--hc-snap-strictness, proximity); }
+#hc-doc-root .hover\:snap-mandatory:hover { --hc-snap-strictness: mandatory; }
+#hc-doc-root .hover\:snap-start:hover { scroll-snap-align: start; }
+#hc-doc-root .hover\:snap-center:hover { scroll-snap-align: center; }
+#hc-doc-root .hover\:shrink-0:hover { flex-shrink: 0; }
+#hc-doc-root .hover\:break-inside-avoid:hover { break-inside: avoid; }
+#hc-doc-root .hover\:transition:hover { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+#hc-doc-root .hover\:duration-150:hover { transition-duration: 150ms; }
+#hc-doc-root .hover\:duration-300:hover { transition-duration: 300ms; }
+#hc-doc-root .hover\:duration-500:hover { transition-duration: 500ms; }
+#hc-doc-root .hover\:opacity-0:hover { opacity: 0; }
+#hc-doc-root .hover\:opacity-50:hover { opacity: 0.5; }
+#hc-doc-root .hover\:opacity-100:hover { opacity: 1; }
+#hc-doc-root .hover\:scale-95:hover { transform: scale(0.95); }
+#hc-doc-root .hover\:scale-100:hover { transform: scale(1); }
+#hc-doc-root .hover\:scale-105:hover { transform: scale(1.05); }
+#hc-doc-root .hover\:translate-y-0:hover { transform: translateY(0); }
+#hc-doc-root .hover\:translate-y-2:hover { transform: translateY(0.5rem); }
+#hc-doc-root .hover\:translate-y-4:hover { transform: translateY(1rem); }
+#hc-doc-root .hover\:columns-2:hover { columns: 2; }
+#hc-doc-root .hover\:columns-3:hover { columns: 3; }
+#hc-doc-root .hover\:columns-4:hover { columns: 4; }
+#hc-doc-root .hover\:z-10:hover { z-index: 10; }
+#hc-doc-root .hover\:z-20:hover { z-index: 20; }
+#hc-doc-root .hover\:z-30:hover { z-index: 30; }
+#hc-doc-root .hover\:z-40:hover { z-index: 40; }
+#hc-doc-root .hover\:z-50:hover { z-index: 50; }
+#hc-doc-root .hover\:from-brand-500:hover { --hc-grad-from: var(--brand); }
+#hc-doc-root .hover\:from-brand-600:hover { --hc-grad-from: color-mix(in srgb, var(--brand) 88%, black); }
+#hc-doc-root .hover\:from-brand-700:hover { --hc-grad-from: color-mix(in srgb, var(--brand) 74%, black); }
+#hc-doc-root .hover\:from-brand-800:hover { --hc-grad-from: color-mix(in srgb, var(--brand) 60%, black); }
+#hc-doc-root .hover\:to-brand-600:hover { --hc-grad-to: color-mix(in srgb, var(--brand) 88%, black); }
+#hc-doc-root .hover\:to-brand-700:hover { --hc-grad-to: color-mix(in srgb, var(--brand) 74%, black); }
+#hc-doc-root .hover\:to-brand-800:hover { --hc-grad-to: color-mix(in srgb, var(--brand) 60%, black); }
+#hc-doc-root .hover\:to-brand-900:hover { --hc-grad-to: color-mix(in srgb, var(--brand) 46%, black); }
+
+#hc-doc-root .focus\:font-serif:focus { font-family: 'DM Sans', serif; }
+#hc-doc-root .focus\:font-sans:focus { font-family: 'Inter', sans-serif; }
+#hc-doc-root .focus\:font-mono:focus { font-family: ui-monospace, monospace; }
+#hc-doc-root .focus\:p-0:focus { padding: 0; }
+#hc-doc-root .focus\:p-1:focus { padding: 0.25rem; }
+#hc-doc-root .focus\:p-2:focus { padding: 0.5rem; }
+#hc-doc-root .focus\:p-3:focus { padding: 0.75rem; }
+#hc-doc-root .focus\:p-4:focus { padding: 1rem; }
+#hc-doc-root .focus\:p-5:focus { padding: 1.25rem; }
+#hc-doc-root .focus\:p-6:focus { padding: 1.5rem; }
+#hc-doc-root .focus\:p-8:focus { padding: 2rem; }
+#hc-doc-root .focus\:p-10:focus { padding: 2.5rem; }
+#hc-doc-root .focus\:p-12:focus { padding: 3rem; }
+#hc-doc-root .focus\:p-16:focus { padding: 4rem; }
+#hc-doc-root .focus\:p-20:focus { padding: 5rem; }
+#hc-doc-root .focus\:p-24:focus { padding: 6rem; }
+#hc-doc-root .focus\:p-32:focus { padding: 8rem; }
+#hc-doc-root .focus\:pt-0:focus { padding-top: 0; }
+#hc-doc-root .focus\:pt-1:focus { padding-top: 0.25rem; }
+#hc-doc-root .focus\:pt-2:focus { padding-top: 0.5rem; }
+#hc-doc-root .focus\:pt-3:focus { padding-top: 0.75rem; }
+#hc-doc-root .focus\:pt-4:focus { padding-top: 1rem; }
+#hc-doc-root .focus\:pt-5:focus { padding-top: 1.25rem; }
+#hc-doc-root .focus\:pt-6:focus { padding-top: 1.5rem; }
+#hc-doc-root .focus\:pt-8:focus { padding-top: 2rem; }
+#hc-doc-root .focus\:pt-10:focus { padding-top: 2.5rem; }
+#hc-doc-root .focus\:pt-12:focus { padding-top: 3rem; }
+#hc-doc-root .focus\:pt-16:focus { padding-top: 4rem; }
+#hc-doc-root .focus\:pt-20:focus { padding-top: 5rem; }
+#hc-doc-root .focus\:pt-24:focus { padding-top: 6rem; }
+#hc-doc-root .focus\:pt-32:focus { padding-top: 8rem; }
+#hc-doc-root .focus\:pb-0:focus { padding-bottom: 0; }
+#hc-doc-root .focus\:pb-1:focus { padding-bottom: 0.25rem; }
+#hc-doc-root .focus\:pb-2:focus { padding-bottom: 0.5rem; }
+#hc-doc-root .focus\:pb-3:focus { padding-bottom: 0.75rem; }
+#hc-doc-root .focus\:pb-4:focus { padding-bottom: 1rem; }
+#hc-doc-root .focus\:pb-5:focus { padding-bottom: 1.25rem; }
+#hc-doc-root .focus\:pb-6:focus { padding-bottom: 1.5rem; }
+#hc-doc-root .focus\:pb-8:focus { padding-bottom: 2rem; }
+#hc-doc-root .focus\:pb-10:focus { padding-bottom: 2.5rem; }
+#hc-doc-root .focus\:pb-12:focus { padding-bottom: 3rem; }
+#hc-doc-root .focus\:pb-16:focus { padding-bottom: 4rem; }
+#hc-doc-root .focus\:pb-20:focus { padding-bottom: 5rem; }
+#hc-doc-root .focus\:pb-24:focus { padding-bottom: 6rem; }
+#hc-doc-root .focus\:pb-32:focus { padding-bottom: 8rem; }
+#hc-doc-root .focus\:pl-0:focus { padding-left: 0; }
+#hc-doc-root .focus\:pl-1:focus { padding-left: 0.25rem; }
+#hc-doc-root .focus\:pl-2:focus { padding-left: 0.5rem; }
+#hc-doc-root .focus\:pl-3:focus { padding-left: 0.75rem; }
+#hc-doc-root .focus\:pl-4:focus { padding-left: 1rem; }
+#hc-doc-root .focus\:pl-5:focus { padding-left: 1.25rem; }
+#hc-doc-root .focus\:pl-6:focus { padding-left: 1.5rem; }
+#hc-doc-root .focus\:pl-8:focus { padding-left: 2rem; }
+#hc-doc-root .focus\:pl-10:focus { padding-left: 2.5rem; }
+#hc-doc-root .focus\:pl-12:focus { padding-left: 3rem; }
+#hc-doc-root .focus\:pl-16:focus { padding-left: 4rem; }
+#hc-doc-root .focus\:pl-20:focus { padding-left: 5rem; }
+#hc-doc-root .focus\:pl-24:focus { padding-left: 6rem; }
+#hc-doc-root .focus\:pl-32:focus { padding-left: 8rem; }
+#hc-doc-root .focus\:pr-0:focus { padding-right: 0; }
+#hc-doc-root .focus\:pr-1:focus { padding-right: 0.25rem; }
+#hc-doc-root .focus\:pr-2:focus { padding-right: 0.5rem; }
+#hc-doc-root .focus\:pr-3:focus { padding-right: 0.75rem; }
+#hc-doc-root .focus\:pr-4:focus { padding-right: 1rem; }
+#hc-doc-root .focus\:pr-5:focus { padding-right: 1.25rem; }
+#hc-doc-root .focus\:pr-6:focus { padding-right: 1.5rem; }
+#hc-doc-root .focus\:pr-8:focus { padding-right: 2rem; }
+#hc-doc-root .focus\:pr-10:focus { padding-right: 2.5rem; }
+#hc-doc-root .focus\:pr-12:focus { padding-right: 3rem; }
+#hc-doc-root .focus\:pr-16:focus { padding-right: 4rem; }
+#hc-doc-root .focus\:pr-20:focus { padding-right: 5rem; }
+#hc-doc-root .focus\:pr-24:focus { padding-right: 6rem; }
+#hc-doc-root .focus\:pr-32:focus { padding-right: 8rem; }
+#hc-doc-root .focus\:px-0:focus { padding-left: 0; padding-right: 0; }
+#hc-doc-root .focus\:px-1:focus { padding-left: 0.25rem; padding-right: 0.25rem; }
+#hc-doc-root .focus\:px-2:focus { padding-left: 0.5rem; padding-right: 0.5rem; }
+#hc-doc-root .focus\:px-3:focus { padding-left: 0.75rem; padding-right: 0.75rem; }
+#hc-doc-root .focus\:px-4:focus { padding-left: 1rem; padding-right: 1rem; }
+#hc-doc-root .focus\:px-5:focus { padding-left: 1.25rem; padding-right: 1.25rem; }
+#hc-doc-root .focus\:px-6:focus { padding-left: 1.5rem; padding-right: 1.5rem; }
+#hc-doc-root .focus\:px-8:focus { padding-left: 2rem; padding-right: 2rem; }
+#hc-doc-root .focus\:px-10:focus { padding-left: 2.5rem; padding-right: 2.5rem; }
+#hc-doc-root .focus\:px-12:focus { padding-left: 3rem; padding-right: 3rem; }
+#hc-doc-root .focus\:px-16:focus { padding-left: 4rem; padding-right: 4rem; }
+#hc-doc-root .focus\:px-20:focus { padding-left: 5rem; padding-right: 5rem; }
+#hc-doc-root .focus\:px-24:focus { padding-left: 6rem; padding-right: 6rem; }
+#hc-doc-root .focus\:px-32:focus { padding-left: 8rem; padding-right: 8rem; }
+#hc-doc-root .focus\:py-0:focus { padding-top: 0; padding-bottom: 0; }
+#hc-doc-root .focus\:py-1:focus { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+#hc-doc-root .focus\:py-2:focus { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+#hc-doc-root .focus\:py-3:focus { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+#hc-doc-root .focus\:py-4:focus { padding-top: 1rem; padding-bottom: 1rem; }
+#hc-doc-root .focus\:py-5:focus { padding-top: 1.25rem; padding-bottom: 1.25rem; }
+#hc-doc-root .focus\:py-6:focus { padding-top: 1.5rem; padding-bottom: 1.5rem; }
+#hc-doc-root .focus\:py-8:focus { padding-top: 2rem; padding-bottom: 2rem; }
+#hc-doc-root .focus\:py-10:focus { padding-top: 2.5rem; padding-bottom: 2.5rem; }
+#hc-doc-root .focus\:py-12:focus { padding-top: 3rem; padding-bottom: 3rem; }
+#hc-doc-root .focus\:py-16:focus { padding-top: 4rem; padding-bottom: 4rem; }
+#hc-doc-root .focus\:py-20:focus { padding-top: 5rem; padding-bottom: 5rem; }
+#hc-doc-root .focus\:py-24:focus { padding-top: 6rem; padding-bottom: 6rem; }
+#hc-doc-root .focus\:py-32:focus { padding-top: 8rem; padding-bottom: 8rem; }
+#hc-doc-root .focus\:m-0:focus { margin: 0; }
+#hc-doc-root .focus\:m-1:focus { margin: 0.25rem; }
+#hc-doc-root .focus\:m-2:focus { margin: 0.5rem; }
+#hc-doc-root .focus\:m-3:focus { margin: 0.75rem; }
+#hc-doc-root .focus\:m-4:focus { margin: 1rem; }
+#hc-doc-root .focus\:m-5:focus { margin: 1.25rem; }
+#hc-doc-root .focus\:m-6:focus { margin: 1.5rem; }
+#hc-doc-root .focus\:m-8:focus { margin: 2rem; }
+#hc-doc-root .focus\:m-10:focus { margin: 2.5rem; }
+#hc-doc-root .focus\:m-12:focus { margin: 3rem; }
+#hc-doc-root .focus\:m-16:focus { margin: 4rem; }
+#hc-doc-root .focus\:m-20:focus { margin: 5rem; }
+#hc-doc-root .focus\:m-24:focus { margin: 6rem; }
+#hc-doc-root .focus\:m-32:focus { margin: 8rem; }
+#hc-doc-root .focus\:mt-0:focus { margin-top: 0; }
+#hc-doc-root .focus\:mt-1:focus { margin-top: 0.25rem; }
+#hc-doc-root .focus\:mt-2:focus { margin-top: 0.5rem; }
+#hc-doc-root .focus\:mt-3:focus { margin-top: 0.75rem; }
+#hc-doc-root .focus\:mt-4:focus { margin-top: 1rem; }
+#hc-doc-root .focus\:mt-5:focus { margin-top: 1.25rem; }
+#hc-doc-root .focus\:mt-6:focus { margin-top: 1.5rem; }
+#hc-doc-root .focus\:mt-8:focus { margin-top: 2rem; }
+#hc-doc-root .focus\:mt-10:focus { margin-top: 2.5rem; }
+#hc-doc-root .focus\:mt-12:focus { margin-top: 3rem; }
+#hc-doc-root .focus\:mt-16:focus { margin-top: 4rem; }
+#hc-doc-root .focus\:mt-20:focus { margin-top: 5rem; }
+#hc-doc-root .focus\:mt-24:focus { margin-top: 6rem; }
+#hc-doc-root .focus\:mt-32:focus { margin-top: 8rem; }
+#hc-doc-root .focus\:mb-0:focus { margin-bottom: 0; }
+#hc-doc-root .focus\:mb-1:focus { margin-bottom: 0.25rem; }
+#hc-doc-root .focus\:mb-2:focus { margin-bottom: 0.5rem; }
+#hc-doc-root .focus\:mb-3:focus { margin-bottom: 0.75rem; }
+#hc-doc-root .focus\:mb-4:focus { margin-bottom: 1rem; }
+#hc-doc-root .focus\:mb-5:focus { margin-bottom: 1.25rem; }
+#hc-doc-root .focus\:mb-6:focus { margin-bottom: 1.5rem; }
+#hc-doc-root .focus\:mb-8:focus { margin-bottom: 2rem; }
+#hc-doc-root .focus\:mb-10:focus { margin-bottom: 2.5rem; }
+#hc-doc-root .focus\:mb-12:focus { margin-bottom: 3rem; }
+#hc-doc-root .focus\:mb-16:focus { margin-bottom: 4rem; }
+#hc-doc-root .focus\:mb-20:focus { margin-bottom: 5rem; }
+#hc-doc-root .focus\:mb-24:focus { margin-bottom: 6rem; }
+#hc-doc-root .focus\:mb-32:focus { margin-bottom: 8rem; }
+#hc-doc-root .focus\:ml-0:focus { margin-left: 0; }
+#hc-doc-root .focus\:ml-1:focus { margin-left: 0.25rem; }
+#hc-doc-root .focus\:ml-2:focus { margin-left: 0.5rem; }
+#hc-doc-root .focus\:ml-3:focus { margin-left: 0.75rem; }
+#hc-doc-root .focus\:ml-4:focus { margin-left: 1rem; }
+#hc-doc-root .focus\:ml-5:focus { margin-left: 1.25rem; }
+#hc-doc-root .focus\:ml-6:focus { margin-left: 1.5rem; }
+#hc-doc-root .focus\:ml-8:focus { margin-left: 2rem; }
+#hc-doc-root .focus\:ml-10:focus { margin-left: 2.5rem; }
+#hc-doc-root .focus\:ml-12:focus { margin-left: 3rem; }
+#hc-doc-root .focus\:ml-16:focus { margin-left: 4rem; }
+#hc-doc-root .focus\:ml-20:focus { margin-left: 5rem; }
+#hc-doc-root .focus\:ml-24:focus { margin-left: 6rem; }
+#hc-doc-root .focus\:ml-32:focus { margin-left: 8rem; }
+#hc-doc-root .focus\:mr-0:focus { margin-right: 0; }
+#hc-doc-root .focus\:mr-1:focus { margin-right: 0.25rem; }
+#hc-doc-root .focus\:mr-2:focus { margin-right: 0.5rem; }
+#hc-doc-root .focus\:mr-3:focus { margin-right: 0.75rem; }
+#hc-doc-root .focus\:mr-4:focus { margin-right: 1rem; }
+#hc-doc-root .focus\:mr-5:focus { margin-right: 1.25rem; }
+#hc-doc-root .focus\:mr-6:focus { margin-right: 1.5rem; }
+#hc-doc-root .focus\:mr-8:focus { margin-right: 2rem; }
+#hc-doc-root .focus\:mr-10:focus { margin-right: 2.5rem; }
+#hc-doc-root .focus\:mr-12:focus { margin-right: 3rem; }
+#hc-doc-root .focus\:mr-16:focus { margin-right: 4rem; }
+#hc-doc-root .focus\:mr-20:focus { margin-right: 5rem; }
+#hc-doc-root .focus\:mr-24:focus { margin-right: 6rem; }
+#hc-doc-root .focus\:mr-32:focus { margin-right: 8rem; }
+#hc-doc-root .focus\:mx-0:focus { margin-left: 0; margin-right: 0; }
+#hc-doc-root .focus\:mx-1:focus { margin-left: 0.25rem; margin-right: 0.25rem; }
+#hc-doc-root .focus\:mx-2:focus { margin-left: 0.5rem; margin-right: 0.5rem; }
+#hc-doc-root .focus\:mx-3:focus { margin-left: 0.75rem; margin-right: 0.75rem; }
+#hc-doc-root .focus\:mx-4:focus { margin-left: 1rem; margin-right: 1rem; }
+#hc-doc-root .focus\:mx-5:focus { margin-left: 1.25rem; margin-right: 1.25rem; }
+#hc-doc-root .focus\:mx-6:focus { margin-left: 1.5rem; margin-right: 1.5rem; }
+#hc-doc-root .focus\:mx-8:focus { margin-left: 2rem; margin-right: 2rem; }
+#hc-doc-root .focus\:mx-10:focus { margin-left: 2.5rem; margin-right: 2.5rem; }
+#hc-doc-root .focus\:mx-12:focus { margin-left: 3rem; margin-right: 3rem; }
+#hc-doc-root .focus\:mx-16:focus { margin-left: 4rem; margin-right: 4rem; }
+#hc-doc-root .focus\:mx-20:focus { margin-left: 5rem; margin-right: 5rem; }
+#hc-doc-root .focus\:mx-24:focus { margin-left: 6rem; margin-right: 6rem; }
+#hc-doc-root .focus\:mx-32:focus { margin-left: 8rem; margin-right: 8rem; }
+#hc-doc-root .focus\:my-0:focus { margin-top: 0; margin-bottom: 0; }
+#hc-doc-root .focus\:my-1:focus { margin-top: 0.25rem; margin-bottom: 0.25rem; }
+#hc-doc-root .focus\:my-2:focus { margin-top: 0.5rem; margin-bottom: 0.5rem; }
+#hc-doc-root .focus\:my-3:focus { margin-top: 0.75rem; margin-bottom: 0.75rem; }
+#hc-doc-root .focus\:my-4:focus { margin-top: 1rem; margin-bottom: 1rem; }
+#hc-doc-root .focus\:my-5:focus { margin-top: 1.25rem; margin-bottom: 1.25rem; }
+#hc-doc-root .focus\:my-6:focus { margin-top: 1.5rem; margin-bottom: 1.5rem; }
+#hc-doc-root .focus\:my-8:focus { margin-top: 2rem; margin-bottom: 2rem; }
+#hc-doc-root .focus\:my-10:focus { margin-top: 2.5rem; margin-bottom: 2.5rem; }
+#hc-doc-root .focus\:my-12:focus { margin-top: 3rem; margin-bottom: 3rem; }
+#hc-doc-root .focus\:my-16:focus { margin-top: 4rem; margin-bottom: 4rem; }
+#hc-doc-root .focus\:my-20:focus { margin-top: 5rem; margin-bottom: 5rem; }
+#hc-doc-root .focus\:my-24:focus { margin-top: 6rem; margin-bottom: 6rem; }
+#hc-doc-root .focus\:my-32:focus { margin-top: 8rem; margin-bottom: 8rem; }
+#hc-doc-root .focus\:gap-0:focus { gap: 0; }
+#hc-doc-root .focus\:gap-1:focus { gap: 0.25rem; }
+#hc-doc-root .focus\:gap-2:focus { gap: 0.5rem; }
+#hc-doc-root .focus\:gap-3:focus { gap: 0.75rem; }
+#hc-doc-root .focus\:gap-4:focus { gap: 1rem; }
+#hc-doc-root .focus\:gap-5:focus { gap: 1.25rem; }
+#hc-doc-root .focus\:gap-6:focus { gap: 1.5rem; }
+#hc-doc-root .focus\:gap-8:focus { gap: 2rem; }
+#hc-doc-root .focus\:gap-10:focus { gap: 2.5rem; }
+#hc-doc-root .focus\:gap-12:focus { gap: 3rem; }
+#hc-doc-root .focus\:gap-16:focus { gap: 4rem; }
+#hc-doc-root .focus\:gap-20:focus { gap: 5rem; }
+#hc-doc-root .focus\:gap-24:focus { gap: 6rem; }
+#hc-doc-root .focus\:gap-32:focus { gap: 8rem; }
+#hc-doc-root .focus\:m-auto:focus { margin: auto; }
+#hc-doc-root .focus\:mx-auto:focus { margin-left: auto; margin-right: auto; }
+#hc-doc-root .focus\:my-auto:focus { margin-top: auto; margin-bottom: auto; }
+#hc-doc-root .focus\:text-xs:focus { font-size: 0.75rem; }
+#hc-doc-root .focus\:text-sm:focus { font-size: 0.875rem; }
+#hc-doc-root .focus\:text-base:focus { font-size: 1rem; }
+#hc-doc-root .focus\:text-lg:focus { font-size: 1.125rem; }
+#hc-doc-root .focus\:text-xl:focus { font-size: 1.25rem; }
+#hc-doc-root .focus\:text-2xl:focus { font-size: 1.5rem; }
+#hc-doc-root .focus\:text-3xl:focus { font-size: 1.875rem; }
+#hc-doc-root .focus\:text-4xl:focus { font-size: 2.25rem; }
+#hc-doc-root .focus\:text-5xl:focus { font-size: 3rem; }
+#hc-doc-root .focus\:text-6xl:focus { font-size: 3.75rem; }
+#hc-doc-root .focus\:text-7xl:focus { font-size: 4.5rem; }
+#hc-doc-root .focus\:font-normal:focus { font-weight: 400; }
+#hc-doc-root .focus\:font-medium:focus { font-weight: 500; }
+#hc-doc-root .focus\:font-semibold:focus { font-weight: 600; }
+#hc-doc-root .focus\:font-bold:focus { font-weight: 700; }
+#hc-doc-root .focus\:font-black:focus { font-weight: 900; }
+#hc-doc-root .focus\:tracking-tighter:focus { letter-spacing: -0.05em; }
+#hc-doc-root .focus\:tracking-tight:focus { letter-spacing: -0.025em; }
+#hc-doc-root .focus\:tracking-normal:focus { letter-spacing: 0em; }
+#hc-doc-root .focus\:tracking-wide:focus { letter-spacing: 0.025em; }
+#hc-doc-root .focus\:tracking-wider:focus { letter-spacing: 0.05em; }
+#hc-doc-root .focus\:tracking-widest:focus { letter-spacing: 0.1em; }
+#hc-doc-root .focus\:leading-none:focus { line-height: 1; }
+#hc-doc-root .focus\:leading-tight:focus { line-height: 1.25; }
+#hc-doc-root .focus\:leading-snug:focus { line-height: 1.375; }
+#hc-doc-root .focus\:leading-normal:focus { line-height: 1.5; }
+#hc-doc-root .focus\:leading-relaxed:focus { line-height: 1.625; }
+#hc-doc-root .focus\:leading-loose:focus { line-height: 2; }
+#hc-doc-root .focus\:text-ink-900:focus { color: #141414; }
+#hc-doc-root .focus\:bg-ink-900:focus { background-color: #141414; }
+#hc-doc-root .focus\:border-ink-900:focus { border-color: #141414; }
+#hc-doc-root .focus\:text-ink-700:focus { color: #444444; }
+#hc-doc-root .focus\:bg-ink-700:focus { background-color: #444444; }
+#hc-doc-root .focus\:border-ink-700:focus { border-color: #444444; }
+#hc-doc-root .focus\:text-ink-400:focus { color: #888888; }
+#hc-doc-root .focus\:bg-ink-400:focus { background-color: #888888; }
+#hc-doc-root .focus\:border-ink-400:focus { border-color: #888888; }
+#hc-doc-root .focus\:text-ink-100:focus { color: #bbbbbb; }
+#hc-doc-root .focus\:bg-ink-100:focus { background-color: #bbbbbb; }
+#hc-doc-root .focus\:border-ink-100:focus { border-color: #bbbbbb; }
+#hc-doc-root .focus\:text-white:focus { color: #ffffff; }
+#hc-doc-root .focus\:bg-white:focus { background-color: #ffffff; }
+#hc-doc-root .focus\:border-white:focus { border-color: #ffffff; }
+#hc-doc-root .focus\:text-brand-100:focus { color: color-mix(in srgb, var(--brand) 12%, white); }
+#hc-doc-root .focus\:bg-brand-100:focus { background-color: color-mix(in srgb, var(--brand) 12%, white); }
+#hc-doc-root .focus\:border-brand-100:focus { border-color: color-mix(in srgb, var(--brand) 12%, white); }
+#hc-doc-root .focus\:text-brand-300:focus { color: color-mix(in srgb, var(--brand) 40%, white); }
+#hc-doc-root .focus\:bg-brand-300:focus { background-color: color-mix(in srgb, var(--brand) 40%, white); }
+#hc-doc-root .focus\:border-brand-300:focus { border-color: color-mix(in srgb, var(--brand) 40%, white); }
+#hc-doc-root .focus\:text-brand-500:focus { color: var(--brand); }
+#hc-doc-root .focus\:bg-brand-500:focus { background-color: var(--brand); }
+#hc-doc-root .focus\:border-brand-500:focus { border-color: var(--brand); }
+#hc-doc-root .focus\:text-brand-600:focus { color: color-mix(in srgb, var(--brand) 88%, black); }
+#hc-doc-root .focus\:bg-brand-600:focus { background-color: color-mix(in srgb, var(--brand) 88%, black); }
+#hc-doc-root .focus\:border-brand-600:focus { border-color: color-mix(in srgb, var(--brand) 88%, black); }
+#hc-doc-root .focus\:text-brand-700:focus { color: color-mix(in srgb, var(--brand) 74%, black); }
+#hc-doc-root .focus\:bg-brand-700:focus { background-color: color-mix(in srgb, var(--brand) 74%, black); }
+#hc-doc-root .focus\:border-brand-700:focus { border-color: color-mix(in srgb, var(--brand) 74%, black); }
+#hc-doc-root .focus\:text-brand-800:focus { color: color-mix(in srgb, var(--brand) 60%, black); }
+#hc-doc-root .focus\:bg-brand-800:focus { background-color: color-mix(in srgb, var(--brand) 60%, black); }
+#hc-doc-root .focus\:border-brand-800:focus { border-color: color-mix(in srgb, var(--brand) 60%, black); }
+#hc-doc-root .focus\:text-brand-900:focus { color: color-mix(in srgb, var(--brand) 46%, black); }
+#hc-doc-root .focus\:bg-brand-900:focus { background-color: color-mix(in srgb, var(--brand) 46%, black); }
+#hc-doc-root .focus\:border-brand-900:focus { border-color: color-mix(in srgb, var(--brand) 46%, black); }
+#hc-doc-root .focus\:max-w-xs:focus { max-width: 20rem; }
+#hc-doc-root .focus\:max-w-sm:focus { max-width: 24rem; }
+#hc-doc-root .focus\:max-w-md:focus { max-width: 28rem; }
+#hc-doc-root .focus\:max-w-lg:focus { max-width: 32rem; }
+#hc-doc-root .focus\:max-w-xl:focus { max-width: 36rem; }
+#hc-doc-root .focus\:max-w-2xl:focus { max-width: 42rem; }
+#hc-doc-root .focus\:max-w-3xl:focus { max-width: 48rem; }
+#hc-doc-root .focus\:max-w-4xl:focus { max-width: 56rem; }
+#hc-doc-root .focus\:max-w-5xl:focus { max-width: 64rem; }
+#hc-doc-root .focus\:max-w-6xl:focus { max-width: 72rem; }
+#hc-doc-root .focus\:max-w-7xl:focus { max-width: 80rem; }
+#hc-doc-root .focus\:max-w-full:focus { max-width: 100%; }
+#hc-doc-root .focus\:grid-cols-1:focus { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+#hc-doc-root .focus\:grid-cols-2:focus { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+#hc-doc-root .focus\:grid-cols-3:focus { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#hc-doc-root .focus\:grid-cols-4:focus { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+#hc-doc-root .focus\:grid-cols-5:focus { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+#hc-doc-root .focus\:grid-cols-6:focus { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+#hc-doc-root .focus\:grid-cols-12:focus { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+#hc-doc-root .focus\:col-span-1:focus { grid-column: span 1 / span 1; }
+#hc-doc-root .focus\:col-span-2:focus { grid-column: span 2 / span 2; }
+#hc-doc-root .focus\:col-span-3:focus { grid-column: span 3 / span 3; }
+#hc-doc-root .focus\:col-span-4:focus { grid-column: span 4 / span 4; }
+#hc-doc-root .focus\:col-span-5:focus { grid-column: span 5 / span 5; }
+#hc-doc-root .focus\:col-span-6:focus { grid-column: span 6 / span 6; }
+#hc-doc-root .focus\:col-span-7:focus { grid-column: span 7 / span 7; }
+#hc-doc-root .focus\:col-span-8:focus { grid-column: span 8 / span 8; }
+#hc-doc-root .focus\:col-span-9:focus { grid-column: span 9 / span 9; }
+#hc-doc-root .focus\:col-span-10:focus { grid-column: span 10 / span 10; }
+#hc-doc-root .focus\:col-span-11:focus { grid-column: span 11 / span 11; }
+#hc-doc-root .focus\:col-span-12:focus { grid-column: span 12 / span 12; }
+#hc-doc-root .focus\:rounded:focus { border-radius: 0.25rem; }
+#hc-doc-root .focus\:rounded-none:focus { border-radius: 0; }
+#hc-doc-root .focus\:rounded-sm:focus { border-radius: 0.125rem; }
+#hc-doc-root .focus\:rounded-md:focus { border-radius: 0.375rem; }
+#hc-doc-root .focus\:rounded-lg:focus { border-radius: 0.5rem; }
+#hc-doc-root .focus\:rounded-xl:focus { border-radius: 0.75rem; }
+#hc-doc-root .focus\:rounded-2xl:focus { border-radius: 1rem; }
+#hc-doc-root .focus\:rounded-full:focus { border-radius: 9999px; }
+#hc-doc-root .focus\:aspect-square:focus { aspect-ratio: 1 / 1; }
+#hc-doc-root .focus\:aspect-video:focus { aspect-ratio: 16 / 9; }
+#hc-doc-root .focus\:aspect-\[3\/4\]:focus { aspect-ratio: 3 / 4; }
+#hc-doc-root .focus\:aspect-\[4\/3\]:focus { aspect-ratio: 4 / 3; }
+#hc-doc-root .focus\:aspect-\[16\/9\]:focus { aspect-ratio: 16 / 9; }
+#hc-doc-root .focus\:w-full:focus { width: 100%; }
+#hc-doc-root .focus\:h-full:focus { height: 100%; }
+#hc-doc-root .focus\:w-1\/2:focus { width: 50%; }
+#hc-doc-root .focus\:h-1\/2:focus { height: 50%; }
+#hc-doc-root .focus\:w-1\/3:focus { width: 33.333333%; }
+#hc-doc-root .focus\:h-1\/3:focus { height: 33.333333%; }
+#hc-doc-root .focus\:w-2\/3:focus { width: 66.666667%; }
+#hc-doc-root .focus\:h-2\/3:focus { height: 66.666667%; }
+#hc-doc-root .focus\:w-1\/4:focus { width: 25%; }
+#hc-doc-root .focus\:h-1\/4:focus { height: 25%; }
+#hc-doc-root .focus\:w-3\/4:focus { width: 75%; }
+#hc-doc-root .focus\:h-3\/4:focus { height: 75%; }
+#hc-doc-root .focus\:italic:focus { font-style: italic; }
+#hc-doc-root .focus\:uppercase:focus { text-transform: uppercase; }
+#hc-doc-root .focus\:lowercase:focus { text-transform: lowercase; }
+#hc-doc-root .focus\:capitalize:focus { text-transform: capitalize; }
+#hc-doc-root .focus\:text-left:focus { text-align: left; }
+#hc-doc-root .focus\:text-center:focus { text-align: center; }
+#hc-doc-root .focus\:text-right:focus { text-align: right; }
+#hc-doc-root .focus\:flex:focus { display: flex; }
+#hc-doc-root .focus\:grid:focus { display: grid; }
+#hc-doc-root .focus\:block:focus { display: block; }
+#hc-doc-root .focus\:inline-block:focus { display: inline-block; }
+#hc-doc-root .focus\:hidden:focus { display: none; }
+#hc-doc-root .focus\:flex-row:focus { flex-direction: row; }
+#hc-doc-root .focus\:flex-col:focus { flex-direction: column; }
+#hc-doc-root .focus\:flex-wrap:focus { flex-wrap: wrap; }
+#hc-doc-root .focus\:items-center:focus { align-items: center; }
+#hc-doc-root .focus\:items-start:focus { align-items: flex-start; }
+#hc-doc-root .focus\:items-end:focus { align-items: flex-end; }
+#hc-doc-root .focus\:justify-center:focus { justify-content: center; }
+#hc-doc-root .focus\:justify-between:focus { justify-content: space-between; }
+#hc-doc-root .focus\:justify-start:focus { justify-content: flex-start; }
+#hc-doc-root .focus\:justify-end:focus { justify-content: flex-end; }
+#hc-doc-root .focus\:justify-around:focus { justify-content: space-around; }
+#hc-doc-root .focus\:min-h-screen:focus { min-height: 100vh; }
+#hc-doc-root .focus\:object-cover:focus { object-fit: cover; }
+#hc-doc-root .focus\:object-contain:focus { object-fit: contain; }
+#hc-doc-root .focus\:overflow-hidden:focus { overflow: hidden; }
+#hc-doc-root .focus\:shadow:focus { box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1); }
+#hc-doc-root .focus\:shadow-md:focus { box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+#hc-doc-root .focus\:shadow-lg:focus { box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); }
+#hc-doc-root .focus\:shadow-xl:focus { box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+#hc-doc-root .focus\:border:focus { border-width: 1px; border-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .focus\:border-2:focus { border-width: 2px; border-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .focus\:relative:focus { position: relative; }
+#hc-doc-root .focus\:absolute:focus { position: absolute; }
+#hc-doc-root .focus\:inset-0:focus { top: 0; right: 0; bottom: 0; left: 0; }
+#hc-doc-root .focus\:bg-gradient-to-br:focus { background-image: linear-gradient(to bottom right, var(--hc-grad-from), var(--hc-grad-to)); }
+#hc-doc-root .focus\:bg-gradient-to-r:focus { background-image: linear-gradient(to right, var(--hc-grad-from), var(--hc-grad-to)); }
+#hc-doc-root .focus\:bg-gradient-to-b:focus { background-image: linear-gradient(to bottom, var(--hc-grad-from), var(--hc-grad-to)); }
+#hc-doc-root .focus\:sticky:focus { position: sticky; }
+#hc-doc-root .focus\:fixed:focus { position: fixed; }
+#hc-doc-root .focus\:top-0:focus { top: 0; }
+#hc-doc-root .focus\:bottom-0:focus { bottom: 0; }
+#hc-doc-root .focus\:left-0:focus { left: 0; }
+#hc-doc-root .focus\:right-0:focus { right: 0; }
+#hc-doc-root .focus\:overflow-x-auto:focus { overflow-x: auto; }
+#hc-doc-root .focus\:overflow-y-auto:focus { overflow-y: auto; }
+#hc-doc-root .focus\:snap-x:focus { scroll-snap-type: x var(--hc-snap-strictness, proximity); }
+#hc-doc-root .focus\:snap-mandatory:focus { --hc-snap-strictness: mandatory; }
+#hc-doc-root .focus\:snap-start:focus { scroll-snap-align: start; }
+#hc-doc-root .focus\:snap-center:focus { scroll-snap-align: center; }
+#hc-doc-root .focus\:shrink-0:focus { flex-shrink: 0; }
+#hc-doc-root .focus\:break-inside-avoid:focus { break-inside: avoid; }
+#hc-doc-root .focus\:transition:focus { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
+#hc-doc-root .focus\:duration-150:focus { transition-duration: 150ms; }
+#hc-doc-root .focus\:duration-300:focus { transition-duration: 300ms; }
+#hc-doc-root .focus\:duration-500:focus { transition-duration: 500ms; }
+#hc-doc-root .focus\:opacity-0:focus { opacity: 0; }
+#hc-doc-root .focus\:opacity-50:focus { opacity: 0.5; }
+#hc-doc-root .focus\:opacity-100:focus { opacity: 1; }
+#hc-doc-root .focus\:scale-95:focus { transform: scale(0.95); }
+#hc-doc-root .focus\:scale-100:focus { transform: scale(1); }
+#hc-doc-root .focus\:scale-105:focus { transform: scale(1.05); }
+#hc-doc-root .focus\:translate-y-0:focus { transform: translateY(0); }
+#hc-doc-root .focus\:translate-y-2:focus { transform: translateY(0.5rem); }
+#hc-doc-root .focus\:translate-y-4:focus { transform: translateY(1rem); }
+#hc-doc-root .focus\:columns-2:focus { columns: 2; }
+#hc-doc-root .focus\:columns-3:focus { columns: 3; }
+#hc-doc-root .focus\:columns-4:focus { columns: 4; }
+#hc-doc-root .focus\:z-10:focus { z-index: 10; }
+#hc-doc-root .focus\:z-20:focus { z-index: 20; }
+#hc-doc-root .focus\:z-30:focus { z-index: 30; }
+#hc-doc-root .focus\:z-40:focus { z-index: 40; }
+#hc-doc-root .focus\:z-50:focus { z-index: 50; }
+#hc-doc-root .focus\:from-brand-500:focus { --hc-grad-from: var(--brand); }
+#hc-doc-root .focus\:from-brand-600:focus { --hc-grad-from: color-mix(in srgb, var(--brand) 88%, black); }
+#hc-doc-root .focus\:from-brand-700:focus { --hc-grad-from: color-mix(in srgb, var(--brand) 74%, black); }
+#hc-doc-root .focus\:from-brand-800:focus { --hc-grad-from: color-mix(in srgb, var(--brand) 60%, black); }
+#hc-doc-root .focus\:to-brand-600:focus { --hc-grad-to: color-mix(in srgb, var(--brand) 88%, black); }
+#hc-doc-root .focus\:to-brand-700:focus { --hc-grad-to: color-mix(in srgb, var(--brand) 74%, black); }
+#hc-doc-root .focus\:to-brand-800:focus { --hc-grad-to: color-mix(in srgb, var(--brand) 60%, black); }
+#hc-doc-root .focus\:to-brand-900:focus { --hc-grad-to: color-mix(in srgb, var(--brand) 46%, black); }

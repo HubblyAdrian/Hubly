@@ -97,19 +97,79 @@ export type ValidationResult =
 // Grammar — the exact allowlist. Anything not named here is rejected.
 // ---------------------------------------------------------------------------
 
+/**
+ * THE TAG VOCABULARY — audited 2026-08-18.
+ *
+ * The rule this list is supposed to enforce is "no state Hubly manages". What
+ * it had actually been enforcing was "no interactivity at all", and those are
+ * not the same rule. The list also simply had not been revisited: it contained
+ * `header` but not `footer`, `ul`/`ol` but no `dl`, and no table elements of
+ * any kind, so a restaurant's opening hours had to be faked out of divs.
+ *
+ * HOW THIS WAS FOUND. Rejection logging over 13 builds produced exactly one
+ * hit, because a closed grammar stated plainly in the prompt makes the model
+ * self-censor rather than push. Handing it three deliberately ambitious briefs
+ * and asking it to enumerate what it wanted and could not build produced 24
+ * items and ZERO logged rejections — it attempted none of them. Everything
+ * added below traces to that list.
+ *
+ * THE LINE, restated precisely:
+ *   - Static presentation .................. allowed here
+ *   - Browser-native behaviour, no script,
+ *     no state we own (details/summary) .... allowed here
+ *   - State Hubly manages (cart, lightbox,
+ *     carousel, filters, modals) ........... a reserved element, never a tag
+ *   - Anything executable .................. never, at any level
+ *
+ * `details`/`summary` is the case that proves the distinction was wrong: an
+ * accordion FAQ is one of the most common small-business patterns, needs no
+ * JavaScript, and holds no state Hubly is responsible for. The model named
+ * those exact two tags as what it would have needed.
+ */
 export const ALLOWED_TAGS = new Set([
-  "section", "div", "header", "article", "aside", "figure", "figcaption",
+  // Structure. `footer`/`nav`/`main` were the asymmetry: `header` was already
+  // here, and `footer` is the one tag 13 builds actually got rejected for.
+  "section", "div", "header", "footer", "nav", "main", "article", "aside",
+  "figure", "figcaption", "hgroup", "address",
   "h1", "h2", "h3", "h4", "h5", "h6",
-  "p", "span", "strong", "em", "blockquote",
-  "ul", "ol", "li", "a", "img", "video", "br",
+  // Text
+  "p", "span", "strong", "em", "blockquote", "q", "cite", "abbr",
+  "small", "mark", "sub", "sup", "s", "del", "ins", "code", "pre", "time",
+  // Lists. `dl`/`dt`/`dd` is the right shape for menus, spec lists and FAQs,
+  // and its absence forced all three into generic divs.
+  "ul", "ol", "li", "dl", "dt", "dd",
+  // Tables — wanted by two of the three briefs (opening hours, pricing
+  // comparison). Entirely static, entirely semantic, and previously absent.
+  "table", "caption", "thead", "tbody", "tfoot", "tr", "th", "td",
+  "colgroup", "col",
+  // Native disclosure. No script, no Hubly state — see the header comment.
+  "details", "summary",
+  // Media and inline SVG. See SVG_TAGS below for why the icon subset is
+  // deliberately narrow.
+  "a", "img", "video", "br", "hr", "wbr",
+  "svg", "path", "circle", "rect", "line", "polyline", "polygon", "g",
 ]);
+
+/** The inline-SVG subset, kept narrow ON PURPOSE.
+ *
+ *  SVG is the one addition here with a real attack surface: `<script>` and
+ *  `<foreignObject>` inside an <svg> are script execution, and `<use>` can
+ *  reference external documents. None of those appear above, so they are
+ *  rejected as unknown tags before any attribute check runs — and the
+ *  attribute allowlist below carries no href, no xlink, and no event handler
+ *  (already impossible via HARD_BANNED_ATTR_RE). What is left is geometry and
+ *  paint, which is inert. */
+const SVG_TAGS = new Set(["svg", "path", "circle", "rect", "line", "polyline", "polygon", "g"]);
 
 /** Opaque to the AI — configured presentationally, implemented by Hubly. */
 export const HUBLY_RESERVED_TAGS = new Set([
   "HublyBooking", "HublyReviews", "HublyCustomerPortal", "HublyContactForm", "HublyMap",
 ]);
 
-const VOID_TAGS = new Set(["img", "video", "br"]);
+// True HTML voids only. SVG leaf elements are NOT listed here: they render as
+// `<path ...></path>`, which is correct inside foreign content, whereas the
+// void branch emits an unclosed tag.
+const VOID_TAGS = new Set(["img", "video", "br", "hr", "wbr", "col"]);
 
 // Attributes never allowed on any tag, regardless of anything else — checked
 // before any tag-specific logic runs.
@@ -121,6 +181,24 @@ const TAG_SPECIFIC_ATTRS: Record<string, string[]> = {
   a: ["href"],
   img: ["src", "alt"],
   video: ["src"],
+  // Static table semantics. colspan/rowspan/scope/headers carry no behaviour.
+  th: ["colspan", "rowspan", "scope", "headers"],
+  td: ["colspan", "rowspan", "headers"],
+  col: ["span"],
+  colgroup: ["span"],
+  // `open` is an initial state written into the markup, not state Hubly keeps.
+  details: ["open"],
+  time: ["datetime"],
+  abbr: ["title"],
+  // Geometry and paint only — no href, no xlink, no external reference.
+  svg: ["viewBox", "fill", "stroke", "stroke-width", "aria-hidden", "role", "width", "height"],
+  path: ["d", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin", "fill-rule", "clip-rule"],
+  circle: ["cx", "cy", "r", "fill", "stroke", "stroke-width"],
+  rect: ["x", "y", "width", "height", "rx", "ry", "fill", "stroke", "stroke-width"],
+  line: ["x1", "y1", "x2", "y2", "stroke", "stroke-width", "stroke-linecap"],
+  polyline: ["points", "fill", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"],
+  polygon: ["points", "fill", "stroke", "stroke-width"],
+  g: ["fill", "stroke", "stroke-width", "transform"],
 };
 
 const REQUIRED_ATTRS: Record<string, string[]> = {
@@ -323,6 +401,35 @@ const CLASS_FAMILIES: ClassFamily[] = [
     ],
     prompt: `Gradients: bg-gradient-to-{r,b,br} with from-brand-{500,600,700,800} and to-brand-{600,700,800,900} — for a hero wash or a scrim that keeps text readable over an image`,
   },
+  {
+    // Wanted by the storefront brief for a sticky nav and a sticky mobile bar.
+    // Note the page chrome already renders a sticky header, so this is for
+    // elements the document itself wants to pin.
+    id: "sticky",
+    tokens: ["sticky", "fixed", "top-0", "bottom-0", "left-0", "right-0", "z-10", "z-20", "z-30", "z-40", "z-50"],
+    prompt: `Pinning: sticky, fixed with top-0/bottom-0/left-0/right-0 and z-{10,20,30,40,50} — for a bar that stays put while the page scrolls. The site header is already sticky and rendered for you; do not build another one`,
+  },
+  {
+    // Wanted by two of three briefs: a draggable "recent weddings" strip and a
+    // sideways-scrolling food gallery. Both were flattened into static grids.
+    id: "horizontal-scroll",
+    tokens: ["overflow-x-auto", "overflow-y-auto", "snap-x", "snap-mandatory", "snap-start", "snap-center", "shrink-0"],
+    prompt: `Horizontal scrolling: overflow-x-auto with snap-x, snap-mandatory and snap-start/snap-center on the children, plus shrink-0 so items keep their width — this is how you build a sideways-scrolling strip of photos or cards instead of flattening it into a grid`,
+  },
+  {
+    // Wanted by the portfolio brief. A masonry gallery was approximated as a
+    // rigid grid because no column utility existed.
+    id: "columns",
+    tokens: ["columns-2", "columns-3", "columns-4", "break-inside-avoid"],
+    prompt: `Masonry: columns-{2,3,4} with break-inside-avoid on each child — packs items of different heights, which a grid cannot do. Right for a photo gallery where the images are not all the same shape`,
+  },
+  {
+    // Transitions are static declarations; only the hover: VARIANT below makes
+    // them move, and that is CSS, not state.
+    id: "transition",
+    tokens: ["transition", "duration-150", "duration-300", "duration-500", "opacity-0", "opacity-50", "opacity-100", "scale-95", "scale-100", "scale-105", "translate-y-0", "translate-y-2", "translate-y-4"],
+    prompt: `Motion: transition with duration-{150,300,500}, and opacity-{0,50,100}, scale-{95,100,105}, translate-y-{0,2,4} — combine with the hover: prefix below for a control that lifts, fades in or slides up under the cursor`,
+  },
 ];
 
 function buildUtilityClassSet(): Set<string> {
@@ -371,7 +478,12 @@ export function verifyVocabularyCoverage(): string[] {
   }
   return problems;
 }
-const RESPONSIVE_PREFIXES = ["sm:", "md:", "lg:"];
+// sm:/md:/lg: are breakpoints; hover:/focus: are interaction states. Both are
+// pure CSS variants over the same base rules — no script, no state Hubly owns —
+// so they belong on the vocabulary side of the line, not the component side.
+// Their absence is why "reveal an Add to cart button on hover" came back as
+// impossible when the visual half of it is one CSS rule.
+const RESPONSIVE_PREFIXES = ["sm:", "md:", "lg:", "hover:", "focus:"];
 
 function isValidClassToken(token: string): boolean {
   for (const p of RESPONSIVE_PREFIXES) {
@@ -940,7 +1052,17 @@ You are not writing JSX or HTML. You are producing a JSON tree of nodes. Each no
 Return the ROOT node only (a single object), not an array, not wrapped in another key.
 
 ALLOWED TAGS (nothing else will be accepted): ${tags}
-Never: script, style, iframe, form, input, button, or any "on*"/"style" attribute — these are rejected outright, not filtered.
+Never: script, style, iframe, form, input, select, button, textarea, dialog, canvas, or any "on*"/"style" attribute — these are rejected outright, not filtered.
+
+WHAT THE TAGS ABOVE LET YOU DO — several of these are new and easy to overlook:
+- <details> + <summary> — a real expand/collapse. THIS IS HOW YOU BUILD AN ACCORDION FAQ. It needs no JavaScript and is fully supported. Put the question in <summary> and the answer in the <details> after it. Add open="true" to the first one if you want it expanded on arrival. Use this instead of stacking every answer permanently on the page.
+- <table>, <thead>, <tbody>, <tr>, <th>, <td>, <caption> — real tabular data. Opening hours, a price list, a package comparison with a column per tier. Use a table when the content IS a table; do not fake one out of divs and do not use one for page layout.
+- <dl>, <dt>, <dd> — a term-and-description list. The right shape for a menu (dish then description), a spec list, or short Q&A that does not need collapsing.
+- <svg> with <path>, <circle>, <rect>, <line>, <polyline>, <polygon>, <g> — real inline icons. Ticks, crosses, stars, arrows, dietary or spice markers. Write the path data yourself; keep icons simple and set aria-hidden="true" on decorative ones. This replaces using emoji as interface icons.
+- <footer>, <nav>, <main>, <hgroup>, <address> — real page structure. NOTE: the site header, its navigation and the page footer are rendered around your document automatically. Do not build a second site-wide header or footer; use <footer> for section-level footers and <nav> for in-page jump links only.
+- <time datetime="...">, <small>, <mark>, <sub>, <sup>, <abbr title="...">, <s>, <del>, <ins>, <code>, <pre>, <q>, <cite>, <hr> — ordinary typography. <s> or <del> is how you show a struck-through original price.
+
+STILL IMPOSSIBLE, and do not approximate it with markup that pretends otherwise: a shopping cart or any cart badge, an image lightbox, a carousel or auto-advancing slider, a modal or popup, filter or tab controls that change what is shown, a before/after drag slider, a date picker, anything that reacts to a click beyond following a link, and anything that depends on the current date or live data. These need real components Hubly has not built. If a brief asks for one, build the closest honest static version and say what you left out — never fake the interactive part.
 
 RESERVED HUBLY ELEMENTS (you configure appearance only, never behavior): ${reserved}
 Never write your own <form> or interactive markup for these — place the reserved element instead. Their real data and functionality are Hubly's, not yours to invent. What each one actually is:
