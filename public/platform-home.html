@@ -154,7 +154,11 @@ button.ask-icon-left:focus-visible{outline:2px solid var(--brand);outline-offset
   background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.10);
   transition:border-color .16s ease,background .16s ease,transform .16s ease;
 }
-.aud-card:hover,.aud-card:focus-visible{
+/* Unlinked until there is somewhere real to send people: /pro is inert -- zero
+   inputs, zero fetches -- and pointing it at / is a loop. It stays a card so the
+   hero still reads as two audiences; it just stops pretending to be a door. */
+.aud-card.is-static{cursor:default}
+.aud-card:not(.is-static):hover,.aud-card:not(.is-static):focus-visible{
   border-color:rgba(233,116,58,.55);background:rgba(255,255,255,.07);transform:translateY(-2px);outline:none;
 }
 .aud-kicker{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#e9743a}
@@ -162,7 +166,7 @@ button.ask-icon-left:focus-visible{outline:2px solid var(--brand);outline-offset
 .aud-card ul{margin:4px 0 0;padding:0 0 0 18px;display:grid;gap:5px}
 .aud-card li{font-size:13.5px;line-height:1.45;color:rgba(255,255,255,.78)}
 .aud-go{margin-top:6px;font-size:13px;font-weight:650;color:rgba(255,255,255,.92)}
-.aud-card:hover .aud-go{color:#e9743a}
+.aud-card:not(.is-static):hover .aud-go{color:#e9743a}
 @media (max-width:720px){ .aud-row{grid-template-columns:1fr;max-width:420px} }
 
 /* Mic. Stays [hidden] unless the browser actually exposes SpeechRecognition. A
@@ -525,7 +529,7 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
         </ul>
         <span class="aud-go">Browse the marketplace &rarr;</span>
       </a>
-      <a class="aud-card" href="/pro">
+      <div class="aud-card is-static">
         <span class="aud-kicker">For business owners</span>
         <h3>Tools to grow your business</h3>
         <ul>
@@ -533,8 +537,7 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
           <li>Take bookings and payments</li>
           <li>Sell products from your own store</li>
         </ul>
-        <span class="aud-go">See the tools &rarr;</span>
-      </a>
+      </div>
     </div>
   </div>
 </section>

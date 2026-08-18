@@ -1019,3 +1019,33 @@ conclusion wrong, because nobody asked whether the path runs. The other three:
 branch (114 combinations verified on a branch production never takes), and the
 marketplace facade fix (made in `app-marketplace.js`, page drawn by
 `journey.js`). See `AI_CAPABILITY_INVENTORY.md` for the table.
+
+---
+
+## An RLS sweep that probes with `select=*` hides column-restricted tables
+
+**Found 2026-08-18, during the sweep it nearly invalidated.**
+
+The sweep tests every table with the anon key and reports which return rows.
+It probed with `select=*`, which is the natural choice and is wrong the moment
+any table has column-level grants.
+
+`businesses` had exactly that: Session 1 had granted anon SELECT on 51 columns
+and withheld `draft_token`. A `select=*` therefore fails with 42501 for the
+missing column, and the sweep recorded `businesses` as **returning nothing** —
+a clean bill of health for a table that was in fact serving all 64 rows,
+15 of them with email and phone, to anyone with the public key.
+
+It was only found by re-testing with an explicit column list, on a hunch about
+the fix rather than by the method.
+
+**The rule: after ANY column-level grant, the sweep must be re-run with explicit
+column lists, not `select=*`.** A table that reads "blocked" under `select=*`
+may be fully readable one column-name away. There are no other column-restricted
+tables today, which is exactly why this will be forgotten before it matters.
+
+Related: the same sweep first reported 41 unconditional anon policies. The real
+number was 10. `pg_policies.qual` is NULL for INSERT policies — the operative
+clause is `with_check` — and coalescing NULL to "unconditional" turned 31
+correctly-guarded policies into false alarms. Read `with_check` for INSERT and
+`qual` for SELECT/UPDATE/DELETE, or the report cries wolf.

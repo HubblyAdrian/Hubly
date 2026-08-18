@@ -17356,10 +17356,13 @@ function hcNoIndex(){
 
 async function loadPublicProfile(slug){
   const dbClient=await waitForDb();
-  // draft_token deliberately absent — anon no longer has column access to it.
-  // The other two select('*') calls filter by owner_id and run as `authenticated`,
-  // whose grants are untouched.
-  const {data,error}=await dbClient.from('businesses').select('id,owner_id,name,tagline,slug,phone,email,city,about,brand_color,bg_color,logo_url,banner_url,ig_handle,fb_url,tiktok_handle,google_url,review_embed_code,payment_setting,deposit_type,deposit_value,deposit_message,section_order,created_at,meta,timezone,buffer_before_min,buffer_after_min,site_mode,hero_photos,service_area_cities,gen_hero_headline,gen_hero_subhead,gen_about,gen_faq,gen_seo_title,gen_seo_description,gen_why_choose,site_theme,tier,travel_radius_miles,years_in_business,gen_hero_headline_options,business_type,capabilities,address,zip,state,latitude,longitude,location_source').eq('slug',slug).single();
+  // Reads through get_public_business(slug), not the table. businesses carried
+  // a USING (true) row policy, so the anon key could list all 64 businesses with
+  // email and phone -- a directory, where the product only needs a site to show
+  // its OWN details. anon now has column access to (id, slug) only, which keeps
+  // slug-availability checks working, and this function returns one business
+  // with draft_token stripped.
+  const {data,error}=await dbClient.rpc('get_public_business',{ p_slug: slug }).single();
   if(error||!data){
     console.error('loadPublicProfile: no business found for slug',slug,error?.message||'(no matching row)');
     const slugEl=document.getElementById('pub-unavail-slug');
