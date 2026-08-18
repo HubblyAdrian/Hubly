@@ -20,7 +20,10 @@
   --line-soft:rgba(255,255,255,.15);
   --ink:#f5f6f8;
   --ink-2:rgba(245,246,248,.68);
-  --ink-3:rgba(245,246,248,.46);
+  /* .46 measured at 4.37:1 on --bg, which FAILS WCAG AA (needs 4.5). The
+     lowest alpha that passes is .47; .62 is used so it clears the bar with
+     margin rather than scraping it. Now 7.24:1. Used by "Hubly is thinking…". */
+  --ink-3:rgba(245,246,248,.62);
   --font:'DM Sans',system-ui,sans-serif;
   --display:'Plus Jakarta Sans',system-ui,sans-serif;
   --page-x:clamp(18px,4.5vw,64px);
@@ -281,8 +284,59 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
 .hc-thread{flex:1;overflow-y:auto;padding:36px clamp(22px,4vw,60px) 18px;display:flex;flex-direction:column;gap:22px}
 .hc-msg{max-width:640px;font-size:16px;line-height:1.65;white-space:pre-wrap}
 .hc-msg.hubly{color:var(--ink)}
-.hc-msg.user{color:var(--ink-2);align-self:flex-end;text-align:right}
+/* The user's own words as a filled bubble at the column's right edge. A
+   brand-orange fill was measured first and rejected: white on #D9632D is
+   2.99:1, which fails AA outright. This neutral raised surface resolves to
+   rgb(35,36,40) and gives white 15.5:1. */
+.hc-msg.user{
+  color:#fff;align-self:flex-end;text-align:left;
+  background:rgba(245,246,248,.12);
+  border-radius:16px 16px 4px 16px;
+  padding:10px 14px;max-width:min(560px,82%);
+}
 .hc-msg.typing{color:var(--ink-3);font-style:italic}
+
+/* TWO STATES, BOTH NOW IMPLEMENTED. Pre-build there is no preview, so the
+   conversation is a centred column at the input's width. The app was in panel
+   mode from the first keystroke, so the transcript spanned the whole window
+   while the input sat centred, and the user's own message ran off the right
+   edge of the viewport. */
+.hc-app:not(.hc-has-draft) .hc-thread{width:100%;max-width:760px;margin:0 auto}
+
+/* The preview's view bar — outside #hcCanvas so it survives every view's
+   innerHTML, which is the whole reason there was no way back. */
+/* Build skeleton. The shape of the page that is coming, so the panel is not a
+   blank minute — paired with elapsed-time copy, which is a true fact, rather
+   than a percentage or a bar, which would not be. */
+.hc-skel{padding:18px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.hc-skel-note{font-size:12.5px;color:rgba(255,255,255,.72);display:flex;align-items:center}
+.hc-skel-bar,.hc-skel-hero,.hc-skel-block,.hc-skel-row span{
+  border-radius:10px;
+  background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.11) 37%,rgba(255,255,255,.05) 63%);
+  background-size:400% 100%;animation:hcSkelShimmer 1.5s ease-in-out infinite;
+}
+.hc-skel-bar{height:44px}
+.hc-skel-hero{height:150px}
+.hc-skel-block{height:96px}
+.hc-skel-row{display:flex;gap:12px}
+.hc-skel-row span{flex:1;height:76px}
+@keyframes hcSkelShimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+@media (prefers-reduced-motion:reduce){
+  .hc-skel-bar,.hc-skel-hero,.hc-skel-block,.hc-skel-row span{animation:none}
+}
+.hc-canvas-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.10);
+  background:#0d0f16;flex:0 0 auto;
+}
+.hc-canvas-bar[hidden]{display:none}
+.hc-view-label{font-size:12px;color:rgba(255,255,255,.62);letter-spacing:.02em}
+.hc-view-home{
+  background:none;border:1px solid rgba(255,255,255,.22);color:#fff;
+  border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer;
+}
+.hc-view-home:hover{border-color:var(--brand);color:var(--brand)}
+.hc-canvas-body{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
 .hc-work-chip{
   align-self:flex-start;display:inline-flex;align-items:center;gap:7px;
   font-size:11.5px;letter-spacing:.03em;color:var(--brand);
@@ -307,6 +361,9 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   display:flex;flex-direction:column;gap:2px;
 }
 .hc-attach-menu[hidden]{display:none}
+/* It opened over the transcript, making the text behind it unreadable. Solid
+   background and a real shadow so nothing shows through. */
+.hc-attach-menu{background:#12141c;border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 44px rgba(0,0,0,.55)}
 .hc-attach-menu button{
   display:flex;align-items:center;gap:9px;text-align:left;border:0;background:none;
   color:rgba(245,246,248,.88);font-size:13px;padding:9px 10px;border-radius:8px;cursor:pointer;
@@ -579,7 +636,13 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
       </div>
     </div>
   </div>
-  <div class="hc-app-right" id="hcCanvas"></div>
+  <div class="hc-app-right" id="hcCanvasPane">
+    <!-- Lives OUTSIDE #hcCanvas so it survives the innerHTML writes of all five
+         view renderers. A back control inside the view it is meant to escape
+         would be wiped by the next one. -->
+    <div class="hc-canvas-bar" id="hcCanvasBar" hidden></div>
+    <div class="hc-canvas-body" id="hcCanvas"></div>
+  </div>
   <input type="file" id="hcFileInput" accept="image/*" style="display:none">
   <input type="file" id="hcPdfInput" accept="application/pdf" style="display:none">
   <input type="file" id="hcLogoInput" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none">
@@ -913,7 +976,53 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   // renderer at <slug>.myhubly.app); everything else stays conversational
   // until it has one too, so the canvas honestly stays a placeholder rather
   // than pretending to show progress that isn't real.
+  // THE PREVIEW VIEW MODEL.
+  //
+  // Five functions write into #hcCanvas — the site, concepts, inspiration cards,
+  // an inspiration link form, and the loading states — and four of them replaced
+  // the page with no way back. Observed: a direction was picked, applied, and
+  // reported as applied, while the pane still showed the cards. The change was
+  // real and invisible. "I cant see the page" got "Hubly is thinking…" and
+  // nothing, because nothing in the product knew how to go home.
+  //
+  // Every non-site view now carries a way back, and the page is the default:
+  // anything that changes it returns there.
+  function hcSetView(view){
+    hc.canvasView = view;
+    var pane = document.getElementById('hcCanvasPane');
+    if(pane) pane.setAttribute('data-view', view);
+    hcMountViewBar();
+  }
+
+  function hcShowPage(){
+    if(!hc.draftBusiness){
+      hcAppendMessage('hubly', "There's no page yet — tell me what you do and I'll build one.");
+      return;
+    }
+    hcSetView('site');
+    hcRenderCanvas();
+  }
+
+  function hcMountViewBar(){
+    var wrap = document.getElementById('hcCanvasBar');
+    if(!wrap) return;
+    if(hc.canvasView === 'site' || hc.canvasView === undefined || !hc.draftBusiness){
+      wrap.innerHTML = ''; wrap.hidden = true; return;
+    }
+    wrap.hidden = false;
+    var what = hc.canvasView === 'inspiration' ? 'directions'
+             : hc.canvasView === 'concepts' ? 'concepts'
+             : hc.canvasView === 'booking' ? 'the booking page' : 'this';
+    wrap.innerHTML =
+      '<span class="hc-view-label">Showing ' + hcEscape(what) + '</span>' +
+      '<button type="button" class="hc-view-home" id="hcViewHome">&larr; Back to your page</button>';
+    var btn = document.getElementById('hcViewHome');
+    if(btn) btn.addEventListener('click', hcShowPage);
+  }
+
   function hcRenderCanvas(){
+    hc.canvasView = 'site';
+    try{ hcMountViewBar(); }catch(e){}
     var root = document.getElementById('hcCanvas');
     if(!root) return;
     if(!hc.draftBusiness || !hc.draftBusiness.url){
@@ -1006,6 +1115,8 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   // (nav / headline / cta / a hint of a services row) in the real
   // direction's character, not a tiny swatch and not prose.
   function hcRenderConcepts(list){
+    hc.canvasView = 'concepts';
+    try{ hcMountViewBar(); }catch(e){}
     var root = document.getElementById('hcCanvas');
     if(!root || !Array.isArray(list) || !list.length) return;
     root.innerHTML =
@@ -1056,6 +1167,8 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
     spark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/></svg>'
   };
   function hcRenderInspiration(){
+    hc.canvasView = 'inspiration';
+    try{ hcMountViewBar(); }catch(e){}
     var root = document.getElementById('hcCanvas');
     if(!root || hc.draftBusiness) return;
     root.innerHTML =
@@ -1120,6 +1233,8 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   }
 
   function hcRenderInspirationLink(label, placeholder){
+    hc.canvasView = 'inspiration';
+    try{ hcMountViewBar(); }catch(e){}
     var root = document.getElementById('hcCanvas');
     if(!root) return;
     root.innerHTML =
@@ -1157,11 +1272,44 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   // normal hcRenderCanvas() path exactly as if it had loaded instantly.
   var hcDocPollTimer = null;
   function hcRenderDocumentBuilding(){
-    var root = document.getElementById('hcCanvas');
-    if(!root) return;
-    root.innerHTML =
-      '<div class="hc-canvas-loading" style="position:static;flex:1"><span class="hc-live-dot"></span>&nbsp;Building your real page — this can take about a minute…</div>';
-  }
+      hc.canvasView = 'site';
+      try{ hcMountViewBar(); }catch(e){}
+      var root = document.getElementById('hcCanvas');
+      if(!root) return;
+      // A SKELETON, NOT A PROGRESS BAR.
+      //
+      // generateDocument cannot stream, checked before building this: HublyAI
+      // has no streaming support at all, document_generate is jsonMode so the
+      // tree is not valid until the closing brace, and the call runs in
+      // EdgeRuntime.waitUntil after the response has already been sent — there
+      // is no connection to stream over. So sections cannot arrive one by one.
+      //
+      // What is honest instead is the SHAPE of what is coming, plus elapsed
+      // time, which is a real fact. No percentage, no bar: both would be
+      // inventing knowledge of progress we do not have.
+      root.innerHTML =
+        '<div class="hc-skel" id="hcSkel">' +
+          '<div class="hc-skel-note"><span class="hc-live-dot"></span>&nbsp;<span id="hcSkelNote">Writing your page — about a minute.</span></div>' +
+          '<div class="hc-skel-bar"></div>' +
+          '<div class="hc-skel-hero"></div>' +
+          '<div class="hc-skel-row"><span></span><span></span><span></span></div>' +
+          '<div class="hc-skel-block"></div>' +
+          '<div class="hc-skel-row"><span></span><span></span></div>' +
+        '</div>';
+      // Elapsed-time copy. True statements only: it says how long it has been,
+      // never how far along it is.
+      var started = Date.now();
+      if(hc.skelTimer) clearInterval(hc.skelTimer);
+      hc.skelTimer = setInterval(function(){
+        var el = document.getElementById('hcSkelNote');
+        if(!el){ clearInterval(hc.skelTimer); hc.skelTimer = null; return; }
+        var secs = Math.round((Date.now() - started) / 1000);
+        el.textContent = secs < 45
+          ? 'Writing your page — about a minute.'
+          : (secs < 100 ? 'Still writing — this one is taking a little longer.'
+                        : 'Still going. It has been ' + Math.round(secs / 15) * 15 + ' seconds.');
+      }, 5000);
+    }
   function hcPollForDocument(businessId, attempt){
     if(hcDocPollTimer){ clearTimeout(hcDocPollTimer); hcDocPollTimer = null; }
     if(!hc.draftBusiness || hc.draftBusiness.id !== businessId) return; // superseded by a newer turn
@@ -1378,6 +1526,13 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
           // The assistant says "upload it here"; this is the "here".
           hcAppendLogoDropzone();
         }
+        // THE PAGE IS THE DEFAULT. If a turn changed the draft, go home —
+        // otherwise a change lands while the pane still shows the cards that
+        // caused it, which is exactly what was observed.
+        if(data.draftBusiness && hc.canvasView && hc.canvasView !== 'site'){
+          var changed = (data.actions||[]).some(function(a){ return a.ok && a.real; });
+          if(changed) hcShowPage();
+        }
         var interim = Array.isArray(data.interimMessages) ? data.interimMessages : [];
         var i = 0;
         function showNext(){
@@ -1398,9 +1553,22 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
       });
   }
 
+  // "I cant see the page" got "Hubly is thinking…" and nothing. Asking to see
+  // the page is a navigation request, not a conversation topic — it is answered
+  // here, instantly, instead of costing a model round-trip that cannot move the
+  // pane anyway.
+  var HC_SHOW_PAGE_RE = /^(?:can (?:i|we) )?(?:i )?(?:c(?:a|')?n'?t see|show me|go back to|back to|see|view|where is|wheres|where's|open)\s+(?:the |my |our )?(?:page|site|website|preview)\b/i;
+
   function hcSendText(text){
     text = (text || '').trim();
     if(!text || hc.busy) return;
+    if(HC_SHOW_PAGE_RE.test(text) && hc.draftBusiness){
+      hcActivate();
+      hcAppendMessage('user', text);
+      hcShowPage();
+      hcAppendMessage('hubly', "Here it is.");
+      return;
+    }
     hcActivate();
     hcAppendMessage('user', text);
     hc.messages.push({ role: 'user', content: text });

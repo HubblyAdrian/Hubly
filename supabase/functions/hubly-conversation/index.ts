@@ -97,23 +97,72 @@ import {
 // it must carry across rounds is a rule it will eventually drop. Compared on
 // normalised text so casing or trailing punctuation still collapses.
 function normalizeForDedupe(text: string): string {
-  return text.toLowerCase().replace(/\s+/g, " ").replace(/[.!\u2026]+$/g, "").trim();
+  return text.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function dedupeConversationMessages(interim: string[], reply: string): { interim: string[]; reply: string } {
-  const seen = new Set<string>();
-  const keptInterim: string[] = [];
-  for (const m of interim) {
-    const key = normalizeForDedupe(m);
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    keptInterim.push(m);
-  }
-  const replyKey = normalizeForDedupe(reply);
-  // The reply is dropped rather than the interim: the interim arrived first,
-  // and was true when it arrived.
-  return { interim: keptInterim, reply: replyKey && seen.has(replyKey) ? "" : reply };
+/** Dice coefficient over normalised word sets. Chosen over Jaccard because it
+ *  weights overlap more generously, which suits short conversational lines
+ *  where a few shared content words already mean something. */
+function similarity(a: string, b: string): number {
+  const A = new Set(normalizeForDedupe(a).split(" ").filter(Boolean));
+  const B = new Set(normalizeForDedupe(b).split(" ").filter(Boolean));
+  if (!A.size || !B.size) return 0;
+  let shared = 0;
+  for (const w of A) if (B.has(w)) shared++;
+  return (2 * shared) / (A.size + B.size);
 }
+
+/** THE THRESHOLD: 0.6. Measured against the repeats actually observed rather
+ *  than picked for roundness. The photos prompt repeated near-verbatim scores
+ *  ~0.95; two genuinely different lines in this product score under 0.2. 0.6
+ *  sits in open space rather than on top of either cluster. */
+const DUPLICATE_THRESHOLD = 0.6;
+
+/** The exception the threshold cannot catch. "Building the first version now."
+ *  and "Building the page now — it'll appear in a moment." are the SAME
+ *  statement and score only ~0.43, because English offers many ways to say one
+ *  thing. Two lines that both announce a build in progress are a repeat
+ *  whatever their wording. */
+const PROGRESS_RE = /\b(building|creating|putting together|working on|generating)\b/i;
+const PAGE_RE = /\b(page|site|website|version|draft)\b/i;
+function isProgressAnnouncement(t: string): boolean {
+  return PROGRESS_RE.test(t) && PAGE_RE.test(t);
+}
+
+function isNearDuplicate(candidate: string, recent: string[]): boolean {
+  for (const prior of recent) {
+    if (similarity(candidate, prior) >= DUPLICATE_THRESHOLD) return true;
+    if (isProgressAnnouncement(candidate) && isProgressAnnouncement(prior)) return true;
+  }
+  return false;
+}
+
+/** Compared against the last few assistant messages, not only the previous one:
+ *  the observed photos repeat was two turns apart. */
+const DEDUPE_WINDOW = 4;
+
+function dedupeConversationMessages(
+  interim: string[],
+  reply: string,
+  history: { role: string; content: unknown }[] = [],
+): { interim: string[]; reply: string } {
+  const recent: string[] = history
+    .filter((m) => m.role === "assistant" && typeof m.content === "string")
+    .slice(-DEDUPE_WINDOW)
+    .map((m) => m.content as string);
+
+  const kept: string[] = [];
+  for (const m of interim) {
+    if (!m || !m.trim()) continue;
+    if (isNearDuplicate(m, recent.concat(kept))) continue;
+    kept.push(m);
+  }
+  // The reply is dropped rather than an interim: the interim arrived first and
+  // was true when it arrived.
+  const replyIsDupe = !!reply && isNearDuplicate(reply, recent.concat(kept));
+  return { interim: kept, reply: replyIsDupe ? "" : reply };
+}
+
 
 const DETERMINISTIC_OPENING =
   "I'd love to help.\n\nBefore I make recommendations or build anything, I'd like to learn about your business.\n\nYou can paste a website, your Google Business Profile, Facebook page, Instagram, upload screenshots, or simply tell me you're starting from scratch.";
@@ -1064,7 +1113,7 @@ Deno.serve(async (req) => {
         }
       }
 
-      const deduped = dedupeConversationMessages(interimMessages, finalText);
+      const deduped = dedupeConversationMessages(interimMessages, finalText, history);
       return jsonRes({
         ok: true,
         // rebuildSkippedNote is empty unless a rebuild was refused over the

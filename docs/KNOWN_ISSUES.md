@@ -1101,17 +1101,43 @@ the thing anyone cares about. The same trap applies to any cleanup step: a
 sanitiser, a dedupe, a suppression rule, a validator. Measure the output, not
 the machinery.
 
+
 ---
 
-## Things that work on classic and silently vanish on the Document format
+## The classic renderer is supported, not deprecated
 
-**A running list. Add to it before migrating anyone.**
+**Decided 2026-08-18.** Existing customers' sites are rendered by the classic
+path in `public/hubly.html` and they are never migrating to the Hubly Document
+format. Classic is a live product surface with real businesses on it, not legacy
+code awaiting removal.
 
-The Document format is not a superset of the classic renderer. Each item below
-works today for real customers on classic and disappears — silently, with no
-error and no warning — the moment that business's site is regenerated as a Hubly
-Document. None of these are caused by the six-section validator; that was ruled
-out on 2026-08-18.
+Practically:
+
+- Do not refactor it away, and do not delete parts of it that look unused —
+  `api/notify.js` was deleted as dead once already because its caller was a row
+  in `pg_trigger`.
+- Changes to code BOTH renderers share — `businesses` columns, the storage
+  buckets, RLS policies, the booking and Service Engine paths — must keep
+  classic working. It is the easier one to break, because the Document work is
+  where the attention is.
+- "Document is the future" means new sites are built there. It does not mean
+  classic is winding down.
+---
+
+## Features classic has that Document does not
+
+**No longer a migration gate. Decided 2026-08-18: existing classic customers
+never migrate. Document is for new sites only, and classic keeps working as-is.**
+
+So nothing below is a risk to an existing customer. Each item is now a product
+question about NEW businesses: does a business starting today on Document need
+this, and if so it has to be built there. The urgency is gone; the questions are
+not.
+
+**Memberships is the one for the roadmap.** It has a real write path —
+`booking_requests.is_membership_signup` — and a new business that wants
+recurring plans simply cannot have them on Document. That is a capability gap in
+the format we are selling to new customers, not a porting chore.
 
 | Feature | Classic | Document | Confirmed |
 |---|---|---|---|
@@ -1145,7 +1171,7 @@ the one unguarded caller of thirteen warns instead of saving; and
 readable and then verified to render through the real Document renderer. Zero
 `data:` URIs remain in the table.
 
-### The deliberate hunt, 2026-08-18
+### What Document lacks, enumerated 2026-08-18
 
 Rather than wait to trip over the next one, every `ws-*` feature block in the
 classic renderer was enumerated and checked against the Document schema. Four
@@ -1158,15 +1184,16 @@ have **no representation in the Document format at all**:
 | Promotions | 39 refs | **0 refs** | Grep-level, not yet traced end to end |
 | Announcement ticker | 20 refs | **0 refs** | Grep-level, not yet traced end to end |
 
-Social links and memberships are the two to take seriously: both have real
-columns or real write paths behind them, so a business using either loses
-something concrete on migration. Promotions and the ticker are grep-level
-findings and need tracing before being treated as facts.
+Social links and memberships are the two worth acting on: both have real columns
+or real write paths, so a NEW business wanting either cannot have it on
+Document. Social links are cheap — the columns exist and the chrome footer is
+ours to extend. Memberships is a real build. Promotions and the ticker are
+grep-level findings and need tracing before being treated as facts.
 
-**The list above is almost certainly incomplete.** This case was found by
-accident, while chasing an unrelated `HTTP 000` in a storage test. Nobody went
-looking for it. Treat the table as a starting point, not an inventory, and do
-not migrate a customer to the Document format on the strength of it.
+**The list above is almost certainly incomplete.** The data-URI logo case was
+found by accident, while chasing an unrelated `HTTP 000` in a storage test.
+Nobody went looking for it. Treat the table as a starting point rather than an
+inventory when deciding what a new business needs.
 
 ---
 
