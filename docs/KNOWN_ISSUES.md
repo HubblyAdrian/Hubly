@@ -1049,3 +1049,45 @@ number was 10. `pg_policies.qual` is NULL for INSERT policies — the operative
 clause is `with_check` — and coalescing NULL to "unconditional" turned 31
 correctly-guarded policies into false alarms. Read `with_check` for INSERT and
 `qual` for SELECT/UPDATE/DELETE, or the report cries wolf.
+
+---
+
+## Things that work on classic and silently vanish on the Document format
+
+**A running list. Add to it before migrating anyone.**
+
+The Document format is not a superset of the classic renderer. Each item below
+works today for real customers on classic and disappears — silently, with no
+error and no warning — the moment that business's site is regenerated as a Hubly
+Document. None of these are caused by the six-section validator; that was ruled
+out on 2026-08-18.
+
+| Feature | Classic | Document | Confirmed |
+|---|---|---|---|
+| Site chatbot | `ws-chat-widget`, 17 refs in hubly.html | **no element exists** — `HublyChat` returns 0 matches in the schema | 2026-08-18 |
+| Service-area map | `ws-area-map`, real component | `HublyMap` renders a dashed "a map appears here" placeholder | 2026-08-18 |
+| Logos stored as `data:` URIs | renders fine | **dropped** — `isValidMediaSrc` allows only the storage and unsplash origins, so the header falls back to the initials monogram | 2026-08-18 |
+
+### The data-URI logos, specifically
+
+8 businesses have a `logo_url`. **2 of them hold a `data:` URI instead of a URL,
+and both belong to claimed businesses** — real owners. Largest is 37,207 bytes of
+base64 sitting in a text column.
+
+The writer is `hostBrandImage` in `public/hubly.html`:
+
+```js
+for (let attempt = 0; attempt < 3 && !hosted; attempt++) {
+  try { hosted = await uploadBrandAsset(kind, dataUrl); } catch (e) { hosted = null; }
+}
+return hosted || dataUrl;   // <-- silent fallback
+```
+
+Three upload attempts, and if all three fail it returns the raw data URL, which
+is then written to `logo_url`. It is called from **13 sites** and is fully live.
+So this is not a historical artefact: any owner whose upload fails today gets a
+data URI, which works on classic and will vanish when they move to Document.
+
+Two fixes are needed and neither is done: stop writing data URIs on upload
+failure (fail visibly instead), and migrate the two existing ones into storage
+before those businesses are moved to the Document format.
