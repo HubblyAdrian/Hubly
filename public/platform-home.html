@@ -1093,13 +1093,18 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     if(hcDocPollTimer){ clearTimeout(hcDocPollTimer); hcDocPollTimer = null; }
     if(!hc.draftBusiness || hc.draftBusiness.id !== businessId) return; // superseded by a newer turn
     var MAX_ATTEMPTS = 40; // ~40 * 4s = ~160s of polling before giving up honestly
-    fetch(SUPA_URL + '/rest/v1/business_documents?business_id=eq.' + encodeURIComponent(businessId) + '&tag=eq.website&select=version&order=version.desc&limit=1', {
-      headers: { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY }
+      // Polls the slug-scoped RPC, not the table: business_documents is no
+      // longer anon-readable. Same question — has the document landed yet —
+      // asked in a way that cannot enumerate other businesses.
+      fetch(SUPA_URL + '/rest/v1/rpc/get_public_business_document', {
+      method: 'POST',
+      body: JSON.stringify({ p_slug: hc.draftBusiness.slug, p_tag: 'website' }),
+        headers: { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' }
     })
       .then(function(r){ return r.json(); })
       .then(function(rows){
         if(!hc.draftBusiness || hc.draftBusiness.id !== businessId) return;
-        if(Array.isArray(rows) && rows.length){
+        if(Array.isArray(rows) && rows.length && rows[0] && rows[0].rendered_html){
           hc.canvasStage = 'site';
           hcRenderCanvas();
           var hcAppEl = document.getElementById('hcApp');
