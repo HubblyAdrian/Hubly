@@ -97,6 +97,22 @@ export type ValidationResult =
 // Grammar — the exact allowlist. Anything not named here is rejected.
 // ---------------------------------------------------------------------------
 
+
+
+export type SiteSectionSpec = { id: string; what: string; required: boolean };
+
+/** The only top-level sections an AI-generated document may contain.
+ *  Enforced in validateHublyDocument, not merely requested. */
+export const ALLOWED_DOCUMENT_SECTIONS: SiteSectionSpec[] = [
+  { id: "hero",         what: "one statement of what this business does and for whom, plus one clear next step", required: true },
+  { id: "services",     what: "the packages or services, each with what is included and who it suits",           required: true },
+  { id: "service-area", what: "where the business works — the towns and neighbourhoods actually covered",        required: false },
+  { id: "reviews",      what: "a HublyReviews element. Real customer proof, never written by you",               required: false },
+];
+
+/** Ids the validator accepts at the top level of a generated document. */
+export const ALLOWED_SECTION_IDS = new Set(ALLOWED_DOCUMENT_SECTIONS.map((s) => s.id));
+
 /**
  * THE TAG VOCABULARY — audited 2026-08-18.
  *
@@ -431,6 +447,16 @@ const CLASS_FAMILIES: ClassFamily[] = [
     tokens: ["transition", "duration-150", "duration-300", "duration-500", "opacity-0", "opacity-50", "opacity-100", "scale-95", "scale-100", "scale-105", "translate-y-0", "translate-y-2", "translate-y-4"],
     prompt: `Motion: transition with duration-{150,300,500}, and opacity-{0,50,100}, scale-{95,100,105}, translate-y-{0,2,4} — combine with the hover: prefix below for a control that lifts, fades in or slides up under the cursor`,
   },
+  {
+    // Model-authored scaffolding needs a marker the renderer can act on. The
+    // reserved empty states carry data-hd-placeholder; this is the equivalent
+    // for the grey photo frames the model composes itself, and it is what makes
+    // "suppress placeholders on the public page" possible without guessing
+    // which grey box was scaffolding and which was a design choice.
+    id: "placeholder",
+    tokens: ["is-placeholder"],
+    prompt: `Scaffolding: is-placeholder marks a block the OWNER will replace — an empty photo frame, a gallery waiting for real images. Put it on the frame itself. It keeps the block visible in the owner's builder preview and REMOVES it from the public page, so a stranger never lands on "photo goes here". Never put it on real copy.`,
+  },
 ];
 
 function buildUtilityClassSet(): Set<string> {
@@ -749,6 +775,33 @@ export function validateHublyDocument(raw: unknown, meta: { businessId: string; 
   const rejections = emptyRejections();
   const ctx: WalkContext = { takenIds: new Set(), h1Count: 0, intentElementCount: 0, errors, warnings, rejections };
   const root = walkAndValidate(rootRaw, "$", ctx);
+  // SIX SECTIONS, ENFORCED.
+  //
+  // Prompt guidance alone produced Reassurance, About, Services, Benefits and
+  // Service area on one page, where Reassurance and Benefits both restated the
+  // hero — the same point made three times. A model given room to invent
+  // sections invents them, and fills the extra ones by repeating itself.
+  //
+  // Only the top level is checked, and only for `ai` generations: nested
+  // <section> elements are ordinary structure, and an owner editing their own
+  // page may do as they like.
+  if (root && meta.generatedBy === "ai") {
+    const kids = Array.isArray(root.children) ? root.children : [];
+    const stray: string[] = [];
+    for (const child of kids) {
+      if (child.tag !== "section" && child.tag !== "article") continue;
+      // mintId appends -2, -3 on collision; compare the base id.
+      const base = String(child.id || "").replace(/-\d+$/, "").toLowerCase();
+      if (!ALLOWED_SECTION_IDS.has(base)) stray.push(child.id);
+    }
+    if (stray.length) {
+      errors.push({
+        path: "$",
+        message:
+          `this page has sections that are not allowed: ${stray.join(", ")}. A Hubly page is exactly four sections — hero, services, service-area, reviews — and hero and services are required. Everything you put in those extra sections belongs inside one of the four: reasons to choose the business go in the hero or beside the services they apply to, process detail goes with its service, common questions go with the service they concern. Do not restate the hero as a second section.`,
+      });
+    }
+  }
   if (ctx.h1Count !== 1) {
     errors.push({ path: "$", message: `document must contain exactly one <h1> (found ${ctx.h1Count})` });
   }
@@ -877,9 +930,19 @@ ${phone}
 </div>`);
     }
     case "HublyReviews":
-      return wrap(`<div class="hd-empty-island" data-hd-empty="reviews"><p>Reviews from real customers appear here as they come in.</p></div>`);
+      // Scaffolding, not simulation. It describes what goes here and shows
+      // nothing that could be mistaken for a review: no sample text, no
+      // names, no avatars, no stars. A fake five-star row on a brand-new
+      // business's page is a lie with a customer on the other end of it.
+      //
+      // data-hd-placeholder is what lets the PUBLIC page drop this while the
+      // builder preview keeps it — see hd-public in hubly.html.
+      return wrap(`<div class="hd-empty-island" data-hd-empty="reviews" data-hd-placeholder="1">
+<p class="hd-ph-title">Space for real customer reviews</p>
+<p class="hd-ph-sub">Once reviews come in through Hubly they appear here, in the customer's own words.</p>
+</div>`);
     case "HublyCustomerPortal":
-      return wrap(`<div class="hd-empty-island" data-hd-empty="portal"><p>Existing customers will be able to sign in here.</p></div>`);
+      return wrap(`<div class="hd-empty-island" data-hd-empty="portal" data-hd-placeholder="1"><p>Existing customers will be able to sign in here.</p></div>`);
     case "HublyContactForm":
       // A real form, posting to the same booking_requests table the classic
       // public site writes to, so a message lands on the owner's Leads board
@@ -895,7 +958,7 @@ ${phone}
 <p class="hd-form-status" role="status" aria-live="polite"></p>
 </form>`);
     case "HublyMap":
-      return wrap(`<div class="hd-empty-island" data-hd-empty="map"><p>A map of the service area appears here once an address is added.</p></div>`);
+      return wrap(`<div class="hd-empty-island" data-hd-empty="map" data-hd-placeholder="1"><p>A map of the service area appears here once an address is added.</p></div>`);
     default:
       return wrap("");
   }

@@ -407,6 +407,7 @@
 #hc-doc-root .snap-center { scroll-snap-align: center; }
 #hc-doc-root .shrink-0 { flex-shrink: 0; }
 #hc-doc-root .break-inside-avoid { break-inside: avoid; }
+#hc-doc-root .is-placeholder { position: relative; }
 #hc-doc-root .transition { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
 #hc-doc-root .duration-150 { transition-duration: 150ms; }
 #hc-doc-root .duration-300 { transition-duration: 300ms; }
@@ -835,6 +836,7 @@
   #hc-doc-root .sm\:snap-center { scroll-snap-align: center; }
   #hc-doc-root .sm\:shrink-0 { flex-shrink: 0; }
   #hc-doc-root .sm\:break-inside-avoid { break-inside: avoid; }
+  #hc-doc-root .sm\:is-placeholder { position: relative; }
   #hc-doc-root .sm\:transition { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
   #hc-doc-root .sm\:duration-150 { transition-duration: 150ms; }
   #hc-doc-root .sm\:duration-300 { transition-duration: 300ms; }
@@ -1264,6 +1266,7 @@
   #hc-doc-root .md\:snap-center { scroll-snap-align: center; }
   #hc-doc-root .md\:shrink-0 { flex-shrink: 0; }
   #hc-doc-root .md\:break-inside-avoid { break-inside: avoid; }
+  #hc-doc-root .md\:is-placeholder { position: relative; }
   #hc-doc-root .md\:transition { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
   #hc-doc-root .md\:duration-150 { transition-duration: 150ms; }
   #hc-doc-root .md\:duration-300 { transition-duration: 300ms; }
@@ -1693,6 +1696,7 @@
   #hc-doc-root .lg\:snap-center { scroll-snap-align: center; }
   #hc-doc-root .lg\:shrink-0 { flex-shrink: 0; }
   #hc-doc-root .lg\:break-inside-avoid { break-inside: avoid; }
+  #hc-doc-root .lg\:is-placeholder { position: relative; }
   #hc-doc-root .lg\:transition { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
   #hc-doc-root .lg\:duration-150 { transition-duration: 150ms; }
   #hc-doc-root .lg\:duration-300 { transition-duration: 300ms; }
@@ -2121,6 +2125,7 @@
 #hc-doc-root .hover\:snap-center:hover { scroll-snap-align: center; }
 #hc-doc-root .hover\:shrink-0:hover { flex-shrink: 0; }
 #hc-doc-root .hover\:break-inside-avoid:hover { break-inside: avoid; }
+#hc-doc-root .hover\:is-placeholder:hover { position: relative; }
 #hc-doc-root .hover\:transition:hover { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
 #hc-doc-root .hover\:duration-150:hover { transition-duration: 150ms; }
 #hc-doc-root .hover\:duration-300:hover { transition-duration: 300ms; }
@@ -2548,6 +2553,7 @@
 #hc-doc-root .focus\:snap-center:focus { scroll-snap-align: center; }
 #hc-doc-root .focus\:shrink-0:focus { flex-shrink: 0; }
 #hc-doc-root .focus\:break-inside-avoid:focus { break-inside: avoid; }
+#hc-doc-root .focus\:is-placeholder:focus { position: relative; }
 #hc-doc-root .focus\:transition:focus { transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms; }
 #hc-doc-root .focus\:duration-150:focus { transition-duration: 150ms; }
 #hc-doc-root .focus\:duration-300:focus { transition-duration: 300ms; }

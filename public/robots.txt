@@ -1,0 +1,16 @@
+# /robots.txt previously returned the SPA's HTML — the catch-all route served
+# index for it, so crawlers got a 200 page and treated it as "no rules".
+#
+# Draft sites are NOT disallowed here, deliberately. A static file cannot tell
+# an unclaimed draft from a real customer's live site, and blanket-disallowing
+# *.myhubly.app would deindex every business we host. Keeping drafts out of
+# search is done per-page instead: hcNoIndex() in hubly.html adds
+# <meta name="robots" content="noindex, nofollow"> when businesses.owner_id is
+# null, and stops adding it the moment the site is claimed.
+
+User-agent: *
+Allow: /
+
+# Builder and app surfaces — never useful in search results.
+Disallow: /app
+Disallow: /*?hcEdit=

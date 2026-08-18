@@ -7,6 +7,7 @@
     { "src": "/api/notify-readiness$", "dest": "/api/notify-readiness.js" },
     { "src": "/api/support-chat$", "dest": "/api/support-chat.js" },
     { "src": "/api/import-analyze$", "dest": "/api/import-analyze.js" },
+    { "src": "/robots.txt$", "dest": "/robots.txt" },
     { "src": "/(.*)", "dest": "/api/router.js" }
   ]
 }

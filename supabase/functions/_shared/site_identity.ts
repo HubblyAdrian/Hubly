@@ -1,3 +1,5 @@
+import { ALLOWED_DOCUMENT_SECTIONS } from "./hubly_document.ts";
+
 /**
  * Visual identity for a newly created site — a curated palette and a section
  * order, chosen per business instead of inherited from column defaults.
@@ -106,30 +108,10 @@ export function palettePromptList(): string {
 // Add ideas here freely; add reserved elements very reluctantly.
 // ---------------------------------------------------------------------------
 
-export type SectionIdea = { id: string; what: string; when: string };
-
-/**
- * Ideas, not a checklist. The instruction that ships with this list matters as
- * much as the list: pick what suits THIS business, skip the rest, and never
- * emit all of them. A vocabulary offered without a selection rule just becomes
- * a longer identical page.
- */
-export const SECTION_IDEAS: SectionIdea[] = [
-  { id: "hero",           what: "headline, one line of substance, one clear next step",            when: "always — the only mandatory section" },
-  { id: "services",       what: "what you actually do, each with what's included and who it's for", when: "almost any service business; make the items specific, not three generic cards" },
-  { id: "why-us",         what: "the two or three real reasons to pick this business over the next one", when: "when there is a genuine differentiator — mobile, licensed, family-run, 20 years. Skip if you'd have to invent one" },
-  { id: "before-after",   what: "visual proof of the transformation, paired and captioned",         when: "work with a dramatic visible result — grooming, detailing, cleaning, landscaping, restoration, renovation" },
-  { id: "how-it-works",   what: "three or four numbered steps from enquiry to done",                when: "when the process is unfamiliar or is itself the hesitation — mobile, in-home, first-time customers, anything people haven't bought before" },
-  { id: "service-area",   what: "the towns and neighbourhoods actually covered, named",             when: "mobile or travelling businesses, or anywhere 'do you come to me?' is the first question" },
-  { id: "pricing",        what: "real prices or honest ranges, with what changes them",             when: "when prices are known and simple enough to state. Never invent a number" },
-  { id: "guarantees",     what: "insurance, satisfaction policy, re-do promise, licensing",         when: "when trust is the barrier — anyone entering a home, handling a pet, a child or an expensive object" },
-  { id: "faq",            what: "the questions customers actually ask, answered plainly",           when: "when there are real objections worth answering; three good ones beat eight filler ones" },
-  { id: "team",           what: "who the customer will actually meet",                              when: "owner-operated and trust-led work, especially in someone's home" },
-  { id: "portfolio",      what: "the work itself, given room",                                      when: "when the work IS the pitch — photography, design, building, hair, tattoo" },
-  { id: "credentials",    what: "certifications, insurance, memberships, years in trade",           when: "regulated or safety-critical trades" },
-  { id: "who-its-for",    what: "the specific customer this is and isn't right for",                when: "specialists, and anyone who benefits from turning the wrong customer away" },
-  { id: "closing-cta",    what: "one last unambiguous next step",                                   when: "usually — a page that ends without one wastes everything above it" },
-];
+// SECTION_IDEAS (fourteen ideas, pick five to eight) was replaced on
+// 2026-08-18 by ALLOWED_DOCUMENT_SECTIONS in hubly_document.ts — a closed
+// set of four, enforced by the validator. See the comment there for why:
+// variety of section SET produced repetition of section CONTENT.
 
 /**
  * What the business leads with, as a prompt instruction.
@@ -191,27 +173,30 @@ RULES
 export function buildPageStructureBlock(leadWith?: unknown): string {
   const want = String(leadWith || "").trim().toLowerCase();
   const lead = LEAD_GUIDANCE[want] || LEAD_GUIDANCE.services;
-  const ideas = SECTION_IDEAS.map((s) => `- ${s.id}: ${s.what}. Use when: ${s.when}`).join("\n");
-  return `PAGE STRUCTURE — decide it, don't default to it.
+  const list = ALLOWED_DOCUMENT_SECTIONS
+    .map((sec) => `- ${sec.id}${sec.required ? " (REQUIRED)" : ""}: ${sec.what}`)
+    .join("\n");
+  return `PAGE STRUCTURE — a closed set of six. A hard limit, not a starting point.
 
-Below is a vocabulary of sections you can build from generic tags. It is a menu, not a form to fill in. Choose the ones this specific business needs, in the order that serves ITS customer, and leave out everything else. A page with six well-chosen sections beats one with twelve dutiful ones.
+A Hubly site is exactly six things, and two of them are not yours to build: the
+LOGO and PAGE BACKGROUND are rendered around your document, and CONTACT (phone
+and email) lives in the header and footer, which are also rendered for you.
+Never build a section for either.
 
-${ideas}
+That leaves FOUR sections you may write, and no others:
+
+${list}
 
 ${lead}
 
-RULES
-- Pick roughly five to eight. Never all of them, and never the same set you would pick for a different trade.
-- Order for this business, not by the list order above. The list is alphabetical-ish by nothing; it implies no sequence.
-- You may build a section that isn't listed. The list is a starting point, not a boundary.
-- Two businesses in different trades must not come out structurally similar. If your section set would suit a generic "local service business", you haven't chosen — go back and choose.
-- Never invent facts to fill a section. No made-up prices, no fabricated certifications, no invented years-in-business, no imaginary awards. If you don't have what a section needs, pick a different section.
-- Photos: the business has not uploaded any images yet, and you must never invent an image URL. When a section wants photos — before-and-after, portfolio, team — build the real structure with honest captions and empty framed placeholders: a div with bg-ink-100 AND an explicit aspect class (aspect-[4/3], aspect-square, aspect-video). Never min-h-screen on a placeholder — that produces a full-viewport grey rectangle. Do not skip a section purely because the photos aren't there yet.
-- The reserved Hubly elements are separate from this list and are governed by the rule above them: include one only because your own reasoning justifies it here.
+RULES — enforced by the validator, not preferences:
+- Do NOT invent sections. No "Why choose us", no "Our process", no "About", no "Benefits", no "Reassurance", no "How it works", no "FAQ", no "Our promise", no separate closing call-to-action. If it is not one of the four above, it does not go on the page, and the document will be rejected.
+- hero and services are required. Include service-area and reviews when the business has something real for them.
+- Give each section exactly the id listed above: hero, services, service-area, reviews.
+- A shorter page that says each thing ONCE beats a longer page that says one thing three times. The commonest failure here is a hero listing three benefits, then a "Why us" section repeating those three benefits, then a "Reassurance" section repeating them again. One statement, once.
+- Everything you would have put in an invented section belongs INSIDE one of the four: reasons to choose this business go in the hero or beside the services they apply to, process detail goes with the service it describes, answers to common questions go with the service they concern.
 
-Two different trades, to show the shape of a real choice — do not copy either:
-- Wedding DJ: hero → portfolio (sets and past weddings) → how-it-works (booking to the night itself) → faq (the questions couples actually ask) → pricing → closing-cta. No service-area section; no guarantees section.
-- Tree surgeon: hero → services (each with what's included) → credentials (insurance and certification, which is the whole decision) → service-area → before-after → guarantees → closing-cta. No portfolio section; no team section.
+Because the set of sections is fixed, the only thing that makes two businesses' pages look different is the SHAPE each section takes. That makes the layout rules below more important, not less.
 
 ${LAYOUT_BLOCK}`;
 }

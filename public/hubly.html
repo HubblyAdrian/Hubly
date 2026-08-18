@@ -17312,6 +17312,47 @@ async function loadLatestBusinessDocumentHtml(businessId,tag){
     return null;
   }
 }
+// Same test as hcEditEnabled() in the click-to-edit script, duplicated
+// deliberately: that one lives inside its own IIFE in a separate <script> and
+// is not reachable from here. One line is a better dependency than a refactor
+// of two script blocks.
+function hcBuilderPreview(){
+  try{ return new URL(location.href).searchParams.get('hcEdit') === '1'; }catch(e){ return false; }
+}
+
+function hcStripPlaceholders(root){
+  if(!root) return;
+  var marked = root.querySelectorAll('[data-hd-placeholder], .is-placeholder');
+  for(var i=0;i<marked.length;i++){ if(marked[i].parentNode) marked[i].parentNode.removeChild(marked[i]); }
+  var sections = root.querySelectorAll('.hd-doc-body > section, .hd-doc-body > article');
+  for(var j=0;j<sections.length;j++){
+    var sec = sections[j];
+    // Keep anything that still has real content: text, an image, or a working
+    // Hubly element. Only a section reduced to headings-and-nothing goes.
+    var hasMedia = sec.querySelector('img, video, [data-hubly-element], form, a');
+    var text = (sec.textContent||'').replace(/\s+/g,' ').trim();
+    var headings = sec.querySelectorAll('h1,h2,h3,h4,h5,h6');
+    var headingText = '';
+    for(var k=0;k<headings.length;k++) headingText += (headings[k].textContent||'');
+    var bodyText = text.replace(/\s+/g,' ').replace(headingText.replace(/\s+/g,' '),'').trim();
+    if(!hasMedia && !bodyText && sec.parentNode) sec.parentNode.removeChild(sec);
+  }
+}
+
+// Unclaimed drafts must not be indexed. Deliberately NOT applied to claimed
+// businesses — those are real sites whose owners want to be found, and a
+// blanket noindex would quietly deindex every customer we have.
+function hcNoIndex(){
+  try{
+    if(document.querySelector('meta[name="robots"][data-hc-noindex]')) return;
+    var m = document.createElement('meta');
+    m.setAttribute('name','robots');
+    m.setAttribute('content','noindex, nofollow');
+    m.setAttribute('data-hc-noindex','1');
+    document.head.appendChild(m);
+  }catch(e){}
+}
+
 async function loadPublicProfile(slug){
   const dbClient=await waitForDb();
   const {data,error}=await dbClient.from('businesses').select('*').eq('slug',slug).single();
@@ -17364,6 +17405,19 @@ async function loadPublicProfile(slug){
       S.biz=data.name||'';S.tag=data.tagline||'';S.phone=data.phone||'';
       S.email=data.email||'';S.city=data.city||'';
       S.color=data.brand_color||'#1a3a6e';S.bgColor=data.bg_color||'#f0f0ee';
+      // PLACEHOLDERS ARE FOR THE OWNER, NOT THE CUSTOMER.
+      //
+      // A Hubly site is public from the moment it is created — there is no
+      // publish step and loadPublicProfile checks no owner_id — so a stranger
+      // can already land on "Photo space for the grooming van". The builder
+      // preview keeps that scaffolding, because it is how the owner knows what
+      // to fill in; the public page drops it.
+      //
+      // hcEditEnabled() is the EXISTING signal (?hcEdit=1, set only by the
+      // builder iframe). Someone can add it to a URL by hand and see the
+      // scaffolding, which is a curiosity, not a leak.
+      if(!hcBuilderPreview()) hcStripPlaceholders(root);
+      if(!data.owner_id) hcNoIndex();
       showP('p-hubly-document');
       try{wireHublyDocumentReserved();}catch(e){console.warn('wireHublyDocumentReserved failed',e);}
       try{wireHublyDocumentClickToEdit();}catch(e){}
@@ -52705,6 +52759,10 @@ if(document.readyState==='loading'){
 // site writes to, so a message from a Document page lands on the owner's Leads
 // board indistinguishably from any other enquiry. No new table, no new
 // endpoint, no second inbox to remember to check.
+// Removes owner-facing scaffolding from a public page, then removes any
+// top-level section left with nothing to say. A section whose only content was
+// a placeholder is worse empty than absent: it leaves a heading promising
+// something that never arrives.
 function wireHublyDocumentReserved(){
   var root = document.getElementById('hc-doc-root');
   if(!root || root.getAttribute('data-hd-wired') === '1') return;

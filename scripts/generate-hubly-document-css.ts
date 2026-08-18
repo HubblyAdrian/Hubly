@@ -263,6 +263,9 @@ function emitBaseRules() {
     ["snap-center", "scroll-snap-align: center;"],
     ["shrink-0", "flex-shrink: 0;"],
     ["break-inside-avoid", "break-inside: avoid;"],
+    // Marks owner-replaceable scaffolding. Visible by default (the builder
+    // preview); hidden by #hc-doc-root.hd-public in hubly-document-chrome.css.
+    ["is-placeholder", "position: relative;"],
     ["transition", "transition-property: color, background-color, border-color, opacity, transform, box-shadow; transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); transition-duration: 150ms;"],
     ["duration-150", "transition-duration: 150ms;"],
     ["duration-300", "transition-duration: 300ms;"],
