@@ -692,9 +692,16 @@ Deno.serve(async (req) => {
   // security — just a different trigger. Short-circuits before the model
   // loop entirely: the person already supplied the exact value themselves
   // (typed it, or picked a file), so there's nothing for the model to
-  // decide. No chat message, no LLM call — the canvas update is the whole
-  // response.
+  // decide. No LLM call — but it does answer, because "the canvas update is
+  // the whole response" was only ever true for the edits you can see land.
+  // A document patch or a dropped image can change something off-screen, or
+  // fail, and a person who gets no reply cannot tell which. See the
+  // humanNote comment on the return below.
   const DIRECT_EDIT_TEXT_FIELDS = new Set(["heroHeadline", "heroSubhead"]);
+  const DIRECT_EDIT_LABELS: Record<string, string> = {
+    heroHeadline: "your headline",
+    heroSubhead: "your subheading",
+  };
   const directEdit =
     body?.directEdit && typeof body.directEdit === "object" &&
     typeof body.directEdit.field === "string" && DIRECT_EDIT_TEXT_FIELDS.has(body.directEdit.field) &&
@@ -747,7 +754,7 @@ Deno.serve(async (req) => {
     if ((directDocumentPatch || directDocumentImageEdit) && !DOCUMENT_GENERATION_ENABLED) {
       return jsonRes({ ok: false, error: "document_generation_disabled" }, 400);
     }
-    let result: { ok: boolean; real: boolean; summary: string; raw?: unknown; error?: string };
+    let result: { ok: boolean; real: boolean; summary: string; humanNote?: string; raw?: unknown; error?: string };
     let actionName: string;
     let isDocumentAction = false;
     if (directEdit) {
@@ -756,6 +763,11 @@ Deno.serve(async (req) => {
       result = found
         ? await found.handler({ draftId: draftBusiness.id, draftToken: draftBusiness.draftToken, [directEdit.field]: directEdit.value })
         : { ok: false, real: false, summary: "That action is not available.", error: "unknown_action" };
+      // updateDraft serves the model too, so its summary names DB columns and a
+      // URL. The click knows exactly which field it changed; say that instead.
+      if (result.ok) {
+        result = { ...result, humanNote: `Done — ${DIRECT_EDIT_LABELS[directEdit.field] || "that"} updated.` };
+      }
     } else if (directImageEdit) {
       actionName = "setHeroImage";
       result = await uploadDraftHeroImage(draftBusiness.id, draftBusiness.draftToken, directImageEdit.imageBase64, directImageEdit.mediaType);
@@ -768,9 +780,20 @@ Deno.serve(async (req) => {
       actionName = "patchDocument";
       result = await applyDirectDocumentPatch(draftBusiness.id, draftBusiness.draftToken, directDocumentPatch!);
     }
+    // SAY WHAT HAPPENED. This path used to return reply: "" unconditionally and
+    // throw away the summary it had already computed, so a real edit landed and
+    // nothing acknowledged it. Silent success rather than silent failure, but
+    // from the person's side those are the same thing — you did something, the
+    // product said nothing, and you are left guessing whether it took.
+    //
+    // humanNote is what to say; summary is what to log. Failures fall back to
+    // summary because their summaries are already written for a person
+    // ("That edit could not be applied safely — nothing changed."). Success
+    // must set humanNote, because its summary carries a version number and a
+    // URL and reads like a receipt.
     return jsonRes({
       ok: true,
-      reply: "",
+      reply: result.humanNote || result.summary || "",
       messages: incoming,
       actions: [{ capability: isDocumentAction ? "website" : "business", capabilityAction: actionName, args: {}, ok: !!result.ok, real: !!result.real }],
       interimMessages: [],

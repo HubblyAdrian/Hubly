@@ -1,2 +1,4 @@
 .tmp-package/
 node_modules/
+.vercel
+.env*

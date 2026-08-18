@@ -74,6 +74,19 @@ export type CapabilityActionResult = {
   real: boolean;
   /** Honest, human-readable account of what happened — consumers should rely on this and nothing more. */
   summary: string;
+  /**
+   * What to SAY TO THE PERSON, when that differs from `summary`.
+   *
+   * `summary` is written for the model and the logs: it names versions, URLs
+   * and whether the work was real, because those are the things a caller
+   * reasoning about the result needs. Read aloud in a chat it is noise.
+   *
+   * Actions that a person triggers DIRECTLY — click-to-edit, a dropped image —
+   * have no model turn to narrate them, so whatever goes here is the only
+   * acknowledgement they get. An action that changes the page and sets nothing
+   * here changes the page in silence.
+   */
+  humanNote?: string;
   raw?: unknown;
   error?: string;
 };
@@ -784,7 +797,23 @@ export async function applyDirectDocumentPatch(
     return { ok: false, real: false, summary: "The edit was computed but could not be saved.", error: "rpc_failed" };
   }
   const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
-  return { ok: true, real: true, summary: `Real edit applied — ${humanPatchSummary(directEffect)}. ${url} now reflects it (version ${r.version}).`, raw: { id: r.id, version: r.version, url } };
+  return {
+    ok: true,
+    real: true,
+    summary: `Real edit applied — ${humanPatchSummary(directEffect)}. ${url} now reflects it (version ${r.version}).`,
+    // The same diff, said to the person instead of to the log. This is the only
+    // acknowledgement a click-to-edit gets — there is no model turn behind it.
+    humanNote: sentence(humanPatchSummary(directEffect)),
+    raw: { id: r.id, version: r.version, url },
+  };
+}
+
+/** A humanPatchSummary clause ("changed the text ... to ...") as something you
+ *  can say out loud. Kept trivial on purpose: the value is in the diff being
+ *  reported at all, not in dressing it up. */
+function sentence(clause: string): string {
+  if (!clause || clause === "no visible change") return "That didn't change anything on the page.";
+  return "Done — " + clause + ".";
 }
 
 const HUBLY_DOMAIN = (Deno.env.get("HUBLY_PUBLIC_DOMAIN") || "").trim() || "myhubly.app";
@@ -874,7 +903,10 @@ export async function uploadAndPatchDocumentImage(
   }
   const uploaded = await uploadImageToStorage(draftId, imageBase64, mediaType, "doc-image");
   if (!uploaded.ok) return uploaded.result;
-  return applyDirectDocumentPatch(draftId, draftToken, { op: "update_attrs", id: nodeId, attrs: { src: uploaded.url } });
+  const patched = await applyDirectDocumentPatch(draftId, draftToken, { op: "update_attrs", id: nodeId, attrs: { src: uploaded.url } });
+  // Said in terms of what the person just did — they dropped a picture on a
+  // picture — rather than the generic diff clause the patch path produces.
+  return patched.ok ? { ...patched, humanNote: "Done — that photo is on the page now." } : patched;
 }
 
 /**
@@ -1067,6 +1099,7 @@ export async function uploadDraftHeroImage(
     ok: true,
     real: true,
     summary: `Real hero image uploaded and live — ${siteUrl} now shows it.`,
+    humanNote: "Done — that's your new header image.",
     raw: { id: r.id, slug: r.slug, url: siteUrl, bannerUrl: uploaded.url },
   };
 }

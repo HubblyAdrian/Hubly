@@ -1520,12 +1520,6 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
         } else if(!hc.draftBusiness && hc.canvasStage !== 'concepts' && hc.canvasStage !== 'inspiration'){
           hcRenderCanvas();
         }
-        // Independent of the chain above — logo can be asked about on the
-        // same turn the site first appears or refreshes.
-        if(data.askLogo === true && hc.draftBusiness){
-          // The assistant says "upload it here"; this is the "here".
-          hcAppendLogoDropzone();
-        }
         // THE PAGE IS THE DEFAULT. If a turn changed the draft, go home —
         // otherwise a change lands while the pane still shows the cards that
         // caused it, which is exactly what was observed.
@@ -1540,9 +1534,21 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
             hcAppendMessage('hubly', interim[i]);
             i++;
             setTimeout(showNext, 550);
-          } else if(data.reply){
-            hcAppendMessage('hubly', data.reply);
+            return;
           }
+          if(data.reply) hcAppendMessage('hubly', data.reply);
+          // THE DROPZONE COMES LAST, after the sentence that points at it.
+          //
+          // It used to be appended up with the canvas work above, which runs
+          // synchronously — while the messages stagger at 550ms each. So the
+          // box arrived first and "do you already have a logo file?" landed
+          // underneath the thing it was asking about, reading like an answer
+          // to a question nobody had been asked yet.
+          //
+          // Anchored to the end of showNext rather than a matching timeout:
+          // a delay tuned to today's interim count silently desynchronises the
+          // first time a turn says three things instead of two.
+          if(data.askLogo === true && hc.draftBusiness) hcAppendLogoDropzone();
         }
         showNext();
       })

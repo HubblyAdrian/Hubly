@@ -1396,6 +1396,15 @@ export function humanPatchSummary(effect: PatchEffect): string {
   if (effect.attrsChanged.length) {
     const styling = effect.attrsChanged.filter((c) => c.keys.includes("class")).length;
     if (styling) parts.push(`restyled ${styling} element${styling === 1 ? "" : "s"}`);
+    // Only `class` used to be reported here, so a dropped image — which changes
+    // `src` and nothing else — summarised as "no visible change" on a patch
+    // that visibly changed the page. That was tolerable while this string only
+    // reached the logs; it stopped being tolerable when it became the sentence
+    // the person reads back (CapabilityActionResult.humanNote).
+    const media = effect.attrsChanged.filter((c) => c.keys.includes("src")).length;
+    if (media) parts.push(`replaced ${media === 1 ? "an image" : media + " images"}`);
+    const links = effect.attrsChanged.filter((c) => c.keys.includes("href")).length;
+    if (links) parts.push(`repointed ${links} link${links === 1 ? "" : "s"}`);
   }
   const extra = effect.removed.length + effect.added.length + effect.textChanged.length - 9;
   if (extra > 0) parts.push(`and ${extra} more change${extra === 1 ? "" : "s"}`);
