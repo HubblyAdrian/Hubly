@@ -735,7 +735,22 @@ Deno.serve(async (req) => {
         system: buildSystemPrompt(context, adapter.merge(currentUnderstanding, turnPatch), latestUserMessage, draftBusiness),
         messages: history,
         jsonMode: true,
-        maxTokens: 900,
+        // 900 was survivable while this decision was "pick a capability and
+        // fill two obvious fields". It stopped being survivable once
+        // startDraft began asking the model to choose a palette from an
+        // annotated list of eight AND reason about what the business should
+        // lead with: gpt-5.5 is a REASONING model, hidden reasoning tokens
+        // come out of this same budget, and an exhausted budget returns an
+        // empty completion that fails JSON.parse and surfaces as a 502.
+        //
+        // Exactly the failure hubly_ai.ts already documents twice --
+        // hubly-intent-classify needed 600 minimum for a THREE-field JSON,
+        // and document_generate hit it at a 6000-token cap. The tells were
+        // that "hello" returned 200 while every build request failed, and
+        // that two of three builds in one round succeeded: an outage does
+        // not pick and choose, a marginal token budget does.
+        maxTokens: 2500,
+        reasoningEffort: "low",
         businessId,
       });
 
