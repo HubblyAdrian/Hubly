@@ -583,6 +583,7 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   <input type="file" id="hcFileInput" accept="image/*" style="display:none">
   <input type="file" id="hcPdfInput" accept="application/pdf" style="display:none">
   <input type="file" id="hcLogoInput" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none">
+  <input type="file" id="hcPhotoInput" accept="image/png,image/jpeg,image/webp" multiple style="display:none">
 </div>
 
 <section class="sec" id="categories">
@@ -1107,7 +1108,7 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
     // Asset inputs, not inspiration. The menu offered six ways to describe a
     // site you already like and no way at all to hand over your own logo.
     if(act === 'logo'){ var li = document.getElementById('hcLogoInput'); if(li) li.click(); return; }
-    if(act === 'photo'){ var ph = document.getElementById('hcFileInput'); if(ph) ph.click(); return; }
+    if(act === 'photo'){ var ph = document.getElementById('hcPhotoInput'); if(ph) ph.click(); return; }
     if(act === 'screenshot'){ var fi = document.getElementById('hcFileInput'); if(fi) fi.click(); return; }
     if(act === 'pdf'){ var pi = document.getElementById('hcPdfInput'); if(pi) pi.click(); return; }
     var copy = {
@@ -1306,6 +1307,8 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
     var typingEl = hcAppendTyping();
     var logoUploadForThisCall = hc.pendingLogoUpload || null;
     hc.pendingLogoUpload = null; // one-shot — never resent on a later, unrelated call
+    var photoUploadForThisCall = hc.pendingPhotoUpload || null;
+    hc.pendingPhotoUpload = null; // one-shot, same reason
     fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
       method: 'POST',
       headers: {
@@ -1313,7 +1316,7 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
         'apikey': SUPA_ANON_KEY,
         'authorization': 'Bearer ' + SUPA_ANON_KEY
       },
-      body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, logoUpload: logoUploadForThisCall })
+      body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, logoUpload: logoUploadForThisCall, photoUpload: photoUploadForThisCall })
     })
       .then(function(r){ return r.json(); })
       .then(function(data){
@@ -1422,6 +1425,52 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   // Pinterest — and the only real entry point was a floating chip sitting on
   // top of the dark-mode toggle. This renders a click target AND a drop target
   // inline in the transcript, at the moment the ask is made.
+  // A photo is a BUSINESS ASSET, not inspiration.
+  //
+  // "Your photos" opened hcFileInput, whose handler sends the file captioned
+  // "Here's a screenshot for inspiration" — so a photo of the owner's work was
+  // read as a reference image and never became a business asset. Clicking it
+  // appeared to do nothing, which is exactly how it was reported.
+  //
+  // This sends it as photoUpload, which uploadDraftPhoto writes to storage and
+  // to portfolio_photos — the table loadBusinessRecord already reads. So a
+  // photo dropped in chat reaches the generator and rebuilds the page.
+  function hcSendPhoto(file){
+    if(!file) return;
+    if(!/^image\//i.test(file.type||'')){
+      hcAppendMessage('hubly', "A photo needs to be an image — PNG, JPG or WebP.");
+      return;
+    }
+    if(hc.busy){
+      hcAppendMessage('hubly', "One moment — still working on the last thing.");
+      return;
+    }
+    if(!hc.draftBusiness){
+      hcAppendMessage('hubly', "Tell me what you do first and I'll build the page — then your photos have somewhere to go.");
+      return;
+    }
+    hcFileToBase64(file).then(function(data){
+      hc.pendingPhotoUpload = { imageBase64: data, mediaType: file.type || 'image/jpeg' };
+      hcSendText("Here's a photo of my work.");
+    }).catch(function(){
+      hcAppendMessage('hubly', "That image couldn't be read — mind trying a different one?");
+    });
+  }
+
+  (function hcWirePhotoInput(){
+    var input = document.getElementById('hcPhotoInput');
+    if(!input) return;
+    input.addEventListener('change', function(){
+      var files = input.files ? Array.prototype.slice.call(input.files) : [];
+      input.value = '';
+      if(!files.length) return;
+      // One per turn: each becomes a message and a rebuild, and several at once
+      // would fire several requests at a server that handles one turn at a time.
+      if(files.length > 1) hcAppendMessage('hubly', "I'll take these one at a time — starting with " + (files[0].name || 'the first') + ".");
+      hcSendPhoto(files[0]);
+    });
+  })();
+
   function hcClearLogoDropzones(){
     var nodes = document.querySelectorAll('.hc-drop[data-drop="logo"]');
     for(var i = 0; i < nodes.length; i++) nodes[i].remove();
@@ -1603,6 +1652,11 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
       if(files.length > 1){
         hcAppendMessage('hubly', "I'll take these one at a time — starting with " + (file.name || 'the first one') + ".");
       }
+      // Drag-and-drop is the PRIMARY way to add a photo, menu as fallback. An
+      // image dropped once a draft exists is the owner's work, not a reference:
+      // that is the common case, and the inspiration path is still reachable
+      // from the attach menu for the rarer one.
+      if(!isPdf && hc.draftBusiness){ hcSendPhoto(file); return; }
       hcFileToBase64(file).then(function(data){
         var kind = isPdf ? 'document' : 'image';
         var caption = isPdf ? "Here's a PDF." : "Here's a photo.";

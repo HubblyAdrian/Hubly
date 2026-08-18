@@ -61,7 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, uploadDraftLogo, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, rebuildDocumentFromRecord, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -635,6 +635,12 @@ Deno.serve(async (req) => {
   // turn, in order — the client can render these as a natural pacing beat
   // ahead of the final message.
   const interimMessages: string[] = [];
+  // RE-RENDER IS AN EVENT, NOT A DECISION. Handlers that write real content
+  // to the business record report it as raw.recordChange; this collects those
+  // across the turn so exactly ONE rebuild fires at the end, however many
+  // handlers ran. The model is never asked whether to rebuild, so the guard
+  // against calling generateDocument twice stays intact.
+  const recordChanges = new Set<string>();
   // #188: the customer-safe confirmation payload from a successful
   // booking.create this turn (WebsiteBookingConfirmation, see
   // hubly_booking_execution.ts) — the ONLY piece of a capability result's
@@ -672,6 +678,28 @@ Deno.serve(async (req) => {
       role: "system",
       content: `CAPABILITY RESULT for business.setLogo: ${JSON.stringify(logoResult)}\nOnly report what "summary" and "raw" actually show. Do not claim anything beyond this.`,
     });
+  }
+
+  // Same shape as logoUpload, and for the same reason: the bytes come straight
+  // from the client and never through the model. A photo lands in storage and
+  // in portfolio_photos, which loadBusinessRecord reads -- so it reaches the
+  // generator, and its recordChange rebuilds the page around it.
+  const photoUpload =
+    body?.photoUpload && typeof body.photoUpload === "object" && typeof body.photoUpload.imageBase64 === "string"
+      ? { imageBase64: body.photoUpload.imageBase64, mediaType: String(body.photoUpload.mediaType || "image/jpeg") }
+      : null;
+  if (photoUpload && draftBusiness?.id && draftBusiness?.draftToken) {
+    const photoResult = await uploadDraftPhoto(
+      draftBusiness.id,
+      draftBusiness.draftToken,
+      photoUpload.imageBase64,
+      photoUpload.mediaType,
+    );
+    actions.push({ capability: "business", capabilityAction: "addPhoto", args: {}, ok: !!photoResult.ok, real: !!photoResult.real, summary: photoResult.summary });
+    try {
+      const rc = (photoResult as { raw?: { recordChange?: unknown } })?.raw?.recordChange;
+      if (Array.isArray(rc)) for (const c of rc) if (typeof c === "string") recordChanges.add(c);
+    } catch (_e) { /* never fail a turn on instrumentation */ }
   }
 
   // Inline canvas edit — click headline/subhead/hero-image directly inside
@@ -924,6 +952,11 @@ Deno.serve(async (req) => {
           }
         }
 
+        try {
+          const rc = (result as { raw?: { recordChange?: unknown } } | null)?.raw?.recordChange;
+          if (Array.isArray(rc)) for (const c of rc) if (typeof c === "string") recordChanges.add(c);
+        } catch (_e) { /* instrumentation must never fail a turn */ }
+
         actions.push({
           capability: capabilityName,
           capabilityAction: actionName,
@@ -995,6 +1028,24 @@ Deno.serve(async (req) => {
             .map((c: any) => ({ id: c.id, name: c.name, character: typeof c.character === "string" ? c.character : "" }))
             .slice(0, 4)
         : [];
+      // THE LOOP CLOSES HERE. Real content landed on the record this turn, so the
+      // page is rebuilt from it -- once, in the background, whatever combination of
+      // handlers ran. Fire-and-forget for the same reason generateDocument is: a
+      // real generation runs well past what a request should block on.
+      //
+      // rebuildDocumentFromRecord refuses if the owner has hand-edited the page,
+      // and downgrades to a cheap re-render for cosmetic-only changes.
+      if (recordChanges.size && draftBusiness?.id && draftBusiness?.draftToken) {
+        const changes = [...recordChanges] as RecordChange[];
+        const rebuild = rebuildDocumentFromRecord(draftBusiness.id, draftBusiness.draftToken, changes)
+          .then((r) => console.log(`record rebuild [${draftBusiness.id}] ${changes.join(",")} -> ${r.status}${r.detail ? " (" + r.detail + ")" : ""}`))
+          .catch((e) => console.error("record rebuild failed", e));
+        try {
+          const rt = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+          if (rt && typeof rt.waitUntil === "function") rt.waitUntil(rebuild);
+        } catch (_e) { /* best effort — it still runs, just not guaranteed past the response */ }
+      }
+
       const deduped = dedupeConversationMessages(interimMessages, finalText);
       return jsonRes({
         ok: true,

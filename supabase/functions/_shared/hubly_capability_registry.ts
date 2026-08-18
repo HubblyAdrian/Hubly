@@ -295,6 +295,90 @@ export function buildBusinessRecordBlock(rec: BusinessRecord): string {
   return L.join("\n");
 }
 
+/**
+ * RE-RENDER AS AN EVENT, NOT A DECISION.
+ *
+ * The record is empty at exactly the moment the generator runs: turn 1 is
+ * startDraft -> generateDocument, setServices lands on turn 2, and the prompt
+ * (correctly) forbids calling generateDocument twice so the model cannot
+ * rebuild on a whim. The result was that a normal new business got a data-free
+ * page forever, and the walk -- "logo, then photos, then services and prices" --
+ * collected answers into a black hole.
+ *
+ * So the model does not decide this. The DATA ARRIVING decides it: a handler
+ * that writes real content to the record reports what it wrote, and
+ * hubly-conversation fires exactly one rebuild at the end of that turn.
+ *
+ * TWO SAFETY PROPERTIES, both deliberate:
+ *
+ *  1. It refuses once the owner has hand-edited their page. Any version with
+ *     created_by='patch' means a human changed something, and silently
+ *     regenerating over that would destroy their work to show them a price.
+ *     Cosmetic changes still re-render, because that only redraws chrome.
+ *
+ *  2. It never fabricates a brief. The brief it passes is a plain instruction
+ *     to rebuild from the record, so every fact still comes from
+ *     buildBusinessRecordBlock and nothing is invented to fill the gap.
+ */
+export type RecordChange = "services" | "photos" | "area" | "hours" | "contact" | "cosmetic";
+
+/** Content changes need a real rebuild; cosmetic ones only need a re-render. */
+const CONTENT_CHANGES = new Set<RecordChange>(["services", "photos", "area", "hours", "contact"]);
+
+export async function rebuildDocumentFromRecord(
+  draftId: string,
+  draftToken: string,
+  changes: RecordChange[],
+): Promise<{ status: "rebuilt" | "rerendered" | "skipped_owner_edited" | "no_document" | "failed"; detail?: string }> {
+  try {
+    const latest = await selectLatestBusinessDocument(draftId, "website");
+    if (!latest) return { status: "no_document" };
+
+    const wantsContent = changes.some((c) => CONTENT_CHANGES.has(c));
+    if (!wantsContent) {
+      const r = await rerenderLatestDocument(draftId, draftToken, "website");
+      return { status: r === "updated" ? "rerendered" : "failed" };
+    }
+
+    // Has a human edited this page? If so, their edits win over our tidiness.
+    const versions = await selectMany("business_documents", "business_id", draftId, "created_by,version", "version.asc");
+    if (versions.some((v: any) => v.created_by === "patch")) {
+      return { status: "skipped_owner_edited" };
+    }
+
+    const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order");
+    const record = await loadBusinessRecord(draftId);
+    const leadWith = Array.isArray(bizRow?.section_order) ? bizRow.section_order[0] : undefined;
+    const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${buildDocumentSchemaPromptBlock()}\n\n${buildPageStructureBlock(leadWith)}\n\n${buildBusinessRecordBlock(record)}`;
+
+    const brief = `Rebuild this page for ${bizRow?.name || "this business"} using THE BUSINESS RECORD above as the source of every fact. New information has just been added to the record (${changes.join(", ")}), and the current page was written before it existed. Use the real services, prices, photos, service area and contact details exactly as recorded. Do not invent anything the record does not contain.`;
+
+    const gen = await generateAndValidateDocument(system, brief, draftId, "website");
+    if (!gen.ok) return { status: "failed", detail: "validation" };
+
+    const html = renderHublyDocument(gen.document, {
+      businessId: draftId,
+      businessName: bizRow?.name || "",
+      businessPhone: bizRow?.phone || undefined,
+      businessBrandColor: bizRow?.brand_color || undefined,
+      businessLogoUrl: bizRow?.logo_url || undefined,
+    });
+    const saved = await callBusinessRpc("create_business_document", {
+      p_business_id: draftId,
+      p_draft_token: draftToken,
+      p_tag: "website",
+      p_document: gen.document,
+      p_rendered_html: html,
+      p_created_by: "ai",
+      p_design_rationale: gen.rationale || null,
+    });
+    return saved && saved.ok === true ? { status: "rebuilt" } : { status: "failed", detail: "save" };
+  } catch (e) {
+    console.error("rebuildDocumentFromRecord failed:", e);
+    return { status: "failed", detail: String(e).slice(0, 120) };
+  }
+}
+
 async function loadBusinessRecord(businessId: string): Promise<BusinessRecord> {
   const [biz, services, addons, portfolio, gallery, reviews, hours] = await Promise.all([
     selectOne("businesses", "id", businessId, "city,state,phone,email,logo_url,business_type,about,tagline,service_area_cities,travel_radius_miles,years_in_business"),
@@ -826,7 +910,7 @@ export async function uploadDraftLogo(
       : rerendered === "no_document"
       ? `Real logo uploaded and saved to the business. There is no generated page yet, so it will appear in the header as soon as one is built.`
       : `Real logo uploaded and saved, but the live page could not be re-rendered, so it may still show the initials. Say that plainly rather than claiming the header changed.`,
-    raw: { id: r.id, slug: r.slug, url: siteUrl, logoUrl: uploaded.url, rerender: rerendered },
+    raw: { id: r.id, slug: r.slug, url: siteUrl, logoUrl: uploaded.url, rerender: rerendered, recordChange: ["cosmetic"] },
   };
 }
 
@@ -878,6 +962,61 @@ async function rerenderLatestDocument(
  * reading hubly.html directly, not assumed) — meta.headerMode is set here
  * in the same patch, the same way meta.businessType already is.
  */
+/**
+ * A real business photo — the third leg of the walk, and the one that never
+ * shipped.
+ *
+ * "Your logo" and "Your photos" were added to the attach menu together, but
+ * only the logo half was ever wired: the photo entry opened the INSPIRATION
+ * input, so a photo of the owner's work was sent as "Here's a screenshot for
+ * inspiration" and never became a business asset. Clicking it did nothing
+ * visible, which is exactly how it was reported.
+ *
+ * This uploads the bytes to storage and writes a portfolio_photos row, which is
+ * what loadBusinessRecord already reads — so a photo added in chat reaches the
+ * generator, and the recordChange marker rebuilds the page around it.
+ *
+ * Direct-dispatched outside the model's decision loop, same as the logo: a
+ * model cannot reliably reproduce multi-KB base64, and asking it to would risk
+ * silently corrupting the upload.
+ */
+export async function uploadDraftPhoto(
+  draftId: string,
+  draftToken: string,
+  imageBase64: string,
+  mediaType: string,
+): Promise<CapabilityActionResult> {
+  if (!draftId || !draftToken) {
+    return { ok: false, real: false, summary: "No draft business exists yet to attach a photo to.", error: "missing_draft" };
+  }
+  const uploaded = await uploadImageToStorage(draftId, imageBase64, mediaType, "photo");
+  if (!uploaded.ok) return uploaded.result;
+
+  const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  const existing = await selectMany("portfolio_photos", "business_id", draftId, "id");
+  const res = await fetch(`${supabaseUrl}/rest/v1/portfolio_photos`, {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${serviceKey}`,
+      apikey: serviceKey,
+      "content-type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify({ business_id: draftId, url: uploaded.url, sort_order: existing.length }),
+  });
+  if (!res.ok) {
+    return { ok: false, real: false, summary: "The photo uploaded but could not be attached to the business.", error: "photo_row_failed" };
+  }
+  const count = existing.length + 1;
+  return {
+    ok: true,
+    real: true,
+    summary: `Real photo added — the business now has ${count} photo${count === 1 ? "" : "s"} on record, and the page is being rebuilt to use ${count === 1 ? "it" : "them"}.`,
+    raw: { url: uploaded.url, count, recordChange: ["photos"] },
+  };
+}
+
 export async function uploadDraftHeroImage(
   draftId: string,
   draftToken: string,
@@ -1699,7 +1838,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             ok: true,
             real: true,
             summary: `Real update — ${url} now shows ${r.count} real service${r.count === 1 ? "" : "s"}.`,
-            raw: { id: r.id, slug: r.slug, url, count: r.count },
+            // recordChange is what makes the rebuild an EVENT rather than a decision:
+            // hubly-conversation reads it after the turn and fires exactly one rebuild.
+            // The model never chooses to rebuild, so the guard against calling
+            // generateDocument twice stays intact.
+            raw: { id: r.id, slug: r.slug, url, count: r.count, recordChange: ["services"] },
           };
         },
       },
