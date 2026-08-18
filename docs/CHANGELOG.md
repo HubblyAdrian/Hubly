@@ -100,3 +100,22 @@ Email → Phone → SMS consent.
 Stripe, Google Calendar and the other integration cards were reporting "Not
 connected" regardless of the truth. They now report the real status, and say
 "Status unavailable" when it genuinely cannot be checked rather than guessing.
+
+## 2026-08-18
+
+### Fixed — the AI no longer reports success on changes it did not make
+Editing your site used to say "Done" whenever the edit was computed, even when
+your page was unchanged. Asking for something Hubly cannot do yet — a
+background colour, a font — produced repeated confident confirmations and no
+change. Hubly now compares your page before and after, says specifically what
+it changed ("removed the section 'Ready to make grooming easier'"), and tells
+you plainly when it cannot make a change instead of claiming it did.
+
+### Fixed — duplicate messages
+"Building the full page now" could appear twice, identically, making it look
+like the request had fired twice.
+
+### Not yet possible, and now said out loud
+Background colour, font, logo size, per-section tone and a hero background
+image have nowhere to be stored, so Hubly cannot change them. It will now say
+so. `docs/architecture/WEBSITE_SET_THEME_SCOPE.md` scopes the fix.
