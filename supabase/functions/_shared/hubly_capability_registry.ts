@@ -53,6 +53,7 @@ import {
   applyPatchOps,
   describePatchEffect,
   humanPatchSummary,
+  type VocabularyRejections,
   type HublyDocument,
 } from "./hubly_document.ts";
 import { adminClient } from "./marketplace_provider.ts";
@@ -295,8 +296,8 @@ type UsageTotal = { promptTokens: number; completionTokens: number; reasoningTok
  *  empty completion or unparseable JSON, which look identical from the
  *  outside without this). */
 export type DocGenOutcome =
-  | { ok: true; document: HublyDocument; usage: UsageTotal; firstAttemptOk: boolean; firstAttemptErrors?: { path: string; message: string }[]; modelUsed?: string; rationale?: string | null }
-  | { ok: false; errors: { path: string; message: string }[]; usage: UsageTotal; firstAttemptOk: boolean; firstAttemptErrors?: { path: string; message: string }[]; modelUsed?: string; rationale?: string | null };
+  | { ok: true; document: HublyDocument; usage: UsageTotal; rejections?: VocabularyRejections; firstAttemptOk: boolean; firstAttemptErrors?: { path: string; message: string }[]; modelUsed?: string; rationale?: string | null }
+  | { ok: false; errors: { path: string; message: string }[]; usage: UsageTotal; rejections?: VocabularyRejections; firstAttemptOk: boolean; firstAttemptErrors?: { path: string; message: string }[]; modelUsed?: string; rationale?: string | null };
 
 function emptyUsage(): UsageTotal {
   return { promptTokens: 0, completionTokens: 0, reasoningTokens: 0, calls: 0 };
@@ -359,7 +360,11 @@ export async function generateAndValidateDocument(system: string, brief: string,
   if (!first) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON" }], usage, firstAttemptOk: false, firstAttemptErrors: [{ path: "$", message: "empty completion or unparseable JSON" }], modelUsed, rationale: null };
   if (!rootOf(first.candidate)) return { ok: false, errors: [{ path: "$.root", message: "response was missing the required root field" }], usage, firstAttemptOk: false, firstAttemptErrors: [{ path: "$.root", message: "missing root field" }], modelUsed, rationale: rationaleOf(first.candidate) };
   const firstResult = validateHublyDocument(rootOf(first.candidate), { businessId, tag, version: 1, generatedBy: "ai" });
-  if (firstResult.ok) return { ok: true, document: firstResult.document, usage, firstAttemptOk: true, modelUsed, rationale: rationaleOf(first.candidate) };
+  // The FIRST attempt is the honest signal: it is what the model reaches for
+  // before being told what it may not have. The retry is already contaminated
+  // by the rejection messages, so its vocabulary is ours, not the model's.
+  const rejections = firstResult.rejections;
+  if (firstResult.ok) return { ok: true, document: firstResult.document, usage, rejections, firstAttemptOk: true, modelUsed, rationale: rationaleOf(first.candidate) };
 
   const retryMsg = `Your previous output's "root" field had these validation errors — fix exactly these, nothing else:\n${firstResult.errors.map((e) => `- ${e.path}: ${e.message}`).join("\n")}\n\nReturn the same { "designRationale": ..., "root": ... } shape, with root corrected (a full corrected root node, not just the fixed part).`;
   const second = await attempt([
@@ -372,8 +377,8 @@ export async function generateAndValidateDocument(system: string, brief: string,
   const secondResult = validateHublyDocument(rootOf(second.candidate), { businessId, tag, version: 1, generatedBy: "ai" });
   const rationale = rationaleOf(second.candidate) ?? rationaleOf(first.candidate);
   return secondResult.ok
-    ? { ok: true, document: secondResult.document, usage, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed, rationale }
-    : { ok: false, errors: secondResult.errors, usage, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed, rationale };
+    ? { ok: true, document: secondResult.document, usage, rejections, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed, rationale }
+    : { ok: false, errors: secondResult.errors, usage, rejections, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed, rationale };
 }
 
 /** Same one-retry-with-real-errors discipline as generateAndValidateDocument,
@@ -709,6 +714,42 @@ function socialStopgapHandler(platform: "facebook" | "instagram" | "google_busin
   };
 }
 
+
+/**
+ * Append-only record of what the model tried to use and was refused.
+ *
+ * Best-effort by design: this is instrumentation, and instrumentation must
+ * never be able to fail a real page build. Every error is swallowed after being
+ * logged, exactly like notifyBookingReal.
+ */
+async function recordVocabularyRejections(
+  businessId: string,
+  tag: string,
+  result: { rejections?: VocabularyRejections; firstAttemptOk?: boolean; modelUsed?: string },
+  outcome: "succeeded" | "retried" | "failed",
+): Promise<void> {
+  try {
+    const r = result.rejections;
+    const classes = r?.classes || [];
+    const tags = r?.tags || [];
+    const attrs = r?.attrs || [];
+    // Nothing was refused and the first attempt passed: no signal, no row.
+    if (!classes.length && !tags.length && !attrs.length) return;
+    const admin = adminClient();
+    await admin.from("document_vocabulary_rejections").insert({
+      business_id: businessId || null,
+      tag,
+      outcome: outcome === "succeeded" && result.firstAttemptOk === false ? "retried" : outcome,
+      rejected_classes: [...new Set(classes)],
+      rejected_tags: [...new Set(tags)],
+      rejected_attrs: [...new Set(attrs)],
+      model_used: result.modelUsed || null,
+    });
+  } catch (e) {
+    console.error("recordVocabularyRejections failed (ignored):", e);
+  }
+}
+
 export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
   {
     name: "website",
@@ -791,6 +832,10 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const genResult = await generateAndValidateDocument(system, brief, draftId, "website", benchmarkModel);
           const generationMs = Date.now() - genStarted;
           if (!genResult.ok) {
+            // The double-failure case left no trace at all before this. It is
+            // also the most informative: whatever the model wanted badly enough
+            // to reach for twice is a genuine gap, not a slip.
+            await recordVocabularyRejections(draftId, "website", genResult, "failed");
             return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: { errors: genResult.errors, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale } };
           }
           const html = renderHublyDocument(genResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined });
@@ -806,6 +851,12 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           // produced a correctly-reasoned document with no way to see why
           // afterward, before this fix.
           console.log(`hubly-document-generate rationale [${draftId}]:`, genResult.rationale || "(none captured)");
+          // Record what the model reached for and was refused. See
+          // 20260818000000_document_vocabulary_rejections.sql for why this
+          // exists: the model is the only interface, so its vocabulary is the
+          // product ceiling, and nothing recorded where it was hitting.
+          await recordVocabularyRejections(draftId, "website", genResult, "succeeded");
+
           const r = await callBusinessRpc("create_business_document", {
             p_business_id: draftId,
             p_draft_token: draftToken,

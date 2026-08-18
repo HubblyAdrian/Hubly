@@ -64,9 +64,34 @@ export type HublyDocument = {
 };
 
 export type ValidationIssue = { path: string; message: string };
+
+/**
+ * WHAT THE MODEL TRIED AND WAS REFUSED.
+ *
+ * The validator has always known this and always thrown it away. On 2026-08-17
+ * eleven class families turned out to be valid-but-never-offered, and simply
+ * naming them produced structurally different pages with zero renderer work —
+ * which means the fence around the model was mostly imaginary, and nobody could
+ * have known because nothing recorded where it was actually hitting.
+ *
+ * The model is the only interface here. There is no toolbar, no inspector, no
+ * drag handle. Its vocabulary IS the product's ceiling, so the list of things
+ * it reaches for and cannot have is the single most valuable signal about where
+ * that ceiling sits. Collected structurally rather than by parsing error
+ * strings, so it stays correct when the wording changes.
+ */
+export type VocabularyRejections = {
+  classes: string[];
+  tags: string[];
+  attrs: string[];
+};
+
+function emptyRejections(): VocabularyRejections {
+  return { classes: [], tags: [], attrs: [] };
+}
 export type ValidationResult =
-  | { ok: true; document: HublyDocument; warnings: ValidationIssue[] }
-  | { ok: false; errors: ValidationIssue[] };
+  | { ok: true; document: HublyDocument; warnings: ValidationIssue[]; rejections: VocabularyRejections }
+  | { ok: false; errors: ValidationIssue[]; rejections: VocabularyRejections };
 
 // ---------------------------------------------------------------------------
 // Grammar — the exact allowlist. Anything not named here is rejected.
@@ -433,12 +458,13 @@ export function mintId(preferred: string, taken: Set<string>): string {
 // Validator
 // ---------------------------------------------------------------------------
 
-function validateAttrs(tag: string, attrs: Record<string, unknown>, path: string, errors: ValidationIssue[]): Record<string, string> {
+function validateAttrs(tag: string, attrs: Record<string, unknown>, path: string, errors: ValidationIssue[], rejections?: VocabularyRejections): Record<string, string> {
   const clean: Record<string, string> = {};
   for (const [key, rawVal] of Object.entries(attrs || {})) {
     if (key === "id") continue; // id is handled separately
     if (HARD_BANNED_ATTR_RE.test(key)) {
       errors.push({ path, message: `attribute "${key}" is never allowed (behavior/style must go through validated class tokens)` });
+      rejections?.attrs.push(`${tag}.${key}`);
       continue;
     }
     if (typeof rawVal !== "string") {
@@ -486,6 +512,7 @@ function validateAttrs(tag: string, attrs: Record<string, unknown>, path: string
     const allowedForTag = TAG_SPECIFIC_ATTRS[tag] || [];
     if (!allowedForTag.includes(key)) {
       errors.push({ path, message: `attribute "${key}" is not allowed on <${tag}>` });
+      rejections?.attrs.push(`${tag}.${key}`);
       continue;
     }
     clean[key] = val;
@@ -496,7 +523,7 @@ function validateAttrs(tag: string, attrs: Record<string, unknown>, path: string
   return clean;
 }
 
-function validateReservedAttrs(tag: string, attrs: Record<string, unknown>, path: string, errors: ValidationIssue[]): Record<string, string> {
+function validateReservedAttrs(tag: string, attrs: Record<string, unknown>, path: string, errors: ValidationIssue[], rejections?: VocabularyRejections): Record<string, string> {
   // Reserved elements accept only presentational hints — a small, named set
   // per element. Deliberately narrower than the open `class` grammar above:
   // these are configuration knobs for a real component, not free styling.
@@ -523,7 +550,7 @@ function validateReservedAttrs(tag: string, attrs: Record<string, unknown>, path
   return clean;
 }
 
-type WalkContext = { takenIds: Set<string>; h1Count: number; intentElementCount: number; errors: ValidationIssue[]; warnings: ValidationIssue[] };
+type WalkContext = { takenIds: Set<string>; h1Count: number; intentElementCount: number; errors: ValidationIssue[]; warnings: ValidationIssue[]; rejections: VocabularyRejections };
 
 function walkAndValidate(raw: unknown, path: string, ctx: WalkContext): HublyDocumentNode | null {
   if (!raw || typeof raw !== "object") {
@@ -536,6 +563,7 @@ function walkAndValidate(raw: unknown, path: string, ctx: WalkContext): HublyDoc
   const isAllowed = ALLOWED_TAGS.has(tag);
   if (!isReserved && !isAllowed) {
     ctx.errors.push({ path, message: `tag "${tag}" is not allowed` });
+    ctx.rejections.tags.push(tag);
     return null;
   }
   if (tag === "h1") ctx.h1Count++;
@@ -549,8 +577,8 @@ function walkAndValidate(raw: unknown, path: string, ctx: WalkContext): HublyDoc
   const nodePath = `${path}[${id}]`;
 
   const attrs = isReserved
-    ? validateReservedAttrs(tag, (r.attrs as Record<string, unknown>) || {}, nodePath, ctx.errors)
-    : validateAttrs(tag, (r.attrs as Record<string, unknown>) || {}, nodePath, ctx.errors);
+    ? validateReservedAttrs(tag, (r.attrs as Record<string, unknown>) || {}, nodePath, ctx.errors, ctx.rejections)
+    : validateAttrs(tag, (r.attrs as Record<string, unknown>) || {}, nodePath, ctx.errors, ctx.rejections);
 
   let children: HublyDocumentNode[] | string;
   if (typeof r.children === "string") {
@@ -602,10 +630,11 @@ function validateReasoning(raw: unknown, path: string, warnings: ValidationIssue
 export function validateHublyDocument(raw: unknown, meta: { businessId: string; tag?: string; version: number; generatedBy: "ai" | "user" | "patch" }): ValidationResult {
   const errors: ValidationIssue[] = [];
   const warnings: ValidationIssue[] = [];
-  if (!raw || typeof raw !== "object") return { ok: false, errors: [{ path: "$", message: "document must be an object" }] };
+  if (!raw || typeof raw !== "object") return { ok: false, errors: [{ path: "$", message: "document must be an object" }], rejections: emptyRejections() };
   const r = raw as Record<string, unknown>;
   const rootRaw = r.root ?? raw; // tolerate a bare root node as input too
-  const ctx: WalkContext = { takenIds: new Set(), h1Count: 0, intentElementCount: 0, errors, warnings };
+  const rejections = emptyRejections();
+  const ctx: WalkContext = { takenIds: new Set(), h1Count: 0, intentElementCount: 0, errors, warnings, rejections };
   const root = walkAndValidate(rootRaw, "$", ctx);
   if (ctx.h1Count !== 1) {
     errors.push({ path: "$", message: `document must contain exactly one <h1> (found ${ctx.h1Count})` });
@@ -629,7 +658,7 @@ export function validateHublyDocument(raw: unknown, meta: { businessId: string; 
         "the page gives a visitor no way to make contact that Hubly can see. Include a HublyBooking or HublyContactForm element. A phone number is information, not a route into Hubly",
     });
   }
-  if (errors.length || !root) return { ok: false, errors };
+  if (errors.length || !root) return { ok: false, errors, rejections };
   const document: HublyDocument = {
     schemaVersion: 1,
     documentId: `${meta.businessId}:v${meta.version}`,
@@ -640,7 +669,7 @@ export function validateHublyDocument(raw: unknown, meta: { businessId: string; 
     createdAt: new Date().toISOString(),
     root,
   };
-  return { ok: true, document, warnings };
+  return { ok: true, document, warnings, rejections };
 }
 
 // ---------------------------------------------------------------------------
