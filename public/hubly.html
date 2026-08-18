@@ -30093,7 +30093,20 @@ async function uploadBrandAsset(kind,dataUrl){
     return null;
   }
 }
-/** Prefer Storage https URL; keep data URL only as last resort for local preview. */
+/** Uploads to Storage and returns the https URL, or NULL if it could not.
+ *
+ *  This used to end `return hosted || dataUrl` -- three silent upload attempts,
+ *  then hand back the raw data: URL, which callers wrote straight into
+ *  businesses.logo_url. Such a row renders fine on the classic site and is
+ *  DROPPED by the Document renderer, whose isValidMediaSrc allows only the
+ *  storage and unsplash origins, so the owner's logo becomes an initials
+ *  monogram the moment their site changes format. Two claimed businesses were
+ *  already in that state when this was found.
+ *
+ *  Returning null makes the failure visible. Twelve of the thirteen callers
+ *  already test isHttpsAssetUrl() and warn; null fails that test, so they warn
+ *  instead of persisting something broken. The thirteenth is fixed at its
+ *  call site. */
 async function hostBrandImage(kind,dataUrl){
   if(!dataUrl)return null;
   if(/^https?:\/\//i.test(dataUrl))return dataUrl;
@@ -30101,7 +30114,8 @@ async function hostBrandImage(kind,dataUrl){
   for(let attempt=0;attempt<3&&!hosted;attempt++){
     try{hosted=await uploadBrandAsset(kind,dataUrl);}catch(e){hosted=null;}
   }
-  return hosted||dataUrl;
+  if(!hosted)console.warn('hostBrandImage: upload failed after 3 attempts for',kind,'- refusing to persist a data: URL');
+  return hosted;
 }
 function isHttpsAssetUrl(u){
   return typeof u==='string'&&/^https?:\/\//i.test(u);
@@ -30371,13 +30385,21 @@ async function handleSidebarLogo(input){
       const compressed=await compressImageDataUrl(e.target.result);
       applyLogoPreview(compressed);
       const url=await hostBrandImage('logo',compressed);
+      // The one unguarded caller of thirteen, and the one that produced the
+      // data: URIs in businesses.logo_url. On failure the preview stays, so the
+      // owner still sees what they picked, but NOTHING is saved and they are
+      // told plainly instead of being left with a logo that silently breaks
+      // the moment their site changes format.
+      if(!isHttpsAssetUrl(url)){
+        toast(t('imageSaveWarn')||"That logo couldn't be uploaded - check your connection and try again.");
+        try{setEdSaveStatus('error');}catch(e){}
+        input.value='';
+        return;
+      }
       S.logoUrl=url;
       applyLogoPreview(url);
       const ok=await autoSaveBrandField('logo_url',url);
-      if(ok){
-        if(/^https?:\/\//i.test(url))toast(t('logoUpdated'));
-        else toast(t('imageSaveWarn')||'Logo preview updated — checking connection…');
-      }
+      if(ok)toast(t('logoUpdated'));
       input.value='';
     }catch(err){
       toast(t('imageSaveWarn'));

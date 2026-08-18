@@ -1050,6 +1050,33 @@ clause is `with_check` — and coalescing NULL to "unconditional" turned 31
 correctly-guarded policies into false alarms. Read `with_check` for INSERT and
 `qual` for SELECT/UPDATE/DELETE, or the report cries wolf.
 
+
+---
+
+## This codebase swallows failure and continues
+
+**Assume any path that reports success does not verify, until proven otherwise.**
+
+Five confirmed instances, all found the same way — by checking the result rather
+than the return value:
+
+| # | What reported success | What actually happened |
+|---|---|---|
+| 1 | logo upload | `logo_url` patched, the rendered header kept its monogram |
+| 2 | `patchDocument` | a column written that the renderer never reads |
+| 3 | "Done — the logo element was restyled" | no change to the page. Twice |
+| 4 | slug-availability check | RLS returned `[]`, read as "slug is free" |
+| 5 | `hostBrandImage` | three upload failures swallowed, a `data:` URI written |
+
+The shape is always the same: an operation returns 200, or a function returns a
+value, and the caller treats that as evidence of the outcome. It is not. A
+column write is not a rendered page; a 200 is not a row; a non-null return is
+not a successful upload.
+
+When touching any path that reports success to a person, verify against the
+thing the person cares about — the rendered result, the row that came back, the
+asset that actually serves bytes — and say so plainly when you cannot.
+
 ---
 
 ## Things that work on classic and silently vanish on the Document format
@@ -1066,7 +1093,7 @@ out on 2026-08-18.
 |---|---|---|---|
 | Site chatbot | `ws-chat-widget`, 17 refs in hubly.html | **no element exists** — `HublyChat` returns 0 matches in the schema | 2026-08-18 |
 | Service-area map | `ws-area-map`, real component | `HublyMap` renders a dashed "a map appears here" placeholder | 2026-08-18 |
-| Logos stored as `data:` URIs | renders fine | **dropped** — `isValidMediaSrc` allows only the storage and unsplash origins, so the header falls back to the initials monogram | 2026-08-18 |
+| Logos stored as `data:` URIs | renders fine | was **dropped** to a monogram — **RESOLVED 2026-08-18**: writer no longer falls back to a data URI, and both existing rows migrated to storage and verified rendering | 2026-08-18 |
 
 ### The data-URI logos, specifically
 
@@ -1088,6 +1115,13 @@ is then written to `logo_url`. It is called from **13 sites** and is fully live.
 So this is not a historical artefact: any owner whose upload fails today gets a
 data URI, which works on classic and will vanish when they move to Document.
 
-Two fixes are needed and neither is done: stop writing data URIs on upload
-failure (fail visibly instead), and migrate the two existing ones into storage
-before those businesses are moved to the Document format.
+**Both fixed on 2026-08-18.** `hostBrandImage` now returns null on failure and
+the one unguarded caller of thirteen warns instead of saving; and
+`scripts/migrate-data-uri-logos.ts` moved both rows into storage, each verified
+readable and then verified to render through the real Document renderer. Zero
+`data:` URIs remain in the table.
+
+**The list above is almost certainly incomplete.** This case was found by
+accident, while chasing an unrelated `HTTP 000` in a storage test. Nobody went
+looking for it. Treat the table as a starting point, not an inventory, and do
+not migrate a customer to the Document format on the strength of it.
