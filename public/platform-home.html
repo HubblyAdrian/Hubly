@@ -305,15 +305,26 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   animation:hcUpdatedPulse 1.15s ease;
 }
 @keyframes hcUpdatedPulse{0%{opacity:0}18%{opacity:.9}100%{opacity:0}}
-.hc-logo-fab{
-  position:absolute;top:14px;right:14px;z-index:5;
-  display:inline-flex;align-items:center;gap:7px;
-  background:rgba(13,15,22,.92);border:1px solid rgba(255,255,255,.18);color:#fff;
-  padding:8px 14px 8px 10px;border-radius:20px;font-size:12px;font-weight:650;cursor:pointer;
-  box-shadow:0 8px 22px rgba(0,0,0,.35);transition:border-color .15s,transform .15s;
-}
-.hc-logo-fab:hover{border-color:var(--brand);transform:translateY(-1px)}
-.hc-logo-fab svg{width:14px;height:14px;color:var(--brand)}
+  /* .hc-logo-fab removed 2026-08-18 — absolutely positioned at the top right of
+     the preview, directly under the dark-mode toggle, and the only way in. */
+  .hc-attach-sep{
+    padding:9px 12px 4px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
+    color:rgba(255,255,255,.4);pointer-events:none;
+  }
+  .hc-drop{
+    margin:10px 0 2px;padding:18px 16px;border:1.5px dashed rgba(255,255,255,.3);
+    border-radius:14px;background:rgba(255,255,255,.03);text-align:center;cursor:pointer;
+    transition:border-color .15s,background .15s;
+  }
+  .hc-drop:hover,.hc-drop:focus-visible{border-color:var(--brand);background:rgba(255,255,255,.06);outline:none}
+  .hc-drop.is-over{border-color:var(--brand);background:rgba(217,99,45,.12)}
+  .hc-drop-t{display:block;font-size:13.5px;font-weight:650;color:#fff}
+  .hc-drop-s{display:block;margin-top:4px;font-size:12px;color:rgba(255,255,255,.66)}
+  .hc-drop-skip{
+    margin-top:10px;background:none;border:0;color:rgba(255,255,255,.66);
+    font-size:12px;text-decoration:underline;cursor:pointer;
+  }
+  .hc-drop-skip:hover{color:#fff}
 
 /* Concept cards — real directions to look at and pick, not prose to read.
    Large, side-by-side, each a small mock homepage (nav/hero/cta/services
@@ -479,6 +490,9 @@ body.hc-active #categories,body.hc-active .footer{display:none}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>
           </button>
           <div class="hc-attach-menu" id="hcAttachMenu" role="menu" hidden>
+            <button type="button" role="menuitem" data-act="logo">🏷️ Your logo</button>
+            <button type="button" role="menuitem" data-act="photo">📷 Your photos</button>
+            <div class="hc-attach-sep" role="separator">Inspiration</div>
             <button type="button" role="menuitem" data-act="url">🔗 Website URL</button>
             <button type="button" role="menuitem" data-act="screenshot">🖼️ Screenshot</button>
             <button type="button" role="menuitem" data-act="pdf">📄 PDF</button>
@@ -496,7 +510,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   <div class="hc-app-right" id="hcCanvas"></div>
   <input type="file" id="hcFileInput" accept="image/*" style="display:none">
   <input type="file" id="hcPdfInput" accept="application/pdf" style="display:none">
-  <input type="file" id="hcLogoInput" accept="image/*" style="display:none">
+  <input type="file" id="hcLogoInput" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none">
 </div>
 
 <section class="sec" id="categories">
@@ -597,7 +611,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   // created (business.startDraft) — { id, slug, draftToken, url }. Threaded
   // back to the server every turn exactly like `messages`; the server never
   // persists it either. This is what makes the canvas real instead of a mockup.
-  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, showLogoFab: false };
+  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false };
 
   // ── Draft claim session ───────────────────────────────────────────────────
   // A draft belongs to nobody until it is claimed. hubly-conversation returns a
@@ -849,7 +863,6 @@ body.hc-active #categories,body.hc-active .footer{display:none}
     if(frameA && loading){
       frameA.addEventListener('load', function(){ loading.classList.add('is-hidden'); }, { once:true });
     }
-    hcMountLogoFab();
   }
 
   // Cache-busts so the exact same URL always forces a real fresh navigation
@@ -865,22 +878,9 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   // about a logo (askLogo) and removed the moment they act on it. Mounted
   // separately from hcRenderCanvas so it can also appear after an in-place
   // iframe refresh without disturbing the live preview.
-  function hcMountLogoFab(){
-    var existing = document.querySelector('.hc-logo-fab');
-    if(existing) existing.remove();
-    if(!hc.showLogoFab || !hc.draftBusiness) return;
-    var wrap = document.querySelector('.hc-canvas-frame-wrap');
-    if(!wrap) return;
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'hc-logo-fab';
-    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M21 16l-5.5-5.5L4 21"/></svg>Upload logo';
-    btn.addEventListener('click', function(){
-      var input = document.getElementById('hcLogoInput');
-      if(input) input.click();
-    });
-    wrap.appendChild(btn);
-  }
+  // hcMountLogoFab removed 2026-08-18. The floating chip was the ONLY way to
+  // upload a logo and it sat on top of the dark-mode toggle. Entry points are
+  // now the attach menu, drag-and-drop, and the in-transcript dropzone.
 
   // Loads the update into the hidden standby frame, then crossfades it in
   // once it's actually ready — used after a turn that really changed the
@@ -1032,6 +1032,10 @@ body.hc-active #categories,body.hc-active .footer{display:none}
       hcSendText('Find inspiration for me — surprise me with a few directions.');
       return;
     }
+    // Asset inputs, not inspiration. The menu offered six ways to describe a
+    // site you already like and no way at all to hand over your own logo.
+    if(act === 'logo'){ var li = document.getElementById('hcLogoInput'); if(li) li.click(); return; }
+    if(act === 'photo'){ var ph = document.getElementById('hcFileInput'); if(ph) ph.click(); return; }
     if(act === 'screenshot'){ var fi = document.getElementById('hcFileInput'); if(fi) fi.click(); return; }
     if(act === 'pdf'){ var pi = document.getElementById('hcPdfInput'); if(pi) pi.click(); return; }
     var copy = {
@@ -1238,8 +1242,8 @@ body.hc-active #categories,body.hc-active .footer{display:none}
         // Independent of the chain above — logo can be asked about on the
         // same turn the site first appears or refreshes.
         if(data.askLogo === true && hc.draftBusiness){
-          hc.showLogoFab = true;
-          hcMountLogoFab();
+          // The assistant says "upload it here"; this is the "here".
+          hcAppendLogoDropzone();
         }
         var interim = Array.isArray(data.interimMessages) ? data.interimMessages : [];
         var i = 0;
@@ -1281,6 +1285,81 @@ body.hc-active #categories,body.hc-active .footer{display:none}
   // sees it directly (per the conversation prompt: "Photos or screenshots
   // someone attaches are visible to you directly"). displayText is what the
   // person sees in their own chat bubble; the real file goes to the model.
+  // A REAL CONTROL WHERE THE ASSISTANT ASKS FOR A LOGO.
+  //
+  // The assistant has been saying "upload it here" while the attach menu
+  // offered only inspiration inputs — Website URL, Screenshot, PDF, Figma,
+  // Pinterest — and the only real entry point was a floating chip sitting on
+  // top of the dark-mode toggle. This renders a click target AND a drop target
+  // inline in the transcript, at the moment the ask is made.
+  function hcClearLogoDropzones(){
+    var nodes = document.querySelectorAll('.hc-drop[data-drop="logo"]');
+    for(var i = 0; i < nodes.length; i++) nodes[i].remove();
+  }
+
+  function hcAppendLogoDropzone(){
+    var thread = document.getElementById('hcThread');
+    if(!thread) return;
+    hcClearLogoDropzones();
+
+    var zone = document.createElement('div');
+    zone.className = 'hc-drop';
+    zone.setAttribute('data-drop', 'logo');
+    zone.setAttribute('role', 'button');
+    zone.setAttribute('tabindex', '0');
+    zone.setAttribute('aria-label', 'Upload your logo');
+    zone.innerHTML =
+      '<span class="hc-drop-t">Drop your logo here, or click to choose a file</span>' +
+      '<span class="hc-drop-s">PNG, JPG, SVG or WebP</span>' +
+      '<button type="button" class="hc-drop-skip">Skip for now</button>';
+
+    function pick(){
+      var input = document.getElementById('hcLogoInput');
+      if(input) input.click();
+    }
+    zone.addEventListener('click', function(ev){
+      if(ev.target && ev.target.className === 'hc-drop-skip') return;
+      pick();
+    });
+    zone.addEventListener('keydown', function(ev){
+      if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); pick(); }
+    });
+    zone.querySelector('.hc-drop-skip').addEventListener('click', function(ev){
+      ev.stopPropagation();
+      hcClearLogoDropzones();
+      hcSendText('Skip the logo for now.');
+    });
+
+    // Its own drop handling, and it stops propagation: a file dropped ON the
+    // zone is a logo, where the page-wide handler would treat it as a generic
+    // photo. We cannot tell a logo from a job photo by looking at the bytes,
+    // so the only signal is where it was dropped.
+    zone.addEventListener('dragover', function(ev){ ev.preventDefault(); ev.stopPropagation(); zone.classList.add('is-over'); });
+    zone.addEventListener('dragleave', function(ev){ ev.stopPropagation(); zone.classList.remove('is-over'); });
+    zone.addEventListener('drop', function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      zone.classList.remove('is-over');
+      var file = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+      if(!file) return;
+      if(!/^image\//i.test(file.type || '')){
+        hcAppendMessage('hubly', "A logo needs to be an image — PNG, JPG, SVG or WebP.");
+        return;
+      }
+      if(hc.busy || !hc.draftBusiness) return;
+      hcFileToBase64(file).then(function(data){
+        hcClearLogoDropzones();
+        hc.pendingLogoUpload = { imageBase64: data, mediaType: file.type || 'image/png' };
+        hcSendText("Here's our logo.");
+      }).catch(function(){
+        hcAppendMessage('hubly', "That image couldn't be read — mind trying a different one?");
+      });
+    });
+
+    thread.appendChild(zone);
+    thread.scrollTop = thread.scrollHeight;
+  }
+
   function hcSendContent(parts, displayText){
     if(hc.busy) return;
     hcActivate();
@@ -1518,9 +1597,7 @@ body.hc-active #categories,body.hc-active .footer{display:none}
       hcLogoInput.value = '';
       if(!file || hc.busy || !hc.draftBusiness) return;
       hcFileToBase64(file).then(function(data){
-        hc.showLogoFab = false;
-        var fab = document.querySelector('.hc-logo-fab');
-        if(fab) fab.remove();
+        hcClearLogoDropzones();
         hc.pendingLogoUpload = { imageBase64: data, mediaType: file.type || 'image/png' };
         hcSendText('Here\'s our logo.');
       }).catch(function(){

@@ -51,6 +51,22 @@
   letter-spacing: 0.02em;
 }
 
+/* A real uploaded logo, in place of the monogram. Constrained by HEIGHT and
+   left free in width, because owners upload both square marks and wide
+   wordmarks and a fixed box would letterbox or crop one of them. */
+#hc-doc-root .hd-logo {
+  height: 2rem;
+  width: auto;
+  max-width: 11rem;
+  flex: 0 0 auto;
+  object-fit: contain;
+  display: block;
+}
+
+@media (max-width: 860px) {
+  #hc-doc-root .hd-logo { max-width: 7rem; }
+}
+
 #hc-doc-root .hd-brand-name {
   font-size: 0.95rem;
   white-space: nowrap;

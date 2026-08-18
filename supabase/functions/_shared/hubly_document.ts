@@ -814,6 +814,10 @@ export type RenderContext = {
    *  theming already uses. Falls back to Hubly's own default brand color
    *  (#D9632D, the dashboard's --brand) if a business hasn't set one. */
   businessBrandColor?: string;
+  /** businesses.logo_url — a real uploaded asset, never invented. When present
+   *  it replaces the monogram in the page header. Absent is the normal state
+   *  for a brand-new draft, which is why the monogram exists at all. */
+  businessLogoUrl?: string;
 };
 
 const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
@@ -998,8 +1002,17 @@ function renderChromeHeader(root: HublyDocumentNode, ctx: RenderContext): string
   // hubly:booking is resolved by wireHublyDocumentReserved in hubly.html —
   // it opens the same real booking wizard the classic renderer uses.
   const cta = `<a class="hd-chrome-cta" href="hubly:booking">Book now</a>`;
+  // A real logo replaces the monogram outright. The monogram was always a
+  // stand-in — honest, but identical in shape on every site (MD, PR, OM) — and
+  // the owner uploading their mark is the single most visible improvement a
+  // generated page gets. Validated against the same storage origins as any
+  // other asset so a logo_url cannot smuggle in an arbitrary remote image.
+  const logo = (ctx.businessLogoUrl || "").trim();
+  const mark = logo && isValidMediaSrc(logo)
+    ? `<img class="hd-logo" src="${escAttr(logo)}" alt="${escAttr(name)}">`
+    : `<span class="hd-monogram">${escHtml(monogram(name))}</span>`;
   return `<header class="hd-chrome-header">
-<a class="hd-brand" href="#hd-top"><span class="hd-monogram">${escHtml(monogram(name))}</span><span class="hd-brand-name">${escHtml(name)}</span></a>
+<a class="hd-brand" href="#hd-top">${mark}<span class="hd-brand-name">${escHtml(name)}</span></a>
 <nav class="hd-nav">${nav}</nav>
 <div class="hd-chrome-actions">${phone}${cta}</div>
 </header>`;

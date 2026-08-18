@@ -59,7 +59,7 @@ async function get(path: string) {
 }
 
 const bizRows = await get(
-  `businesses?select=id,name,phone,slug,brand_color&id=eq.${businessId}`,
+  `businesses?select=id,name,phone,slug,brand_color,logo_url&id=eq.${businessId}`,
 );
 const biz = bizRows[0];
 if (!biz) {
@@ -82,6 +82,7 @@ const html = renderHublyDocument(doc, {
   businessName: biz.name || "",
   businessPhone: biz.phone || undefined,
   businessBrandColor: biz.brand_color || undefined,
+  businessLogoUrl: biz.logo_url || undefined,
 });
 
 // Report what actually changed, rather than claiming success. The two counts

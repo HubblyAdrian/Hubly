@@ -476,8 +476,8 @@ export async function applyDirectDocumentPatch(
     if (!directEffect.changed) {
       return { ok: false, real: false, summary: "That edit produced no change to the page.", error: "patch_no_effect" };
     }
-  const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color");
-  const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined });
+  const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url");
+  const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined, businessLogoUrl: bizRow?.logo_url || undefined });
   const r = await callBusinessRpc("create_business_document", {
     p_business_id: draftId,
     p_draft_token: draftToken,
@@ -620,12 +620,68 @@ export async function uploadDraftLogo(
     return { ok: false, real: false, summary: "The logo uploaded but couldn't be attached to the business — the draft may have already been claimed.", error: "rpc_failed" };
   }
   const siteUrl = `https://${r.slug}.${HUBLY_DOMAIN}`;
+
+  // A Hubly Document stores its RENDERED html, so patching businesses.logo_url
+  // alone changes nothing a visitor sees — the header keeps its monogram
+  // forever. This summary used to say "now shows it in the header" regardless,
+  // which is the same false-success failure that patchDocument was fixed for.
+  //
+  // So re-render the stored tree through the current renderer, which now reads
+  // businessLogoUrl. No model call, no change to the document itself: the same
+  // operation scripts/rerender-business-document.ts performs, and the reason
+  // that script exists.
+  const rerendered = await rerenderLatestDocument(draftId, draftToken, "website");
+
   return {
     ok: true,
     real: true,
-    summary: `Real logo uploaded and live — ${siteUrl} now shows it in the header.`,
-    raw: { id: r.id, slug: r.slug, url: siteUrl, logoUrl: uploaded.url },
+    summary: rerendered === "updated"
+      ? `Real logo uploaded — ${siteUrl} now shows it in the header in place of the initials.`
+      : rerendered === "no_document"
+      ? `Real logo uploaded and saved to the business. There is no generated page yet, so it will appear in the header as soon as one is built.`
+      : `Real logo uploaded and saved, but the live page could not be re-rendered, so it may still show the initials. Say that plainly rather than claiming the header changed.`,
+    raw: { id: r.id, slug: r.slug, url: siteUrl, logoUrl: uploaded.url, rerender: rerendered },
   };
+}
+
+/**
+ * Re-render a business's latest document through the CURRENT renderer and save
+ * it as a new version. Never calls the model and never alters the document
+ * tree — only the HTML derived from it.
+ *
+ * Needed because rendered_html is stored, so anything that changes how a page
+ * is DRAWN (a logo, and later a theme) reaches existing sites only if something
+ * re-runs the renderer over them.
+ */
+async function rerenderLatestDocument(
+  businessId: string,
+  draftToken: string,
+  tag: string,
+): Promise<"updated" | "no_document" | "failed"> {
+  try {
+    const latest = await selectLatestBusinessDocument(businessId, tag);
+    if (!latest) return "no_document";
+    const bizRow = await selectOne("businesses", "id", businessId, "name,phone,slug,brand_color,logo_url");
+    const html = renderHublyDocument(latest.document, {
+      businessId,
+      businessName: bizRow?.name || "",
+      businessPhone: bizRow?.phone || undefined,
+      businessBrandColor: bizRow?.brand_color || undefined,
+      businessLogoUrl: bizRow?.logo_url || undefined,
+    });
+    const saved = await callBusinessRpc("create_business_document", {
+      p_business_id: businessId,
+      p_draft_token: draftToken,
+      p_tag: tag,
+      p_document: latest.document,
+      p_rendered_html: html,
+      p_created_by: "patch",
+    });
+    return saved && saved.ok === true ? "updated" : "failed";
+  } catch (e) {
+    console.error("rerenderLatestDocument failed:", e);
+    return "failed";
+  }
 }
 
 /**
@@ -812,7 +868,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!brief) {
             return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
           }
-          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,section_order");
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order");
           const schemaBlock = buildDocumentSchemaPromptBlock();
           // section_order[0] is what startDraft chose for this business to lead
           // with. renderHublyDocument does not read section_order at all — that
@@ -838,7 +894,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             await recordVocabularyRejections(draftId, "website", genResult, "failed");
             return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: { errors: genResult.errors, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale } };
           }
-          const html = renderHublyDocument(genResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined });
+          const html = renderHublyDocument(genResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined, businessLogoUrl: bizRow?.logo_url || undefined });
           // generateDocument runs as a fire-and-forget background task in
           // hubly-conversation (EdgeRuntime.waitUntil) -- nothing awaits or
           // reads this handler's return value, only errors get caught. The
@@ -937,8 +993,8 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
                 raw: { instruction, patchMs, usage: patchResult.usage },
               };
             }
-          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color");
-          const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined });
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url");
+          const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined, businessLogoUrl: bizRow?.logo_url || undefined });
           const r = await callBusinessRpc("create_business_document", {
             p_business_id: draftId,
             p_draft_token: draftToken,
