@@ -17424,6 +17424,18 @@ async function loadPublicProfile(slug){
       // builder iframe). Someone can add it to a URL by hand and see the
       // scaffolding, which is a curiosity, not a leak.
       if(!hcBuilderPreview()) hcStripPlaceholders(root);
+      // The floating Night toggle is position:fixed at right:88px, z-index:9999 —
+      // directly over the "Book now" button in the document header, making the
+      // primary CTA on every generated site partly unclickable. And it does
+      // nothing here: there are ZERO [data-theme] rules touching #hc-doc-root,
+      // so clicking it flips an attribute no stylesheet reads.
+      //
+      // Hidden rather than repositioned. A control that cannot do its job is a
+      // false affordance wherever it sits, and the mic taught that lesson
+      // already. Document dark mode is a real theming job — the ink palette in
+      // the generated stylesheet is literal values, not variables — and it is
+      // recorded as such rather than faked with a button.
+      try{ var tt=document.querySelector('.theme-toggle'); if(tt) tt.style.display='none'; }catch(e){}
       if(!data.owner_id) hcNoIndex();
       showP('p-hubly-document');
       try{wireHublyDocumentReserved();}catch(e){console.warn('wireHublyDocumentReserved failed',e);}
@@ -52818,6 +52830,76 @@ function wireHublyDocumentReserved(){
       else { try{ openBookingPage(''); }catch(e){} }
     }
   });
+
+  // THE SITE CHATBOT, ported from classic. Real customers use ws-chat-widget
+  // today and this schema had no element for it at all, so every site
+  // regenerated as a Document silently lost it. Same backend as classic: the
+  // deployed chatbot-message function.
+  (function wireHublyChat(){
+    var box = root.querySelector('[data-hd-chat]');
+    if(!box) return;
+    var launch = box.querySelector('.hd-chat-launch');
+    var panel  = box.querySelector('.hd-chat-panel');
+    var log    = box.querySelector('.hd-chat-log');
+    var cform  = box.querySelector('.hd-chat-form');
+    var input  = box.querySelector('.hd-chat-input');
+    var businessId = box.getAttribute('data-business-id') || '';
+    var history = [];
+    var conversationId = null;
+    var busy = false;
+
+    function add(role, text){
+      var d = document.createElement('div');
+      d.className = 'hd-chat-msg ' + (role === 'user' ? 'is-user' : 'is-bot');
+      d.textContent = text;
+      log.appendChild(d);
+      log.scrollTop = log.scrollHeight;
+      return d;
+    }
+    launch.addEventListener('click', function(){
+      var isOpen = !panel.hidden;
+      panel.hidden = isOpen;
+      launch.setAttribute('aria-expanded', String(!isOpen));
+      if(!isOpen){
+        if(!history.length) add('bot', 'Ask me anything about our services, pricing or availability.');
+        if(input) input.focus();
+      }
+    });
+
+    cform.addEventListener('submit', function(ev){
+      ev.preventDefault();
+      var text = String(input.value || '').trim();
+      if(!text || busy || !businessId) return;
+      input.value = '';
+      add('user', text);
+      history.push({ role: 'user', content: text });
+      busy = true;
+      var thinking = add('bot', 'Thinking…');
+      fetch(SUPA_URL + '/functions/v1/chatbot-message', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY },
+        body: JSON.stringify({ business_id: businessId, conversation_id: conversationId, messages: history })
+      })
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          busy = false;
+          // Say what happened. A chatbot that silently does nothing is the
+          // swallow-failure shape, in front of a customer.
+          var reply = data && (data.reply || data.message);
+          if(!data || data.error || !reply){
+            thinking.textContent = "I could not answer that just now — please call or use the enquiry form.";
+            return;
+          }
+          if(data.conversation_id) conversationId = data.conversation_id;
+          thinking.textContent = reply;
+          history.push({ role: 'assistant', content: reply });
+        })
+        .catch(function(){
+          busy = false;
+          thinking.textContent = "I could not reach the assistant — please call or use the enquiry form.";
+        });
+    });
+  })();
 
   var form = root.querySelector('[data-hd-form="contact"]');
   if(!form) return;

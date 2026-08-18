@@ -270,3 +270,55 @@
   font-size: 0.9rem;
   color: rgba(20, 20, 20, 0.55);
 }
+
+/* --- Ported from the classic renderer, 2026-08-18 --------------------------- */
+
+/* Sticky header scrim. The header is translucent, so hero text scrolled under it
+   was being clipped mid-line against nothing. A short gradient below the header
+   gives the type something to disappear into. */
+#hc-doc-root .hd-chrome-header::after{
+  content:"";
+  position:absolute;left:0;right:0;top:100%;height:28px;
+  background:linear-gradient(to bottom, rgba(255,255,255,.55), rgba(255,255,255,0));
+  pointer-events:none;
+}
+
+/* Service-area map. Classic has rendered a real Google embed for as long as it
+   has existed; this format rendered a dashed island saying a map would appear. */
+#hc-doc-root .hd-map{
+  border-radius:18px;overflow:hidden;border:1px solid rgba(20,20,20,.12);
+  background:rgba(20,20,20,.04);
+}
+#hc-doc-root .hd-map iframe{width:100%;height:280px;border:0;display:block}
+
+/* Site chatbot. Collapsed launcher, so it never covers the page on arrival. */
+#hc-doc-root .hd-chat{position:relative;display:inline-block}
+#hc-doc-root .hd-chat-launch{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:.7rem 1.3rem;border:0;border-radius:999px;
+  background:var(--brand);color:#fff;font:inherit;font-size:.95rem;font-weight:600;cursor:pointer;
+}
+#hc-doc-root .hd-chat-launch:hover{filter:brightness(.92)}
+#hc-doc-root .hd-chat-panel{
+  margin-top:12px;width:min(380px,100%);
+  border:1px solid rgba(20,20,20,.14);border-radius:14px;background:#fff;
+  box-shadow:0 10px 34px rgba(0,0,0,.12);overflow:hidden;
+}
+#hc-doc-root .hd-chat-panel[hidden]{display:none}
+#hc-doc-root .hd-chat-log{max-height:260px;overflow-y:auto;padding:14px;display:grid;gap:8px}
+#hc-doc-root .hd-chat-msg{
+  font-size:.9rem;line-height:1.45;padding:.55rem .8rem;border-radius:12px;max-width:88%;
+}
+#hc-doc-root .hd-chat-msg.is-bot{background:rgba(20,20,20,.05);color:#141414;justify-self:start}
+#hc-doc-root .hd-chat-msg.is-user{background:var(--brand);color:#fff;justify-self:end}
+#hc-doc-root .hd-chat-form{display:flex;gap:8px;padding:12px;border-top:1px solid rgba(20,20,20,.1)}
+#hc-doc-root .hd-chat-input{
+  flex:1;padding:.6rem .75rem;border:1px solid rgba(20,20,20,.18);border-radius:.6rem;
+  font:inherit;font-size:.95rem;color:#141414;background:#fff;
+}
+#hc-doc-root .hd-chat-input:focus{outline:2px solid var(--brand);outline-offset:1px;border-color:transparent}
+#hc-doc-root .hd-chat-send{
+  padding:.6rem 1rem;border:0;border-radius:.6rem;background:var(--brand);color:#fff;
+  font:inherit;font-weight:600;cursor:pointer;
+}
+@media (max-width:520px){ #hc-doc-root .hd-chat-panel{width:100%} }

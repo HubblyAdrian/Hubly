@@ -1077,6 +1077,30 @@ When touching any path that reports success to a person, verify against the
 thing the person cares about — the rendered result, the row that came back, the
 asset that actually serves bytes — and say so plainly when you cannot.
 
+
+---
+
+## Verification that measures the mechanism passes while the problem persists
+
+Sibling to the swallow-failure note above, and the subtler of the two.
+
+The builder-only placeholder rule was verified correct: on a live public page,
+**0 placeholders and 0 empty islands survived the strip**. The filter provably
+ran and provably worked. Meanwhile an empty reviews section held **414px** of
+that same page, because the model narrated the absence in prose — "Reviews will
+appear here once we connect them" — which is copy, not a marked placeholder, so
+there was nothing for the strip to remove.
+
+Every number in that check was true. The check was still worthless, because it
+measured the FILTER rather than the PAGE.
+
+**Assert that the page does not contain the thing. Never that the filter ran.**
+"0 placeholders remain" is a statement about our code; "no section says reviews
+are coming" is a statement about what a customer sees, and only the second is
+the thing anyone cares about. The same trap applies to any cleanup step: a
+sanitiser, a dedupe, a suppression rule, a validator. Measure the output, not
+the machinery.
+
 ---
 
 ## Things that work on classic and silently vanish on the Document format
@@ -1091,8 +1115,8 @@ out on 2026-08-18.
 
 | Feature | Classic | Document | Confirmed |
 |---|---|---|---|
-| Site chatbot | `ws-chat-widget`, 17 refs in hubly.html | **no element exists** — `HublyChat` returns 0 matches in the schema | 2026-08-18 |
-| Service-area map | `ws-area-map`, real component | `HublyMap` renders a dashed "a map appears here" placeholder | 2026-08-18 |
+| Site chatbot | `ws-chat-widget`, 17 refs in hubly.html | was **absent entirely** — **RESOLVED 2026-08-18**: `HublyChat` added to the schema, rendered by the shell, wired to the same deployed `chatbot-message` function classic uses | 2026-08-18 |
+| Service-area map | `ws-area-map`, real component | was a dashed placeholder — **RESOLVED 2026-08-18**: `HublyMap` now renders the same Google embed classic does, built from the same city/service-area query, with an honest empty state only when there is no location on record | 2026-08-18 |
 | Logos stored as `data:` URIs | renders fine | was **dropped** to a monogram — **RESOLVED 2026-08-18**: writer no longer falls back to a data URI, and both existing rows migrated to storage and verified rendering | 2026-08-18 |
 
 ### The data-URI logos, specifically
@@ -1120,6 +1144,24 @@ the one unguarded caller of thirteen warns instead of saving; and
 `scripts/migrate-data-uri-logos.ts` moved both rows into storage, each verified
 readable and then verified to render through the real Document renderer. Zero
 `data:` URIs remain in the table.
+
+### The deliberate hunt, 2026-08-18
+
+Rather than wait to trip over the next one, every `ws-*` feature block in the
+classic renderer was enumerated and checked against the Document schema. Four
+have **no representation in the Document format at all**:
+
+| Feature | Classic | Document | Confirmed how |
+|---|---|---|---|
+| Social links | 42 refs; `ig_handle`, `fb_url`, `tiktok_handle`, `google_url` are real columns on `businesses` | **0 refs.** The Document footer renders name and phone only | Confirmed — columns exist, classic renders them, schema never mentions them |
+| Memberships | 58 refs, including a real signup writing `booking_requests.is_membership_signup` | **0 refs** | Confirmed absent from the schema; the signup path is classic-only |
+| Promotions | 39 refs | **0 refs** | Grep-level, not yet traced end to end |
+| Announcement ticker | 20 refs | **0 refs** | Grep-level, not yet traced end to end |
+
+Social links and memberships are the two to take seriously: both have real
+columns or real write paths behind them, so a business using either loses
+something concrete on migration. Promotions and the ticker are grep-level
+findings and need tracing before being treated as facts.
 
 **The list above is almost certainly incomplete.** This case was found by
 accident, while chasing an unrelated `HTTP 000` in a storage test. Nobody went

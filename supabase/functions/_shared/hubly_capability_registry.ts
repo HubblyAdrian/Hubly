@@ -360,7 +360,7 @@ export async function rebuildDocumentFromRecord(
       return { status: "skipped_owner_edited" };
     }
 
-    const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order");
+    const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities");
     const record = await loadBusinessRecord(draftId);
     const leadWith = Array.isArray(bizRow?.section_order) ? bizRow.section_order[0] : undefined;
     const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${buildDocumentSchemaPromptBlock()}\n\n${buildPageStructureBlock(leadWith)}\n\n${buildBusinessRecordBlock(record)}`;
@@ -391,6 +391,16 @@ export async function rebuildDocumentFromRecord(
     console.error("rebuildDocumentFromRecord failed:", e);
     return { status: "failed", detail: String(e).slice(0, 120) };
   }
+}
+
+/** Same query classic builds: the town, or the service area, or nothing. */
+function mapQueryFor(bizRow: any): string | undefined {
+  if (!bizRow) return undefined;
+  const cities = Array.isArray(bizRow.service_area_cities) ? bizRow.service_area_cities.filter((c: unknown) => typeof c === "string") : [];
+  const parts = [bizRow.city, bizRow.state].filter(Boolean);
+  if (parts.length) return parts.join(", ");
+  if (cities.length) return cities[0];
+  return undefined;
 }
 
 async function loadBusinessRecord(businessId: string): Promise<BusinessRecord> {
@@ -760,8 +770,8 @@ export async function applyDirectDocumentPatch(
     if (!directEffect.changed) {
       return { ok: false, real: false, summary: "That edit produced no change to the page.", error: "patch_no_effect" };
     }
-  const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url");
-  const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined, businessLogoUrl: bizRow?.logo_url || undefined });
+  const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities");
+  const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined, businessLogoUrl: bizRow?.logo_url || undefined, businessMapQuery: mapQueryFor(bizRow) });
   const r = await callBusinessRpc("create_business_document", {
     p_business_id: draftId,
     p_draft_token: draftToken,
@@ -945,7 +955,7 @@ async function rerenderLatestDocument(
   try {
     const latest = await selectLatestBusinessDocument(businessId, tag);
     if (!latest) return "no_document";
-    const bizRow = await selectOne("businesses", "id", businessId, "name,phone,slug,brand_color,logo_url");
+    const bizRow = await selectOne("businesses", "id", businessId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities");
     const html = renderHublyDocument(latest.document, {
       businessId,
       businessName: bizRow?.name || "",
@@ -1207,7 +1217,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!brief) {
             return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
           }
-          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order");
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities");
           const schemaBlock = buildDocumentSchemaPromptBlock();
           // section_order[0] is what startDraft chose for this business to lead
           // with. renderHublyDocument does not read section_order at all — that
@@ -1240,7 +1250,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             await recordVocabularyRejections(draftId, "website", genResult, "failed");
             return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: { errors: genResult.errors, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale } };
           }
-          const html = renderHublyDocument(genResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined, businessLogoUrl: bizRow?.logo_url || undefined });
+          const html = renderHublyDocument(genResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined, businessLogoUrl: bizRow?.logo_url || undefined, businessMapQuery: mapQueryFor(bizRow) });
           // generateDocument runs as a fire-and-forget background task in
           // hubly-conversation (EdgeRuntime.waitUntil) -- nothing awaits or
           // reads this handler's return value, only errors get caught. The
@@ -1339,8 +1349,8 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
                 raw: { instruction, patchMs, usage: patchResult.usage },
               };
             }
-          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url");
-          const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined, businessLogoUrl: bizRow?.logo_url || undefined });
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities");
+          const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined, businessLogoUrl: bizRow?.logo_url || undefined, businessMapQuery: mapQueryFor(bizRow) });
           const r = await callBusinessRpc("create_business_document", {
             p_business_id: draftId,
             p_draft_token: draftToken,

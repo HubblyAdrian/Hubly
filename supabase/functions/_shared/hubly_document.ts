@@ -173,6 +173,11 @@ const SVG_TAGS = new Set(["svg", "path", "circle", "rect", "line", "polyline", "
 /** Opaque to the AI — configured presentationally, implemented by Hubly. */
 export const HUBLY_RESERVED_TAGS = new Set([
   "HublyBooking", "HublyReviews", "HublyCustomerPortal", "HublyContactForm", "HublyMap",
+  // Ported from the classic renderer on 2026-08-18. Real customers use the
+  // classic ws-chat-widget today, and it had NO element in this schema at all —
+  // so every site regenerated as a Document silently lost its chatbot. Backed by
+  // the deployed chatbot-message function, exactly as classic is.
+  "HublyChat",
 ]);
 
 // True HTML voids only. SVG leaf elements are NOT listed here: they render as
@@ -661,6 +666,7 @@ function validateReservedAttrs(tag: string, attrs: Record<string, unknown>, path
   // these are configuration knobs for a real component, not free styling.
   const ALLOWED: Record<string, string[]> = {
     HublyBooking: ["variant", "class", "serviceId"],
+    HublyChat: ["variant", "class"],
     HublyReviews: ["variant", "class"],
     HublyCustomerPortal: ["variant", "class"],
     HublyContactForm: ["variant", "class"],
@@ -764,12 +770,26 @@ function validateReasoning(raw: unknown, path: string, warnings: ValidationIssue
  *  Deliberately structural rather than semantic: it asks what the section
  *  CONTAINS, not what it appears to be about, so it cannot be satisfied by
  *  confident-sounding copy. A prompt-only version of this rule would be, and
- *  the previous rule had to be enforced here for exactly the same reason. */
+ *  the rule it replaced had to be enforced here for the same reason.
+ *
+ *  NUMBERS COUNT BY POSITION, NOT BY SIZE. The first version accepted any
+ *  2+ digit token, which a year, a street number or a phone fragment satisfies
+ *  — so an "about" section could pass on an incidental figure while carrying
+ *  nothing a visitor can use. A bare number now only counts where its position
+ *  makes it data: inside a list item or a table cell. Anywhere else it needs a
+ *  currency symbol or a real unit next to it.
+ */
 function sectionCarriesContent(node: HublyDocumentNode): boolean {
   let listItems = 0;
   let found = false;
 
-  const walk = (n: HublyDocumentNode) => {
+  // A figure that is unambiguous wherever it appears: money, or a number with
+  // a unit attached. "$120", "2 hours", "25 miles", "15 min".
+  const QUALIFIED_FIGURE = /(\$\s?\d|\d+\s?(hours?|hrs?|mins?|minutes?|miles?|km|days?|years?|%|sq\s?ft))/i;
+  // A bare number, which only counts in a structured position.
+  const BARE_NUMBER = /\d/;
+
+  const walk = (n: HublyDocumentNode, inDataCell: boolean) => {
     if (found) return;
     // A real Hubly element is a working thing, not prose about one.
     if (HUBLY_RESERVED_TAGS.has(n.tag)) {
@@ -781,14 +801,18 @@ function sectionCarriesContent(node: HublyDocumentNode): boolean {
     if (n.tag === "table" || n.tag === "details" || n.tag === "dl") { found = true; return; }
     if (n.tag === "li") listItems++;
     if (listItems >= 2) { found = true; return; }
+
+    // li / td / th / dd are positions where a number IS the content.
+    const positional = inDataCell || n.tag === "li" || n.tag === "td" || n.tag === "th" || n.tag === "dd";
+
     if (typeof n.children === "string") {
-      // A price, a duration, a distance, a count — any real figure.
-      if (/(\$\s?\d|\d+\s?(hour|hr|min|mile|km|day|year|%)|\b\d{2,}\b)/i.test(n.children)) { found = true; return; }
+      if (QUALIFIED_FIGURE.test(n.children)) { found = true; return; }
+      if (positional && BARE_NUMBER.test(n.children)) { found = true; return; }
     } else if (Array.isArray(n.children)) {
-      for (const c of n.children) { walk(c); if (found) return; }
+      for (const c of n.children) { walk(c, positional); if (found) return; }
     }
   };
-  walk(node);
+  walk(node, false);
   return found || listItems >= 2;
 }
 
@@ -888,6 +912,9 @@ export type RenderContext = {
    *  it replaces the monogram in the page header. Absent is the normal state
    *  for a brand-new draft, which is why the monogram exists at all. */
   businessLogoUrl?: string;
+  /** City, or the service-area cities, for the map embed. Classic builds the
+   *  same query from `areaDisp.mapQuery || city || areaZips`. */
+  businessMapQuery?: string;
 };
 
 const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
@@ -974,8 +1001,35 @@ ${phone}
 <button class="hd-primary-action" type="submit">Send enquiry</button>
 <p class="hd-form-status" role="status" aria-live="polite"></p>
 </form>`);
-    case "HublyMap":
-      return wrap(`<div class="hd-empty-island" data-hd-empty="map" data-hd-placeholder="1"><p>A map of the service area appears here once an address is added.</p></div>`);
+    case "HublyMap": {
+      // A REAL MAP, not a dashed island. Classic has rendered a Google embed
+      // from city/service-area for as long as it has existed; this schema
+      // rendered a placeholder saying a map would appear, which is what "the
+      // map degraded to prose" meant. Same embed, same query construction.
+      //
+      // <iframe> is banned in the document grammar and stays banned — the model
+      // cannot write one. The SHELL emits this, which is the whole point of a
+      // reserved element: Hubly implements it, the AI only places it.
+      const q = (ctx.businessMapQuery || "").trim();
+      if (!q) {
+        return wrap(`<div class="hd-empty-island" data-hd-empty="map" data-hd-placeholder="1"><p>A map of the service area appears here once an address is added.</p></div>`);
+      }
+      return wrap(`<div class="hd-map"><iframe title="Service area map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${escAttr(encodeURIComponent(q))}&z=11&output=embed"></iframe></div>`);
+    }
+    case "HublyChat":
+      // Markup only; wireHublyDocumentReserved in hubly.html gives it behaviour,
+      // talking to the same chatbot-message function classic uses. Rendered
+      // collapsed so it never covers the page on arrival.
+      return wrap(`<div class="hd-chat" data-hd-chat data-business-id="${escAttr(ctx.businessId)}">
+<button type="button" class="hd-chat-launch" aria-expanded="false" aria-controls="hd-chat-panel">Ask a question</button>
+<div class="hd-chat-panel" id="hd-chat-panel" hidden>
+<div class="hd-chat-log" role="log" aria-live="polite"></div>
+<form class="hd-chat-form" novalidate>
+<input class="hd-chat-input" type="text" autocomplete="off" placeholder="Type your question…" aria-label="Your question">
+<button class="hd-chat-send" type="submit">Send</button>
+</form>
+</div>
+</div>`);
     default:
       return wrap("");
   }
@@ -1165,6 +1219,8 @@ Never write your own <form> or interactive markup for these — place the reserv
 - HublyReviews — real customer reviews once connected. Shows an honest empty state until then.
 - HublyMap — the service area, once an address exists. Honest empty state until then.
 - HublyCustomerPortal — sign-in for existing customers. Only for businesses with ongoing client relationships.
+- HublyChat — a real assistant that answers visitor questions about THIS business, backed by the business's own services and details. Place it once, near the end of the page; it renders as a collapsed launcher, not a panel that covers the content. Almost every service business benefits from it: it answers the questions that would otherwise be a phone call the owner has to take.
+- HublyMap — a real embedded map of the service area. It renders an actual map when the business has a city or service-area on record, and an honest empty state when it does not. Place it in the service-area section.
 Booking and the contact form are not alternatives to each other and a page may carry both: booking for the customer who already knows what they want, the form for the one who has a question first. Choose on what this business's customers need — not on how much data happens to exist at this moment.
 
 STYLING — every value must be one of these exact tokens (space-separated in "class"), nothing invented:
