@@ -341,8 +341,9 @@ const CLASS_FAMILIES: ClassFamily[] = [
       "flex-row", "flex-col", "flex-wrap",
       "items-center", "items-start", "items-end",
       "justify-center", "justify-between", "justify-start", "justify-end", "justify-around",
+      "flex-1", "grow",
     ],
-    prompt: `Flex: flex-row, flex-col, flex-wrap, items-{center,start,end}, justify-{center,between,start,end,around}`,
+    prompt: `Flex: flex-row, flex-col, flex-wrap, items-{center,start,end}, justify-{center,between,start,end,around}, and flex-1 / grow to make a child take up the remaining space — pair grow with border-dotted for a leader line`,
   },
   {
     id: "grid",
@@ -389,8 +390,8 @@ const CLASS_FAMILIES: ClassFamily[] = [
   },
   {
     id: "border",
-    tokens: ["border", "border-2"],
-    prompt: `Border: border, border-2`,
+    tokens: ["border", "border-2", "border-t", "border-b", "border-l", "border-r", "border-dotted", "border-dashed"],
+    prompt: `Border: border, border-2 for all sides, border-{t,b,l,r} for one side, and border-dotted / border-dashed for the style. border-b alone is how you separate list rows without drawing boxes; grow + border-b + border-dotted on a spacer is how you get printed-menu leader lines between a dish name and its price`,
   },
   {
     id: "gradient",

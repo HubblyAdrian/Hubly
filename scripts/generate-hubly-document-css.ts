@@ -226,6 +226,21 @@ function emitBaseRules() {
     ["shadow-xl", "box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);"],
     ["border", "border-width: 1px; border-style: solid; border-color: #e5e7eb;"],
     ["border-2", "border-width: 2px; border-style: solid; border-color: #e5e7eb;"],
+    // Style only — pairs with `border`/`border-2` for the width. Named by the
+    // restaurant brief for printed-menu leader lines.
+    // Single-side borders. Absent until 2026-08-18, which made the LAYOUT_BLOCK
+    // instruction "plain rows separated by border-b" impossible to follow — the
+    // prompt named a token the validator refused. Drift running the opposite
+    // way from the aspect-* bug, and invisible to verifyVocabularyCoverage,
+    // which only checks tokens -> prompt.
+    ["border-t", "border-top-width: 1px; border-top-style: solid; border-color: #e5e7eb;"],
+    ["border-b", "border-bottom-width: 1px; border-bottom-style: solid; border-color: #e5e7eb;"],
+    ["border-l", "border-left-width: 1px; border-left-style: solid; border-color: #e5e7eb;"],
+    ["border-r", "border-right-width: 1px; border-right-style: solid; border-color: #e5e7eb;"],
+    ["border-dotted", "border-style: dotted;"],
+    ["border-dashed", "border-style: dashed;"],
+    ["flex-1", "flex: 1 1 0%;"],
+    ["grow", "flex-grow: 1;"],
     ["relative", "position: relative;"],
     ["absolute", "position: absolute;"],
     ["inset-0", "top: 0; right: 0; bottom: 0; left: 0;"],

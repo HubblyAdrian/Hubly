@@ -88,6 +88,37 @@ describe('Hubly Document class vocabulary', () => {
     assert.deepEqual(JSON.parse(out), ['aspect-square', 'aspect-video']);
   });
 
+  it('every class token named in guidance prose is actually valid', () => {
+    // THE REVERSE DIRECTION. verifyVocabularyCoverage checks tokens -> prompt:
+    // does the model get told about everything the validator accepts. It cannot
+    // see the opposite mistake — prose that names a token the validator
+    // REFUSES — and that mistake shipped on 2026-08-18: LAYOUT_BLOCK said
+    // "plain rows separated by border-b" while border-b was not a real token,
+    // so the model was being instructed toward a guaranteed rejection.
+    //
+    // Listed explicitly rather than scraped, because guidance prose is full of
+    // hyphenated words ("before-after", "how-it-works") that look exactly like
+    // class tokens and would make a scraper cry wolf. Add to this list whenever
+    // guidance names a class.
+    const NAMED_IN_PROSE = [
+      'border-b', 'border-dotted', 'grow', 'bg-ink-100', 'aspect-[4/3]',
+      'aspect-square', 'aspect-video', 'object-cover', 'inset-0', 'relative',
+      'absolute', 'min-h-screen', 'bg-gradient-to-b', 'from-brand-800',
+      'overflow-x-auto', 'snap-x', 'snap-mandatory', 'snap-start', 'shrink-0',
+      'columns-3', 'break-inside-avoid', 'sticky', 'top-0', 'bottom-0',
+      'transition', 'flex-1', 'mx-auto',
+    ];
+    const raw = runInDeno(
+      'console.log(JSON.stringify(' + JSON.stringify(NAMED_IN_PROSE) + '.filter((t) => !m.UTILITY_CLASSES.has(t))));',
+    );
+    const invalid = JSON.parse(raw);
+    assert.deepEqual(
+      invalid,
+      [],
+      'Guidance prose names class tokens the validator rejects: ' + invalid.join(', '),
+    );
+  });
+
   it('keeps the vocabulary non-empty and the two halves in sync in size', () => {
     const raw = runInDeno('console.log(JSON.stringify({n: m.UTILITY_CLASSES.size, prompt: m.buildStylingPromptBlock().length}));');
     const { n, prompt } = JSON.parse(raw);

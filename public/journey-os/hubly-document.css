@@ -379,6 +379,14 @@
 #hc-doc-root .shadow-xl { box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
 #hc-doc-root .border { border-width: 1px; border-style: solid; border-color: #e5e7eb; }
 #hc-doc-root .border-2 { border-width: 2px; border-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .border-t { border-top-width: 1px; border-top-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .border-b { border-bottom-width: 1px; border-bottom-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .border-l { border-left-width: 1px; border-left-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .border-r { border-right-width: 1px; border-right-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .border-dotted { border-style: dotted; }
+#hc-doc-root .border-dashed { border-style: dashed; }
+#hc-doc-root .flex-1 { flex: 1 1 0%; }
+#hc-doc-root .grow { flex-grow: 1; }
 #hc-doc-root .relative { position: relative; }
 #hc-doc-root .absolute { position: absolute; }
 #hc-doc-root .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
@@ -799,6 +807,14 @@
   #hc-doc-root .sm\:shadow-xl { box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
   #hc-doc-root .sm\:border { border-width: 1px; border-style: solid; border-color: #e5e7eb; }
   #hc-doc-root .sm\:border-2 { border-width: 2px; border-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .sm\:border-t { border-top-width: 1px; border-top-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .sm\:border-b { border-bottom-width: 1px; border-bottom-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .sm\:border-l { border-left-width: 1px; border-left-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .sm\:border-r { border-right-width: 1px; border-right-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .sm\:border-dotted { border-style: dotted; }
+  #hc-doc-root .sm\:border-dashed { border-style: dashed; }
+  #hc-doc-root .sm\:flex-1 { flex: 1 1 0%; }
+  #hc-doc-root .sm\:grow { flex-grow: 1; }
   #hc-doc-root .sm\:relative { position: relative; }
   #hc-doc-root .sm\:absolute { position: absolute; }
   #hc-doc-root .sm\:inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
@@ -1220,6 +1236,14 @@
   #hc-doc-root .md\:shadow-xl { box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
   #hc-doc-root .md\:border { border-width: 1px; border-style: solid; border-color: #e5e7eb; }
   #hc-doc-root .md\:border-2 { border-width: 2px; border-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .md\:border-t { border-top-width: 1px; border-top-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .md\:border-b { border-bottom-width: 1px; border-bottom-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .md\:border-l { border-left-width: 1px; border-left-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .md\:border-r { border-right-width: 1px; border-right-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .md\:border-dotted { border-style: dotted; }
+  #hc-doc-root .md\:border-dashed { border-style: dashed; }
+  #hc-doc-root .md\:flex-1 { flex: 1 1 0%; }
+  #hc-doc-root .md\:grow { flex-grow: 1; }
   #hc-doc-root .md\:relative { position: relative; }
   #hc-doc-root .md\:absolute { position: absolute; }
   #hc-doc-root .md\:inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
@@ -1641,6 +1665,14 @@
   #hc-doc-root .lg\:shadow-xl { box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
   #hc-doc-root .lg\:border { border-width: 1px; border-style: solid; border-color: #e5e7eb; }
   #hc-doc-root .lg\:border-2 { border-width: 2px; border-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .lg\:border-t { border-top-width: 1px; border-top-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .lg\:border-b { border-bottom-width: 1px; border-bottom-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .lg\:border-l { border-left-width: 1px; border-left-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .lg\:border-r { border-right-width: 1px; border-right-style: solid; border-color: #e5e7eb; }
+  #hc-doc-root .lg\:border-dotted { border-style: dotted; }
+  #hc-doc-root .lg\:border-dashed { border-style: dashed; }
+  #hc-doc-root .lg\:flex-1 { flex: 1 1 0%; }
+  #hc-doc-root .lg\:grow { flex-grow: 1; }
   #hc-doc-root .lg\:relative { position: relative; }
   #hc-doc-root .lg\:absolute { position: absolute; }
   #hc-doc-root .lg\:inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
@@ -2061,6 +2093,14 @@
 #hc-doc-root .hover\:shadow-xl:hover { box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
 #hc-doc-root .hover\:border:hover { border-width: 1px; border-style: solid; border-color: #e5e7eb; }
 #hc-doc-root .hover\:border-2:hover { border-width: 2px; border-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .hover\:border-t:hover { border-top-width: 1px; border-top-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .hover\:border-b:hover { border-bottom-width: 1px; border-bottom-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .hover\:border-l:hover { border-left-width: 1px; border-left-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .hover\:border-r:hover { border-right-width: 1px; border-right-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .hover\:border-dotted:hover { border-style: dotted; }
+#hc-doc-root .hover\:border-dashed:hover { border-style: dashed; }
+#hc-doc-root .hover\:flex-1:hover { flex: 1 1 0%; }
+#hc-doc-root .hover\:grow:hover { flex-grow: 1; }
 #hc-doc-root .hover\:relative:hover { position: relative; }
 #hc-doc-root .hover\:absolute:hover { position: absolute; }
 #hc-doc-root .hover\:inset-0:hover { top: 0; right: 0; bottom: 0; left: 0; }
@@ -2480,6 +2520,14 @@
 #hc-doc-root .focus\:shadow-xl:focus { box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
 #hc-doc-root .focus\:border:focus { border-width: 1px; border-style: solid; border-color: #e5e7eb; }
 #hc-doc-root .focus\:border-2:focus { border-width: 2px; border-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .focus\:border-t:focus { border-top-width: 1px; border-top-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .focus\:border-b:focus { border-bottom-width: 1px; border-bottom-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .focus\:border-l:focus { border-left-width: 1px; border-left-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .focus\:border-r:focus { border-right-width: 1px; border-right-style: solid; border-color: #e5e7eb; }
+#hc-doc-root .focus\:border-dotted:focus { border-style: dotted; }
+#hc-doc-root .focus\:border-dashed:focus { border-style: dashed; }
+#hc-doc-root .focus\:flex-1:focus { flex: 1 1 0%; }
+#hc-doc-root .focus\:grow:focus { flex-grow: 1; }
 #hc-doc-root .focus\:relative:focus { position: relative; }
 #hc-doc-root .focus\:absolute:focus { position: absolute; }
 #hc-doc-root .focus\:inset-0:focus { top: 0; right: 0; bottom: 0; left: 0; }
