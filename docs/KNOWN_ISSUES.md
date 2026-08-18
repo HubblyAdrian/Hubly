@@ -1125,3 +1125,33 @@ readable and then verified to render through the real Document renderer. Zero
 accident, while chasing an unrelated `HTTP 000` in a storage test. Nobody went
 looking for it. Treat the table as a starting point, not an inventory, and do
 not migrate a customer to the Document format on the strength of it.
+
+---
+
+## `price = 0` is the "no price" sentinel, so a free service is unrepresentable
+
+**Found 2026-08-18**, while checking how many draft services actually had prices.
+
+`set_business_draft_services` stores `0` when the model omits a price — which it
+correctly does when the owner has not given one. So `0` means "unpriced", not
+"free". Two consequences:
+
+**1. `!= null` is the dominant test in this codebase and it treats `0` as real.**
+Twelve call sites use `price != null`. `buildBusinessRecordBlock` deliberately
+does not — it guards on `n > 0`, so the generator reads `0` as unpriced and
+withholds the figure rather than printing `$0` on a customer's website. That is
+the right behaviour for the website and it is *inconsistent with the rest of the
+codebase*, which is worth knowing before someone "fixes" the inconsistency in
+the wrong direction.
+
+**2. A genuinely free service cannot be expressed.** "Free inspection", "no
+call-out charge", a £0 add-on — all indistinguishable from "we never asked".
+Nothing depends on this today because no business has one, which is exactly why
+it will be discovered by a customer rather than by us.
+
+The fix is a nullable price with `NULL` meaning unpriced and `0` meaning free,
+which is a migration plus an audit of the twelve `!= null` sites. Not done.
+
+One nearby instance already renders it: `hubly_capability_registry.ts` prints a
+membership price with `m.price != null ? "$" + m.price : ""`, so a £0 membership
+reads as `$0` in a CRM summary. Not customer-facing, not urgent.
