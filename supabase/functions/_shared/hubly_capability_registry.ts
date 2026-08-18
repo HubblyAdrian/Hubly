@@ -325,10 +325,23 @@ export type RecordChange = "services" | "photos" | "area" | "hours" | "contact" 
 /** Content changes need a real rebuild; cosmetic ones only need a re-render. */
 const CONTENT_CHANGES = new Set<RecordChange>(["services", "photos", "area", "hours", "contact"]);
 
+/** Has a human hand-edited this page? Checked synchronously before a turn
+ *  responds, so a skipped rebuild can be MENTIONED rather than logged into a
+ *  void the owner never sees. */
+export async function documentHasOwnerEdits(draftId: string): Promise<boolean> {
+  try {
+    const versions = await selectMany("business_documents", "business_id", draftId, "created_by,version", "version.asc");
+    return versions.some((v: any) => v.created_by === "patch");
+  } catch {
+    return false;
+  }
+}
+
 export async function rebuildDocumentFromRecord(
   draftId: string,
   draftToken: string,
   changes: RecordChange[],
+  opts?: { force?: boolean },
 ): Promise<{ status: "rebuilt" | "rerendered" | "skipped_owner_edited" | "no_document" | "failed"; detail?: string }> {
   try {
     const latest = await selectLatestBusinessDocument(draftId, "website");
@@ -341,8 +354,9 @@ export async function rebuildDocumentFromRecord(
     }
 
     // Has a human edited this page? If so, their edits win over our tidiness.
-    const versions = await selectMany("business_documents", "business_id", draftId, "created_by,version", "version.asc");
-    if (versions.some((v: any) => v.created_by === "patch")) {
+    // force = the OWNER asked for it. The guard exists to stop us silently
+    // overwriting their edits, not to stop them choosing to rebuild.
+    if (!opts?.force && await documentHasOwnerEdits(draftId)) {
       return { status: "skipped_owner_edited" };
     }
 

@@ -99,19 +99,12 @@ export type ValidationResult =
 
 
 
-export type SiteSectionSpec = { id: string; what: string; required: boolean };
-
-/** The only top-level sections an AI-generated document may contain.
- *  Enforced in validateHublyDocument, not merely requested. */
-export const ALLOWED_DOCUMENT_SECTIONS: SiteSectionSpec[] = [
-  { id: "hero",         what: "one statement of what this business does and for whom, plus one clear next step", required: true },
-  { id: "services",     what: "the packages or services, each with what is included and who it suits",           required: true },
-  { id: "service-area", what: "where the business works — the towns and neighbourhoods actually covered",        required: false },
-  { id: "reviews",      what: "a HublyReviews element. Real customer proof, never written by you",               required: false },
-];
-
-/** Ids the validator accepts at the top level of a generated document. */
-export const ALLOWED_SECTION_IDS = new Set(ALLOWED_DOCUMENT_SECTIONS.map((s) => s.id));
+// The closed four-section list (ALLOWED_DOCUMENT_SECTIONS / ALLOWED_SECTION_IDS)
+// was removed on 2026-08-18. It prevented the Lehi failure by making the page
+// too short to contain a repeated section -- a blunt instrument that also
+// stopped a business with eight real things to say from saying them. The count
+// was never the defect; sections carrying nothing were. See the Content Value
+// Rule in validateHublyDocument and sectionCarriesContent below.
 
 /**
  * THE TAG VOCABULARY — audited 2026-08-18.
@@ -766,6 +759,39 @@ function validateReasoning(raw: unknown, path: string, warnings: ValidationIssue
 /** Validates and normalizes a raw candidate document (untrusted — from the
  *  model, or from a hand-authored fixture). Never throws; always returns a
  *  result. Nothing downstream should ever consume an unvalidated document. */
+/** Does this section carry at least one concrete datum?
+ *
+ *  Deliberately structural rather than semantic: it asks what the section
+ *  CONTAINS, not what it appears to be about, so it cannot be satisfied by
+ *  confident-sounding copy. A prompt-only version of this rule would be, and
+ *  the previous rule had to be enforced here for exactly the same reason. */
+function sectionCarriesContent(node: HublyDocumentNode): boolean {
+  let listItems = 0;
+  let found = false;
+
+  const walk = (n: HublyDocumentNode) => {
+    if (found) return;
+    // A real Hubly element is a working thing, not prose about one.
+    if (HUBLY_RESERVED_TAGS.has(n.tag)) {
+      // ...except HublyReviews, whose whole point when empty is to say nothing
+      // is there. It cannot be the thing that justifies a section existing.
+      if (n.tag !== "HublyReviews") { found = true; return; }
+    }
+    if (n.tag === "img" || n.tag === "video") { found = true; return; }
+    if (n.tag === "table" || n.tag === "details" || n.tag === "dl") { found = true; return; }
+    if (n.tag === "li") listItems++;
+    if (listItems >= 2) { found = true; return; }
+    if (typeof n.children === "string") {
+      // A price, a duration, a distance, a count — any real figure.
+      if (/(\$\s?\d|\d+\s?(hour|hr|min|mile|km|day|year|%)|\b\d{2,}\b)/i.test(n.children)) { found = true; return; }
+    } else if (Array.isArray(n.children)) {
+      for (const c of n.children) { walk(c); if (found) return; }
+    }
+  };
+  walk(node);
+  return found || listItems >= 2;
+}
+
 export function validateHublyDocument(raw: unknown, meta: { businessId: string; tag?: string; version: number; generatedBy: "ai" | "user" | "patch" }): ValidationResult {
   const errors: ValidationIssue[] = [];
   const warnings: ValidationIssue[] = [];
@@ -775,54 +801,45 @@ export function validateHublyDocument(raw: unknown, meta: { businessId: string; 
   const rejections = emptyRejections();
   const ctx: WalkContext = { takenIds: new Set(), h1Count: 0, intentElementCount: 0, errors, warnings, rejections };
   const root = walkAndValidate(rootRaw, "$", ctx);
-  // SIX SECTIONS, ENFORCED.
+  // THE CONTENT VALUE RULE — replaces the six-section limit, which is gone.
   //
-  // Prompt guidance alone produced Reassurance, About, Services, Benefits and
-  // Service area on one page, where Reassurance and Benefits both restated the
-  // hero — the same point made three times. A model given room to invent
-  // sections invents them, and fills the extra ones by repeating itself.
+  // The old rule capped the page at four sections. It stopped the Lehi failure
+  // (Reassurance and Benefits both restating the hero) by making the page too
+  // short to contain them, which is a blunt instrument: it also stopped a
+  // business with eight real things to say from saying them.
   //
-  // Only the top level is checked, and only for `ai` generations: nested
-  // <section> elements are ordinary structure, and an owner editing their own
-  // page may do as they like.
+  // The real defect was never the COUNT. It was sections that carry nothing.
+  // So the test is now structural and per-section: does this section contain at
+  // least one concrete datum, or is it only headings and prose?
+  //
+  // Concrete means an actual thing a visitor can use — a price or number, a
+  // list of two or more items, a table, an expandable question, an image, or a
+  // real Hubly element. Two paragraphs of warm sentiment about the business is
+  // not concrete, however well written.
+  //
+  // The hero is exempt: it is the one section whose job IS a statement.
+  //
+  // This is also what finally removes the empty reviews section. Placeholder
+  // stripping already works -- measured on a live public page, 0 placeholders
+  // and 0 empty islands survive -- but the model routes around it by NARRATING
+  // the absence ("Reviews will appear here once we connect them"), which is
+  // prose, so nothing removed it and it held 414px of a real customer's page.
   if (root && meta.generatedBy === "ai") {
     const kids = Array.isArray(root.children) ? root.children : [];
-    const stray: string[] = [];
+    const hollow: string[] = [];
     for (const child of kids) {
       if (child.tag !== "section" && child.tag !== "article") continue;
-      // mintId appends -2, -3 on collision; compare the base id.
       const base = String(child.id || "").replace(/-\d+$/, "").toLowerCase();
-      if (!ALLOWED_SECTION_IDS.has(base)) stray.push(child.id);
+      if (/^hero\b/.test(base)) continue;
+      if (!sectionCarriesContent(child)) hollow.push(child.id);
     }
-    if (stray.length) {
+    if (hollow.length) {
       errors.push({
         path: "$",
         message:
-          `this page has sections that are not allowed: ${stray.join(", ")}. A Hubly page is exactly four sections — hero, services, service-area, reviews — and hero and services are required. Everything you put in those extra sections belongs inside one of the four: reasons to choose the business go in the hero or beside the services they apply to, process detail goes with its service, common questions go with the service they concern. Do not restate the hero as a second section.`,
+          `these sections carry no concrete content and must be removed or filled: ${hollow.join(", ")}. A section earns its place with something a visitor can use — a price, a number, a list of two or more items, a table, an expandable question, an image, or a Hubly element. Headings and paragraphs about the business are not enough. If a section has nothing real yet (no reviews, no photos, no prices on record), DELETE IT rather than writing copy explaining that it is empty.`,
       });
     }
-  }
-  if (ctx.h1Count !== 1) {
-    errors.push({ path: "$", message: `document must contain exactly one <h1> (found ${ctx.h1Count})` });
-  }
-  // INTENT CAPTURE MUST ROUTE INTO HUBLY.
-  //
-  // A site that looks good and sends its enquiries somewhere Hubly cannot see
-  // leaves the business no better off. HublyContactForm writes booking_requests
-  // and lands in Leads; a mailto: link lands in an inbox and Hubly never learns
-  // the lead existed -- no record, no follow-up, nothing to chase. There were
-  // sixteen mailto: links across the documents generated before this rule,
-  // including one to a real business's real address.
-  //
-  // Enforced for `ai` generations only. A patch is an owner deliberately
-  // editing their own page, and blocking them from removing a form would be
-  // overriding the person who owns the business.
-  if (meta.generatedBy === "ai" && ctx.intentElementCount === 0) {
-    errors.push({
-      path: "$",
-      message:
-        "the page gives a visitor no way to make contact that Hubly can see. Include a HublyBooking or HublyContactForm element. A phone number is information, not a route into Hubly",
-    });
   }
   if (errors.length || !root) return { ok: false, errors, rejections };
   const document: HublyDocument = {

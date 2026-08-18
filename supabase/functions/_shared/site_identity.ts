@@ -1,4 +1,3 @@
-import { ALLOWED_DOCUMENT_SECTIONS } from "./hubly_document.ts";
 
 /**
  * Visual identity for a newly created site — a curated palette and a section
@@ -109,9 +108,10 @@ export function palettePromptList(): string {
 // ---------------------------------------------------------------------------
 
 // SECTION_IDEAS (fourteen ideas, pick five to eight) was replaced on
-// 2026-08-18 by ALLOWED_DOCUMENT_SECTIONS in hubly_document.ts — a closed
-// set of four, enforced by the validator. See the comment there for why:
-// variety of section SET produced repetition of section CONTENT.
+// 2026-08-18, first by a closed set of four and then — the same day, once real
+// business data began reaching the generator — by the Content Value Rule in
+// hubly_document.ts, which caps nothing and instead requires each section to
+// carry something a visitor can use.
 
 /**
  * What the business leads with, as a prompt instruction.
@@ -154,7 +154,7 @@ cards is the default your instincts will reach for. It is fine ONCE on a page.
 It is not fine four times.
 
 Shapes available with the class vocabulary above:
-- Full-bleed statement — a section with a background wash (bg-gradient-to-b, from-brand-800) and nothing but a short, confident line of type at large size. No cards, no columns. Use it to break rhythm between two dense sections.
+- Full-bleed statement — a background wash (bg-gradient-to-b, from-brand-800) behind a short, confident line of type. HERO ONLY: anywhere else it is a section carrying no concrete content, which the validator rejects.
 - Text over image — a relative section, an absolute inset-0 image or placeholder behind it, a scrim, and the copy on top. This is the strongest hero shape for a visual trade.
 - Two-column split — copy in one column, a single proportioned image (aspect-[4/3], object-cover) in the other. Not three cards; one image.
 - Numbered process strip — a horizontal row of steps with big numerals and no card chrome, connected by spacing rather than boxes. Right for how-it-works.
@@ -173,30 +173,38 @@ RULES
 export function buildPageStructureBlock(leadWith?: unknown): string {
   const want = String(leadWith || "").trim().toLowerCase();
   const lead = LEAD_GUIDANCE[want] || LEAD_GUIDANCE.services;
-  const list = ALLOWED_DOCUMENT_SECTIONS
-    .map((sec) => `- ${sec.id}${sec.required ? " (REQUIRED)" : ""}: ${sec.what}`)
-    .join("\n");
-  return `PAGE STRUCTURE — a closed set of six. A hard limit, not a starting point.
+  return `PAGE STRUCTURE — decided by the business, not by a quota.
 
-A Hubly site is exactly six things, and two of them are not yours to build: the
-LOGO and PAGE BACKGROUND are rendered around your document, and CONTACT (phone
-and email) lives in the header and footer, which are also rendered for you.
-Never build a section for either.
+There is NO limit on how many sections a page may have. Five, seven, nine — the
+right number is however many the business has real things to say. A business
+with three services, a service area and real photos earns more sections than one
+with a name and a phone number, and it should get them.
 
-That leaves FOUR sections you may write, and no others:
+What every section must do instead is EARN ITS PLACE.
 
-${list}
+THE CONTENT VALUE RULE — enforced by the validator, not a preference:
+A section must carry at least one concrete thing a visitor can use — a price, a
+duration or distance, a list of two or more items, a comparison table, an
+expandable question, a real photo, or a working Hubly element. Headings and
+paragraphs about the business are NOT enough, however well written.
+
+The hero is the one exception: its job is to be a statement.
+
+- If a section would only contain prose, do not build it. Fold what it says into
+  a section that carries something real.
+- If there is nothing real for a section yet — no reviews on record, no photos,
+  no prices — DELETE THE SECTION. Do not write copy explaining that it is empty.
+  "Reviews will appear here once we connect them" is a section that occupies a
+  real customer's page to say nothing, and it will be rejected.
+- Do not pad. Two sections that each carry something beat five where three are
+  atmosphere.
 
 ${lead}
 
-RULES — enforced by the validator, not preferences:
-- Do NOT invent sections. No "Why choose us", no "Our process", no "About", no "Benefits", no "Reassurance", no "How it works", no "FAQ", no "Our promise", no separate closing call-to-action. If it is not one of the four above, it does not go on the page, and the document will be rejected.
-- hero and services are required. Include service-area and reviews when the business has something real for them.
-- Give each section exactly the id listed above: hero, services, service-area, reviews.
-- A shorter page that says each thing ONCE beats a longer page that says one thing three times. The commonest failure here is a hero listing three benefits, then a "Why us" section repeating those three benefits, then a "Reassurance" section repeating them again. One statement, once.
-- Everything you would have put in an invented section belongs INSIDE one of the four: reasons to choose this business go in the hero or beside the services they apply to, process detail goes with the service it describes, answers to common questions go with the service they concern.
-
-Because the set of sections is fixed, the only thing that makes two businesses' pages look different is the SHAPE each section takes. That makes the layout rules below more important, not less.
+CHROME IS NOT A SECTION. Navigation, the logo, contact details, the footer, the
+booking CTA in the header, site controls, the chatbot and the service-area map
+are all rendered AROUND your document. Never spend a section on them and never
+rebuild them yourself.
 
 ${LAYOUT_BLOCK}`;
 }

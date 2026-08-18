@@ -1152,6 +1152,13 @@ it will be discovered by a customer rather than by us.
 The fix is a nullable price with `NULL` meaning unpriced and `0` meaning free,
 which is a migration plus an audit of the twelve `!= null` sites. Not done.
 
+**When it is resolved, the twelve call sites move to
+`buildBusinessRecordBlock`'s behaviour — guard on `> 0` — not the other way
+round.** The generator is the one that is right. Withholding a figure you are
+unsure of is recoverable; publishing `$0` on a customer's live website is not.
+Without this sentence someone will "simplify" the inconsistency in the
+convenient direction and start printing free prices on real sites.
+
 One nearby instance already renders it: `hubly_capability_registry.ts` prints a
 membership price with `m.price != null ? "$" + m.price : ""`, so a £0 membership
 reads as `$0` in a CRM summary. Not customer-facing, not urgent.

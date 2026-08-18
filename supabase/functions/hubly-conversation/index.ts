@@ -61,7 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, rebuildDocumentFromRecord, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, rebuildDocumentFromRecord, documentHasOwnerEdits, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -1035,21 +1035,41 @@ Deno.serve(async (req) => {
       //
       // rebuildDocumentFromRecord refuses if the owner has hand-edited the page,
       // and downgrades to a cheap re-render for cosmetic-only changes.
+      // THE LOOP CLOSES HERE. Real content landed on the record this turn, so the
+      // page is rebuilt from it -- once, in the background, whatever combination of
+      // handlers ran.
+      //
+      // The owner-edit check runs SYNCHRONOUSLY, before this turn replies, because
+      // a skip has to be something the owner is told rather than something logged
+      // where nobody looks. Refusing to overwrite their edits is right; refusing
+      // silently is the swallow-failure shape from KNOWN_ISSUES -- they would add
+      // services later, the record would update, the page would not, and there
+      // would be no signal at all.
+      let rebuildSkippedNote = "";
       if (recordChanges.size && draftBusiness?.id && draftBusiness?.draftToken) {
         const changes = [...recordChanges] as RecordChange[];
-        const rebuild = rebuildDocumentFromRecord(draftBusiness.id, draftBusiness.draftToken, changes)
-          .then((r) => console.log(`record rebuild [${draftBusiness.id}] ${changes.join(",")} -> ${r.status}${r.detail ? " (" + r.detail + ")" : ""}`))
-          .catch((e) => console.error("record rebuild failed", e));
-        try {
-          const rt = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
-          if (rt && typeof rt.waitUntil === "function") rt.waitUntil(rebuild);
-        } catch (_e) { /* best effort — it still runs, just not guaranteed past the response */ }
+        const contentful = changes.some((c) => c !== "cosmetic");
+        const ownerEdited = contentful ? await documentHasOwnerEdits(draftBusiness.id) : false;
+        if (ownerEdited) {
+          rebuildSkippedNote =
+            " Your page has manual edits, so I have not rebuilt it — the new details are saved on your record. Want me to rebuild the page around them?";
+        } else {
+          const rebuild = rebuildDocumentFromRecord(draftBusiness.id, draftBusiness.draftToken, changes)
+            .then((r) => console.log(`record rebuild [${draftBusiness.id}] ${changes.join(",")} -> ${r.status}${r.detail ? " (" + r.detail + ")" : ""}`))
+            .catch((e) => console.error("record rebuild failed", e));
+          try {
+            const rt = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+            if (rt && typeof rt.waitUntil === "function") rt.waitUntil(rebuild);
+          } catch (_e) { /* best effort — it still runs, just not guaranteed past the response */ }
+        }
       }
 
       const deduped = dedupeConversationMessages(interimMessages, finalText);
       return jsonRes({
         ok: true,
-        reply: deduped.reply,
+        // rebuildSkippedNote is empty unless a rebuild was refused over the
+        // owner's manual edits, in which case they are told and offered one.
+        reply: (deduped.reply || "") + rebuildSkippedNote,
         messages: history,
         actions,
         interimMessages: deduped.interim,
