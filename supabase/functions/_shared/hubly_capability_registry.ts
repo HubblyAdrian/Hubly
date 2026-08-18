@@ -152,6 +152,192 @@ async function selectOne(table: string, filterCol: string, filterVal: string, co
   return Array.isArray(rows) && rows.length ? rows[0] : null;
 }
 
+/** Multi-row read with the service role. selectOne's sibling. */
+async function selectMany(table: string, filterCol: string, filterVal: string, columns: string, order?: string): Promise<any[]> {
+  const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  if (!supabaseUrl || !serviceKey) return [];
+  const ord = order ? `&order=${order}` : "";
+  const url = `${supabaseUrl}/rest/v1/${table}?${filterCol}=eq.${encodeURIComponent(filterVal)}&select=${columns}${ord}`;
+  const res = await fetch(url, { headers: { authorization: `Bearer ${serviceKey}`, apikey: serviceKey } });
+  if (!res.ok) return [];
+  const rows = await res.json().catch(() => null);
+  return Array.isArray(rows) ? rows : [];
+}
+
+/**
+ * THE BUSINESS RECORD — what the generator is allowed to know.
+ *
+ * Until 2026-08-18 generateDocument read six columns, all of them for
+ * rendering (name, phone, slug, brand_color, logo_url, section_order), and the
+ * only content input was `brief`: a prose paragraph the CONVERSATION model
+ * wrote from what the owner typed. Reads of services, pricing, photos, hours
+ * and blueprint were each zero. So an entire website was written from a summary
+ * of a summary, which is the root cause of vague pages, repeated sections, and
+ * the gap against the reference page -- that page got rich input.
+ *
+ * setServices already writes the real `services` table, so nothing needed
+ * bridging; the generator simply never looked.
+ *
+ * Everything here is READ ONLY and canonical. The Service Engine stays the
+ * single source of truth for services and prices: this loads them, it does not
+ * copy or re-derive them.
+ */
+export type BusinessRecord = {
+  services: { name: string; price: number | null; description: string | null; duration_hours: number | null; includes: unknown; is_popular: boolean | null }[];
+  addons: { name: string; price: number | null; description: string | null }[];
+  photos: { url: string; kind: string; caption?: string | null }[];
+  reviews: { customer_name: string | null; service_name: string | null; stars: number | null; quote: string | null }[];
+  hours: { day: string | number | null; open: string | null; close: string | null; closed: boolean | null }[];
+  areaCities: string[];
+  city: string | null;
+  state: string | null;
+  travelRadiusMiles: number | null;
+  yearsInBusiness: number | null;
+  phone: string | null;
+  email: string | null;
+  logoUrl: string | null;
+  businessType: string | null;
+  about: string | null;
+  tagline: string | null;
+};
+
+/**
+ * The record, rendered for the model as DATA rather than folded into prose.
+ *
+ * Deliberately not merged into `brief`. The brief is what the owner said; this
+ * is what Hubly actually knows. Keeping them separate means the model can tell
+ * a fact from a paraphrase, and means an empty record reads as "we have nothing
+ * here yet" instead of quietly looking like the owner never mentioned it.
+ *
+ * Empty sections are printed as an explicit "none on record" rather than
+ * omitted, because a missing heading is ambiguous and "none on record" is not.
+ */
+export function buildBusinessRecordBlock(rec: BusinessRecord): string {
+  const money = (n: number | null) => (typeof n === "number" && n > 0 ? `$${n}` : null);
+  const L: string[] = [];
+
+  L.push("THE BUSINESS RECORD — everything Hubly actually knows about this business.");
+  L.push("");
+  L.push("This is DATA, not the owner's paraphrase. It is the only source of facts you may state.");
+  L.push("Anything marked \"none on record\" is genuinely unknown: do not fill the gap, do not estimate, do not write a plausible-sounding substitute.");
+  L.push("");
+
+  if (rec.services.length) {
+    L.push(`SERVICES (${rec.services.length}) — canonical, from the Service Engine. These are the real services; do not rename, merge, split or invent alongside them:`);
+    for (const s of rec.services) {
+      const bits = [money(s.price), s.duration_hours ? `${s.duration_hours}h` : null, s.is_popular ? "most popular" : null].filter(Boolean);
+      L.push(`- ${s.name}${bits.length ? " (" + bits.join(", ") + ")" : ""}${s.description ? " — " + s.description : ""}`);
+      if (Array.isArray(s.includes) && s.includes.length) L.push(`    includes: ${s.includes.join(", ")}`);
+    }
+    const priced = rec.services.filter((s) => money(s.price)).length;
+    if (!priced) L.push("  NOTE: no service has a real price on record. Do not print a price, a range, a \"from\" figure or a guess for any of them.");
+  } else {
+    L.push("SERVICES: none on record. Do not invent a service list.");
+  }
+  L.push("");
+
+  if (rec.addons.length) {
+    L.push("ADD-ONS:");
+    for (const a of rec.addons) L.push(`- ${a.name}${money(a.price) ? " (" + money(a.price) + ")" : ""}${a.description ? " — " + a.description : ""}`);
+    L.push("");
+  }
+
+  if (rec.photos.length) {
+    L.push(`PHOTOS (${rec.photos.length}) — real uploaded assets. Use these exact URLs in <img src>; never invent one, and never use a photo the record does not list:`);
+    for (const ph of rec.photos.slice(0, 24)) L.push(`- [${ph.kind}] ${ph.url}${ph.caption ? " — " + ph.caption : ""}`);
+    const beforeAfter = rec.photos.filter((x) => x.kind === "before" || x.kind === "after").length;
+    if (beforeAfter >= 2) L.push("  These include before/after pairs — a comparison section is genuinely supported.");
+  } else {
+    L.push("PHOTOS: none on record. Build the real structure with honest empty frames (is-placeholder) rather than skipping the section or inventing an image URL.");
+  }
+  L.push("");
+
+  if (rec.reviews.length) {
+    L.push(`REVIEWS (${rec.reviews.length}, approved only) — quote these EXACTLY or not at all:`);
+    for (const r of rec.reviews.slice(0, 8)) L.push(`- ${r.stars ? r.stars + "★ " : ""}${r.customer_name || "Anonymous"}${r.service_name ? " (" + r.service_name + ")" : ""}: ${r.quote || "(no quote)"}`);
+  } else {
+    L.push("REVIEWS: none on record. Do not write testimonials, star ratings, review counts or phrases like \"loved by locals\". Use HublyReviews, which shows an honest empty state.");
+  }
+  L.push("");
+
+  const area = [rec.city, rec.state].filter(Boolean).join(", ");
+  const cities = rec.areaCities.length ? rec.areaCities.join(", ") : null;
+  if (area || cities || rec.travelRadiusMiles) {
+    L.push("SERVICE AREA:");
+    if (area) L.push(`- based in ${area}`);
+    if (cities) L.push(`- serves: ${cities}`);
+    if (rec.travelRadiusMiles) L.push(`- travels up to ${rec.travelRadiusMiles} miles`);
+  } else {
+    L.push("SERVICE AREA: none on record. Do not name towns, neighbourhoods or a radius.");
+  }
+  L.push("");
+
+  if (rec.hours.length) {
+    L.push(`OPENING HOURS: ${rec.hours.length} rows on record — state them only as recorded.`);
+  } else {
+    L.push("OPENING HOURS: none on record. Do not print hours, \"open 7 days\", \"evenings and weekends\" or same-day availability.");
+  }
+  L.push("");
+
+  L.push("CONTACT:");
+  L.push(rec.phone ? `- phone: ${rec.phone}` : "- phone: none on record — do not invent one, and do not write \"call us today\" as if a number existed");
+  L.push(rec.email ? `- email: ${rec.email}` : "- email: none on record");
+  L.push("");
+
+  const misc: string[] = [];
+  if (rec.businessType) misc.push(`type: ${rec.businessType}`);
+  if (rec.yearsInBusiness) misc.push(`years in business: ${rec.yearsInBusiness}`);
+  if (rec.tagline) misc.push(`tagline: ${rec.tagline}`);
+  if (rec.about) misc.push(`about: ${rec.about}`);
+  L.push(misc.length ? "ALSO ON RECORD:\n" + misc.map((m) => "- " + m).join("\n") : "No years-in-business, tagline or about text on record — do not claim experience, longevity or credentials.");
+
+  return L.join("\n");
+}
+
+async function loadBusinessRecord(businessId: string): Promise<BusinessRecord> {
+  const [biz, services, addons, portfolio, gallery, reviews, hours] = await Promise.all([
+    selectOne("businesses", "id", businessId, "city,state,phone,email,logo_url,business_type,about,tagline,service_area_cities,travel_radius_miles,years_in_business"),
+    selectMany("services", "business_id", businessId, "name,price,description,duration_hours,includes,is_popular", "sort_order.asc"),
+    selectMany("addons", "business_id", businessId, "name,price,description", "sort_order.asc"),
+    selectMany("portfolio_photos", "business_id", businessId, "url", "sort_order.asc"),
+    selectMany("gallery_items", "business_id", businessId, "before_url,after_url,caption,service_name,featured", "sort_order.asc"),
+    selectMany("review_submissions", "business_id", businessId, "customer_name,service_name,stars,quote,status"),
+    selectMany("settings_business_hours", "business_id", businessId, "*"),
+  ]);
+
+  const photos: BusinessRecord["photos"] = [];
+  for (const p of portfolio) if (p?.url) photos.push({ url: p.url, kind: "portfolio" });
+  for (const g of gallery) {
+    if (g?.before_url) photos.push({ url: g.before_url, kind: "before", caption: g.caption });
+    if (g?.after_url) photos.push({ url: g.after_url, kind: "after", caption: g.caption });
+  }
+
+  const rawCities = biz?.service_area_cities;
+  const areaCities = Array.isArray(rawCities) ? rawCities.filter((c: unknown) => typeof c === "string") : [];
+
+  return {
+    services: services.map((x: any) => ({ name: x.name, price: x.price ?? null, description: x.description ?? null, duration_hours: x.duration_hours ?? null, includes: x.includes ?? null, is_popular: x.is_popular ?? null })),
+    addons: addons.map((x: any) => ({ name: x.name, price: x.price ?? null, description: x.description ?? null })),
+    photos,
+    // Only approved reviews. An unmoderated quote is exactly the kind of thing
+    // that must never reach a public page.
+    reviews: reviews.filter((r: any) => r?.status === "approved").map((r: any) => ({ customer_name: r.customer_name ?? null, service_name: r.service_name ?? null, stars: r.stars ?? null, quote: r.quote ?? null })),
+    hours: Array.isArray(hours) ? hours : [],
+    areaCities,
+    city: biz?.city ?? null,
+    state: biz?.state ?? null,
+    travelRadiusMiles: biz?.travel_radius_miles ?? null,
+    yearsInBusiness: biz?.years_in_business ?? null,
+    phone: biz?.phone ?? null,
+    email: biz?.email ?? null,
+    logoUrl: biz?.logo_url ?? null,
+    businessType: biz?.business_type ?? null,
+    about: biz?.about ?? null,
+    tagline: biz?.tagline ?? null,
+  };
+}
+
 async function selectLatestBusinessDocument(businessId: string, tag: string): Promise<{ version: number; document: HublyDocument } | null> {
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
   const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
@@ -877,7 +1063,14 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           // which is exactly what it did until 2026-08-17.
           const leadWith = Array.isArray(bizRow?.section_order) ? bizRow.section_order[0] : undefined;
           const structureBlock = buildPageStructureBlock(leadWith);
-          const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${schemaBlock}\n\n${structureBlock}`;
+          // THE RECORD, not a paraphrase of it. Loaded and passed as data
+          // alongside the brief -- see loadBusinessRecord for why this is the
+          // highest-value change available: until now the generator wrote an
+          // entire website from one prose paragraph and had never seen a price,
+          // a service, a photo or an opening hour.
+          const record = await loadBusinessRecord(draftId);
+          const recordBlock = buildBusinessRecordBlock(record);
+          const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${schemaBlock}\n\n${structureBlock}\n\n${recordBlock}`;
           // __benchmarkModel is intentionally absent from argsSchema/description —
           // the conversational AI never sees or sets it. Internal-only override
           // for the model benchmark harness so the exact same code path can be
