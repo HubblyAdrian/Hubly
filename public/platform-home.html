@@ -1548,7 +1548,17 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
         if(typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
         hc.busy = false;
         if(!data || data.ok !== true){
-          hcAppendMessage('hubly', "I'm having trouble connecting right now — mind trying again in a moment?");
+          // "Try again in a moment" is the wrong thing to say when trying again
+          // cannot possibly work. A rejected key or an exhausted account is our
+          // problem, and inviting someone to keep retrying it wastes their time
+          // and makes the product look broken in a way they might blame
+          // themselves for. The server sends `detail` for exactly this
+          // distinction; it is never shown verbatim.
+          var permanent = data && typeof data.detail === 'string' &&
+            /quota|credential|rejected/i.test(data.detail);
+          hcAppendMessage('hubly', permanent
+            ? "Something's wrong on our side and I can't build anything right now. It isn't something retrying will fix — we're on it. Sorry."
+            : "I'm having trouble connecting right now — mind trying again in a moment?");
           return;
         }
         hc.messages = Array.isArray(data.messages) ? data.messages : hc.messages;

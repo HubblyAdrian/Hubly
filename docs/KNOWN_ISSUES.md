@@ -1333,3 +1333,71 @@ an exception, anywhere `selectOne` is used. `curl` the PostgREST endpoint with
 the exact select list when changing one — a 400 means a bad column, a 401 means
 the list is fine and RLS stopped you.
 
+
+---
+
+## "Generation fails ~37% of the time" was a quota exhaustion, not a lost isolate
+
+On 2026-08-18 three of eight real builds produced no document. The reasoning
+went: generation runs in `EdgeRuntime.waitUntil` on the request isolate, the
+runtime recycles a request isolate the moment it responds, therefore the work is
+being dropped. Plausible, consistent with everything observable, and **wrong** —
+or at best a small part of it.
+
+The actual cause, found the next day by returning the upstream status instead of
+swallowing it:
+
+```
+502 {"detail":"The OpenAI account has no quota left.","upstreamStatus":429}
+```
+
+`insufficient_quota`. The account had run out of credit, and had presumably been
+running low during the very builds that "failed".
+
+**Why it looked like an infrastructure problem.** The two are indistinguishable
+from outside:
+
+| | isolate recycled | OpenAI 429 |
+|---|---|---|
+| document written | no | no |
+| error surfaced to the person | none | none |
+| entry in any table | none | none |
+| what the client showed | skeleton, then a timeout | skeleton, then a timeout |
+
+`hubly_ai.ts` threw `HublyAIProviderError("openai", 429, "OpenAI is temporarily
+unavailable.")` and the handler returned a flat 502 with the status discarded.
+One string covered quota exhaustion, a rotated key, and a genuine outage — three
+completely different problems, one of which is fixed by topping up an account
+and none of which could be told apart without a deploy.
+
+**Three lessons, all already paid for:**
+
+1. **Never collapse an upstream status into a generic message.** The number
+   costs nothing to keep and was the entire diagnosis.
+2. **A plausible mechanism that explains the symptom is not the cause.** The
+   `waitUntil` reasoning was sound and the fix was worth making on its own
+   terms; it was still not what was happening. Ask what would DISTINGUISH the
+   candidate causes before building for one of them.
+3. **"Try again in a moment" is a lie when trying again cannot work.** A quota
+   failure invites infinite retries and reads to the person as their fault.
+
+### What was built anyway, and why it still matters
+
+The failure was invisible, and that part was real regardless of cause:
+
+- **`document_build_jobs`** — a row written before the build is dispatched, so a
+  build that never arrives is one somebody recorded asking for. `running` past
+  `expected_by` is provably stuck; `failed` carries a short reason code. Nothing
+  could count these before, which is why 37% was a number from watching rather
+  than from the system.
+- **`hubly-document-build`** — the build moved out of `waitUntil` into its own
+  function invocation, awaited in a fresh isolate. Still not a queue: if THAT
+  isolate dies the work is lost. It removes one real risk and does not pretend
+  to remove all of them.
+- **Retry with backoff in `hubly_ai.ts`** — there was none. A single 429 ended
+  the turn. Three attempts, exponential backoff, `retry-after` honoured, and
+  `insufficient_quota` deliberately NOT retried because it is a billing state,
+  not congestion.
+- **An honest client** — the skeleton stops, says what happened, and offers
+  Retry, rather than spinning for something that is not coming.
+

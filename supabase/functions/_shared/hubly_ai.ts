@@ -762,19 +762,68 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
   if (opts.jsonMode) body.response_format = { type: "json_object" };
   if (opts.reasoningEffort) body.reasoning_effort = opts.reasoningEffort;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+  // RETRY THE RETRYABLE ONES.
+  //
+  // There was no retry here at all: a single 429 ended the whole turn, and the
+  // person saw "temporarily unavailable" or, on a background build, nothing
+  // whatsoever. On 2026-08-19 five consecutive requests came back 429 -- the
+  // same failure that was being read as isolates being recycled, because both
+  // present identically from the outside: no page, no error, no signal.
+  //
+  // Bounded and honest: three attempts, exponential backoff, and retry-after
+  // respected when the provider sends one. 4xx other than 429 are NOT retried
+  // -- a 401 from a rotated key or a 400 from a malformed request will fail the
+  // same way three times and only delay the truth.
+  const RETRYABLE = new Set([429, 500, 502, 503, 504]);
+  const MAX_ATTEMPTS = 3;
+  let res!: Response;
+  let lastStatus = 0;
+  let lastBody = "";
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) break;
+
+    lastStatus = res.status;
+    lastBody = await res.text();
+    console.error("HublyAI openai error", opts.feature, opts.task, res.status, `attempt ${attempt}/${MAX_ATTEMPTS}`, lastBody.slice(0, 400));
+
+    if (!RETRYABLE.has(res.status) || attempt === MAX_ATTEMPTS) break;
+
+    // insufficient_quota is a 429 that will never succeed -- it is a billing
+    // state, not congestion. Retrying it wastes a minute of somebody's time to
+    // arrive at the same answer.
+    if (res.status === 429 && /insufficient_quota|billing/i.test(lastBody)) break;
+
+    const retryAfter = Number(res.headers.get("retry-after"));
+    const waitMs = Number.isFinite(retryAfter) && retryAfter > 0
+      ? Math.min(retryAfter * 1000, 20_000)
+      : Math.min(1000 * Math.pow(2, attempt - 1), 8000);
+    await new Promise((r) => setTimeout(r, waitMs));
+  }
 
   if (!res.ok) {
-    const errText = await res.text();
-    console.error("HublyAI openai error", opts.feature, opts.task, res.status, errText);
-    throw new HublyAIProviderError("openai", res.status, "OpenAI is temporarily unavailable.");
+    // The MESSAGE says which, because "temporarily unavailable" covering a
+    // quota exhaustion, a rotated key and a real outage is how a fixable
+    // problem stays unfixed. Still no provider body -- this reaches a person.
+    const quota = lastStatus === 429 && /insufficient_quota|billing/i.test(lastBody);
+    throw new HublyAIProviderError(
+      "openai",
+      lastStatus,
+      quota
+        ? "The OpenAI account has no quota left."
+        : lastStatus === 429
+        ? "OpenAI is rate-limiting us right now."
+        : lastStatus === 401 || lastStatus === 403
+        ? "The OpenAI credentials were rejected."
+        : "OpenAI is temporarily unavailable.",
+    );
   }
 
   const data = await res.json();

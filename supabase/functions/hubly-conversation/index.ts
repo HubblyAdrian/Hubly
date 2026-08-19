@@ -1166,6 +1166,19 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("hubly-conversation error:", err);
-    return jsonRes({ ok: false, error: "Hubly Conversation is temporarily unavailable." }, 502);
+    // The message, not the stack. A 502 with no detail is a bug you debug by
+    // guessing; this one cost a round of bisecting-by-deploy to find. Message
+    // only, and only the first 300 characters -- an exception string can carry
+    // a query or a payload fragment, and this response is public.
+    return jsonRes({
+      ok: false,
+      error: "Hubly Conversation is temporarily unavailable.",
+      detail: String((err as { message?: unknown })?.message ?? err).slice(0, 300),
+      // The upstream HTTP status when there is one. A number, never a body:
+      // "OpenAI is temporarily unavailable" is true of a 429 quota exhaustion,
+      // a 500, and a 401 from a rotated key, and those are three completely
+      // different problems that took a deploy each to tell apart.
+      ...(typeof (err as { status?: unknown })?.status === "number" ? { upstreamStatus: (err as { status: number }).status } : {}),
+    }, 502);
   }
 });
