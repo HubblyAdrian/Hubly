@@ -32,15 +32,31 @@
  *   deno run --allow-net --allow-env scripts/rerender-business-document.ts \
  *     <business_id> <draft_token> [tag]
  *
- * Env: SUPABASE_URL, SUPABASE_ANON_KEY
+ * Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  */
 
 import { renderHublyDocument } from "../supabase/functions/_shared/hubly_document.ts";
 
+// SERVICE ROLE, not anon.
+//
+// This script read `businesses` and `business_documents` directly with the anon
+// key until the RLS sweep of 2026-08-18 revoked anon SELECT on both -- correctly,
+// they were enumerable. It has been dead since, failing with a 42501 that reads
+// like a misconfiguration rather than the deliberate lockdown it is.
+//
+// The public RPCs are not a substitute: get_public_business_document returns
+// only { rendered_html, version } by design, and this script needs the document
+// TREE to re-render it. So it is now an operator script like
+// migrate-data-uri-logos.ts, and needs an operator's key.
+//
+// The draft_token requirement below is unchanged and still the authorisation
+// model: the service key gets you the read, the token is what says you may
+// rewrite this particular business.
 const URL_ = Deno.env.get("SUPABASE_URL");
-const KEY = Deno.env.get("SUPABASE_ANON_KEY");
+const KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 if (!URL_ || !KEY) {
-  console.error("SUPABASE_URL and SUPABASE_ANON_KEY must be set.");
+  console.error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.");
+  console.error("(anon no longer has SELECT on businesses/business_documents -- see the comment above)");
   Deno.exit(1);
 }
 
@@ -58,6 +74,14 @@ async function get(path: string) {
   return await r.json();
 }
 
+
+// Read through the PUBLIC RPC, not the table.
+//
+// This used to select from `businesses` directly. The RLS sweep of 2026-08-18
+// revoked anon SELECT on that table -- correctly, it was enumerable -- and this
+// script has been dead since, failing with a 42501 that reads like a
+// misconfiguration rather than the deliberate lockdown it is. get_public_business
+// is the supported anon read and returns the row minus draft_token.
 const bizRows = await get(
   `businesses?select=id,name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,meta&id=eq.${businessId}`,
 );
