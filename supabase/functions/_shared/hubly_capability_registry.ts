@@ -383,7 +383,7 @@ export async function rebuildDocumentFromRecord(
       return { status: "skipped_owner_edited" };
     }
 
-    const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,website_meta");
+    const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,meta");
     const record = await loadBusinessRecord(draftId);
     const leadWith = Array.isArray(bizRow?.section_order) ? bizRow.section_order[0] : undefined;
     const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${buildDocumentSchemaPromptBlock()}\n\n${buildPageStructureBlock(leadWith)}\n\n${buildBusinessRecordBlock(record)}`;
@@ -431,9 +431,29 @@ function renderContextFor(businessId: string, bizRow: any): RenderContext {
     businessLogoUrl: bizRow?.logo_url || undefined,
     businessMapQuery: mapQueryFor(bizRow),
     businessType: bizRow?.business_type || undefined,
-    businessLogoAspect: logoAspectFrom(bizRow?.website_meta),
-    chromeOverrides: chromeOverridesFrom(bizRow?.website_meta),
+    businessLogoAspect: logoAspectFrom(websiteMetaOf(bizRow)),
+    chromeOverrides: chromeOverridesFrom(websiteMetaOf(bizRow)),
   };
+}
+
+/**
+ * businesses.meta -> 'website'. NOT a `website_meta` column: there isn't one.
+ * patch_business_in_progress takes a p_website_meta ARGUMENT and merges it into
+ * meta->'website', and the argument name reads so much like a column that the
+ * first version of this selected `website_meta` — which PostgREST rejects, so
+ * every select returned null and the rendered header lost the business name,
+ * phone, logo and brand colour at once. Stored as text in some rows and jsonb
+ * in others, hence the parse.
+ */
+function websiteMetaOf(bizRow: any): Record<string, unknown> | undefined {
+  const raw = bizRow?.meta;
+  if (!raw) return undefined;
+  let meta: any = raw;
+  if (typeof raw === "string") {
+    try { meta = JSON.parse(raw); } catch { return undefined; }
+  }
+  const w = meta?.website;
+  return w && typeof w === "object" ? w as Record<string, unknown> : undefined;
 }
 
 /** website_meta.logoAspect, written at upload time by uploadDraftLogo. Guarded
@@ -867,7 +887,7 @@ export async function applyDirectDocumentPatch(
     if (!directEffect.changed) {
       return { ok: false, real: false, summary: "That edit produced no change to the page.", error: "patch_no_effect" };
     }
-  const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,website_meta");
+  const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,meta");
   const html = renderHublyDocument(patchResult.document, renderContextFor(draftId, bizRow));
   const r = await callBusinessRpc("create_business_document", {
     p_business_id: draftId,
@@ -1086,7 +1106,7 @@ async function rerenderLatestDocument(
   try {
     const latest = await selectLatestBusinessDocument(businessId, tag);
     if (!latest) return "no_document";
-    const bizRow = await selectOne("businesses", "id", businessId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,website_meta");
+    const bizRow = await selectOne("businesses", "id", businessId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,meta");
     const html = renderHublyDocument(latest.document, renderContextFor(businessId, bizRow));
     const saved = await callBusinessRpc("create_business_document", {
       p_business_id: businessId,
@@ -1343,7 +1363,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!brief) {
             return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
           }
-          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,website_meta");
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,meta");
           const schemaBlock = buildDocumentSchemaPromptBlock();
           // section_order[0] is what startDraft chose for this business to lead
           // with. renderHublyDocument does not read section_order at all — that
@@ -1475,7 +1495,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
                 raw: { instruction, patchMs, usage: patchResult.usage },
               };
             }
-          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,website_meta");
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,meta");
           const html = renderHublyDocument(patchResult.document, renderContextFor(draftId, bizRow));
           const r = await callBusinessRpc("create_business_document", {
             p_business_id: draftId,
@@ -1539,13 +1559,13 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             return { ok: false, real: false, summary: "No recognisable header change was requested, so nothing was altered.", error: "no_valid_fields" };
           }
           // 'call' with no phone number would render a dead tel: link.
-          const biz = await selectOne("businesses", "id", draftId, "phone,website_meta");
+          const biz = await selectOne("businesses", "id", draftId, "phone,meta");
           if (chrome.cta === "call" && !String(biz?.phone || "").trim()) {
             return { ok: false, real: false, summary: "There is no phone number on the record yet, so the header cannot show one. Ask for the number first.", error: "no_phone" };
           }
           // MERGED, not replaced: two separate asks ("centre it" then "bigger")
           // must both survive, and website_meta carries unrelated keys.
-          const existing = (biz?.website_meta as any)?.chrome;
+          const existing = (websiteMetaOf(biz) as any)?.chrome;
           const merged = { ...(existing && typeof existing === "object" ? existing : {}), ...chrome };
           const r = await callBusinessRpc("patch_business_in_progress", {
             p_id: draftId,

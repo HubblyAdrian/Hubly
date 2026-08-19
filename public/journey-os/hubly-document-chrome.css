@@ -66,10 +66,20 @@
   background: #fff;
   color: #141414;
 }
-/* The transparent header is out of flow, so the first section has to make room
-   for it itself. Applied to the body rather than the section so it works
-   whatever the model called its first section. */
-#hc-doc-root:has(.hd-h-transparent) .hd-doc-body > *:first-child { padding-block-start: 5.5rem; }
+/* The transparent header is out of flow, so the HERO has to make room for it
+   itself.
+   
+   It must be the hero SECTION, not the body's first child. The generator
+   usually wraps everything in a <main class="bg-white">, so padding the first
+   child pushed a white band down between the header and the dark hero -- the
+   exact gap this variant exists to remove. Both real shapes are addressed:
+   sections directly under the body, and sections one wrapper down. Deliberately
+   not a depth-free `section:first-of-type`, which would also match a section
+   nested inside a later one. */
+#hc-doc-root:has(.hd-h-transparent) .hd-doc-body > section:first-child,
+#hc-doc-root:has(.hd-h-transparent) .hd-doc-body > *:first-child > section:first-child {
+  padding-block-start: 5.5rem;
+}
 
 /* --- Variant: logo placement --------------------------------------------- */
 
@@ -249,7 +259,8 @@
   #hc-doc-root .hd-chrome-header.hd-h-centre .hd-chrome-actions { position: static; }
   #hc-doc-root .hd-mark-wordmark .hd-logo { max-width: 9rem; }
   #hc-doc-root .hd-logo-lg .hd-logo { height: 2.5rem; }
-  #hc-doc-root:has(.hd-h-transparent) .hd-doc-body > *:first-child { padding-block-start: 4.5rem; }
+  #hc-doc-root:has(.hd-h-transparent) .hd-doc-body > section:first-child,
+  #hc-doc-root:has(.hd-h-transparent) .hd-doc-body > *:first-child > section:first-child { padding-block-start: 4.5rem; }
 }
 
 /* --- Footer ------------------------------------------------------------- */

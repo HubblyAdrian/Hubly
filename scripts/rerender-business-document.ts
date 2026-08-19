@@ -59,7 +59,7 @@ async function get(path: string) {
 }
 
 const bizRows = await get(
-  `businesses?select=id,name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,website_meta&id=eq.${businessId}`,
+  `businesses?select=id,name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,meta&id=eq.${businessId}`,
 );
 const biz = bizRows[0];
 if (!biz) {
@@ -83,7 +83,11 @@ const doc = latest.document.root ? latest.document : { root: latest.document };
 // this script will quietly re-render a DIFFERENT header than production would.
 const areaCities = Array.isArray(biz.service_area_cities) ? biz.service_area_cities.filter((c: unknown) => typeof c === "string") : [];
 const mapQuery = [biz.city, biz.state].filter(Boolean).join(", ") || areaCities[0] || undefined;
-const meta = (biz.website_meta || {}) as Record<string, unknown>;
+// meta -> 'website'. There is no website_meta column; see websiteMetaOf in
+// hubly_capability_registry.ts for why that is worth saying out loud.
+let metaRoot: any = biz.meta;
+if (typeof metaRoot === "string") { try { metaRoot = JSON.parse(metaRoot); } catch { metaRoot = null; } }
+const meta = (metaRoot?.website || {}) as Record<string, unknown>;
 const aspect = typeof meta.logoAspect === "number" && isFinite(meta.logoAspect as number) && (meta.logoAspect as number) > 0
   ? meta.logoAspect as number
   : undefined;
