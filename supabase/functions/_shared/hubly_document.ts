@@ -1280,12 +1280,28 @@ export function selectChromeVariant(
   else if (nav === "none") placement = "centre";
   else placement = "left";
 
+  const style: ChromeHeaderStyle = o.headerStyle || (heroIsDark(root) ? "transparent" : "solid");
+  const wantsSticky = typeof o.sticky === "boolean" ? o.sticky : navCount >= 5;
+
   return {
     placement,
     scale: o.logoScale || (shape === "wordmark" ? "md" : shape === "tall" ? "lg" : "md"),
     shape,
-    style: o.headerStyle || (heroIsDark(root) ? "transparent" : "solid"),
-    sticky: typeof o.sticky === "boolean" ? o.sticky : navCount >= 5,
+    style,
+    // TRANSPARENT IMPLIES NOT STICKY, whatever anything else says.
+    //
+    // A transparent header is styled for the hero it sits on -- white type, a
+    // white pill, no bar. Follow it down the page and it becomes white type on
+    // white sections: a fixed, invisible header with a floating logo and a
+    // button hovering over the contact form. Seen on the yoga studio's page,
+    // which is how this rule got written rather than assumed.
+    //
+    // Solving it properly means swapping the header to solid on scroll, which
+    // is JavaScript in the shell for a problem the layout can avoid: a header
+    // that belongs to the hero belongs at the top. So the two are exclusive,
+    // and this is deliberately not overridable -- an owner asking for both
+    // would be asking for the broken one.
+    sticky: style === "transparent" ? false : wantsSticky,
     nav,
     cta: o.cta || ctaModeFor(ctx.businessType, ctx.businessPhone),
     // A wordmark already spells the business out; printing the name beside it

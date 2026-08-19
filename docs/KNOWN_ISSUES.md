@@ -1246,3 +1246,90 @@ convenient direction and start printing free prices on real sites.
 One nearby instance already renders it: `hubly_capability_registry.ts` prints a
 membership price with `m.price != null ? "$" + m.price : ""`, so a £0 membership
 reads as `$0` in a CRM summary. Not customer-facing, not urgent.
+
+
+---
+
+## Generated-site chrome is identical on every business's site
+
+**The header is fixed. So are six other things nobody had counted.**
+
+Chrome is drawn by the shell, so the generator cannot vary it — the right call
+for sections, and the reason the first thing any visitor sees was byte-identical
+on every Hubly site. Three real headers, pulled from stored `rendered_html` on
+2026-08-18, differed only in two initials and the nav labels:
+
+```
+<header class="hd-chrome-header"><a class="hd-brand"…><span class="hd-monogram">PF</span>…
+<header class="hd-chrome-header"><a class="hd-brand"…><span class="hd-monogram">TW</span>…
+<header class="hd-chrome-header"><a class="hd-brand"…><span class="hd-monogram">LM</span>…
+```
+
+| Surface | Renderer | What varies today | Status |
+|---|---|---|---|
+| Header | `renderChromeHeader` | placement, mark shape, scale, solid/transparent, sticky, nav, CTA | **fixed 2026-08-18** — `selectChromeVariant` |
+| Footer | `renderChromeFooter` | name and phone only | open — one layout, no links, hours or area |
+| Booking CTA | `HublyBooking` | phone line only | open — always "Check availability" |
+| Contact form | `HublyContactForm` | nothing | open — same four fields, labels and "Send enquiry" everywhere |
+| Chat | `HublyChat` | nothing | open — always "Ask a question", always collapsed |
+| Reviews placeholder | `HublyReviews` | nothing | open — identical two lines |
+| Portal placeholder | `HublyCustomerPortal` | nothing | open — identical one line |
+| Map | `HublyMap` | the query | open — identical frame, height and zoom |
+
+The three worst remaining are the contact form, the chat launcher and the
+booking CTA: they vary *not at all*, so they are the same words on every Hubly
+site in existence.
+
+**The fix that worked is a vocabulary, not freedom.** The shell still owns every
+pixel; it owns more than one arrangement of them and picks between them from
+facts about the business — logo aspect ratio measured from the asset's own
+header bytes, navigable section count, whether the hero paints itself dark,
+and the trade family. No randomness, no model preference, so the same business
+always renders the same header — which is what makes "put the logo in the
+middle" answerable at all. See `selectChromeVariant` for the rule and
+`tests/chrome-variants.test.mjs` for what would catch it collapsing back.
+
+**This also closed "the logo has no controls — locked square, no size, shape or
+position."** Same root cause. `website.setChrome` maps those requests to
+variants rather than trying to restyle an element, which is what made "make the
+logo bigger" report success and change nothing.
+
+### Two things the variant work turned up
+
+- **`deriveNav` will print garbage.** Lehi Mobile Dog Grooming has a nav item
+  reading **"Node"**, from a section the model gave `id="node"`. `navLabel`
+  title-cases whatever it is handed; there is no allow-list.
+- **A transparent header must never be sticky.** Styled for the hero it sits on
+  — white type, white pill, no bar — it becomes white-on-white the moment you
+  scroll past, with the CTA floating over the contact form. Observed on the yoga
+  studio's page. The two are now mutually exclusive and deliberately not
+  overridable.
+
+
+---
+
+## There is no `website_meta` column
+
+`patch_business_in_progress` takes a **`p_website_meta` argument** and merges it
+into `businesses.meta -> 'website'`. The argument name reads so exactly like a
+column that a render-path change on 2026-08-18 selected `website_meta` in five
+places at once. PostgREST rejects the unknown column with a 400, `selectOne`
+returned null, and every generated header silently lost the business name, phone
+number, logo and brand colour together:
+
+```
+<span class="hd-monogram">•</span><span class="hd-brand-name"></span>
+```
+
+It did not throw, did not log, and the header still rendered — with a bullet for
+a monogram and an empty name. Nothing downstream treats a null row as an error.
+
+Read it through `websiteMetaOf(bizRow)`, never `bizRow.website_meta`. The column
+is also **text in some rows and jsonb in others**, so it needs parsing either
+way.
+
+**The general form:** a column name that does not exist fails as `null`, not as
+an exception, anywhere `selectOne` is used. `curl` the PostgREST endpoint with
+the exact select list when changing one — a 400 means a bad column, a 401 means
+the list is fine and RLS stopped you.
+

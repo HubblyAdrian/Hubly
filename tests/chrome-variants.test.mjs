@@ -89,12 +89,31 @@ describe('chrome header variants', () => {
     // accident that happens to differ.
     assert.equal(wordmark.suppressName, true, 'a wordmark must replace the printed name, not sit beside it');
     assert.equal(wordmark.cta, 'call', 'roofing is a call-first trade');
+    // This hero is light, so the header is solid and free to stick. (The
+    // transparent case, and why it is never sticky, has its own test below.)
+    assert.equal(wordmark.style, 'solid');
     assert.equal(wordmark.sticky, true, '5 navigable sections is a long page');
     assert.equal(round.placement, 'stack', 'a mark taller than it is wide needs its own row');
     assert.equal(round.cta, 'book', 'grooming is a book-first trade');
     assert.equal(bare.placement, 'centre', 'no nav to balance against means centre the brand');
     assert.equal(bare.nav, 'none', 'a 1-section page has no jump list worth showing');
     assert.equal(bare.shape, 'monogram');
+  });
+
+  it('never makes a transparent header sticky, even when asked', () => {
+    // The combination is illegible past the hero -- white type on white
+    // sections, with the CTA floating over the contact form. Not overridable,
+    // because an owner asking for both is asking for the broken one.
+    const v = variantFor({
+      sections: 6, heroClass: 'bg-brand-800',
+      overrides: { headerStyle: 'transparent', sticky: true },
+    });
+    assert.equal(v.style, 'transparent');
+    assert.equal(v.sticky, false);
+
+    // And a solid header is still free to stick.
+    const solid = variantFor({ sections: 6, overrides: { headerStyle: 'solid', sticky: true } });
+    assert.equal(solid.sticky, true);
   });
 
   it('is a rule, not a roll of the dice', () => {
