@@ -1,18 +1,21 @@
 -- A build that nobody recorded cannot be missed.
 --
--- generateDocument runs as a background task: ~100-150s of model call, dispatched
--- and not awaited. When the isolate carrying it is recycled -- which Supabase is
--- free to do the moment the response is sent -- the work vanishes. Measured on
--- 2026-08-18: three of eight real builds never wrote a document. A person types
--- a sentence, watches a skeleton for ninety seconds, and no site is ever built.
+-- On 2026-08-18 three of eight real builds never wrote a document. A person
+-- types a sentence, watches a skeleton for ninety seconds, and no site is ever
+-- built -- no error, no signal, no trace.
 --
--- The silence was structural. NOTHING was persisted when a build started, so no
--- code could tell "still working" from "died forty seconds ago", nothing could
--- retry it, and nothing could count how often it happened. The 37% figure came
--- from watching, not from the system.
+-- The cause turned out to be an OpenAI 429 (insufficient_quota), NOT the
+-- background-task theory it was first attributed to. That mattered less than it
+-- should have, because the two were indistinguishable from outside: no
+-- document, no error, no row, the same skeleton and the same timeout. Whatever
+-- killed a build, nothing recorded that one had been owed -- so no code could
+-- tell "still working" from "died forty seconds ago", nothing could retry, and
+-- nothing could count. The 37% figure came from watching, not from the system.
 --
--- This table is the missing fact. One row per build attempt, written BEFORE the
--- work is dispatched, so it survives whatever happens to the isolate.
+-- This table is the missing fact, and it is deliberately cause-agnostic. One
+-- row per build attempt, written BEFORE the work is dispatched, so it survives
+-- whatever happens next -- a recycled isolate, an exhausted account, a provider
+-- outage, or a bug nobody has met yet.
 
 create table if not exists public.document_build_jobs (
   id uuid primary key default gen_random_uuid(),
@@ -20,8 +23,9 @@ create table if not exists public.document_build_jobs (
   tag text not null default 'website',
 
   -- running -> succeeded | failed. A row left in `running` past expected_by is
-  -- the isolate-death case: nothing wrote a terminal status, because nothing
-  -- was alive to write one.
+  -- the case where nothing was alive to write a terminal status -- a recycled
+  -- isolate, a hard timeout, a crash. Anything that could report its own
+  -- failure sets 'failed' with a reason instead.
   status text not null default 'running'
     check (status in ('running', 'succeeded', 'failed')),
 
@@ -32,9 +36,12 @@ create table if not exists public.document_build_jobs (
   -- and so a retry rebuilds the SAME page rather than a different one.
   brief text,
 
-  -- Why it failed, when something was alive to say. Distinguishes the two real
-  -- causes -- validation refused the document twice, vs the isolate died -- which
-  -- could not be told apart at all before this table existed.
+  -- Why it failed, when something was alive to say so. A SHORT CODE, never
+  -- provider output: get_document_build_status surfaces this publicly.
+  -- 'validation_failed', 'exception', 'missing_input'. This is what separates
+  -- "the model produced something we refused" from "the account is out of
+  -- credit" from "the isolate died" -- three problems that produced an
+  -- identical silence before this column existed.
   error text,
 
   started_at timestamptz not null default now(),
