@@ -13,18 +13,123 @@
 
 /* --- Header ------------------------------------------------------------- */
 
+/* BASE. Everything that is true of every header treatment. The variant
+   classes below change position, colour and arrangement -- they never restate
+   what is already here. See selectChromeVariant in hubly_document.ts for which
+   combination a given business gets and why. */
 #hc-doc-root .hd-chrome-header {
-  position: sticky;
-  top: 0;
   z-index: 40;
   display: flex;
   align-items: center;
   gap: 1.5rem;
   padding: 0.85rem clamp(1rem, 4vw, 3rem);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: saturate(1.6) blur(10px);
   border-bottom: 1px solid rgba(20, 20, 20, 0.08);
 }
+
+/* --- Variant: sticky or static ------------------------------------------- */
+
+#hc-doc-root .hd-chrome-header.hd-h-sticky { position: sticky; top: 0; }
+#hc-doc-root .hd-chrome-header.hd-h-static { position: relative; }
+
+/* --- Variant: solid or transparent-over-hero ------------------------------ */
+
+#hc-doc-root .hd-chrome-header.hd-h-solid {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: saturate(1.6) blur(10px);
+}
+
+/* Sits ON the hero rather than in a strip above it, for the businesses whose
+   first section paints itself dark. Absolute rather than translucent: a
+   translucent bar over a dark hero is still a visible band, which is the thing
+   this variant exists to remove. The hero keeps its own top padding, so
+   nothing is overlapped -- see hd-h-transparent + .hd-doc-body below. */
+#hc-doc-root .hd-chrome-header.hd-h-transparent {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  background: transparent;
+  backdrop-filter: none;
+  border-bottom: 0;
+  color: #fff;
+}
+#hc-doc-root .hd-chrome-header.hd-h-transparent.hd-h-sticky { position: fixed; }
+#hc-doc-root .hd-chrome-header.hd-h-transparent .hd-nav-link,
+#hc-doc-root .hd-chrome-header.hd-h-transparent .hd-chrome-phone,
+#hc-doc-root .hd-chrome-header.hd-h-transparent .hd-brand { color: rgba(255, 255, 255, 0.88); }
+#hc-doc-root .hd-chrome-header.hd-h-transparent .hd-nav-link:hover,
+#hc-doc-root .hd-chrome-header.hd-h-transparent .hd-nav-link:focus-visible { color: #fff; }
+#hc-doc-root .hd-chrome-header.hd-h-transparent .hd-monogram {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+#hc-doc-root .hd-chrome-header.hd-h-transparent .hd-chrome-cta {
+  background: #fff;
+  color: #141414;
+}
+/* The transparent header is out of flow, so the first section has to make room
+   for it itself. Applied to the body rather than the section so it works
+   whatever the model called its first section. */
+#hc-doc-root:has(.hd-h-transparent) .hd-doc-body > *:first-child { padding-block-start: 5.5rem; }
+
+/* --- Variant: logo placement --------------------------------------------- */
+
+/* left: brand, then nav pushed right by hd-nav's margin-inline-start:auto. */
+
+/* centre: nothing to balance a left-aligned mark against, so the mark takes
+   the middle and the actions stay pinned right. */
+#hc-doc-root .hd-chrome-header.hd-h-centre { justify-content: center; position: relative; }
+#hc-doc-root .hd-chrome-header.hd-h-centre .hd-brand { margin-inline: auto; }
+#hc-doc-root .hd-chrome-header.hd-h-centre .hd-nav { display: none; }
+#hc-doc-root .hd-chrome-header.hd-h-centre .hd-chrome-actions {
+  position: absolute;
+  inset-inline-end: clamp(1rem, 4vw, 3rem);
+}
+
+/* stack: the mark owns a row; nav and actions share the one beneath. For marks
+   taller than they are wide, which a single horizontal row cannot hold without
+   shrinking them to nothing. */
+#hc-doc-root .hd-chrome-header.hd-h-stack {
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-block: 1.1rem;
+}
+#hc-doc-root .hd-h-stack .hd-h-row-brand { display: flex; justify-content: center; }
+#hc-doc-root .hd-h-stack .hd-h-row-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  width: 100%;
+}
+#hc-doc-root .hd-h-stack .hd-nav { margin-inline-start: 0; }
+#hc-doc-root .hd-h-stack .hd-brand { flex-direction: column; gap: 0.4rem; text-align: center; }
+
+/* --- Variant: mark shape and scale ---------------------------------------- */
+
+/* A wordmark is the business name set as artwork, so it is sized by HEIGHT and
+   given room to run; a round mark is sized by its diameter and kept circular.
+   Both used to be forced through the same square box, which is what made a
+   good logo look no better than initials. */
+#hc-doc-root .hd-mark-wordmark .hd-logo { max-width: 18rem; }
+#hc-doc-root .hd-mark-wide     .hd-logo { max-width: 13rem; }
+#hc-doc-root .hd-mark-square   .hd-logo { max-width: 4rem; }
+#hc-doc-root .hd-mark-tall     .hd-logo { max-width: 5rem; width: auto; }
+
+/* Round marks read as round. object-fit stays `contain` so nothing is cropped
+   -- a mark that is nearly circular is clipped to a circle, one that is not is
+   simply centred inside it. */
+#hc-doc-root .hd-mark-square .hd-logo,
+#hc-doc-root .hd-mark-tall .hd-logo { border-radius: 50%; }
+
+#hc-doc-root .hd-logo-sm .hd-logo, #hc-doc-root .hd-logo-sm .hd-monogram { height: 1.75rem; }
+#hc-doc-root .hd-logo-md .hd-logo, #hc-doc-root .hd-logo-md .hd-monogram { height: 2.25rem; }
+#hc-doc-root .hd-logo-lg .hd-logo { height: 3.5rem; }
+#hc-doc-root .hd-logo-lg .hd-monogram { height: 3rem; width: 3rem; font-size: 1rem; }
+#hc-doc-root .hd-logo-sm .hd-monogram { width: 1.75rem; }
+#hc-doc-root .hd-logo-md .hd-monogram { width: 2.25rem; }
+
+/* A wordmark carries the name, so the header stops printing it (suppressName
+   in selectChromeVariant). Nothing to style -- the span is simply not emitted. */
 
 #hc-doc-root .hd-brand {
   display: inline-flex;
@@ -131,6 +236,20 @@
   #hc-doc-root .hd-nav { display: none; }
   #hc-doc-root .hd-chrome-phone { display: none; }
   #hc-doc-root .hd-chrome-actions { margin-inline-start: auto; }
+  /* Every placement collapses to the same thing on a phone. `centre` and
+     `stack` are decisions about how to use horizontal room, and there isn't
+     any -- holding them here would cost the CTA its place on the row. */
+  #hc-doc-root .hd-chrome-header.hd-h-stack { flex-direction: row; gap: 1rem; }
+  #hc-doc-root .hd-h-stack .hd-h-row-brand,
+  #hc-doc-root .hd-h-stack .hd-h-row-nav { width: auto; }
+  #hc-doc-root .hd-h-stack .hd-h-row-nav { margin-inline-start: auto; }
+  #hc-doc-root .hd-h-stack .hd-brand { flex-direction: row; }
+  #hc-doc-root .hd-chrome-header.hd-h-centre { justify-content: flex-start; }
+  #hc-doc-root .hd-chrome-header.hd-h-centre .hd-brand { margin-inline: 0; }
+  #hc-doc-root .hd-chrome-header.hd-h-centre .hd-chrome-actions { position: static; }
+  #hc-doc-root .hd-mark-wordmark .hd-logo { max-width: 9rem; }
+  #hc-doc-root .hd-logo-lg .hd-logo { height: 2.5rem; }
+  #hc-doc-root:has(.hd-h-transparent) .hd-doc-body > *:first-child { padding-block-start: 4.5rem; }
 }
 
 /* --- Footer ------------------------------------------------------------- */
@@ -282,6 +401,14 @@
   background:linear-gradient(to bottom, rgba(255,255,255,.55), rgba(255,255,255,0));
   pointer-events:none;
 }
+/* The scrim exists to give type something to disappear INTO under a translucent
+   white bar. Over a dark hero, with no bar, it is just a white smear. */
+#hc-doc-root .hd-chrome-header.hd-h-transparent::after{ display:none; }
+
+/* No nav is a variant, not an accident -- a two-link jump list on a short page
+   is noise. Hidden here rather than by omitting the element so the markup
+   stays one shape and the override can turn it back on. */
+#hc-doc-root .hd-chrome-header.hd-h-nonav .hd-nav{ display:none; }
 
 /* Service-area map. Classic has rendered a real Google embed for as long as it
    has existed; this format rendered a dashed island saying a map would appear. */

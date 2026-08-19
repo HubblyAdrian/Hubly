@@ -194,7 +194,10 @@ function getAllowedCapabilities(context: ConversationContextName) {
 // it on for real traffic, kept separate from the decision to merge the
 // code. Unset/anything other than "true" = off, the safe default.
 const DOCUMENT_GENERATION_ENABLED = (Deno.env.get("HUBLY_DOCUMENT_GENERATION_ENABLED") || "").trim() === "true";
-const GATED_WEBSITE_ACTIONS = new Set(["generateDocument", "patchDocument"]);
+// setChrome is gated with the other two: it re-renders a Document, so it is
+// meaningless without one, and advertising it while the format is dark would
+// offer the owner a header they cannot have.
+const GATED_WEBSITE_ACTIONS = new Set(["generateDocument", "patchDocument", "setChrome"]);
 
 /** Second half of the "advertise or don't" gate — strips the gated actions
  *  out of what the model is even told exists, same discipline as

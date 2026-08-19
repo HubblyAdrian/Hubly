@@ -59,7 +59,7 @@ async function get(path: string) {
 }
 
 const bizRows = await get(
-  `businesses?select=id,name,phone,slug,brand_color,logo_url&id=eq.${businessId}`,
+  `businesses?select=id,name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,website_meta&id=eq.${businessId}`,
 );
 const biz = bizRows[0];
 if (!biz) {
@@ -77,12 +77,26 @@ if (!latest?.document) {
 }
 
 const doc = latest.document.root ? latest.document : { root: latest.document };
+// Same fields the Edge Function's renderContextFor assembles. Kept in step by
+// hand because this script runs outside the function and cannot import its
+// service-role helpers -- if a header input is added there, add it here too, or
+// this script will quietly re-render a DIFFERENT header than production would.
+const areaCities = Array.isArray(biz.service_area_cities) ? biz.service_area_cities.filter((c: unknown) => typeof c === "string") : [];
+const mapQuery = [biz.city, biz.state].filter(Boolean).join(", ") || areaCities[0] || undefined;
+const meta = (biz.website_meta || {}) as Record<string, unknown>;
+const aspect = typeof meta.logoAspect === "number" && isFinite(meta.logoAspect as number) && (meta.logoAspect as number) > 0
+  ? meta.logoAspect as number
+  : undefined;
 const html = renderHublyDocument(doc, {
   businessId,
   businessName: biz.name || "",
   businessPhone: biz.phone || undefined,
   businessBrandColor: biz.brand_color || undefined,
   businessLogoUrl: biz.logo_url || undefined,
+  businessMapQuery: mapQuery,
+  businessType: biz.business_type || undefined,
+  businessLogoAspect: aspect,
+  chromeOverrides: (meta.chrome && typeof meta.chrome === "object" ? meta.chrome : undefined) as any,
 });
 
 // Report what actually changed, rather than claiming success. The two counts
@@ -90,8 +104,10 @@ const html = renderHublyDocument(doc, {
 // that does not move them is a re-render that did nothing.
 const anchorIds = (html.match(/ id="hd-/g) || []).length;
 const hasChrome = /hd-chrome-header/.test(html);
+const variant = (/<header class="([^"]*)"/.exec(html) || [, "(none)"])[1];
 console.log(`${biz.slug}  v${latest.version} -> re-rendered`);
 console.log(`  anchor ids: ${anchorIds}   chrome: ${hasChrome ? "yes" : "NO"}   bytes: ${html.length}`);
+console.log(`  header variant: ${variant}`);
 
 const res = await fetch(`${URL_}/rest/v1/rpc/create_business_document`, {
   method: "POST",

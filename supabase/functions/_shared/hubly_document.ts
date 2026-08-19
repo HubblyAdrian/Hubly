@@ -135,6 +135,9 @@ export type ValidationResult =
  * JavaScript, and holds no state Hubly is responsible for. The model named
  * those exact two tags as what it would have needed.
  */
+import { logoShapeFor, type LogoShape } from "./hubly_image_dims.ts";
+export type { LogoShape };
+
 export const ALLOWED_TAGS = new Set([
   // Structure. `footer`/`nav`/`main` were the asymmetry: `header` was already
   // here, and `footer` is the one tag 13 builds actually got rejected for.
@@ -915,6 +918,19 @@ export type RenderContext = {
   /** City, or the service-area cities, for the map embed. Classic builds the
    *  same query from `areaDisp.mapQuery || city || areaZips`. */
   businessMapQuery?: string;
+  /** businesses.business_type — free text the model wrote ("landscaping",
+   *  "mobile dog grooming"). Used ONLY to decide whether the header's primary
+   *  action is a phone number or a booking pill, matched on word families. */
+  businessType?: string;
+  /** Width / height of the uploaded logo, measured from the asset's own header
+   *  bytes at upload time (see hubly_image_dims.ts) and stored on
+   *  website_meta.logoAspect. Absent means "unknown", which renders exactly as
+   *  every site does today. Never estimated and never inferred from the URL. */
+  businessLogoAspect?: number;
+  /** businesses.website_meta.chrome — what the OWNER asked for, which beats
+   *  anything derived. Set by website.setChrome, which is what "put the logo
+   *  in the middle" and "make the logo bigger" resolve to. */
+  chromeOverrides?: ChromeOverrides;
 };
 
 const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
@@ -1125,30 +1141,219 @@ function monogram(name: string): string {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
+// ---------------------------------------------------------------------------
+// CHROME VARIANTS
+//
+// The header is chrome, drawn by the shell, so the generator cannot vary it.
+// That was the right call for sections — handing the header to the model would
+// lose the validated logo handling and the booking CTA that actually work — but
+// it meant the FIRST thing anyone saw was byte-identical on every business's
+// site but for two initials. Three real generated headers, pulled from stored
+// rendered_html: "PF", "TW", "LM", in the same rounded square, in the same bar,
+// with the same pill on the right. It reads as templated because it is.
+//
+// So: not freedom, a vocabulary. The shell still owns every pixel; it just
+// owns more than one arrangement of them, and picks between them from facts
+// about the business rather than from randomness or the model's taste.
+//
+// THE SELECTION RULE, in precedence order. Every input is a real, observable
+// property. Nothing here consults the model, and nothing is random — the same
+// business always renders the same header, which is what makes "put the logo in
+// the middle" a thing you can ask for rather than a thing you hope for.
+//
+//  0. OWNER OVERRIDE wins on any axis it sets (website_meta.chrome). This is
+//     how "put the logo in the middle" and "make the logo bigger" work: they
+//     select a variant, they do not restyle an element.
+//  1. LOGO SHAPE, from the asset's own intrinsic aspect ratio, decides
+//     placement and mark treatment:
+//       none/monogram -> left      wordmark (>=2.2) -> left, and the name text
+//       is suppressed because the mark already IS the name
+//       wide          -> left      square           -> left
+//       tall (<0.8)   -> stack     — a mark taller than it is wide cannot share
+//       a horizontal bar without shrinking to nothing, so it gets its own row
+//       above the nav
+//  2. NAVIGABLE SECTION COUNT decides nav and sticky:
+//       0-2 -> no nav, not sticky   (a two-link nav is noise, and a page this
+//                                    short has no "back to the top" problem)
+//       3-4 -> nav, not sticky
+//       5+  -> nav, sticky          (long enough that you need the way back)
+//     With no nav and a left logo the bar is a logo and a lot of empty space,
+//     so a nav-less header centres its brand instead.
+//  3. HERO DARKNESS decides solid vs transparent. If the first section paints
+//     itself a dark or branded background, the header sits ON it rather than
+//     above it in a white strip — read from the section's own class tokens,
+//     which is the same information the browser uses.
+//  4. BUSINESS TYPE decides the CTA. Trades people CALL get their phone number
+//     as the primary action; trades people BOOK get the booking pill. Matched
+//     on word families rather than exact strings, because business_type is
+//     free text the model wrote.
+// ---------------------------------------------------------------------------
+
+export type ChromeLogoPlacement = "left" | "centre" | "stack";
+export type ChromeLogoScale = "sm" | "md" | "lg";
+export type ChromeHeaderStyle = "solid" | "transparent";
+export type ChromeNavMode = "full" | "none";
+export type ChromeCtaMode = "book" | "call";
+
+export type ChromeVariant = {
+  placement: ChromeLogoPlacement;
+  scale: ChromeLogoScale;
+  shape: LogoShape | "monogram";
+  style: ChromeHeaderStyle;
+  sticky: boolean;
+  nav: ChromeNavMode;
+  cta: ChromeCtaMode;
+  /** True when the mark carries the name, so printing it again is duplication. */
+  suppressName: boolean;
+};
+
+/** Owner-set overrides, from businesses.website_meta.chrome. Every field
+ *  optional — an override sets one axis and leaves the rest derived. */
+export type ChromeOverrides = {
+  logoPlacement?: ChromeLogoPlacement;
+  logoScale?: ChromeLogoScale;
+  logoShape?: LogoShape;
+  headerStyle?: ChromeHeaderStyle;
+  sticky?: boolean;
+  nav?: ChromeNavMode;
+  cta?: ChromeCtaMode;
+};
+
+/** Trades where the customer's next move is a phone call, not a form. Word
+ *  families rather than exact matches: business_type is free text. */
+// STEM-PREFIXED, NOT WORD-BOUNDED. `/\broof\b/` does not match "roofing",
+// which is what business_type actually contains, so the first version of this
+// sent every trade to the booking pill and the whole CTA axis was dead. Stems
+// only, with no trailing boundary, and chosen long enough not to collide
+// ("towing" not "tow", which also matches "towel").
+const CALL_FIRST_RE =
+  /\b(?:plumb|hvac|heating|cooling|furnace|air.?condition|electric|roof|towing|locksmith|garage.?door|septic|pest|exterminat|glass|windshield|restoration|water.?damage|chimney|appliance|handyman|junk|hauling|moving|movers|tree.?(?:service|removal|trimming)|stump|paving|asphalt|concrete|excavat|drain|sewer|emergency|repair|fence|gutter|foundation|masonry|welding|septic)/i;
+
+/** Trades where the customer books an appointment for a future date. Checked
+ *  FIRST, because "dog grooming" and "mobile detailing" both contain words the
+ *  call-first family also claims. */
+const BOOK_FIRST_RE =
+  /\b(?:groom|salon|spa\b|barber|massage|photograph|photo\b|videograph|tutor|lesson|yoga|pilates|dental|dentist|therapy|therapist|training|trainer|coach|nail|lash|brow|aesthet|clean|maid|housekeep|detail|wash|landscap|lawn|dog|cat\b|veterinar|catering|event|wedding|makeup|hair|chiropract|acupunct|wellness)/i;
+
+function ctaModeFor(businessType: string | undefined, phone: string | undefined): ChromeCtaMode {
+  if (!phone) return "book";                       // can't call what we don't have
+  const t = (businessType || "").trim();
+  if (!t) return "book";
+  if (BOOK_FIRST_RE.test(t)) return "book";
+  if (CALL_FIRST_RE.test(t)) return "call";
+  return "book";
+}
+
+/** Dark-background tokens the generated hero can legitimately carry. Read from
+ *  the class string because that is where the truth is — the same tokens the
+ *  browser will act on. */
+const DARK_HERO_RE = /\b(bg-(?:brand|ink-[6-9]00|black)|bg-gradient-to-\w+|from-(?:brand|ink-[6-9]00))/;
+
+function heroIsDark(root: HublyDocumentNode): boolean {
+  const kids = Array.isArray(root.children) ? root.children : [];
+  for (const child of kids) {
+    if (child.tag !== "section" && child.tag !== "article") continue;
+    return DARK_HERO_RE.test(String(child.attrs?.class || ""));   // first section only
+  }
+  return false;
+}
+
+/**
+ * The whole selection rule in one place, so it can be read, tested, and argued
+ * with without rendering anything.
+ */
+export function selectChromeVariant(
+  root: HublyDocumentNode,
+  ctx: RenderContext,
+): ChromeVariant {
+  const o = ctx.chromeOverrides || {};
+  const hasLogo = !!(ctx.businessLogoUrl || "").trim() && isValidMediaSrc((ctx.businessLogoUrl || "").trim());
+  const derivedShape = hasLogo ? (o.logoShape || logoShapeFor(ctx.businessLogoAspect)) : null;
+  const shape: LogoShape | "monogram" = hasLogo ? (derivedShape || "square") : "monogram";
+
+  const navCount = deriveNav(root).length;
+  const nav: ChromeNavMode = o.nav || (navCount >= 3 ? "full" : "none");
+
+  let placement: ChromeLogoPlacement;
+  if (o.logoPlacement) placement = o.logoPlacement;
+  else if (shape === "tall") placement = "stack";
+  else if (nav === "none") placement = "centre";
+  else placement = "left";
+
+  return {
+    placement,
+    scale: o.logoScale || (shape === "wordmark" ? "md" : shape === "tall" ? "lg" : "md"),
+    shape,
+    style: o.headerStyle || (heroIsDark(root) ? "transparent" : "solid"),
+    sticky: typeof o.sticky === "boolean" ? o.sticky : navCount >= 5,
+    nav,
+    cta: o.cta || ctaModeFor(ctx.businessType, ctx.businessPhone),
+    // A wordmark already spells the business out; printing the name beside it
+    // is the same words twice at two sizes. Only true for a REAL wordmark, not
+    // for an override that merely places a square mark centrally.
+    suppressName: shape === "wordmark",
+  };
+}
+
 function renderChromeHeader(root: HublyDocumentNode, ctx: RenderContext): string {
   const name = ctx.businessName || "";
-  const nav = deriveNav(root)
-    .map((n) => `<a class="hd-nav-link" href="#${escAttr(ANCHOR_PREFIX + n.id)}">${escHtml(n.label)}</a>`)
-    .join("");
-  const phone = ctx.businessPhone
-    ? `<a class="hd-chrome-phone" href="tel:${escAttr(ctx.businessPhone)}">${escHtml(ctx.businessPhone)}</a>`
-    : "";
+  const v = selectChromeVariant(root, ctx);
+
+  const navHtml = v.nav === "none"
+    ? ""
+    : deriveNav(root)
+      .map((n) => `<a class="hd-nav-link" href="#${escAttr(ANCHOR_PREFIX + n.id)}">${escHtml(n.label)}</a>`)
+      .join("");
+
   // hubly:booking is resolved by wireHublyDocumentReserved in hubly.html —
   // it opens the same real booking wizard the classic renderer uses.
-  const cta = `<a class="hd-chrome-cta" href="hubly:booking">Book now</a>`;
+  const cta = v.cta === "call" && ctx.businessPhone
+    ? `<a class="hd-chrome-cta" href="tel:${escAttr(ctx.businessPhone)}">Call ${escHtml(ctx.businessPhone)}</a>`
+    : `<a class="hd-chrome-cta" href="hubly:booking">Book now</a>`;
+  // The secondary phone line is redundant when the CTA already IS the phone.
+  const phone = ctx.businessPhone && v.cta !== "call"
+    ? `<a class="hd-chrome-phone" href="tel:${escAttr(ctx.businessPhone)}">${escHtml(ctx.businessPhone)}</a>`
+    : "";
+
   // A real logo replaces the monogram outright. The monogram was always a
-  // stand-in — honest, but identical in shape on every site (MD, PR, OM) — and
+  // stand-in — honest, but identical in shape on every site (PF, TW, LM) — and
   // the owner uploading their mark is the single most visible improvement a
   // generated page gets. Validated against the same storage origins as any
   // other asset so a logo_url cannot smuggle in an arbitrary remote image.
   const logo = (ctx.businessLogoUrl || "").trim();
-  const mark = logo && isValidMediaSrc(logo)
+  const mark = v.shape !== "monogram"
     ? `<img class="hd-logo" src="${escAttr(logo)}" alt="${escAttr(name)}">`
     : `<span class="hd-monogram">${escHtml(monogram(name))}</span>`;
-  return `<header class="hd-chrome-header">
-<a class="hd-brand" href="#hd-top">${mark}<span class="hd-brand-name">${escHtml(name)}</span></a>
-<nav class="hd-nav">${nav}</nav>
-<div class="hd-chrome-actions">${phone}${cta}</div>
+  const brandName = v.suppressName ? "" : `<span class="hd-brand-name">${escHtml(name)}</span>`;
+  const brand = `<a class="hd-brand" href="#hd-top">${mark}${brandName}</a>`;
+
+  const cls = [
+    "hd-chrome-header",
+    `hd-h-${v.placement}`,
+    `hd-h-${v.style}`,
+    `hd-mark-${v.shape}`,
+    `hd-logo-${v.scale}`,
+    v.sticky ? "hd-h-sticky" : "hd-h-static",
+    v.nav === "none" ? "hd-h-nonav" : "",
+  ].filter(Boolean).join(" ");
+
+  const actions = `<div class="hd-chrome-actions">${phone}${cta}</div>`;
+
+  // `stack` is a genuinely different DOM order, not the same row re-flowed:
+  // the mark owns a row, and the nav and actions share the one beneath it.
+  // Trying to express that with flex-wrap on the single-row markup put the CTA
+  // above the nav at some widths and below it at others.
+  if (v.placement === "stack") {
+    return `<header class="${cls}">
+<div class="hd-h-row-brand">${brand}</div>
+<div class="hd-h-row-nav"><nav class="hd-nav">${navHtml}</nav>${actions}</div>
+</header>`;
+  }
+
+  return `<header class="${cls}">
+${brand}
+<nav class="hd-nav">${navHtml}</nav>
+${actions}
 </header>`;
 }
 
@@ -1391,7 +1596,10 @@ export function humanPatchSummary(effect: PatchEffect): string {
     parts.push(x.label ? `added "${x.label}"` : `added a ${x.tag}`);
   }
   for (const t of effect.textChanged.slice(0, 3)) {
-    parts.push(`changed the text "${t.from}" to "${t.to}"`);
+    // Only the NEW value. Quoting both ran to ~180 characters for a headline
+    // edit, and the old string is the one thing the person definitely already
+    // knows -- they were looking at it a second ago.
+    parts.push(`set the text to "${t.to}"`);
   }
   if (effect.attrsChanged.length) {
     const styling = effect.attrsChanged.filter((c) => c.keys.includes("class")).length;

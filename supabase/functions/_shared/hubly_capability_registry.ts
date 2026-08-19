@@ -55,7 +55,10 @@ import {
   humanPatchSummary,
   type VocabularyRejections,
   type HublyDocument,
+  type ChromeOverrides,
+  type RenderContext,
 } from "./hubly_document.ts";
+import { imageDimensions, type ImageDims } from "./hubly_image_dims.ts";
 import { adminClient } from "./marketplace_provider.ts";
 import { getWebsiteAvailability, createWebsiteBookingJob } from "./hubly_booking_execution.ts";
 import { buildPageStructureBlock, paletteById, palettePromptList, sectionOrderFor } from "./site_identity.ts";
@@ -64,7 +67,14 @@ const APP_ORIGIN = (Deno.env.get("HUBLY_APP_ORIGIN") || "").trim() || "https://m
 
 export type CapabilityActionArgSchema = {
   type: "object";
-  properties: Record<string, { type: string; description: string }>;
+  /**
+   * `enum` is expressible because some arguments genuinely have a closed set of
+   * values (header placement, CTA mode) and prose alone does not stop a model
+   * inventing a sixth one. It is a PROMPT, not a gate: every handler that
+   * accepts an enum still validates the value it receives against the same list
+   * before acting on it, because the schema only ever reaches the model.
+   */
+  properties: Record<string, { type: string; description: string; enum?: readonly string[] }>;
   required: string[];
 };
 
@@ -373,7 +383,7 @@ export async function rebuildDocumentFromRecord(
       return { status: "skipped_owner_edited" };
     }
 
-    const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities");
+    const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,website_meta");
     const record = await loadBusinessRecord(draftId);
     const leadWith = Array.isArray(bizRow?.section_order) ? bizRow.section_order[0] : undefined;
     const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${buildDocumentSchemaPromptBlock()}\n\n${buildPageStructureBlock(leadWith)}\n\n${buildBusinessRecordBlock(record)}`;
@@ -383,13 +393,7 @@ export async function rebuildDocumentFromRecord(
     const gen = await generateAndValidateDocument(system, brief, draftId, "website");
     if (!gen.ok) return { status: "failed", detail: "validation" };
 
-    const html = renderHublyDocument(gen.document, {
-      businessId: draftId,
-      businessName: bizRow?.name || "",
-      businessPhone: bizRow?.phone || undefined,
-      businessBrandColor: bizRow?.brand_color || undefined,
-      businessLogoUrl: bizRow?.logo_url || undefined,
-    });
+    const html = renderHublyDocument(gen.document, renderContextFor(draftId, bizRow));
     const saved = await callBusinessRpc("create_business_document", {
       p_business_id: draftId,
       p_draft_token: draftToken,
@@ -404,6 +408,86 @@ export async function rebuildDocumentFromRecord(
     console.error("rebuildDocumentFromRecord failed:", e);
     return { status: "failed", detail: String(e).slice(0, 120) };
   }
+}
+
+/**
+ * THE ONE PLACE a RenderContext is built.
+ *
+ * There were five, assembled by hand, and two of them had already drifted --
+ * they omitted businessMapQuery, so the same document rendered a real map or a
+ * dashed placeholder depending on which code path happened to re-render it.
+ * Adding the chrome inputs to five hand-written literals would have guaranteed
+ * a sixth divergence, so they now all come through here.
+ *
+ * Every field is read off a real businesses row. Nothing is invented, and the
+ * caller cannot forget a field it has never heard of.
+ */
+function renderContextFor(businessId: string, bizRow: any): RenderContext {
+  return {
+    businessId,
+    businessName: bizRow?.name || "",
+    businessPhone: bizRow?.phone || undefined,
+    businessBrandColor: bizRow?.brand_color || undefined,
+    businessLogoUrl: bizRow?.logo_url || undefined,
+    businessMapQuery: mapQueryFor(bizRow),
+    businessType: bizRow?.business_type || undefined,
+    businessLogoAspect: logoAspectFrom(bizRow?.website_meta),
+    chromeOverrides: chromeOverridesFrom(bizRow?.website_meta),
+  };
+}
+
+/** website_meta.logoAspect, written at upload time by uploadDraftLogo. Guarded
+ *  rather than trusted: website_meta is jsonb an older build could have put
+ *  anything in, and a NaN here would silently pick a shape at random. */
+function logoAspectFrom(meta: unknown): number | undefined {
+  const v = (meta as any)?.logoAspect;
+  return typeof v === "number" && isFinite(v) && v > 0 ? v : undefined;
+}
+
+/** website_meta.chrome, written by website.setChrome. Every value is checked
+ *  against the enum it belongs to and dropped if it does not match -- this is
+ *  persisted jsonb, so it is untrusted input like any other. */
+const CHROME_ENUMS: Record<string, readonly string[]> = {
+  logoPlacement: ["left", "centre", "stack"],
+  logoScale: ["sm", "md", "lg"],
+  logoShape: ["wordmark", "wide", "square", "tall"],
+  headerStyle: ["solid", "transparent"],
+  nav: ["full", "none"],
+  cta: ["book", "call"],
+};
+
+function chromeOverridesFrom(meta: unknown): ChromeOverrides | undefined {
+  const raw = (meta as any)?.chrome;
+  if (!raw || typeof raw !== "object") return undefined;
+  const out: Record<string, unknown> = {};
+  for (const [key, allowed] of Object.entries(CHROME_ENUMS)) {
+    const v = raw[key];
+    if (typeof v === "string" && allowed.includes(v)) out[key] = v;
+  }
+  if (typeof raw.sticky === "boolean") out.sticky = raw.sticky;
+  return Object.keys(out).length ? out as ChromeOverrides : undefined;
+}
+
+/** What to SAY after a header change — in terms of what moved, not the enum
+ *  values that moved it. "logoPlacement=centre" is a log line, not an answer to
+ *  "put the logo in the middle". */
+const CHROME_NOTES: Record<string, Record<string, string>> = {
+  logoPlacement: { left: "the logo is on the left now", centre: "the logo is centred now", stack: "the logo has its own row above the menu now" },
+  logoScale: { sm: "the logo is smaller now", md: "the logo is back to its normal size", lg: "the logo is bigger now" },
+  headerStyle: { solid: "the header has a solid bar again", transparent: "the header sits over the hero now, with no bar behind it" },
+  nav: { full: "the section links are back", none: "the section links are gone" },
+  cta: { book: "the header button books an appointment again", call: "the header button is your phone number now" },
+};
+
+function chromeChangeNote(chrome: Record<string, unknown>): string {
+  const parts: string[] = [];
+  for (const [k, v] of Object.entries(chrome)) {
+    if (k === "sticky") { parts.push(v ? "the header follows the page down now" : "the header stays at the top of the page now"); continue; }
+    const note = CHROME_NOTES[k]?.[String(v)];
+    if (note) parts.push(note);
+  }
+  if (!parts.length) return "Done — the header is updated.";
+  return "Done — " + parts.join(", and ") + ".";
 }
 
 /** Same query classic builds: the town, or the service area, or nothing. */
@@ -783,8 +867,8 @@ export async function applyDirectDocumentPatch(
     if (!directEffect.changed) {
       return { ok: false, real: false, summary: "That edit produced no change to the page.", error: "patch_no_effect" };
     }
-  const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities");
-  const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined, businessLogoUrl: bizRow?.logo_url || undefined, businessMapQuery: mapQueryFor(bizRow) });
+  const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,website_meta");
+  const html = renderHublyDocument(patchResult.document, renderContextFor(draftId, bizRow));
   const r = await callBusinessRpc("create_business_document", {
     p_business_id: draftId,
     p_draft_token: draftToken,
@@ -828,7 +912,7 @@ const LOGO_EXT_BY_MEDIA_TYPE: Record<string, string> = {
 };
 
 type StorageUploadOutcome =
-  | { ok: true; url: string }
+  | { ok: true; url: string; dims: ImageDims | null }
   | { ok: false; result: CapabilityActionResult };
 
 /**
@@ -879,7 +963,16 @@ async function uploadImageToStorage(
   if (!uploadRes.ok) {
     return { ok: false, result: { ok: false, real: false, summary: "The image could not be uploaded right now.", error: "storage_upload_failed" } };
   }
-  return { ok: true, url: `${supabaseUrl}/storage/v1/object/public/brand-assets/${path}` };
+  // Measured from the bytes we already have in hand, before they go anywhere.
+  // The header needs the SHAPE of a logo to lay it out -- a wordmark and a
+  // round mark are different design problems -- and this is the only moment
+  // the raw asset exists in this process. Null when the header is unreadable,
+  // which renders exactly as every site does today.
+  return {
+    ok: true,
+    url: `${supabaseUrl}/storage/v1/object/public/brand-assets/${path}`,
+    dims: imageDimensions(bytes),
+  };
 }
 
 /** Click-to-replace for any <img> node in a Hubly Document — the click
@@ -936,11 +1029,17 @@ export async function uploadDraftLogo(
   const uploaded = await uploadImageToStorage(draftId, imageBase64, mediaType, "logo");
   if (!uploaded.ok) return uploaded.result;
 
+  // The SHAPE of the mark, measured from its own header bytes, persisted so the
+  // page header can lay it out as what it is. A wide wordmark and a circular
+  // mark are different design problems; before this they were both squeezed
+  // into the same square box, which is why a good logo made a generated header
+  // look no better than initials did. Omitted when unreadable -- never guessed.
+  const aspect = uploaded.dims ? uploaded.dims.width / uploaded.dims.height : null;
   const r = await callBusinessRpc("patch_business_in_progress", {
     p_id: draftId,
     p_draft_token: draftToken,
     p_patch: { logo_url: uploaded.url },
-    p_website_meta: null,
+    p_website_meta: aspect ? { logoAspect: Math.round(aspect * 1000) / 1000 } : null,
   });
   if (!r || r.ok !== true) {
     return { ok: false, real: false, summary: "The logo uploaded but couldn't be attached to the business — the draft may have already been claimed.", error: "rpc_failed" };
@@ -987,14 +1086,8 @@ async function rerenderLatestDocument(
   try {
     const latest = await selectLatestBusinessDocument(businessId, tag);
     if (!latest) return "no_document";
-    const bizRow = await selectOne("businesses", "id", businessId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities");
-    const html = renderHublyDocument(latest.document, {
-      businessId,
-      businessName: bizRow?.name || "",
-      businessPhone: bizRow?.phone || undefined,
-      businessBrandColor: bizRow?.brand_color || undefined,
-      businessLogoUrl: bizRow?.logo_url || undefined,
-    });
+    const bizRow = await selectOne("businesses", "id", businessId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,website_meta");
+    const html = renderHublyDocument(latest.document, renderContextFor(businessId, bizRow));
     const saved = await callBusinessRpc("create_business_document", {
       p_business_id: businessId,
       p_draft_token: draftToken,
@@ -1250,7 +1343,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!brief) {
             return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
           }
-          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities");
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,website_meta");
           const schemaBlock = buildDocumentSchemaPromptBlock();
           // section_order[0] is what startDraft chose for this business to lead
           // with. renderHublyDocument does not read section_order at all — that
@@ -1283,7 +1376,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             await recordVocabularyRejections(draftId, "website", genResult, "failed");
             return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: { errors: genResult.errors, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale } };
           }
-          const html = renderHublyDocument(genResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined, businessLogoUrl: bizRow?.logo_url || undefined, businessMapQuery: mapQueryFor(bizRow) });
+          const html = renderHublyDocument(genResult.document, renderContextFor(draftId, bizRow));
           // generateDocument runs as a fire-and-forget background task in
           // hubly-conversation (EdgeRuntime.waitUntil) -- nothing awaits or
           // reads this handler's return value, only errors get caught. The
@@ -1382,8 +1475,8 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
                 raw: { instruction, patchMs, usage: patchResult.usage },
               };
             }
-          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities");
-          const html = renderHublyDocument(patchResult.document, { businessId: draftId, businessName: bizRow?.name || "", businessPhone: bizRow?.phone || undefined, businessBrandColor: bizRow?.brand_color || undefined, businessLogoUrl: bizRow?.logo_url || undefined, businessMapQuery: mapQueryFor(bizRow) });
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,website_meta");
+          const html = renderHublyDocument(patchResult.document, renderContextFor(draftId, bizRow));
           const r = await callBusinessRpc("create_business_document", {
             p_business_id: draftId,
             p_draft_token: draftToken,
@@ -1403,6 +1496,89 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
               // is obvious the moment it is named, invisible behind a generic "Done".
               summary: `Real edit applied — ${humanPatchSummary(effect)}. ${url} now reflects it (version ${r.version}). Nothing else changed. Tell the owner specifically what changed, in those terms.`,
             raw: { id: r.id, version: r.version, url, usage: patchResult.usage, patchMs, firstAttemptOk: patchResult.firstAttemptOk, firstAttemptErrors: patchResult.firstAttemptErrors },
+          };
+        },
+      },
+      {
+        name: "setChrome",
+        description:
+          "Changes the LAYOUT OF THE PAGE HEADER — where the logo sits, how big it is, whether " +
+          "the bar is solid or sits over the hero, whether there is a nav, and whether the main " +
+          "button books or dials. Use this for anything about the header or the logo: 'put the " +
+          "logo in the middle', 'make the logo bigger', 'lose the menu', 'I want people to call, " +
+          "not book'. Do NOT use patchDocument for these — the header is not part of the document " +
+          "and patching it silently does nothing. Every field is optional; send only what was " +
+          "asked for, and leave the rest alone so the derived choices stand.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            logoPlacement: { type: "string", enum: ["left", "centre", "stack"], description: "'centre' puts the mark in the middle of the bar; 'stack' gives it a row of its own above the nav." },
+            logoScale: { type: "string", enum: ["sm", "md", "lg"], description: "'lg' is what 'make the logo bigger' means." },
+            headerStyle: { type: "string", enum: ["solid", "transparent"], description: "'transparent' lays the header over the hero with no bar behind it. Only looks right over a dark hero." },
+            sticky: { type: "boolean", description: "Whether the header follows the page down." },
+            nav: { type: "string", enum: ["full", "none"], description: "'none' removes the section links." },
+            cta: { type: "string", enum: ["book", "call"], description: "'call' makes the header button the phone number instead of Book now. Needs a phone number on the record." },
+          },
+          required: [],
+        },
+        handler: async (args) => {
+          const draftId = String(args?.draftId || "").trim();
+          const draftToken = String((args as any)?.draftToken || "").trim();
+          if (!draftId || !draftToken) {
+            return { ok: false, real: false, summary: "No draft business exists yet to restyle.", error: "missing_draft" };
+          }
+          // Validated against the same enums the renderer reads, here rather
+          // than trusting the argsSchema: the schema is a prompt, not a gate.
+          const chrome: Record<string, unknown> = {};
+          for (const [key, allowed] of Object.entries(CHROME_ENUMS)) {
+            const v = (args as any)?.[key];
+            if (typeof v === "string" && allowed.includes(v)) chrome[key] = v;
+          }
+          if (typeof (args as any)?.sticky === "boolean") chrome.sticky = (args as any).sticky;
+          if (!Object.keys(chrome).length) {
+            return { ok: false, real: false, summary: "No recognisable header change was requested, so nothing was altered.", error: "no_valid_fields" };
+          }
+          // 'call' with no phone number would render a dead tel: link.
+          const biz = await selectOne("businesses", "id", draftId, "phone,website_meta");
+          if (chrome.cta === "call" && !String(biz?.phone || "").trim()) {
+            return { ok: false, real: false, summary: "There is no phone number on the record yet, so the header cannot show one. Ask for the number first.", error: "no_phone" };
+          }
+          // MERGED, not replaced: two separate asks ("centre it" then "bigger")
+          // must both survive, and website_meta carries unrelated keys.
+          const existing = (biz?.website_meta as any)?.chrome;
+          const merged = { ...(existing && typeof existing === "object" ? existing : {}), ...chrome };
+          const r = await callBusinessRpc("patch_business_in_progress", {
+            p_id: draftId,
+            p_draft_token: draftToken,
+            p_patch: {},
+            p_website_meta: { chrome: merged },
+          });
+          if (!r || r.ok !== true) {
+            return { ok: false, real: false, summary: "The header change could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
+          }
+          // A Document stores its RENDERED html, so saving the preference alone
+          // changes nothing anyone can see. Same re-render the logo upload does.
+          const rerendered = await rerenderLatestDocument(draftId, draftToken, "website");
+          const said = Object.entries(chrome).map(([k, v]) => `${k}=${v}`).join(", ");
+          if (rerendered !== "updated") {
+            return {
+              ok: true,
+              real: rerendered === "no_document",
+              summary: rerendered === "no_document"
+                ? `Header preference saved (${said}). There is no generated page yet, so it applies as soon as one is built.`
+                : `Header preference saved (${said}), but the live page could not be re-rendered, so it may still show the old header. Say that plainly rather than claiming the header changed.`,
+              humanNote: rerendered === "no_document"
+                ? "Saved — I'll use that when I build the page."
+                : "I saved that, but I couldn't rebuild the page just now, so it may still look the same.",
+              raw: { chrome: merged, rerender: rerendered },
+            };
+          }
+          return {
+            ok: true,
+            real: true,
+            summary: `Header layout changed (${said}) and the page re-rendered. Tell the owner specifically what moved.`,
+            humanNote: chromeChangeNote(chrome),
+            raw: { chrome: merged, rerender: rerendered, recordChange: ["cosmetic"] },
           };
         },
       },
