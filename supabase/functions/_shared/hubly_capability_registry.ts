@@ -1301,6 +1301,265 @@ async function recordVocabularyRejections(
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * BUILD JOBS — making a lost build visible.
+ *
+ * generateDocument is dispatched, not awaited: ~100-150s of model call riding
+ * on an isolate the runtime may recycle the moment the response is sent. When
+ * that happens the work vanishes and NOTHING knows. Measured 2026-08-18: three
+ * of eight real builds never wrote a document, and a person watched a skeleton
+ * for ninety seconds for a site that was never coming.
+ *
+ * The silence was the structural part. With no record that a build was owed,
+ * no code could tell "still working" from "died forty seconds ago", nothing
+ * could retry, and nothing could count. So the row is written BEFORE the work
+ * is dispatched and survives whatever happens to the isolate.
+ * ------------------------------------------------------------------------- */
+
+export type BuildJobStart = { jobId: string; expectedBy: string } | null;
+
+/** Written synchronously and awaited, before anything is dispatched. If this
+ *  fails we still build — a missing job row costs visibility, not the page. */
+export async function startDocumentBuildJob(
+  businessId: string,
+  tag: string,
+  brief: string,
+  previousJobId?: string,
+): Promise<BuildJobStart> {
+  try {
+    const admin = adminClient();
+    // A retry continues the same job rather than starting a rival one, so
+    // `attempts` counts what actually happened to this page.
+    if (previousJobId) {
+      const { data, error } = await admin
+        .from("document_build_jobs")
+        .update({
+          status: "running",
+          error: null,
+          started_at: new Date().toISOString(),
+          expected_by: new Date(Date.now() + BUILD_WINDOW_MS).toISOString(),
+          finished_at: null,
+        })
+        .eq("id", previousJobId)
+        .select("id,expected_by,attempts")
+        .single();
+      if (!error && data) {
+        await admin.from("document_build_jobs")
+          .update({ attempts: (data.attempts || 1) + 1 })
+          .eq("id", previousJobId);
+        return { jobId: data.id, expectedBy: data.expected_by };
+      }
+    }
+    const { data, error } = await admin
+      .from("document_build_jobs")
+      .insert({ business_id: businessId, tag, brief })
+      .select("id,expected_by")
+      .single();
+    if (error || !data) {
+      console.error("startDocumentBuildJob failed (building anyway):", error);
+      return null;
+    }
+    return { jobId: data.id, expectedBy: data.expected_by };
+  } catch (e) {
+    console.error("startDocumentBuildJob threw (building anyway):", e);
+    return null;
+  }
+}
+
+const BUILD_WINDOW_MS = 3 * 60 * 1000;
+
+/** Terminal status. `reason` is a SHORT CODE, never model output — it is
+ *  surfaced to the public through get_document_build_status. */
+export async function finishDocumentBuildJob(
+  jobId: string | null | undefined,
+  status: "succeeded" | "failed",
+  reason?: string,
+): Promise<void> {
+  if (!jobId) return;
+  try {
+    await adminClient()
+      .from("document_build_jobs")
+      .update({
+        status,
+        error: status === "failed" ? String(reason || "unknown").slice(0, 64) : null,
+        finished_at: new Date().toISOString(),
+      })
+      .eq("id", jobId);
+  } catch (e) {
+    console.error("finishDocumentBuildJob failed (ignored):", e);
+  }
+}
+
+/** The most recent job for a business, for deciding whether to resume one. */
+export async function latestDocumentBuildJob(
+  businessId: string,
+  tag = "website",
+): Promise<{ id: string; status: string; brief: string | null; attempts: number; expiredAt: boolean } | null> {
+  try {
+    const { data } = await adminClient()
+      .from("document_build_jobs")
+      .select("id,status,brief,attempts,expected_by")
+      .eq("business_id", businessId)
+      .eq("tag", tag)
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data) return null;
+    return {
+      id: data.id,
+      status: data.status,
+      brief: data.brief,
+      attempts: data.attempts || 1,
+      expiredAt: new Date(data.expected_by).getTime() < Date.now(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * OUT OF waitUntil, INTO ITS OWN INVOCATION.
+ *
+ * The build used to ride EdgeRuntime.waitUntil on the REQUEST isolate — the one
+ * the runtime is free to recycle the instant the response is sent, which is
+ * exactly when it recycles. This posts to a dedicated function instead, so the
+ * work runs in a fresh isolate whose only job is the build, with the whole
+ * function lifetime to itself rather than competing with a response that has
+ * already gone.
+ *
+ * Deliberately not awaited: the caller must return in under a second. The
+ * request is fire-and-forget, and the job row is what notices if it never
+ * arrives — this call failing silently is the case that row exists for.
+ */
+export function dispatchDocumentBuild(input: {
+  draftId: string;
+  draftToken: string;
+  brief: string;
+  tag?: string;
+  jobId?: string | null;
+}): void {
+  const url = (Deno.env.get("SUPABASE_URL") || "").trim();
+  const key = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEYS") || "").trim();
+  if (!url || !key) {
+    console.error("dispatchDocumentBuild: no service credentials — build not started");
+    return;
+  }
+  fetch(`${url}/functions/v1/hubly-document-build`, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${key}`, apikey: key },
+    body: JSON.stringify({ ...input, tag: input.tag || "website" }),
+  })
+    .then((r) => { if (!r.ok) console.error("dispatchDocumentBuild non-ok", r.status); })
+    .catch((e) => console.error("dispatchDocumentBuild failed", e));
+}
+
+/**
+ * THE GENERATION ITSELF, callable from more than one place.
+ *
+ * Lifted out of the capability handler so the dedicated hubly-document-build
+ * function can run the identical code path. It matters that it is identical:
+ * a build started by the conversation and a build started by a retry must
+ * produce the same thing, or "retry" quietly means "get a different site".
+ */
+export async function runDocumentGeneration(
+  draftId: string,
+  draftToken: string,
+  brief: string,
+  benchmarkModel?: string,
+): Promise<CapabilityActionResult> {
+          if (!draftId || !draftToken) {
+            return { ok: false, real: false, summary: "No draft business exists yet to generate a page for — call business.startDraft first.", error: "missing_draft" };
+          }
+          if (!brief) {
+            return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
+          }
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,meta");
+          const schemaBlock = buildDocumentSchemaPromptBlock();
+          // section_order[0] is what startDraft chose for this business to lead
+          // with. renderHublyDocument does not read section_order at all — that
+          // column drives the classic renderer — so on this path the choice has
+          // to reach the model as prompt text or it does nothing whatsoever,
+          // which is exactly what it did until 2026-08-17.
+          const leadWith = Array.isArray(bizRow?.section_order) ? bizRow.section_order[0] : undefined;
+          const structureBlock = buildPageStructureBlock(leadWith);
+          // THE RECORD, not a paraphrase of it. Loaded and passed as data
+          // alongside the brief -- see loadBusinessRecord for why this is the
+          // highest-value change available: until now the generator wrote an
+          // entire website from one prose paragraph and had never seen a price,
+          // a service, a photo or an opening hour.
+          const record = await loadBusinessRecord(draftId);
+          const recordBlock = buildBusinessRecordBlock(record);
+          const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${schemaBlock}\n\n${structureBlock}\n\n${recordBlock}`;
+          // benchmarkModel is intentionally absent from argsSchema/description —
+          // the conversational AI never sees or sets it. Internal-only override
+          // for the model benchmark harness so the exact same code path can be
+          // run against different candidate models without touching production
+          // secrets or per-task config.
+          const genStarted = Date.now();
+          const genResult = await generateAndValidateDocument(system, brief, draftId, "website", benchmarkModel);
+          const generationMs = Date.now() - genStarted;
+          if (!genResult.ok) {
+            // The double-failure case left no trace at all before this. It is
+            // also the most informative: whatever the model wanted badly enough
+            // to reach for twice is a genuine gap, not a slip.
+            await recordVocabularyRejections(draftId, "website", genResult, "failed");
+            return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: { errors: genResult.errors, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale } };
+          }
+          // RE-READ THE ROW. Do not render from the one loaded ~100s ago.
+          //
+          // Generation reads businesses once and then spends 100-150s in the
+          // model. The walk asks for the logo immediately after the build
+          // starts, so the single most likely moment for someone to upload one
+          // is exactly the window where the row goes stale and the upload is
+          // discarded -- the page renders with the initials, and "I uploaded my
+          // logo and nothing happened" is a completely accurate description of
+          // what occurred.
+          //
+          // Anything the owner changed while waiting matters the same way: a
+          // phone number, a brand colour, a business name. Cheap to re-read,
+          // and the only alternative is a page built from facts that were true
+          // two minutes ago.
+          const freshRow = (await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,meta")) || bizRow;
+          const html = renderHublyDocument(genResult.document, renderContextFor(draftId, freshRow));
+          // generateDocument runs as a fire-and-forget background task in
+          // hubly-conversation (EdgeRuntime.waitUntil) -- nothing awaits or
+          // reads this handler's return value, only errors get caught. The
+          // real designRationale text was previously computed and then
+          // discarded every time. Logged here (visible in real time via
+          // function logs) AND persisted below (queryable after the fact,
+          // tied to the exact version it explains) -- this is the actual
+          // debugging tool for "why did it make that choice", not optional
+          // polish, confirmed live: a real conversation-driven generation
+          // produced a correctly-reasoned document with no way to see why
+          // afterward, before this fix.
+          console.log(`hubly-document-generate rationale [${draftId}]:`, genResult.rationale || "(none captured)");
+          // Record what the model reached for and was refused. See
+          // 20260818000000_document_vocabulary_rejections.sql for why this
+          // exists: the model is the only interface, so its vocabulary is the
+          // product ceiling, and nothing recorded where it was hitting.
+          await recordVocabularyRejections(draftId, "website", genResult, "succeeded");
+
+          const r = await callBusinessRpc("create_business_document", {
+            p_business_id: draftId,
+            p_draft_token: draftToken,
+            p_tag: "website",
+            p_document: genResult.document,
+            p_rendered_html: html,
+            p_created_by: "ai",
+            p_design_rationale: genResult.rationale || null,
+          });
+          if (!r || r.ok !== true) {
+            return { ok: false, real: false, summary: "The page was generated but could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
+          }
+          const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
+          return {
+            ok: true,
+            real: true,
+            summary: `Real page generated and live — ${url} (version ${r.version}). Every element on it is individually editable.`,
+            raw: { id: r.id, version: r.version, url, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale },
+          };
+}
+
 export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
   {
     name: "website",
@@ -1353,88 +1612,13 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           },
           required: ["brief"],
         },
-        handler: async (args) => {
-          const draftId = String(args?.draftId || "").trim();
-          const draftToken = String((args as any)?.draftToken || "").trim();
-          const brief = String(args?.brief || "").trim();
-          if (!draftId || !draftToken) {
-            return { ok: false, real: false, summary: "No draft business exists yet to generate a page for — call business.startDraft first.", error: "missing_draft" };
-          }
-          if (!brief) {
-            return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
-          }
-          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,meta");
-          const schemaBlock = buildDocumentSchemaPromptBlock();
-          // section_order[0] is what startDraft chose for this business to lead
-          // with. renderHublyDocument does not read section_order at all — that
-          // column drives the classic renderer — so on this path the choice has
-          // to reach the model as prompt text or it does nothing whatsoever,
-          // which is exactly what it did until 2026-08-17.
-          const leadWith = Array.isArray(bizRow?.section_order) ? bizRow.section_order[0] : undefined;
-          const structureBlock = buildPageStructureBlock(leadWith);
-          // THE RECORD, not a paraphrase of it. Loaded and passed as data
-          // alongside the brief -- see loadBusinessRecord for why this is the
-          // highest-value change available: until now the generator wrote an
-          // entire website from one prose paragraph and had never seen a price,
-          // a service, a photo or an opening hour.
-          const record = await loadBusinessRecord(draftId);
-          const recordBlock = buildBusinessRecordBlock(record);
-          const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${schemaBlock}\n\n${structureBlock}\n\n${recordBlock}`;
-          // __benchmarkModel is intentionally absent from argsSchema/description —
-          // the conversational AI never sees or sets it. Internal-only override
-          // for the model benchmark harness so the exact same code path can be
-          // run against different candidate models without touching production
-          // secrets or per-task config.
-          const benchmarkModel = String((args as any)?.__benchmarkModel || "").trim() || undefined;
-          const genStarted = Date.now();
-          const genResult = await generateAndValidateDocument(system, brief, draftId, "website", benchmarkModel);
-          const generationMs = Date.now() - genStarted;
-          if (!genResult.ok) {
-            // The double-failure case left no trace at all before this. It is
-            // also the most informative: whatever the model wanted badly enough
-            // to reach for twice is a genuine gap, not a slip.
-            await recordVocabularyRejections(draftId, "website", genResult, "failed");
-            return { ok: false, real: false, summary: "The generated page didn't pass validation, twice — nothing was published.", error: "validation_failed", raw: { errors: genResult.errors, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale } };
-          }
-          const html = renderHublyDocument(genResult.document, renderContextFor(draftId, bizRow));
-          // generateDocument runs as a fire-and-forget background task in
-          // hubly-conversation (EdgeRuntime.waitUntil) -- nothing awaits or
-          // reads this handler's return value, only errors get caught. The
-          // real designRationale text was previously computed and then
-          // discarded every time. Logged here (visible in real time via
-          // function logs) AND persisted below (queryable after the fact,
-          // tied to the exact version it explains) -- this is the actual
-          // debugging tool for "why did it make that choice", not optional
-          // polish, confirmed live: a real conversation-driven generation
-          // produced a correctly-reasoned document with no way to see why
-          // afterward, before this fix.
-          console.log(`hubly-document-generate rationale [${draftId}]:`, genResult.rationale || "(none captured)");
-          // Record what the model reached for and was refused. See
-          // 20260818000000_document_vocabulary_rejections.sql for why this
-          // exists: the model is the only interface, so its vocabulary is the
-          // product ceiling, and nothing recorded where it was hitting.
-          await recordVocabularyRejections(draftId, "website", genResult, "succeeded");
-
-          const r = await callBusinessRpc("create_business_document", {
-            p_business_id: draftId,
-            p_draft_token: draftToken,
-            p_tag: "website",
-            p_document: genResult.document,
-            p_rendered_html: html,
-            p_created_by: "ai",
-            p_design_rationale: genResult.rationale || null,
-          });
-          if (!r || r.ok !== true) {
-            return { ok: false, real: false, summary: "The page was generated but could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
-          }
-          const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
-          return {
-            ok: true,
-            real: true,
-            summary: `Real page generated and live — ${url} (version ${r.version}). Every element on it is individually editable.`,
-            raw: { id: r.id, version: r.version, url, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale },
-          };
-        },
+        handler: async (args) =>
+          runDocumentGeneration(
+            String(args?.draftId || "").trim(),
+            String((args as any)?.draftToken || "").trim(),
+            String(args?.brief || "").trim(),
+            String((args as any)?.__benchmarkModel || "").trim() || undefined,
+          ),
       },
       {
         name: "patchDocument",

@@ -1102,13 +1102,50 @@ const NAV_LABEL_OVERRIDES: Record<string, string> = {
   inquire: "Enquire",
 };
 
+/**
+ * Ids that are STRUCTURAL rather than editorial, and must never reach a nav.
+ *
+ * Lehi Mobile Dog Grooming shipped with a nav item reading "Node", from a
+ * section the model gave id="node". navLabel title-cases whatever it is handed,
+ * so an id that describes the markup rather than the content became a menu item
+ * on a real customer-facing site, linking to a section about nothing.
+ *
+ * A DENY-LIST, deliberately, not an allow-list of good ids. An allow-list would
+ * have to enumerate every section a small business might ever have — "warranty",
+ * "our-vans", "before-and-after", "meet-the-groomers" — and each one it had not
+ * thought of would silently vanish from the nav. That is a worse failure than
+ * the one being fixed: a missing nav item is invisible, a wrong one at least
+ * announces itself. So the rule is "reject ids that are obviously not content",
+ * and the fallback stays "show it".
+ */
+const NAV_ID_DENYLIST = new Set([
+  // Markup words. The model reaching for these means it was naming the box,
+  // not what is in it.
+  "node", "div", "section", "block", "wrapper", "container", "content", "main",
+  "root", "body", "page", "layout", "grid", "row", "col", "column", "item",
+  "element", "component", "region", "area", "box", "panel", "group",
+  // Chrome the shell already renders, or the visitor is already looking at.
+  "header", "footer", "nav", "navigation", "top", "hero", "banner", "masthead",
+  // Placeholder-ish.
+  "untitled", "new", "temp", "test", "placeholder", "todo", "tbd", "misc",
+  "other", "default", "unnamed", "section-1", "section1",
+]);
+
+/** Bare "section-2", "block-3", "node-7" — the numbered form of the same
+ *  mistake, which no fixed list can enumerate. */
+const NAV_ID_STRUCTURAL_RE = /^(node|section|block|div|item|part|row|col|group|panel|area)[-_]?\d+$/i;
+
 /** "how-mobile-grooming-works" -> "How mobile grooming works". Never invented,
- *  always derived from an id that already exists in the rendered page. */
+ *  always derived from an id that already exists in the rendered page. Returns
+ *  "" for anything that should not appear in a nav at all; deriveNav drops those. */
 function navLabel(id: string): string {
   const key = id.toLowerCase();
   if (NAV_LABEL_OVERRIDES[key]) return NAV_LABEL_OVERRIDES[key];
+  if (NAV_ID_DENYLIST.has(key) || NAV_ID_STRUCTURAL_RE.test(key)) return "";
   const words = key.replace(/[-_.]+/g, " ").replace(/\s+/g, " ").trim();
   if (!words) return "";
+  // A single letter or a bare number is not a section name either — "A", "3".
+  if (words.length < 2 || /^\d+$/.test(words)) return "";
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
 

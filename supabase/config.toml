@@ -76,3 +76,13 @@ verify_jwt = false
 # /api/draft-session; 'finish' checks the Supabase session itself, in-function.
 [functions.claim-draft-business]
 verify_jwt = false
+
+# Page generation, moved out of hubly-conversation's EdgeRuntime.waitUntil.
+#
+# verify_jwt stays ON. This function takes a draftId + draftToken and writes a
+# real page to a real business; it must never be reachable from a browser. The
+# only caller is hubly-conversation, which already holds the service key, and
+# the function ALSO compares the bearer against that key itself -- two points,
+# same discipline as the capability allow-lists.
+[functions.hubly-document-build]
+verify_jwt = true

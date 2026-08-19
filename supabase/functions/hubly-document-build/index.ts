@@ -1,0 +1,106 @@
+// hubly-document-build — one job, its own isolate.
+//
+// WHY THIS FUNCTION EXISTS
+//
+// Page generation is a single ~100-150s model call. It used to run inside
+// hubly-conversation via EdgeRuntime.waitUntil: dispatched, not awaited, riding
+// on the REQUEST isolate. waitUntil asks the runtime to keep that isolate alive
+// past the response; it does not guarantee it. The runtime is free to recycle a
+// request isolate the moment it has responded, which is precisely when it
+// recycles one, and when it does the build vanishes with no error and no trace.
+//
+// Measured on 2026-08-18: three of eight real builds never wrote a document.
+// The core function of the product, failing silently on more than a third of
+// attempts, while the person watched a skeleton for ninety seconds.
+//
+// So the work moved here. A fresh isolate, whose only job is this build, with
+// the whole function lifetime to itself instead of competing with a response
+// that has already been sent.
+//
+// WHAT THIS DOES NOT CLAIM
+//
+// This is not a queue and does not pretend to be one. If THIS isolate dies
+// mid-build the work is still lost. What is different is that the loss is now
+// recorded: document_build_jobs holds a row written before the dispatch, so a
+// job stuck in `running` past expected_by is provably dead rather than
+// indistinguishable from slow — which is what lets the client say so and offer
+// a retry instead of showing a skeleton forever. Real durability needs a worker
+// outside the request path (pg_cron -> net.http_post, or Supabase Queues); that
+// is the follow-up, and it is a database change nobody should make blind.
+//
+// AUTHORISATION
+//
+// Service-role only. This function takes a draftId and draftToken and writes a
+// document, so it must never be reachable from a browser: the caller has to
+// already hold the service key, which means it is another one of our functions.
+// verify_jwt stays on (see config.toml) and the bearer is checked below as
+// well — two points, same discipline as everywhere else in this codebase.
+
+import { runDocumentGeneration, finishDocumentBuildJob } from "../_shared/hubly_capability_registry.ts";
+
+const CORS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
+};
+
+function json(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json", ...CORS },
+  });
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+  if (req.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
+
+  const serviceKey =
+    (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEYS") || "").trim();
+  const bearer = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  // Not a formality. Everything below writes a real page to a real business
+  // from an unauthenticated-looking payload; the only thing standing between
+  // that and the open internet is this comparison.
+  if (!serviceKey || bearer !== serviceKey) {
+    return json({ ok: false, error: "forbidden" }, 403);
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return json({ ok: false, error: "bad_json" }, 400);
+  }
+
+  const draftId = String(body?.draftId || "").trim();
+  const draftToken = String(body?.draftToken || "").trim();
+  const brief = String(body?.brief || "").trim();
+  const jobId = body?.jobId ? String(body.jobId) : null;
+
+  if (!draftId || !draftToken || !brief) {
+    await finishDocumentBuildJob(jobId, "failed", "missing_input");
+    return json({ ok: false, error: "missing_input" }, 400);
+  }
+
+  // AWAITED, not backgrounded. That is the entire point of this function
+  // existing: the response is not sent until the build is finished, so the
+  // runtime has no reason to recycle the isolate underneath it.
+  try {
+    const result = await runDocumentGeneration(draftId, draftToken, brief);
+    await finishDocumentBuildJob(
+      jobId,
+      result.ok ? "succeeded" : "failed",
+      // A short code, never the model's own output — get_document_build_status
+      // surfaces this field publicly.
+      result.ok ? undefined : String(result.error || "generation_failed"),
+    );
+    console.log(`hubly-document-build [${draftId}] ${result.ok ? "succeeded" : "FAILED"}: ${result.summary}`);
+    return json({ ok: result.ok, summary: result.summary });
+  } catch (e) {
+    // An exception here is the case the old code could not distinguish from an
+    // isolate death. Recording it is the difference between a bug we can find
+    // and a 37% failure rate nobody can explain.
+    console.error(`hubly-document-build [${draftId}] threw`, e);
+    await finishDocumentBuildJob(jobId, "failed", "exception");
+    return json({ ok: false, error: "exception" }, 500);
+  }
+});

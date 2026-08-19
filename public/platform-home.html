@@ -1310,37 +1310,100 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
                         : 'Still going. It has been ' + Math.round(secs / 15) * 15 + ' seconds.');
       }, 5000);
     }
+  // NEVER LEAVE SOMEONE WATCHING A SKELETON FOR SOMETHING THAT ISN'T COMING.
+  //
+  // This used to poll only for the document, and after ~160s replaced the
+  // canvas with "this is taking longer than expected — try asking again in a
+  // moment." Three problems with that: it appeared in the canvas, which the
+  // person may not be looking at; it put the work back on them; and 160s is
+  // barely past a normal build, so it fired on slow-but-fine ones too.
+  //
+  // It now asks the server the real question. get_document_build_status knows
+  // whether a build was ever started, whether it finished, and whether it is
+  // stuck past the window it was given — a distinction that did not exist
+  // before document_build_jobs, which is why a lost build looked exactly like
+  // a slow one.
+  function hcBuildFailed(message){
+    var root = document.getElementById('hcCanvas');
+    if(root) root.innerHTML = '';
+    hcSetView('site');
+    // Said in the CHAT, not only the canvas: the chat is where everything else
+    // this product says appears, and a failure announced somewhere else is a
+    // failure the person can miss.
+    hcAppendMessage('hubly', message);
+    hcAppendRetryBuild();
+  }
+
+  function hcAppendRetryBuild(){
+    var thread = document.getElementById('hcThread');
+    if(!thread || thread.querySelector('[data-hc-retry-build]')) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'hc-drop';
+    wrap.setAttribute('data-hc-retry-build', '1');
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'hd-primary-action hc-retry-build';
+    btn.textContent = 'Try building it again';
+    btn.addEventListener('click', function(){
+      if(hc.busy) return;
+      wrap.remove();
+      hcAppendMessage('hubly', 'Starting it again now.');
+      // retryBuild is answered server-side from the STORED brief, so this
+      // rebuilds the page that was asked for rather than whatever the
+      // conversation has drifted to since.
+      hcCall({ retryBuild: true });
+    });
+    wrap.appendChild(btn);
+    thread.appendChild(wrap);
+    thread.scrollTop = thread.scrollHeight;
+  }
+
   function hcPollForDocument(businessId, attempt){
     if(hcDocPollTimer){ clearTimeout(hcDocPollTimer); hcDocPollTimer = null; }
     if(!hc.draftBusiness || hc.draftBusiness.id !== businessId) return; // superseded by a newer turn
-    var MAX_ATTEMPTS = 40; // ~40 * 4s = ~160s of polling before giving up honestly
-      // Polls the slug-scoped RPC, not the table: business_documents is no
-      // longer anon-readable. Same question — has the document landed yet —
-      // asked in a way that cannot enumerate other businesses.
-      fetch(SUPA_URL + '/rest/v1/rpc/get_public_business_document', {
+    // Long enough to outlast the server's own 3-minute window, so the SERVER
+    // decides a build is dead and the client only reports it. Two clocks
+    // disagreeing about that is how you get "it failed" over a page that then
+    // appears ten seconds later.
+    var MAX_ATTEMPTS = 60; // 60 * 4s = 240s
+    var slug = hc.draftBusiness.slug;
+    fetch(SUPA_URL + '/rest/v1/rpc/get_document_build_status', {
       method: 'POST',
-      body: JSON.stringify({ p_slug: hc.draftBusiness.slug, p_tag: 'website' }),
-        headers: { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' }
+      body: JSON.stringify({ p_slug: slug, p_tag: 'website' }),
+      headers: { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' }
     })
       .then(function(r){ return r.json(); })
-      .then(function(rows){
+      .then(function(st){
         if(!hc.draftBusiness || hc.draftBusiness.id !== businessId) return;
-        if(Array.isArray(rows) && rows.length && rows[0] && rows[0].rendered_html){
+        st = st || {};
+        if(st.hasDocument || st.status === 'succeeded'){
           hc.canvasStage = 'site';
           hcRenderCanvas();
           var hcAppEl = document.getElementById('hcApp');
           if(hcAppEl) hcAppEl.classList.add('hc-has-draft');
           return;
         }
+        if(st.status === 'stalled'){
+          hcBuildFailed("The build stopped partway and never finished — that's on us, not on anything you did. Nothing was saved, so nothing is half-built.");
+          return;
+        }
+        if(st.status === 'failed'){
+          hcBuildFailed("I couldn't finish building the page that time. Nothing was saved, so we can start it again cleanly.");
+          return;
+        }
         if(attempt >= MAX_ATTEMPTS){
-          var root = document.getElementById('hcCanvas');
-          if(root) root.innerHTML = '<div class="hc-canvas-loading" style="position:static;flex:1">This is taking longer than expected — try asking again in a moment.</div>';
+          hcBuildFailed("I've been waiting on this build for four minutes and it hasn't arrived. Rather than leave you watching a loading screen, let's start it again.");
           return;
         }
         hcDocPollTimer = setTimeout(function(){ hcPollForDocument(businessId, attempt + 1); }, 4000);
       })
       .catch(function(){
-        if(attempt >= MAX_ATTEMPTS) return;
+        // A network blip is not a failed build; keep polling and let the
+        // attempt ceiling be the thing that gives up.
+        if(attempt >= MAX_ATTEMPTS){
+          hcBuildFailed("I lost contact while your page was building. Let's start it again.");
+          return;
+        }
         hcDocPollTimer = setTimeout(function(){ hcPollForDocument(businessId, attempt + 1); }, 4000);
       });
   }
@@ -1448,7 +1511,7 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
     }, 420);
   }
 
-  function hcCall(){
+  function hcCall(extra){
     if(hc.busy) return;
     hc.busy = true;
     if(!hc.draftBusiness) hcRenderCanvasThinking();
@@ -1464,7 +1527,10 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
         'apikey': SUPA_ANON_KEY,
         'authorization': 'Bearer ' + SUPA_ANON_KEY
       },
-      body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, logoUpload: logoUploadForThisCall, photoUpload: photoUploadForThisCall })
+      body: JSON.stringify(Object.assign(
+        { messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, logoUpload: logoUploadForThisCall, photoUpload: photoUploadForThisCall },
+        extra || {}
+      ))
     })
       .then(function(r){ return r.json(); })
       .then(function(data){
@@ -1498,6 +1564,12 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
         var generatingDocument = Array.isArray(data.actions) && data.actions.some(function(a){
           return a.capability === 'website' && a.capabilityAction === 'generateDocument' && a.real === false;
         });
+        // A resumed build looks the same from here: a page is coming, show the
+        // skeleton and start watching. data.buildResumed is set when the server
+        // found a job stuck past its window and restarted it -- either because
+        // Retry was clicked, or because this turn happened to be the next thing
+        // after a build that died in silence.
+        if(data.buildResumed && hc.draftBusiness) generatingDocument = true;
         if(generatingDocument && hc.draftBusiness){
           hc.canvasStage = 'site';
           hcRenderDocumentBuilding();

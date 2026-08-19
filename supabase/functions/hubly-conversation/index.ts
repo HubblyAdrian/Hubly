@@ -62,7 +62,7 @@
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
 import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, rebuildDocumentFromRecord, documentHasOwnerEdits, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -645,6 +645,54 @@ Deno.serve(async (req) => {
   // editor so it can apply it to the live preview and publish it. Presentation only.
   let storefrontAstOut: unknown = undefined;
 
+  // RESUME A STALLED BUILD.
+  //
+  // Two triggers, one path. The client sends { retryBuild: true } when the
+  // person clicks Retry on a stalled build; and ANY turn for a business whose
+  // last job is stuck past its window kicks the same resume, because the most
+  // likely next thing after "nothing appeared" is the person typing again, and
+  // making them ask twice for the same page is its own failure.
+  //
+  // The stored brief is what makes this honest: the retry rebuilds the page
+  // that was asked for, not a new page from whatever the conversation has since
+  // drifted to. A retry that quietly produces something different is not a
+  // retry.
+  let buildResumed: { jobId: string; expectedBy: string | null } | null = null;
+  if (draftBusiness?.id && draftBusiness?.draftToken && DOCUMENT_GENERATION_ENABLED) {
+    const explicitRetry = body?.retryBuild === true;
+    const job = await latestDocumentBuildJob(draftBusiness.id, "website");
+    const stalled = !!job && job.status === "running" && job.expiredAt;
+    // A failed job is only resumed when asked for. Retrying a validation
+    // failure unprompted burns a model call to fail the same way.
+    const resumable = stalled || (explicitRetry && !!job && job.status !== "succeeded");
+    // Three attempts, then stop and say so. A loop that retries forever is how
+    // a silent failure becomes an expensive silent failure.
+    if (job && resumable && job.brief && job.attempts < 3) {
+      const restarted = await startDocumentBuildJob(draftBusiness.id, "website", job.brief, job.id);
+      dispatchDocumentBuild({
+        draftId: draftBusiness.id,
+        draftToken: draftBusiness.draftToken,
+        brief: job.brief,
+        jobId: restarted?.jobId || job.id,
+      });
+      buildResumed = { jobId: restarted?.jobId || job.id, expectedBy: restarted?.expectedBy || null };
+      actions.push({ capability: "website", capabilityAction: "resumeDocumentBuild", args: {}, ok: true, real: true });
+      history.push({
+        role: "system",
+        content:
+          "CAPABILITY RESULT for website.resumeDocumentBuild: the previous page build never finished and has been restarted from the original brief. " +
+          "Tell the owner plainly that the first attempt did not complete and you are rebuilding now — do not pretend this is the first attempt, and do not claim the page is ready.",
+      });
+    } else if (job && resumable && job.attempts >= 3) {
+      history.push({
+        role: "system",
+        content:
+          "CAPABILITY RESULT for website.resumeDocumentBuild: the page build has now failed " + job.attempts +
+          " times and was NOT restarted again. Say so honestly, apologise briefly, and ask what they would like to do — do not promise a page is coming.",
+      });
+    }
+  }
+
   // Logo upload is client-triggered, not model-decided — see uploadDraftLogo's
   // own comment for why. Dispatched directly here, then folded into history
   // as a normal CAPABILITY RESULT so the model narrates it exactly like any
@@ -921,20 +969,27 @@ Deno.serve(async (req) => {
         // real version appears.
         let result;
         if (capabilityName === "website" && actionName === "generateDocument" && found) {
-          const bgTask = found.handler(dispatchArgs);
-          bgTask.catch((e) => console.error("background generateDocument failed", e));
-          try {
-            // EdgeRuntime is a Supabase Edge Functions / Deno Deploy global,
-            // not in the standard lib types.
-            // deno-lint-ignore no-explicit-any
-            const rt = (globalThis as any).EdgeRuntime;
-            if (rt && typeof rt.waitUntil === "function") rt.waitUntil(bgTask);
-          } catch (_e) { /* best effort — bgTask still runs either way, just not guaranteed past response if this fails */ }
+          // NOT waitUntil. See dispatchDocumentBuild for the whole argument, in
+          // short: waitUntil rode the REQUEST isolate, the runtime recycles a
+          // request isolate the moment it responds, and three of eight real
+          // builds on 2026-08-18 were lost that way with no error and no trace.
+          //
+          // The job row is written and AWAITED first, so a build that never
+          // arrives is still a build somebody recorded asking for. Everything
+          // after this point can die without the loss becoming invisible.
+          const buildBrief = String(dispatchArgs.brief || "").trim();
+          const job = await startDocumentBuildJob(draftBusiness!.id, "website", buildBrief);
+          dispatchDocumentBuild({
+            draftId: draftBusiness!.id,
+            draftToken: draftBusiness!.draftToken,
+            brief: buildBrief,
+            jobId: job?.jobId,
+          });
           result = {
             ok: true,
             real: false,
             summary: "Real page generation started in the background — this takes about a minute to produce a complete, real page. It will appear as soon as it's ready.",
-            raw: { status: "building" },
+            raw: { status: "building", buildJobId: job?.jobId || null, expectedBy: job?.expectedBy || null },
           };
         } else {
           result = found
@@ -1088,6 +1143,7 @@ Deno.serve(async (req) => {
         ...(decision?.askLogo === true ? { askLogo: true } : {}),
         ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
         ...(draftBusiness ? { draftBusiness } : {}),
+        ...(buildResumed ? { buildResumed } : {}),
         ...(bookingConfirmation ? { bookingConfirmation } : {}),
         ...(draftGrant ? { draftGrant } : {}),
         ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),
