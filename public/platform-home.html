@@ -1323,7 +1323,18 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   // stuck past the window it was given — a distinction that did not exist
   // before document_build_jobs, which is why a lost build looked exactly like
   // a slow one.
+  // Bumped whenever a turn's outcome is contradicted. showNext checks it, so
+  // interim messages queued behind a 550ms stagger stop rather than arriving
+  // AFTER the failure that made them untrue -- observed live as "the build
+  // stopped partway" immediately followed by "building the full page now".
+  var hcMsgEpoch = 0;
+
   function hcBuildFailed(message){
+    // Once is enough. The poll can report the same stall several times, and a
+    // column of identical apologies is its own kind of broken.
+    if(hc.lastBuildFailure === message) return;
+    hc.lastBuildFailure = message;
+    hcMsgEpoch++;
     var root = document.getElementById('hcCanvas');
     if(root) root.innerHTML = '';
     hcSetView('site');
@@ -1348,6 +1359,7 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
       if(hc.busy) return;
       wrap.remove();
       hcAppendMessage('hubly', 'Starting it again now.');
+      hc.lastBuildFailure = null;   // a fresh attempt may fail afresh
       // retryBuild is answered server-side from the STORED brief, so this
       // rebuilds the page that was asked for rather than whatever the
       // conversation has drifted to since.
@@ -1622,7 +1634,11 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
         }
         var interim = Array.isArray(data.interimMessages) ? data.interimMessages : [];
         var i = 0;
+        var epoch = hcMsgEpoch;
         function showNext(){
+          // A build that has since been reported as dead makes every remaining
+          // "building now" line a lie. Drop them.
+          if(epoch !== hcMsgEpoch) return;
           if(i < interim.length){
             hcAppendMessage('hubly', interim[i]);
             i++;

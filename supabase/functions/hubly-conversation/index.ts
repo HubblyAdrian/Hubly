@@ -662,9 +662,19 @@ Deno.serve(async (req) => {
     const explicitRetry = body?.retryBuild === true;
     const job = await latestDocumentBuildJob(draftBusiness.id, "website");
     const stalled = !!job && job.status === "running" && job.expiredAt;
-    // A failed job is only resumed when asked for. Retrying a validation
-    // failure unprompted burns a model call to fail the same way.
-    const resumable = stalled || (explicitRetry && !!job && job.status !== "succeeded");
+    // NEVER RESTART A HEALTHY IN-FLIGHT BUILD, even when Retry is clicked.
+    //
+    // The first version resumed on `explicitRetry && status !== "succeeded"`,
+    // which includes a job that is running perfectly well and simply has not
+    // finished yet. Clicking Retry then started a SECOND build racing the
+    // first: two model calls, two documents, and whichever landed last won.
+    // The client's own four-minute ceiling can fire over a slow-but-fine build,
+    // so this was reachable without anybody doing anything wrong.
+    //
+    // A retry is for a build that is dead — stalled past its window, or failed.
+    // A running one inside its window is answered by waiting.
+    const resumable = stalled || (explicitRetry && !!job && job.status === "failed");
+    const stillHealthy = !!job && job.status === "running" && !job.expiredAt;
     // Three attempts, then stop and say so. A loop that retries forever is how
     // a silent failure becomes an expensive silent failure.
     if (job && resumable && job.brief && job.attempts < 3) {
@@ -682,6 +692,15 @@ Deno.serve(async (req) => {
         content:
           "CAPABILITY RESULT for website.resumeDocumentBuild: the previous page build never finished and has been restarted from the original brief. " +
           "Tell the owner plainly that the first attempt did not complete and you are rebuilding now — do not pretend this is the first attempt, and do not claim the page is ready.",
+      });
+    } else if (explicitRetry && stillHealthy) {
+      // Asked to retry something that is still genuinely working. Say so rather
+      // than silently doing nothing, which reads as the button being broken.
+      history.push({
+        role: "system",
+        content:
+          "CAPABILITY RESULT for website.resumeDocumentBuild: NOT restarted — the original build is still running and has not passed its expected finish time. " +
+          "Tell the owner it is still going and will appear shortly. Do not claim a new build was started.",
       });
     } else if (job && resumable && job.attempts >= 3) {
       history.push({
