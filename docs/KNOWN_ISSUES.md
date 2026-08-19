@@ -1615,9 +1615,19 @@ production for the better part of an hour. Three migrations to resolve.
 
 ### What the repo cannot tell you
 
-- **`migration list` shows 14 local migrations with an empty remote column**
-  while their effects are demonstrably live. History and database have diverged;
-  things were applied by other means.
+- **RECONCILED 2026-08-19.** `migration list` showed 15 local migrations with an
+  empty remote column while their effects were demonstrably live. Thirteen were
+  marked applied with `migration repair --status applied` (which records without
+  executing); the two that were purely `drop ... if exists` were left out and
+  re-applied by `db push`, so nothing was asserted that had not been observed.
+  `db push --dry-run` now reports `{"upToDate":true,"migrations":[]}` and
+  141 migrations are tracked with zero local-only and zero remote-only.
+
+  The idempotency check is what made that split possible, and it is worth
+  repeating before any future repair: a migration whose statements are all
+  `drop ... if exists` can be re-run safely, so let `push` do it. One containing
+  a bare `create policy` cannot — **Postgres has no `IF NOT EXISTS` for
+  policies** — so it must be marked applied instead.
 - **Policies created in the dashboard are invisible to every check runnable from
   the code.** Six policies dropped during the RLS sweep of 2026-08-18 existed
   ONLY in the live database — `public can read services`, `public can read
