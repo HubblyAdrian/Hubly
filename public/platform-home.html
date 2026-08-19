@@ -429,6 +429,18 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   }
   .hc-drop-skip:hover{color:#fff}
 
+  /* Retry-after-a-failed-build. Its own class rather than .hd-primary-action,
+     which is the DOCUMENT renderer's button and is scoped under #hc-doc-root --
+     borrowed here it matched nothing and rendered as a bare browser button in
+     the middle of a dark panel. Reachable-looking, but the one control in the
+     product someone reaches for when they are already annoyed. */
+  .hc-retry-build{
+    display:inline-block;padding:.6rem 1.15rem;border:0;border-radius:999px;
+    background:var(--brand);color:#fff;font:inherit;font-size:13.5px;font-weight:650;
+    cursor:pointer;transition:filter .15s;
+  }
+  .hc-retry-build:hover,.hc-retry-build:focus-visible{filter:brightness(.92);outline:none}
+
 /* Concept cards — real directions to look at and pick, not prose to read.
    Large, side-by-side, each a small mock homepage (nav/hero/cta/services
    strip) in the real direction's character — not a claim that this is the
@@ -1349,11 +1361,13 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
     var thread = document.getElementById('hcThread');
     if(!thread || thread.querySelector('[data-hc-retry-build]')) return;
     var wrap = document.createElement('div');
-    wrap.className = 'hc-drop';
+    // Not .hc-drop: that is the dashed drop-target frame, and a button inside
+    // one reads as "drop a file here" rather than "press this".
+    wrap.style.cssText = 'display:flex;justify-content:flex-start';
     wrap.setAttribute('data-hc-retry-build', '1');
     var btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'hd-primary-action hc-retry-build';
+    btn.className = 'hc-retry-build';
     btn.textContent = 'Try building it again';
     btn.addEventListener('click', function(){
       if(hc.busy) return;
