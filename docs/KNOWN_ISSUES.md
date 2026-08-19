@@ -1767,3 +1767,27 @@ the code sweep and the key creation happened together, this would have surfaced
 as "the new keys broke the build" and the obvious move — roll back the keys —
 would have fixed nothing, because the keys were never the problem.
 
+### Residual stall rate, measured 2026-08-19
+
+`document_build_jobs` now makes this countable for the first time. Over 14
+consecutive builds: **12 succeeded, 2 stalled** — and both stalls were the same
+business, back to back, including through an explicit Retry that correctly
+incremented `attempts` to 2 and refreshed `expected_by`. The job simply never
+reached a terminal status and no document appeared.
+
+That is the failure mode `hubly-document-build` was always documented as NOT
+solving: if THAT isolate dies mid-build the work is lost. It is now *visible*
+(the client says so and offers Retry) rather than silent, which was the goal —
+but it is not fixed.
+
+Two consecutive failures on one business while others succeed suggests it is
+not purely random. The most likely cause is the generation exceeding the
+function's wall-clock limit for briefs that produce longer documents, which
+would kill the isolate before `finishDocumentBuildJob` runs. **Not confirmed** —
+confirming it needs the Edge Function logs, which need a Supabase access token
+nobody has supplied.
+
+The real fix remains a worker outside the request path (pg_cron ->
+`net.http_post`, or Supabase Queues) that can retry from the stored brief
+without a person clicking anything.
+
