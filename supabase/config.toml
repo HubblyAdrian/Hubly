@@ -79,10 +79,22 @@ verify_jwt = false
 
 # Page generation, moved out of hubly-conversation's EdgeRuntime.waitUntil.
 #
-# verify_jwt stays ON. This function takes a draftId + draftToken and writes a
-# real page to a real business; it must never be reachable from a browser. The
-# only caller is hubly-conversation, which already holds the service key, and
-# the function ALSO compares the bearer against that key itself -- two points,
-# same discipline as the capability allow-lists.
+# verify_jwt OFF, deliberately, and the in-function check is what replaces it.
+#
+# It was ON, which was right while the credential was a legacy service_role JWT.
+# It is WRONG for the new API keys: an sb_secret_ key is not a JWT, so it cannot
+# be sent as `Authorization: Bearer` -- PostgREST and the gateway both reject a
+# non-JWT bearer. adminHeaders() therefore sends the credential on `apikey`
+# alone, and the gateway then answers "Missing authorization header" BEFORE this
+# function's own handler runs. Every build stalled, silently, because the
+# dispatch never arrived.
+#
+# Caught by the end-to-end build check on 2026-08-19, before any key was
+# rotated -- which is the entire reason that check exists.
+#
+# The security property is unchanged and arguably stronger: the handler compares
+# the presented credential against the resolved secret key on BOTH the
+# Authorization and apikey headers. The gateway only ever checked "is this a
+# well-formed JWT", which is a weaker question than "is this OUR key".
 [functions.hubly-document-build]
-verify_jwt = true
+verify_jwt = false

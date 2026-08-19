@@ -1743,3 +1743,27 @@ Also unused in production, on the evidence of their own tables:
 functions have never been used by anyone. Migrated deliberately, because it is
 not clear whether that is by design or a regression.
 
+### What the step-0 check actually caught
+
+The end-to-end build was run BEFORE any key was created, so a failure could only
+be the refactor. It failed: `running -> stalled`, no document.
+
+Cause: **`SUPABASE_SECRET_KEYS` was already populated with a real `sb_secret_`
+key.** Inverting the precedence to new-key-first — correct, and required — made
+the system start using it immediately. `adminHeaders()` then correctly omitted
+`Authorization`, because a non-JWT key cannot be a Bearer token. But
+`hubly-document-build` had `verify_jwt = true`, so the **gateway** answered
+"Missing authorization header" before the function's own handler ran. The
+dispatch never arrived, and the build stalled in exactly the silent way the job
+table was built to expose.
+
+`verify_jwt = false` on that function, with the in-function comparison as the
+gate. That is not a weakening: the gateway only ever asked "is this a
+well-formed JWT", while the handler asks "is this OUR key", on both the
+Authorization and apikey headers. Re-verified: anon key 403, no auth 403.
+
+**This is the single strongest argument for the ordering you insisted on.** Had
+the code sweep and the key creation happened together, this would have surfaced
+as "the new keys broke the build" and the obvious move — roll back the keys —
+would have fixed nothing, because the keys were never the problem.
+
