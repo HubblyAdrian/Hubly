@@ -208,7 +208,6 @@ async function selectMany(table: string, filterCol: string, filterVal: string, c
  */
 export type BusinessRecord = {
   services: { name: string; price: number | null; description: string | null; duration_hours: number | null; includes: unknown; is_popular: boolean | null }[];
-  addons: { name: string; price: number | null; description: string | null }[];
   photos: { url: string; kind: string; caption?: string | null }[];
   reviews: { customer_name: string | null; service_name: string | null; stars: number | null; quote: string | null }[];
   hours: { day: string | number | null; open: string | null; close: string | null; closed: boolean | null }[];
@@ -259,12 +258,6 @@ export function buildBusinessRecordBlock(rec: BusinessRecord): string {
     L.push("SERVICES: none on record. Do not invent a service list.");
   }
   L.push("");
-
-  if (rec.addons.length) {
-    L.push("ADD-ONS:");
-    for (const a of rec.addons) L.push(`- ${a.name}${money(a.price) ? " (" + money(a.price) + ")" : ""}${a.description ? " — " + a.description : ""}`);
-    L.push("");
-  }
 
   if (rec.photos.length) {
     L.push(`PHOTOS (${rec.photos.length}) — real uploaded assets. Use these exact URLs in <img src>; never invent one, and never use a photo the record does not list:`);
@@ -488,6 +481,130 @@ function chromeOverridesFrom(meta: unknown): ChromeOverrides | undefined {
   return Object.keys(out).length ? out as ChromeOverrides : undefined;
 }
 
+/* ---------------------------------------------------------------------------
+ * APPLYING EXTRACTED FACTS
+ *
+ * Fills BLANKS ONLY. Extraction is a floor under the model, not an authority
+ * over it: if a field already holds a value, something -- the owner, or the
+ * model acting on a later correction -- put it there deliberately, and
+ * re-reading an earlier message must not undo that. "I typed my new number and
+ * it went back to the old one" is a worse bug than the one this fixes.
+ * ------------------------------------------------------------------------- */
+
+export type ExtractedFactWrite = {
+  written: string[];
+  skipped: string[];
+  recordChange: RecordChange[];
+};
+
+export async function applyExtractedFacts(
+  draftId: string,
+  draftToken: string,
+  facts: {
+    phone?: string; email?: string; postalCode?: string; city?: string; state?: string;
+    address?: string; serviceAreaCities?: string[]; travelRadiusMiles?: number;
+    yearsInBusiness?: number;
+    hours?: { weekday: number; open: string | null; close: string | null; closed: boolean }[];
+  },
+  pricedServices?: { name: string; price: number }[],
+): Promise<ExtractedFactWrite> {
+  const written: string[] = [];
+  const skipped: string[] = [];
+  const changes = new Set<RecordChange>();
+  if (!draftId || !draftToken) return { written, skipped, recordChange: [] };
+
+  const row = await selectOne(
+    "businesses",
+    "id",
+    draftId,
+    // NO postal_code -- there is no such column, and PostgREST answers a bad
+    // column with a 400 that selectOne turns into null, silently emptying every
+    // field in this list. Verified against the live schema before shipping:
+    // a 400 means a bad column, a 401 means the list is fine and RLS stopped
+    // the read. See the standing rule in KNOWN_ISSUES.
+    "phone,email,city,state,address,service_area_cities,travel_radius_miles,years_in_business",
+  );
+
+  const patch: Record<string, unknown> = {};
+  const fill = (col: string, key: string, value: unknown, change: RecordChange) => {
+    if (value === undefined || value === null || value === "") return;
+    const existing = (row as Record<string, unknown> | null)?.[col];
+    const isBlank = existing === null || existing === undefined || existing === "" ||
+      (Array.isArray(existing) && existing.length === 0);
+    if (!isBlank) { skipped.push(key); return; }
+    patch[col] = value;
+    written.push(key);
+    changes.add(change);
+  };
+
+  fill("phone", "phone", facts.phone, "contact");
+  fill("email", "email", facts.email, "contact");
+  fill("city", "city", facts.city, "area");
+  fill("state", "state", facts.state, "area");
+  // The postcode has no column of its own, so it rides with the address it
+  // belongs to. Dropped entirely when there is no address rather than invented
+  // a home somewhere it does not fit.
+  const addressWithZip = facts.address && facts.postalCode && !facts.address.includes(facts.postalCode)
+    ? `${facts.address}, ${facts.postalCode}`
+    : facts.address;
+  fill("address", "address", addressWithZip, "area");
+  fill("service_area_cities", "serviceAreaCities", facts.serviceAreaCities, "area");
+  fill("travel_radius_miles", "travelRadiusMiles", facts.travelRadiusMiles, "area");
+  fill("years_in_business", "yearsInBusiness", facts.yearsInBusiness, "contact");
+
+  if (Object.keys(patch).length) {
+    const r = await callBusinessRpc("patch_business_in_progress", {
+      p_id: draftId,
+      p_draft_token: draftToken,
+      p_patch: patch,
+      p_website_meta: null,
+    });
+    if (!r || r.ok !== true) {
+      console.error("applyExtractedFacts: patch rejected", Object.keys(patch));
+      return { written: [], skipped, recordChange: [] };
+    }
+  }
+
+  // Hours are a set, written through their own RPC. Only when there are none
+  // already: a partial week overwritten by a partial week is worse than either.
+  if (facts.hours && facts.hours.length) {
+    const existingHours = await selectMany("settings_business_hours", "business_id", draftId, "weekday");
+    if (!Array.isArray(existingHours) || existingHours.length === 0) {
+      const r = await callBusinessRpc("set_business_hours_in_progress", {
+        p_id: draftId,
+        p_draft_token: draftToken,
+        p_hours: facts.hours,
+      });
+      if (r?.ok === true) { written.push(`hours(${facts.hours.length})`); changes.add("hours"); }
+      else console.error("applyExtractedFacts: hours rejected", r);
+    } else {
+      skipped.push("hours");
+    }
+  }
+
+  // Prices are the floor under setServices, not a replacement for it. Written
+  // only when the business has NO services at all -- the model's structured
+  // version, with descriptions and ordering, is better whenever it exists.
+  if (pricedServices && pricedServices.length) {
+    const existing = await selectMany("services", "business_id", draftId, "id");
+    if (!Array.isArray(existing) || existing.length === 0) {
+      const found = findAction("business", "setServices");
+      if (found) {
+        const res = await found.handler({
+          draftId,
+          draftToken,
+          services: pricedServices.map((s) => ({ name: s.name, price: s.price })),
+        });
+        if (res.ok) { written.push(`services(${pricedServices.length})`); changes.add("services"); }
+      }
+    } else {
+      skipped.push("services");
+    }
+  }
+
+  return { written, skipped, recordChange: [...changes] };
+}
+
 /** What to SAY after a header change — in terms of what moved, not the enum
  *  values that moved it. "logoPlacement=centre" is a log line, not an answer to
  *  "put the logo in the middle". */
@@ -521,29 +638,31 @@ function mapQueryFor(bizRow: any): string | undefined {
 }
 
 async function loadBusinessRecord(businessId: string): Promise<BusinessRecord> {
-  const [biz, services, addons, portfolio, gallery, reviews, hours] = await Promise.all([
+  // NO addons, NO gallery_items.
+  //
+  // Both were read here and neither has a writer anywhere in the conversational
+  // path -- no capability produces them, and no client upload does either. They
+  // are editor-era tables, and the decision of 2026-08-18 was that existing
+  // classic customers never migrate, so a Document business will never have a
+  // row in either. Unlike hours and service area, their empty state carried no
+  // useful negative constraint for the prompt, so reading them bought nothing
+  // and cost two queries on every generation.
+  const [biz, services, portfolio, reviews, hours] = await Promise.all([
     selectOne("businesses", "id", businessId, "city,state,phone,email,logo_url,business_type,about,tagline,service_area_cities,travel_radius_miles,years_in_business"),
     selectMany("services", "business_id", businessId, "name,price,description,duration_hours,includes,is_popular", "sort_order.asc"),
-    selectMany("addons", "business_id", businessId, "name,price,description", "sort_order.asc"),
     selectMany("portfolio_photos", "business_id", businessId, "url", "sort_order.asc"),
-    selectMany("gallery_items", "business_id", businessId, "before_url,after_url,caption,service_name,featured", "sort_order.asc"),
     selectMany("review_submissions", "business_id", businessId, "customer_name,service_name,stars,quote,status"),
     selectMany("settings_business_hours", "business_id", businessId, "*"),
   ]);
 
   const photos: BusinessRecord["photos"] = [];
   for (const p of portfolio) if (p?.url) photos.push({ url: p.url, kind: "portfolio" });
-  for (const g of gallery) {
-    if (g?.before_url) photos.push({ url: g.before_url, kind: "before", caption: g.caption });
-    if (g?.after_url) photos.push({ url: g.after_url, kind: "after", caption: g.caption });
-  }
 
   const rawCities = biz?.service_area_cities;
   const areaCities = Array.isArray(rawCities) ? rawCities.filter((c: unknown) => typeof c === "string") : [];
 
   return {
     services: services.map((x: any) => ({ name: x.name, price: x.price ?? null, description: x.description ?? null, duration_hours: x.duration_hours ?? null, includes: x.includes ?? null, is_popular: x.is_popular ?? null })),
-    addons: addons.map((x: any) => ({ name: x.name, price: x.price ?? null, description: x.description ?? null })),
     photos,
     // Only approved reviews. An unmoderated quote is exactly the kind of thing
     // that must never reach a public page.
@@ -2219,13 +2338,33 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           }
           const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
           const changed = Object.keys(patch).concat(layout ? ["layout"] : []);
+          // DECLARE THE CHANGE, or the page never learns about it.
+          //
+          // A Document stores its RENDERED html. updateDraft reported no
+          // recordChange, so the Session 6 rebuild never fired and a phone
+          // number saved after the build reached the row and stopped there.
+          // Verified: phone "801-555-0611" written, header kept its booking
+          // button, and every check short of looking at the page said success.
+          //
+          // Split by what a visitor would notice: contact details and copy are
+          // content; a colour or a layout token is cosmetic and only needs the
+          // cheaper re-render.
+          const CONTENTFUL_COLS = new Set([
+            "name", "tagline", "about", "phone", "email", "city", "business_type",
+            "gen_hero_headline", "gen_hero_subhead", "gen_seo_title",
+          ]);
+          const recordChange: RecordChange[] = changed.some((c) => CONTENTFUL_COLS.has(c))
+            ? ["contact"]
+            : changed.length
+            ? ["cosmetic"]
+            : [];
           return {
             ok: true,
             real: true,
             summary: changed.length
               ? `Real update applied — ${url} now reflects: ${changed.join(", ")}.`
               : `No fields changed — nothing new was given to update.`,
-            raw: { id: r.id, slug: r.slug, url },
+            raw: { id: r.id, slug: r.slug, url, ...(recordChange.length ? { recordChange } : {}) },
           };
         },
       },

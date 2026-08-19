@@ -62,7 +62,8 @@
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
 import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
+import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts } from "../_shared/hubly_extract.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -86,6 +87,42 @@ import {
 // opener with nothing specific to respond to (see isGenericOpener below).
 // Every turn after this one belongs entirely to the model — no scripted
 // flow beyond it.
+
+/**
+ * Is the schema'd extraction pass worth a model call?
+ *
+ * Decided from the record, not from a guess about the message. Once every field
+ * the pass can supply is filled, it stops running -- so a long conversation
+ * pays for extraction a handful of times, not on every turn.
+ *
+ * Fails OPEN: if the check itself errors we run the pass. Missing a fact
+ * someone typed is the failure this whole path exists to prevent; one extra
+ * cheap model call is not.
+ */
+async function selectDraftFactGaps(businessId: string): Promise<{ missing: boolean }> {
+  try {
+    const url = (Deno.env.get("SUPABASE_URL") || "").trim();
+    const key = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEYS") || "").trim();
+    if (!url || !key) return { missing: true };
+    const res = await fetch(
+      `${url}/rest/v1/businesses?select=city,state,address,service_area_cities,travel_radius_miles,years_in_business&id=eq.${businessId}`,
+      { headers: { apikey: key, authorization: `Bearer ${key}` } },
+    );
+    if (!res.ok) return { missing: true };
+    const rows = await res.json();
+    const row = Array.isArray(rows) ? rows[0] : null;
+    if (!row) return { missing: true };
+    const blank = (v: unknown) =>
+      v === null || v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
+    return {
+      missing: blank(row.city) || blank(row.state) || blank(row.address) ||
+        blank(row.service_area_cities) || blank(row.travel_radius_miles) ||
+        blank(row.years_in_business),
+    };
+  } catch {
+    return { missing: true };
+  }
+}
 
 const DETERMINISTIC_OPENING =
   "I'd love to help.\n\nBefore I make recommendations or build anything, I'd like to learn about your business.\n\nYou can paste a website, your Google Business Profile, Facebook page, Instagram, upload screenshots, or simply tell me you're starting from scratch.";
@@ -644,6 +681,55 @@ Deno.serve(async (req) => {
   // Storefront Builder — the layout produced by generate/patchStorefront, surfaced to the
   // editor so it can apply it to the live preview and publish it. Presentation only.
   let storefrontAstOut: unknown = undefined;
+
+  // DETERMINISTIC EXTRACTION — before anything else this turn.
+  //
+  // Facts someone literally typed must not depend on whether a model chose to
+  // call a function. Until this existed there was no extraction step at all: a
+  // phone number, an address, opening hours or a service area reached the
+  // record only if the model happened to invoke updateDraft, and when it went
+  // straight startDraft -> generateDocument -> setServices they were gone. One
+  // real message carrying eleven distinct facts produced a record holding the
+  // name and nothing else.
+  //
+  // Placed HERE, above the capability loop, for one reason: everything captured
+  // must be on the record before generateDocument can be chosen. A fact written
+  // afterwards reaches a row the page was already built from.
+  //
+  // Two tiers, see hubly_extract.ts. Patterns run always and cost nothing; the
+  // single schema'd pass runs only when there is somewhere to put the result
+  // and something still missing.
+  let extractedNote = "";
+  if (latestUserMessage && draftBusiness?.id && draftBusiness?.draftToken) {
+    const pattern = extractByPattern(latestUserMessage);
+    const priced = extractPricedServices(latestUserMessage);
+
+    // Is the schema'd pass worth a model call? Decided from facts, not a guess:
+    // a message long enough to contain an address, and a record still missing
+    // at least one thing the pass can supply.
+    const existing = await selectDraftFactGaps(draftBusiness.id);
+    const worthAPass = latestUserMessage.trim().length >= 25 && existing.missing;
+    const passed = worthAPass ? await extractRecordFacts(latestUserMessage, draftBusiness.id) : {};
+
+    const facts = mergeFacts(pattern, passed);
+    if (Object.keys(facts).length || priced.length) {
+      const applied = await applyExtractedFacts(draftBusiness.id, draftBusiness.draftToken, facts, priced);
+      if (applied.written.length) {
+        for (const c of applied.recordChange) recordChanges.add(c);
+        // Told to the MODEL as a capability result, the same convention the
+        // logo upload uses -- so the reply reflects what was saved rather than
+        // asking for something the person already gave.
+        extractedNote = applied.written.join(", ");
+        actions.push({ capability: "business", capabilityAction: "recordFacts", args: {}, ok: true, real: true });
+        history.push({
+          role: "system",
+          content:
+            `CAPABILITY RESULT for business.recordFacts: saved from what they typed — ${extractedNote}. ` +
+            `Do NOT ask for any of these again. Mention them only if it is natural to; never list them back.`,
+        });
+      }
+    }
+  }
 
   // RESUME A STALLED BUILD.
   //

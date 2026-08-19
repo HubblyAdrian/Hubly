@@ -1507,7 +1507,7 @@ captured after the build, or captured and never re-rendered.
 
 ---
 
-## Every Edge Function bundles its own copy of `_shared`
+## STANDING RULE: a change in `_shared` must be deployed to EVERY function that imports it
 
 Moving generation into `hubly-document-build` created a SECOND deployment target
 for the renderer. The first time the renderer changed afterwards, only
@@ -1526,4 +1526,76 @@ npm run deploy:generation     # both functions, always
 The general form: **a shared module changed is every function that imports it
 redeployed.** Check `grep -rl "_shared/<file>" supabase/functions/*/index.ts`
 before assuming one deploy was enough.
+
+### The verification consequence
+
+This failure is invisible in exactly the direction that matters: the deployed
+code is OLDER than the code you are testing against, so a change appears not to
+work and the natural conclusion — "the logic is wrong" — sends you to debug
+something that is already correct. It cost a round here, and it would have cost
+more if the unit test had not disagreed with the live page.
+
+**Anything verified through a generated page since `hubly-document-build` was
+created (2026-08-19) should be re-checked once.** In that window
+`hubly-conversation` and `hubly-document-build` could hold different copies of
+the renderer, and a page proves only what the BUILD function was running. The
+header-variant and nav results in this file were re-confirmed after the fix; the
+logo-during-build result was not, and is the one most worth repeating.
+
+Where a claim rests on a generated page, say which function generated it.
+
+
+---
+
+## Facts now reach the record without the model choosing to send them
+
+The report above stands as the diagnosis. The fix, 2026-08-19:
+
+**Two tiers, both before the capability loop**, so anything captured is on the
+record before `generateDocument` can even be chosen — a fact written afterwards
+reaches a row the page was already built from.
+
+- **Tier A, patterns** (`hubly_extract.ts`). Phone, email, postcode, state,
+  priced services. No model, no token cost, and no failure mode where it
+  declines to run. Deliberately conservative: a postcode only counts when
+  something says it is one, because five digits is also a price and a year, and
+  a wrong phone number on a real business's site is a customer calling a
+  stranger.
+- **Tier B, one pass with a REQUIRED schema.** City, state, street address,
+  service-area towns, hours, years in business, travel radius. Every key
+  required and nullable, so each field is *considered* rather than optionally
+  mentioned — an optional schema would reproduce the original bug one layer
+  down. Gated on facts: a draft exists, the message is ≥25 characters, and at
+  least one target field is still blank. Once everything is known it stops
+  running.
+
+**Fills blanks only.** Extraction is a floor under the model, not an authority
+over it. Re-reading an earlier message must never undo a later correction —
+"I typed my new number and it went back to the old one" is a worse bug than the
+one being fixed.
+
+### The eight unwritable fields
+
+Six got writers (`20260819010000_business_record_writers.sql` extends the
+`patch_business_in_progress` whitelist and adds `set_business_hours_in_progress`
+for the owner-scoped hours table, which a draft cannot otherwise write):
+`state`, `address`, `service_area_cities`, `travel_radius_miles`,
+`years_in_business`, `settings_business_hours`.
+
+Two stopped being read: `addons` and `gallery_items`. Editor-era tables with no
+conversational writer, and — unlike hours and service area — their empty state
+carried no useful negative constraint.
+
+**That distinction is worth keeping.** "OPENING HOURS: none on record. Do not
+print hours, 'open 7 days' or same-day availability" is not filler; it is what
+stops the model inventing them. The problem with a permanently empty block is
+the *permanently*, not the empty. Give the field a writer where the constraint
+is load-bearing; drop the read where it is not.
+
+### `patch_business_in_progress` is a whitelist
+
+It names every column it will set. A patch containing anything else is accepted,
+returns `ok: true`, and changes nothing. That is how five columns had no writer
+without anyone noticing, and it is worth checking the UPDATE statement before
+assuming a new field can be saved.
 
