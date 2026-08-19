@@ -682,7 +682,7 @@ Deno.serve(async (req) => {
   // editor so it can apply it to the live preview and publish it. Presentation only.
   let storefrontAstOut: unknown = undefined;
 
-  // DETERMINISTIC EXTRACTION — before anything else this turn.
+  // DETERMINISTIC EXTRACTION — computed now, applied the moment there is a row.
   //
   // Facts someone literally typed must not depend on whether a model chose to
   // call a function. Until this existed there was no extraction step at all: a
@@ -692,43 +692,51 @@ Deno.serve(async (req) => {
   // real message carrying eleven distinct facts produced a record holding the
   // name and nothing else.
   //
-  // Placed HERE, above the capability loop, for one reason: everything captured
-  // must be on the record before generateDocument can be chosen. A fact written
-  // afterwards reaches a row the page was already built from.
+  // THE TIMING IS THE WHOLE PROBLEM. The turn that carries the facts is almost
+  // always the turn that CREATES the business, so there is no row to write to
+  // when the message arrives. The first version of this ran here and did
+  // nothing at all for exactly that reason — gated on a draft that startDraft
+  // had not created yet.
   //
-  // Two tiers, see hubly_extract.ts. Patterns run always and cost nothing; the
-  // single schema'd pass runs only when there is somewhere to put the result
-  // and something still missing.
-  let extractedNote = "";
-  if (latestUserMessage && draftBusiness?.id && draftBusiness?.draftToken) {
+  // So: extract now (pure, no row needed), and apply at the first moment a row
+  // exists — either immediately below, or the instant startDraft returns one,
+  // which is necessarily before generateDocument can be dispatched.
+  let pendingFacts: Awaited<ReturnType<typeof extractRecordFacts>> = {};
+  let pendingPricedServices: ReturnType<typeof extractPricedServices> = [];
+  if (latestUserMessage && latestUserMessage.trim()) {
     const pattern = extractByPattern(latestUserMessage);
-    const priced = extractPricedServices(latestUserMessage);
+    pendingPricedServices = extractPricedServices(latestUserMessage);
+    // Is the schema'd pass worth a model call? Decided from the record where
+    // there is one; a business that does not exist yet is missing everything.
+    const gaps = draftBusiness?.id ? await selectDraftFactGaps(draftBusiness.id) : { missing: true };
+    const worthAPass = latestUserMessage.trim().length >= 25 && gaps.missing;
+    const passed = worthAPass ? await extractRecordFacts(latestUserMessage, draftBusiness?.id) : {};
+    pendingFacts = mergeFacts(pattern, passed);
+  }
 
-    // Is the schema'd pass worth a model call? Decided from facts, not a guess:
-    // a message long enough to contain an address, and a record still missing
-    // at least one thing the pass can supply.
-    const existing = await selectDraftFactGaps(draftBusiness.id);
-    const worthAPass = latestUserMessage.trim().length >= 25 && existing.missing;
-    const passed = worthAPass ? await extractRecordFacts(latestUserMessage, draftBusiness.id) : {};
+  /** Applies whatever was extracted, once. Safe to call more than once. */
+  let factsApplied = false;
+  const flushExtractedFacts = async (id: string, token: string) => {
+    if (factsApplied || !id || !token) return;
+    if (!Object.keys(pendingFacts).length && !pendingPricedServices.length) return;
+    factsApplied = true;
+    const applied = await applyExtractedFacts(id, token, pendingFacts, pendingPricedServices);
+    if (!applied.written.length) return;
+    for (const c of applied.recordChange) recordChanges.add(c);
+    // Told to the MODEL as a capability result, the same convention the logo
+    // upload uses — so the reply reflects what was saved rather than asking for
+    // something the person already gave.
+    actions.push({ capability: "business", capabilityAction: "recordFacts", args: {}, ok: true, real: true });
+    history.push({
+      role: "system",
+      content:
+        `CAPABILITY RESULT for business.recordFacts: saved from what they typed — ${applied.written.join(", ")}. ` +
+        `Do NOT ask for any of these again. Mention them only if it is natural to; never list them back.`,
+    });
+  };
 
-    const facts = mergeFacts(pattern, passed);
-    if (Object.keys(facts).length || priced.length) {
-      const applied = await applyExtractedFacts(draftBusiness.id, draftBusiness.draftToken, facts, priced);
-      if (applied.written.length) {
-        for (const c of applied.recordChange) recordChanges.add(c);
-        // Told to the MODEL as a capability result, the same convention the
-        // logo upload uses -- so the reply reflects what was saved rather than
-        // asking for something the person already gave.
-        extractedNote = applied.written.join(", ");
-        actions.push({ capability: "business", capabilityAction: "recordFacts", args: {}, ok: true, real: true });
-        history.push({
-          role: "system",
-          content:
-            `CAPABILITY RESULT for business.recordFacts: saved from what they typed — ${extractedNote}. ` +
-            `Do NOT ask for any of these again. Mention them only if it is natural to; never list them back.`,
-        });
-      }
-    }
+  if (draftBusiness?.id && draftBusiness?.draftToken) {
+    await flushExtractedFacts(draftBusiness.id, draftBusiness.draftToken);
   }
 
   // RESUME A STALLED BUILD.
@@ -1117,6 +1125,14 @@ Deno.serve(async (req) => {
           const raw = result.raw as any;
           if (actionName === "startDraft" && raw.id && raw.draftToken && raw.slug) {
             draftBusiness = { id: String(raw.id), slug: String(raw.slug), draftToken: String(raw.draftToken), url: String(raw.url || "") };
+            // THE FIRST MOMENT THERE IS A ROW TO WRITE TO.
+            //
+            // The turn carrying the facts is almost always the turn that creates
+            // the business, so extraction has nowhere to put anything until
+            // exactly here. Awaited, and placed before the loop can reach
+            // generateDocument, because a fact written after the build lands on
+            // a row the page was already rendered from.
+            await flushExtractedFacts(draftBusiness.id, draftBusiness.draftToken);
           } else if ((actionName === "updateDraft" || actionName === "setServices") && draftBusiness && raw.id) {
             draftBusiness = { ...draftBusiness, url: String(raw.url || draftBusiness.url) };
           }
