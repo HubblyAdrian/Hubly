@@ -82,11 +82,13 @@
 }
 
 /* The stack variant is two rows tall, so a one-row offset leaves the nav
-   sitting on the hero's eyebrow text. Measured against the rendered page, not
-   guessed: the stacked header is ~110px where the single row is ~64px. */
+   sitting on the hero's eyebrow text. MEASURED on the rendered page rather
+   than guessed: the stacked header is 171px (a 3.5rem mark, the name, and a
+   nav row) where the single row is ~64px. 12rem clears it with room; 9rem did
+   not, which is how we know it was measured. */
 #hc-doc-root:has(.hd-h-transparent.hd-h-stack) .hd-doc-body > section:first-child,
 #hc-doc-root:has(.hd-h-transparent.hd-h-stack) .hd-doc-body > *:first-child > section:first-child {
-  padding-block-start: 9rem;
+  padding-block-start: 12rem;
 }
 
 /* --- Variant: logo placement --------------------------------------------- */
