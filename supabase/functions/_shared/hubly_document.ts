@@ -1272,12 +1272,43 @@ const CALL_FIRST_RE =
 const BOOK_FIRST_RE =
   /\b(?:groom|salon|spa\b|barber|massage|photograph|photo\b|videograph|tutor|lesson|yoga|pilates|dental|dentist|therapy|therapist|training|trainer|coach|nail|lash|brow|aesthet|clean|maid|housekeep|detail|wash|landscap|lawn|dog|cat\b|veterinar|catering|event|wedding|makeup|hair|chiropract|acupunct|wellness)/i;
 
-function ctaModeFor(businessType: string | undefined, phone: string | undefined): ChromeCtaMode {
+/**
+ * THE NAME FIRST, then the category.
+ *
+ * business_type is not the trade. It is a coarse bucket the model picks from a
+ * short list, and on real records it reads:
+ *
+ *   Redcliff Chimney Sweep     -> "cleaning"
+ *   Ridgeline Tree Service     -> "landscaping"
+ *   Hollybrook Gutter Guards   -> "windows"
+ *   Larkspur Window Cleaning   -> "windows"
+ *
+ * A chimney sweep classified as "cleaning" matched the BOOK-first family and
+ * got a booking button, which is the wrong action for a trade whose customers
+ * phone. The rule looked like it worked only because Granite Ridge Roofing
+ * happened to be categorised "roofing".
+ *
+ * The NAME almost always contains the real trade -- small businesses name
+ * themselves after what they do -- so it is the stronger signal and is checked
+ * first. The category stays as the fallback for the businesses whose name does
+ * not say ("Redcliff & Sons", "Hollybrook Ltd").
+ *
+ * Order matters within each source too: BOOK-first is tested before CALL-first,
+ * because "Window Cleaning" contains both "clean" and, via the category,
+ * nothing useful -- and a booking button on a business that takes appointments
+ * is the safer wrong answer than a phone number on one that does not answer it.
+ */
+function ctaModeFor(
+  businessName: string | undefined,
+  businessType: string | undefined,
+  phone: string | undefined,
+): ChromeCtaMode {
   if (!phone) return "book";                       // can't call what we don't have
-  const t = (businessType || "").trim();
-  if (!t) return "book";
-  if (BOOK_FIRST_RE.test(t)) return "book";
-  if (CALL_FIRST_RE.test(t)) return "call";
+  for (const source of [(businessName || "").trim(), (businessType || "").trim()]) {
+    if (!source) continue;
+    if (BOOK_FIRST_RE.test(source)) return "book";
+    if (CALL_FIRST_RE.test(source)) return "call";
+  }
   return "book";
 }
 
@@ -1340,7 +1371,7 @@ export function selectChromeVariant(
     // would be asking for the broken one.
     sticky: style === "transparent" ? false : wantsSticky,
     nav,
-    cta: o.cta || ctaModeFor(ctx.businessType, ctx.businessPhone),
+    cta: o.cta || ctaModeFor(ctx.businessName, ctx.businessType, ctx.businessPhone),
     // A wordmark already spells the business out; printing the name beside it
     // is the same words twice at two sizes. Only true for a REAL wordmark, not
     // for an override that merely places a square mark centrally.

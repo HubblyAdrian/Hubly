@@ -51,10 +51,10 @@ function docWith(n, heroClass = '') {
   return { tag: 'div', id: 'root', attrs: {}, children: kids };
 }
 
-function variantFor({ sections = 4, heroClass = '', logo = '', aspect = undefined, type = undefined, phone = undefined, overrides = undefined }) {
+function variantFor({ sections = 4, heroClass = '', logo = '', aspect = undefined, type = undefined, phone = undefined, overrides = undefined, name = 'Test Business' }) {
   const ctx = {
     businessId: 'b1',
-    businessName: 'Test Business',
+    businessName: name,
     ...(phone ? { businessPhone: phone } : {}),
     ...(logo ? { businessLogoUrl: logo } : {}),
     ...(aspect !== undefined ? { businessLogoAspect: aspect } : {}),
@@ -141,6 +141,39 @@ describe('chrome header variants', () => {
     assert.equal(forced.style, 'transparent');
     assert.equal(forced.nav, 'none');
     assert.equal(forced.sticky, false);
+  });
+
+  it('reads the trade out of the NAME, because business_type is a bucket', () => {
+    // THE REAL RECORDS. Every left-hand value below was written by the model to
+    // a real business_type column, and every one of them is wrong about the
+    // trade. Before this the CTA was decided from the right-hand column alone,
+    // so a chimney sweep -- whose customers phone -- got a booking button.
+    const cases = [
+      { name: 'Redcliff Chimney Sweep',   type: 'cleaning',          expect: 'call' },
+      { name: 'Ridgeline Tree Service',   type: 'landscaping',       expect: 'call' },
+      { name: 'Hollybrook Gutter Guards', type: 'windows',           expect: 'call' },
+      { name: 'Granite Ridge Roofing',    type: 'roofing',           expect: 'call' },
+      // Book-first trades must NOT be dragged along by the same change.
+      { name: 'Larkspur Window Cleaning', type: 'windows',           expect: 'book' },
+      { name: 'Marigold Dog Grooming',    type: 'grooming',          expect: 'book' },
+      { name: 'Ember & Oak Barbershop',   type: 'barber',            expect: 'book' },
+      { name: 'Willow Lane Bakery',       type: 'food',              expect: 'book' },
+      { name: 'Cedar & Sage Yoga Studio', type: 'fitness',           expect: 'book' },
+    ];
+    const wrong = [];
+    for (const c of cases) {
+      const v = variantFor({ name: c.name, type: c.type, phone: '801-555-0100', sections: 4 });
+      if (v.cta !== c.expect) wrong.push(`${c.name} (type=${c.type}) -> ${v.cta}, expected ${c.expect}`);
+    }
+    assert.deepEqual(wrong, [], 'CTA chosen wrongly:\n  ' + wrong.join('\n  '));
+  });
+
+  it('falls back to the category when the name does not say the trade', () => {
+    // Not every business is named after what it does.
+    const v = variantFor({ name: 'Redcliff & Sons', type: 'plumbing', phone: '801-555-0100', sections: 4 });
+    assert.equal(v.cta, 'call');
+    const b = variantFor({ name: 'Hollybrook Ltd', type: 'photography', phone: '801-555-0100', sections: 4 });
+    assert.equal(b.cta, 'book');
   });
 
   it('never offers a phone CTA to a business with no phone number', () => {
