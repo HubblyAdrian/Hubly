@@ -31,6 +31,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { applyOrderInventoryDeduction } from "../_shared/hubly_commerce_inventory.ts";
 import { resolveShippingProvider } from "../_shared/hubly_provider_shipping.ts";
+// Key resolution goes through _shared/supabase_admin.ts: it THROWS on a missing
+// key instead of continuing with "", reads the plural SUPABASE_PUBLISHABLE_KEYS
+// the platform actually injects, and never sends a non-JWT sb_secret_ key as a
+// Bearer token (PostgREST rejects those as "Invalid JWT").
+import { createAdminClient, createUserClient } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -65,18 +70,22 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anon = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
-  const serviceKey =
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (!supabaseUrl || !anon || !serviceKey) {
+  if (!supabaseUrl) {
     return json({ error: "Server misconfigured" }, 500);
   }
 
   const authHeader = req.headers.get("Authorization") || "";
-  const userClient = createClient(supabaseUrl, anon, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const admin = createClient(supabaseUrl, serviceKey);
+  // These throw when no key resolves. A caught 500 that names the problem beats
+  // a client built with an empty key, which does not fail -- it just reports
+  // that nobody is signed in.
+  let userClient, admin;
+  try {
+    userClient = createUserClient(authHeader);
+    admin = createAdminClient();
+  } catch (e) {
+    console.error("commerce-api: key resolution failed", e);
+    return json({ error: "Server misconfigured" }, 500);
+  }
 
   const parts = pathParts(req);
   const resource = parts[0] || "";

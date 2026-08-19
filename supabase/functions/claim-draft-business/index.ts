@@ -24,6 +24,11 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { verifyClaimAssertion } from "../_shared/draft_grant.ts";
+// Key resolution goes through _shared/supabase_admin.ts: it THROWS on a missing
+// key instead of continuing with "", reads the plural SUPABASE_PUBLISHABLE_KEYS
+// the platform actually injects, and never sends a non-JWT sb_secret_ key as a
+// Bearer token (PostgREST rejects those as "Invalid JWT").
+import { createAdminClient, createUserClient } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -45,13 +50,13 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return jsonRes({ error: "POST required" }, 405);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-    Deno.env.get("SUPABASE_SECRET_KEYS");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  if (!supabaseUrl || !serviceKey || !anonKey) {
+
+  if (!supabaseUrl) {
     return jsonRes({ error: "Auth isn’t configured on the server yet." }, 500);
   }
-  const admin = createClient(supabaseUrl, serviceKey);
+  // createAdminClient()/createUserClient() throw when no key resolves, so the
+  // old triple-guard on three env vars is now one guard plus a real exception.
+  const admin = createAdminClient();
 
   try {
     const body = await req.json().catch(() => ({}));
@@ -116,9 +121,7 @@ Deno.serve(async (req: Request) => {
       if (!authHeader.toLowerCase().startsWith("bearer ")) {
         return jsonRes({ error: "Sign in required", code: "no_session" }, 401);
       }
-      const userClient = createClient(supabaseUrl, anonKey, {
-        global: { headers: { Authorization: authHeader } },
-      });
+      const userClient = createUserClient(authHeader);
       const { data: userData, error: userErr } = await userClient.auth.getUser();
       if (userErr || !userData?.user?.email) {
         return jsonRes({ error: "Your session expired — open the link again.", code: "no_session" }, 401);

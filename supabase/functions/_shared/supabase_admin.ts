@@ -205,6 +205,30 @@ export function secretKeyMeta(resolved: ResolvedSecretKey | null): Record<string
 }
 
 /**
+ * A client acting as the CALLER, with their own rights, not ours.
+ *
+ * Same publishable-key trap as everywhere else: the anon/publishable value is
+ * an `apikey`, and only a legacy anon JWT may also travel as a Bearer token.
+ * Here the Bearer slot belongs to the CALLER's Authorization header anyway —
+ * that is whose identity is being resolved — so the only real change is that
+ * the apikey is now resolved through resolvePublishableKey() rather than an
+ * env var that is set nowhere.
+ *
+ * Throws rather than returning a half-configured client: a user client built
+ * with an empty key does not fail, it just says nobody is signed in, which is
+ * a wrong answer rather than an error.
+ */
+export function createUserClient(authHeader: string | null | undefined): SupabaseClient {
+  const url = (Deno.env.get("SUPABASE_URL") || "").trim();
+  if (!url) throw new Error("SUPABASE_URL is not configured");
+  const key = requirePublishableKey();
+  return createClient(url, key, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    global: { headers: { Authorization: authHeader || "" } },
+  });
+}
+
+/**
  * Admin Supabase client that bypasses RLS.
  * Handles new `sb_secret_` keys (apikey-only) and legacy service_role JWTs.
  */

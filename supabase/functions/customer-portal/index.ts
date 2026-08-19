@@ -6,6 +6,11 @@
 // (#188).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { issuePortalSession, verifyPortalAccessToken, verifyPortalSession } from "../_shared/portal_access.ts";
+// Key resolution goes through _shared/supabase_admin.ts: it THROWS on a missing
+// key instead of continuing with "", reads the plural SUPABASE_PUBLISHABLE_KEYS
+// the platform actually injects, and never sends a non-JWT sb_secret_ key as a
+// Bearer token (PostgREST rejects those as "Invalid JWT").
+import { createAdminClient } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -27,9 +32,14 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return jsonRes({ ok: false, error: "POST required" }, 405);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (!supabaseUrl || !serviceKey) return jsonRes({ ok: false, error: "server_not_configured" }, 500);
-  const admin = createClient(supabaseUrl, serviceKey);
+  if (!supabaseUrl) return jsonRes({ ok: false, error: "server_not_configured" }, 500);
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch (e) {
+    console.error("customer-portal: key resolution failed", e);
+    return jsonRes({ ok: false, error: "server_not_configured" }, 500);
+  }
 
   const body = await req.json().catch(() => ({}));
   const action = String(body?.action || "");

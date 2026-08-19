@@ -12,6 +12,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import type { toAiSummary } from "../_shared/service_engine.ts";
 import { HublyAI } from "../_shared/hubly_ai.ts";
 import { loadConciergeContext } from "../_shared/hubly_conversation_context_loader.ts";
+// Key resolution goes through _shared/supabase_admin.ts: it THROWS on a
+// missing key instead of continuing with "", reads the plural
+// SUPABASE_PUBLISHABLE_KEYS the platform actually injects, and never sends a
+// non-JWT sb_secret_ key as a Bearer token (PostgREST rejects those as
+// "Invalid JWT"). See the comments there for why each of those matters.
+import { createAdminClient } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -126,13 +132,7 @@ Deno.serve(async (req: Request) => {
       return jsonRes({ error: "business_id is required" }, 400);
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!supabaseUrl || !serviceKey) {
-      console.error("chatbot-message rejected: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing from function env.");
-      return jsonRes({ error: "Chatbot isn't configured yet on the server." }, 500);
-    }
-    const supabase = createClient(supabaseUrl, serviceKey);
+    const supabase = createAdminClient();
 
     // Booking-completion signal from the handoff flow -- no AI call,
     // just the one write the anonymous client otherwise has no path to

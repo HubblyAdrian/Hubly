@@ -3,6 +3,11 @@
 // limbo where JWT still shows draft-*@accounts.myhubly.app).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Key resolution goes through _shared/supabase_admin.ts: it THROWS on a missing
+// key instead of continuing with "", reads the plural SUPABASE_PUBLISHABLE_KEYS
+// the platform actually injects, and never sends a non-JWT sb_secret_ key as a
+// Bearer token (PostgREST rejects those as "Invalid JWT").
+import { createAdminClient, createUserClient } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -46,22 +51,19 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    if (!supabaseUrl || !serviceKey || !anonKey) {
+
+    if (!supabaseUrl) {
       return jsonRes({ error: "Auth isn’t configured on the server yet." }, 500);
     }
 
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const userClient = createUserClient(authHeader);
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) {
       return jsonRes({ error: "Your session expired — refresh and try again." }, 401);
     }
     const user = userData.user;
 
-    const admin = createClient(supabaseUrl, serviceKey);
+    const admin = createAdminClient();
     const { data: updated, error: updErr } = await admin.auth.admin.updateUserById(user.id, {
       email,
       password,
