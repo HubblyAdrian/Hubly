@@ -1638,11 +1638,26 @@ production for the better part of an hour. Three migrations to resolve.
    such column) and both COALESCE mismatches (`service_area_cities` is jsonb,
    `section_order` is `text[]`).
 
-2. **It is NOT a `pg_dump`.** PostgREST does not expose function bodies or RLS
-   policies — exactly the half that caused the incident. A real
-   `supabase db dump --schema public` is still owed; it needs Docker (not
-   installed here) or `pg_dump` with the database password (the service-role key
-   is a PostgREST JWT, not a Postgres credential).
+2. **`docs/schema.sql`** — the real `pg_dump`, taken 2026-08-19. 11,825 lines:
+   **53 function bodies** and **200 RLS policies** across `public` and
+   `storage`. THIS is the half `live-schema.md` cannot cover, and the half that
+   caused the incident — the body that was two revisions stale is now readable
+   without guessing which migration is latest.
+
+   Regenerate with:
+
+   ```
+   PGPASSWORD=… pg_dump "host=aws-1-us-east-1.pooler.supabase.com port=5432 \
+     user=postgres.rtwxxkxpkqdrhclkozma dbname=postgres sslmode=require" \
+     --schema-only --schema=public --schema=storage --no-owner --no-privileges \
+     -f docs/schema.sql
+   ```
+
+   Notes for whoever does it next: `supabase db dump` needs Docker. The direct
+   host `db.<ref>.supabase.co` no longer resolves — connections go through the
+   **`aws-1-`** pooler prefix, not `aws-0-`, and the wrong region answers
+   "tenant/user not found" rather than failing to connect. A service-role key
+   cannot authenticate to Postgres; this needs the database password.
 
 3. **Never rebuild a `create or replace` from a migration found by name.** Find
    the latest first:
