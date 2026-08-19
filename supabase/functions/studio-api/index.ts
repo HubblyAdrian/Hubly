@@ -45,6 +45,13 @@ import {
   listPublisherSlots,
 } from "../_shared/hubly_studio_publisher.ts";
 import { V1_PUBLISH_CHANNEL } from "../_shared/hubly_studio_campaign_brief.ts";
+// Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
+// missing key instead of continuing with "" (nine call sites used to 401 quietly
+// and be logged), reads the plural SUPABASE_PUBLISHABLE_KEYS the platform
+// actually injects rather than the singular name that is set nowhere, and never
+// sends a non-JWT sb_secret_ key as a Bearer token -- PostgREST rejects those as
+// "Invalid JWT", which looks exactly like the empty-key 401 in a log.
+import { createAdminClient, createUserClient } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -84,18 +91,13 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anon = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY");
-  const serviceKey =
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (!supabaseUrl || !anon || !serviceKey) {
+  if (!supabaseUrl) {
     return json({ error: "Server misconfigured" }, 500);
   }
 
   const authHeader = req.headers.get("Authorization") || "";
-  const userClient = createClient(supabaseUrl, anon, {
-    global: { headers: { Authorization: authHeader } },
-  });
-  const admin = createClient(supabaseUrl, serviceKey);
+  const userClient = createUserClient(authHeader);
+  const admin = createAdminClient();
 
   const partsFromUrl = pathParts(req);
   let parts = partsFromUrl;

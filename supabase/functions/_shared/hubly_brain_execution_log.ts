@@ -1,3 +1,7 @@
+// Key resolution goes through supabase_admin.ts: THROWS on a missing key rather
+// than continuing with "", and never sends a non-JWT sb_secret_ key as a Bearer
+// token (PostgREST rejects those as "Invalid JWT").
+import { createAdminClient } from "./supabase_admin.ts";
 /**
  * Hubly Brain — Execution Log (Section 1)
  *
@@ -89,14 +93,11 @@ export function clearBrainExecutionsForTests(): void {
 export async function persistBrainExecution(record: HublyBrainExecutionRecord): Promise<void> {
   try {
     const url = (Deno.env.get("SUPABASE_URL") || "").trim();
-    const key = (
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
-      Deno.env.get("SUPABASE_SECRET_KEYS") ||
-      ""
-    ).trim();
-    if (!url || !key) return;
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
-    const supabase = createClient(url, key);
+    if (!url) return;
+    // createAdminClient() throws on a missing key. This function is documented
+    // as never throwing to callers, and the whole body is inside a try/catch --
+    // so a missing key is now a logged exception rather than a silent no-op.
+    const supabase = createAdminClient();
     await supabase.from("hubly_brain_executions").insert({
       id: undefined,
       business_id: record.businessId || null,

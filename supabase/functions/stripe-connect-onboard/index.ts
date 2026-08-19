@@ -12,7 +12,7 @@ import {
   sanitizeAppReturnUrl,
   stripeConfigured,
 } from "../_shared/stripe.ts";
-import { createAdminClient } from "../_shared/supabase_admin.ts";
+import { createAdminClient, createUserClient } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -45,8 +45,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    if (!supabaseUrl || !anonKey) {
+    if (!supabaseUrl) {
       return jsonRes({ error: "Auth isn’t configured on the server yet." }, 500);
     }
 
@@ -76,9 +75,7 @@ Deno.serve(async (req: Request) => {
       }
     })();
 
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const userClient = createUserClient(authHeader);
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) {
       return jsonRes({ error: "Your session expired — refresh and try again." }, 401);

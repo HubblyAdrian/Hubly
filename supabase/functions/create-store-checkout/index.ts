@@ -16,6 +16,13 @@ import {
   stripeConfigured,
 } from "../_shared/stripe.ts";
 import { computeAuthoritativeOrder, type ComputedOrderItem } from "../_shared/commerce_checkout.ts";
+// Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
+// missing key instead of continuing with "" (nine call sites used to 401 quietly
+// and be logged), reads the plural SUPABASE_PUBLISHABLE_KEYS the platform
+// actually injects rather than the singular name that is set nowhere, and never
+// sends a non-JWT sb_secret_ key as a Bearer token -- PostgREST rejects those as
+// "Invalid JWT", which looks exactly like the empty-key 401 in a log.
+import { createAdminClient } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -39,14 +46,13 @@ Deno.serve(async (req: Request) => {
       return json({ error: "Online payments aren’t available yet.", code: "not_configured", message: "Provider not configured" }, 503);
     }
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
-    if (!supabaseUrl || !serviceKey) return json({ error: "Server misconfigured" }, 500);
+    if (!supabaseUrl) return json({ error: "Server misconfigured" }, 500);
 
     const body = await req.json().catch(() => ({}));
     const businessId = String(body.business_id || "").trim();
     if (!businessId) return json({ error: "business_id required" }, 400);
 
-    const admin = createClient(supabaseUrl, serviceKey);
+    const admin = createAdminClient();
 
     // Stripe Connect must be ready — otherwise refuse honestly (no order, no fake success).
     const { data: connect } = await admin

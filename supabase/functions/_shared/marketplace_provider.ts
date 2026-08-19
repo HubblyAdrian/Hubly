@@ -9,15 +9,22 @@ import {
 import { computeMarketplaceScore } from "./marketplace_score.ts";
 import { listBookingServices } from "./service_engine.ts";
 import { getBusinessMeta } from "./hubly_business_meta.ts";
+// Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
+// missing key instead of continuing with "" (nine call sites used to 401 quietly
+// and be logged), reads the plural SUPABASE_PUBLISHABLE_KEYS the platform
+// actually injects rather than the singular name that is set nowhere, and never
+// sends a non-JWT sb_secret_ key as a Bearer token -- PostgREST rejects those as
+// "Invalid JWT", which looks exactly like the empty-key 401 in a log.
+import { createAdminClient } from "./supabase_admin.ts";
 
 export type AdminClient = SupabaseClient;
 
 export function adminClient(): AdminClient {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey =
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (!supabaseUrl || !serviceKey) throw new Error("Server isn’t configured yet.");
-  return createClient(supabaseUrl, serviceKey);
+  // The key is resolved (and enforced) by createAdminClient(); this guard is
+  // now only about the URL.
+  if (!supabaseUrl) throw new Error("Server isn’t configured yet.");
+  return createAdminClient();
 }
 
 export async function ensureProvider(

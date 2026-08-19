@@ -5,6 +5,13 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
+// Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
+// missing key instead of continuing with "" (nine call sites used to 401 quietly
+// and be logged), reads the plural SUPABASE_PUBLISHABLE_KEYS the platform
+// actually injects rather than the singular name that is set nowhere, and never
+// sends a non-JWT sb_secret_ key as a Bearer token -- PostgREST rejects those as
+// "Invalid JWT", which looks exactly like the empty-key 401 in a log.
+import { createAdminClient } from "../_shared/supabase_admin.ts";
   ADOBE_PROVIDER_ID,
   adobeOAuthRedirectUri,
   appBaseUrl,
@@ -44,17 +51,15 @@ Deno.serve(async (req: Request) => {
     const state = url.searchParams.get("state");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
 
-    if (!supabaseUrl || !serviceKey) {
+    if (!supabaseUrl) {
       return redirectTo(fallback, {
         adobe_oauth: "error",
         adobe_msg: "Adobe isn’t configured on the server",
       });
     }
 
-    const admin = createClient(supabaseUrl, serviceKey);
+    const admin = createAdminClient();
 
     if (err) {
       return redirectTo(fallback, {

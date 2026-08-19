@@ -3,6 +3,13 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { upsertCrmFromBooking } from "../_shared/crm_from_booking.ts";
+// Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
+// missing key instead of continuing with "" (nine call sites used to 401 quietly
+// and be logged), reads the plural SUPABASE_PUBLISHABLE_KEYS the platform
+// actually injects rather than the singular name that is set nowhere, and never
+// sends a non-JWT sb_secret_ key as a Bearer token -- PostgREST rejects those as
+// "Invalid JWT", which looks exactly like the empty-key 401 in a log.
+import { createAdminClient, createUserClient } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -28,10 +35,7 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    if (!supabaseUrl || !serviceKey || !anonKey) {
+    if (!supabaseUrl) {
       return jsonRes({ error: "Server isn’t configured yet." }, 500);
     }
 
@@ -39,9 +43,7 @@ Deno.serve(async (req: Request) => {
     const businessId = String(body?.business_id || "").trim();
     if (!businessId) return jsonRes({ error: "business_id required" }, 400);
 
-    const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const userClient = createUserClient(authHeader);
     const { data: userData, error: userErr } = await userClient.auth.getUser();
     if (userErr || !userData?.user) {
       return jsonRes({ error: "Your session expired — refresh and try again." }, 401);
@@ -55,7 +57,7 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
     if (!owned) return jsonRes({ error: "Business not found for this account" }, 403);
 
-    const admin = createClient(supabaseUrl, serviceKey);
+    const admin = createAdminClient();
     const result = await upsertCrmFromBooking(admin, {
       business_id: businessId,
       customer_name: body?.customer_name ?? body?.name,

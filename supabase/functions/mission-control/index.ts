@@ -5,6 +5,10 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
+// Key resolution goes through supabase_admin.ts: THROWS on a missing key rather
+// than continuing with "", and never sends a non-JWT sb_secret_ key as a Bearer
+// token (PostgREST rejects those as "Invalid JWT").
+import { createAdminClient } from "../_shared/supabase_admin.ts";
   addWaitlistEntry,
   buildAdoption,
   buildAiHealth,
@@ -64,10 +68,8 @@ function authorized(req: Request): boolean {
 
 function adminClient() {
   const url = Deno.env.get("SUPABASE_URL");
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-    Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (!url || !key) throw new Error("Supabase service role not configured");
-  return createClient(url, key);
+  if (!url) throw new Error("Supabase service role not configured");
+  return createAdminClient();
 }
 
 Deno.serve(async (req: Request) => {

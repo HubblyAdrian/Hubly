@@ -4,7 +4,14 @@
  * Production-First: does not invent revenue; uses real order/product rows when present.
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient  } from "https://esm.sh/@supabase/supabase-js@2";
+// Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
+// missing key instead of continuing with "" (nine call sites used to 401 quietly
+// and be logged), reads the plural SUPABASE_PUBLISHABLE_KEYS the platform
+// actually injects rather than the singular name that is set nowhere, and never
+// sends a non-JWT sb_secret_ key as a Bearer token -- PostgREST rejects those as
+// "Invalid JWT", which looks exactly like the empty-key 401 in a log.
+import { createAdminClient, requireSecretKey } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -26,15 +33,15 @@ Deno.serve(async (req: Request) => {
   const auth = req.headers.get("Authorization") || "";
   const token = auth.replace(/^Bearer\s+/i, "").trim();
   const cron = (Deno.env.get("HUBLY_CRON_SECRET") || "").trim();
-  const serviceKey =
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS") ?? "";
+  // Compare against the RESOLVED key, whichever era it comes from.
+  const serviceKey = requireSecretKey().key;
   if (!token || (token !== cron && token !== serviceKey)) {
     return json({ error: "Unauthorized" }, 401);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  if (!supabaseUrl || !serviceKey) return json({ error: "Server misconfigured" }, 500);
-  const admin = createClient(supabaseUrl, serviceKey);
+  if (!supabaseUrl) return json({ error: "Server misconfigured" }, 500);
+  const admin = createAdminClient();
 
   const body = await req.json().catch(() => ({}));
   const businessId = String(body.business_id || "").trim();

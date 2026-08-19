@@ -74,6 +74,13 @@ import {
 } from "../_shared/marketplace_lifecycle.ts";
 import { rankMarketplaceMatches, type MatchNeed } from "../_shared/marketplace_match.ts";
 import {
+// Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
+// missing key instead of continuing with "" (nine call sites used to 401 quietly
+// and be logged), reads the plural SUPABASE_PUBLISHABLE_KEYS the platform
+// actually injects rather than the singular name that is set nowhere, and never
+// sends a non-JWT sb_secret_ key as a Bearer token -- PostgREST rejects those as
+// "Invalid JWT", which looks exactly like the empty-key 401 in a log.
+import { createUserClient } from "../_shared/supabase_admin.ts";
   adminClient,
   assembleProviderPublic,
   ensureProvider,
@@ -173,13 +180,10 @@ async function requireOwner(req: Request, businessId: string) {
     return { error: jsonRes({ error: "Sign in required" }, 401) };
   }
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  if (!supabaseUrl || !anonKey) {
+  if (!supabaseUrl) {
     return { error: jsonRes({ error: "Auth isn’t configured on the server yet." }, 500) };
   }
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
+  const userClient = createUserClient(authHeader);
   const { data: userData, error: userErr } = await userClient.auth.getUser();
   if (userErr || !userData?.user) {
     return { error: jsonRes({ error: "Your session expired — refresh and try again." }, 401) };
@@ -1762,13 +1766,10 @@ async function requireUser(req: Request) {
     return { error: jsonRes({ error: "Sign in required" }, 401) };
   }
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  if (!supabaseUrl || !anonKey) {
+  if (!supabaseUrl) {
     return { error: jsonRes({ error: "Auth isn’t configured on the server yet." }, 500) };
   }
-  const userClient = createClient(supabaseUrl, anonKey, {
-    global: { headers: { Authorization: authHeader } },
-  });
+  const userClient = createUserClient(authHeader);
   const { data: userData, error: userErr } = await userClient.auth.getUser();
   if (userErr || !userData?.user) {
     return { error: jsonRes({ error: "Your session expired — refresh and try again." }, 401) };

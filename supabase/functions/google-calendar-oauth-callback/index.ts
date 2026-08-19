@@ -8,6 +8,13 @@ import {
   registerGoogleCalendarWatch,
 } from "../_shared/google_calendar_inbound.ts";
 import { appBaseUrl, sanitizeReturnTo } from "../_shared/google_calendar_security.ts";
+// Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
+// missing key instead of continuing with "" (nine call sites used to 401 quietly
+// and be logged), reads the plural SUPABASE_PUBLISHABLE_KEYS the platform
+// actually injects rather than the singular name that is set nowhere, and never
+// sends a non-JWT sb_secret_ key as a Bearer token -- PostgREST rejects those as
+// "Invalid JWT", which looks exactly like the empty-key 401 in a log.
+import { createAdminClient } from "../_shared/supabase_admin.ts";
 
 function redirectUri(supabaseUrl: string) {
   const override = Deno.env.get("GOOGLE_OAUTH_REDIRECT_URI")?.trim();
@@ -46,19 +53,17 @@ Deno.serve(async (req: Request) => {
     const state = url.searchParams.get("state");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
     const clientId = Deno.env.get("GOOGLE_CLIENT_ID")?.trim();
     const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET")?.trim();
 
-    if (!supabaseUrl || !serviceKey || !clientId || !clientSecret) {
+    if (!supabaseUrl || !clientId || !clientSecret) {
       return redirectTo(fallback, {
         gcal_oauth: "error",
         gcal_msg: "Google Calendar isn’t configured on the server",
       });
     }
 
-    const admin = createClient(supabaseUrl, serviceKey);
+    const admin = createAdminClient();
 
     if (err) {
       return redirectTo(fallback, {

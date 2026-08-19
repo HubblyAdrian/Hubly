@@ -22,6 +22,10 @@
  */
 
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+// Key resolution goes through supabase_admin.ts: THROWS on a missing key rather
+// than continuing with "", and never sends a non-JWT sb_secret_ key as a Bearer
+// token (PostgREST rejects those as "Invalid JWT").
+import { adminHeaders } from "./supabase_admin.ts";
 
 /**
  * Fire the notification for a booking_requests row. Best-effort by design.
@@ -50,14 +54,15 @@ export async function notifyBookingReal(
     // booking-notify still expects the trigger's payload shape ({ record }), so
     // the same function serves both callers while the trigger is being retired.
     const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/booking-notify`;
-    const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ??
-      Deno.env.get("SUPABASE_SECRET_KEYS") ?? "";
+    // adminHeaders() throws rather than resolving to "" -- an empty key here
+    // produced a 401 that this call site logged and moved past.
+    const notifyHeaders = adminHeaders();
     const res = await fetch(url, {
       method: "POST",
       headers: {
+        ...notifyHeaders,
         "content-type": "application/json",
-        authorization: `Bearer ${key}`,
-      },
+              },
       body: JSON.stringify({ record: row, hubly_notify_reason: reason }),
     });
     if (!res.ok) {

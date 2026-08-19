@@ -23,9 +23,16 @@
  * see the migration that enables pg_cron/pg_net and registers the job.
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { syncEnginePushCreate } from "../_shared/google_calendar_sync_engine.ts";
-import { computeNextOccurrenceDate } from "../_shared/recurring_schedule_engine.ts";
+import { createClient  } from "https://esm.sh/@supabase/supabase-js@2";
+import { syncEnginePushCreate  } from "../_shared/google_calendar_sync_engine.ts";
+import { computeNextOccurrenceDate  } from "../_shared/recurring_schedule_engine.ts";
+// Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
+// missing key instead of continuing with "" (nine call sites used to 401 quietly
+// and be logged), reads the plural SUPABASE_PUBLISHABLE_KEYS the platform
+// actually injects rather than the singular name that is set nowhere, and never
+// sends a non-JWT sb_secret_ key as a Bearer token -- PostgREST rejects those as
+// "Invalid JWT", which looks exactly like the empty-key 401 in a log.
+import { createAdminClient, requireSecretKey } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -75,12 +82,11 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return jsonRes({ error: "POST required" }, 405);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey =
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? Deno.env.get("SUPABASE_SECRET_KEYS");
-  if (!supabaseUrl || !serviceKey) return jsonRes({ error: "Server misconfigured" }, 500);
-  if (!authorized(req, serviceKey)) return jsonRes({ error: "Unauthorized" }, 401);
+  if (!supabaseUrl) return jsonRes({ error: "Server misconfigured" }, 500);
+  // Compare against the RESOLVED key, whichever era it comes from.
+  if (!authorized(req, requireSecretKey().key)) return jsonRes({ error: "Unauthorized" }, 401);
 
-  const admin = createClient(supabaseUrl, serviceKey);
+  const admin = createAdminClient();
   const horizon = addDaysStr(todayStr(), LOOKAHEAD_DAYS);
 
   const { data: dueSchedules, error: loadErr } = await admin
