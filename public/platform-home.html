@@ -752,7 +752,10 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   // `messages`.
   // ————————————————————————————————————————————————————————————
   var SUPA_URL = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
-  var SUPA_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
+  /* The publishable key comes from public/journey-os/hubly-public-key.js --
+     ONE copy for every surface. There used to be seven inline copies of the
+     old anon JWT; a value duplicated seven times is a value nobody owns. */
+  var SUPA_ANON_KEY = window.HUBLY_PUBLISHABLE_KEY;
   var HC_CATEGORY_ORDER = ['business','industry','services','website','brand','scheduling','crm','payments','goals'];
 
   // draftBusiness: the real, unclaimed businesses row Hubly may have already

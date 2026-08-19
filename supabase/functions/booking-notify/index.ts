@@ -1,5 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { stripBookingMachineTags } from '../_shared/booking_notes.ts';
+// Key resolution goes through supabase_admin.ts: it THROWS on a missing key
+// rather than continuing with "", and never sends a non-JWT sb_secret_ key as a
+// Bearer token (PostgREST rejects those as "Invalid JWT").
+import { createAdminClient, requireSecretKey } from '../_shared/supabase_admin.ts';
 
 /** Same convention as the OAuth callbacks: appBaseUrl() + "/app". */
 function appBaseUrl() {
@@ -9,7 +13,6 @@ function appBaseUrl() {
 const RESEND_KEY = Deno.env.get('RESEND_API_KEY')!;
 const RESEND_FROM = Deno.env.get('RESEND_FROM_EMAIL') || 'Hubly <notifications@notifications.myhubly.app>';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 function icsEscape(str: string) {
   return String(str || '').replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, '\\n');
@@ -137,6 +140,39 @@ function detailRow(icon: string, label: string, value: string) {
 
 Deno.serve(async (req) => {
   try {
+    // CREDENTIAL CHECK IN THE FUNCTION, because the gateway can no longer do it.
+    //
+    // This function's only caller is _shared/booking_notify_call.ts, server to
+    // server, presenting our own secret key. A new-era sb_secret_ key is NOT a
+    // JWT, so it cannot be sent as `Authorization: Bearer` -- adminHeaders()
+    // sends it on `apikey` alone, and a gateway with verify_jwt enabled answers
+    // "Missing authorization header" before this handler ever runs. That is
+    // exactly how hubly-document-build silently stopped building pages on
+    // 2026-08-19, and booking-notify was the only other function with the same
+    // shape: an enforcing gateway plus a server-to-server caller.
+    //
+    // So verify_jwt is off for this function (see config.toml) and the check
+    // lives here instead. This is not a weakening: the gateway only ever asked
+    // "is this a well-formed JWT", while this asks "is this OUR key", on either
+    // header. An unauthenticated caller could previously reach this endpoint and
+    // trigger an email to a business owner; now it cannot.
+    let expected: string;
+    try {
+      expected = requireSecretKey().key;
+    } catch (e) {
+      console.error('booking-notify: no service key configured', e);
+      return new Response(JSON.stringify({ ok: false, error: 'not_configured' }), {
+        status: 500, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    const bearer = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
+    const apikey = (req.headers.get('apikey') || '').trim();
+    if (bearer !== expected && apikey !== expected) {
+      return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), {
+        status: 403, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const payload = await req.json();
     const booking = payload.record;
     if (!booking) return new Response(JSON.stringify({ ok: true, skipped: 'no record' }));
@@ -153,7 +189,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const supabase = createAdminClient();
     const { data: business } = await supabase
       .from('businesses')
       .select('name, phone, email, slug, brand_color, timezone')

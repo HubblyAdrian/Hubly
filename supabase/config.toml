@@ -98,3 +98,20 @@ verify_jwt = false
 # well-formed JWT", which is a weaker question than "is this OUR key".
 [functions.hubly-document-build]
 verify_jwt = false
+
+# verify_jwt OFF, with an in-function credential check that replaces it.
+#
+# Only caller: _shared/booking_notify_call.ts, server to server, presenting our
+# own secret key. A new-era sb_secret_ key is not a JWT and so cannot be a
+# Bearer token; adminHeaders() sends it on `apikey` alone, and an enforcing
+# gateway rejects that with "Missing authorization header" before the handler
+# runs. booking-notify was the ONLY other function with the same shape as
+# hubly-document-build -- enforcing gateway plus a server-to-server caller --
+# found by probing all 49 functions with no credentials and cross-referencing
+# against every functions/v1/ call site in the repo.
+#
+# Stronger than what it replaces: the gateway asked "is this a well-formed JWT",
+# the handler asks "is this OUR key". Previously an unauthenticated caller with
+# any valid JWT could trigger an owner email.
+[functions.booking-notify]
+verify_jwt = false

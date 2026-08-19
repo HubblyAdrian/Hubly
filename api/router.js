@@ -21,10 +21,10 @@ const SUPA_URL =
   process.env.SUPABASE_URL ||
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   'https://rtwxxkxpkqdrhclkozma.supabase.co';
-const SUPA_ANON =
-  process.env.SUPABASE_ANON_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ0d3h4a3hwa3FkcmhjbGtvem1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0MjA4MjgsImV4cCI6MjA5Nzk5NjgyOH0.ky9ycGJ621E4ab078pCIR4-1X_XS6OUpfPmH3v8tzf8';
+// ONE source of truth, shared with the browser pages -- see
+// public/journey-os/hubly-public-key.js. There were seven inline copies of
+// the old anon JWT; seven copies is how a key nobody owns goes stale.
+const { SUPABASE_PUBLISHABLE_KEY: SUPA_ANON } = require('./_publishable-key');
 
 /** {slug}.myhubly.app / {slug}.hubly.app — owner booking sites, not platform marketing. */
 function isBusinessSubdomain(req) {
