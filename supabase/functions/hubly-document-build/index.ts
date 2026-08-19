@@ -50,6 +50,7 @@
 // well — two points, same discipline as everywhere else in this codebase.
 
 import { runDocumentGeneration, finishDocumentBuildJob } from "../_shared/hubly_capability_registry.ts";
+import { requireSecretKey } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "access-control-allow-origin": "*",
@@ -67,13 +68,27 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
 
-  const serviceKey =
-    (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEYS") || "").trim();
+  // BOTH KEY ERAS. A legacy service_role JWT arrives as a Bearer token; a new
+  // sb_secret_ key cannot, because the platform gateway rejects a non-JWT
+  // Bearer before this handler runs -- so it arrives on `apikey` instead.
+  // Checking only Authorization would have silently 403'd every build the day
+  // the keys changed.
+  //
+  // requireSecretKey throws when nothing resolves, which is right: a missing
+  // key here must not degrade into "compare against empty string".
+  let serviceKey: string;
+  try {
+    serviceKey = requireSecretKey().key;
+  } catch (e) {
+    console.error("hubly-document-build: no service key configured", e);
+    return json({ ok: false, error: "not_configured" }, 500);
+  }
   const bearer = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  const apikey = (req.headers.get("apikey") || "").trim();
   // Not a formality. Everything below writes a real page to a real business
   // from an unauthenticated-looking payload; the only thing standing between
   // that and the open internet is this comparison.
-  if (!serviceKey || bearer !== serviceKey) {
+  if (bearer !== serviceKey && apikey !== serviceKey) {
     return json({ ok: false, error: "forbidden" }, 403);
   }
 

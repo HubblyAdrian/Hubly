@@ -63,6 +63,7 @@
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
 import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts } from "../_shared/hubly_extract.ts";
+import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
 import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
@@ -102,11 +103,10 @@ import {
 async function selectDraftFactGaps(businessId: string): Promise<{ missing: boolean }> {
   try {
     const url = (Deno.env.get("SUPABASE_URL") || "").trim();
-    const key = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEYS") || "").trim();
-    if (!url || !key) return { missing: true };
+    if (!url) return { missing: true };
     const res = await fetch(
       `${url}/rest/v1/businesses?select=city,state,address,service_area_cities,travel_radius_miles,years_in_business&id=eq.${businessId}`,
-      { headers: { apikey: key, authorization: `Bearer ${key}` } },
+      { headers: adminHeaders() },
     );
     if (!res.ok) return { missing: true };
     const rows = await res.json();
@@ -567,19 +567,22 @@ Deno.serve(async (req) => {
   if (context === "operate") {
     const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
     const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
-    const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
-    if (!token || !businessId || !supabaseUrl || !serviceKey) {
+    if (!token || !businessId || !supabaseUrl) {
       return jsonRes({ ok: false, error: "This action needs you to be signed in to your business." }, 401);
     }
+    // The CALLER's token stays in Authorization -- that is whose identity is
+    // being checked. apikey carries our own credential, and adminHeaders throws
+    // if we have none rather than sending an empty one and reading the 401 as
+    // "this person is not signed in", which is a different and wrong answer.
     const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-      headers: { authorization: `Bearer ${token}`, apikey: serviceKey },
+      headers: { ...adminHeaders(), authorization: `Bearer ${token}` },
     });
     const userJson = await userRes.json().catch(() => null);
     const userId = userRes.ok && userJson?.id ? String(userJson.id) : null;
     if (!userId) return jsonRes({ ok: false, error: "You're not signed in." }, 401);
     const bizRes = await fetch(
       `${supabaseUrl}/rest/v1/businesses?id=eq.${encodeURIComponent(businessId)}&select=owner_id&limit=1`,
-      { headers: { authorization: `Bearer ${serviceKey}`, apikey: serviceKey } },
+      { headers: adminHeaders() },
     );
     const bizRows = await bizRes.json().catch(() => null);
     const ownerId = Array.isArray(bizRows) && bizRows[0] ? String(bizRows[0].owner_id || "") : "";

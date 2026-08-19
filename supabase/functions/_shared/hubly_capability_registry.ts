@@ -59,6 +59,10 @@ import {
   type RenderContext,
 } from "./hubly_document.ts";
 import { imageDimensions, type ImageDims } from "./hubly_image_dims.ts";
+// adminHeaders() THROWS when no service/secret key resolves, and omits the
+// Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
+// "Invalid JWT". Both behaviours are load-bearing -- see supabase_admin.ts.
+import { adminHeaders, requireSecretKey, resolvePublishableKey } from "./supabase_admin.ts";
 import { adminClient } from "./marketplace_provider.ts";
 import { getWebsiteAvailability, createWebsiteBookingJob } from "./hubly_booking_execution.ts";
 import { buildPageStructureBlock, paletteById, palettePromptList, sectionOrderFor } from "./site_identity.ts";
@@ -130,11 +134,13 @@ async function callImportAnalyze(type: string, url: string): Promise<any> {
 // lives here, no calendar/provider logic is touched or duplicated.
 async function callMarketplace(action: string, payload: Record<string, unknown>): Promise<any> {
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
-  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
-  if (!supabaseUrl || !serviceKey) return null;
+  // A missing key now throws rather than returning empty-handed: an absent
+  // key and an absent row used to be the same value here.
+  const headers = adminHeaders();
+  if (!supabaseUrl) return null;
   const res = await fetch(`${supabaseUrl}/functions/v1/marketplace`, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${serviceKey}` },
+    headers: { ...headers, "content-type": "application/json" },
     body: JSON.stringify({ action, ...payload }),
   });
   return await res.json().catch(() => null);
@@ -146,15 +152,13 @@ async function callMarketplace(action: string, payload: Record<string, unknown>)
 // PostgREST's /rpc/ endpoint — no business-record logic lives here.
 async function callBusinessRpc(fn: string, payload: Record<string, unknown>): Promise<any> {
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
-  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
-  if (!supabaseUrl || !serviceKey) return null;
+  // A missing key now throws rather than returning empty-handed: an absent
+  // key and an absent row used to be the same value here.
+  const headers = adminHeaders();
+  if (!supabaseUrl) return null;
   const res = await fetch(`${supabaseUrl}/rest/v1/rpc/${fn}`, {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      authorization: `Bearer ${serviceKey}`,
-      apikey: serviceKey,
-    },
+    headers: { ...headers, "content-type": "application/json" },
     body: JSON.stringify(payload),
   });
   if (!res.ok) return null;
@@ -166,10 +170,12 @@ async function callBusinessRpc(fn: string, payload: Record<string, unknown>): Pr
  *  Hubly Document both need this. */
 async function selectOne(table: string, filterCol: string, filterVal: string, columns: string): Promise<any> {
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
-  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
-  if (!supabaseUrl || !serviceKey) return null;
+  // A missing key now throws rather than returning empty-handed: an absent
+  // key and an absent row used to be the same value here.
+  const headers = adminHeaders();
+  if (!supabaseUrl) return null;
   const url = `${supabaseUrl}/rest/v1/${table}?${filterCol}=eq.${encodeURIComponent(filterVal)}&select=${encodeURIComponent(columns)}&limit=1`;
-  const res = await fetch(url, { headers: { authorization: `Bearer ${serviceKey}`, apikey: serviceKey } });
+  const res = await fetch(url, { headers: headers });
   if (!res.ok) return null;
   const rows = await res.json().catch(() => null);
   return Array.isArray(rows) && rows.length ? rows[0] : null;
@@ -178,11 +184,13 @@ async function selectOne(table: string, filterCol: string, filterVal: string, co
 /** Multi-row read with the service role. selectOne's sibling. */
 async function selectMany(table: string, filterCol: string, filterVal: string, columns: string, order?: string): Promise<any[]> {
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
-  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
-  if (!supabaseUrl || !serviceKey) return [];
+  // A missing key now throws rather than returning empty-handed: an absent
+  // key and an absent row used to be the same value here.
+  const headers = adminHeaders();
+  if (!supabaseUrl) return [];
   const ord = order ? `&order=${order}` : "";
   const url = `${supabaseUrl}/rest/v1/${table}?${filterCol}=eq.${encodeURIComponent(filterVal)}&select=${columns}${ord}`;
-  const res = await fetch(url, { headers: { authorization: `Bearer ${serviceKey}`, apikey: serviceKey } });
+  const res = await fetch(url, { headers: headers });
   if (!res.ok) return [];
   const rows = await res.json().catch(() => null);
   return Array.isArray(rows) ? rows : [];
@@ -684,10 +692,12 @@ async function loadBusinessRecord(businessId: string): Promise<BusinessRecord> {
 
 async function selectLatestBusinessDocument(businessId: string, tag: string): Promise<{ version: number; document: HublyDocument } | null> {
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
-  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
-  if (!supabaseUrl || !serviceKey) return null;
+  // A missing key now throws rather than returning empty-handed: an absent
+  // key and an absent row used to be the same value here.
+  const headers = adminHeaders();
+  if (!supabaseUrl) return null;
   const url = `${supabaseUrl}/rest/v1/business_documents?business_id=eq.${encodeURIComponent(businessId)}&tag=eq.${encodeURIComponent(tag)}&select=version,document&order=version.desc&limit=1`;
-  const res = await fetch(url, { headers: { authorization: `Bearer ${serviceKey}`, apikey: serviceKey } });
+  const res = await fetch(url, { headers: headers });
   if (!res.ok) return null;
   const rows = await res.json().catch(() => null);
   if (!Array.isArray(rows) || !rows.length) return null;
@@ -708,7 +718,11 @@ async function callCommerceApi(
   body?: Record<string, unknown>,
 ): Promise<{ status: number; json: any }> {
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
-  const anon = (Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "").trim();
+  // SUPABASE_PUBLISHABLE_KEY (singular) is set nowhere -- the platform injects
+  // the PLURAL SUPABASE_PUBLISHABLE_KEYS. resolvePublishableKey reads the real
+  // one. The owner's own JWT stays in Authorization; the publishable key is an
+  // apikey and must never be sent as a Bearer token.
+  const anon = resolvePublishableKey();
   const headers: Record<string, string> = { "content-type": "application/json", authorization: `Bearer ${ownerToken}` };
   if (anon) headers.apikey = anon;
   const res = await fetch(`${supabaseUrl}/functions/v1/commerce-api${path}`, {
@@ -1068,8 +1082,18 @@ async function uploadImageToStorage(
   fileLabel: string,
 ): Promise<StorageUploadOutcome> {
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
-  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
-  if (!supabaseUrl || !serviceKey) {
+  // adminHeaders() throws on a missing key. Kept as a caught error rather than
+  // a bare throw here because this path already has an honest "not configured"
+  // result to return -- but it is now reached because the key is genuinely
+  // absent, not because an empty string quietly passed a truthiness check.
+  let storageHeaders: Record<string, string>;
+  try {
+    storageHeaders = adminHeaders();
+  } catch (e) {
+    console.error("uploadImageToStorage: no service key", e);
+    return { ok: false, result: { ok: false, real: false, summary: "Storage isn't configured right now.", error: "storage_unconfigured" } };
+  }
+  if (!supabaseUrl) {
     return { ok: false, result: { ok: false, real: false, summary: "Storage isn't configured right now.", error: "storage_unconfigured" } };
   }
 
@@ -1089,12 +1113,7 @@ async function uploadImageToStorage(
 
   const uploadRes = await fetch(`${supabaseUrl}/storage/v1/object/brand-assets/${path}`, {
     method: "POST",
-    headers: {
-      authorization: `Bearer ${serviceKey}`,
-      apikey: serviceKey,
-      "content-type": type,
-      "x-upsert": "true",
-    },
+    headers: { ...storageHeaders, "content-type": type, "x-upsert": "true" },
     // Deno's runtime fetch accepts a Uint8Array body fine — this cast is
     // purely for the DOM lib typings used here, not a runtime concern.
     body: bytes as unknown as BodyInit,
@@ -1281,16 +1300,11 @@ export async function uploadDraftPhoto(
   if (!uploaded.ok) return uploaded.result;
 
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
-  const serviceKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "").trim();
+  const photoHeaders = adminHeaders();
   const existing = await selectMany("portfolio_photos", "business_id", draftId, "id");
   const res = await fetch(`${supabaseUrl}/rest/v1/portfolio_photos`, {
     method: "POST",
-    headers: {
-      authorization: `Bearer ${serviceKey}`,
-      apikey: serviceKey,
-      "content-type": "application/json",
-      Prefer: "return=representation",
-    },
+    headers: { ...photoHeaders, "content-type": "application/json", Prefer: "return=representation" },
     body: JSON.stringify({ business_id: draftId, url: uploaded.url, sort_order: existing.length }),
   });
   if (!res.ok) {
@@ -1558,14 +1572,26 @@ export function dispatchDocumentBuild(input: {
   jobId?: string | null;
 }): void {
   const url = (Deno.env.get("SUPABASE_URL") || "").trim();
-  const key = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_SECRET_KEYS") || "").trim();
-  if (!url || !key) {
-    console.error("dispatchDocumentBuild: no service credentials — build not started");
+  // requireSecretKey() throws on a missing key, and SUPABASE_SECRET_KEYS is a
+  // JSON object -- the old chain would have sent `{"default":"sb_secret_..."}`
+  // verbatim as a bearer token and called it credentials.
+  let key: string;
+  try {
+    key = requireSecretKey().key;
+  } catch (e) {
+    console.error("dispatchDocumentBuild: no service credentials — build not started", e);
+    return;
+  }
+  if (!url) {
+    console.error("dispatchDocumentBuild: no SUPABASE_URL — build not started");
     return;
   }
   fetch(`${url}/functions/v1/hubly-document-build`, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${key}`, apikey: key },
+    // apikey carries the credential for BOTH key eras; Authorization is sent
+    // only for a legacy JWT, because the receiving function's gateway rejects a
+    // non-JWT Bearer before our own handler ever runs.
+    headers: { ...adminHeaders(), "content-type": "application/json" },
     body: JSON.stringify({ ...input, tag: input.tag || "website" }),
   })
     .then((r) => { if (!r.ok) console.error("dispatchDocumentBuild non-ok", r.status); })
