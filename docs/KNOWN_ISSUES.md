@@ -1381,6 +1381,34 @@ and none of which could be told apart without a deploy.
 3. **"Try again in a moment" is a lie when trying again cannot work.** A quota
    failure invites infinite retries and reads to the person as their fault.
 
+### Verified 2026-08-19, after quota was restored
+
+- 5 of 5 builds landed (same experiment shape as the 8 that gave 3 failures).
+- A live job went `running -> succeeded`, attempts=1, document in ~62s.
+- A logo uploaded **12 seconds into a build** now reaches the rendered header.
+  Before the row re-read it was discarded, and "I uploaded my logo and nothing
+  happened" was an accurate description of what occurred.
+- 0 structural nav labels across 7 freshly generated sites.
+- The stalled path stops the skeleton, says so in the chat, and offers Retry.
+
+Two bugs the verification itself found, both since fixed:
+
+- **Retry could restart a HEALTHY build.** The resume condition included any job
+  that had not yet succeeded, so clicking Retry over a slow-but-fine build
+  started a second one racing the first. Reachable without anyone doing anything
+  wrong, because the client's four-minute ceiling can fire over a genuinely
+  running build.
+- **Stale interims arrived after the failure**, so the transcript read "the
+  build stopped partway" and then "building the full page now". Anything on a
+  timer has to be able to find out it is no longer true.
+
+### Still not verified
+
+Nobody has watched a build die for real and be recovered. `stalled` detection
+was exercised by stubbing the status RPC's documented response to the client;
+the SQL branch that produces `stalled` (status `running` past `expected_by`)
+has not been hit by an actually-dead build.
+
 ### What was built anyway, and why it still matters
 
 The failure was invisible, and that part was real regardless of cause:
