@@ -1681,3 +1681,65 @@ production for the better part of an hour. Three migrations to resolve.
 4. **Verify a function by CALLING it**, against a real row, reading the row
    before and after. Not by reading the SQL, and not by trusting "Success".
 
+
+---
+
+## API key migration: CHANGED is not VERIFIED
+
+Thirty-six files moved onto `_shared/supabase_admin.ts` on 2026-08-19. Most were
+exercised. **Five were changed and never run**, and each carries a banner at the
+top of the file saying so. That distinction is the whole lesson of the week and
+the migration must not bury it.
+
+| File | Why the probe did not reach key resolution | What would prove it |
+|---|---|---|
+| `ai-advisorsuper-handlerai-advisor` | 502 from the AI provider — that error can be raised either side of the Supabase client | a 200 answer with a real `business_id` |
+| `hubly-recurring-maintain` | 401; the auth compare and the key resolution are on the same line, so a failure proves nothing | POST with `HUBLY_CRON_SECRET`, expect a 200 summary |
+| `stripe-webhook` | signature check runs BEFORE any client is built | replay a signed event with `stripe trigger` |
+| `_shared/booking_notify_call.ts` | not directly invocable; its caller fires on a real confirmed booking | complete a real booking, confirm the owner notification |
+| `_shared/hubly_brain_execution_log.ts` | `persistBrainExecution` swallows its own errors by design — broken and working look identical | run hubly-brain, confirm a NEW row in `hubly_brain_executions` |
+
+### How the rest were proven, and what "proven" meant
+
+Reaching business logic is NOT proof. Most functions bail on payload validation
+long before they build a client, so a `400 business_id required` says only that
+the function booted. The probe had to get PAST that:
+
+- **`auth.getUser()` reached** → `createUserClient()` worked. A "Your session
+  expired" answer to a non-session JWT is the user client functioning correctly.
+  13 functions proven this way.
+- **A real 200 with data** → admin client worked (`hubly-daily`, `ai-advisor`,
+  `hubly-find-pro`, both OAuth callbacks rendering their HTML after a state
+  lookup).
+- **A DB-derived business answer** → e.g. "This business hasn't finished
+  connecting Stripe yet" requires a real query first.
+- **`chatbot-message` returning a `conversation_id`** is the strongest single
+  proof: `chatbot_conversations` has no public RLS policy, so only the service
+  role can have written that row.
+
+### Two traps worth keeping
+
+**A gateway 401 and a broken-credential 401 are indistinguishable from outside.**
+`booking-confirmed` first answered `401 Invalid JWT` — that was the platform
+rejecting a malformed Bearer before the handler ran, proving nothing. Always
+probe with a REAL JWT so the request reaches the function.
+
+**`deno check` reports FEWER errors on a syntactically broken file.** An import
+insertion split a multi-line `import {` in ten files; `deno check` scored three
+of them as *improved*, and only `supabase functions deploy` — which actually
+bundles — caught it. A type check is not a parse check.
+
+### Flagged for deletion, not migrated on merit
+
+`hire-crm`, `mission-control` and `ai-advisorsuper-handlerai-advisor` have zero
+references anywhere in `public/`, `api/` or `supabase/functions/`, and that last
+name is a mangled artefact of a bad edit. They were swept with the rest so the
+migration is uniform, but sweeping debris is how debris survives an audit. They
+should be deleted.
+
+Also unused in production, on the evidence of their own tables:
+`google_calendar_connections` 0 rows, `google_calendar_events` 0 rows,
+`commerce_orders` 0 rows. Eight Google Calendar functions and two commerce
+functions have never been used by anyone. Migrated deliberately, because it is
+not clear whether that is by design or a regression.
+

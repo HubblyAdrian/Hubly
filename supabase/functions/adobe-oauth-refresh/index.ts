@@ -5,6 +5,9 @@
  */
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
+  adobeConfigured,
+  refreshAdobeAccessToken,
+} from "../_shared/adobe_oauth.ts";
 // Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
 // missing key instead of continuing with "" (nine call sites used to 401 quietly
 // and be logged), reads the plural SUPABASE_PUBLISHABLE_KEYS the platform
@@ -12,9 +15,6 @@ import {
 // sends a non-JWT sb_secret_ key as a Bearer token -- PostgREST rejects those as
 // "Invalid JWT", which looks exactly like the empty-key 401 in a log.
 import { createAdminClient, createUserClient } from "../_shared/supabase_admin.ts";
-  adobeConfigured,
-  refreshAdobeAccessToken,
-} from "../_shared/adobe_oauth.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",

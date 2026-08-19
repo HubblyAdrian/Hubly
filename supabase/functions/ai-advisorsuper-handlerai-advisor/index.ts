@@ -1,3 +1,24 @@
+// ============================================================================
+// CHANGED BUT NEVER EXECUTED — API key migration, 2026-08-19
+//
+// WHAT CHANGED
+//   Supabase key resolution was moved to _shared/supabase_admin.ts
+//   (createAdminClient / createUserClient / requireSecretKey / adminHeaders).
+//   That helper THROWS on a missing key instead of continuing with "", reads
+//   the plural SUPABASE_PUBLISHABLE_KEYS the platform actually injects, and
+//   never sends a non-JWT sb_secret_ key as a Bearer token.
+//
+// THIS FILE WAS NOT RUN.
+//   502 "AI assistant temporarily unavailable" — ambiguous: that error can be raised either side of the Supabase client, so it does not prove the key resolved.
+//
+// TO PROVE IT
+//   POST {"business_id":"<real id>","question":"..."} and get a 200 answer back. Needs the upstream AI provider to be healthy.
+//
+// A file that looks migrated and was never verified is worse than one that
+// obviously still reads legacy vars: the second is greppable, the first looks
+// done. Delete this banner only when the check above has actually been run.
+// ============================================================================
+
 // supabase/functions/ai-advisor/index.ts
 // Ask-AI panel backend: pulls this business's own jobs/customers, builds a
 // compact data summary, and asks Claude to answer the owner's question

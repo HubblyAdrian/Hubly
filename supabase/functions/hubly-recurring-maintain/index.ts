@@ -1,3 +1,24 @@
+// ============================================================================
+// CHANGED BUT NEVER EXECUTED — API key migration, 2026-08-19
+//
+// WHAT CHANGED
+//   Supabase key resolution was moved to _shared/supabase_admin.ts
+//   (createAdminClient / createUserClient / requireSecretKey / adminHeaders).
+//   That helper THROWS on a missing key instead of continuing with "", reads
+//   the plural SUPABASE_PUBLISHABLE_KEYS the platform actually injects, and
+//   never sends a non-JWT sb_secret_ key as a Bearer token.
+//
+// THIS FILE WAS NOT RUN.
+//   401 Unauthorized. The auth compare and the key resolution are on the same line, so a pass would prove it but a failure proves nothing.
+//
+// TO PROVE IT
+//   POST with the HUBLY_CRON_SECRET as a bearer token and confirm a 200 with a maintenance summary.
+//
+// A file that looks migrated and was never verified is worse than one that
+// obviously still reads legacy vars: the second is greppable, the first looks
+// done. Delete this banner only when the check above has actually been run.
+// ============================================================================
+
 /**
  * Recurring Schedule → next occurrence — the scheduled worker that keeps
  * the schedule-as-source-of-truth model real. A recurring_schedules row

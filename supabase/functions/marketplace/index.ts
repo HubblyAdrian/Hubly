@@ -74,6 +74,12 @@ import {
 } from "../_shared/marketplace_lifecycle.ts";
 import { rankMarketplaceMatches, type MatchNeed } from "../_shared/marketplace_match.ts";
 import {
+  adminClient,
+  assembleProviderPublic,
+  ensureProvider,
+  recomputeProviderScore,
+  refreshCalendarConnected,
+} from "../_shared/marketplace_provider.ts";
 // Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
 // missing key instead of continuing with "" (nine call sites used to 401 quietly
 // and be logged), reads the plural SUPABASE_PUBLISHABLE_KEYS the platform
@@ -81,12 +87,6 @@ import {
 // sends a non-JWT sb_secret_ key as a Bearer token -- PostgREST rejects those as
 // "Invalid JWT", which looks exactly like the empty-key 401 in a log.
 import { createUserClient } from "../_shared/supabase_admin.ts";
-  adminClient,
-  assembleProviderPublic,
-  ensureProvider,
-  recomputeProviderScore,
-  refreshCalendarConnected,
-} from "../_shared/marketplace_provider.ts";
 
 function opsAuthorized(req: Request): boolean {
   const secret =

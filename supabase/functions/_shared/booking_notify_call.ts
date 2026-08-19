@@ -1,3 +1,24 @@
+// ============================================================================
+// CHANGED BUT NEVER EXECUTED — API key migration, 2026-08-19
+//
+// WHAT CHANGED
+//   Supabase key resolution was moved to _shared/supabase_admin.ts
+//   (createAdminClient / createUserClient / requireSecretKey / adminHeaders).
+//   That helper THROWS on a missing key instead of continuing with "", reads
+//   the plural SUPABASE_PUBLISHABLE_KEYS the platform actually injects, and
+//   never sends a non-JWT sb_secret_ key as a Bearer token.
+//
+// THIS FILE WAS NOT RUN.
+//   Not directly invocable. Its one caller fires on a real booking being confirmed, which this session never produced.
+//
+// TO PROVE IT
+//   Complete a real booking end to end and confirm the owner notification is sent.
+//
+// A file that looks migrated and was never verified is worse than one that
+// obviously still reads legacy vars: the second is greppable, the first looks
+// done. Delete this banner only when the check above has actually been run.
+// ============================================================================
+
 /**
  * Send the owner (and customer) booking notification, from the code that knows
  * a booking actually became real.

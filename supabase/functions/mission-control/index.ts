@@ -5,10 +5,6 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-// Key resolution goes through supabase_admin.ts: THROWS on a missing key rather
-// than continuing with "", and never sends a non-JWT sb_secret_ key as a Bearer
-// token (PostgREST rejects those as "Invalid JWT").
-import { createAdminClient } from "../_shared/supabase_admin.ts";
   addWaitlistEntry,
   buildAdoption,
   buildAiHealth,
@@ -36,6 +32,10 @@ import { createAdminClient } from "../_shared/supabase_admin.ts";
   recordSmokeRun,
   writeAudit,
 } from "../_shared/mission_control.ts";
+// Key resolution goes through supabase_admin.ts: THROWS on a missing key rather
+// than continuing with "", and never sends a non-JWT sb_secret_ key as a Bearer
+// token (PostgREST rejects those as "Invalid JWT").
+import { createAdminClient } from "../_shared/supabase_admin.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",

@@ -1,3 +1,24 @@
+// ============================================================================
+// CHANGED BUT NEVER EXECUTED — API key migration, 2026-08-19
+//
+// WHAT CHANGED
+//   Supabase key resolution was moved to _shared/supabase_admin.ts
+//   (createAdminClient / createUserClient / requireSecretKey / adminHeaders).
+//   That helper THROWS on a missing key instead of continuing with "", reads
+//   the plural SUPABASE_PUBLISHABLE_KEYS the platform actually injects, and
+//   never sends a non-JWT sb_secret_ key as a Bearer token.
+//
+// THIS FILE WAS NOT RUN.
+//   400 "Invalid signature" — the signature check runs BEFORE any Supabase client is built, so the probe never reached key resolution.
+//
+// TO PROVE IT
+//   Replay a real Stripe event with a valid STRIPE_WEBHOOK_SECRET signature (Stripe CLI `stripe trigger`), and confirm the event is recorded rather than 500ing.
+//
+// A file that looks migrated and was never verified is worse than one that
+// obviously still reads legacy vars: the second is greppable, the first looks
+// done. Delete this banner only when the check above has actually been run.
+// ============================================================================
+
 // Stripe webhooks — account.updated + checkout.session.completed.
 // verify_jwt = false; authenticity via Stripe-Signature.
 
