@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
+    "deploy:generation": "supabase functions deploy hubly-conversation && supabase functions deploy hubly-document-build",
     "milestone1": "node scripts/milestone1.mjs",
     "milestone1:verbose": "MILESTONE1_VERBOSE=1 node scripts/milestone1.mjs",
     "check:section1": "node scripts/check-section1-hubly-brain.mjs",
