@@ -2235,3 +2235,74 @@ live in the parent chrome, outside the frame).
 - **`years_in_business` reached the roofer and nothing else**, which is correct
   (only the roofer's sentence stated one) — noted only because it is the one
   numeric claim on that page and it is real.
+
+## booking-notify has never worked on the pay-in-person path, and cannot
+
+**Settled 2026-08-20 by completing a real booking end to end.** Previously
+recorded as "reasoned, not demonstrated" — it is now demonstrated, and the
+answer is that it fails every time.
+
+`booking-notify` authenticates by comparing the caller's credential against the
+**secret** key:
+
+```ts
+const expected = requireSecretKey().key;
+if (bearer !== expected && apikey !== expected) return 403 forbidden;
+```
+
+The only caller on the pay-in-person path is the **browser**
+(`public/hubly.html:42396`, `dbClient.functions.invoke('booking-notify', …)`),
+which can only ever send the publishable key. Called with the real record from a
+real completed booking, it returns:
+
+```
+{"ok":false,"error":"forbidden"}   HTTP 403
+```
+
+And the call site is fire-and-forget —
+`.catch(e => console.warn('booking-notify failed', …))` — so **a completed
+booking has never notified the business owner, and nothing has ever said so.**
+The comment above that call explains it exists because a database trigger
+previously covered this "badly"; the replacement has covered it not at all.
+
+Not fixed here — it needs a decision, not a patch. Either the browser stops
+being the notifier (a DB trigger or a server-side call after insert, which is
+what `_shared/booking_notify_call.ts` already does for the Stripe path), or
+`booking-notify` gets an auth model a public client can satisfy. The first is
+correct; the second re-opens the hole the secret-key check was added to close.
+
+## The chatbot cannot see the business's services
+
+On all three verified freeform pages — and the classic page checked alongside
+them — the assistant answers pricing and availability questions with "I don't
+have configured pricing / packages / product list", **while the page beside it
+lists those exact services with prices** and the `services` table has the rows.
+
+```
+Calder & Vane Roofing   3 services   page shows $150/$220/$480
+  chat: "I don't have configured pricing for roof inspections"
+Neve Ashford            3 services   page shows $340/$1400/$2600
+  chat: "I don't have any configured wedding packages, pricing"
+Thistledown Bakehouse   3 services   page shows the loaf list
+  chat: "I don't have Thistledown Bakehouse's current product list"
+```
+
+The behaviour is *safe* — it declines rather than inventing, which is right —
+but it makes the assistant close to useless for the single most common visitor
+question. `loadConciergeContext` in `chatbot-message` is where to look; this is
+not caused by the freeform switch, since classic shows it too.
+
+## The injected chat widget is a second chat implementation
+
+`hubly_page_runtime.ts` contains a small chat UI that posts to
+`chatbot-message` directly. `hubly.html` contains another one
+(`.ws-chat-panel`, `ccStartGeneric`, the hero inline input, the nudge/teaser
+logic). They now both exist, and only the hubly.html one has the lead-capture
+behaviour, the courtesy message cap (`CHATBOT_MAX_MESSAGES_CLIENT`), the
+handoff-to-booking hook (`S._chatbotHandoffConversationId`) and the
+`mark_resulted_in_booking` call.
+
+The duplication was the deliberate cost of getting chat inside the iframe at
+all, but it is a fork and it will drift. The injected widget should either grow
+those behaviours or the two should converge on one implementation that both
+surfaces load.

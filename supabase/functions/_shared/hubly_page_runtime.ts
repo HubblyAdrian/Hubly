@@ -85,8 +85,11 @@ function chatWidgetHtml(opts: { businessId: string; businessName: string; supaba
     style="width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;background:${escapeAttr(accent)};color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;padding:0;">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
   </button>
-  <div id="hubly-chat-panel" hidden
-    style="position:absolute;right:0;bottom:68px;width:min(340px,calc(100vw - 40px));max-height:min(460px,calc(100vh - 120px));display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.26);overflow:hidden;">
+  <!-- display:none, NOT the hidden attribute: an inline display:flex beats the
+       UA's [hidden]{display:none} rule, so the panel shipped permanently open
+       and empty -- the greeting only renders when open() runs. -->
+  <div id="hubly-chat-panel"
+    style="position:absolute;right:0;bottom:68px;width:min(340px,calc(100vw - 40px));max-height:min(460px,calc(100vh - 120px));display:none;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.26);overflow:hidden;">
     <div style="padding:13px 15px;background:${escapeAttr(accent)};color:#fff;font-weight:700;font-size:14px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
       <span>${escapeAttr(businessName)}</span>
       <button id="hubly-chat-close" type="button" aria-label="Close chat" style="background:none;border:none;color:inherit;font-size:20px;line-height:1;cursor:pointer;padding:0 2px;">&times;</button>
@@ -123,13 +126,14 @@ function chatWidgetHtml(opts: { businessId: string; businessName: string; supaba
     log.scrollTop = log.scrollHeight;
     return d;
   }
+  function isOpen(){ return panel.style.display !== 'none'; }
   function open(){
-    panel.hidden = false;
+    panel.style.display = 'flex';
     if (!messages.length) bubble("Hi! I'm " + CFG.businessName + "'s assistant. What can I help you with?", false);
     input.focus();
   }
-  fab.addEventListener('click', function(){ panel.hidden ? open() : (panel.hidden = true); });
-  document.getElementById('hubly-chat-close').addEventListener('click', function(){ panel.hidden = true; });
+  fab.addEventListener('click', function(){ isOpen() ? (panel.style.display = 'none') : open(); });
+  document.getElementById('hubly-chat-close').addEventListener('click', function(){ panel.style.display = 'none'; });
 
   form.addEventListener('submit', function(e){
     e.preventDefault();
