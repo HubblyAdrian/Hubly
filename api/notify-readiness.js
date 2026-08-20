@@ -56,7 +56,9 @@ module.exports = async (req, res) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Hubly Waitlist <waitlist@myhubly.app>',
+        // Verified domain. The bare myhubly.app is not registered in Resend,
+        // which is why this has never sent.
+        from: 'Hubly Waitlist <waitlist@notifications.myhubly.app>',
         to: OWNER_EMAIL,
         reply_to: email,
         subject: 'Business Readiness notify: ' + email,

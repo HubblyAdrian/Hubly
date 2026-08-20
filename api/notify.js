@@ -17,13 +17,18 @@ module.exports = async (req, res) => {
     ? new Date(booking.scheduled_date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})
     : 'TBD';
 
-  async function sendEmail(to, from, subject, html) {
+  async function sendEmail(to, from, subject, html, replyTo) {
     if(!RESEND_KEY || !to) return false;
+    const payload = { from, to, subject, html };
+    // The from-address has no mailbox; without this a customer hitting reply
+    // is talking to nobody.
+    if(replyTo) payload.reply_to = replyTo;
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer '+RESEND_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to, subject, html })
+      body: JSON.stringify(payload)
     });
+    if(!r.ok) console.error('notify: resend rejected', r.status, await r.text().catch(()=>''));
     return r.ok;
   }
 
@@ -52,7 +57,8 @@ module.exports = async (req, res) => {
       +'</table>'
       +'<div style="margin-top:20px;"><a href="https://myhubly.app" style="background:#1a3a6e;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;display:inline-block;">View in dashboard</a></div>'
       +'</div><div style="text-align:center;color:#bbb;font-size:11px;margin-top:12px;">Sent by Hubly</div></div>';
-    sent.detailer = await sendEmail(business.email, 'Hubly Bookings <bookings@myhubly.app>', 'New booking from '+booking.customer_name, html);
+    // Owner-facing: the business replies to the CUSTOMER.
+    sent.detailer = await sendEmail(business.email, 'Hubly Bookings <bookings@notifications.myhubly.app>', 'New booking from '+booking.customer_name, html, booking.email || null);
   }
 
   // Email to client
@@ -77,7 +83,10 @@ module.exports = async (req, res) => {
       +(business.email ? '<div style="color:#555;font-size:13px;">'+business.email+'</div>' : '')
       +'</div></div>'
       +'<div style="text-align:center;color:#bbb;font-size:11px;margin-top:12px;">Powered by Hubly</div></div>';
-    sent.client = await sendEmail(booking.email, business.name+' via Hubly <bookings@myhubly.app>', 'Booking confirmed – '+booking.service_name+' with '+business.name, html);
+    // Customer-facing: the customer replies to the BUSINESS. The sender domain
+    // was the bare myhubly.app here too -- built by concatenation, so it did not
+    // show up in a search for a quoted from-address.
+    sent.client = await sendEmail(booking.email, business.name+' via Hubly <bookings@notifications.myhubly.app>', 'Booking confirmed – '+booking.service_name+' with '+business.name, html, business.email || null);
   }
 
   return res.status(200).json({ ok: true, sent });

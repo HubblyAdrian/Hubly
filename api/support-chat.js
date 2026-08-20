@@ -64,7 +64,9 @@ module.exports = async (req, res) => {
 
   try {
     const payload = {
-      from: 'Hubly Chat <chat@myhubly.app>',
+      // Verified domain. The bare myhubly.app is not registered in Resend,
+      // so this was almost certainly failing the same way notify-signup was.
+      from: 'Hubly Chat <chat@notifications.myhubly.app>',
       to: SUPPORT_TO,
       subject: 'Hubly chat: ' + (topic || 'Website message') + (name ? ': ' + name : ''),
       html,

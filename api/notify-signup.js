@@ -45,13 +45,36 @@ module.exports = async (req, res) => {
       method: 'POST',
       headers: { 'Authorization': 'Bearer '+RESEND_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'Hubly Signups <signups@myhubly.app>',
+        // notifications.myhubly.app is the ONLY domain verified in Resend.
+        // The bare myhubly.app is not registered there at all, which is why
+        // every signup notification was rejected: this endpoint reached Resend
+        // and Resend refused the sender.
+        from: 'Hubly Signups <signups@notifications.myhubly.app>',
         to: OWNER_EMAIL,
+        // Nothing receives mail at the from-address, so a reply to it bounces.
+        // Platform notifications reply to the platform owner.
+        reply_to: OWNER_EMAIL,
         subject: 'New signup: '+business.name,
         html,
       }),
     });
-    return res.status(200).json({ ok: r.ok });
+    // FORWARD WHAT RESEND ACTUALLY SAID.
+    //
+    // This used to return { ok: r.ok } and discard the body, so a rejected
+    // send looked like {"ok":false} and nothing else -- diagnosing it required
+    // reading the source to work out which of three branches produced a bare
+    // false. Resend's own message names the cause.
+    //
+    // NOTE: ok:true means Resend ACCEPTED the message, not that it was
+    // delivered. Same distinction the notification_deliveries schema makes.
+    const text = await r.text().catch(() => '');
+    if (!r.ok) {
+      console.error('notify-signup: resend rejected', r.status, text);
+      return res.status(200).json({ ok: false, status: r.status, error: text.slice(0, 500) });
+    }
+    let id = null;
+    try { id = JSON.parse(text).id || null; } catch (e) {}
+    return res.status(200).json({ ok: true, accepted: true, id });
   } catch(e) {
     return res.status(200).json({ ok: false, reason: e.message });
   }
