@@ -29,6 +29,18 @@ export interface FreeformEdit {
   text?: string;
   /** For an image edit — an already-uploaded URL. */
   src?: string;
+  /**
+   * The clicked element's text BEFORE the edit, sent only by click-to-edit.
+   *
+   * A label can match several elements, so "the owner typed this" and "this
+   * value changed" are different intentions that used to arrive identically.
+   * When the owner edits the words on ONE button, only that button should
+   * change; when a phone number changes in the record, the number should change
+   * everywhere and the words around it should not. prevText is what tells the
+   * two apart: present means a specific element was targeted, absent means the
+   * automatic path, which is never allowed to rewrite wording.
+   */
+  prevText?: string;
 }
 
 export interface FreeformEditResult {
@@ -40,6 +52,8 @@ export interface FreeformEditResult {
   matched: number;
   before: string[];
   after: string;
+  /** Matches deliberately left alone because the old value was not in them. */
+  skipped: string[];
   error?: "invalid_label" | "no_match" | "no_change" | "empty_text" | "bad_src";
 }
 
@@ -78,7 +92,7 @@ function syncedHref(el: ScannedEl, label: string, newText: string): string | nul
 export function applyFreeformEdit(html: string, edit: FreeformEdit): FreeformEditResult {
   const src = String(html || "");
   const fail = (error: FreeformEditResult["error"]): FreeformEditResult =>
-    ({ ok: false, html: src, changed: 0, matched: 0, before: [], after: "", error });
+    ({ ok: false, html: src, changed: 0, matched: 0, before: [], after: "", skipped: [], error });
 
   if (!isValidHcLabel(edit.label)) return fail("invalid_label");
 
@@ -135,14 +149,27 @@ export function applyFreeformEdit(html: string, edit: FreeformEdit): FreeformEdi
 
   // The NEW value, read out of `edit.text` with the same extractor. See the
   // note at the in-place substitution below for why this normalisation exists.
+  //
+  // NULL MEANS "THIS IS NOT A VALUE CHANGE". If the owner retitles a button
+  // from "Start the conversation" to "Ring the bindery", the new text contains
+  // no phone number, so there is no new value to substitute anywhere — only the
+  // element they clicked should change. Without this, editing one button's
+  // WORDS pushed those words into every other element carrying the label,
+  // including the one that was correctly showing the number.
+  //
+  // For a label with no extractor (business.name, contact.address) the whole
+  // new text IS the value, so it stands in directly.
   const canonicalNew = (() => {
     if (isImage) return null;
     const extractor = VALUE_IN_TEXT[edit.label];
-    if (!extractor) return null;
+    if (!extractor) return String(edit.text || "").trim() || null;
     const m = extractor.exec(String(edit.text || ""));
     return m ? m[0].trim() : null;
   })();
 
+  const isValueRole = HC_VALUE_ROLES.has(edit.label);
+  /** Elements left deliberately untouched, so the caller can say so. */
+  const skipped: string[] = [];
   const edits: Splice[] = [];
   const before: string[] = [];
   let changed = 0;
@@ -164,19 +191,38 @@ export function applyFreeformEdit(html: string, edit: FreeformEdit): FreeformEdi
       const nextText = String(edit.text);
       const cur = ownText(el, src);
       before.push(cur);
-      // Substitute in place when this element wraps the shared value in extra
-      // words; otherwise replace the body. The element is a labelled leaf, so
-      // its whole body is text — anything with element children was never
-      // labelled, and so can never reach here.
+
+      // A SYNC THAT CANNOT FIND WHAT IT IS REPLACING HAS NO BUSINESS GUESSING.
       //
-      // `nextText` arrives meaning two different things depending on the
-      // caller: the EDITOR sends the element's whole new text ("Call
-      // 801-555-9999", straight out of the textarea), while the record sync
-      // sends the bare new value ("801-555-9999"). Substituting the former into
-      // a wrapper produced "Call Call 801-555-2200". Both are normalised to the
-      // value first, so the two callers mean the same thing here.
-      const inPlace = canonicalOld && cur !== canonicalOld && cur.includes(canonicalOld);
-      const resulting = inPlace ? cur.split(canonicalOld!).join(canonicalNew ?? nextText) : nextText;
+      // This used to fall back to replacing the element's whole body whenever
+      // the old value was not found in it. On a real page that turned saving an
+      // EMAIL ADDRESS into this:
+      //
+      //   business.name  "CK"              -> "Copperwick Kilns"
+      //   contact.phone  "Start a Call"    -> "801-555-7420"
+      //   contact.phone  "Call Copperwick" -> "801-555-7420"
+      //
+      // Three buttons reduced to printing a phone number the page already
+      // stated, a monogram overwritten with the full name, and none of it
+      // anything the owner asked for. The automatic path is the one operation
+      // that must never threaten what the owner wrote, so it now changes
+      // NOTHING it cannot locate.
+      let resulting: string | null = null;
+      if (edit.prevText != null && cur === edit.prevText) {
+        // The specific element the owner clicked. They typed these words; use
+        // them verbatim, and leave every other match to the value rules below.
+        resulting = nextText;
+      } else if (!isValueRole) {
+        // A positional label (section.3.heading) is unique by construction, so
+        // there is no ambiguity about which element was meant.
+        resulting = nextText;
+      } else if (canonicalOld && canonicalNew && cur.includes(canonicalOld)) {
+        // A value role whose old value is genuinely here, AND a real new value
+        // to put in its place: swap the value and keep every word around it
+        // ("Call 801-555-2200" -> "Call 801-555-8888").
+        resulting = cur.split(canonicalOld).join(canonicalNew);
+      }
+      if (resulting === null) { skipped.push(`${edit.label}:"${cur.slice(0, 40)}"`); continue; }
       if (cur === resulting.replace(/\s+/g, " ").trim()) continue;
       edits.push({ start: el.openEnd, end: el.closeStart, text: escapeText(resulting) });
       const href = syncedHref(el, edit.label, nextText);
@@ -189,7 +235,7 @@ export function applyFreeformEdit(html: string, edit: FreeformEdit): FreeformEdi
   }
 
   if (!changed) {
-    return { ok: false, html: src, changed: 0, matched: matches.length, before, after: isImage ? String(edit.src) : String(edit.text), error: "no_change" };
+    return { ok: false, html: src, changed: 0, matched: matches.length, before, after: isImage ? String(edit.src) : String(edit.text), skipped, error: "no_change" };
   }
 
   let out = spliceAll(src, edits);
@@ -210,7 +256,7 @@ export function applyFreeformEdit(html: string, edit: FreeformEdit): FreeformEdi
   // any remaining occurrence of the old value is updated too, in text and in
   // tel:/mailto: hrefs. Done as a second pass over a fresh scan so these
   // ranges cannot overlap the ones already spliced above.
-  if (!isImage && canonicalOld && HC_VALUE_ROLES.has(edit.label)) {
+  if (!isImage && canonicalOld && canonicalNew && HC_VALUE_ROLES.has(edit.label)) {
     const nextText = String(edit.text);
     const sweep: Splice[] = [];
     const rescan = scanHtml(out);
@@ -218,12 +264,12 @@ export function applyFreeformEdit(html: string, edit: FreeformEdit): FreeformEdi
       for (const t of el.texts) {
         const chunk = out.slice(t.start, t.end);
         if (!chunk.includes(canonicalOld)) continue;
-        sweep.push({ start: t.start, end: t.end, text: chunk.split(canonicalOld).join(escapeText(canonicalNew ?? nextText)) });
+        sweep.push({ start: t.start, end: t.end, text: chunk.split(canonicalOld).join(escapeText(canonicalNew)) });
       }
       const href = el.attrRanges["href"];
       if (href && el.name === "a") {
         const cur = (el.attrs.href || "").trim();
-        const synced = syncedHref(el, edit.label, canonicalNew ?? nextText);
+        const synced = syncedHref(el, edit.label, canonicalNew);
         // Only when this link points at the OLD value — never rewrite a link
         // that was already pointing somewhere else.
         if (synced && cur.replace(/\D/g, "") === canonicalOld.replace(/\D/g, "") && cur !== synced) {
@@ -241,6 +287,7 @@ export function applyFreeformEdit(html: string, edit: FreeformEdit): FreeformEdi
     matched: matches.length,
     before,
     after: isImage ? String(edit.src) : String(edit.text),
+    skipped,
   };
 }
 

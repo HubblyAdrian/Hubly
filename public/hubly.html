@@ -53096,6 +53096,11 @@ function wireHcEditingSurface(doc, root){
       'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;';
     var ta = doc.createElement('textarea');
     ta.value = el.textContent || '';
+    // What this element said BEFORE the owner touched it. Sent with the edit so
+    // the server can tell "the owner rewrote THIS element" from "this value
+    // changed everywhere" -- a label can match several elements, and only the
+    // clicked one should take the typed words verbatim.
+    var prevText = el.textContent || '';
     ta.style.cssText =
       'width:100%;min-height:64px;background:#0d0f16;color:#f5f6f8;' +
       'border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:8px;' +
@@ -53152,7 +53157,7 @@ function wireHcEditingSurface(doc, root){
       var value = ta.value.trim();
       if(value){
         el.textContent = value; // optimistic local paint
-        if(hc) post({ type: 'hcFreeformInlineEdit', op: 'update_text', label: hc, text: value });
+        if(hc) post({ type: 'hcFreeformInlineEdit', op: 'update_text', label: hc, text: value, prevText: prevText });
         else if(id) post({ type: 'hcDocInlineEdit', op: 'update_text', id: id, text: value });
       }
       closeOverlay();

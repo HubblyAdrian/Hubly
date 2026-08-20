@@ -2067,29 +2067,120 @@ owner before a document can be stored, sanitise stored HTML on write, serve
 unclaimed drafts from a separate throwaway domain, or rate-limit draft creation
 per IP. The first is the only one that actually closes it.
 
-## Freeform record-sync overwrites wording it should have left alone
+## Freeform record-sync overwrote wording it should have left alone — FIXED
 
-**Found in production on 2026-08-20, on a real generated page. Not fixed.**
+**Found in production 2026-08-20, reproduced on a fresh page, fixed and
+re-verified the same day.**
 
-`syncFreeformFacts` applies a value-role edit to *every* element carrying that
-label. When the element's current text does not contain the old value, it falls
-back to replacing the element's whole body — and that is wrong twice over:
+`syncFreeformFacts` applied a value-role edit to every element carrying the
+label, and when the element's text did not contain the old value it fell back to
+replacing the whole body. On a real page, saving an EMAIL ADDRESS did this:
 
 ```
-BEFORE  <span data-hc="business.name" class="mark">A</span><span>Ashgrove Forge</span>
-AFTER   <span data-hc="business.name" class="mark">Ashgrove Forge</span><span>Ashgrove Forge</span>
-
-BEFORE  <a data-hc="contact.phone" class="btn btn-primary" href="tel:8015553100">Call the Forge</a>
-AFTER   <a data-hc="contact.phone" class="btn btn-primary" href="tel:8015553100">801-555-3100</a>
+business.name  "CK"              -> "Copperwick Kilns"
+contact.phone  "Start a Call"    -> "801-555-7420"
+contact.phone  "Call Copperwick" -> "801-555-7420"
+contact.phone  "Call Copperwick" -> "801-555-7420"
 ```
 
-The first is also a labelling error: `business.name` went to a one-letter
-monogram because the rule picks the first text leaf in the header. The second
-destroyed a call-to-action's wording to write a number that the same page
-already stated three times.
+Three buttons reduced to printing a number the page already stated, a monogram
+overwritten with the full name, and none of it requested — on the AUTOMATIC
+path, the one operation that is supposed to be incapable of threatening what the
+owner wrote.
 
-Both were triggered automatically by an owner saving an email address — a change
-that had nothing to do with either element. The fix is to make the fallback
-conservative: if the element's text does not contain the old value, leave it
-alone rather than replacing it. Until that lands, **every contact-record change
-can silently rewrite CTA text on a freeform page.**
+**THE RULE, now enforced: a sync that cannot find what it is replacing changes
+nothing.** A value role is only substituted where the old value is genuinely
+present in the element; everything else is left alone and reported in
+`FreeformEditResult.skipped`.
+
+Two supporting distinctions had to exist for that rule to be safe:
+
+- **`prevText`** — click-to-edit now sends the clicked element's previous text.
+  "The owner typed these words on THIS element" and "this value changed
+  everywhere" used to arrive identically, so the conservative rule alone would
+  have silently dropped legitimate wording edits.
+- **`canonicalNew === null` means "not a value change".** Retitling a button
+  from "Start the conversation" to "Ring the bindery" yields no phone number, so
+  there is nothing to substitute anywhere and only the clicked element changes.
+  Without this, editing one button's WORDS pushed those words into the element
+  that was correctly displaying the number — a bug introduced by the first
+  version of this very fix, and caught by a test rather than by reading.
+
+Verified before and after on real pages through the real path, not by unit test
+alone: the same seeded HTML, the same trigger (saving an email), pre-fix
+destroys the monogram and all three CTAs, post-fix leaves all four alone while
+still updating the bare number and every `tel:` href to the record's value.
+
+**One page was corrupted before the fix:** `ashgrove-forge` (`business.name`
+"A" -> "Ashgrove Forge", `contact.phone` "Call the Forge" -> "801-555-3100").
+`copperwick-kilns` was corrupted deliberately to reproduce it and has been
+repaired by appending the pre-damage HTML as a new version. No other freeform
+page was affected; `hearth-iron` was checked and is intact.
+
+## The label vocabulary cannot say "displays this value" vs "links to it" vs "decorative"
+
+Both corruptions above were possible because one label carries three different
+relationships to the same fact:
+
+| element | label today | what it really is |
+|---|---|---|
+| `<strong>801-555-7420</strong>` | `contact.phone` | **displays** the value |
+| `<a href="tel:…">Call Copperwick</a>` | `contact.phone` | **links to** it, displays words |
+| `<span class="mark">CK</span>` | `business.name` | **decorative** — initials, not the name |
+
+The fix above compensates at edit time by checking whether the value is present
+in the text. That is the right safety net, but it is inference at the point of
+use rather than knowledge captured once at labelling time.
+
+**Proposal — small, deterministic, NOT built this session.** Two new role
+tokens, both decidable by the existing stamping pass with no model involvement:
+
+- `…​.cta` — an element carrying a value role whose `href` points at the value
+  (`tel:`/`mailto:`) but whose own text does NOT contain it.
+  So `contact.phone.cta` for "Call Copperwick".
+- `…​.mark` — an element carrying a value role whose text is 1–4 characters and
+  matches the initials of the value it names. So `business.name.mark` for "CK".
+
+Both are strict subsets of an existing role, so nothing that reads
+`contact.phone` today breaks; the editor keeps offering all three; and the
+automatic sync gets to skip `.cta` and `.mark` by NAME rather than by inferring
+from the text each time. It also makes the `href`-sync rule exact: a
+`contact.phone.cta` should have its `href` updated and its text never touched.
+
+Cost is two tokens in `HC_ROLE_TOKENS` and roughly fifteen lines in
+`valueRoleFor`. Deliberately not done in the same session as the fix, so the
+safety net lands and is verified on its own.
+
+## Freeform pages are only reachable when the AST build FAILS
+
+`website.newPage` refuses when the latest document is an AST:
+
+> "That page is a Hubly Document, not a freeform page. Converting between the
+> two formats is not something this action does."
+
+That guard is deliberate — swapping a validated tree for opaque HTML is a format
+migration, not a conversational edit. But the FIRST thing any new draft does is
+dispatch an AST build, so a freeform page can only be created in the window
+where that build has failed or has not yet landed.
+
+Every freeform page in existence got there that way: two were created after the
+AST build hit the 150s wall-clock cliff and failed, one was created before the
+build landed and was later overwritten by it (below), one was seeded directly
+for testing.
+
+So freeform is not a path a customer can choose. It is a path they fall into
+when generation fails. Worth deciding about deliberately rather than leaving as
+an emergent property of a timeout.
+
+## A resumed AST build silently overwrote a freeform page
+
+`saltmarsh-bindery`: v1 and v2 were `format='html'`; a later turn resumed the
+stalled AST build from the first turn, which completed and wrote v3 as
+`format='ast'`. The business's page changed format, renderer and content because
+a build from several minutes earlier finally finished.
+
+Nothing is wrong with resuming a stalled build. What is wrong is that it takes
+no account of what has happened since — including a page the owner explicitly
+asked to replace it with. `resumeDocumentBuild` should refuse when the latest
+document is newer than the job it is resuming, or when the format changed
+underneath it.

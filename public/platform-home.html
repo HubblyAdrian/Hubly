@@ -2044,7 +2044,9 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
       // look an id up in, and one label can legitimately match several
       // elements (a phone number stated in the header, the contact block and
       // the footer all carry contact.phone, and all of them change together).
-      hcSendDirectEdit({ directFreeformEdit: { label: data.label, text: data.text } });
+      hcSendDirectEdit({ directFreeformEdit: { label: data.label, text: data.text,
+        // Carried through untouched: it identifies WHICH element was clicked.
+        prevText: typeof data.prevText === 'string' ? data.prevText : undefined } });
     } else if(data.type === 'hcFreeformInlineImageEdit' && typeof data.label === 'string' && data.label && typeof data.imageBase64 === 'string'){
       hcSendDirectEdit({ directFreeformImageEdit: { label: data.label, imageBase64: data.imageBase64, mediaType: data.mediaType || 'image/png' } });
     }

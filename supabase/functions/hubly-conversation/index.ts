@@ -262,6 +262,12 @@ const DRAFT_INJECTED_ACTIONS = new Set([
   "website.generateDocument",
   "website.patchDocument",
   "website.newPage",
+  // Found by the audit below on the day it was written, and seen failing in a
+  // real conversation: the model called setChrome, got no credentials, and told
+  // the owner "I couldn't change the header controls in this conversation".
+  // Its handler reads args.draftId but its argsSchema does not declare one,
+  // which is why a schema-only check reported it as fine.
+  "website.setChrome",
 ]);
 
 /**
@@ -994,6 +1000,9 @@ Deno.serve(async (req) => {
       ? {
           label: String(body.directFreeformEdit.label),
           text: String(body.directFreeformEdit.text),
+          ...(typeof body.directFreeformEdit.prevText === "string"
+            ? { prevText: String(body.directFreeformEdit.prevText) }
+            : {}),
         }
       : null;
   const directFreeformImageEdit =

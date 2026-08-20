@@ -232,3 +232,77 @@ describe('value-role fact sync', () => {
     assert.equal(r.error, 'no_change');
   });
 });
+
+/**
+ * The automatic path must never rewrite wording.
+ *
+ * WHAT HAPPENED, ON A REAL PAGE
+ *
+ * An owner saved an EMAIL ADDRESS. The record sync then rewrote, on the same
+ * page, in the same second:
+ *
+ *   business.name  "CK"              -> "Copperwick Kilns"
+ *   contact.phone  "Start a Call"    -> "801-555-7420"
+ *   contact.phone  "Call Copperwick" -> "801-555-7420"
+ *
+ * Three buttons reduced to printing a number the page already stated, a
+ * monogram overwritten with the full name, and none of it requested. The cause
+ * was a fallback: when the old value could not be found inside an element, the
+ * element's whole body was replaced anyway.
+ *
+ * THE RULE: a sync that cannot find what it is replacing changes nothing.
+ */
+describe('automatic record sync leaves wording alone', () => {
+  const edit = (html, e) => {
+    const mod = join(root, 'supabase/functions/_shared/hubly_freeform.ts');
+    const out = execFileSync('deno', ['eval', '--quiet', `import * as m from "${mod}";\nconsole.log(JSON.stringify(m.applyFreeformEdit(${JSON.stringify(html)}, ${JSON.stringify(e)})));`], { encoding: 'utf8' });
+    return JSON.parse(out);
+  };
+  const textOf = (html, label) => {
+    const re = new RegExp(`data-hc="${label.replace(/\./g, '\\.')}"[^>]*>([^<]*)`, 'g');
+    return [...html.matchAll(re)].map((m) => m[1].trim());
+  };
+
+  // The shape a real generator produced: a monogram, a worded CTA, a bare number.
+  const PAGE = stamp(`<body>
+<header><div class="mark">SB</div><a class="phone" href="tel:8015556310">801-555-6310</a></header>
+<section><h1>Hand-bound</h1></section>
+<section class="contact"><h2>Visit</h2>
+  <a class="btn" href="tel:8015556310">Start the conversation</a>
+</section>
+</body>`).html;
+
+  it('does not touch a CTA whose words do not contain the number', () => {
+    const r = edit(PAGE, { label: 'contact.phone', text: '801-555-9001' });
+    assert.ok(r.ok, 'the real number should still update');
+    assert.deepEqual(textOf(r.html, 'contact.phone'), ['801-555-9001', 'Start the conversation']);
+    assert.ok(r.skipped.some((s) => s.includes('Start the conversation')), 'and it should say what it left alone');
+  });
+
+  it('updates every tel: href even on the element it left worded', () => {
+    const r = edit(PAGE, { label: 'contact.phone', text: '801-555-9001' });
+    const hrefs = [...new Set([...r.html.matchAll(/href="tel:[^"]*"/g)].map((m) => m[0]))];
+    assert.deepEqual(hrefs, ['href="tel:8015559001"'], 'the button still dials the right number');
+  });
+
+  it('does not overwrite a monogram with the full business name', () => {
+    const r = edit(PAGE, { label: 'business.name', text: 'Saltmarsh Bindery' });
+    assert.equal(r.ok, false, 'nothing to change: the monogram is not the name');
+    assert.equal(r.error, 'no_change');
+    assert.deepEqual(textOf(r.html, 'business.name'), ['SB']);
+  });
+
+  it('still lets the OWNER rewrite the words on the element they clicked', () => {
+    // prevText identifies the clicked element; only that one takes the words.
+    const r = edit(PAGE, { label: 'contact.phone', text: 'Ring the bindery', prevText: 'Start the conversation' });
+    assert.ok(r.ok);
+    assert.deepEqual(textOf(r.html, 'contact.phone'), ['801-555-6310', 'Ring the bindery']);
+  });
+
+  it('a positional label is still replaced outright', () => {
+    // Unique by construction, so there is no ambiguity to protect against.
+    const r = edit(PAGE, { label: 'section.1.heading', text: 'Where to find us' });
+    assert.ok(r.ok, JSON.stringify(r.error));
+    assert.deepEqual(textOf(r.html, 'section.1.heading'), ['Where to find us']);
+  });
+});

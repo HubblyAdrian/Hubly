@@ -1403,7 +1403,7 @@ async function uploadImageToStorage(
 export async function applyDirectFreeformEdit(
   draftId: string,
   draftToken: string,
-  edit: { label: string; text?: string; src?: string },
+  edit: { label: string; text?: string; src?: string; prevText?: string },
 ): Promise<CapabilityActionResult> {
   if (!draftId || !draftToken) {
     return { ok: false, real: false, summary: "No draft business exists yet to edit.", error: "missing_draft" };
