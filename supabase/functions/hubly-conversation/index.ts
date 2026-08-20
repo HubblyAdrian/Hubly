@@ -64,6 +64,7 @@ import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
 import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts } from "../_shared/hubly_extract.ts";
 import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
+import { reportAllowlistDrops } from "../_shared/hubly_allowlist.ts";
 import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
@@ -222,19 +223,93 @@ function getAllowedCapabilities(context: ConversationContextName) {
   return HUBLY_CAPABILITY_REGISTRY.filter((c) => allow.has(c.name));
 }
 
-// Real AI website generation — merged to main but deliberately shipped
-// dark. Nothing in this whole feature (generation, the styling layer, the
-// designRationale prompting, the benchmark) has ever been exercised by a
-// real customer; every verification pass has been a manual/test-harness
-// call. A global, explicit env flag (not a per-business rollout tier,
-// which wasn't scoped or asked for) is the deliberate switch for turning
-// it on for real traffic, kept separate from the decision to merge the
-// code. Unset/anything other than "true" = off, the safe default.
+// Real AI website generation, behind one global env flag. Unset/anything other
+// than "true" = off, the safe default.
+//
+// IT IS CURRENTLY ON. `HUBLY_DOCUMENT_GENERATION_ENABLED` is set to "true" in
+// production — verified on 2026-08-20 against the platform secrets API, whose
+// hash for this variable matches sha256("true") exactly. This comment used to
+// say the feature was "shipped dark" and that nothing here had ever been
+// exercised by a real customer; both stopped being true when the flag was
+// turned on, and the comment kept saying it. A comment describing a state the
+// system has left is worse than no comment, because it is read as current.
+//
+// If you turn the flag off, say so HERE. The three enforcement points below are
+// only as honest as this line.
 const DOCUMENT_GENERATION_ENABLED = (Deno.env.get("HUBLY_DOCUMENT_GENERATION_ENABLED") || "").trim() === "true";
-// setChrome is gated with the other two: it re-renders a Document, so it is
-// meaningless without one, and advertising it while the format is dark would
-// offer the owner a header they cannot have.
-const GATED_WEBSITE_ACTIONS = new Set(["generateDocument", "patchDocument", "setChrome"]);
+// Every website action that creates or rewrites a stored page. setChrome is
+// here because it re-renders a Document, so it is meaningless without one;
+// newPage because it generates a whole freeform page, which is the single most
+// expensive and most destructive thing this capability can do.
+//
+// ADDING A WEBSITE ACTION? It is NOT gated unless its name is in this set, and
+// nothing used to say so — newPage was advertised, dispatchable and reachable
+// with the flag off. The audit below now names anything that falls through.
+const GATED_WEBSITE_ACTIONS = new Set(["generateDocument", "patchDocument", "setChrome", "newPage"]);
+
+/**
+ * Actions the engine injects the real draftId/draftToken into. The model never
+ * sees those values, so an action absent from this set reaches its handler with
+ * nothing and returns "missing_draft" — indistinguishable, from the outside,
+ * from "this conversation has no draft business". That is exactly what
+ * `website.newPage` did: picked correctly by the model on the first attempt,
+ * and answered with a confident, wrong "there isn't a draft business connected
+ * to this conversation."
+ */
+const DRAFT_INJECTED_ACTIONS = new Set([
+  "business.updateDraft",
+  "business.setServices",
+  "website.generateDocument",
+  "website.patchDocument",
+  "website.newPage",
+]);
+
+/**
+ * BOOT-TIME AUDIT OF THE TWO ALLOW-LISTS ABOVE.
+ *
+ * Both are hardcoded name lists, and both have silently dropped a new entry.
+ * Running the check at module load rather than per request means the warning
+ * appears before anyone reaches the broken path, and costs one pass over a
+ * registry of ~25 actions per isolate.
+ *
+ * "Needs a draft" is detected from the handler's own SOURCE, not from its
+ * argsSchema. Schema alone is not enough: `website.setChrome` does not declare
+ * draftId as an argument but its handler reads `args?.draftId` and refuses
+ * without it — so a schema-only check would have reported it as fine.
+ */
+function auditConversationAllowlists(): void {
+  const needsDraft: string[] = [];
+  const websiteActions: string[] = [];
+  for (const cap of HUBLY_CAPABILITY_REGISTRY) {
+    for (const action of cap.actions) {
+      const id = `${cap.name}.${action.name}`;
+      if (cap.name === "website") websiteActions.push(action.name);
+      let source = "";
+      try { source = action.handler.toString(); } catch { /* not inspectable; skip */ }
+      const reads = /draftToken/.test(source) || /draftId/.test(source);
+      // startDraft CREATES the draft, so it legitimately mentions both while
+      // needing neither injected.
+      if (reads && id !== "business.startDraft" && !DRAFT_INJECTED_ACTIONS.has(id)) needsDraft.push(id);
+    }
+  }
+  reportAllowlistDrops({
+    list: "DRAFT_INJECTED_ACTIONS",
+    dropped: needsDraft,
+    consequence: "the handler gets no draftId/draftToken and answers 'missing_draft', which reads to the owner as 'you have no draft business'",
+    fixAt: "hubly-conversation/index.ts DRAFT_INJECTED_ACTIONS",
+  });
+
+  // Anything on `website` that is not gated stays fully live when the feature
+  // flag is off. Some of these are correct (analyze reads a URL and writes
+  // nothing); the point is that the list is printed rather than assumed.
+  reportAllowlistDrops({
+    list: "GATED_WEBSITE_ACTIONS",
+    dropped: websiteActions.filter((a) => !GATED_WEBSITE_ACTIONS.has(a)),
+    consequence: "advertised to the model and dispatchable even with HUBLY_DOCUMENT_GENERATION_ENABLED off — confirm each one is genuinely safe to leave ungated",
+    fixAt: "hubly-conversation/index.ts GATED_WEBSITE_ACTIONS",
+  });
+}
+auditConversationAllowlists();
 
 /** Second half of the "advertise or don't" gate — strips the gated actions
  *  out of what the model is even told exists, same discipline as
@@ -940,7 +1015,11 @@ Deno.serve(async (req) => {
     // this path can't structurally be reached while the feature is dark —
     // but checked explicitly anyway, same discipline as the other two
     // enforcement points, not relying on that precondition alone.
-    if ((directDocumentPatch || directDocumentImageEdit) && !DOCUMENT_GENERATION_ENABLED) {
+    // The freeform shapes belong here too. This guard listed only the two AST
+    // ones, so a click-to-edit on a freeform page reached the server and wrote a
+    // new version with the feature flag off — the flag turned off generation and
+    // left editing running.
+    if ((directDocumentPatch || directDocumentImageEdit || directFreeformEdit || directFreeformImageEdit) && !DOCUMENT_GENERATION_ENABLED) {
       return jsonRes({ ok: false, error: "document_generation_disabled" }, 400);
     }
     let result: { ok: boolean; real: boolean; summary: string; humanNote?: string; raw?: unknown; error?: string };
@@ -1096,16 +1175,9 @@ Deno.serve(async (req) => {
         // the real draftId/draftToken, so it can never be trusted to
         // transcribe them — the engine injects the real ones whenever a
         // draft already exists, overriding any placeholder the model put in.
-        // THIS IS AN ALLOW-LIST, AND A NEW ACTION MISSING FROM IT FAILS
-        // QUIETLY. `newPage` was added to the registry, was picked correctly by
-        // the model on the first try, and returned "missing_draft" — because
-        // the engine only injects credentials for names written here, and the
-        // handler cannot tell "no draft exists" from "nobody told me about it".
-        // Same shape as patch_business_in_progress's column whitelist, which
-        // returned ok:true and wrote nothing for six columns.
-        const NEEDS_DRAFT_INJECTION =
-          (capabilityName === "business" && (actionName === "updateDraft" || actionName === "setServices")) ||
-          (capabilityName === "website" && (actionName === "generateDocument" || actionName === "patchDocument" || actionName === "newPage"));
+        // Membership of DRAFT_INJECTED_ACTIONS — see the audit at module load,
+        // which names any action that needs a draft and is missing from it.
+        const NEEDS_DRAFT_INJECTION = DRAFT_INJECTED_ACTIONS.has(`${capabilityName}.${actionName}`);
         if (NEEDS_DRAFT_INJECTION && draftBusiness) {
           dispatchArgs.draftId = draftBusiness.id;
           dispatchArgs.draftToken = draftBusiness.draftToken;

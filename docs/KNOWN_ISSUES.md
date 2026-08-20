@@ -1988,3 +1988,108 @@ Same shape as `patch_business_in_progress`'s column whitelist, which returned
 `ok: true` and wrote nothing for six columns for months. **When you add a
 capability action that needs a draft, grep for `NEEDS_DRAFT_INJECTION` before you
 test it**, or you will debug the handler for something the dispatcher did.
+
+## A hardcoded list that silently drops unknown entries — six instances, one bug
+
+This is not six bugs. It is one shape, six times, and it will happen again unless
+the rule below is applied when the list is written rather than after it breaks.
+
+**The shape.** A set of known names, an input that may contain an unknown one,
+and an `if (known.has(x))` whose else-branch does nothing. Dropping is the
+list's *normal* behaviour, so "not in the list" and "deliberately excluded" are
+the same code path and produce the same silence. Nothing is ever observably
+wrong; the feature simply does not happen.
+
+| # | The list | What fell through | What it looked like from outside |
+|---|---|---|---|
+| 1 | `patch_business_in_progress`'s column whitelist | `state`, `address`, `service_area_cities`, `travel_radius_miles`, `years_in_business`, `settings_business_hours` | `ok: true`, nothing written, for months |
+| 2 | The publishable-key script-tag guard | six pages | shipped blank; the guard matched its own comment |
+| 3 | `NEEDS_DRAFT_INJECTION` | `website.newPage` | "there isn't a draft business connected to this conversation" — confident and wrong |
+| 4 | `GATED_WEBSITE_ACTIONS` (3 call sites) | `website.newPage` | advertised and dispatchable with the feature flag off |
+| 5 | `DRAFT_INJECTED_ACTIONS` | `website.setChrome` | found by the audit below, on the day it was written. **Still open** |
+| 6 | `platform-home.html`'s canvas-refresh branches | `newPage` | a page built successfully and the builder showed a blank canvas |
+
+**THE RULE: a list that silently drops unknown entries must log the drop.**
+
+Not throw. Most of these lists are right most of the time, and failing hard on
+an unknown name turns a small omission into an outage. Log it: name the list,
+name what fell through, say what the consequence is, say where to fix it. The
+entire cost of all six was that this line did not exist.
+
+**Where the rule now lives:**
+
+- `_shared/hubly_allowlist.ts` — `reportAllowlistDrops()`, the TypeScript form.
+  Deduplicates per isolate so a hot path cannot flood the log.
+- `hubly-conversation/index.ts` — `auditConversationAllowlists()` runs at module
+  load and audits #3/#5 and #4 together. It detects "needs a draft" from the
+  handler's own **source**, not its `argsSchema`: `setChrome` does not declare
+  `draftId` as an argument but reads `args?.draftId` and refuses without it, so
+  a schema-only check reports it as fine.
+- `patch_business_in_progress` — returns `dropped_keys` in its result JSON *and*
+  raises a warning. Returning it is what makes it verifiable by CALLING the
+  function, which is the only verification a plpgsql body earns here.
+- `tests/publishable-key-tag.test.mjs` — the durable form of #2. A build-time
+  check has no log to write to, so the test's failure message *is* the line, and
+  it names the offending page. It also asserts that the naive filename check
+  would still be fooled, so the distinction cannot be refactored away.
+
+#6 is **not** covered: it lives in `platform-home.html`, a browser file with no
+log anyone reads and no test harness around the canvas branches. Recorded as
+open rather than papered over.
+
+## OPEN SECURITY ITEM: anyone can host arbitrary HTML on a *.myhubly.app subdomain
+
+**Must be closed before the first real customer.**
+
+Typing one sentence into the landing page creates a draft business and returns a
+`draft_token`. That token is the only credential `create_business_document`
+checks, and the function is granted to `anon`. So:
+
+1. Type a sentence → get `draft_token` + a `{slug}.myhubly.app` subdomain.
+2. `POST /rest/v1/rpc/create_business_document` with `p_format: 'html'` and any
+   `p_rendered_html` at all.
+3. `get_public_business_document` serves it to anyone, on a Hubly subdomain,
+   over Hubly's TLS certificate.
+
+**This predates freeform** — the same call has always accepted arbitrary
+`rendered_html` — but freeform makes it *practical*, because the format's whole
+premise is that stored HTML is served as the page rather than rendered from a
+validated tree. A phishing page on `secure-login.myhubly.app` is now a two-step
+API call, not a bug hunt.
+
+Mitigating today, and none of it is a control: there are no real customers, the
+domain has no reputation to trade on, and `hcNoIndex()` keeps unclaimed drafts
+out of search results. All three stop being true the moment the product has
+users.
+
+Not fixed this session, deliberately. Options when it is: require a claimed
+owner before a document can be stored, sanitise stored HTML on write, serve
+unclaimed drafts from a separate throwaway domain, or rate-limit draft creation
+per IP. The first is the only one that actually closes it.
+
+## Freeform record-sync overwrites wording it should have left alone
+
+**Found in production on 2026-08-20, on a real generated page. Not fixed.**
+
+`syncFreeformFacts` applies a value-role edit to *every* element carrying that
+label. When the element's current text does not contain the old value, it falls
+back to replacing the element's whole body — and that is wrong twice over:
+
+```
+BEFORE  <span data-hc="business.name" class="mark">A</span><span>Ashgrove Forge</span>
+AFTER   <span data-hc="business.name" class="mark">Ashgrove Forge</span><span>Ashgrove Forge</span>
+
+BEFORE  <a data-hc="contact.phone" class="btn btn-primary" href="tel:8015553100">Call the Forge</a>
+AFTER   <a data-hc="contact.phone" class="btn btn-primary" href="tel:8015553100">801-555-3100</a>
+```
+
+The first is also a labelling error: `business.name` went to a one-letter
+monogram because the rule picks the first text leaf in the header. The second
+destroyed a call-to-action's wording to write a number that the same page
+already stated three times.
+
+Both were triggered automatically by an owner saving an email address — a change
+that had nothing to do with either element. The fix is to make the fallback
+conservative: if the element's text does not contain the old value, leave it
+alone rather than replacing it. Until that lands, **every contact-record change
+can silently rewrite CTA text on a freeform page.**
