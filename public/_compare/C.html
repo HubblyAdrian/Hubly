@@ -1,0 +1,660 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hearth and Iron | Wood-Fired Bakery in Ogden, Utah</title>
+  <style>
+    :root {
+      --ember: #b94726;
+      --ember-dark: #7b2818;
+      --char: #221915;
+      --iron: #39302b;
+      --flour: #f7efe1;
+      --dough: #ead5b5;
+      --paper: #fff9ee;
+      --smoke: #6f6259;
+      --seed: #12100e;
+      --line: rgba(34, 25, 21, 0.18);
+      --glow: rgba(185, 71, 38, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--char);
+      background:
+        radial-gradient(circle at 15% 8%, rgba(185, 71, 38, 0.18), transparent 26rem),
+        radial-gradient(circle at 85% 12%, rgba(234, 213, 181, 0.7), transparent 24rem),
+        linear-gradient(180deg, #fff8eb 0%, #f4e4ca 48%, #efe0c8 100%);
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      position: relative;
+      padding: 28px clamp(18px, 4vw, 56px) 0;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .mark {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .oven-mark {
+      width: 42px;
+      height: 42px;
+      border: 2px solid var(--char);
+      border-radius: 50% 50% 8px 8px;
+      position: relative;
+      background: linear-gradient(180deg, var(--char) 0 42%, var(--ember) 43% 100%);
+      box-shadow: 0 8px 20px var(--glow);
+    }
+
+    .oven-mark::before {
+      content: "";
+      position: absolute;
+      left: 9px;
+      right: 9px;
+      bottom: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #f2b35f;
+    }
+
+    .brand-name {
+      display: grid;
+      line-height: 1.05;
+    }
+
+    .brand-name strong {
+      font-size: clamp(1.15rem, 2vw, 1.45rem);
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+
+    .brand-name span {
+      font-size: 0.85rem;
+      color: var(--smoke);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .call-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 10px 16px;
+      border: 1px solid var(--char);
+      border-radius: 999px;
+      background: var(--char);
+      color: var(--paper);
+      text-decoration: none;
+      font-family: Arial, sans-serif;
+      font-size: 0.92rem;
+      letter-spacing: 0.02em;
+      transition: transform 160ms ease, background 160ms ease;
+      white-space: nowrap;
+    }
+
+    .call-link:hover,
+    .call-link:focus {
+      transform: translateY(-1px);
+      background: var(--ember-dark);
+    }
+
+    .hero {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: clamp(54px, 9vw, 112px) 0 clamp(46px, 7vw, 86px);
+      display: grid;
+      grid-template-columns: minmax(0, 1.05fr) minmax(280px, 0.75fr);
+      gap: clamp(32px, 6vw, 74px);
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      gap: 10px;
+      align-items: center;
+      margin: 0 0 20px;
+      color: var(--ember-dark);
+      font-family: Arial, sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 38px;
+      height: 2px;
+      background: var(--ember);
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 830px;
+      font-size: clamp(3.2rem, 8.7vw, 7.8rem);
+      line-height: 0.88;
+      letter-spacing: -0.075em;
+      color: var(--char);
+    }
+
+    .hero-copy {
+      max-width: 620px;
+      margin: 28px 0 0;
+      font-size: clamp(1.2rem, 2.3vw, 1.7rem);
+      line-height: 1.35;
+      color: var(--iron);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 14px;
+      margin-top: 32px;
+    }
+
+    .primary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 54px;
+      padding: 14px 22px;
+      border-radius: 999px;
+      background: var(--ember);
+      color: #fffaf0;
+      text-decoration: none;
+      font-family: Arial, sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      box-shadow: 0 16px 34px rgba(185, 71, 38, 0.24);
+    }
+
+    .secondary-note {
+      font-family: Arial, sans-serif;
+      color: var(--smoke);
+      font-size: 0.96rem;
+    }
+
+    .oven-card {
+      position: relative;
+      min-height: 430px;
+      border: 1px solid var(--line);
+      border-radius: 34px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.42), rgba(255,255,255,0.08)),
+        #d9b988;
+      box-shadow: 0 30px 80px rgba(34, 25, 21, 0.13);
+      overflow: hidden;
+    }
+
+    .oven-card::before {
+      content: "";
+      position: absolute;
+      inset: 34px 34px auto;
+      height: 270px;
+      border-radius: 50% 50% 16px 16px;
+      background:
+        radial-gradient(circle at 50% 78%, #f0aa4d 0 12%, #c95728 13% 25%, transparent 26%),
+        radial-gradient(circle at 50% 90%, rgba(255, 229, 166, 0.9), rgba(174, 56, 27, 0.85) 32%, #1f1713 33% 100%);
+      border: 10px solid #3c3029;
+      box-shadow: inset 0 -22px 50px rgba(0,0,0,0.35);
+    }
+
+    .oven-card::after {
+      content: "";
+      position: absolute;
+      left: -30%;
+      right: -30%;
+      bottom: 66px;
+      height: 86px;
+      background:
+        radial-gradient(ellipse at center, rgba(255,255,255,0.25), transparent 55%),
+        linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+      transform: rotate(-4deg);
+    }
+
+    .same-day {
+      position: absolute;
+      left: 26px;
+      right: 26px;
+      bottom: 26px;
+      padding: 22px;
+      border-radius: 24px;
+      background: rgba(255, 249, 238, 0.9);
+      border: 1px solid rgba(34, 25, 21, 0.16);
+      backdrop-filter: blur(2px);
+    }
+
+    .same-day b {
+      display: block;
+      font-size: 1.4rem;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+
+    .same-day span {
+      display: block;
+      color: var(--smoke);
+      font-family: Arial, sans-serif;
+      font-size: 0.95rem;
+    }
+
+    main {
+      position: relative;
+    }
+
+    section {
+      padding: clamp(50px, 8vw, 92px) clamp(18px, 4vw, 56px);
+    }
+
+    .section-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .notice-band {
+      padding-top: 0;
+    }
+
+    .notice {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 20px;
+      align-items: center;
+      padding: clamp(22px, 4vw, 34px);
+      border: 1px solid rgba(123, 40, 24, 0.28);
+      border-radius: 28px;
+      background: var(--char);
+      color: var(--paper);
+      box-shadow: 0 22px 60px rgba(34, 25, 21, 0.18);
+    }
+
+    .notice h2 {
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 3.2rem);
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .notice p {
+      margin: 8px 0 0;
+      max-width: 700px;
+      color: #ead8c0;
+      font-family: Arial, sans-serif;
+      font-size: 1rem;
+    }
+
+    .notice a {
+      border-color: var(--paper);
+      background: var(--paper);
+      color: var(--char);
+    }
+
+    .menu-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .menu-head h2,
+    .visit h2 {
+      margin: 0;
+      font-size: clamp(2.4rem, 6vw, 5.2rem);
+      line-height: 0.95;
+      letter-spacing: -0.06em;
+    }
+
+    .menu-head p {
+      margin: 0;
+      max-width: 360px;
+      color: var(--smoke);
+      font-family: Arial, sans-serif;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .menu-item {
+      min-height: 170px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.12)),
+        var(--paper);
+      box-shadow: 0 18px 45px rgba(34, 25, 21, 0.06);
+    }
+
+    .menu-item h3 {
+      margin: 0 0 18px;
+      font-size: clamp(1.45rem, 2.4vw, 2rem);
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+    }
+
+    .price {
+      display: inline-block;
+      margin-top: auto;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: #f0dfc4;
+      color: var(--ember-dark);
+      font-family: Arial, sans-serif;
+      font-weight: 700;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 0.85fr 1.15fr;
+      gap: clamp(28px, 6vw, 70px);
+      align-items: stretch;
+    }
+
+    .visit-card {
+      padding: clamp(26px, 4vw, 42px);
+      border-radius: 34px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      box-shadow: 0 18px 55px rgba(34, 25, 21, 0.08);
+    }
+
+    .visit-card p {
+      margin: 18px 0 0;
+      color: var(--smoke);
+      font-family: Arial, sans-serif;
+      font-size: 1.05rem;
+    }
+
+    .details {
+      display: grid;
+      gap: 14px;
+    }
+
+    .detail {
+      padding: 22px;
+      border-radius: 24px;
+      background: rgba(255, 249, 238, 0.58);
+      border: 1px solid var(--line);
+    }
+
+    .detail span {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ember-dark);
+      font-family: Arial, sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .detail strong,
+    .detail a {
+      font-size: clamp(1.25rem, 2.2vw, 1.75rem);
+      line-height: 1.15;
+      text-decoration: none;
+    }
+
+    footer {
+      padding: 28px clamp(18px, 4vw, 56px) 42px;
+      color: var(--smoke);
+      font-family: Arial, sans-serif;
+      font-size: 0.9rem;
+    }
+
+    .footer-inner {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding-top: 22px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 860px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .oven-card {
+        min-height: 360px;
+      }
+
+      .notice {
+        grid-template-columns: 1fr;
+      }
+
+      .menu-head {
+        display: block;
+      }
+
+      .menu-head p {
+        margin-top: 12px;
+      }
+
+      .menu-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .split {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      header {
+        padding-top: 16px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+      }
+
+      .brand-name span {
+        font-size: 0.72rem;
+      }
+
+      .call-link {
+        padding: 9px 12px;
+        font-size: 0.82rem;
+      }
+
+      h1 {
+        font-size: clamp(3rem, 18vw, 5rem);
+      }
+
+      .hero-copy {
+        font-size: 1.12rem;
+      }
+
+      .menu-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .menu-item {
+        min-height: 130px;
+      }
+
+      .oven-card::before {
+        inset: 26px 22px auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="topbar">
+        <a class="mark" href="#top" aria-label="Hearth and Iron home">
+          <span class="oven-mark" aria-hidden="true"></span>
+          <span class="brand-name">
+            <strong>Hearth and Iron</strong>
+            <span>Wood-fired bakery</span>
+          </span>
+        </a>
+        <a class="call-link" href="tel:8015552200">Call 801-555-2200</a>
+      </div>
+
+      <div class="hero" id="top">
+        <div>
+          <p class="eyebrow">Ogden, Utah</p>
+          <h1>Wood-fired bread, baked for today.</h1>
+          <p class="hero-copy">
+            Hearth and Iron is a wood-fired bakery in Ogden, Utah. Everything is same-day, and they sell out most afternoons.
+          </p>
+          <div class="hero-actions">
+            <a class="primary" href="tel:8015552200">Call before you come</a>
+            <span class="secondary-note">Same-day menu items listed below.</span>
+          </div>
+        </div>
+
+        <div class="oven-card" aria-label="Illustration of a wood-fired oven">
+          <div class="same-day">
+            <b>Same-day only.</b>
+            <span>Fresh from the oven, available until sold out.</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="notice-band" aria-labelledby="daily-note">
+        <div class="section-inner">
+          <div class="notice">
+            <div>
+              <h2 id="daily-note">Most afternoons, the shelves are gone.</h2>
+              <p>
+                If you are coming for a specific loaf, pastry, roll, or pizza, call Hearth and Iron first.
+              </p>
+            </div>
+            <a class="call-link" href="tel:8015552200">801-555-2200</a>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="menu">
+        <div class="section-inner">
+          <div class="menu-head">
+            <h2 id="menu">Menu</h2>
+            <p>Wood-fired bakery items and prices on record.</p>
+          </div>
+
+          <div class="menu-grid">
+            <article class="menu-item">
+              <h3>Sourdough loaf</h3>
+              <span class="price">$9</span>
+            </article>
+
+            <article class="menu-item">
+              <h3>Seeded rye</h3>
+              <span class="price">$11</span>
+            </article>
+
+            <article class="menu-item">
+              <h3>Morning bun</h3>
+              <span class="price">$5.50</span>
+            </article>
+
+            <article class="menu-item">
+              <h3>Cardamom knot</h3>
+              <span class="price">$6</span>
+            </article>
+
+            <article class="menu-item">
+              <h3>Sausage roll</h3>
+              <span class="price">$8.50</span>
+            </article>
+
+            <article class="menu-item">
+              <h3>Wood-fired pizza</h3>
+              <span class="price">$22</span>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="visit" aria-labelledby="visit">
+        <div class="section-inner split">
+          <div class="visit-card">
+            <h2 id="visit">Plan around the bake.</h2>
+            <p>
+              Hearth and Iron has been baking for 6 years. The page does not list opening hours because none are on record.
+            </p>
+          </div>
+
+          <div class="details">
+            <div class="detail">
+              <span>Business</span>
+              <strong>Hearth and Iron</strong>
+            </div>
+
+            <div class="detail">
+              <span>Trade</span>
+              <strong>Wood-fired bakery</strong>
+            </div>
+
+            <div class="detail">
+              <span>City</span>
+              <strong>Ogden, Utah</strong>
+            </div>
+
+            <div class="detail">
+              <span>Phone</span>
+              <a href="tel:8015552200">801-555-2200</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <span>Hearth and Iron</span>
+        <span>Wood-fired bakery in Ogden, Utah</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

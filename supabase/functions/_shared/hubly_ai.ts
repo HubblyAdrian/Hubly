@@ -901,6 +901,25 @@ const CUSTOMER_FACING_TASKS: Set<HublyAITask> = new Set([
   "business_coach",
 ]);
 
+/**
+ * Which part of the product paid for this call.
+ *
+ * `feature` and `task` already exist, but neither answers "what did building a
+ * page cost" without a lookup table in someone's head. Recording the phase makes
+ * the cost question a group-by instead of an argument.
+ */
+function phaseFor(feature?: string, task?: string | null): string {
+  const f = String(feature || "");
+  const t = String(task || "");
+  if (t === "document_generate" || f.includes("document-generate")) return "generation";
+  if (t === "document_patch" || f.includes("document-patch")) return "edit";
+  if (f.includes("record-extract")) return "extraction";
+  if (t === "storefront_build" || f.includes("storefront")) return "storefront";
+  if (f.includes("conversation")) return "conversation";
+  if (f.includes("scratch-freeform")) return "freeform-experiment";
+  return "other";
+}
+
 async function run(opts: InternalCall): Promise<HublyAIResult> {
   const started = Date.now();
   // Section 1: Brain alone decides experts. Direct complete = empty expert set until ED.
@@ -944,6 +963,11 @@ async function run(opts: InternalCall): Promise<HublyAIResult> {
       kind: "complete",
       feature: opts.feature,
       task: opts.task,
+      // Real provider-reported usage. It was parsed out of every response and
+      // then thrown away, which is why "what does a page cost" had to be
+      // reasoned about rather than read.
+      usage: result.usage ?? null,
+      phase: phaseFor(opts.feature, opts.task),
       expertsSelected,
       mergedResponse: true, // single Brain-owned response
       memoryUpdated: !!conversation || !!opts.memory,
@@ -968,6 +992,7 @@ async function run(opts: InternalCall): Promise<HublyAIResult> {
       kind: "complete",
       feature: opts.feature,
       task: opts.task,
+      phase: phaseFor(opts.feature, opts.task),
       expertsSelected,
       mergedResponse: false,
       memoryUpdated: false,

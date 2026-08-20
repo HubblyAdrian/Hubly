@@ -115,3 +115,7 @@ verify_jwt = false
 # any valid JWT could trigger an owner email.
 [functions.booking-notify]
 verify_jwt = false
+
+# SCRATCH — delete with the function.
+[functions.scratch-freeform]
+verify_jwt = false

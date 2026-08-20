@@ -54,6 +54,11 @@ export type HublyBrainExecutionRecord = {
   error?: string | null;
   businessId?: string | null;
   runId?: string | null;
+  /** Provider-reported token usage. Null when the provider did not report it —
+   *  never estimated, because an estimated cost is not a cost. */
+  usage?: { promptTokens: number; completionTokens: number; reasoningTokens?: number } | null;
+  /** Which part of the product paid for this call — see phaseFor in hubly_ai.ts. */
+  phase?: string | null;
 };
 
 const MAX_LOG = 250;
@@ -86,6 +91,8 @@ export function logBrainExecution(
     error: partial.error ?? null,
     businessId: partial.businessId ?? null,
     runId: partial.runId ?? null,
+    usage: partial.usage ?? null,
+    phase: partial.phase ?? null,
   };
   LOG.push(record);
   while (LOG.length > MAX_LOG) LOG.shift();
@@ -136,6 +143,12 @@ export async function persistBrainExecution(record: HublyBrainExecutionRecord): 
       provider: record.provider,
       model: record.model,
       error: record.error,
+      // Real columns, not buried in payload: the whole point is that
+      // "what does a page cost" becomes a group-by rather than a JSON dig.
+      prompt_tokens: record.usage?.promptTokens ?? null,
+      completion_tokens: record.usage?.completionTokens ?? null,
+      reasoning_tokens: record.usage?.reasoningTokens ?? null,
+      phase: record.phase ?? null,
       payload: { executionId: record.id, at: record.at },
     });
   } catch (err) {
