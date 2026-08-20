@@ -2380,3 +2380,108 @@ classic customer whose services have no price now answers that bathroom tiling
 is quote required and there is no set price listed.
 
 **This was never a freeform problem.** It affected every Hubly site.
+
+## A failure that cannot fail loudly must still be RECORDED where someone can query it
+
+This is one disease with many hosts, and it is the single most expensive pattern
+in this codebase. It has now been found in enough places to name:
+
+| Where | Shape | Cost |
+|---|---|---|
+| Browser → `booking-notify` | `.catch(e => console.warn(...))` | 403 on **every booking ever made**; no owner was told, for months |
+| `sendEmail` in booking-notify | `if (!res.ok) console.error(...)` then `ok: true` | a bounced owner email was indistinguishable from a delivered one |
+| `patch_business_in_progress` | unknown keys silently ignored, `ok: true` | six columns unwritten for months |
+| `/api/notify-signup` | returns **HTTP 200** `{ok:false, reason:'not_configured'}` | Hubly's own signup alert has never sent (below) |
+| the ten-plus "reported success while doing nothing" entries above | same | same |
+
+**The rule.** Fire-and-forget is often correct — an email problem must not roll
+back a completed booking, and a missing env var must not stop a business
+launching. What is never correct is the *absence of a record*. So:
+
+> If a failure is deliberately made non-fatal, it must be written somewhere
+> queryable. A `console.warn` is not a record. A log line in a system whose log
+> API returns backend errors is not a record. A row is a record.
+
+`notification_deliveries` is the first application of it: one row per recipient
+per attempt, `sent` / `failed` / `skipped`, with the provider's own receipt or
+its own error text. Proven by booking twice — once to a good address, once to a
+malformed one — and getting `sent` with a Resend id and `failed` with
+`resend 422: Invalid \`to\` field` respectively, while the handler returned
+`ok: true` both times. **That is the point: the handler's 200 was never the
+answer to "did the owner get told".**
+
+### The size of the remaining problem
+
+Swept on 2026-08-21 across `supabase/functions`, `public`, `api`, `scripts`:
+
+```
+1267  empty catch  ( } catch(e){} )
+  85  catch -> a console line, then continue
+   3  .catch(e => console.warn(...))  fire-and-forget
+```
+
+The raw 1267 **overstates it**: most are `try{ el.style.x=1 }catch(e){}` around
+DOM pokes where nothing depends on the result. Narrowing to catches whose `try`
+body performs a network call or a write — where the swallowed thing is a side
+effect someone relies on — gives the real number:
+
+```
+41 swallowed side-effecting calls
+   30  public/hubly.html
+    3  public/platform-home.html
+    5  supabase/functions/** (google-calendar x3, adobe_oauth, calendar_sync)
+    3  other public/ modules
+```
+
+None of the 41 are silent on the server side; all log something. **Not fixed
+this session** — the list is the deliverable, not the repair.
+
+## ACTIVELY BROKEN: Hubly's own new-signup notification has never sent
+
+Found by the sweep above, verified by calling it, **not fixed** (stop rule).
+
+```
+POST https://myhubly.app/api/notify-signup   ->   HTTP 200
+{"ok":false,"reason":"not_configured"}
+```
+
+`api/notify-signup.js` returns 200 with `ok:false` when `RESEND_API_KEY` or
+`OWNER_EMAIL` is unset, and one of them is unset in production. The caller is
+fire-and-forget with `.catch(e => console.warn(...))` — and because the response
+is a **200**, that catch never even runs. So every business that has ever
+completed onboarding did so without anyone at Hubly being told.
+
+It is the same disease as `booking-notify`, one layer up: a non-fatal failure
+with no record. Fix is to set the env vars and give it a delivery row like
+bookings now have.
+
+## meta.service_catalog is NOT dead — I was wrong
+
+An earlier entry said "not one real business has that key". **That was a
+generalisation from a four-business sample and it is false.** Across all 42
+businesses:
+
+```
+has service_catalog key ........ 9
+catalog containing services .... 6   (all 6 are CLAIMED businesses)
+has rows in `services` ......... 24
+```
+
+Both sources are live. They are split by WHICH PATH created the services:
+
+- **`meta.service_catalog`** — written by the owner editor
+  (`buildServiceCatalogFromEditor` → `buildBizMeta`), by `service_engine.ts`
+  (`writeCatalog`), and by `marketplace/index.ts`. Every business that has it is
+  claimed, i.e. an owner sat in the editor and saved.
+- **`services` table** — written by the AI path (`business.setServices`) on
+  drafts.
+
+Two businesses have BOTH and they disagree on count (`everlasting` 6 vs 9,
+`adrians-lawn-service` 5 vs 9).
+
+So the instruction "if nothing writes it, delete it" does not apply — deleting it
+would destroy the service data of six claimed businesses. **Converging the two
+is a data migration, not a fix**, and is deliberately not started here. The
+context-loader fallback added yesterday (catalog first, `services` table when the
+catalog is empty) is the right *reader-side* behaviour in the meantime, but it
+does not resolve the split.

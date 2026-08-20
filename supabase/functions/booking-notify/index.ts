@@ -81,8 +81,53 @@ function googleCalendarLink(opts: { summary: string; location: string; descripti
   return `https://www.google.com/calendar/render?${params.toString()}`;
 }
 
-async function sendEmail(to: string | null, subject: string, html: string, attachment?: { filename: string; content: string }) {
-  if (!to) return;
+/**
+ * Send, and RECORD THE OUTCOME.
+ *
+ * This used to swallow a provider rejection into a console.error and let the
+ * caller report ok:true regardless — so a booking whose owner email bounced was
+ * indistinguishable from one that arrived. Every path out of this function now
+ * writes a notification_deliveries row: sent (with the provider's receipt),
+ * failed (with the reason), or skipped (no address to send to).
+ *
+ * The recording must never break the send, and a failed RECORD must never be
+ * reported as a failed SEND, so the ledger write has its own try/catch and its
+ * own loud log.
+ */
+async function sendEmail(
+  supabase: ReturnType<typeof createAdminClient>,
+  ledger: { businessId: string | null; subjectType: string; subjectId: string | null; role: string },
+  to: string | null,
+  subject: string,
+  html: string,
+  attachment?: { filename: string; content: string },
+) {
+  const record = async (status: 'sent' | 'failed' | 'skipped', extra: { providerMessageId?: string | null; error?: string | null }) => {
+    try {
+      const { error } = await supabase.from('notification_deliveries').insert({
+        business_id: ledger.businessId,
+        subject_type: ledger.subjectType,
+        subject_id: ledger.subjectId,
+        recipient_role: ledger.role,
+        recipient: to,
+        channel: 'email',
+        provider: 'resend',
+        provider_message_id: extra.providerMessageId ?? null,
+        status,
+        error: extra.error ? String(extra.error).slice(0, 500) : null,
+      });
+      if (error) console.error('notification_deliveries insert failed:', error.message);
+    } catch (e) {
+      console.error('notification_deliveries insert threw:', e);
+    }
+  };
+
+  if (!to) {
+    // Not a failure and not a success. A business with no email on file cannot
+    // be notified, and that is worth being able to count.
+    await record('skipped', { error: 'no recipient address' });
+    return;
+  }
   try {
     const body: Record<string, unknown> = { from: RESEND_FROM, to, subject, html };
     if (attachment) {
@@ -93,9 +138,18 @@ async function sendEmail(to: string | null, subject: string, html: string, attac
       headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    if (!res.ok) console.error('Resend error', await res.text());
+    const text = await res.text();
+    if (!res.ok) {
+      console.error('Resend error', text);
+      await record('failed', { error: `resend ${res.status}: ${text}` });
+      return;
+    }
+    let id: string | null = null;
+    try { id = (JSON.parse(text) as { id?: string }).id ?? null; } catch { /* keep null */ }
+    await record('sent', { providerMessageId: id });
   } catch (e) {
     console.error('Email send failed', e);
+    await record('failed', { error: String(e) });
   }
 }
 
@@ -208,7 +262,7 @@ Deno.serve(async (req) => {
     const supabase = createAdminClient();
     const { data: business } = await supabase
       .from('businesses')
-      .select('name, phone, email, slug, brand_color, timezone')
+      .select('id, name, phone, email, slug, brand_color, timezone')
       .eq('id', booking.business_id)
       .single();
 
@@ -304,11 +358,15 @@ Deno.serve(async (req) => {
       ctaHref: gcalLink,
     });
 
+    const ledgerBase = { businessId: business.id ?? null, subjectType: 'booking_request', subjectId: booking.id ?? null };
     await Promise.all([
-      sendEmail(business.email, `New booking from ${booking.customer_name}`, ownerHtml),
-      sendEmail(booking.customer_email, `Booking request sent to ${business.name}`, customerHtml, { filename: 'appointment.ics', content: icsBase64 }),
+      sendEmail(supabase, { ...ledgerBase, role: 'owner' }, business.email, `New booking from ${booking.customer_name}`, ownerHtml),
+      sendEmail(supabase, { ...ledgerBase, role: 'customer' }, booking.customer_email, `Booking request sent to ${business.name}`, customerHtml, { filename: 'appointment.ics', content: icsBase64 }),
     ]);
 
+    // The response still says ok — the notify PATH ran — but it no longer has to
+    // carry the weight of "and it was delivered". That question is now answered
+    // by notification_deliveries, per recipient, whether or not anyone asks.
     return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });
   } catch (e) {
     console.error(e);
