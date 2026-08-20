@@ -1922,3 +1922,69 @@ jobs. **`backups/` is gitignored and `draft_token` is redacted in the file:**
 that column is a permanent bearer credential for an unclaimed business, and an
 export written for safety is exactly the kind of file that ends up committed.
 
+
+## Three page formats now run in parallel, and `commerce_documents` is the gate
+
+As of 2026-08-20 a business's public page can be built three different ways, and
+each has its own storage, its own editor and its own idea of what "edit this"
+means:
+
+| Format | Stored in | `document` holds | Editing handle | Who is on it |
+|---|---|---|---|---|
+| **classic** | `businesses` columns + `meta->'website'` | — | hardcoded `#ws-*` selectors, `WS_PE_LABELS` | every real customer |
+| **Document (AST)** | `business_documents`, `format='ast'` | a Hubly Document tree | `data-node`, patched through `applyPatchOps` | generated sites |
+| **freeform** | `business_documents`, `format='html'` | the design brief + image list | `data-hc`, patched by string replace | new |
+
+**Freeform editing applies to WEBSITES ONLY. Storefronts are unchanged and will
+need their own answer.** Storefront ASTs live in `commerce_documents`, a
+different table with a different RPC surface, so none of the `format` column, the
+`data-hc` stamping pass, the freeform save path or the regeneration flow reaches
+them. A storefront is still an AST, still re-rendered from its tree, and still
+has no freeform option.
+
+**That table is the migration gate.** Nothing is "migrated to freeform" until
+`commerce_documents` has an answer, and there is currently no plan for one. Until
+then, assume any statement of the form "pages are freeform now" is false for
+storefronts, and check which table you are looking at before believing a claim
+about how a page is edited.
+
+### Related, and deliberately not built
+
+- **There is no way to remove a section from a freeform page.** The click-to-edit
+  handler is leaf-only (`if (target.children.length > 0) return`), which means it
+  covers text and images and nothing else. Removing a section needs a different
+  affordance — a hover control on the section, not a click on a leaf — and that
+  is a change to the interaction, not an extension of it.
+- **Nothing in the UI lets a customer go back to a previous version**, even
+  though every version is stored and always has been (`business_documents` is
+  append-only, `unique(business_id, tag, version)`). After a "new page" the old
+  one is still sitting in the table, fully intact, permanently unreachable.
+  `planFreeformRegeneration` warns about what will be lost precisely because
+  there is no undo behind it.
+- **Mixed-content elements are not editable, and that can strand a fact.** An
+  `<a href="tel:…"><strong>Phone</strong><br />801-555-2200</a>` has an element
+  child, so it is not a leaf, so it is never labelled. `applyFreeformEdit`
+  compensates for VALUE roles by sweeping the whole page for the old value — but
+  only for those roles. A non-contact fact written this way is uneditable and
+  will silently go stale.
+
+## An allow-list of action names is a silent failure waiting to happen
+
+`hubly-conversation`'s `NEEDS_DRAFT_INJECTION` decides which capability actions
+get the real `draftId`/`draftToken` injected, by naming them:
+
+```ts
+(capabilityName === "website" && (actionName === "generateDocument" || actionName === "patchDocument"))
+```
+
+A new action absent from that list reaches its handler with no credentials and
+returns `missing_draft` — which is indistinguishable from "this conversation has
+no draft business". `website.newPage` was added to the registry, was picked
+correctly by the model on the very first attempt, and failed this way; the reply
+to the owner was a confident, wrong "there isn't a draft business connected to
+this conversation."
+
+Same shape as `patch_business_in_progress`'s column whitelist, which returned
+`ok: true` and wrote nothing for six columns for months. **When you add a
+capability action that needs a draft, grep for `NEEDS_DRAFT_INJECTION` before you
+test it**, or you will debug the handler for something the dispatcher did.

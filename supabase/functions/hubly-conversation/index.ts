@@ -64,7 +64,7 @@ import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
 import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts } from "../_shared/hubly_extract.ts";
 import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -909,8 +909,30 @@ Deno.serve(async (req) => {
           mediaType: String(body.directDocumentImageEdit.mediaType || "image/png"),
         }
       : null;
+  // FREEFORM click-to-edit. A LABEL, not a node id: a freeform page has no
+  // tree to look an id up in, and one label may legitimately match several
+  // elements (a phone number stated in three places changes in all three).
+  const directFreeformEdit =
+    body?.directFreeformEdit && typeof body.directFreeformEdit === "object" &&
+    typeof body.directFreeformEdit.label === "string" && body.directFreeformEdit.label &&
+    typeof body.directFreeformEdit.text === "string"
+      ? {
+          label: String(body.directFreeformEdit.label),
+          text: String(body.directFreeformEdit.text),
+        }
+      : null;
+  const directFreeformImageEdit =
+    body?.directFreeformImageEdit && typeof body.directFreeformImageEdit === "object" &&
+    typeof body.directFreeformImageEdit.label === "string" && body.directFreeformImageEdit.label &&
+    typeof body.directFreeformImageEdit.imageBase64 === "string"
+      ? {
+          label: String(body.directFreeformImageEdit.label),
+          imageBase64: String(body.directFreeformImageEdit.imageBase64),
+          mediaType: String(body.directFreeformImageEdit.mediaType || "image/png"),
+        }
+      : null;
 
-  if (directEdit || directImageEdit || directDocumentPatch || directDocumentImageEdit) {
+  if (directEdit || directImageEdit || directDocumentPatch || directDocumentImageEdit || directFreeformEdit || directFreeformImageEdit) {
     if (!draftBusiness) {
       return jsonRes({ ok: false, error: "no_draft_to_edit" }, 400);
     }
@@ -942,6 +964,14 @@ Deno.serve(async (req) => {
       isDocumentAction = true;
       actionName = "patchDocument";
       result = await uploadAndPatchDocumentImage(draftBusiness.id, draftBusiness.draftToken, directDocumentImageEdit.id, directDocumentImageEdit.imageBase64, directDocumentImageEdit.mediaType);
+    } else if (directFreeformImageEdit) {
+      isDocumentAction = true;
+      actionName = "patchDocument";
+      result = await uploadAndPatchFreeformImage(draftBusiness.id, draftBusiness.draftToken, directFreeformImageEdit.label, directFreeformImageEdit.imageBase64, directFreeformImageEdit.mediaType);
+    } else if (directFreeformEdit) {
+      isDocumentAction = true;
+      actionName = "patchDocument";
+      result = await applyDirectFreeformEdit(draftBusiness.id, draftBusiness.draftToken, directFreeformEdit);
     } else {
       isDocumentAction = true;
       actionName = "patchDocument";
@@ -1066,9 +1096,16 @@ Deno.serve(async (req) => {
         // the real draftId/draftToken, so it can never be trusted to
         // transcribe them — the engine injects the real ones whenever a
         // draft already exists, overriding any placeholder the model put in.
+        // THIS IS AN ALLOW-LIST, AND A NEW ACTION MISSING FROM IT FAILS
+        // QUIETLY. `newPage` was added to the registry, was picked correctly by
+        // the model on the first try, and returned "missing_draft" — because
+        // the engine only injects credentials for names written here, and the
+        // handler cannot tell "no draft exists" from "nobody told me about it".
+        // Same shape as patch_business_in_progress's column whitelist, which
+        // returned ok:true and wrote nothing for six columns.
         const NEEDS_DRAFT_INJECTION =
           (capabilityName === "business" && (actionName === "updateDraft" || actionName === "setServices")) ||
-          (capabilityName === "website" && (actionName === "generateDocument" || actionName === "patchDocument"));
+          (capabilityName === "website" && (actionName === "generateDocument" || actionName === "patchDocument" || actionName === "newPage"));
         if (NEEDS_DRAFT_INJECTION && draftBusiness) {
           dispatchArgs.draftId = draftBusiness.id;
           dispatchArgs.draftToken = draftBusiness.draftToken;
@@ -1081,8 +1118,12 @@ Deno.serve(async (req) => {
         // "done" (see its description in the registry, which the model
         // reads and is expected to say something honest about, like
         // "building now" rather than declaring it finished). The client
-        // polls business_documents (already publicly readable) until the
-        // real version appears.
+        // polls until the real version appears — through
+        // get_public_business_document(slug, tag), NOT the table. The table
+        // stopped being anon-readable when its unconditional `using (true)`
+        // SELECT policy was dropped; the RPC is the only public route, and it
+        // returns exactly (rendered_html, version), never the document column
+        // in either format.
         let result;
         if (capabilityName === "website" && actionName === "generateDocument" && found) {
           // NOT waitUntil. See dispatchDocumentBuild for the whole argument, in

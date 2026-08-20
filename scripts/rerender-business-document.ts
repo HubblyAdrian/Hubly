@@ -92,12 +92,34 @@ if (!biz) {
 }
 
 const docRows = await get(
-  `business_documents?select=document,version,design_rationale&business_id=eq.${businessId}&tag=eq.${tag}&order=version.desc&limit=1`,
+  `business_documents?select=document,version,design_rationale,format&business_id=eq.${businessId}&tag=eq.${tag}&order=version.desc&limit=1`,
 );
 const latest = docRows[0];
 if (!latest?.document) {
   console.error(`No ${tag} document for ${biz.slug}.`);
   Deno.exit(1);
+}
+
+// THIS SCRIPT READS business_documents WITH ITS OWN QUERY.
+//
+// It does not go through selectLatestBusinessDocument, so the discriminated
+// union that forces every Edge Function reader to branch cannot reach it. That
+// makes it the reader most likely to be forgotten, and the most damaging one to
+// forget: `format` defaults to 'ast', a freeform row's `document` holds the
+// design brief rather than a tree, and renderHublyDocument would happily draw
+// an empty page from `{ root: { brief: "..." } }` and write it over the real
+// one. The page would be destroyed by a tool whose entire purpose is to be
+// safe to re-run.
+//
+// So it refuses, loudly, and says what the row actually is.
+if (latest.format && latest.format !== "ast") {
+  console.error(
+    `${biz.slug} v${latest.version} is format='${latest.format}', not an AST.\n` +
+      `  There is no tree to re-render: for a freeform page the stored HTML IS the page,\n` +
+      `  and its \`document\` column holds the design brief it was generated from.\n` +
+      `  Re-rendering would replace a real page with an empty one. Refusing.`,
+  );
+  Deno.exit(2);
 }
 
 const doc = latest.document.root ? latest.document : { root: latest.document };

@@ -59,6 +59,8 @@ import {
   type RenderContext,
 } from "./hubly_document.ts";
 import { imageDimensions, type ImageDims } from "./hubly_image_dims.ts";
+import { stampFreeformHtml } from "./hubly_document_labels.ts";
+import { applyFreeformEdit, humanFreeformSummary, labelInventory, labelsPresent, type LabelEntry } from "./hubly_freeform.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
 // Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
 // "Invalid JWT". Both behaviours are load-bearing -- see supabase_admin.ts.
@@ -361,19 +363,212 @@ export async function documentHasOwnerEdits(draftId: string): Promise<boolean> {
   }
 }
 
+/**
+ * TARGETED UPDATE, record-driven. The owner's phone number changed in the
+ * record; the page should say the new one.
+ *
+ * NO MODEL CALL. The value roles (contact.phone, contact.email,
+ * contact.address, business.name) are closed and map one-to-one onto columns,
+ * so this is a lookup and a string replace. That is what makes it safe to run
+ * automatically on every record change: it is free, instant, deterministic, and
+ * it can only ever touch the specific facts that changed.
+ *
+ * WHAT IT DELIBERATELY DOES NOT DO is regenerate. A change to services, photos,
+ * hours or service area cannot be expressed as a value swap, and the fix for
+ * that is NOT to quietly rebuild the page — that is precisely the operation
+ * that destroys an owner's edits. Those changes report `not_applicable`, and
+ * the conversation offers a new page as an explicit choice with its costs
+ * stated (see planFreeformRegeneration).
+ */
+async function syncFreeformFacts(
+  draftId: string,
+  draftToken: string,
+  changes: RecordChange[],
+  latest: Extract<LatestBusinessDocument, { format: "html" }>,
+): Promise<{ status: "patched" | "not_applicable" | "failed"; detail?: string }> {
+  try {
+    if (!changes.includes("contact")) {
+      // Nothing here can be expressed as a value swap.
+      return { status: "not_applicable", detail: changes.join(",") };
+    }
+    const biz = await selectOne("businesses", "id", draftId, "name,phone,email,address,city,state");
+    if (!biz) return { status: "failed", detail: "no_business_row" };
+
+    const wants: { label: string; value: string }[] = [];
+    if (biz.phone) wants.push({ label: "contact.phone", value: String(biz.phone) });
+    if (biz.email) wants.push({ label: "contact.email", value: String(biz.email) });
+    if (biz.name) wants.push({ label: "business.name", value: String(biz.name) });
+    const addr = [biz.address, [biz.city, biz.state].filter(Boolean).join(", ")].filter(Boolean).join(", ");
+    if (addr) wants.push({ label: "contact.address", value: addr });
+
+    let html = latest.renderedHtml;
+    const applied: string[] = [];
+    for (const w of wants) {
+      const r = applyFreeformEdit(html, { label: w.label, text: w.value });
+      // no_match and no_change are both normal: the page may not state this
+      // fact, or may already state it correctly. Neither is a failure.
+      if (r.ok) { html = r.html; applied.push(`${w.label} (${r.changed})`); }
+    }
+    if (!applied.length) return { status: "not_applicable", detail: "nothing_to_change" };
+
+    const saved = await callBusinessRpc("create_business_document", {
+      p_business_id: draftId,
+      p_draft_token: draftToken,
+      p_tag: "website",
+      p_document: latest.brief,
+      p_rendered_html: html,
+      p_created_by: "patch",
+      p_format: "html",
+    });
+    return saved && saved.ok === true
+      ? { status: "patched", detail: applied.join(", ") }
+      : { status: "failed", detail: "save" };
+  } catch (e) {
+    console.error("syncFreeformFacts failed:", e);
+    return { status: "failed", detail: String(e).slice(0, 120) };
+  }
+}
+
+/**
+ * NEW VERSION — the explicit, owner-chosen operation. This function does not
+ * regenerate anything. It reports what a regeneration would COST, by name, so
+ * the owner can decide.
+ *
+ * WHY IT IS SPLIT THIS WAY
+ *
+ * The obvious design is to freeze a page once it has owner edits. That ends the
+ * conversation loop permanently after one click, and the loop is the product.
+ * So a new page stays available forever — it just stops being something that
+ * can happen without the owner knowing what they are giving up.
+ *
+ * WHAT SURVIVES, AND WHY IT IS KNOWABLE RATHER THAN GUESSED
+ *
+ *   Value roles (hero.headline, contact.phone, contact.email, business.name…)
+ *   name a fact or a fixed part of any page. A new page will have a headline
+ *   and a phone number, so an edit to one can be carried across.
+ *
+ *   Positional roles (section.3.heading, section.2.item.4.body) name a PLACE in
+ *   a structure that is about to be replaced. There is no section 3 in a page
+ *   that does not exist yet. These do not carry, and this says so explicitly
+ *   rather than pretending or silently dropping them.
+ */
+export interface FreeformRegenerationPlan {
+  hasEdits: boolean;
+  /** Owner-edited labels that a new page will keep. */
+  carried: { label: string; value: string }[];
+  /** Owner-edited labels that a new page will lose. */
+  lost: { label: string; value: string }[];
+  /** One sentence naming the loss, for the owner, not the log. */
+  warning: string;
+}
+
+/** Labels whose meaning survives a structural rewrite. */
+const CARRIES_ACROSS = new Set([
+  "hero.headline", "hero.subhead", "hero.cta",
+  "contact.phone", "contact.email", "contact.address", "contact.hours",
+  "business.name", "business.logo",
+]);
+
+export async function planFreeformRegeneration(draftId: string): Promise<FreeformRegenerationPlan> {
+  const empty: FreeformRegenerationPlan = { hasEdits: false, carried: [], lost: [], warning: "" };
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest || latest.format !== "html") return empty;
+
+  // What did the OWNER change, as opposed to what the model first wrote? The
+  // first version of a page is generated; every later version tagged 'patch' is
+  // an edit. Comparing the current page against the first one is what makes the
+  // warning name real values instead of listing everything on the page.
+  const first = await selectFirstBusinessDocument(draftId, "website");
+  if (!first || first.format !== "html") return empty;
+
+  const now = new Map(labelInventory(latest.renderedHtml).map((e: LabelEntry) => [e.label, e.value]));
+  const then = new Map(labelInventory(first.renderedHtml).map((e: LabelEntry) => [e.label, e.value]));
+
+  const carried: { label: string; value: string }[] = [];
+  const lost: { label: string; value: string }[] = [];
+  for (const [label, value] of now) {
+    const was = then.get(label);
+    if (was === undefined || was === value) continue;
+    (CARRIES_ACROSS.has(label) ? carried : lost).push({ label, value });
+  }
+  const hasEdits = carried.length + lost.length > 0;
+  if (!hasEdits) return empty;
+
+  // Named, not counted. "You will lose 3 edits" is not something anyone can
+  // make a decision about.
+  const say = (xs: { label: string; value: string }[]) =>
+    xs.map((x) => `${humanLabelName(x.label)} ("${x.value.length > 40 ? x.value.slice(0, 37) + "…" : x.value}")`).join(", ");
+  const warning = lost.length
+    ? `You've changed ${say([...carried, ...lost])}. A new page will keep ${carried.length ? say(carried) : "none of those"} and lose ${say(lost)}.`
+    : `You've changed ${say(carried)}. A new page will keep ${carried.length === 1 ? "that" : "those"}.`;
+  return { hasEdits, carried, lost, warning };
+}
+
+/** "section.3.heading" -> "the heading of section 3". Said, not printed. */
+function humanLabelName(label: string): string {
+  const p = label.split(".");
+  if (label === "hero.headline") return "your headline";
+  if (label === "hero.subhead") return "your intro line";
+  if (label === "contact.phone") return "your phone number";
+  if (label === "contact.email") return "your email address";
+  if (label === "contact.address") return "your address";
+  if (label === "business.name") return "your business name";
+  if (p[0] === "section" && p[2] === "heading") return `the heading of section ${p[1]}`;
+  if (p[0] === "section" && p[2] === "item") return `item ${p[3]} in section ${p[1]}`;
+  if (p[0] === "section") return `text in section ${p[1]}`;
+  if (p[0] === "nav") return `a menu link`;
+  if (p[0] === "footer") return `footer text`;
+  return label;
+}
+
+/** The FIRST stored version — what the model originally wrote, before edits. */
+async function selectFirstBusinessDocument(businessId: string, tag: string): Promise<LatestBusinessDocument | null> {
+  const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+  const headers = adminHeaders();
+  if (!supabaseUrl) return null;
+  const url = `${supabaseUrl}/rest/v1/business_documents?business_id=eq.${encodeURIComponent(businessId)}&tag=eq.${encodeURIComponent(tag)}&select=version,format,document,rendered_html&order=version.asc&limit=1`;
+  const res = await fetch(url, { headers });
+  if (!res.ok) return null;
+  const rows = await res.json().catch(() => null);
+  if (!Array.isArray(rows) || !rows.length) return null;
+  const row = rows[0];
+  if (row.format === "html") {
+    return { version: row.version, format: "html", brief: (row.document || {}) as FreeformBrief, renderedHtml: String(row.rendered_html || "") };
+  }
+  return { version: row.version, format: "ast", document: row.document as HublyDocument, renderedHtml: typeof row.rendered_html === "string" ? row.rendered_html : null };
+}
+
 export async function rebuildDocumentFromRecord(
   draftId: string,
   draftToken: string,
   changes: RecordChange[],
   opts?: { force?: boolean },
-): Promise<{ status: "rebuilt" | "rerendered" | "skipped_owner_edited" | "no_document" | "failed"; detail?: string }> {
+): Promise<{ status: "rebuilt" | "rerendered" | "patched" | "skipped_owner_edited" | "no_document" | "not_applicable" | "failed"; detail?: string }> {
   try {
     const latest = await selectLatestBusinessDocument(draftId, "website");
     if (!latest) return { status: "no_document" };
 
+    // THIS BRANCH IS HAND-WRITTEN BECAUSE THE COMPILER CANNOT DEMAND IT.
+    //
+    // Every other reader of `document` dereferences it, so the discriminated
+    // union forces them to narrow or fail to build. This one only tests
+    // `latest` for existence and then hands off — so it type-checked perfectly
+    // while being completely unaware that freeform pages exist. It is exactly
+    // the "reader that doesn't know" this whole change was meant to prevent,
+    // and it was found by re-reading the audit list, not by the type system.
+    if (latest.format !== "ast") {
+      // A record change must NEVER regenerate a freeform page. Regeneration is
+      // the operation that destroys owner edits, and it only ever happens when
+      // the owner explicitly asks for a different page (planFreeformRegeneration).
+      // What a record change gets is a targeted update: change the facts the
+      // page states, leave everything else exactly as it is.
+      return await syncFreeformFacts(draftId, draftToken, changes, latest);
+    }
+
     const wantsContent = changes.some((c) => CONTENT_CHANGES.has(c));
     if (!wantsContent) {
       const r = await rerenderLatestDocument(draftId, draftToken, "website");
+      if (r === "not_applicable") return { status: "not_applicable" };
       return { status: r === "updated" ? "rerendered" : "failed" };
     }
 
@@ -690,18 +885,65 @@ async function loadBusinessRecord(businessId: string): Promise<BusinessRecord> {
   };
 }
 
-async function selectLatestBusinessDocument(businessId: string, tag: string): Promise<{ version: number; document: HublyDocument } | null> {
+/** What a freeform row keeps in `document`. Not a tree — the inputs the page was
+ *  generated from, which is the only place they exist and exactly what a "build
+ *  me a different page" request needs in order to stay about the same business.
+ *  It deliberately does NOT carry the format: that lives in the column. */
+export interface FreeformBrief {
+  brief?: string;
+  images?: { url: string; alt?: string }[];
+  generatedAt?: string;
+  [k: string]: unknown;
+}
+
+/**
+ * The latest stored page, discriminated by what `document` actually holds.
+ *
+ * A UNION rather than an optional `format` field, on purpose. Five callers read
+ * this and every one of them used to assume a tree. With a union, none of them
+ * can reach `.document` without narrowing first, so a reader that forgets the
+ * freeform case is a compile error instead of a page quietly destroyed by a
+ * re-render that had nothing to re-render from.
+ */
+export type LatestBusinessDocument =
+  | { version: number; format: "ast"; document: HublyDocument; renderedHtml: string | null }
+  | { version: number; format: "html"; brief: FreeformBrief; renderedHtml: string };
+
+async function selectLatestBusinessDocument(businessId: string, tag: string): Promise<LatestBusinessDocument | null> {
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
   // A missing key now throws rather than returning empty-handed: an absent
   // key and an absent row used to be the same value here.
   const headers = adminHeaders();
   if (!supabaseUrl) return null;
-  const url = `${supabaseUrl}/rest/v1/business_documents?business_id=eq.${encodeURIComponent(businessId)}&tag=eq.${encodeURIComponent(tag)}&select=version,document&order=version.desc&limit=1`;
+  // rendered_html comes back on BOTH branches even though only the freeform one
+  // needs it. The alternative is a second round trip once the format is known,
+  // which costs a whole request to save ~40KB on a call made a handful of times
+  // per turn. If that ratio ever inverts, split it -- don't guess at the format
+  // before reading it.
+  const url = `${supabaseUrl}/rest/v1/business_documents?business_id=eq.${encodeURIComponent(businessId)}&tag=eq.${encodeURIComponent(tag)}&select=version,format,document,rendered_html&order=version.desc&limit=1`;
   const res = await fetch(url, { headers: headers });
   if (!res.ok) return null;
   const rows = await res.json().catch(() => null);
   if (!Array.isArray(rows) || !rows.length) return null;
-  return { version: rows[0].version, document: rows[0].document as HublyDocument };
+  const row = rows[0];
+  const version = row.version as number;
+  // Absent/unknown format reads as 'ast'. Every row written before this column
+  // existed is a tree, and the column default says so -- but a null arriving
+  // from an older PostgREST cache must not be allowed to mean "freeform".
+  if (row.format === "html") {
+    return {
+      version,
+      format: "html",
+      brief: (row.document && typeof row.document === "object" ? row.document : {}) as FreeformBrief,
+      renderedHtml: typeof row.rendered_html === "string" ? row.rendered_html : "",
+    };
+  }
+  return {
+    version,
+    format: "ast",
+    document: row.document as HublyDocument,
+    renderedHtml: typeof row.rendered_html === "string" ? row.rendered_html : null,
+  };
 }
 
 // ── Storefront capability helpers ──────────────────────────────────────────
@@ -1010,6 +1252,12 @@ export async function applyDirectDocumentPatch(
   if (!latest) {
     return { ok: false, real: false, summary: "No page exists yet to edit.", error: "no_document" };
   }
+  if (latest.format !== "ast") {
+    // A node id has no meaning on a freeform page — there is no tree to look it
+    // up in. The client sends label-shaped messages for those, so reaching here
+    // means the two got crossed; say so rather than failing inside a tree walk.
+    return { ok: false, real: false, summary: "That page is freeform HTML, not a Hubly Document — click edits there go through the label path.", error: "wrong_format" };
+  }
   const patchResult = applyPatchOps(latest.document, [op as any]);
   if (!patchResult.ok) {
     return { ok: false, real: false, summary: "That edit could not be applied safely — nothing changed.", error: "patch_failed", raw: patchResult.errors };
@@ -1139,6 +1387,249 @@ async function uploadImageToStorage(
  *  applyDirectDocumentPatch used for text edits, just with a new "src".
  *  The uploaded URL always starts with this project's own storage origin,
  *  so it passes the validator's media-origin check without special-casing. */
+/**
+ * The freeform save path. Deliberately short, and that is the point.
+ *
+ * The AST path is: load the tree, walk it to the node, apply ops, re-validate
+ * the WHOLE tree, diff it, re-render every element back to HTML, store both.
+ * None of that exists here. The HTML is the page: find the labelled elements,
+ * change the text or the src, append a version. No tree load, no
+ * validateHublyDocument, no renderHublyDocument.
+ *
+ * The stored `document` (the design brief) is carried through UNCHANGED. It
+ * describes what the page was generated from, not what it currently says, and
+ * an owner edit does not retroactively change the brief.
+ */
+export async function applyDirectFreeformEdit(
+  draftId: string,
+  draftToken: string,
+  edit: { label: string; text?: string; src?: string },
+): Promise<CapabilityActionResult> {
+  if (!draftId || !draftToken) {
+    return { ok: false, real: false, summary: "No draft business exists yet to edit.", error: "missing_draft" };
+  }
+  if (!edit?.label) {
+    return { ok: false, real: false, summary: "No element was specified to edit.", error: "missing_label" };
+  }
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest) {
+    return { ok: false, real: false, summary: "No page exists yet to edit.", error: "no_document" };
+  }
+  if (latest.format !== "html") {
+    return { ok: false, real: false, summary: "That page is a Hubly Document, not a freeform page — click edits there go through the node path.", error: "wrong_format" };
+  }
+
+  const result = applyFreeformEdit(latest.renderedHtml, edit);
+  if (!result.ok) {
+    // Same guarantee as the AST path: a click that changed nothing must not
+    // report that it changed something.
+    if (result.error === "no_change") {
+      return { ok: false, real: false, summary: "That edit produced no change to the page.", error: "patch_no_effect" };
+    }
+    if (result.error === "no_match") {
+      return { ok: false, real: false, summary: "That part of the page could not be found — it may have been rebuilt since.", error: "label_not_found" };
+    }
+    return { ok: false, real: false, summary: "That edit could not be applied safely — nothing changed.", error: result.error || "patch_failed" };
+  }
+
+  const r = await callBusinessRpc("create_business_document", {
+    p_business_id: draftId,
+    p_draft_token: draftToken,
+    p_tag: "website",
+    // The brief, unchanged. An owner edit does not rewrite the brief.
+    p_document: latest.brief,
+    p_rendered_html: result.html,
+    p_created_by: "patch",
+    p_format: "html",
+  });
+  if (!r || r.ok !== true) {
+    return { ok: false, real: false, summary: "The edit was computed but could not be saved.", error: "rpc_failed" };
+  }
+  const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
+  const said = humanFreeformSummary(result, edit.label);
+  return {
+    ok: true,
+    real: true,
+    summary: `Real edit applied — ${said}. ${url} now reflects it (version ${r.version}).`,
+    humanNote: sentence(said),
+    raw: { id: r.id, version: r.version, url, label: edit.label, changed: result.changed },
+  };
+}
+
+/**
+ * Generate a freeform page: one model call, a whole standalone HTML document,
+ * no AST and no section vocabulary. The only hard constraint is the one that
+ * protects the business — never invent a price, name, review, rating or
+ * guarantee — because everything else the format used to enforce structurally
+ * is now the model's to choose.
+ *
+ * The returned HTML is STAMPED before it is returned. There is no path in this
+ * file that stores freeform HTML without labelling it first, which is what
+ * makes "a partially labelled page must not be reachable" true of the system
+ * and not just of the stamping function.
+ */
+export async function generateFreeformPage(
+  businessId: string,
+  brief: string,
+  record: Record<string, unknown>,
+): Promise<{ ok: true; html: string; brief: FreeformBrief; labels: number } | { ok: false; error: string }> {
+  const system =
+    "You write a complete, standalone HTML page for one real local service business — a single file, with its own <style> block in the head. " +
+    "No frameworks, no external requests, no scripts. Use real, specific copy for THIS business, drawn only from the record below. " +
+    "NEVER invent a price, a customer name, a review, a rating, a certification or a guarantee that is not in the record. " +
+    "If you have no photos, design a page that does not need them rather than leaving empty frames. " +
+    "Write the page you think this business should have — you choose the sections, the order and the layout.\n\n" +
+    `THE BUSINESS RECORD:\n${JSON.stringify(record, null, 1)}`;
+
+  let text = "";
+  try {
+    const ai = await HublyAI.complete({
+      feature: "hubly-freeform-generate",
+      task: "document_generate",
+      system,
+      messages: [{ role: "user", content: brief }],
+      // The document_generate route sets jsonMode because the AST path returns
+      // JSON. This one returns an HTML document, and leaving JSON mode on makes
+      // the provider wrap or refuse it.
+      jsonMode: false,
+    });
+    text = String(ai.text || "");
+  } catch (e) {
+    return { ok: false, error: `model_call_failed: ${String(e).slice(0, 120)}` };
+  }
+
+  // Fenced code blocks are the normal shape of this answer; unwrap rather than
+  // scolding the model for it.
+  const fenced = /```(?:html)?\s*([\s\S]*?)```/i.exec(text);
+  const raw = (fenced ? fenced[1] : text).trim();
+  if (!/<html[\s>]|<body[\s>]|<!doctype/i.test(raw)) {
+    return { ok: false, error: "model did not return an HTML document" };
+  }
+
+  // THE STAMPING PASS. Not a validation gate: it cannot reject the page and it
+  // never triggers a regeneration. It takes whatever came back and labels it.
+  const stamped = stampFreeformHtml(raw);
+  return {
+    ok: true,
+    html: stamped.html,
+    brief: { brief, images: [], generatedAt: new Date().toISOString() },
+    labels: stamped.coverage.labelled,
+  };
+}
+
+/**
+ * A conversational edit to a freeform page — "make the headline punchier",
+ * "change the price of the sourdough to $12".
+ *
+ * THE TARGETED UPDATE. It changes the labels it was asked to change and
+ * nothing else, so it can run automatically, cheaply, and without ever
+ * threatening work the owner did by hand. It is the default and it must keep
+ * working forever; asking for a whole new page is a separate, explicit
+ * operation (see planFreeformRegeneration).
+ *
+ * The model never sees the HTML. It sees a list of labels and what each one
+ * currently says, and returns which to change. That is what keeps a request for
+ * one sentence from becoming a rewritten page.
+ */
+export async function applyFreeformInstruction(
+  draftId: string,
+  draftToken: string,
+  instruction: string,
+  latest: Extract<LatestBusinessDocument, { format: "html" }>,
+): Promise<CapabilityActionResult> {
+  const inventory = labelInventory(latest.renderedHtml).filter((e: LabelEntry) => e.kind === "text");
+  if (!inventory.length) {
+    return { ok: false, real: false, summary: "That page has no editable text yet.", error: "no_labels" };
+  }
+  const system =
+    "You are editing one specific local business web page. You are shown its editable parts, each with a stable label and its current text. " +
+    "Return ONLY the parts that must change to satisfy the request, as JSON {\"edits\":[{\"label\":\"...\",\"text\":\"...\"}]}. " +
+    "Change as FEW parts as possible. Never invent a price, name, review, rating or guarantee that is not already present. " +
+    "If the request cannot be satisfied by changing text on this page, return {\"edits\":[]} and nothing else.";
+  const brief =
+    `REQUEST: ${instruction}\n\nEDITABLE PARTS OF THE PAGE:\n` +
+    inventory.map((e: LabelEntry) => `${e.label}: ${JSON.stringify(e.value)}`).join("\n");
+
+  const started = Date.now();
+  let edits: { label?: string; text?: string }[] = [];
+  try {
+    const ai = await HublyAI.complete({
+      feature: "hubly-freeform-edit",
+      task: "document_patch",
+      system,
+      messages: [{ role: "user", content: brief }],
+      jsonMode: true,
+    });
+    const parsed = JSON.parse(extractJson(String(ai.text || "")));
+    if (Array.isArray(parsed?.edits)) edits = parsed.edits;
+  } catch {
+    edits = [];
+  }
+  const ms = Date.now() - started;
+  if (!edits.length) {
+    return {
+      ok: false,
+      real: false,
+      summary:
+        "Nothing on the page changed. The request could not be expressed as a change to the page's existing text, so tell the owner plainly that you cannot make this change yet rather than describing it as done.",
+      error: "patch_no_effect",
+      raw: { instruction, ms },
+    };
+  }
+
+  let html = latest.renderedHtml;
+  const applied: string[] = [];
+  for (const e of edits) {
+    if (!e?.label || typeof e.text !== "string") continue;
+    const r = applyFreeformEdit(html, { label: e.label, text: e.text });
+    if (r.ok) { html = r.html; applied.push(`${e.label} → "${e.text.slice(0, 60)}"`); }
+  }
+  if (!applied.length) {
+    return { ok: false, real: false, summary: "That edit produced no change to the page.", error: "patch_no_effect", raw: { instruction, ms, proposed: edits.length } };
+  }
+
+  const r = await callBusinessRpc("create_business_document", {
+    p_business_id: draftId,
+    p_draft_token: draftToken,
+    p_tag: "website",
+    p_document: latest.brief,
+    p_rendered_html: html,
+    p_created_by: "patch",
+    p_format: "html",
+  });
+  if (!r || r.ok !== true) {
+    return { ok: false, real: false, summary: "The edit was computed but could not be saved.", error: "rpc_failed" };
+  }
+  const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
+  return {
+    ok: true,
+    real: true,
+    summary: `Real edit applied — ${applied.join("; ")}. ${url} now reflects it (version ${r.version}).`,
+    humanNote: sentence(applied.length === 1 ? `changed ${applied[0]}` : `changed ${applied.length} parts of the page`),
+    raw: { id: r.id, version: r.version, url, applied, ms },
+  };
+}
+
+/** The freeform twin of uploadAndPatchDocumentImage: upload, then swap the src. */
+export async function uploadAndPatchFreeformImage(
+  draftId: string,
+  draftToken: string,
+  label: string,
+  imageBase64: string,
+  mediaType: string,
+): Promise<CapabilityActionResult> {
+  if (!draftId || !draftToken) {
+    return { ok: false, real: false, summary: "No draft business exists yet to edit.", error: "missing_draft" };
+  }
+  if (!label) {
+    return { ok: false, real: false, summary: "No image was specified to replace.", error: "missing_label" };
+  }
+  const uploaded = await uploadImageToStorage(draftId, imageBase64, mediaType, "doc-image");
+  if (!uploaded.ok) return uploaded.result;
+  const patched = await applyDirectFreeformEdit(draftId, draftToken, { label, src: uploaded.url });
+  return patched.ok ? { ...patched, humanNote: "Done — that photo is on the page now." } : patched;
+}
+
 export async function uploadAndPatchDocumentImage(
   draftId: string,
   draftToken: string,
@@ -1222,6 +1713,14 @@ export async function uploadDraftLogo(
       ? `Real logo uploaded — ${siteUrl} now shows it in the header in place of the initials.`
       : rerendered === "no_document"
       ? `Real logo uploaded and saved to the business. There is no generated page yet, so it will appear in the header as soon as one is built.`
+      : rerendered === "not_applicable"
+      // Not a failure. This page's header was written by the model as part of
+      // the page itself, so there is no chrome to re-render the logo into. The
+      // logo IS saved and will be used by anything built from the record later.
+      // Saying "could not be re-rendered" here would report a bug that is not
+      // happening; saying "now shows it" would be the false success this whole
+      // code path exists to prevent.
+      ? `Real logo uploaded and saved to the business. This page's header is part of the page itself rather than Hubly chrome, so the logo does not appear there automatically — offer to put it in the header as an edit, and do not claim it is already showing.`
       : `Real logo uploaded and saved, but the live page could not be re-rendered, so it may still show the initials. Say that plainly rather than claiming the header changed.`,
     raw: { id: r.id, slug: r.slug, url: siteUrl, logoUrl: uploaded.url, rerender: rerendered, recordChange: ["cosmetic"] },
   };
@@ -1240,10 +1739,23 @@ async function rerenderLatestDocument(
   businessId: string,
   draftToken: string,
   tag: string,
-): Promise<"updated" | "no_document" | "failed"> {
+): Promise<"updated" | "no_document" | "not_applicable" | "failed"> {
   try {
     const latest = await selectLatestBusinessDocument(businessId, tag);
     if (!latest) return "no_document";
+    // A FREEFORM PAGE CANNOT BE RE-RENDERED, and that is not a gap to fill.
+    //
+    // This function exists because a Document stores rendered HTML, so a change
+    // to the chrome inputs (logo, header variant, brand colour) only becomes
+    // visible by drawing the tree again. A freeform page has no tree and no
+    // chrome: the model wrote the header, the colours and the markup together,
+    // as one artefact. There is nothing to redraw from, and "redrawing" it
+    // would mean regenerating the page — which is a different operation with a
+    // different cost that must never happen behind the owner's back.
+    //
+    // So callers get an honest "not_applicable" and say so, rather than a
+    // "failed" that reads like a bug or an "updated" that is a lie.
+    if (latest.format !== "ast") return "not_applicable";
     const bizRow = await selectOne("businesses", "id", businessId, "name,phone,slug,brand_color,logo_url,city,state,service_area_cities,business_type,meta");
     const html = renderHublyDocument(latest.document, renderContextFor(businessId, bizRow));
     const saved = await callBusinessRpc("create_business_document", {
@@ -1592,7 +2104,9 @@ export function dispatchDocumentBuild(input: {
     // only for a legacy JWT, because the receiving function's gateway rejects a
     // non-JWT Bearer before our own handler ever runs.
     headers: { ...adminHeaders(), "content-type": "application/json" },
-    body: JSON.stringify({ ...input, tag: input.tag || "website" }),
+    // Stamped here so the receiving function can measure the round trip plus
+    // its own cold boot -- the slice of the job clock nothing could see.
+    body: JSON.stringify({ ...input, tag: input.tag || "website", dispatchedAt: Date.now() }),
   })
     .then((r) => { if (!r.ok) console.error("dispatchDocumentBuild non-ok", r.status); })
     .catch((e) => console.error("dispatchDocumentBuild failed", e));
@@ -1606,12 +2120,43 @@ export function dispatchDocumentBuild(input: {
  * a build started by the conversation and a build started by a retry must
  * produce the same thing, or "retry" quietly means "get a different site".
  */
+/**
+ * WHERE THE TIME ACTUALLY GOES.
+ *
+ * Measured 2026-08-20: a 144s build contained an 86s model call, and a 126s
+ * build a 56s one. Fifty-eight to sixty-nine seconds of every build was
+ * somewhere other than the model -- roughly half the budget, and therefore the
+ * real cause of the 150s stalls, bigger than the prompt and bigger than the
+ * plan tier.
+ *
+ * Nobody could say where, because nothing between "job started" and "job
+ * finished" was timed. This records each step so the answer is a log line
+ * rather than an argument. Cheap enough to leave in permanently: it is
+ * performance.now() and one console.log.
+ */
+function stopwatch() {
+  const t0 = performance.now();
+  let last = t0;
+  const marks: Record<string, number> = {};
+  return {
+    mark(name: string) {
+      const now = performance.now();
+      marks[name] = Math.round(now - last);
+      last = now;
+    },
+    done() {
+      return { ...marks, TOTAL: Math.round(performance.now() - t0) };
+    },
+  };
+}
+
 export async function runDocumentGeneration(
   draftId: string,
   draftToken: string,
   brief: string,
   benchmarkModel?: string,
 ): Promise<CapabilityActionResult> {
+  const sw = stopwatch();
           if (!draftId || !draftToken) {
             return { ok: false, real: false, summary: "No draft business exists yet to generate a page for — call business.startDraft first.", error: "missing_draft" };
           }
@@ -1619,7 +2164,9 @@ export async function runDocumentGeneration(
             return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
           }
           const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,meta");
+          sw.mark("selectBusinessRow");
           const schemaBlock = buildDocumentSchemaPromptBlock();
+          sw.mark("buildSchemaBlock");
           // section_order[0] is what startDraft chose for this business to lead
           // with. renderHublyDocument does not read section_order at all — that
           // column drives the classic renderer — so on this path the choice has
@@ -1633,7 +2180,9 @@ export async function runDocumentGeneration(
           // entire website from one prose paragraph and had never seen a price,
           // a service, a photo or an opening hour.
           const record = await loadBusinessRecord(draftId);
+          sw.mark("loadBusinessRecord");
           const recordBlock = buildBusinessRecordBlock(record);
+          sw.mark("buildRecordBlock");
           const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${schemaBlock}\n\n${structureBlock}\n\n${recordBlock}`;
           // benchmarkModel is intentionally absent from argsSchema/description —
           // the conversational AI never sees or sets it. Internal-only override
@@ -1642,6 +2191,24 @@ export async function runDocumentGeneration(
           // secrets or per-task config.
           const genStarted = Date.now();
           const genResult = await generateAndValidateDocument(system, brief, draftId, "website", benchmarkModel);
+          sw.mark("modelAndValidate");
+          // WHY THE SECOND MODEL CALL HAPPENS.
+          //
+          // Instrumenting the build on 2026-08-20 showed generation is 99% of a
+          // 147s job -- and that it is TWO model calls, not one, on every build
+          // measured. The retry doubles both the time and the cost of the single
+          // most expensive thing this product does.
+          //
+          // Nothing recorded why. recordVocabularyRejections returns early when
+          // no class/tag/attr was refused, so a retry caused by any OTHER
+          // validation error left no trace at all -- one row exists across every
+          // build ever made. These are the errors that actually triggered it.
+          if (genResult.firstAttemptOk === false) {
+            console.log(
+              `first-attempt-failed [${draftId}] ` +
+                JSON.stringify((genResult.firstAttemptErrors || []).slice(0, 12)),
+            );
+          }
           const generationMs = Date.now() - genStarted;
           if (!genResult.ok) {
             // The double-failure case left no trace at all before this. It is
@@ -1665,7 +2232,9 @@ export async function runDocumentGeneration(
           // and the only alternative is a page built from facts that were true
           // two minutes ago.
           const freshRow = (await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,meta")) || bizRow;
+          sw.mark("reReadBusinessRow");
           const html = renderHublyDocument(genResult.document, renderContextFor(draftId, freshRow));
+          sw.mark("render");
           // generateDocument runs as a fire-and-forget background task in
           // hubly-conversation (EdgeRuntime.waitUntil) -- nothing awaits or
           // reads this handler's return value, only errors get caught. The
@@ -1683,6 +2252,7 @@ export async function runDocumentGeneration(
           // exists: the model is the only interface, so its vocabulary is the
           // product ceiling, and nothing recorded where it was hitting.
           await recordVocabularyRejections(draftId, "website", genResult, "succeeded");
+          sw.mark("recordRejections");
 
           const r = await callBusinessRpc("create_business_document", {
             p_business_id: draftId,
@@ -1693,15 +2263,20 @@ export async function runDocumentGeneration(
             p_created_by: "ai",
             p_design_rationale: genResult.rationale || null,
           });
+          sw.mark("persistDocument");
           if (!r || r.ok !== true) {
             return { ok: false, real: false, summary: "The page was generated but could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
           }
+          // ONE LINE, every build. Read it with:
+          //   select event_message from function_logs where event_message like '%build-timing%'
+          const timing = sw.done();
+          console.log(`build-timing [${draftId}] ${JSON.stringify(timing)}`);
           const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
           return {
             ok: true,
             real: true,
             summary: `Real page generated and live — ${url} (version ${r.version}). Every element on it is individually editable.`,
-            raw: { id: r.id, version: r.version, url, usage: genResult.usage, generationMs, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale },
+            raw: { id: r.id, version: r.version, url, usage: genResult.usage, generationMs, timing, firstAttemptOk: genResult.firstAttemptOk, firstAttemptErrors: genResult.firstAttemptErrors, modelUsed: genResult.modelUsed, rationale: genResult.rationale },
           };
 }
 
@@ -1766,6 +2341,90 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           ),
       },
       {
+        name: "newPage",
+        description:
+          "Builds a COMPLETELY NEW page from scratch, replacing the current one. Only call this when the owner has explicitly asked for a different page — 'start over', 'try something completely different', 'I don't like this, do another one'. NEVER call it to make a change to the existing page; that is website.patchDocument, which is cheaper, faster and safe. This action is deliberately two-step: call it first WITHOUT confirm, and it tells you what the owner would lose by name. Repeat that back to them in your own words and wait for them to say yes. Only then call it again with confirm:true. Do not confirm on their behalf.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: { type: "string", description: "Automatically supplied by the system before this runs — put any placeholder here." },
+            brief: { type: "string", description: "What the owner wants this time, richly written: what they disliked about the current page and what they want instead, plus the business facts. This is the only context the generation receives." },
+            confirm: { type: "boolean", description: "Omit or false on the FIRST call. Only true after the owner has been told what they will lose and has said yes." },
+          },
+          required: ["brief"],
+        },
+        handler: async (args) => {
+          const draftId = String(args?.draftId || "").trim();
+          const draftToken = String((args as any)?.draftToken || "").trim();
+          const brief = String(args?.brief || "").trim();
+          const confirm = (args as any)?.confirm === true;
+          if (!draftId || !draftToken) {
+            return { ok: false, real: false, summary: "No draft business exists yet.", error: "missing_draft" };
+          }
+          const latest = await selectLatestBusinessDocument(draftId, "website");
+          // No page yet is a perfectly good starting point — there is simply
+          // nothing to lose, so the confirmation step below has nothing to say
+          // and does not fire. An AST page is a different matter: replacing a
+          // Hubly Document with freeform HTML is a format migration, not an
+          // edit, and it is not something a conversational turn should do.
+          if (latest && latest.format !== "html") {
+            return { ok: false, real: false, summary: "That page is a Hubly Document, not a freeform page. Converting between the two formats is not something this action does.", error: "wrong_format" };
+          }
+
+          // STEP ONE: say what it costs. Never regenerate on this call.
+          const plan = await planFreeformRegeneration(draftId);
+          if (!confirm && plan.hasEdits) {
+            return {
+              ok: true,
+              real: false,
+              summary:
+                `NOT DONE YET — nothing has been built. The owner has hand-edited this page and a new page would discard some of that. ${plan.warning} ` +
+                `Tell them this in your own words, naming what goes, and ask whether to go ahead. Only call newPage again with confirm:true if they say yes.`,
+              humanNote: plan.warning + " Do you want me to go ahead?",
+              raw: { carried: plan.carried, lost: plan.lost, confirmed: false },
+            };
+          }
+
+          const bizRow = await selectOne("businesses", "id", draftId, "name,phone,email,address,city,state,business_type,years_in_business,service_area_cities,brand_color,logo_url,slug");
+          const record = await loadBusinessRecord(draftId);
+          const gen = await generateFreeformPage(draftId, brief, { ...(record as any), ...(bizRow || {}) });
+          if (!gen.ok) return { ok: false, real: false, summary: `The new page could not be built (${gen.error}).`, error: "generation_failed" };
+
+          // CARRY THE EDITS THAT STILL MEAN SOMETHING. A value role names a
+          // fact, and the new page has the same facts, so the owner's wording
+          // is re-applied. A positional role names a place in a structure that
+          // no longer exists, so it cannot be and is not.
+          let html = gen.html;
+          const kept: string[] = [];
+          for (const e of plan.carried) {
+            const r = applyFreeformEdit(html, { label: e.label, text: e.value });
+            if (r.ok) { html = r.html; kept.push(e.label); }
+          }
+
+          const saved = await callBusinessRpc("create_business_document", {
+            p_business_id: draftId,
+            p_draft_token: draftToken,
+            p_tag: "website",
+            p_document: gen.brief,
+            p_rendered_html: html,
+            p_created_by: "ai",
+            p_format: "html",
+          });
+          if (!saved || saved.ok !== true) {
+            return { ok: false, real: false, summary: "The new page was built but could not be saved.", error: "rpc_failed" };
+          }
+          const url = `https://${saved.slug}.${HUBLY_DOMAIN}`;
+          const lostNote = plan.lost.length ? ` ${plan.lost.length} earlier edit(s) did not carry across, as warned.` : "";
+          return {
+            ok: true,
+            real: true,
+            summary: `A new page is live at ${url} (version ${saved.version}). Kept: ${kept.length ? kept.join(", ") : "nothing to carry"}.${lostNote}`,
+            humanNote: `Here's a completely new page.${kept.length ? " I kept your " + kept.map(humanLabelName).join(" and ") + "." : ""}`,
+            raw: { version: saved.version, url, kept, lost: plan.lost.map((l) => l.label), labels: gen.labels },
+          };
+        },
+      },
+      {
         name: "patchDocument",
         description:
           "Applies a targeted edit to the live Hubly Document — changes ONLY the specific element(s) the request refers to, never regenerates the page. Use this for any conversational edit once a document exists (a headline change, moving an image, removing a section, adding one). Never call generateDocument again to make an edit.",
@@ -1796,6 +2455,14 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const latest = await selectLatestBusinessDocument(draftId, "website");
           if (!latest) {
             return { ok: false, real: false, summary: "No page exists yet to edit — call generateDocument first.", error: "no_document" };
+          }
+          if (latest.format !== "ast") {
+            // TARGETED UPDATE, not regeneration. The model is shown the page's
+            // labels and their current contents and asked which to change —
+            // never the markup, so it cannot rewrite the page as a side effect
+            // of being asked for one sentence. This is the operation that must
+            // keep working forever and must never threaten an owner's edits.
+            return await applyFreeformInstruction(draftId, draftToken, instruction, latest);
           }
           const patchStarted = Date.now();
           const patchResult = await generateAndApplyPatch(latest.document, instruction);
@@ -1915,9 +2582,17 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
               real: rerendered === "no_document",
               summary: rerendered === "no_document"
                 ? `Header preference saved (${said}). There is no generated page yet, so it applies as soon as one is built.`
+                : rerendered === "not_applicable"
+                // Hubly chrome preferences do not reach a freeform page: its
+                // header is part of the page the model wrote, not a variant this
+                // setting selects. Saved for anything built later, and said
+                // plainly rather than implying the header just moved.
+                ? `Header preference saved (${said}), but this page's header is part of the page itself rather than Hubly chrome, so the setting does not change it. Say that, and offer to change the header as an edit instead.`
                 : `Header preference saved (${said}), but the live page could not be re-rendered, so it may still show the old header. Say that plainly rather than claiming the header changed.`,
               humanNote: rerendered === "no_document"
                 ? "Saved — I'll use that when I build the page."
+                : rerendered === "not_applicable"
+                ? "Saved — though this page's header is part of the page itself, so that setting won't move it. I can change the header directly if you like."
                 : "I saved that, but I couldn't rebuild the page just now, so it may still look the same.",
               raw: { chrome: merged, rerender: rerendered },
             };

@@ -1282,10 +1282,16 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   // page generation can take past a minute, longer than a single request
   // should block on) — the capability result that comes back is honestly
   // "started", not "done". This is what fills the gap between that and the
-  // real page actually existing: an honest loading state, then polling the
-  // same public, already-readable business_documents table (no new
-  // endpoint) until the real version appears, then handing off to the
-  // normal hcRenderCanvas() path exactly as if it had loaded instantly.
+  // real page actually existing: an honest loading state, then polling until
+  // the real version appears, then handing off to the normal hcRenderCanvas()
+  // path exactly as if it had loaded instantly.
+  //
+  // NOT by reading business_documents. That table is no longer readable by
+  // anon — it carried an unconditional `using (true)` SELECT policy, which
+  // let the publishable key list every business's rendered_html, and that
+  // policy is gone. Public access is get_public_business_document(slug, tag)
+  // and nothing else, and it returns exactly (rendered_html, version) — never
+  // the document column, in either format.
   var hcDocPollTimer = null;
   function hcRenderDocumentBuilding(){
       hc.canvasView = 'site';
@@ -2033,6 +2039,14 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
       hcSendDirectEdit({ directDocumentPatch: patchOp });
     } else if(data.type === 'hcDocInlineImageEdit' && typeof data.id === 'string' && data.id && typeof data.imageBase64 === 'string'){
       hcSendDirectEdit({ directDocumentImageEdit: { id: data.id, imageBase64: data.imageBase64, mediaType: data.mediaType || 'image/png' } });
+    } else if(data.type === 'hcFreeformInlineEdit' && data.op === 'update_text' && typeof data.label === 'string' && data.label && typeof data.text === 'string'){
+      // Freeform click-to-edit. A LABEL, not a node id: there is no tree to
+      // look an id up in, and one label can legitimately match several
+      // elements (a phone number stated in the header, the contact block and
+      // the footer all carry contact.phone, and all of them change together).
+      hcSendDirectEdit({ directFreeformEdit: { label: data.label, text: data.text } });
+    } else if(data.type === 'hcFreeformInlineImageEdit' && typeof data.label === 'string' && data.label && typeof data.imageBase64 === 'string'){
+      hcSendDirectEdit({ directFreeformImageEdit: { label: data.label, imageBase64: data.imageBase64, mediaType: data.mediaType || 'image/png' } });
     }
   });
 

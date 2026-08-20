@@ -17325,6 +17325,47 @@ function hcBuilderPreview(){
   try{ return new URL(location.href).searchParams.get('hcEdit') === '1'; }catch(e){ return false; }
 }
 
+// A stored page comes in one of two shapes, and they cannot be mounted the
+// same way.
+//
+//   AST format   -> a FRAGMENT. renderHublyDocument returns
+//                   `<style>#hc-doc-root{...}</style><header>...`, scoped to
+//                   this container on purpose. innerHTML is exactly right.
+//
+//   html format  -> a WHOLE DOCUMENT the model wrote, with its own <head> and
+//                   its own `body { ... }` rules. innerHTML would drop the
+//                   html/head/body elements and keep only their contents, so
+//                   every `body`-scoped rule — background, base type, layout —
+//                   would match nothing and the page would render unstyled.
+//                   It goes in a same-origin srcdoc iframe instead, which
+//                   preserves it byte-for-byte and stays scriptable, so
+//                   click-to-edit still reaches inside it.
+//
+// The format is read off the HTML rather than the row because
+// get_public_business_document returns only (rendered_html, version) and did
+// not need to change to carry freeform pages. The two shapes are unambiguous:
+// a rendered AST never starts with a doctype.
+function hcIsFullDocument(html){
+  return /^\s*(<!doctype\s+html|<html[\s>])/i.test(String(html||''));
+}
+function hcMountDocumentHtml(root,html){
+  if(!root) return null;
+  if(!hcIsFullDocument(html)){ root.innerHTML=html; return null; }
+  root.innerHTML='';
+  var frame=document.createElement('iframe');
+  frame.setAttribute('data-hc-freeform','1');
+  frame.setAttribute('title','Website');
+  frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;display:block;background:#fff;';
+  root.appendChild(frame);
+  // srcdoc, not a blob/data URL: those are opaque origins and the editing layer
+  // could not read into them.
+  frame.srcdoc=html;
+  return frame;
+}
+function hcFreeformFrame(){
+  try{ return document.querySelector('#hc-doc-root iframe[data-hc-freeform]'); }catch(e){ return null; }
+}
+
 function hcStripPlaceholders(root){
   if(!root) return;
   var marked = root.querySelectorAll('[data-hd-placeholder], .is-placeholder');
@@ -17403,7 +17444,7 @@ async function loadPublicProfile(slug){
     const rendered=await loadLatestBusinessDocumentHtml(slug,'website');
     if(rendered){
       const root=document.getElementById('hc-doc-root');
-      if(root)root.innerHTML=rendered;
+      if(root)hcMountDocumentHtml(root,rendered);
       if(data.name)document.title=data.name;
       try{document.documentElement.setAttribute('data-theme','day');}catch(e){}
       // The document branch used to return before currentBusiness was ever
@@ -52967,7 +53008,28 @@ function wireHublyDocumentClickToEdit(){
   try{
     if(new URL(location.href).searchParams.get('hcEdit') !== '1') return;
   }catch(e){ return; }
-  var root = document.getElementById('hc-doc-root');
+  var host = document.getElementById('hc-doc-root');
+  if(!host) return;
+  // A freeform page lives inside a same-origin srcdoc iframe, so the editable
+  // surface is THAT document, not this one. Everything past this point is
+  // identical for both formats — same overlay, same file picker, same
+  // gestures — which is the whole point: the owner should not be able to tell
+  // which format they are editing.
+  var frame = hcFreeformFrame();
+  if(!frame){ wireHcEditingSurface(document, host); return; }
+  var bind = function(){
+    try{
+      var d = frame.contentDocument;
+      if(d && d.body) wireHcEditingSurface(d, d.body);
+    }catch(e){ console.warn('freeform editing surface unavailable', e); }
+  };
+  try{
+    if(frame.contentDocument && frame.contentDocument.readyState === 'complete') bind();
+  }catch(e){}
+  frame.addEventListener('load', bind);
+}
+
+function wireHcEditingSurface(doc, root){
   if(!root || root.getAttribute('data-hc-wired') === '1') return;
   root.setAttribute('data-hc-wired', '1');
 
@@ -53017,7 +53079,13 @@ function wireHublyDocumentClickToEdit(){
   function openTextEditor(el){
     closeOverlay();
     var id = el.getAttribute('data-node');
-    overlay = document.createElement('div');
+    // data-hc is the freeform handle. Deliberately a DIFFERENT attribute from
+    // data-node: data-node promises "a node with this id exists in the AST",
+    // and the whole patch path is built on that promise. A freeform page has
+    // no AST, so reusing the attribute would send ids to be looked up in a
+    // tree that does not exist.
+    var hc = el.getAttribute('data-hc');
+    overlay = doc.createElement('div');
     overlay.setAttribute('data-hc-edit-overlay', '1');
     var rect = el.getBoundingClientRect();
     overlay.style.cssText =
@@ -53026,21 +53094,21 @@ function wireHublyDocumentClickToEdit(){
       'max-width:min(480px,90vw);background:#12151f;border:1px solid rgba(255,255,255,.18);' +
       'border-radius:12px;padding:10px;box-shadow:0 20px 50px -12px rgba(0,0,0,.6);' +
       'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;';
-    var ta = document.createElement('textarea');
+    var ta = doc.createElement('textarea');
     ta.value = el.textContent || '';
     ta.style.cssText =
       'width:100%;min-height:64px;background:#0d0f16;color:#f5f6f8;' +
       'border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:8px;' +
       'font-size:14px;font-family:inherit;resize:vertical;box-sizing:border-box;';
 
-    var styleRow = document.createElement('div');
+    var styleRow = doc.createElement('div');
     styleRow.style.cssText = 'display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap;';
-    var colorLabel = document.createElement('span');
+    var colorLabel = doc.createElement('span');
     colorLabel.textContent = 'Color';
     colorLabel.style.cssText = 'font-size:10.5px;color:#8a8d98;margin-right:2px;';
     styleRow.appendChild(colorLabel);
     COLOR_SWATCHES.forEach(function(c){
-      var btn = document.createElement('button');
+      var btn = doc.createElement('button');
       btn.type = 'button'; btn.title = c.label;
       btn.style.cssText = 'width:20px;height:20px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:' + c.hex + ';cursor:pointer;padding:0;';
       btn.addEventListener('click', function(){
@@ -53049,12 +53117,12 @@ function wireHublyDocumentClickToEdit(){
       });
       styleRow.appendChild(btn);
     });
-    var fontLabel = document.createElement('span');
+    var fontLabel = doc.createElement('span');
     fontLabel.textContent = 'Font';
     fontLabel.style.cssText = 'font-size:10.5px;color:#8a8d98;margin:0 2px 0 8px;';
     styleRow.appendChild(fontLabel);
     FONT_OPTIONS.forEach(function(f){
-      var btn = document.createElement('button');
+      var btn = doc.createElement('button');
       btn.type = 'button'; btn.textContent = f.label;
       btn.style.cssText = 'background:none;border:1px solid rgba(255,255,255,.2);color:#c9cbd1;padding:3px 8px;border-radius:6px;font-size:11px;cursor:pointer;';
       btn.addEventListener('click', function(){
@@ -53064,29 +53132,37 @@ function wireHublyDocumentClickToEdit(){
       styleRow.appendChild(btn);
     });
 
-    var row = document.createElement('div');
+    // The swatches write Hubly utility classes (text-brand-600, font-serif),
+    // which exist only in the Document stylesheet. A freeform page wrote its
+    // own CSS and has never heard of them, so offering the control there would
+    // be a button that silently does nothing — the same false affordance the
+    // Night toggle was. Text and images are editable on both; styling is not.
+    if(hc) styleRow.style.display = 'none';
+
+    var row = doc.createElement('div');
     row.style.cssText = 'display:flex;gap:8px;margin-top:8px;justify-content:flex-end;';
-    var cancelBtn = document.createElement('button');
+    var cancelBtn = doc.createElement('button');
     cancelBtn.type = 'button'; cancelBtn.textContent = 'Cancel';
     cancelBtn.style.cssText = 'background:none;border:1px solid rgba(255,255,255,.2);color:#c9cbd1;padding:7px 12px;border-radius:7px;font-size:12.5px;cursor:pointer;';
-    var saveBtn = document.createElement('button');
+    var saveBtn = doc.createElement('button');
     saveBtn.type = 'button'; saveBtn.textContent = 'Save';
     saveBtn.style.cssText = 'background:#D9632D;border:none;color:#fff;padding:7px 14px;border-radius:7px;font-size:12.5px;font-weight:700;cursor:pointer;';
     cancelBtn.addEventListener('click', closeOverlay);
     saveBtn.addEventListener('click', function(){
       var value = ta.value.trim();
-      if(value && id){
+      if(value){
         el.textContent = value; // optimistic local paint
-        post({ type: 'hcDocInlineEdit', op: 'update_text', id: id, text: value });
+        if(hc) post({ type: 'hcFreeformInlineEdit', op: 'update_text', label: hc, text: value });
+        else if(id) post({ type: 'hcDocInlineEdit', op: 'update_text', id: id, text: value });
       }
       closeOverlay();
     });
-    document.addEventListener('keydown', function escClose(e){
-      if(e.key === 'Escape'){ closeOverlay(); document.removeEventListener('keydown', escClose); }
+    doc.addEventListener('keydown', function escClose(e){
+      if(e.key === 'Escape'){ closeOverlay(); doc.removeEventListener('keydown', escClose); }
     });
     row.appendChild(cancelBtn); row.appendChild(saveBtn);
     overlay.appendChild(ta); overlay.appendChild(styleRow); overlay.appendChild(row);
-    document.body.appendChild(overlay);
+    doc.body.appendChild(overlay);
     ta.focus(); ta.select();
   }
 
@@ -53094,31 +53170,40 @@ function wireHublyDocumentClickToEdit(){
   // there's nothing to type. Same postMessage-out pattern, a different
   // message type because a real upload has to happen before this becomes
   // a patch (see uploadAndPatchDocumentImage in the registry).
-  var imgFileInput = document.createElement('input');
+  var imgFileInput = doc.createElement('input');
   imgFileInput.type = 'file'; imgFileInput.accept = 'image/*'; imgFileInput.style.display = 'none';
   imgFileInput.setAttribute('data-hc-doc-image-input', '1');
-  document.body.appendChild(imgFileInput);
+  doc.body.appendChild(imgFileInput);
   var pendingImageNodeId = null;
+  var pendingImageLabel = null;
   imgFileInput.addEventListener('change', function(){
     var file = imgFileInput.files && imgFileInput.files[0];
     imgFileInput.value = '';
-    if(!file || !pendingImageNodeId) return;
+    if(!file || (!pendingImageNodeId && !pendingImageLabel)) return;
     var reader = new FileReader();
     reader.onload = function(){
       var result = String(reader.result || '');
       var comma = result.indexOf(',');
       var data = comma !== -1 ? result.slice(comma + 1) : result;
-      post({ type: 'hcDocInlineImageEdit', id: pendingImageNodeId, imageBase64: data, mediaType: file.type || 'image/png' });
+      if(pendingImageLabel) post({ type: 'hcFreeformInlineImageEdit', label: pendingImageLabel, imageBase64: data, mediaType: file.type || 'image/png' });
+      else post({ type: 'hcDocInlineImageEdit', id: pendingImageNodeId, imageBase64: data, mediaType: file.type || 'image/png' });
+      pendingImageNodeId = null; pendingImageLabel = null;
     };
     reader.readAsDataURL(file);
   });
 
+  // [data-node] is the AST handle, [data-hc] the freeform one. Both are
+  // clickable; the gesture, the overlay and the leaf-only rule below are
+  // unchanged from what shipped for AST pages.
+  var EDITABLE_SEL = '[data-node],[data-hc]';
+
   root.addEventListener('click', function(e){
-    var target = e.target && e.target.closest ? e.target.closest('[data-node]') : null;
+    var target = e.target && e.target.closest ? e.target.closest(EDITABLE_SEL) : null;
     if(!target || !root.contains(target)) return;
     if(target.closest('[data-hubly-element]')) return; // reserved elements aren't AI/user-editable text
     if(target.tagName && target.tagName.toLowerCase() === 'img'){
       pendingImageNodeId = target.getAttribute('data-node');
+      pendingImageLabel = target.getAttribute('data-hc');
       imgFileInput.click();
       return;
     }
@@ -53128,7 +53213,7 @@ function wireHublyDocumentClickToEdit(){
   }, true);
 
   root.addEventListener('mouseover', function(e){
-    var target = e.target && e.target.closest ? e.target.closest('[data-node]') : null;
+    var target = e.target && e.target.closest ? e.target.closest(EDITABLE_SEL) : null;
     if(!target || !root.contains(target) || target.hasAttribute('data-hc-editable-marked')) return;
     if(target.closest('[data-hubly-element]') || target.children.length > 0) return;
     target.setAttribute('data-hc-editable-marked', '1');

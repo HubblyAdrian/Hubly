@@ -64,7 +64,12 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
+// Set at module load — the gap between this and the first request is the
+// isolate cold-boot the job clock is already paying for.
+const MODULE_LOADED_AT = performance.now();
+
 Deno.serve(async (req) => {
+  const fnStart = performance.now();
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
 
@@ -113,7 +118,15 @@ Deno.serve(async (req) => {
   // existing: the response is not sent until the build is finished, so the
   // runtime has no reason to recycle the isolate underneath it.
   try {
+    const preamble = Math.round(performance.now() - fnStart);
     const result = await runDocumentGeneration(draftId, draftToken, brief);
+    const inFunction = Math.round(performance.now() - fnStart);
+    // dispatchedAt is stamped by hubly-conversation immediately before the HTTP
+    // call, so (arrival - dispatchedAt) is the round trip plus cold boot -- the
+    // part of the job clock that happens before this function does anything.
+    const dispatchedAt = Number((body as Record<string, unknown>)?.dispatchedAt) || 0;
+    const handoff = dispatchedAt ? Math.round(Date.now() - dispatchedAt - inFunction) : null;
+    console.log(`build-timing-fn [${draftId}] ${JSON.stringify({ preamble, inFunction, handoffAndBoot: handoff, moduleLoad: Math.round(fnStart - MODULE_LOADED_AT) })}`);
     await finishDocumentBuildJob(
       jobId,
       result.ok ? "succeeded" : "failed",
