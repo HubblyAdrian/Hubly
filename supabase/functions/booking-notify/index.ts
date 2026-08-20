@@ -167,7 +167,23 @@ Deno.serve(async (req) => {
     }
     const bearer = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim();
     const apikey = (req.headers.get('apikey') || '').trim();
-    if (bearer !== expected && apikey !== expected) {
+    // A SECOND SERVER-ONLY CREDENTIAL, NOT A LOOSENING.
+    //
+    // The pay-in-person path has no Edge Function on it at all -- the booking is
+    // completed by a Postgres RPC -- so the only server-side caller that can
+    // exist is Postgres itself, via a trigger (see
+    // 20260821010000_notify_owner_on_booking_completion.sql). Postgres cannot
+    // hold the service key without copying our most privileged credential into
+    // the database, so it presents the cron secret from Vault, exactly as
+    // hubly-recurring-maintain is already called.
+    //
+    // The property this check exists to protect is unchanged: an
+    // UNAUTHENTICATED caller, or one holding only the publishable key that ships
+    // to every browser, still cannot make this function email a business owner.
+    const cronSecret = (Deno.env.get('HUBLY_CRON_SECRET') || '').trim();
+    const givenCron = (req.headers.get('x-hubly-cron-secret') || '').trim();
+    const cronOk = !!cronSecret && givenCron === cronSecret;
+    if (!cronOk && bearer !== expected && apikey !== expected) {
       return new Response(JSON.stringify({ ok: false, error: 'forbidden' }), {
         status: 403, headers: { 'Content-Type': 'application/json' },
       });

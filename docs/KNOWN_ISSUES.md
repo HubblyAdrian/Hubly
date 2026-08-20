@@ -2306,3 +2306,77 @@ The duplication was the deliberate cost of getting chat inside the iframe at
 all, but it is a fork and it will drift. The injected widget should either grow
 those behaviours or the two should converge on one implementation that both
 surfaces load.
+
+## Owner booking notifications: fixed, and how it is wired now
+
+**Before:** no booking made through a Hubly site had ever reached its owner.
+`booking-notify` authenticates against the SECRET key; the only caller on the
+pay-in-person path was the browser, which can only send the publishable key;
+403 every time, into a `console.warn`.
+
+**Now:** a trigger on `booking_requests` fires when `status` BECOMES `'pending'`
+and calls `booking-notify` via `net.http_post`, presenting `hubly_cron_secret`
+from Vault. See `20260821010000_notify_owner_on_booking_completion.sql`.
+
+**Why a trigger again, when one was deleted for exactly this.** The old
+`booking_request_notify` had two faults and only one was about triggers:
+
+- *The event.* It fired `AFTER INSERT` with no status filter, and the row is
+  inserted at step 3 as an `'abandoned'` LEAD. Owners were emailed before any
+  payment, and for every visitor who reached step 3 and left. The new trigger
+  fires on the transition INTO `'pending'`, which happens once, at completion.
+- *The invisible caller.* Still partly true and not waved away: a `pg_trigger`
+  row is not greppable from application code. Mitigated by the migration being
+  committed and heavily commented, by `public/hubly.html`'s former call site now
+  carrying a pointer to it, and by this entry. **If you are looking for who
+  sends the owner email, it is that migration.**
+
+**Why not put the call inside `complete_abandoned_booking`.** That RPC is only
+the primary path; when it fails the browser falls back to a direct INSERT with
+`status='pending'`. Notifying on one path and not the other is how this broke the
+first time. The trigger covers both.
+
+**Why the cron secret and not the service key.** `booking-notify` now also
+accepts `x-hubly-cron-secret`, the same credential `hubly-recurring-maintain` is
+already called with. It is server-only and never ships to a browser, so the
+property the secret-key check protects — an unauthenticated or publicly-keyed
+caller cannot make this function email a business owner — is unchanged. Copying
+the service key into the database was the alternative and is worse.
+
+### What is proven, and what is not
+
+Proven by doing it: a real booking through a generated site fired the trigger and
+`booking-notify` answered **HTTP 200 with ok:true** — recorded in
+`net._http_response`, where the same call previously returned 403.
+
+**NOT proven: that the email was delivered.** `sendEmail` swallows Resend
+failures (it only console.errors) and the handler returns ok:true regardless, so
+a 200 means "the notify path ran", not "the mail went out". The Supabase
+log-query API was returning backend errors during this session, so the Resend
+response could not be read either.
+
+**That is a real gap in its own right:** the one thing the owner cares about is
+the only step with no success signal. `booking-notify` should return a
+per-recipient send result, or record one, so "did the owner get told" is
+answerable without reading a mailbox.
+
+## The chatbot could not see the services, on every Hubly site
+
+`loadConciergeContext` then `toAiSummary` then `listServices` then `getCatalog`
+reads `meta.service_catalog`. **Not one real business has that key** — checked
+across freeform and classic sites — while all of them have rows in the
+`services` table. So the assistant answered "I don't have configured pricing"
+while the page it sat on listed those exact services with prices.
+
+Fixed by falling back to the `services` table when the catalog is empty. The
+never-invent rule is untouched: this hands the model rows that already existed,
+it does not give it licence to guess. A business with no services still yields an
+empty list and the assistant still declines.
+
+`price = 0` is this codebase's "no price set" sentinel, not free, so it maps to
+`quote_required: true` rather than a zero — reporting a zero would be inventing a
+price downward, which is the same sin as inventing one upward. Verified live: a
+classic customer whose services have no price now answers that bathroom tiling
+is quote required and there is no set price listed.
+
+**This was never a freeform problem.** It affected every Hubly site.

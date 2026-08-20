@@ -125,7 +125,54 @@ export async function loadConciergeContext(
   const hours = (meta.hours || null) as ConciergeGroundTruth["hours"];
   const cities = Array.isArray(biz.service_area_cities) ? biz.service_area_cities : [];
   const isPro = biz.tier === "pro";
-  const services = toAiSummary({ ...biz, meta }, "website");
+  let services = toAiSummary({ ...biz, meta }, "website");
+
+  // THE ASSISTANT COULD NOT SEE THE SERVICES ON THE PAGE BESIDE IT.
+  //
+  // toAiSummary -> listServices -> getCatalog reads meta.service_catalog. Not
+  // one real business has that key -- checked across freeform and classic sites
+  // on 2026-08-20 -- while all of them have rows in the `services` table. So the
+  // assistant answered "I don't have configured pricing" while the page it was
+  // sitting on listed those exact services with prices.
+  //
+  // The never-invent rule is untouched: this does not give the model anything to
+  // guess with, it gives it the rows that already existed. A business with no
+  // services still yields an empty list and the assistant still declines.
+  if (!services.services.length) {
+    const { data: rows } = await supabase
+      .from("services")
+      .select("id, name, price, duration_hours, description")
+      .eq("business_id", businessId)
+      .order("sort_order");
+    if (Array.isArray(rows) && rows.length) {
+      services = {
+        ...services,
+        services: rows.map((r: Record<string, unknown>) => {
+          // price = 0 is this codebase's "no price set" sentinel, NOT free --
+          // see KNOWN_ISSUES. Reporting $0 would be inventing a price downward,
+          // which is the same sin as inventing one upward.
+          const p = typeof r.price === "number" && r.price > 0 ? r.price : null;
+          return {
+            id: String(r.id ?? ""),
+            name: String(r.name ?? ""),
+            description: (r.description as string) || null,
+            category: null,
+            subcategory: null,
+            includes: [] as string[],
+            addon_names: [] as string[],
+            price_label: p === null ? null : `$${String(p).replace(/\.00$/, "")}`,
+            duration_minutes: typeof r.duration_hours === "number" && r.duration_hours > 0
+              ? Math.round(r.duration_hours * 60)
+              : 0,
+            // No price recorded means the visitor must ask -- which is exactly
+            // what "quote required" means, and keeps the assistant from
+            // implying a number exists.
+            quote_required: p === null,
+          };
+        }),
+      } as typeof services;
+    }
+  }
 
   return {
     ok: true,

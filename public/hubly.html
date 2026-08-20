@@ -42386,18 +42386,23 @@ async function submitBooking(){
           console.warn('booking_requests insert failed:',error.message);
           toast('Saved on this device — we’ll sync when you’re back online');
         }else{
-          // Tell the business. This path is the pay-in-person booking: no Stripe
-          // session opened, so the server-side notify in createJobFromBookingRequest
-          // never runs for it. Previously a database trigger covered this — badly,
-          // firing at step 3 on the abandoned lead row instead of here.
-          // Fire-and-forget: an email problem must not disturb a completed booking.
-          try{
-            if(insertedReqId){
-              dbClient.functions.invoke('booking-notify',{
-                body:{record:{...payload,id:insertedReqId},hubly_notify_reason:'created'},
-              }).catch(e=>console.warn('booking-notify failed',e&&e.message));
-            }
-          }catch(e){console.warn('booking-notify skipped',e&&e.message);}
+          // THE OWNER EMAIL IS SENT BY THE DATABASE, NOT FROM HERE.
+          //
+          // This used to invoke booking-notify directly. It returned 403 on every
+          // single call and always would have: booking-notify authenticates
+          // against the SECRET key, and a browser can only ever send the
+          // publishable one. The failure went into a console.warn nobody reads,
+          // so no booking made through a Hubly site ever reached its owner.
+          //
+          // The notify now fires from a trigger on booking_requests, on the
+          // status becoming 'pending' — which covers BOTH this path and the
+          // complete_abandoned_booking RPC above, and never fires on the
+          // abandoned lead row that the old trigger got wrong. See
+          // supabase/migrations/20260821010000_notify_owner_on_booking_completion.sql.
+          //
+          // Nothing replaces the call here. Adding a browser-side notifier back
+          // would mean giving a public client a credential that can email a
+          // business owner, which is the hole the secret-key check exists to close.
           if(S.bkDiscountCode)markPromoUsedLocal(S.bkDiscountCode,phone,email);
           if(S._chatbotHandoffConversationId){
             markChatbotConversationBooked(S._chatbotHandoffConversationId);
