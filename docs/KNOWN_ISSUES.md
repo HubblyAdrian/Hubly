@@ -1791,3 +1791,75 @@ The real fix remains a worker outside the request path (pg_cron ->
 `net.http_post`, or Supabase Queues) that can retry from the stored brief
 without a person clicking anything.
 
+### Diagnosed 2026-08-19: it is the wall-clock limit, and the numbers say so
+
+Duration distribution across 17 successful builds:
+
+```
+min 60.0   p50 94.9   p90 138.8   max 143.2   mean 98.7
+over 140s: 1     over 150s: 0
+```
+
+**Nothing above 150s.** That is not a tail, it is a cliff — the Edge Function
+wall-clock limit on the free plan. Two builds in 19 stalled (10.5%), which is
+almost exactly the fraction the successful distribution places within ten
+seconds of that ceiling. The stalls are the right-hand tail being truncated.
+
+It also explains why one business failed twice in a row: it is not random, that
+business's generation genuinely needs more than 150s, so every attempt dies.
+
+Corroborated from three independent signals, all of which match "isolate killed
+mid-run" and none of which match "the dispatch never arrived":
+
+| Signal | On a stall | A killed isolate |
+|---|---|---|
+| terminal job status | never written | never written |
+| end-of-run log line | absent | absent |
+| edge-log completion row | absent | absent (the row is written on COMPLETION) |
+| thrown error anywhere | none | none |
+
+`dispatchDocumentBuild` logs `console.error` on a non-ok response and there are
+zero such lines, and one completed request logged `200`, so dispatch works.
+
+**Method note:** `function_edge_logs` records a request when it COMPLETES. A
+request that never completes never produces a row — so absence there proves
+nothing on its own, and the logs are sampled besides (143 rows in six hours).
+The conclusion rests on the duration cliff, not on the log absence.
+
+**Two corrections to earlier reasoning in this file.** The wall-clock theory was
+called "weakened" on the strength of a single 91-second sample; the full
+distribution says the opposite. And "two consecutive failures suggest it is not
+random" was the right conclusion for the wrong reason — it is not random because
+that business is over the limit, not because something is broken.
+
+### The sweep (20260819040000)
+
+`sweep_stalled_document_builds()`, every two minutes, pure SQL — no
+`net.http_post`, no secret. A `running` job past `expected_by` becomes:
+
+- **`succeeded`** if a document actually exists. The page is the outcome, the
+  row is only the record; marking that `failed` would tell someone their site
+  did not build while they are looking at it.
+- **`failed`** with `error = 'timed_out_or_crashed'` otherwise.
+
+It deliberately does NOT auto-retry. An identical retry of a genuine timeout
+fails identically at full model cost, so retry stays explicit — the person
+clicks it, having been told honestly — until generation is fast enough that a
+retry means something.
+
+**`finished_at` is set to `expected_by`, not `now()`.** The first version used
+`now()` and recorded a build that "took" 11,577 seconds, which would have
+silently poisoned every future duration query — including the one that produced
+the diagnosis above. `expected_by` is the honest upper bound on when the job was
+still alive.
+
+### The 400s timeout is not available to us
+
+Organisation `BRNNO team` is on `plan: "free"`, confirmed via the Management
+API, and the function config exposes no timeout field — the limit is a plan
+property. Raising it to 400s requires Supabase Pro, **$25/month per
+organisation** plus usage.
+
+Worth noting the ordering: a longer limit moves the cliff, it does not remove
+it. The sweep is the durable half either way.
+
