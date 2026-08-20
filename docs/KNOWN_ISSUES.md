@@ -2485,3 +2485,116 @@ is a data migration, not a fix**, and is deliberately not started here. The
 context-loader fallback added yesterday (catalog first, `services` table when the
 catalog is empty) is the right *reader-side* behaviour in the meantime, but it
 does not resolve the split.
+
+## Only notifications.myhubly.app is verified in Resend — five senders used the bare domain
+
+The bare `myhubly.app` is not registered in Resend at all. Anything sending from
+it is rejected at the provider. Five senders did:
+
+```
+signups@myhubly.app    api/notify-signup.js      proven failing
+waitlist@myhubly.app   api/notify-readiness.js   never tested
+chat@myhubly.app       api/support-chat.js       never tested
+bookings@myhubly.app   api/notify.js  (x2)       one built by string concatenation,
+                                                 so a search for a quoted
+                                                 from-address did not find it
+```
+
+All now send from `notifications.myhubly.app`. Verified by POSTing to the live
+endpoints: `notify-signup` returns a real Resend id, `notify-readiness` and
+`support-chat` return `ok:true` (both forward provider errors, so a 200 there
+means accepted).
+
+### Reply-to, because a send-only address bounces replies
+
+Nothing receives mail at any of these from-addresses. Every one now sets a
+reply-to at a real person:
+
+| endpoint | reply-to |
+|---|---|
+| `notify-signup` | `PLATFORM_OWNER_EMAIL` — platform notification |
+| `notify-readiness` | the waitlist signer (already present) |
+| `support-chat` | the person who wrote in (already present) |
+| `notify.js` owner mail | the customer |
+| `notify.js` customer mail | the business |
+
+**Not verified: that the header survives to the inbox.** The production Resend
+key is send-only — `GET /emails/{id}` answers `"API key is invalid"` while POST
+works — so the message cannot be read back. Confirming the header needs the
+recipient's mailbox.
+
+## ACTIVELY BROKEN: api/notify.js cannot load at all
+
+```
+POST https://myhubly.app/api/notify  ->  HTTP 500  FUNCTION_INVOCATION_FAILED
+```
+
+`node --check api/notify.js` fails at line 62: `'You're booked!'` — an unescaped
+apostrophe inside a single-quoted string. It is a **syntax error**, so the module
+has never parsed and the endpoint has never run, despite being routed in
+`vercel.json`. Present before this session's changes (checked against `HEAD~1`).
+
+**Deliberately not fixed.** It is a one-character repair, and that is exactly
+why it needs a decision rather than a reflex: `api/notify.js` is a THIRD
+implementation of the owner booking email, alongside `booking-notify` (working,
+with a delivery ledger) and the deleted `booking_request_notify` trigger. Making
+it parse would switch on a duplicate notifier that has never been exercised.
+Delete it or wire it deliberately; do not just fix the quote.
+
+Its sender addresses were corrected with the others, which changes nothing while
+the file cannot load.
+
+## notification_deliveries cannot reach the Vercel endpoints — credentials, not shape
+
+The table's shape fits fine: `subject_type` is deliberately loose and a signup or
+waitlist notification maps onto it cleanly.
+
+The blocker is credentials. `vercel env ls production` shows the complete set:
+
+```
+HUBLY_DRAFT_SECRET  ADOBE_CLIENT_ID  ADOBE_CLIENT_SECRET
+PLATFORM_OWNER_EMAIL  RESEND_API_KEY
+```
+
+**No Supabase credentials at all.** `notification_deliveries` has RLS on and is
+revoked from `anon` and `authenticated`, so `api/notify-signup.js` and
+`api/notify-readiness.js` have no way to write a row. Two ways out, neither taken
+here:
+
+1. Put the Supabase secret key in Vercel — copies the most privileged credential
+   we have onto a second platform. Rejected on the same grounds as putting it in
+   the database.
+2. Move these notifications to an Edge Function, where the credential already
+   exists and `booking-notify`'s ledger code can be reused. **Recommended**, and
+   it also collapses two mail implementations into one.
+
+Until then "did the signup notification send?" is answerable from the endpoint's
+HTTP response (which now forwards Resend's status, id and error) but not from a
+query. That is better than it was and worse than bookings.
+
+## Businesses that completed onboarding while signup notification was dark
+
+`api/notify-signup.js` was added **2026-07-13**. It has never successfully sent —
+first because a required env var was unset, then because of the sender domain
+above. Every business claimed since then launched without anyone at Hubly being
+told.
+
+```
+2026-07-29  my-auto-detailing-shop    asmayorga@outlook.com
+2026-07-25  my-auto-detailing         jjake486@gmail.com
+2026-07-25  cotter-aviation           cotterjp@gmail.com
+2026-07-24  my-photography            test@mail.com
+2026-07-20  bucket-mobile-detailing   bucketmobiledetailing@outlook.com
+2026-07-20  my-business               tom@mgai.com
+2026-07-18  star-windows              test@gmail.com
+2026-07-17  everlasting               jacquelynsmithee@gmail.com
+2026-07-17  adrians-lawn-service      adriansmithee@gmail.com
+2026-07-13  devdetailing661           fdevin180@gmail.com
+--- feature did not exist before this line ---
+2026-07-11  graefs-autocare           austinjgraef@gmail.com
+2026-07-11  aquaspeed                 aquaspeed723@gmail.com
+```
+
+**Caveat on the dates:** `businesses` has no claim/publish/launch timestamp —
+`created_at` is the row's creation, which approximates when onboarding STARTED,
+not when it completed. The ordering is right; the exact moment is not.
