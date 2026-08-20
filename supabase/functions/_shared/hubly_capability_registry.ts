@@ -1472,7 +1472,7 @@ export async function generateFreeformPage(
   businessId: string,
   brief: string,
   record: Record<string, unknown>,
-): Promise<{ ok: true; html: string; brief: FreeformBrief; labels: number } | { ok: false; error: string }> {
+): Promise<{ ok: true; html: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string } | { ok: false; error: string }> {
   const system =
     "You write a complete, standalone HTML page for one real local service business — a single file, with its own <style> block in the head. " +
     "No frameworks, no external requests, no scripts. Use real, specific copy for THIS business, drawn only from the record below. " +
@@ -1482,6 +1482,8 @@ export async function generateFreeformPage(
     `THE BUSINESS RECORD:\n${JSON.stringify(record, null, 1)}`;
 
   let text = "";
+  const usage = emptyUsage();
+  let modelUsed: string | undefined;
   try {
     const ai = await HublyAI.complete({
       feature: "hubly-freeform-generate",
@@ -1494,6 +1496,8 @@ export async function generateFreeformPage(
       jsonMode: false,
     });
     text = String(ai.text || "");
+    addUsage(usage, ai.usage);
+    modelUsed = (ai as { model?: string }).model;
   } catch (e) {
     return { ok: false, error: `model_call_failed: ${String(e).slice(0, 120)}` };
   }
@@ -1514,6 +1518,8 @@ export async function generateFreeformPage(
     html: stamped.html,
     brief: { brief, images: [], generatedAt: new Date().toISOString() },
     labels: stamped.coverage.labelled,
+    usage,
+    modelUsed,
   };
 }
 
@@ -2150,6 +2156,63 @@ function stopwatch() {
   };
 }
 
+/**
+ * Build a page the freeform way: one model call, a whole standalone HTML
+ * document, stamped with data-hc and stored. The default path for any new draft.
+ *
+ * What is deliberately absent compared with the AST path next door: no schema
+ * prompt block, no LAYOUT_BLOCK, no class vocabulary, no validation pass, no
+ * second model call when validation fails, and no render step — the model's
+ * HTML IS the page. That is where the time goes.
+ */
+async function runFreeformGeneration(
+  draftId: string,
+  draftToken: string,
+  brief: string,
+  sw: ReturnType<typeof stopwatch>,
+): Promise<CapabilityActionResult> {
+  const bizRow = await selectOne("businesses", "id", draftId, "name,phone,email,address,slug,brand_color,logo_url,city,state,service_area_cities,business_type,years_in_business,meta");
+  sw.mark("selectBusinessRow");
+  // THE RECORD, not a paraphrase of it — same reasoning as the AST path: until
+  // the record was passed as data, the generator wrote an entire website from
+  // one prose paragraph and had never seen a price, a service or an opening hour.
+  const record = await loadBusinessRecord(draftId);
+  sw.mark("loadBusinessRecord");
+
+  const genStarted = Date.now();
+  const gen = await generateFreeformPage(draftId, brief, { ...(record as any), ...(bizRow || {}) });
+  sw.mark("modelAndStamp");
+  const generationMs = Date.now() - genStarted;
+  if (!gen.ok) {
+    return { ok: false, real: false, summary: `The page could not be generated (${gen.error}).`, error: "generation_failed", raw: { generationMs } };
+  }
+
+  const r = await callBusinessRpc("create_business_document", {
+    p_business_id: draftId,
+    p_draft_token: draftToken,
+    p_tag: "website",
+    p_document: gen.brief,
+    p_rendered_html: gen.html,
+    p_created_by: "ai",
+    p_format: "html",
+  });
+  sw.mark("persistDocument");
+  if (!r || r.ok !== true) {
+    return { ok: false, real: false, summary: "The page was generated but could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
+  }
+  const timing = sw.done();
+  // Same one-line-per-build shape as the AST path, so the two are directly
+  // comparable in the function logs without a join.
+  console.log(`build-timing-freeform [${draftId}] ${JSON.stringify({ ...timing, labels: gen.labels, bytes: gen.html.length, promptTokens: gen.usage.promptTokens, completionTokens: gen.usage.completionTokens, reasoningTokens: gen.usage.reasoningTokens, calls: gen.usage.calls, model: gen.modelUsed })}`);
+  const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
+  return {
+    ok: true,
+    real: true,
+    summary: `Real page generated and live — ${url} (version ${r.version}). Every element on it is individually editable.`,
+    raw: { id: r.id, version: r.version, url, format: "html", labels: gen.labels, usage: gen.usage, generationMs, timing, modelUsed: gen.modelUsed },
+  };
+}
+
 export async function runDocumentGeneration(
   draftId: string,
   draftToken: string,
@@ -2162,6 +2225,30 @@ export async function runDocumentGeneration(
           }
           if (!brief) {
             return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
+          }
+
+          // FREEFORM IS HOW A NEW PAGE IS BUILT. AST IS HOW AN OLD ONE IS REBUILT.
+          //
+          // Until now every new draft dispatched an AST build, and a freeform
+          // page only ever existed when that build FAILED — freeform was not a
+          // path anyone could choose, it was where you landed on a timeout.
+          // This is the flip: nothing already built changes, but nothing new is
+          // built as an AST.
+          //
+          // The decision is made from what is already stored, not from a flag,
+          // so it cannot drift: an existing AST page keeps the AST generator
+          // (that is what "retry" and "rebuild from the record" mean for the
+          // pages already on it), and everything else — no document at all, or
+          // a freeform one — gets freeform.
+          //
+          // A side effect worth stating: no AST build is dispatched for a new
+          // draft, so there is no long-running AST job left to resume later and
+          // overwrite a page the owner has since replaced. That race is closed
+          // by removal rather than by a guard.
+          const existing = await selectLatestBusinessDocument(draftId, "website");
+          sw.mark("readExistingDocument");
+          if (!existing || existing.format === "html") {
+            return await runFreeformGeneration(draftId, draftToken, brief, sw);
           }
           const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,meta");
           sw.mark("selectBusinessRow");

@@ -2184,3 +2184,54 @@ no account of what has happened since — including a page the owner explicitly
 asked to replace it with. `resumeDocumentBuild` should refuse when the latest
 document is newer than the job it is resuming, or when the format changed
 underneath it.
+
+## Freeform is now the default, and this is everything it is missing
+
+As of 2026-08-20 a new draft generates a freeform page. The AST generator is
+untouched and still serves every page already built on it, but nothing new is
+built as an AST. This is the gap list, measured against a real AST page
+(`thornfield-cyclery`) and the three freeform pages built to verify the switch.
+
+**Nothing here is fixed. This is the roadmap.**
+
+| Missing | AST page has | Why it matters |
+|---|---|---|
+| **Reserved Hubly elements** | 4 | The booking widget, the enquiry form and the reviews block are `data-hubly-element` nodes. A freeform page has none, so **a visitor cannot book or send an enquiry.** This is the largest gap by a distance. |
+| **Booking flow** | 13 markers | `wireHublyDocumentReserved()` binds availability, slot selection and `createWebsiteBookingJob`. Freeform pages have nothing to bind. |
+| **Contact / enquiry form** | 2 `<form>` | A freeform page's only conversion path is a `tel:` link. No form, no email capture, no lead row. |
+| **Service-area map** | 2 | `businessMapQuery` renders a real map. Freeform pages describe the area in words. |
+| **Photographs** | 0 in this sample, but supported | `banner_url`, hero image and gallery nodes all exist on the AST path. Freeform generation is told to design a page that needs no photos, so it does — every one of the three pages has **zero `<img>`**. The Image Engine was the original reason for this whole line of work and it is still absent. |
+| **Logo in the header** | chrome-driven | `selectChromeVariant` places a real logo by measured aspect ratio. A freeform page writes its own header and draws a monogram from initials; a logo upload does not appear on it. `setChrome` says so honestly rather than pretending. |
+| **Chrome variants / `setChrome`** | 3 marker classes | Header layout is not a setting on a freeform page — the model wrote the header as part of the page. |
+| **Owner placeholders** | 2 | `data-hd-placeholder` scaffolding shows the owner what to fill in and is stripped for the public. Freeform has no equivalent, which is partly why the pages *say* what is missing in prose instead. |
+| **Node-level structural editing** | 132 anchors | `move_node`, `remove_node`, `add_node`, `replace_node` all work on an AST. Freeform editing is text and images only — there is still no way to remove a section. |
+| **Utility class vocabulary** | 41 uses | The colour/font pickers in click-to-edit write `text-brand-600` / `font-serif`. On a freeform page those controls are hidden because the page wrote its own CSS. **Styling is not editable at all on freeform.** |
+| **Design rationale** | persisted | `design_rationale` records why the model made its structural choices. The freeform path stores the brief instead and captures no rationale. |
+| **Vocabulary rejection tracking** | recorded | `document_vocabulary_rejections` measured where the model hit the format's ceiling. Freeform has no ceiling to hit, so the signal is gone — and with it the evidence for what to add next. |
+
+### Structural, and worse than the list above
+
+**Anything the shell injects cannot reach inside a freeform page.** A freeform
+page renders in a same-origin `srcdoc` iframe (it is a whole document whose CSS
+targets `body`). Everything `hubly.html` wires binds to `#hc-doc-root` in the
+PARENT document and does not cross the frame boundary — confirmed live:
+`reservedInParent: 0, reservedInsideIframe: 0`. So even once a freeform page
+starts emitting `data-hubly-element` nodes, `wireHublyDocumentReserved()` will
+not see them. Booking will need the wiring to move inside the frame, or a
+postMessage bridge, or freeform pages to stop being iframed.
+
+What DOES still work, verified rather than assumed: the parent's `noindex,
+nofollow` for unclaimed drafts, `document.title`, and the language toggle (all
+live in the parent chrome, outside the frame).
+
+### Two facts that did not survive the switch
+
+- **The bakery's prices never reached the record.** "Country loaf 9 dollars,
+  olive fougasse 11, cinnamon morning bun 5" produced `recordFacts` + `startDraft`
+  + `generateDocument` and **no `setServices`** — 0 rows in `services`. The page
+  then correctly said no menu was available. The page is honest; the extraction
+  is wrong. The photographer's three priced services extracted fine, so this is
+  intermittent, not absent.
+- **`years_in_business` reached the roofer and nothing else**, which is correct
+  (only the roofer's sentence stated one) — noted only because it is the one
+  numeric claim on that page and it is real.
