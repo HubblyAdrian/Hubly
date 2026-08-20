@@ -17774,6 +17774,16 @@ async function initApp(){
           const q=new URL(location.href).searchParams;
           if(q.get('book')==='1'){
             const svc=(q.get('svc')||'').trim();
+            // HYDRATE THE SERVICES FIRST, or booking opens empty.
+            //
+            // S.services is populated from meta.services by the CLASSIC
+            // renderer. The Document/freeform path never fills it, so a
+            // freeform page arriving here showed "Add services to show them
+            // here" for a business with three real priced services in the
+            // `services` table. loadServicesFromDb() reads exactly that table
+            // and already existed — but its only caller is the owner/editor
+            // load path, so it never runs for a public visitor.
+            try{ await loadServicesFromDb(); }catch(e){ console.warn('booking services load failed',e); }
             // forceBooking so it opens the wizard instead of bouncing the
             // visitor to the packages list — arriving here IS the choice.
             setTimeout(function(){
