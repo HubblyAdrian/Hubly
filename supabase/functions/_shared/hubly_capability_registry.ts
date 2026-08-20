@@ -60,11 +60,12 @@ import {
 } from "./hubly_document.ts";
 import { imageDimensions, type ImageDims } from "./hubly_image_dims.ts";
 import { stampFreeformHtml } from "./hubly_document_labels.ts";
+import { injectHublyRuntime } from "./hubly_page_runtime.ts";
 import { applyFreeformEdit, humanFreeformSummary, labelInventory, labelsPresent, type LabelEntry } from "./hubly_freeform.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
 // Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
 // "Invalid JWT". Both behaviours are load-bearing -- see supabase_admin.ts.
-import { adminHeaders, requireSecretKey, resolvePublishableKey } from "./supabase_admin.ts";
+import { adminHeaders, requireSecretKey, resolvePublishableKey, requirePublishableKey } from "./supabase_admin.ts";
 import { adminClient } from "./marketplace_provider.ts";
 import { getWebsiteAvailability, createWebsiteBookingJob } from "./hubly_booking_execution.ts";
 import { buildPageStructureBlock, paletteById, palettePromptList, sectionOrderFor } from "./site_identity.ts";
@@ -1473,12 +1474,38 @@ export async function generateFreeformPage(
   brief: string,
   record: Record<string, unknown>,
 ): Promise<{ ok: true; html: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string } | { ok: false; error: string }> {
+  // WHAT HUBLY SUPPLIES, told to the model so it can DESIGN for it.
+  //
+  // The first three freeform pages were call-only brochures for one reason:
+  // nobody told the model that booking exists. It cannot lay out a page around
+  // a capability it has not been told about. So the capabilities are stated,
+  // and WHERE they go is left to the model — a Book button in the header suits
+  // a roofer, a "check availability" line suits a photographer, and a bakery
+  // may want neither above the fold.
+  //
+  // The sentinel is the contract. The model marks its booking CTA
+  // href="#hubly-book"; injectHublyRuntime rewrites that to the real booking
+  // URL. The model is responsible for PLACEMENT, this codebase is responsible
+  // for it WORKING, and neither can silently fail: a sentinel that is never
+  // rewritten is a dead link, so the pass injects its own button when it finds
+  // none, and asserts afterwards.
+  const capabilities =
+    "WHAT HUBLY GIVES THIS PAGE — design for these, they are real:\n" +
+    "1. ONLINE BOOKING. This business can take bookings online; Hubly supplies the whole booking flow. " +
+    "Place a booking call-to-action wherever it genuinely belongs for this trade, and give it exactly " +
+    'href="#hubly-book". To preselect one service, use href="#hubly-book?svc=NAME" with a service name from the record. ' +
+    "You may place more than one. Treat the phone number as the SECONDARY option, not the only one — do not build a page whose only action is a phone call.\n" +
+    "2. A CHAT ASSISTANT. Every Hubly site carries one; it is added automatically after you finish and it floats in the bottom-right corner. " +
+    "Do NOT design a chat window, a message form, or a support widget yourself, and do not put anything in the bottom-right corner that it would cover.\n" +
+    "Do not write any other <script>, and do not build a booking form of your own — the sentinel link is how booking is reached.";
+
   const system =
     "You write a complete, standalone HTML page for one real local service business — a single file, with its own <style> block in the head. " +
-    "No frameworks, no external requests, no scripts. Use real, specific copy for THIS business, drawn only from the record below. " +
+    "No frameworks, no external requests, no scripts of your own. Use real, specific copy for THIS business, drawn only from the record below. " +
     "NEVER invent a price, a customer name, a review, a rating, a certification or a guarantee that is not in the record. " +
     "If you have no photos, design a page that does not need them rather than leaving empty frames. " +
     "Write the page you think this business should have — you choose the sections, the order and the layout.\n\n" +
+    capabilities + "\n\n" +
     `THE BUSINESS RECORD:\n${JSON.stringify(record, null, 1)}`;
 
   let text = "";
@@ -1513,9 +1540,21 @@ export async function generateFreeformPage(
   // THE STAMPING PASS. Not a validation gate: it cannot reject the page and it
   // never triggers a regeneration. It takes whatever came back and labels it.
   const stamped = stampFreeformHtml(raw);
+  // THEN HUBLY'S MACHINERY. Also not a gate: it rewrites the model's booking
+  // CTA to a working URL, adds one if there is none, and injects the chat
+  // widget. Ordered after stamping so the injected runtime is not itself
+  // labelled as editable content — the owner edits their page, not our widget.
+  const wired = injectHublyRuntime(stamped.html, {
+    businessId,
+    businessName: String((record as Record<string, unknown>)?.name || "this business"),
+    slug: String((record as Record<string, unknown>)?.slug || ""),
+    supabaseUrl: (Deno.env.get("SUPABASE_URL") || "").trim(),
+    publishableKey: requirePublishableKey(),
+    accent: String((record as Record<string, unknown>)?.brand_color || ""),
+  });
   return {
     ok: true,
-    html: stamped.html,
+    html: wired.html,
     brief: { brief, images: [], generatedAt: new Date().toISOString() },
     labels: stamped.coverage.labelled,
     usage,

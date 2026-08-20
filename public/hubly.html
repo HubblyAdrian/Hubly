@@ -17756,6 +17756,32 @@ async function initApp(){
       try{
         await loadPublicProfile(slug);
         hublyBootLog('initApp public profile loaded',currentBusiness?.id||'(none)');
+        // BOOKING AS A REAL URL.
+        //
+        // Until now the ONLY way into the booking flow was calling
+        // openBookingPage() inside this document — there was no path, no query
+        // param, nothing a link could point at. That was survivable while every
+        // page was rendered by this file. It is not survivable for a freeform
+        // page, which is a whole document inside an iframe and cannot call a
+        // function in its parent.
+        //
+        // So booking gets an address: ?book=1 (optionally &svc=<service name>).
+        // A freeform page links to it with target="_top"; so can an email, an
+        // SMS, or a QR code on a van. This is deliberately a real entry point
+        // rather than a postMessage bridge, because a bridge only works from
+        // inside our own iframe and a URL works from everywhere.
+        try{
+          const q=new URL(location.href).searchParams;
+          if(q.get('book')==='1'){
+            const svc=(q.get('svc')||'').trim();
+            // forceBooking so it opens the wizard instead of bouncing the
+            // visitor to the packages list — arriving here IS the choice.
+            setTimeout(function(){
+              try{ openBookingPage(svc||null,{forceBooking:true}); }
+              catch(e){ console.warn('deep-link booking failed',e); }
+            },400);
+          }
+        }catch(e){}
       }catch(e){
         hublyBootFail('initApp loadPublicProfile',e);
         throw e;
