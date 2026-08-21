@@ -17449,6 +17449,13 @@ function hcNoIndex(){
 // handshake — never put in the URL. Only requested in ?hcEdit=1 (the builder
 // preview), so a public visitor never even asks.
 var hcDraftToken = null;
+// C: is the builder visitor signed in? Set from the draft-context handshake and
+// kept fresh by hcAuthState (below) after an in-place sign-in. The click-to-edit
+// gate reads it to decide whether to edit or ask for sign-in first.
+var hcAuthedFlag = false;
+// Set by wireHcEditingSurface so hcAuthState can open the element they clicked
+// before signing in, once auth resolves.
+var hcOpenEditByLabel = null;
 function hcRequestDraftToken(slug){
   return new Promise(function(resolve){
     if(!hcBuilderPreview()){ resolve(null); return; }
@@ -17458,6 +17465,7 @@ function hcRequestDraftToken(slug){
       if(!d||d.type!=='hcDraftContext'||d.slug!==slug) return;
       done=true; window.removeEventListener('message',onMsg);
       hcDraftToken = (typeof d.draftToken==='string' && d.draftToken) ? d.draftToken : null;
+      hcAuthedFlag = !!d.authed;
       resolve(hcDraftToken);
     }
     window.addEventListener('message',onMsg);
@@ -17465,6 +17473,20 @@ function hcRequestDraftToken(slug){
     setTimeout(function(){ if(!done){ window.removeEventListener('message',onMsg); resolve(null); } }, 2500);
   });
 }
+// After the parent signs the visitor in and claims the draft, it posts this: the
+// visitor is now authed, and (if they clicked to edit before) which element to
+// open. Persistent — it must survive past the one-shot handshake listener.
+window.addEventListener('message', function(ev){
+  // Only the builder that embeds us may flip auth state — never a nested frame or
+  // another window.
+  if(ev.source !== window.parent) return;
+  var d = ev.data;
+  if(!d || d.type !== 'hcAuthState') return;
+  hcAuthedFlag = !!d.authed;
+  if(d.authed && d.openEditLabel && typeof hcOpenEditByLabel === 'function'){
+    try{ hcOpenEditByLabel(d.openEditLabel); }catch(e){}
+  }
+});
 
 async function loadPublicProfile(slug){
   const dbClient=await waitForDb();
@@ -53390,10 +53412,33 @@ function wireHcEditingSurface(doc, root){
   // unchanged from what shipped for AST pages.
   var EDITABLE_SEL = '[data-node],[data-hc]';
 
+  // C: reopen the element the visitor clicked before signing in, once the parent
+  // reports auth resolved (hcAuthState -> hcOpenEditByLabel).
+  hcOpenEditByLabel = function(label){
+    if(!label) return;
+    var el = null;
+    try{ el = root.querySelector('[data-hc="' + (window.CSS && CSS.escape ? CSS.escape(label) : label) + '"]'); }catch(e){}
+    if(!el){ try{ el = root.querySelector('[data-node="' + label + '"]'); }catch(e){} }
+    if(!el) return;
+    if(el.tagName && el.tagName.toLowerCase() === 'img'){ pendingImageNodeId = el.getAttribute('data-node'); pendingImageLabel = el.getAttribute('data-hc'); imgFileInput.click(); }
+    else openTextEditor(el);
+  };
+
   root.addEventListener('click', function(e){
     var target = e.target && e.target.closest ? e.target.closest(EDITABLE_SEL) : null;
     if(!target || !root.contains(target)) return;
     if(target.closest('[data-hubly-element]')) return; // reserved elements aren't AI/user-editable text
+    // C: an anonymous visitor must sign in before editing. Block the edit, ask the
+    // parent to open the one-door auth modal, and pass which element they clicked
+    // so it reopens after sign-in + claim. A signed-in owner falls straight
+    // through and edits exactly as before. The page still LOOKS editable (hover
+    // outline, cursor, marks) — only the click changes.
+    if(!hcAuthedFlag){
+      var lbl = target.getAttribute('data-hc') || target.getAttribute('data-node') || '';
+      try{ window.parent.postMessage({ type:'hcEditAuthNeeded', label: lbl }, '*'); }catch(err){}
+      e.preventDefault(); e.stopPropagation();
+      return;
+    }
     if(target.tagName && target.tagName.toLowerCase() === 'img'){
       pendingImageNodeId = target.getAttribute('data-node');
       pendingImageLabel = target.getAttribute('data-hc');

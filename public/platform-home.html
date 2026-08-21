@@ -569,6 +569,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 }
 .hc-claim-card-alt:hover{border-color:var(--brand);color:var(--brand)}
 
+/* C: claim-retry — shown when sign-in succeeded but linking the draft didn't.
+   They can still edit; this is a one-tap retry, never a dead end. */
+.hc-claim-retry{align-self:stretch;background:var(--card-tint);border:1px solid rgba(217,99,45,.22);border-radius:14px;padding:14px 16px}
+.hc-claim-retry p{font-size:13px;line-height:1.5;color:var(--ink-2);margin:0 0 10px}
+.hc-claim-retry-btn{padding:9px 16px;border:0;border-radius:10px;background:var(--brand);color:#fff;font-size:13px;font-weight:700;cursor:pointer}
+.hc-claim-retry-btn:hover{background:var(--brand-dark)}
+.hc-claim-retry-btn:disabled{opacity:.6;cursor:default}
+
 /* The steps card (item 3) — the real stages of a build, in the chat, each
    ticking only when it genuinely completes. Completed steps sit above the
    current (spinning) one; pending ones below. */
@@ -2190,8 +2198,23 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // a URL and never leaves this origin pair.
     if(data.type === 'hcRequestDraftContext'){
       if(hc.draftBusiness && data.slug === hc.draftBusiness.slug && event.source){
-        try{ event.source.postMessage({ type:'hcDraftContext', slug: hc.draftBusiness.slug, draftToken: hc.draftBusiness.draftToken || null }, expectedOrigin); }catch(e){}
+        // Also tell the preview whether the visitor is signed in, so its click
+        // handler can gate an edit behind sign-in (C) without reading our session.
+        try{ event.source.postMessage({ type:'hcDraftContext', slug: hc.draftBusiness.slug, draftToken: hc.draftBusiness.draftToken || null, authed: hcIsAuthed() }, expectedOrigin); }catch(e){}
       }
+      return;
+    }
+    // C: an anonymous visitor tried to edit. The preview blocked the edit and
+    // asked us to open the one-door auth modal, passing which element they clicked
+    // so we can reopen it for editing after they sign in and the draft is claimed.
+    if(data.type === 'hcEditAuthNeeded'){
+      hc.pendingEditLabel = (typeof data.label === 'string' && data.label) ? data.label : null;
+      // Already signed in (the preview's flag was just stale, e.g. a click in the
+      // gap before the handshake landed)? No modal — claim (idempotent) and open
+      // the element straight away.
+      if(hcIsAuthed()){ hcAfterAuth(); return; }
+      try{ if(hc.pendingEditLabel && hc.draftBusiness) sessionStorage.setItem('hcPendingEdit:' + hc.draftBusiness.id, hc.pendingEditLabel); }catch(e){}
+      authOpen();
       return;
     }
     // FIT-TO-PANE (A1): the preview reports its real content height (it is
@@ -2364,7 +2387,19 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       hcRenderCanvas();
     }catch(e){ /* best-effort: a failure just means a fresh start */ }
   }
-  hcResumeDraft();
+  // On load: resume the draft, then — if this is the return leg of a Google
+  // sign-in started from the builder (hcauth=1) — parse the OAuth session, claim
+  // the draft, and reopen the element they were editing (C's Google path).
+  (async function(){
+    await hcResumeDraft();
+    try{
+      if(new URLSearchParams(location.search).get('hcauth') === '1'){
+        try{ await authGetClient(); }catch(e){}         // detectSessionInUrl parses the fragment
+        try{ history.replaceState(null, '', location.pathname); }catch(e){}
+        await hcAfterAuth();
+      }
+    }catch(e){}
+  })();
 
   // ── ONE DOOR: sign in / sign up ────────────────────────────────────────────
   // A modal over the page. Continue with Google (which redirects to Google and
@@ -2435,7 +2470,11 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       var c = await authGetClient();
       var res = await c.auth.verifyOtp({ email: authEmailValue, token: token, type: 'email' });
       if(res.error) throw res.error;
-      location.assign('/dashboard');   // post-login destination; hubly.html reads the session
+      // The good path: resolves in place. No navigation — claim the draft and
+      // return them to the builder with it still on screen (hcAfterAuth). A plain
+      // landing sign-in with no draft goes to the dashboard, inside hcAfterAuth.
+      btn.textContent = 'Signed in';
+      await hcAfterAuth();
     }catch(e){
       authEl('authErr2').textContent = (e && e.message) ? e.message : "That code didn't match. Check it and try again.";
       btn.disabled = false; btn.textContent = 'Verify & continue';
@@ -2445,11 +2484,98 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     authEl('authErr').textContent = '';
     try{
       var c = await authGetClient();
-      await c.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + '/dashboard' } });
+      // Google has to round-trip. With a draft in play, come back to the BUILDER
+      // (not /dashboard) so the draft resumes and we can claim it + reopen the
+      // clicked element; stash the pending edit for the return. No draft -> the
+      // dashboard, as a plain sign-in.
+      var redirect = hc.draftBusiness ? (location.origin + '/?hcauth=1') : (location.origin + '/dashboard');
+      if(hc.draftBusiness && hc.pendingEditLabel){ try{ sessionStorage.setItem('hcPendingEdit:' + hc.draftBusiness.id, hc.pendingEditLabel); }catch(e){} }
+      await c.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirect } });
     }catch(e){
       authEl('authErr').textContent = 'Could not reach Google sign-in. Try email instead.';
     }
   }
+
+  // ── C: SIGN-IN CLAIMS THE DRAFT ──────────────────────────────────────────────
+  // A lightweight authed check (the SDK's stored session), so the preview can gate
+  // an edit without loading the SDK just to ask.
+  function hcIsAuthed(){
+    try{
+      var ref = SUPA_URL.split('//')[1].split('.')[0];
+      var raw = localStorage.getItem('sb-' + ref + '-auth-token');
+      if(!raw) return false;
+      var o = JSON.parse(raw);
+      var exp = o && (o.expires_at || (o.currentSession && o.currentSession.expires_at));
+      return !exp || (exp * 1000 > Date.now());
+    }catch(e){ return false; }
+  }
+  // The one privileged call. Uses the draft id + token the builder already holds
+  // (populated from the cookie by resume-draft, so it survives the OAuth round
+  // trip). Returns the RPC's verdict: claimed / alreadyYours / a refusal.
+  async function hcClaimDraft(){
+    if(!hc.draftBusiness || !hc.draftBusiness.id || !hc.draftBusiness.draftToken) return { ok:false, error:'no_draft' };
+    try{
+      var c = await authGetClient();
+      var r = await c.rpc('claim_draft_business', { p_draft_id: hc.draftBusiness.id, p_draft_token: hc.draftBusiness.draftToken });
+      if(r.error) return { ok:false, error: r.error.message };
+      return r.data || { ok:false, error:'no_data' };
+    }catch(e){ return { ok:false, error: (e && e.message) || 'claim_failed' }; }
+  }
+  // Tell the preview the user is now authed, and (if set) which element to open
+  // for editing — the one they clicked before signing in.
+  function hcTellPreviewAuthed(label){
+    if(!hc.draftBusiness) return;
+    var origin; try{ origin = new URL(hc.draftBusiness.url).origin; }catch(e){ return; }
+    // Post to whichever frame is live, and retry a few times: on the Google
+    // round-trip the preview is reloading, so it may not be ready to receive (or
+    // to reopen the clicked element) on the first try.
+    var tries = 0;
+    (function send(){
+      try{
+        var frame = document.querySelector('#hcCanvasFrameWrap iframe.is-live') || document.getElementById('hcCanvasFrameA');
+        if(frame && frame.contentWindow) frame.contentWindow.postMessage({ type:'hcAuthState', authed:true, openEditLabel: label || null }, origin);
+      }catch(e){}
+      if(++tries < 6) setTimeout(send, 500);
+    })();
+  }
+  // A claim failed but they ARE signed in and the draft is STILL editable (the
+  // draft token is valid) — so never a dead end. Offer a one-tap retry in the rail
+  // rather than leave it unexplained.
+  function hcShowClaimRetry(){
+    var thread = document.getElementById('hcThread'); if(!thread) return;
+    var d = document.createElement('div'); d.className = 'hc-claim-retry';
+    d.innerHTML = '<p>You’re signed in, and you can keep editing this page. I couldn’t link it to your account just yet.</p>' +
+      '<button type="button" class="hc-claim-retry-btn">Save to my account</button>';
+    d.querySelector('button').addEventListener('click', async function(){
+      var b = d.querySelector('button'); b.disabled = true; b.textContent = 'Saving…';
+      var r = await hcClaimDraft();
+      if(r && r.ok){ d.remove(); hcAppendMessage('hubly', 'Saved to your account — this page is yours now.'); }
+      else { b.disabled = false; b.textContent = 'Save to my account'; }
+    });
+    thread.appendChild(d); thread.scrollTop = thread.scrollHeight;
+  }
+  // After auth resolves (either path). Claim the draft in play and return them to
+  // editing; a plain landing sign-in with no draft goes to the dashboard.
+  async function hcAfterAuth(){
+    authClose();
+    if(!hc.draftBusiness){ location.assign('/dashboard'); return; }
+    var pending = hc.pendingEditLabel;
+    if(!pending){ try{ pending = sessionStorage.getItem('hcPendingEdit:' + hc.draftBusiness.id); }catch(e){} }
+    try{ sessionStorage.removeItem('hcPendingEdit:' + hc.draftBusiness.id); }catch(e){}
+    hc.pendingEditLabel = null;
+    var res = await hcClaimDraft();
+    if(res && res.ok){
+      hcTellPreviewAuthed(pending);                 // preview can edit now; open the clicked element
+      if(res.claimed) hcAppendMessage('hubly', 'Saved to your account — this page is yours now. Keep editing whenever you like.');
+    } else if(res && res.error === 'already_claimed'){
+      hcAppendMessage('hubly', "You’re signed in — but this page is already saved to a different account, so I can’t add it to yours.");
+    } else {
+      // Transient (token gone after the hop, network). Still editable; retry offered.
+      hcTellPreviewAuthed(pending);
+      hcShowClaimRetry();
+    }
+  }
+
   if(authOv){
     var navSignin = document.getElementById('navSignin');
     if(navSignin) navSignin.addEventListener('click', authOpen);
