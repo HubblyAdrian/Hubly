@@ -17373,7 +17373,34 @@ function hcMountDocumentHtml(root,html){
   // srcdoc, not a blob/data URL: those are opaque origins and the editing layer
   // could not read into them.
   frame.srcdoc=html;
+  // FIT-TO-PANE (A1). The builder preview (platform-home.html) needs the page's
+  // natural height to scale the whole thing into its pane, but it is cross-origin
+  // and cannot read into this document. We can: the freeform page is a
+  // same-origin srcdoc, and it fills a fixed 100%-height frame with the page
+  // scrolling inside it, so its documentElement.scrollHeight is the real page
+  // height at whatever width this document is laid out. Report it up on load and
+  // whenever it changes (images settling, an inline edit reflowing). Only when
+  // framed — a directly-visited page has no parent to tell.
+  if(window.parent && window.parent!==window){
+    frame.addEventListener('load',function(){
+      hcReportPreviewSize(frame);
+      try{
+        var d=frame.contentDocument;
+        if(d&&d.body){ var ro=new ResizeObserver(function(){ hcReportPreviewSize(frame); }); ro.observe(d.body); }
+      }catch(e){}
+      // Images change height after they decode; catch that without an observer race.
+      try{ setTimeout(function(){ hcReportPreviewSize(frame); },600); setTimeout(function(){ hcReportPreviewSize(frame); },1800); }catch(e){}
+    });
+  }
   return frame;
+}
+function hcReportPreviewSize(frame){
+  try{
+    var d=frame&&frame.contentDocument; if(!d) return;
+    var h=Math.max(d.documentElement?d.documentElement.scrollHeight:0, d.body?d.body.scrollHeight:0);
+    var w=Math.max(d.documentElement?d.documentElement.scrollWidth:0, d.body?d.body.scrollWidth:0);
+    if(h>0) window.parent.postMessage({ type:'hcPreviewSize', width:w, height:h }, '*');
+  }catch(e){}
 }
 function hcFreeformFrame(){
   try{ return document.querySelector('#hc-doc-root iframe[data-hc-freeform]'); }catch(e){ return null; }

@@ -371,15 +371,37 @@ body.hc-active #hc-keep-btn{display:block}
 .hc-canvas-url .hc-live-dot{width:6px;height:6px;border-radius:50%;background:#3ecf7a;box-shadow:0 0 6px rgba(62,207,122,.7);flex-shrink:0}
 .hc-canvas-url a{color:var(--ink-2);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hc-canvas-url a:hover{color:var(--ink);text-decoration:underline}
-.hc-canvas-frame-wrap{flex:1;position:relative;background:#fff;min-height:0;overflow:hidden}
+/* The pane. FIT-TO-PANE (A1): the whole generated page is scaled to be visible
+   without scrolling by default. The stage is laid out at a fixed desktop width
+   and the page's real height (reported by the preview), then transform-scaled to
+   contain; the frame box carries the SCALED dimensions so there is no phantom
+   scrollbar from the transform. Cream letterboxing, not white, so the fitted page
+   reads as a framed object rather than a page that failed to fill. overflow:auto
+   so zooming to 100% can scroll for detail. */
+.hc-canvas-frame-wrap{flex:1;position:relative;background:var(--bg-1);min-height:0;overflow:auto;display:flex;align-items:flex-start;justify-content:center}
+.hc-preview-frame{position:relative;flex:0 0 auto;width:var(--hc-fw,100%);height:var(--hc-fh,100%)}
+.hc-preview-stage{
+  position:absolute;top:0;left:0;
+  width:var(--hc-pw,1200px);height:var(--hc-ph,100%);
+  transform:scale(var(--hc-scale,1));transform-origin:top left;
+  background:#fff;box-shadow:0 6px 30px rgba(28,22,16,.14);
+}
 /* Two stacked iframes, crossfaded — an update loads invisibly in the
    standby frame, then swaps in once ready. The person watches the real
    change land; they never see a blank reload. */
-.hc-canvas-frame-wrap iframe{
+.hc-preview-stage iframe{
   position:absolute;inset:0;width:100%;height:100%;border:0;display:block;
   z-index:1;opacity:0;transition:opacity .5s ease;pointer-events:none;
 }
-.hc-canvas-frame-wrap iframe.is-live{z-index:2;opacity:1;pointer-events:auto}
+.hc-preview-stage iframe.is-live{z-index:2;opacity:1;pointer-events:auto}
+/* Zoom toggle — fit ↔ 100%. Detail is a click away; the default is the whole page. */
+.hc-zoom-btn{
+  position:absolute;top:10px;right:12px;z-index:6;
+  background:rgba(255,255,255,.92);border:1px solid var(--line-soft);border-radius:8px;
+  padding:5px 11px;font-size:12px;font-weight:650;color:var(--ink);cursor:pointer;
+  box-shadow:0 2px 10px rgba(28,22,16,.12);backdrop-filter:blur(4px);
+}
+.hc-zoom-btn:hover{border-color:var(--brand);color:var(--brand)}
 .hc-canvas-loading{
   position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;
   background:var(--panel);color:var(--ink-3);font-size:12.5px;transition:opacity .3s ease;gap:8px;
@@ -777,6 +799,12 @@ body.hc-active #hc-keep-btn{display:block}
   function syncNav(){ if(nav) nav.classList.toggle('is-scrolled', window.scrollY > 12); }
   syncNav();
   window.addEventListener('scroll', syncNav, { passive:true });
+  // Re-fit the preview when the window (and so the pane) changes size (A1).
+  var hcFitTimer = null;
+  window.addEventListener('resize', function(){
+    if(hcFitTimer) clearTimeout(hcFitTimer);
+    hcFitTimer = setTimeout(function(){ try{ if(document.getElementById('hcPreviewStage')) hcApplyPreviewFit(); }catch(e){} }, 120);
+  }, { passive:true });
 
   // ————————————————————————————————————————————————————————————
   // Experience 1 — Hubly Conversation
@@ -1125,15 +1153,64 @@ body.hc-active #hc-keep-btn{display:block}
       '<div class="hc-canvas-url"><span class="hc-live-dot"></span><a href="' + hcEscape(url) + '" target="_blank" rel="noopener">' + hcEscape(url.replace(/^https?:\/\//,'')) + '</a></div>' +
       '<div class="hc-canvas-frame-wrap" id="hcCanvasFrameWrap">' +
         '<div class="hc-canvas-loading" id="hcCanvasLoading"><span class="hc-live-dot"></span>&nbsp;Loading your site…</div>' +
-        '<iframe class="is-live" id="hcCanvasFrameA" src="' + hcEscape(hcBust(url)) + '" title="Live preview"></iframe>' +
-        '<iframe id="hcCanvasFrameB" title="Live preview"></iframe>' +
+        '<button type="button" class="hc-zoom-btn" id="hcZoomBtn">100%</button>' +
+        '<div class="hc-preview-frame" id="hcPreviewFrame">' +
+          '<div class="hc-preview-stage" id="hcPreviewStage">' +
+            '<iframe class="is-live" id="hcCanvasFrameA" src="' + hcEscape(hcBust(url)) + '" title="Live preview"></iframe>' +
+            '<iframe id="hcCanvasFrameB" title="Live preview"></iframe>' +
+          '</div>' +
+        '</div>' +
       '</div>';
     hc.activeFrame = 'A';
+    hcApplyPreviewFit();
     var frameA = document.getElementById('hcCanvasFrameA');
     var loading = document.getElementById('hcCanvasLoading');
     if(frameA && loading){
       frameA.addEventListener('load', function(){ loading.classList.add('is-hidden'); }, { once:true });
     }
+    var zoom = document.getElementById('hcZoomBtn');
+    if(zoom) zoom.addEventListener('click', function(){
+      hc.previewZoom = (hc.previewZoom === 'full') ? 'fit' : 'full';
+      hcApplyPreviewFit();
+    });
+  }
+
+  // FIT-TO-PANE (A1). The generated page is the most important thing on the
+  // screen; the person must see the WHOLE of it without scrolling. The stage is
+  // laid out at a fixed desktop width (so the page keeps its desktop design, not
+  // a reflowed mobile one) and the page's real height, reported by the preview
+  // via postMessage — cross-origin, so it cannot be measured from here. Then it
+  // is transform-scaled to contain. 'full' zoom is 1:1 with pane scrolling.
+  //
+  // Click-to-edit is unaffected: hit-testing there is element-based (a click makes
+  // the labelled element contentEditable; the edit is keyed by its data-hc label,
+  // never by screen coordinates), and all of it runs inside the preview's own
+  // UNSCALED coordinate space — the transform here scales the whole preview
+  // uniformly and the browser maps pointer events back through it.
+  var HC_PREVIEW_W = 1200;   // logical desktop width the stage is laid out at
+  function hcApplyPreviewFit(){
+    var wrap = document.getElementById('hcCanvasFrameWrap');
+    var frame = document.getElementById('hcPreviewFrame');
+    var stage = document.getElementById('hcPreviewStage');
+    if(!wrap || !frame || !stage) return;
+    var pageW = HC_PREVIEW_W;
+    var pageH = (hc.previewSize && hc.previewSize.h) ? hc.previewSize.h : Math.round(HC_PREVIEW_W * 1.35);
+    var paneW = wrap.clientWidth || 1;
+    var paneH = wrap.clientHeight || 1;
+    var scale;
+    if(hc.previewZoom === 'full'){
+      scale = 1;
+    } else {
+      // Contain: the whole page fits both ways. Never scale a small page UP.
+      scale = Math.min(paneW / pageW, paneH / pageH, 1);
+    }
+    stage.style.setProperty('--hc-pw', pageW + 'px');
+    stage.style.setProperty('--hc-ph', pageH + 'px');
+    stage.style.setProperty('--hc-scale', String(scale));
+    frame.style.setProperty('--hc-fw', (pageW * scale) + 'px');
+    frame.style.setProperty('--hc-fh', (pageH * scale) + 'px');
+    var zoom = document.getElementById('hcZoomBtn');
+    if(zoom) zoom.textContent = (hc.previewZoom === 'full') ? 'Fit' : '100%';
   }
 
   // Cache-busts so the exact same URL always forces a real fresh navigation
@@ -2128,6 +2205,14 @@ body.hc-active #hc-keep-btn{display:block}
       if(hc.draftBusiness && data.slug === hc.draftBusiness.slug && event.source){
         try{ event.source.postMessage({ type:'hcDraftContext', slug: hc.draftBusiness.slug, draftToken: hc.draftBusiness.draftToken || null }, expectedOrigin); }catch(e){}
       }
+      return;
+    }
+    // FIT-TO-PANE (A1): the preview reports its real content height (it is
+    // cross-origin, so we cannot read it) and we rescale to keep the whole page
+    // visible. Width is always the fixed desktop width we lay it out at.
+    if(data.type === 'hcPreviewSize' && typeof data.height === 'number' && data.height > 0){
+      hc.previewSize = { h: Math.round(data.height) };
+      hcApplyPreviewFit();
       return;
     }
     if(data.type === 'hcInlineEdit' && (data.field === 'heroHeadline' || data.field === 'heroSubhead') && typeof data.value === 'string'){
