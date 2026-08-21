@@ -1647,7 +1647,25 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // ones the model wrote: Menu, Wholesale, Roasting…), so "lead with your
   // roasting" is a real thing about this business, and the logo is offered in a
   // sentence rather than as a card demanding a file.
+  //
+  // The public doc RPC is gated for an UNCLAIMED draft, so the html handed in
+  // here is usually empty. Fetch it via the DRAFT RPC (the token the builder
+  // already holds) so the suggestions can name real sections; fall back to the
+  // generic wording only if that fails too.
   function hcPostBuildFollowup(html){
+    if(html && /data-hc="nav\.item/i.test(html)){ hcPostBuildFollowupWith(html); return; }
+    var d = hc.draftBusiness;
+    if(!d || !d.slug || !d.draftToken){ hcPostBuildFollowupWith(''); return; }
+    var H = { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' };
+    fetch(SUPA_URL + '/rest/v1/rpc/get_draft_business_document', {
+      method: 'POST', headers: H,
+      body: JSON.stringify({ p_slug: d.slug, p_tag: 'website', p_draft_token: d.draftToken })
+    }).then(function(r){ return r.ok ? r.json() : null; }).then(function(rows){
+      var h = Array.isArray(rows) ? (rows[0] && rows[0].rendered_html) : (rows && rows.rendered_html);
+      hcPostBuildFollowupWith(h || '');
+    }).catch(function(){ hcPostBuildFollowupWith(''); });
+  }
+  function hcPostBuildFollowupWith(html){
     var labels = [];
     try{
       var re = /data-hc="nav\.item\.\d+"[^>]*>([^<]{1,28})</gi, m;
