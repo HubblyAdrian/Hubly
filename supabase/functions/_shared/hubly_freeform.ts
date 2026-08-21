@@ -225,6 +225,12 @@ export function applyFreeformEdit(html: string, edit: FreeformEdit): FreeformEdi
       if (resulting === null) { skipped.push(`${edit.label}:"${cur.slice(0, 40)}"`); continue; }
       if (cur === resulting.replace(/\s+/g, " ").trim()) continue;
       edits.push({ start: el.openEnd, end: el.closeStart, text: escapeText(resulting) });
+      // The owner just replaced Hubly's guess with their own words, so it is no
+      // longer a guess: drop the data-hubly-guess mark. This is what makes
+      // "editing a placeholder clears its mark" true structurally, and it keeps
+      // the queryable placeholder count honest.
+      const gr = el.attrRanges["data-hubly-guess"];
+      if (gr) edits.push({ start: gr.start, end: gr.end, text: "" });
       const href = syncedHref(el, edit.label, nextText);
       if (href) {
         const hr = el.attrRanges["href"];

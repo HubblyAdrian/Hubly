@@ -62,6 +62,7 @@ import { imageDimensions, type ImageDims } from "./hubly_image_dims.ts";
 import { stampFreeformHtml } from "./hubly_document_labels.ts";
 import { injectHublyRuntime } from "./hubly_page_runtime.ts";
 import { resolveImages, pexelsFetcher, type PlacedImageRow } from "./hubly_image_resolver.ts";
+import { annotatePlaceholders } from "./hubly_placeholders.ts";
 import { applyFreeformEdit, humanFreeformSummary, labelInventory, labelsPresent, type LabelEntry } from "./hubly_freeform.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
 // Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
@@ -1474,7 +1475,7 @@ export async function generateFreeformPage(
   businessId: string,
   brief: string,
   record: Record<string, unknown>,
-): Promise<{ ok: true; html: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string; imagesPlaced?: number; imageBlanks?: number } | { ok: false; error: string }> {
+): Promise<{ ok: true; html: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string; imagesPlaced?: number; imageBlanks?: number; placeholders?: number; strippedCredentials?: number } | { ok: false; error: string }> {
   // WHAT HUBLY SUPPLIES, told to the model so it can DESIGN for it.
   //
   // The first three freeform pages were call-only brochures for one reason:
@@ -1528,11 +1529,18 @@ export async function generateFreeformPage(
       : "- This business has no photos of its own yet. Still mark hero/atmosphere images; they will be filled with fitting stock or a designed colour field.\n") +
     "Design as if every marker will be a real photograph.";
 
+  const markingBlock =
+    "MARK WHAT YOU GUESS. Some copy you write will be a reasonable proposal rather than a fact from the record — an invented tagline, a process you assumed, a value proposition, a section heading you chose. " +
+    'On any element whose text you INVENTED (not grounded in the record above), add the attribute data-hubly-guess="a few words naming what it is" — e.g. data-hubly-guess="a suggested tagline". ' +
+    "You know what you invented; mark it. Do NOT mark anything that comes straight from the record (the real name, phone, city, services, prices). " +
+    "This is not an error — it is you flagging your own suggestions so the owner can replace them in one click.\n" +
+    "THE HARD LINE, even as a guess: NEVER write a price, a customer name, a review, a testimonial, a star rating, a review count, 'trusted by N', years in business, a licence, insurance, a certification, an award or a guarantee unless it is in the record. Do not mark these — do not write them at all. Fake the shape and the voice of a page; never fake its credentials.";
+
   const system =
     "You write a complete, standalone HTML page for one real local service business — a single file, with its own <style> block in the head. " +
     "No frameworks, no external requests, no scripts of your own. Use real, specific copy for THIS business, drawn only from the record below. " +
-    "NEVER invent a price, a customer name, a review, a rating, a certification or a guarantee that is not in the record. " +
     "Write the page you think this business should have — you choose the sections, the order and the layout.\n\n" +
+    markingBlock + "\n\n" +
     imageBlock + "\n\n" +
     capabilities + "\n\n" +
     `THE BUSINESS RECORD:\n${JSON.stringify(record, null, 1)}`;
@@ -1598,9 +1606,23 @@ export async function generateFreeformPage(
   };
   const resolved = await resolveImages(raw, imgCtx);
 
+  // PLACEHOLDER PASS. Strips ungrounded credentials (prices/ratings/reviews/
+  // years/licence/insurance/certification/guarantee — the never-invent list)
+  // and keeps the model's own data-hubly-guess marks, adding a light backstop
+  // for forgotten ones. Deterministic, no model call, no regeneration. Runs
+  // before stamping so labels land on what survives, not on a stripped element.
+  const annotated = annotatePlaceholders(resolved.html, {
+    services: Array.isArray((record as any).services) ? (record as any).services : [],
+    yearsInBusiness: ((record as any).yearsInBusiness ?? (rec.years_in_business as number)) || null,
+    reviews: Array.isArray((record as any).reviews) ? (record as any).reviews : [],
+    city: (rec.city as string) || null,
+    state: (rec.state as string) || null,
+    areaCities: Array.isArray((record as any).areaCities) ? (record as any).areaCities : [],
+  });
+
   // THE STAMPING PASS. Not a validation gate: it cannot reject the page and it
   // never triggers a regeneration. It takes whatever came back and labels it.
-  const stamped = stampFreeformHtml(resolved.html);
+  const stamped = stampFreeformHtml(annotated.html);
   // THEN HUBLY'S MACHINERY. Also not a gate: it rewrites the model's booking
   // CTA to a working URL, adds one if there is none, and injects the chat
   // widget. Ordered after stamping so the injected runtime is not itself
@@ -1622,6 +1644,8 @@ export async function generateFreeformPage(
     modelUsed,
     imagesPlaced: resolved.placed.length,
     imageBlanks: resolved.blanks,
+    placeholders: annotated.placeholders.length,
+    strippedCredentials: annotated.stripped.length,
   };
 }
 
