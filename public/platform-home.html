@@ -2025,6 +2025,17 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
     if(event.origin !== expectedOrigin) return;
     var data = event.data;
     if(!data || typeof data !== 'object') return;
+    // DRAFT PREVIEW HANDSHAKE. The preview iframe (an unclaimed draft, whose
+    // public URL is now gated on owner_id) asks for the draft token so it can
+    // read the draft directly. We answer only for the draft it is actually
+    // showing, and only back to the frame that asked -- the token never goes in
+    // a URL and never leaves this origin pair.
+    if(data.type === 'hcRequestDraftContext'){
+      if(hc.draftBusiness && data.slug === hc.draftBusiness.slug && event.source){
+        try{ event.source.postMessage({ type:'hcDraftContext', slug: hc.draftBusiness.slug, draftToken: hc.draftBusiness.draftToken || null }, expectedOrigin); }catch(e){}
+      }
+      return;
+    }
     if(data.type === 'hcInlineEdit' && (data.field === 'heroHeadline' || data.field === 'heroSubhead') && typeof data.value === 'string'){
       hcSendDirectEdit({ directEdit: { field: data.field, value: data.value } });
     } else if(data.type === 'hcInlineImageEdit' && data.field === 'heroImage' && typeof data.imageBase64 === 'string'){
@@ -2131,6 +2142,35 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
     hcSubmit.addEventListener('click', function(){ hcSend(hcInput); });
     hcInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') hcSend(hcInput); });
   }
+
+  // ── WELCOME BACK: resume a draft after a closed tab ──────────────────────────
+  //
+  // A draft page is permanent at its URL, but the builder session was in-memory
+  // only -- reopening this page was a fresh chat with no way back to edit or
+  // claim. The 7-day httpOnly claim cookie carries the businessId;
+  // /api/draft-session (the only reader of that cookie) turns it into a signed
+  // assertion, and resume-draft turns THAT back into the draft. If a live draft
+  // already exists this turn (a fresh build), we do nothing.
+  async function hcResumeDraft(){
+    if(hc.draftBusiness) return;
+    try{
+      var sess = await fetch('/api/draft-session', { credentials: 'same-origin' }).then(function(r){ return r.json(); }).catch(function(){ return null; });
+      if(!sess || !sess.ok || !sess.assertion) return;
+      var res = await fetch(SUPA_URL + '/functions/v1/resume-draft', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'apikey': SUPA_ANON_KEY, 'authorization': 'Bearer ' + SUPA_ANON_KEY },
+        body: JSON.stringify({ assertion: sess.assertion })
+      }).then(function(r){ return r.json(); }).catch(function(){ return null; });
+      if(!res || !res.ok || !res.draftBusiness) return;   // already claimed / expired / gone
+      hc.draftBusiness = res.draftBusiness;
+      hc.active = true;
+      hcAppendMessage('hubly', 'Welcome back — here’s the page you built. Pick up wherever you like, or keep it to your account.');
+      hcSetView('site');
+      hcRenderCanvas();
+      try{ hcEnsureClaimUi(); }catch(e){}
+    }catch(e){ /* best-effort: a failure just means a fresh start */ }
+  }
+  hcResumeDraft();
 })();
 </script>
 </body>

@@ -17315,8 +17315,16 @@ async function loadLatestBusinessDocumentHtml(slug,tag){
     // Public sites stay public by slug. Enumeration is what goes away.
     const {data,error}=await dbClient
       .rpc('get_public_business_document',{ p_slug: slug, p_tag: tag||'website' });
-    if(error||!Array.isArray(data)||!data.length||!data[0].rendered_html)return null;
-    return data[0].rendered_html;
+    if(!error && Array.isArray(data) && data.length && data[0].rendered_html) return data[0].rendered_html;
+    // Public read empty. In the builder preview of an unclaimed draft the public
+    // RPC is gated on owner_id; read the draft document with the token instead
+    // (hcDraftToken is set by hcRequestDraftToken during loadPublicProfile).
+    if(hcBuilderPreview() && hcDraftToken){
+      const draft=await dbClient
+        .rpc('get_draft_business_document',{ p_slug: slug, p_tag: tag||'website', p_draft_token: hcDraftToken });
+      if(!draft.error && Array.isArray(draft.data) && draft.data.length && draft.data[0].rendered_html) return draft.data[0].rendered_html;
+    }
+    return null;
   }catch(e){
     console.warn('loadLatestBusinessDocumentHtml failed',e);
     return null;
@@ -17404,6 +17412,33 @@ function hcNoIndex(){
   }catch(e){}
 }
 
+// THE DRAFT TOKEN, for previewing an UNCLAIMED page in the builder.
+//
+// A public address now requires an owner: get_public_business / _document refuse
+// an unclaimed draft to anyone anonymous, which is what makes a stranger's link
+// dead. But the builder previews the draft through this same page, so it needs
+// to read it. The draft_token is the credential; it lives in the parent builder
+// (platform-home's hc.draftBusiness) and is fetched here via a postMessage
+// handshake — never put in the URL. Only requested in ?hcEdit=1 (the builder
+// preview), so a public visitor never even asks.
+var hcDraftToken = null;
+function hcRequestDraftToken(slug){
+  return new Promise(function(resolve){
+    if(!hcBuilderPreview()){ resolve(null); return; }
+    var done=false;
+    function onMsg(ev){
+      var d=ev.data;
+      if(!d||d.type!=='hcDraftContext'||d.slug!==slug) return;
+      done=true; window.removeEventListener('message',onMsg);
+      hcDraftToken = (typeof d.draftToken==='string' && d.draftToken) ? d.draftToken : null;
+      resolve(hcDraftToken);
+    }
+    window.addEventListener('message',onMsg);
+    try{ window.parent.postMessage({ type:'hcRequestDraftContext', slug: slug }, '*'); }catch(e){}
+    setTimeout(function(){ if(!done){ window.removeEventListener('message',onMsg); resolve(null); } }, 2500);
+  });
+}
+
 async function loadPublicProfile(slug){
   const dbClient=await waitForDb();
   // Reads through get_public_business(slug), not the table. businesses carried
@@ -17412,7 +17447,17 @@ async function loadPublicProfile(slug){
   // its OWN details. anon now has column access to (id, slug) only, which keeps
   // slug-availability checks working, and this function returns one business
   // with draft_token stripped.
-  const {data,error}=await dbClient.rpc('get_public_business',{ p_slug: slug }).single();
+  let {data,error}=await dbClient.rpc('get_public_business',{ p_slug: slug }).single();
+  // Public read refused (unclaimed draft). If this is the BUILDER preview, ask
+  // the parent for the draft token and read the draft directly. A stranger,
+  // never in hcEdit, falls straight through to "unavailable".
+  if((error||!data) && hcBuilderPreview()){
+    const dt=await hcRequestDraftToken(slug);
+    if(dt){
+      const draftRes=await dbClient.rpc('get_draft_business',{ p_slug: slug, p_draft_token: dt }).single();
+      if(draftRes && draftRes.data){ data=draftRes.data; error=null; }
+    }
+  }
   if(error||!data){
     console.error('loadPublicProfile: no business found for slug',slug,error?.message||'(no matching row)');
     const slugEl=document.getElementById('pub-unavail-slug');

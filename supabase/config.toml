@@ -77,6 +77,9 @@ verify_jwt = false
 [functions.claim-draft-business]
 verify_jwt = false
 
+[functions.resume-draft]
+verify_jwt = false
+
 # Page generation, moved out of hubly-conversation's EdgeRuntime.waitUntil.
 #
 # verify_jwt OFF, deliberately, and the in-function check is what replaces it.
