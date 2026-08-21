@@ -10,21 +10,25 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Same SDK + CDN the app (hubly.html) uses, so a session minted here is stored
+     under the identical key and hubly.html recognises the signed-in owner. -->
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --brand:#D9632D;
   --brand-dark:#B84E1F;
-  --bg:#06070c;
-  --bg-1:#0a0c14;
-  --bg-2:#12151f;
-  --line:rgba(255,255,255,.09);
-  --line-soft:rgba(255,255,255,.15);
-  --ink:#f5f6f8;
-  --ink-2:rgba(245,246,248,.68);
-  /* .46 measured at 4.37:1 on --bg, which FAILS WCAG AA (needs 4.5). The
-     lowest alpha that passes is .47; .62 is used so it clears the bar with
-     margin rather than scraping it. Now 7.24:1. Used by "Hubly is thinking…". */
-  --ink-3:rgba(245,246,248,.62);
+  /* Warm cream light theme — the approved reference. */
+  --bg:#FAF4EC;          /* page */
+  --bg-1:#F3EADF;        /* deeper cream (section bands) */
+  --bg-2:#FFFFFF;        /* raised / white surfaces */
+  --panel:#FFFFFF;       /* builder canvas pane, cards, menus */
+  --panel-2:#F1E9DE;     /* subtle raised fill (user bubble, hovers) */
+  --card-tint:#FCEFE4;   /* peachy card background */
+  --line:rgba(28,22,16,.10);
+  --line-soft:rgba(28,22,16,.16);
+  --ink:#1B1712;         /* near-black warm — primary text */
+  --ink-2:rgba(27,23,18,.66);
+  --ink-3:rgba(27,23,18,.50);
   --font:'DM Sans',system-ui,sans-serif;
   --display:'Plus Jakarta Sans',system-ui,sans-serif;
   --page-x:clamp(18px,4.5vw,64px);
@@ -45,7 +49,7 @@ img{max-width:100%;display:block}
 
 .hubly-lockup{
   font-family:var(--display);font-weight:800;letter-spacing:-.06em;
-  font-size:22px;line-height:1;color:#fff;display:inline-block;white-space:nowrap;
+  font-size:22px;line-height:1;color:var(--ink);display:inline-block;white-space:nowrap;
 }
 .hubly-lockup .ly{color:var(--brand)}
 
@@ -57,14 +61,15 @@ img{max-width:100%;display:block}
   background:transparent;border-bottom:1px solid transparent;
   transition:background .25s ease,border-color .25s ease;
 }
-.nav.is-scrolled{background:rgba(6,7,12,.85);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom-color:var(--line)}
+.nav.is-scrolled{background:rgba(250,244,236,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom-color:var(--line)}
 .nav-signin{
   display:inline-flex;align-items:center;gap:7px;
-  color:rgba(255,255,255,.86);font-size:14px;font-weight:650;
-  padding:8px 4px;transition:color .18s ease;
+  color:var(--ink);font-size:14px;font-weight:650;
+  background:none;border:1px solid var(--line-soft);border-radius:999px;
+  padding:8px 16px;transition:color .18s ease,border-color .18s ease,background .18s ease;
 }
 .nav-signin svg{width:17px;height:17px;flex-shrink:0}
-.nav-signin:hover{color:#fff}
+.nav-signin:hover{color:var(--brand);border-color:var(--brand)}
 
 /* —— Hero —— */
 .hero{
@@ -73,16 +78,13 @@ img{max-width:100%;display:block}
   display:flex;flex-direction:column;
   padding-top:var(--nav-h);
 }
+/* A soft warm wash instead of the old night photograph — keeps the cream
+   from reading as flat while the ask box stays the one bright focus. */
 .hero-media{
   position:absolute;inset:0;z-index:-2;
-  background:url('/assets/landing/hero-night-patio.jpg') center 62%/cover no-repeat;
-  transform:scale(1.02);
-}
-.hero-media::after{
-  content:'';position:absolute;inset:0;
   background:
-    linear-gradient(180deg,rgba(4,5,9,.72) 0%,rgba(4,5,9,.42) 32%,rgba(4,5,9,.62) 68%,rgba(4,5,9,.94) 100%),
-    radial-gradient(ellipse 70% 55% at 50% 30%,rgba(4,5,9,.15),rgba(4,5,9,.65) 82%);
+    radial-gradient(ellipse 60% 50% at 50% 32%,rgba(217,99,45,.07),rgba(217,99,45,0) 70%),
+    linear-gradient(180deg,#FDF8F1 0%,var(--bg) 60%);
 }
 .hero-copy{
   position:relative;z-index:1;flex:1;
@@ -91,54 +93,56 @@ img{max-width:100%;display:block}
 }
 .eyebrow-badge{
   display:inline-flex;align-items:center;gap:8px;
-  border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.05);
-  backdrop-filter:blur(6px);
-  border-radius:999px;padding:8px 16px;
-  font-size:11.5px;font-weight:750;letter-spacing:.06em;color:rgba(255,255,255,.9);margin-bottom:16px;
+  border:1px solid var(--line-soft);background:var(--bg-2);
+  border-radius:999px;padding:8px 16px;box-shadow:0 2px 10px rgba(28,22,16,.05);
+  font-size:11.5px;font-weight:750;letter-spacing:.06em;color:var(--ink-2);margin-bottom:18px;
 }
 .hero h1{
   font-family:var(--display);font-weight:800;letter-spacing:-.045em;
-  font-size:clamp(32px,6.6vw,56px);line-height:1.06;margin-bottom:12px;
-  text-shadow:0 8px 30px rgba(0,0,0,.4);
+  font-size:clamp(34px,7vw,60px);line-height:1.02;margin-bottom:10px;color:var(--ink);
 }
 .hero h1 .grow{color:var(--brand)}
+.hero-tagline{
+  font-family:var(--display);font-weight:800;letter-spacing:-.02em;
+  font-size:clamp(19px,3vw,26px);line-height:1.2;color:var(--ink);margin-bottom:8px;
+}
 .hero-sub{
-  font-size:clamp(14px,1.8vw,17px);line-height:1.5;color:rgba(245,246,248,.86);
-  max-width:44ch;margin:0 auto 22px;font-weight:450;
-  text-shadow:0 4px 18px rgba(0,0,0,.35);
+  font-size:clamp(14px,1.8vw,17px);line-height:1.5;color:var(--ink-2);
+  max-width:44ch;margin:0 auto 24px;font-weight:450;
 }
 
 /* Ask input */
-.ask-wrap{position:relative;max-width:620px;width:100%;margin:0 auto}
+.ask-wrap{position:relative;max-width:640px;width:100%;margin:0 auto}
 .ask-glow{
-  position:absolute;left:50%;top:50%;width:120%;height:220%;
+  position:absolute;left:50%;top:50%;width:116%;height:180%;
   transform:translate(-50%,-50%);
-  background:radial-gradient(closest-side,rgba(217,99,45,.34),rgba(217,99,45,0) 72%);
-  filter:blur(6px);z-index:-1;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(217,99,45,.14),rgba(217,99,45,0) 72%);
+  filter:blur(8px);z-index:-1;pointer-events:none;
 }
 .ask-box{
-  position:relative;background:rgba(18,21,31,.92);border:1px solid rgba(255,255,255,.16);
-  border-radius:24px;box-shadow:0 30px 70px rgba(0,0,0,.55);
-  backdrop-filter:blur(10px);
-  padding:20px 18px 60px;text-align:left;
+  position:relative;background:var(--bg-2);border:1px solid var(--line-soft);
+  border-radius:22px;box-shadow:0 24px 60px rgba(28,22,16,.10);
+  padding:22px 18px 62px;text-align:left;
+  transition:border-color .18s ease,box-shadow .18s ease;
 }
+.ask-box:focus-within{border-color:rgba(217,99,45,.55);box-shadow:0 24px 60px rgba(217,99,45,.14)}
 .ask-box input{
   width:100%;border:0;outline:none;background:transparent;color:var(--ink);
   font-size:16px;padding:4px 2px;
 }
 .ask-box input::placeholder{color:var(--ink-3)}
 .ask-icon-left{
-  position:absolute;left:18px;bottom:14px;width:20px;height:20px;
-  color:var(--ink-3);display:flex;align-items:center;justify-content:center;
+  position:absolute;left:18px;bottom:16px;width:20px;height:20px;
+  color:var(--brand);display:flex;align-items:center;justify-content:center;
   background:none;border:0;padding:0;margin:0;cursor:default;
 }
 button.ask-icon-left{cursor:pointer;border-radius:6px;transition:color .15s ease,background .15s ease}
 button.ask-icon-left:hover,button.ask-icon-left[aria-expanded="true"]{color:var(--brand);background:rgba(217,99,45,.12)}
 button.ask-icon-left:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .ask-submit{
-  position:absolute;right:12px;bottom:10px;width:42px;height:42px;border-radius:50%;
+  position:absolute;right:12px;bottom:12px;width:44px;height:44px;border-radius:14px;
   background:var(--brand);border:0;display:flex;align-items:center;justify-content:center;
-  color:#fff;box-shadow:0 10px 24px rgba(217,99,45,.45);
+  color:#fff;box-shadow:0 10px 24px rgba(217,99,45,.30);
   transition:transform .18s ease,background .18s ease;
 }
 .ask-submit:hover{background:var(--brand-dark);transform:translateY(-1px)}
@@ -149,98 +153,74 @@ button.ask-icon-left:focus-visible{outline:2px solid var(--brand);outline-offset
    the markup until 2026-08-18: "FOR CONSUMERS" / "FOR BUSINESS OWNERS" returned
    zero matches across every page in public/. */
 .aud-row{
-  display:grid;grid-template-columns:1fr 1fr;gap:16px;
-  max-width:860px;margin:34px auto 0;width:100%;
+  display:grid;grid-template-columns:1fr 1fr;gap:18px;
+  max-width:900px;margin:36px auto 0;width:100%;
 }
 .aud-card{
-  display:flex;flex-direction:column;gap:8px;text-align:left;text-decoration:none;
-  padding:22px 22px 20px;border-radius:16px;
-  background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.10);
-  transition:border-color .16s ease,background .16s ease,transform .16s ease;
+  position:relative;overflow:hidden;
+  display:flex;flex-direction:column;gap:10px;text-align:left;text-decoration:none;
+  padding:24px 24px 22px;border-radius:18px;
+  background:var(--card-tint);border:1px solid rgba(217,99,45,.14);
+  transition:border-color .16s ease,box-shadow .16s ease,transform .16s ease;
 }
 /* Unlinked until there is somewhere real to send people: /pro is inert -- zero
    inputs, zero fetches -- and pointing it at / is a loop. It stays a card so the
    hero still reads as two audiences; it just stops pretending to be a door. */
 .aud-card.is-static{cursor:default}
 .aud-card:not(.is-static):hover,.aud-card:not(.is-static):focus-visible{
-  border-color:rgba(233,116,58,.55);background:rgba(255,255,255,.07);transform:translateY(-2px);outline:none;
+  border-color:rgba(217,99,45,.5);box-shadow:0 18px 44px rgba(217,99,45,.12);transform:translateY(-2px);outline:none;
 }
-.aud-kicker{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#e9743a}
-.aud-card h3{margin:0;font-size:19px;line-height:1.25;color:#fff;font-weight:700}
-.aud-card ul{margin:4px 0 0;padding:0 0 0 18px;display:grid;gap:5px}
-.aud-card li{font-size:13.5px;line-height:1.45;color:rgba(255,255,255,.78)}
-.aud-go{margin-top:6px;font-size:13px;font-weight:650;color:rgba(255,255,255,.92)}
-.aud-card:not(.is-static):hover .aud-go{color:#e9743a}
-@media (max-width:720px){ .aud-row{grid-template-columns:1fr;max-width:420px} }
+.aud-kicker{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--brand)}
+.aud-card h3{margin:0;font-size:20px;line-height:1.25;color:var(--ink);font-weight:750}
+.aud-card ul{margin:6px 0 0;padding:0;list-style:none;display:grid;gap:9px}
+.aud-card li{position:relative;padding-left:26px;font-size:13.5px;line-height:1.45;color:var(--ink-2)}
+.aud-card li::before{
+  content:'';position:absolute;left:0;top:1px;width:17px;height:17px;border-radius:50%;
+  background:rgba(217,99,45,.14) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23D9632D' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4 4L19 7'/%3E%3C/svg%3E") center/11px no-repeat;
+}
+.aud-go{margin-top:8px;font-size:13px;font-weight:650;color:var(--brand)}
+.aud-card:not(.is-static):hover .aud-go{color:var(--brand-dark)}
+/* Faint decorative motif in the card corner — pure ornament, aria-hidden. */
+.aud-art{position:absolute;right:-6px;bottom:-6px;width:120px;height:120px;color:var(--brand);opacity:.12;pointer-events:none}
+.aud-art svg{width:100%;height:100%}
+@media (max-width:720px){ .aud-row{grid-template-columns:1fr;max-width:440px} }
 
 /* Mic. Stays [hidden] unless the browser actually exposes SpeechRecognition. A
    control that cannot listen is a label claiming a capability we do not have —
    the same failure as the "Voice ready" tooltip in hubly.html. */
 .ask-mic{
-  position:absolute;right:56px;top:50%;transform:translateY(-50%);
-  width:34px;height:34px;display:grid;place-items:center;
-  background:none;border:0;border-radius:50%;cursor:pointer;
-  color:rgba(255,255,255,.58);transition:color .15s ease,background .15s ease;
+  position:absolute;right:60px;bottom:12px;
+  width:44px;height:44px;display:grid;place-items:center;
+  background:var(--panel-2);border:0;border-radius:14px;cursor:pointer;
+  color:var(--ink-3);transition:color .15s ease,background .15s ease;
 }
-.ask-mic:hover{color:#fff;background:rgba(255,255,255,.08)}
+.ask-mic:hover{color:var(--ink);background:var(--line)}
 .ask-mic[hidden]{display:none}
 .ask-mic svg{width:18px;height:18px}
-.ask-mic.is-listening{color:#e9743a;background:rgba(233,116,58,.16)}
+.ask-mic.is-listening{color:var(--brand);background:rgba(217,99,45,.14)}
 
 .trust-row{
   position:relative;z-index:1;
   display:grid;grid-template-columns:repeat(3,1fr);gap:20px;
-  max-width:900px;margin:22px auto 0;padding:0 var(--page-x) 26px;
+  max-width:900px;margin:28px auto 0;padding:0 var(--page-x) 26px;
 }
 .trust-item{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px}
-.trust-ico{width:24px;height:24px;color:#fff;margin-bottom:6px}
-.trust-item h3{font-size:14px;font-weight:750;color:#fff}
-.trust-item p{font-size:12.5px;color:rgba(245,246,248,.72)}
+.trust-ico{width:24px;height:24px;color:var(--ink);margin-bottom:6px}
+.trust-item h3{font-size:14px;font-weight:750;color:var(--ink)}
+.trust-item p{font-size:12.5px;color:var(--ink-2)}
 @media(max-width:700px){
   .trust-row{grid-template-columns:1fr;gap:22px;max-width:340px}
 }
 
-/* Category section */
-.sec{padding:76px 0}
-.sec-head{max-width:600px;margin:0 auto 40px;text-align:center}
-.sec-head h2{font-family:var(--display);font-weight:800;letter-spacing:-.03em;font-size:clamp(24px,4vw,34px);margin-bottom:10px}
-.sec-head p{color:var(--ink-2);font-size:15px;line-height:1.55}
-
-.cat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.cat-tile{
-  position:relative;border-radius:16px;overflow:hidden;min-height:200px;
-  background-size:cover;background-position:center;border:1px solid var(--line);
-  display:flex;align-items:flex-end;
-}
-.cat-tile::after{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(6,7,12,0) 38%,rgba(6,7,12,.92) 100%);
-}
-.cat-tile-body{position:relative;z-index:1;padding:14px}
-.cat-tile-ico{width:20px;height:20px;color:#fff;margin-bottom:8px;display:block}
-.cat-tile-body h3{font-size:14.5px;font-weight:750;color:#fff;margin-bottom:3px}
-.cat-tile-body p{font-size:11.5px;line-height:1.4;color:rgba(245,246,248,.72)}
-
-.cat-tile-more{
-  background:var(--bg-2);border:1px solid var(--line);
-  align-items:center;justify-content:center;text-align:center;
-}
-.cat-tile-more .cat-tile-body{display:flex;flex-direction:column;align-items:center;padding:20px 14px}
-.cat-tile-more .cat-tile-ico{color:var(--brand);margin-bottom:10px}
-.cat-tile-more h3{font-size:15px}
-
-.cat-support{text-align:center;color:var(--ink-2);font-size:13.5px;margin-top:24px}
-.trust-bottom{text-align:center;color:var(--ink-3);font-size:12.5px;margin-top:14px}
-
-@media(max-width:980px){.cat-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:640px){.cat-grid{grid-template-columns:repeat(2,1fr)}}
-
-/* Footer */
-.footer{border-top:1px solid var(--line);padding:40px 0}
+/* Footer — minimal: logo, contact, copyright, and the trust line. The
+   photographic category grid was removed 2026-08-20 (it competed with the one
+   thing the page is for: getting someone to type in the box). */
+.footer{border-top:1px solid var(--line);padding:40px 0;margin-top:12px;background:var(--bg-1)}
 .footer-mini{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
 .footer-contact a{font-size:13.5px;color:var(--ink-2);transition:color .18s ease}
-.footer-contact a:hover{color:#fff}
+.footer-contact a:hover{color:var(--brand)}
 .footer-copy{font-size:12.5px;color:var(--ink-3)}
+.trust-bottom{text-align:center;color:var(--ink-3);font-size:12.5px;margin-top:2px}
 
 /* Experience 1 — Hubly Conversation. No loading screen, no splash — the
    hero fades, this fades in over it. URL never changes, page never reloads. */
@@ -249,7 +229,7 @@ button.ask-icon-left:focus-visible{outline:2px solid var(--brand);outline-offset
    the layout behind it — still focusable, still read by screen readers, and the
    audience cards with it. Hidden once the app is active; this runs after
    hcActivate's 420ms .hc-transforming animation, so it does not cut it short. */
-body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:none}
+body.hc-active .footer,body.hc-active .hero{display:none}
 /* Drop target — a visible edge and a dimmed pane, so it is obvious the chat
    will take the file rather than the browser navigating away from it. */
 .hc-app.hc-dragging{outline:2px dashed var(--brand,#D9632D);outline-offset:-10px;}
@@ -267,7 +247,7 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
 .hc-app-left{flex:1 1 100%;min-width:0;display:flex;flex-direction:column;border-right:0;transition:flex-basis .45s cubic-bezier(.22,.61,.36,1)}
 /* display:none, so no width is reserved and nothing is painted. display cannot
    be transitioned, which is why ARRIVAL is animated below rather than here. */
-.hc-app-right{display:none;flex:1 1 0%;min-width:0;flex-direction:column;overflow:hidden;background:#0d0f16;transition:flex-basis .45s cubic-bezier(.22,.61,.36,1)}
+.hc-app-right{display:none;flex:1 1 0%;min-width:0;flex-direction:column;overflow:hidden;background:var(--panel);transition:flex-basis .45s cubic-bezier(.22,.61,.36,1)}
 /* Once there's a real site to look at, the canvas becomes the point — "the
    visible change is the explanation" only works if it has the room to be
    seen. Chat stays comfortable to read, just no longer fighting for equal
@@ -290,8 +270,8 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
    2.99:1, which fails AA outright. This neutral raised surface resolves to
    rgb(35,36,40) and gives white 15.5:1. */
 .hc-msg.user{
-  color:#fff;align-self:flex-end;text-align:left;
-  background:rgba(245,246,248,.12);
+  color:var(--ink);align-self:flex-end;text-align:left;
+  background:var(--panel-2);
   border-radius:16px 16px 4px 16px;
   padding:10px 14px;max-width:min(560px,82%);
 }
@@ -310,10 +290,10 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
    blank minute — paired with elapsed-time copy, which is a true fact, rather
    than a percentage or a bar, which would not be. */
 .hc-skel{padding:18px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
-.hc-skel-note{font-size:12.5px;color:rgba(255,255,255,.72);display:flex;align-items:center}
+.hc-skel-note{font-size:12.5px;color:var(--ink-2);display:flex;align-items:center}
 .hc-skel-bar,.hc-skel-hero,.hc-skel-block,.hc-skel-row span{
   border-radius:10px;
-  background:linear-gradient(90deg,rgba(255,255,255,.05) 25%,rgba(255,255,255,.11) 37%,rgba(255,255,255,.05) 63%);
+  background:linear-gradient(90deg,rgba(28,22,16,.05) 25%,rgba(28,22,16,.10) 37%,rgba(28,22,16,.05) 63%);
   background-size:400% 100%;animation:hcSkelShimmer 1.5s ease-in-out infinite;
 }
 .hc-skel-bar{height:44px}
@@ -327,13 +307,13 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
 }
 .hc-canvas-bar{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.10);
-  background:#0d0f16;flex:0 0 auto;
+  padding:10px 14px;border-bottom:1px solid var(--line);
+  background:var(--panel);flex:0 0 auto;
 }
 .hc-canvas-bar[hidden]{display:none}
-.hc-view-label{font-size:12px;color:rgba(255,255,255,.62);letter-spacing:.02em}
+.hc-view-label{font-size:12px;color:var(--ink-3);letter-spacing:.02em}
 .hc-view-home{
-  background:none;border:1px solid rgba(255,255,255,.22);color:#fff;
+  background:none;border:1px solid var(--line-soft);color:var(--ink);
   border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer;
 }
 .hc-view-home:hover{border-color:var(--brand);color:var(--brand)}
@@ -357,19 +337,19 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
    doesn't actually have (see hcInspirationAct — same handler either way). */
 .hc-attach-menu{
   position:absolute;left:0;bottom:calc(100% + 10px);z-index:20;
-  background:#12151f;border:1px solid rgba(255,255,255,.14);border-radius:12px;
-  box-shadow:0 16px 40px -10px rgba(0,0,0,.6);padding:6px;min-width:200px;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 16px 40px -10px rgba(28,22,16,.22);padding:6px;min-width:200px;
   display:flex;flex-direction:column;gap:2px;
 }
 .hc-attach-menu[hidden]{display:none}
 /* It opened over the transcript, making the text behind it unreadable. Solid
    background and a real shadow so nothing shows through. */
-.hc-attach-menu{background:#12141c;border:1px solid rgba(255,255,255,.14);box-shadow:0 18px 44px rgba(0,0,0,.55)}
+.hc-attach-menu{background:var(--panel);border:1px solid var(--line);box-shadow:0 18px 44px rgba(28,22,16,.20)}
 .hc-attach-menu button{
   display:flex;align-items:center;gap:9px;text-align:left;border:0;background:none;
-  color:rgba(245,246,248,.88);font-size:13px;padding:9px 10px;border-radius:8px;cursor:pointer;
+  color:var(--ink);font-size:13px;padding:9px 10px;border-radius:8px;cursor:pointer;
 }
-.hc-attach-menu button:hover,.hc-attach-menu button:focus-visible{background:rgba(217,99,45,.14);color:#fff;outline:none}
+.hc-attach-menu button:hover,.hc-attach-menu button:focus-visible{background:rgba(217,99,45,.12);color:var(--brand);outline:none}
 
 /* Live canvas — "the thing we're building together," never Business
    Understanding as data. Default: quiet placeholder. Once a real business
@@ -384,8 +364,8 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   font-family:ui-monospace,'SF Mono',Menlo,monospace;flex-shrink:0;
 }
 .hc-canvas-url .hc-live-dot{width:6px;height:6px;border-radius:50%;background:#3ecf7a;box-shadow:0 0 6px rgba(62,207,122,.7);flex-shrink:0}
-.hc-canvas-url a{color:rgba(245,246,248,.75);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hc-canvas-url a:hover{color:#fff;text-decoration:underline}
+.hc-canvas-url a{color:var(--ink-2);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hc-canvas-url a:hover{color:var(--ink);text-decoration:underline}
 .hc-canvas-frame-wrap{flex:1;position:relative;background:#fff;min-height:0;overflow:hidden}
 /* Two stacked iframes, crossfaded — an update loads invisibly in the
    standby frame, then swaps in once ready. The person watches the real
@@ -397,7 +377,7 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
 .hc-canvas-frame-wrap iframe.is-live{z-index:2;opacity:1;pointer-events:auto}
 .hc-canvas-loading{
   position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;
-  background:#0d0f16;color:var(--ink-3);font-size:12.5px;transition:opacity .3s ease;gap:8px;
+  background:var(--panel);color:var(--ink-3);font-size:12.5px;transition:opacity .3s ease;gap:8px;
 }
 .hc-canvas-loading.is-hidden{opacity:0;pointer-events:none}
 .hc-canvas-loading .hc-live-dot{animation:hcPulse 1s infinite}
@@ -413,22 +393,22 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
      the preview, directly under the dark-mode toggle, and the only way in. */
   .hc-attach-sep{
     padding:9px 12px 4px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;
-    color:rgba(255,255,255,.4);pointer-events:none;
+    color:var(--ink-3);pointer-events:none;
   }
   .hc-drop{
-    margin:10px 0 2px;padding:18px 16px;border:1.5px dashed rgba(255,255,255,.3);
-    border-radius:14px;background:rgba(255,255,255,.03);text-align:center;cursor:pointer;
+    margin:10px 0 2px;padding:18px 16px;border:1.5px dashed var(--line-soft);
+    border-radius:14px;background:var(--bg-1);text-align:center;cursor:pointer;
     transition:border-color .15s,background .15s;
   }
-  .hc-drop:hover,.hc-drop:focus-visible{border-color:var(--brand);background:rgba(255,255,255,.06);outline:none}
+  .hc-drop:hover,.hc-drop:focus-visible{border-color:var(--brand);background:rgba(217,99,45,.06);outline:none}
   .hc-drop.is-over{border-color:var(--brand);background:rgba(217,99,45,.12)}
-  .hc-drop-t{display:block;font-size:13.5px;font-weight:650;color:#fff}
-  .hc-drop-s{display:block;margin-top:4px;font-size:12px;color:rgba(255,255,255,.66)}
+  .hc-drop-t{display:block;font-size:13.5px;font-weight:650;color:var(--ink)}
+  .hc-drop-s{display:block;margin-top:4px;font-size:12px;color:var(--ink-2)}
   .hc-drop-skip{
-    margin-top:10px;background:none;border:0;color:rgba(255,255,255,.66);
+    margin-top:10px;background:none;border:0;color:var(--ink-2);
     font-size:12px;text-decoration:underline;cursor:pointer;
   }
-  .hc-drop-skip:hover{color:#fff}
+  .hc-drop-skip:hover{color:var(--ink)}
 
   /* Retry-after-a-failed-build. Its own class rather than .hd-primary-action,
      which is the DOCUMENT renderer's button and is scoped under #hc-doc-root --
@@ -451,12 +431,12 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
 .hc-concepts-grid{flex:1;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;align-content:start}
 .hc-concept-card{
   border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;
-  background:#12151f;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;text-align:left;
+  background:var(--panel);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;text-align:left;
   padding:0;width:100%;color:inherit;display:flex;flex-direction:column;
   opacity:0;animation:hcCardIn .5s cubic-bezier(.16,.8,.3,1) forwards;
 }
 @keyframes hcCardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.hc-concept-card:hover{transform:translateY(-3px);border-color:rgba(255,255,255,.35);box-shadow:0 16px 40px -12px rgba(0,0,0,.55)}
+.hc-concept-card:hover{transform:translateY(-3px);border-color:var(--line-soft);box-shadow:0 16px 40px -12px rgba(28,22,16,.22)}
 .hc-concept-card:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .hc-concept-swatch{
   min-height:280px;flex:1;display:flex;flex-direction:column;padding:22px 22px 18px;
@@ -472,37 +452,37 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
 .hc-concept-swatch .cs-strip{display:flex;gap:6px;margin-top:16px}
 .hc-concept-swatch .cs-chip{font-size:8px;padding:4px 8px;border-radius:20px;border:1px solid currentColor;opacity:.55}
 .hc-concept-meta{padding:14px 16px}
-.hc-concept-name{font-size:14px;font-weight:750;color:rgba(245,246,248,.96);margin-bottom:2px}
+.hc-concept-name{font-size:14px;font-weight:750;color:var(--ink);margin-bottom:2px}
 .hc-concept-character{font-size:12px;color:var(--ink-3);line-height:1.4}
 .hc-concepts-more{
-  align-self:flex-start;font-size:12px;color:var(--ink-3);background:none;border:1px solid var(--line-2,rgba(255,255,255,.14));
+  align-self:flex-start;font-size:12px;color:var(--ink-3);background:none;border:1px solid var(--line-soft);
   padding:8px 14px;border-radius:20px;cursor:pointer;transition:border-color .15s,color .15s;
 }
-.hc-concepts-more:hover{color:#fff;border-color:rgba(255,255,255,.4)}
+.hc-concepts-more:hover{color:var(--ink);border-color:var(--ink-3)}
 
 /* Inspiration picker — Step 1. Real, premium, visual entry points; never a
    text question the person has to answer by typing. */
 .hc-inspiration{flex:1;overflow-y:auto;padding:28px clamp(20px,3vw,34px);display:flex;flex-direction:column;gap:16px}
-.hc-inspiration-head{font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:-.01em;color:#fff}
+.hc-inspiration-head{font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:-.01em;color:var(--ink)}
 .hc-inspiration-sub{font-size:13px;color:var(--ink-3);margin-top:-8px}
 .hc-insp-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .hc-insp-card{
-  border:1px solid var(--line);border-radius:14px;background:#12151f;color:inherit;
+  border:1px solid var(--line);border-radius:14px;background:var(--panel);color:inherit;
   padding:18px 16px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;
   cursor:pointer;transition:transform .15s ease,border-color .15s ease;text-align:left;
   opacity:0;animation:hcCardIn .45s cubic-bezier(.16,.8,.3,1) forwards;
 }
-.hc-insp-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.32)}
+.hc-insp-card:hover{transform:translateY(-2px);border-color:var(--line-soft)}
 .hc-insp-card:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .hc-insp-card .ic{width:30px;height:30px;border-radius:9px;background:rgba(217,99,45,.12);border:1px solid rgba(217,99,45,.35);display:flex;align-items:center;justify-content:center;color:var(--brand)}
 .hc-insp-card .ic svg{width:15px;height:15px}
-.hc-insp-card .it{font-size:13px;font-weight:700;color:rgba(245,246,248,.94)}
+.hc-insp-card .it{font-size:13px;font-weight:700;color:var(--ink)}
 .hc-insp-card .id{font-size:11px;color:var(--ink-3);line-height:1.4}
 .hc-insp-card.hc-insp-primary{grid-column:1 / -1;background:linear-gradient(135deg,rgba(217,99,45,.16),rgba(217,99,45,.05));border-color:rgba(217,99,45,.4)}
 .hc-insp-card.hc-insp-primary .ic{background:var(--brand);border-color:var(--brand);color:#fff}
 .hc-insp-inline{display:flex;gap:8px;padding-top:2px}
 .hc-insp-inline input{
-  flex:1;border:1px solid var(--line-2,rgba(255,255,255,.16));background:#12151f;color:var(--ink);
+  flex:1;border:1px solid var(--line-soft);background:var(--panel);color:var(--ink);
   border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;
 }
 .hc-insp-inline input:focus{outline:none;border-color:var(--brand)}
@@ -511,7 +491,7 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   font-size:12.5px;font-weight:700;cursor:pointer;
 }
 .hc-insp-back{align-self:flex-start;font-size:11.5px;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:0}
-.hc-insp-back:hover{color:#fff}
+.hc-insp-back:hover{color:var(--ink)}
 @media(max-width:860px){
   .hc-app{flex-direction:column}
   .hc-app-left{border-right:0;border-bottom:1px solid var(--line);flex:1 1 52%;min-width:0}
@@ -526,6 +506,59 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   .hc-canvas-frame-wrap iframe,.hc-canvas-loading{transition:none}
   .hc-canvas-frame-wrap.hc-just-updated::after{animation:none}
 }
+
+/* —— Sign-in: one door. A modal over the current page — no navigation, no
+   second window. Continue with Google, or an email and a six-digit code. Same
+   door for new and returning: the email either logs in or creates the account,
+   and the person never chooses which. No password anywhere. —— */
+.auth-ov{
+  position:fixed;inset:0;z-index:9999;display:none;
+  align-items:center;justify-content:center;padding:20px;
+  background:rgba(27,23,18,.42);backdrop-filter:blur(3px);
+}
+.auth-ov.is-open{display:flex}
+.auth-card{
+  background:var(--bg-2);border:1px solid var(--line);border-radius:20px;
+  box-shadow:0 30px 80px rgba(28,22,16,.28);
+  width:100%;max-width:400px;padding:30px 28px 26px;text-align:center;
+  animation:authIn .22s cubic-bezier(.2,.7,.3,1) both;
+}
+@keyframes authIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){ .auth-card{animation:none} }
+.auth-close{
+  position:absolute;top:14px;right:16px;width:32px;height:32px;border-radius:50%;
+  border:0;background:none;color:var(--ink-3);font-size:20px;line-height:1;cursor:pointer;
+}
+.auth-close:hover{color:var(--ink);background:var(--line)}
+.auth-card h2{font-family:var(--display);font-weight:800;font-size:21px;letter-spacing:-.02em;color:var(--ink);margin-bottom:6px}
+.auth-card .auth-sub{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin-bottom:20px}
+.auth-google{
+  display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+  padding:12px;border:1px solid var(--line-soft);border-radius:12px;background:var(--bg-2);
+  color:var(--ink);font-size:14.5px;font-weight:650;cursor:pointer;transition:background .15s ease,border-color .15s ease;
+}
+.auth-google:hover{background:var(--bg-1);border-color:var(--ink-3)}
+.auth-google svg{width:18px;height:18px;flex-shrink:0}
+.auth-or{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--ink-3);font-size:12px}
+.auth-or::before,.auth-or::after{content:'';flex:1;height:1px;background:var(--line)}
+.auth-field{
+  width:100%;padding:12px 14px;border:1px solid var(--line-soft);border-radius:12px;
+  background:var(--bg-2);color:var(--ink);font-size:15px;text-align:left;
+}
+.auth-field::placeholder{color:var(--ink-3)}
+.auth-field:focus{outline:none;border-color:var(--brand)}
+.auth-code{text-align:center;letter-spacing:.4em;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;padding-left:.4em}
+.auth-primary{
+  width:100%;margin-top:12px;padding:12px;border:0;border-radius:12px;
+  background:var(--brand);color:#fff;font-size:15px;font-weight:700;cursor:pointer;
+  transition:background .15s ease,opacity .15s ease;
+}
+.auth-primary:hover{background:var(--brand-dark)}
+.auth-primary:disabled{opacity:.55;cursor:default}
+.auth-err{color:#B42318;font-size:13px;margin-top:10px;min-height:1em}
+.auth-back{margin-top:14px;background:none;border:0;color:var(--ink-3);font-size:12.5px;text-decoration:underline;cursor:pointer}
+.auth-back:hover{color:var(--ink)}
+.auth-foot{margin-top:16px;font-size:11.5px;color:var(--ink-3);line-height:1.5}
 </style>
 </head>
 <body>
@@ -534,10 +567,10 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   <a href="/" aria-label="hubly home">
     <span class="hubly-lockup">hub<span class="ly">ly</span></span>
   </a>
-  <a class="nav-signin" href="/login">
+  <button type="button" class="nav-signin" id="navSignin" aria-haspopup="dialog">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.6-3.6 4.6-5.4 7.5-5.4s5.9 1.8 7.5 5.4"/></svg>
     Sign in
-  </a>
+  </button>
 </header>
 
 <!--
@@ -550,7 +583,8 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   <div class="hero-media" aria-hidden="true"></div>
   <div class="hero-copy">
     <span class="eyebrow-badge">✨ AI-POWERED. HUMAN FOCUSED.</span>
-    <h1>Hubly<br><span class="grow">gets it done.</span></h1>
+    <h1>Hubly <span class="grow">gets it done.</span></h1>
+    <p class="hero-tagline">Anything. Any service. Anywhere.</p>
     <p class="hero-sub">Tell us what you need and we'll take care of the rest.</p>
 
     <div class="ask-wrap">
@@ -598,6 +632,9 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
           <li>Book and pay in one place</li>
         </ul>
         <span class="aud-go">Browse the marketplace &rarr;</span>
+        <span class="aud-art" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 5h16v11H9l-4 4V5z"/><circle cx="9" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="10.5" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10.5" r="1" fill="currentColor" stroke="none"/></svg>
+        </span>
       </a>
       <div class="aud-card is-static">
         <span class="aud-kicker">For business owners</span>
@@ -607,6 +644,9 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
           <li>Take bookings and payments</li>
           <li>Sell products from your own store</li>
         </ul>
+        <span class="aud-art" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M7 14l3-3 2.5 2.5L17 9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
       </div>
     </div>
   </div>
@@ -662,75 +702,44 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
   <input type="file" id="hcPhotoInput" accept="image/png,image/jpeg,image/webp" multiple style="display:none">
 </div>
 
-<section class="sec" id="categories">
-  <div class="wrap">
-    <div class="sec-head">
-      <h2>Anything. Any service. Anywhere.</h2>
-      <p>Hubly works for all your home and personal needs.</p>
-    </div>
-    <div class="cat-grid">
-      <div class="cat-tile" style="background-image:url('/assets/landing/photography.jpg')">
-        <div class="cat-tile-body">
-          <svg class="cat-tile-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7l1.6-2.5h4.8L16 7"/><circle cx="12" cy="13.5" r="3.5"/></svg>
-          <h3>Photography</h3>
-          <p>Weddings, events, portraits &amp; more</p>
-        </div>
-      </div>
-      <div class="cat-tile" style="background-image:url('/assets/landing/cleaning.jpg')">
-        <div class="cat-tile-body">
-          <svg class="cat-tile-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 20h4l9-9a2.1 2.1 0 00-3-3L6 17v3z"/><path d="M14 6l3 3"/></svg>
-          <h3>Cleaning</h3>
-          <p>Home, office, or move-in / move-out</p>
-        </div>
-      </div>
-      <div class="cat-tile" style="background-image:url('/assets/landing/lawn-care.jpg')">
-        <div class="cat-tile-body">
-          <svg class="cat-tile-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22V12M12 12C8 12 5 9 5 5c4 0 7 3 7 7zm0 0c4 0 7-3 7-7-4 0-7 3-7 7z"/></svg>
-          <h3>Lawn Care</h3>
-          <p>Mowing, trimming, and full maintenance</p>
-        </div>
-      </div>
-      <div class="cat-tile" style="background-image:url('/assets/landing/window-cleaning.jpg')">
-        <div class="cat-tile-body">
-          <svg class="cat-tile-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 12h18M12 3v18"/></svg>
-          <h3>Window Cleaning</h3>
-          <p>Streak-free shine every time</p>
-        </div>
-      </div>
-      <div class="cat-tile" style="background-image:url('/assets/landing/pressure-washing.jpg')">
-        <div class="cat-tile-body">
-          <svg class="cat-tile-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6"/><path d="M11 3l10 10-3 3L8 6l3-3z"/><path d="M13 15l2 2M15 12l2 2M17 9l2 2" stroke-linecap="round"/></svg>
-          <h3>Pressure Washing</h3>
-          <p>Driveways, decks, and more</p>
-        </div>
-      </div>
-      <div class="cat-tile" style="background-image:url('/assets/landing/hvac.jpg')">
-        <div class="cat-tile-body">
-          <svg class="cat-tile-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c2 3 2 5 0 8 2 0 4 1 5 3-3 0-5 1-7 3-2-2-4-3-7-3 1-2 3-3 5-3-2-3-2-5 0-8z"/></svg>
-          <h3>HVAC</h3>
-          <p>Heating, cooling, and ventilation</p>
-        </div>
-      </div>
-      <div class="cat-tile cat-tile-more">
-        <div class="cat-tile-body">
-          <svg class="cat-tile-ico" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>
-          <h3>+ many more</h3>
-          <p>And dozens more home services</p>
-        </div>
-      </div>
-    </div>
-    <p class="cat-support">From photography to plumbing — if it's a home service, we've got someone for it.</p>
-    <p class="trust-bottom">🔒 Secure • Private • Your information is never shared.</p>
-  </div>
-</section>
-
 <footer class="footer">
   <div class="wrap footer-mini">
     <span class="hubly-lockup">hub<span class="ly">ly</span></span>
     <p class="footer-contact"><a href="mailto:support@myhubly.app">support@myhubly.app</a></p>
+    <p class="trust-bottom">🔒 Secure • Private • Your information is never shared.</p>
     <p class="footer-copy">© <span id="y"></span> Hubly. All rights reserved.</p>
   </div>
 </footer>
+
+<!-- One door. Opens over the page; never navigates. -->
+<div class="auth-ov" id="authOv" role="dialog" aria-modal="true" aria-label="Sign in or sign up" hidden>
+  <div class="auth-card" id="authCard">
+    <button type="button" class="auth-close" id="authClose" aria-label="Close">&times;</button>
+
+    <div id="authStepStart">
+      <h2>Log in or sign up</h2>
+      <p class="auth-sub">Continue and Hubly picks up right where you are. New here or returning — same door.</p>
+      <button type="button" class="auth-google" id="authGoogle">
+        <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.9 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9.1h12.4c-.5 2.9-2.1 5.3-4.6 7l7.1 5.5c4.1-3.8 6.5-9.4 6.5-16z"/><path fill="#FBBC05" d="M10.5 28.3c-.5-1.4-.8-2.9-.8-4.5s.3-3.1.8-4.5l-7.9-6.1C1 16.4 0 20 0 23.8s1 7.4 2.6 10.6l7.9-6.1z"/><path fill="#34A853" d="M24 47.6c6.3 0 11.6-2.1 15.5-5.7l-7.1-5.5c-2 1.3-4.5 2.1-8.4 2.1-6.3 0-11.6-3.7-13.5-9.8l-7.9 6.1C6.5 42.2 14.6 47.6 24 47.6z"/></svg>
+        Continue with Google
+      </button>
+      <div class="auth-or">or</div>
+      <input type="email" class="auth-field" id="authEmail" inputmode="email" autocomplete="email" placeholder="you@yourbusiness.com" aria-label="Email address">
+      <button type="button" class="auth-primary" id="authSendCode">Continue</button>
+      <div class="auth-err" id="authErr" role="alert"></div>
+      <p class="auth-foot">No password needed. By continuing you agree to Hubly's Terms.</p>
+    </div>
+
+    <div id="authStepCode" hidden>
+      <h2>Enter your code</h2>
+      <p class="auth-sub">We sent a six-digit code to <b id="authEmailEcho"></b>. Paste it here — you'll stay right on this page.</p>
+      <input type="text" class="auth-field auth-code" id="authCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="Six-digit code">
+      <button type="button" class="auth-primary" id="authVerify">Verify &amp; continue</button>
+      <div class="auth-err" id="authErr2" role="alert"></div>
+      <button type="button" class="auth-back" id="authBack">Use a different email</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -2171,6 +2180,104 @@ body.hc-active #categories,body.hc-active .footer,body.hc-active .hero{display:n
     }catch(e){ /* best-effort: a failure just means a fresh start */ }
   }
   hcResumeDraft();
+
+  // ── ONE DOOR: sign in / sign up ────────────────────────────────────────────
+  // A modal over the page. Continue with Google (which redirects to Google and
+  // back — the one place navigation is expected), or an email + six-digit code
+  // (verifyOtp, no navigation). shouldCreateUser:true makes it the SAME door for
+  // new and returning: the email either logs in or creates the account, and the
+  // person never chooses which. The client is built with the same url+key+storage
+  // as hubly.html, so the session written here is the one /dashboard reads back.
+  //
+  // The code (vs a link) depends on the Supabase "Magic Link" email template
+  // rendering {{ .Token }} — a dashboard setting. This client is built for a code
+  // regardless; until the template is flipped the email carries a link instead.
+  var authClient = null;
+  async function authGetClient(){
+    if(authClient) return authClient;
+    var t0 = Date.now();
+    while(!(window.supabase && window.supabase.createClient)){
+      if(Date.now() - t0 > 10000) throw new Error('sdk_unavailable');
+      await new Promise(function(r){ setTimeout(r, 60); });
+    }
+    authClient = window.supabase.createClient(SUPA_URL, SUPA_ANON_KEY, {
+      auth: { persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storage: window.localStorage }
+    });
+    return authClient;
+  }
+  var authOv = document.getElementById('authOv');
+  function authEl(id){ return document.getElementById(id); }
+  function authShowStep(which){
+    authEl('authStepStart').hidden = (which !== 'start');
+    authEl('authStepCode').hidden = (which !== 'code');
+  }
+  function authOpen(){
+    if(!authOv) return;
+    authOv.hidden = false; authOv.classList.add('is-open');
+    authShowStep('start');
+    authEl('authErr').textContent = ''; authEl('authErr2').textContent = '';
+    setTimeout(function(){ try{ authEl('authEmail').focus(); }catch(e){} }, 40);
+    authGetClient().catch(function(){});   // warm up the SDK before the first click
+  }
+  function authClose(){
+    if(!authOv) return;
+    authOv.classList.remove('is-open'); authOv.hidden = true;
+  }
+  var authEmailValue = '';
+  async function authSendCode(){
+    var email = String((authEl('authEmail') || {}).value || '').trim();
+    authEl('authErr').textContent = '';
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ authEl('authErr').textContent = 'Enter a valid email address.'; return; }
+    var btn = authEl('authSendCode'); btn.disabled = true; btn.textContent = 'Sending…';
+    try{
+      var c = await authGetClient();
+      var res = await c.auth.signInWithOtp({ email: email, options: { shouldCreateUser: true } });
+      if(res.error) throw res.error;
+      authEmailValue = email;
+      authEl('authEmailEcho').textContent = email;
+      authShowStep('code');
+      setTimeout(function(){ try{ authEl('authCode').focus(); }catch(e){} }, 40);
+    }catch(e){
+      authEl('authErr').textContent = (e && e.message) ? e.message : 'Could not send the code. Try again.';
+    }finally{ btn.disabled = false; btn.textContent = 'Continue'; }
+  }
+  async function authVerify(){
+    var token = String((authEl('authCode') || {}).value || '').replace(/\D/g, '').trim();
+    authEl('authErr2').textContent = '';
+    if(token.length !== 6){ authEl('authErr2').textContent = 'Enter the six-digit code.'; return; }
+    var btn = authEl('authVerify'); btn.disabled = true; btn.textContent = 'Verifying…';
+    try{
+      var c = await authGetClient();
+      var res = await c.auth.verifyOtp({ email: authEmailValue, token: token, type: 'email' });
+      if(res.error) throw res.error;
+      location.assign('/dashboard');   // post-login destination; hubly.html reads the session
+    }catch(e){
+      authEl('authErr2').textContent = (e && e.message) ? e.message : "That code didn't match. Check it and try again.";
+      btn.disabled = false; btn.textContent = 'Verify & continue';
+    }
+  }
+  async function authGoogle(){
+    authEl('authErr').textContent = '';
+    try{
+      var c = await authGetClient();
+      await c.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + '/dashboard' } });
+    }catch(e){
+      authEl('authErr').textContent = 'Could not reach Google sign-in. Try email instead.';
+    }
+  }
+  if(authOv){
+    var navSignin = document.getElementById('navSignin');
+    if(navSignin) navSignin.addEventListener('click', authOpen);
+    authEl('authClose').addEventListener('click', authClose);
+    authOv.addEventListener('click', function(e){ if(e.target === authOv) authClose(); });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && authOv.classList.contains('is-open')) authClose(); });
+    authEl('authGoogle').addEventListener('click', authGoogle);
+    authEl('authSendCode').addEventListener('click', authSendCode);
+    authEl('authEmail').addEventListener('keydown', function(e){ if(e.key === 'Enter') authSendCode(); });
+    authEl('authVerify').addEventListener('click', authVerify);
+    authEl('authCode').addEventListener('keydown', function(e){ if(e.key === 'Enter') authVerify(); });
+    authEl('authBack').addEventListener('click', function(){ authShowStep('start'); authEl('authErr2').textContent = ''; });
+  }
 })();
 </script>
 </body>
