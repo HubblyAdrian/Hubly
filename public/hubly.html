@@ -13432,7 +13432,12 @@ function showP(id,opts){
     }catch(e){}
   }
   const floatLang=document.getElementById('lang-btn-float');
-  if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-storefront'||id==='p-landing'||id==='p-booking'||id==='p-booking-landing'||id==='p-onboard')?'none':'flex';
+  // p-hubly-document (the freeform/Document view) is in the hide-list: the
+  // toggle translates the CLASSIC renderer's data-i18n DOM, which a freeform
+  // page rendered in an iframe does not have, so it translates nothing and
+  // floats dead over the corner. showP is the authoritative place to hide it —
+  // hiding it once after render was undone every time showP re-ran here.
+  if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-storefront'||id==='p-landing'||id==='p-booking'||id==='p-booking-landing'||id==='p-onboard'||id==='p-hubly-document')?'none':'flex';
   ensureMktSupportChat(id==='p-landing');
   if(id==='p-app'||id==='p-onboard'||id==='p-storefront'){
     try{ensureGoogleFonts();}catch(e){}
