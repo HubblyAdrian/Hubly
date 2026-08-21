@@ -1841,12 +1841,15 @@ body.hc-active #hc-keep-btn{display:block}
         var buildNarration = '';
         if(generatingDocument && hc.draftBusiness){
           hc.canvasStage = 'site';
-          // Only treat a real, substantial reply as the build narration — the
-          // near-silent "On it." / "Done." a normal turn produces is not it, and
-          // must never be dressed up as a tailored say. Thin/empty -> no
-          // narration, just the honest elapsed note. Shown in the skeleton and
-          // therefore NOT duplicated into the chat below (hc.buildNarrationShown).
-          buildNarration = (data.reply && data.reply.trim().length >= 80) ? data.reply.trim() : '';
+          // The build narration is the model's substantial design say. It's told
+          // to put it in "reply"; be robust to it front-loading it as the first
+          // interim line instead. A near-silent "On it." / "Done." is NOT a
+          // narration and must never be dressed up as tailored: below the length
+          // bar -> no narration at all, just the honest elapsed note. Whatever we
+          // show in the skeleton is then NOT echoed into the chat.
+          var hcReplyNarr = (data.reply && data.reply.trim().length >= 80) ? data.reply.trim() : '';
+          var hcInterim0 = (Array.isArray(data.interimMessages) && data.interimMessages[0] && String(data.interimMessages[0]).trim().length >= 80) ? String(data.interimMessages[0]).trim() : '';
+          buildNarration = hcReplyNarr || hcInterim0;
           hcRenderDocumentBuilding(buildNarration);
           var hcAppElBuild = document.getElementById('hcApp');
           if(hcAppElBuild) hcAppElBuild.classList.add('hc-has-draft');
@@ -1886,7 +1889,10 @@ body.hc-active #hc-keep-btn{display:block}
           // "building now" line a lie. Drop them.
           if(epoch !== hcMsgEpoch) return;
           if(i < interim.length){
-            hcAppendMessage('hubly', interim[i]);
+            // Skip the line we're already showing as the skeleton narration —
+            // one voice, one place (it can arrive here if the model front-loaded
+            // it as the first interim instead of in reply).
+            if(interim[i] !== buildNarration) hcAppendMessage('hubly', interim[i]);
             i++;
             setTimeout(showNext, 550);
             return;
