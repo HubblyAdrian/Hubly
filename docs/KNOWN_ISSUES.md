@@ -6,6 +6,73 @@ what would settle it.
 
 ---
 
+## A public address now requires an owner — closed, but one path is unverified end-to-end
+
+**Status:** shipped 2026-08-20 (migration `20260821070000_draft_reads_and_public_gate.sql`,
+`resume-draft` function, `hubly.html` + `platform-home.html` handshake/resume).
+The read-time gate and the server round-trips are verified by running them. One
+client path — the *cold* cookie-only resume visual — could not be exercised in a
+signed-in browser and is verified only at the data layer. Details below.
+
+**What was wrong.** `get_public_business(slug)` and
+`get_public_business_document(slug)` served ANY business by slug, claimed or not.
+So an unclaimed draft's `{slug}.myhubly.app` was live to any stranger with the
+link — an unfinished, unowned page public as fact, the read-time half of the
+phishing exposure.
+
+**The gate.** Both public RPCs now require `owner_id IS NOT NULL`. Two new
+draft-scoped reads (`get_draft_business`, `get_draft_business_document`) take the
+`draft_token` the builder already holds and return the SAME data for an
+*unclaimed* business, so the builder still previews. The builder iframe
+(`{slug}.myhubly.app?hcEdit=1`) asks its parent for the token via an
+origin-checked postMessage — answered only for the draft it is showing, never in
+a URL — and a public visitor, never in edit mode, never asks and falls straight
+to "This page isn't live yet."
+
+**Existing pages (checked before changing anything).** The 10 claimed businesses
+are all on the classic renderer, `owner_id` set, 0 stored `business_documents` —
+they never depended on `get_public_business_document` and keep serving. The ~30
+unclaimed-with-page businesses are all test drafts; their URLs go dark to
+strangers, which is the point.
+
+**Resume.** The draft session was in-memory; closing the tab lost the way back.
+There are now two layers: (1) a pre-existing `hubly_session_v1` in localStorage
+already restores the whole session — conversation, memory, `businessId` — on the
+**same device**; (2) new for cross-device / cleared-storage, `resume-draft` turns
+the 7-day httpOnly claim cookie's assertion (minted by `/api/draft-session` on
+Vercel, the only thing that can read that cookie) back into the draft, but only
+while `owner_id` is null. On load `hcResumeDraft()` calls it and, if a draft
+comes back, says "welcome back" with the page in the preview.
+
+**Verified by running it (2026-08-20):**
+- Stranger at `marlow-vance.myhubly.app` → "This page isn't live yet"; freeform
+  page NOT rendered.
+- `aquaspeed.myhubly.app` (a claimed business) still serves its full page.
+- `resume-draft`, called live from the myhubly.app origin with the real cookie's
+  assertion, returned the full unclaimed draft (`ashgrove-forge`, draft_token,
+  `hasPage:true`) — and returns `ok` ONLY because it is unclaimed.
+- (server, prior) draft RPCs: correct token returns the 32KB page, wrong token
+  refused.
+
+**NOT verified end-to-end, and why.** The cold "close tab → reopen anonymously →
+welcome-back paints" visual could not be isolated: the only browser available is
+a **signed-in owner** whose `businessId` persists through the auth session and
+whose same-device `hubly_session_v1` resume already covers the warm case, so
+`hcResumeDraft()`'s `if(hc.draftBusiness) return;` guard correctly short-circuits
+before the cookie path runs. Exercising the cold path needs an anonymous profile
+holding ONLY the draft cookie (a fresh draft in incognito), or signing the user
+out — neither worth doing to the user's live session. The server half (the hard
+half) is proven; the client paint is deployed and code-reviewed but not
+eyes-on-verified in the cold case. **What would settle it:** create a draft in an
+incognito window, close it, reopen `myhubly.app` in that same window, confirm the
+welcome-back + preview.
+
+**Not done this session (deliberately, per the stop rule):** the email-ask at
+first-paint (item 3, report-only) and grouping placeholder marks under ten per
+page (item 4). See the session report.
+
+---
+
 ## The booking wizard's current step has two sources of truth
 
 **Status:** open, latent — no product code desyncs them today
