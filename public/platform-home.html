@@ -2010,21 +2010,20 @@ body.hc-active #hc-keep-btn{display:block}
           // "building now" line a lie. Drop them.
           if(epoch !== hcMsgEpoch) return;
           if(i < interim.length){
-            // Skip the line we're already showing as the skeleton narration —
-            // one voice, one place (it can arrive here if the model front-loaded
-            // it as the first interim instead of in reply). And strip the
-            // "it's building now…" filler here rather than asking the model not
-            // to write it — a prompt-only rule it keeps violating; the steps card
-            // and the skeleton already say a build is happening.
-            if(interim[i] !== buildNarration && !(generatingDocument && hcIsBuildFiller(interim[i]))) hcAppendMessage('hubly', interim[i]);
+            // On a BUILD turn the chat is just the steps card; the design say is
+            // in the skeleton. Suppress every interim line here — otherwise a
+            // second design paragraph the model wrote lands in the chat beside the
+            // one already in the skeleton (two narrations at once). On a normal
+            // turn, interim messages show as usual.
+            if(!generatingDocument) hcAppendMessage('hubly', interim[i]);
             i++;
             setTimeout(showNext, 550);
             return;
           }
-          // Don't echo the reply into chat when it's already carrying the wait
-          // as the build narration in the skeleton — one voice, one place — and
-          // strip the "building now" filler on a build turn (see above).
-          if(data.reply && data.reply !== buildNarration && !(generatingDocument && hcIsBuildFiller(data.reply))) hcAppendMessage('hubly', data.reply);
+          // Same on the reply: on a build turn it's the skeleton narration (or
+          // "building now" filler) — never echoed into the chat. On a normal turn
+          // it shows.
+          if(!generatingDocument && data.reply) hcAppendMessage('hubly', data.reply);
           // THE DROPZONE COMES LAST, after the sentence that points at it.
           //
           // It used to be appended up with the canvas work above, which runs
