@@ -61,6 +61,7 @@ import {
 import { imageDimensions, type ImageDims } from "./hubly_image_dims.ts";
 import { stampFreeformHtml } from "./hubly_document_labels.ts";
 import { injectHublyRuntime } from "./hubly_page_runtime.ts";
+import { resolveImages, pexelsFetcher, type PlacedImageRow } from "./hubly_image_resolver.ts";
 import { applyFreeformEdit, humanFreeformSummary, labelInventory, labelsPresent, type LabelEntry } from "./hubly_freeform.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
 // Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
@@ -1473,7 +1474,7 @@ export async function generateFreeformPage(
   businessId: string,
   brief: string,
   record: Record<string, unknown>,
-): Promise<{ ok: true; html: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; html: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string; imagesPlaced?: number; imageBlanks?: number } | { ok: false; error: string }> {
   // WHAT HUBLY SUPPLIES, told to the model so it can DESIGN for it.
   //
   // The first three freeform pages were call-only brochures for one reason:
@@ -1499,12 +1500,38 @@ export async function generateFreeformPage(
     "Do NOT design a chat window, a message form, or a support widget yourself, and do not put anything in the bottom-right corner that it would cover.\n" +
     "Do not write any other <script>, and do not build a booking form of your own — the sentinel link is how booking is reached.";
 
+  // IMAGES ARE MARKERS, RESOLVED AFTER YOU FINISH — same contract as booking.
+  //
+  // The model used to be told "design a page that does not need photos", so
+  // every page came out image-free. It now marks WHERE an image belongs and
+  // WHAT IT IS FOR; a deterministic pass fills each marker with the business's
+  // own photo, then stock, then a designed colour field — the model never
+  // handles a URL. Purpose is emitted inline (data-subject), so planning every
+  // image costs zero extra model calls.
+  const rec = record as Record<string, unknown>;
+  const hasLogo = !!rec.logo_url || !!rec.logoUrl;
+  const photoCount = Array.isArray(rec.photos) ? (rec.photos as unknown[]).length : 0;
+  const imageBlock =
+    "IMAGES — design WITH them, do not avoid them:\n" +
+    "Where an image belongs, emit a marker and let Hubly source it. Never write a real image URL yourself.\n" +
+    '- A content image: <img src="#hubly-image" data-role="ROLE" data-subject="DESCRIBE THE IDEAL SHOT" alt="...">. ' +
+    "ROLE is hero, section, feature, or background for atmosphere; gallery, portfolio, work, results, or before-after for the business's OWN work. " +
+    "data-subject is a specific art-direction phrase — the subject, the mood, the framing — e.g. " +
+    '"a premium dark close-up of a luxury car after detailing, no people" — not just "a car". Always design the subject with NO people in frame.\n' +
+    (hasLogo
+      ? '- THE LOGO: this business has uploaded a logo. Put <img src="#hubly-logo" alt="LOGO"> in the header as the brand mark. Do NOT draw a monogram or initials — the real logo exists and must be used.\n'
+      : "- No logo is on file, so a clean typographic wordmark or monogram in the header is correct.\n") +
+    (photoCount > 0
+      ? `- This business has ${photoCount} of its OWN photo(s). Give it a section that shows its work (role="gallery" or "work") so those real photos are used.\n`
+      : "- This business has no photos of its own yet. Still mark hero/atmosphere images; they will be filled with fitting stock or a designed colour field.\n") +
+    "Design as if every marker will be a real photograph.";
+
   const system =
     "You write a complete, standalone HTML page for one real local service business — a single file, with its own <style> block in the head. " +
     "No frameworks, no external requests, no scripts of your own. Use real, specific copy for THIS business, drawn only from the record below. " +
     "NEVER invent a price, a customer name, a review, a rating, a certification or a guarantee that is not in the record. " +
-    "If you have no photos, design a page that does not need them rather than leaving empty frames. " +
     "Write the page you think this business should have — you choose the sections, the order and the layout.\n\n" +
+    imageBlock + "\n\n" +
     capabilities + "\n\n" +
     `THE BUSINESS RECORD:\n${JSON.stringify(record, null, 1)}`;
 
@@ -1537,9 +1564,41 @@ export async function generateFreeformPage(
     return { ok: false, error: "model did not return an HTML document" };
   }
 
+  // IMAGE RESOLUTION, before stamping so labels land on resolved <img>s (or on
+  // nothing, for a marker that collapsed to a colour field). The model marked
+  // where images go; this fills them: the business's own photos first, then
+  // Pexels for atmosphere gaps, then a designed brand-coloured field. Work-role
+  // markers are never filled with stock, and no stock query allows people —
+  // both enforced here in code, not in the prompt.
+  const imgCtx = {
+    businessId,
+    documentVersion: undefined as number | undefined,
+    brandColor: (rec.brand_color as string) || null,
+    logoUrl: (rec.logo_url as string) || (rec.logoUrl as string) || null,
+    photos: Array.isArray(rec.photos) ? (rec.photos as { url: string; kind: string; caption?: string | null }[]) : [],
+    businessType: (rec.business_type as string) || (rec.businessType as string) || null,
+    businessName: (rec.name as string) || null,
+    fetchStock: pexelsFetcher((Deno.env.get("PEXELS_API_KEY") || "").trim() || null),
+    recordPlacement: async (row: PlacedImageRow) => {
+      const url = (Deno.env.get("SUPABASE_URL") || "").trim();
+      if (!url) return;
+      await fetch(`${url}/rest/v1/placed_images`, {
+        method: "POST",
+        headers: { ...adminHeaders(), "content-type": "application/json" },
+        body: JSON.stringify({
+          business_id: row.businessId, document_version: row.documentVersion ?? null,
+          provider: row.provider, asset_id: row.assetId ?? null, photographer: row.photographer ?? null,
+          source_url: row.sourceUrl ?? null, license: row.license ?? null, image_url: row.imageUrl,
+          slot: row.slot, role: row.role, alt: row.alt,
+        }),
+      }).catch(() => {});
+    },
+  };
+  const resolved = await resolveImages(raw, imgCtx);
+
   // THE STAMPING PASS. Not a validation gate: it cannot reject the page and it
   // never triggers a regeneration. It takes whatever came back and labels it.
-  const stamped = stampFreeformHtml(raw);
+  const stamped = stampFreeformHtml(resolved.html);
   // THEN HUBLY'S MACHINERY. Also not a gate: it rewrites the model's booking
   // CTA to a working URL, adds one if there is none, and injects the chat
   // widget. Ordered after stamping so the injected runtime is not itself
@@ -1555,10 +1614,12 @@ export async function generateFreeformPage(
   return {
     ok: true,
     html: wired.html,
-    brief: { brief, images: [], generatedAt: new Date().toISOString() },
+    brief: { brief, images: resolved.placed.map((p) => ({ url: p.imageUrl, provider: p.provider, slot: p.slot })), generatedAt: new Date().toISOString() },
     labels: stamped.coverage.labelled,
     usage,
     modelUsed,
+    imagesPlaced: resolved.placed.length,
+    imageBlanks: resolved.blanks,
   };
 }
 

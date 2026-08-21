@@ -2661,3 +2661,60 @@ are almost certainly safe to remove. But per the stop rule ("if anything
 unexpected is attached, stop") the deletion was NOT performed — it is the
 owner's call now that the cascade is visible. Both are currently tagged `real`
 and probably should be `test` regardless of the delete decision.
+
+## Photographs on freeform pages: the image resolver
+
+Every freeform page used to have zero `<img>`. The cause was one prompt line —
+"design a page that does not need photos" — plus never telling the model the
+logo or the customer's photos existed. Both reach generation via
+`loadBusinessRecord`; they were simply not used.
+
+Now: the model marks WHERE images go and WHAT FOR (`<img src="#hubly-image"
+data-role="hero" data-subject="...">`, and `#hubly-logo`), exactly like the
+booking sentinel — zero extra model calls, purpose emitted inline. A
+deterministic pass (`hubly_image_resolver.ts`, run before stamping) fills each
+marker:
+
+1. **The customer's own photos first**, always. Work-role markers (gallery,
+   portfolio, work, results, before-after) get first claim on the photo pool, so
+   a business's real photos land in its "our work" section rather than being
+   spent on the hero.
+2. **Pexels** for atmosphere gaps only.
+3. **A brand-coloured field** — a diagonal wash of the business's own brand
+   colour with the art-direction phrase as a faint watermark. Never a grey box,
+   never a broken frame. This is the "deliberate nothing".
+
+Two rules, enforced in code not prompt:
+- **Stock is never the business's own work.** A work-role marker is filled from
+  customer photos or a colour field — never stock. Verified: the roofer's work
+  section contains only its own photo, zero stock.
+- **No people in stock.** Every Pexels query carries "no people", and a
+  candidate whose own description names a person is rejected. Honest limit: a
+  photo with a person and a sparse description can still slip; documented.
+
+Provenance for every placed image is in `placed_images` (provider, asset id,
+photographer, source url, licence, business id, slot) so a takedown is a query.
+
+VERIFIED on three real served pages:
+- **redhill-roofing** (seeded with an uploaded logo + one photo): the logo is in
+  the header — no monogram — and the photo is in the work section. 3 real
+  `<img>`, 0 stock, provenance recorded (customer:logo, customer:gallery).
+- **wynne-castellan / fernwick-bakehouse** (no uploads): every image marker
+  became a colour field, 0 unresolved markers, nothing miscounted in the ledger.
+  The three pages look genuinely different (dark utility / cream editorial /
+  warm monogram).
+
+### NOT verified: the live stock fetch
+
+`PEXELS_API_KEY` is not set (a Pexels key needs an account created at
+pexels.com/api, which I cannot do). So the Pexels path is code-complete and
+unit-tested with an injected fetcher, but **no real stock image has been fetched
+and placed on a live page**. Every atmosphere gap currently resolves to a colour
+field instead. To turn stock on: create a free Pexels API key and set
+`PEXELS_API_KEY` in the Supabase function secrets — no code change needed, the
+resolver already reads it and `pexelsFetcher` is wired.
+
+The measure the brief set — "how many pages need no stock" — is met for any
+business with its own photos: the roofer needed none. The hero of a photo-less
+business is where stock would help most, and that is exactly what the key
+unlocks.
