@@ -1047,24 +1047,20 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         '</div>' +
       '</div>';
     hc.activeFrame = 'A';
-    // SETTLE ONCE (fix): a fresh page must NOT paint at a guessed scale and then
-    // jump when the real height arrives ("zooms in mid-build"). So we keep the
-    // stage behind the loading cover until the preview reports its true height,
-    // fit to THAT, and only then reveal — and never re-scale after it's visible.
-    hc.previewSize = null;
-    hc.previewSettled = false;
-    hc.frameLoaded = false;
-    hcApplyPreviewFit();   // lays out the (hidden) stage; the visible fit happens at settle
+    // The preview iframe is a FIXED, pane-sized viewport and the page scrolls
+    // INSIDE it, exactly like a real browser window. So the fit is correct from
+    // the first paint: there is no content-height handshake to wait on, nothing
+    // re-scales, and `100vh` in the page means one screen (see hcApplyPreviewFit).
+    // Size it once from the pane width, then reveal when the frame has loaded.
+    hcApplyPreviewFit();
     var frameA = document.getElementById('hcCanvasFrameA');
     if(frameA){
       frameA.addEventListener('load', function(){
-        hc.frameLoaded = true;
-        hcMaybeSettlePreview();
-        // Fallback: if the height report never comes (an older preview, a blocked
-        // message), reveal anyway rather than sit on the loader forever — fit to
-        // width at the default height.
-        setTimeout(function(){ if(!hc.previewSettled) hcMaybeSettlePreview(true); }, 3500);
+        var loading = document.getElementById('hcCanvasLoading');
+        if(loading) loading.classList.add('is-hidden');
       }, { once:true });
+      // Never sit on the loader if the 'load' event was missed.
+      setTimeout(function(){ var l=document.getElementById('hcCanvasLoading'); if(l) l.classList.add('is-hidden'); }, 4000);
     }
     var zoom = document.getElementById('hcZoomBtn');
     if(zoom) zoom.addEventListener('click', function(){
@@ -1073,81 +1069,68 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     });
   }
 
-  // Reveal the preview exactly once, at the correct scale. Called when the frame
-  // loads and when the height report lands; it only fires when BOTH are true (or
-  // `force`, the timeout fallback). After it settles, later height reports are
-  // ignored so the page never re-scales under the person (the image-load reflow
-  // that caused the "zoom in mid-build" is exactly a later report).
-  function hcMaybeSettlePreview(force){
-    if(hc.previewSettled) return;
-    if(!force && !(hc.frameLoaded && hc.previewSize)) return;
-    hcApplyPreviewFit();
-    hc.previewSettled = true;
-    var loading = document.getElementById('hcCanvasLoading');
-    if(loading) loading.classList.add('is-hidden');
-  }
-
-  // FIT-TO-WIDTH (A1). The page fills the width of the pane at a readable scale
-  // and the person scrolls down it like any website — NOT shrunk to a thumbnail
-  // to avoid scrolling (a tall page as a narrow centred strip is worse than
-  // scrolling). The stage is laid out at a fixed desktop width (so the page keeps
-  // its desktop design, not a reflowed mobile one) and the page's real height,
-  // reported by the preview via postMessage (cross-origin, so it can't be
-  // measured here). Then it's transform-scaled to the pane width; the pane
-  // scrolls vertically. 'full' is 1:1.
+  // THE PREVIEW IS A BROWSER WINDOW, NOT A SCALED POSTER.
   //
-  // The zoom control shows the TRUE current scale as a percentage and toggles
-  // fit-width <-> 100%. It must never read one number while showing another.
+  // The old model sized the iframe to the page's *content* height and reported
+  // that height up so we could scale the whole tall thing into the pane. That was
+  // the bug: the pages use `min-height:100vh` on their hero/sections (correct,
+  // ordinary CSS), and `vh` resolves against the IFRAME's height — which we had
+  // set to the content height. So `100vh` meant "the whole page", every section
+  // inflated, the document grew, the next height report inflated it further, and
+  // a restaurant one-pager measured ~39,000px instead of ~6,000px. The dark
+  // image containers then read as giant black rectangles because they were
+  // thousands of px tall, and the visitor arrived on empty space with content
+  // pinned far below the fold.
   //
-  // Click-to-edit is unaffected: hit-testing there is element-based (a click makes
-  // the labelled element contentEditable; the edit is keyed by its data-hc label,
-  // never by screen coordinates), and all of it runs inside the preview's own
-  // UNSCALED coordinate space — the transform here scales the whole preview
-  // uniformly and the browser maps pointer events back through it.
-  var HC_PREVIEW_W = 1200;   // logical desktop width the stage is laid out at
+  // The fix: the iframe is a FIXED viewport the size of the pane, and the page
+  // scrolls inside it — exactly like a browser window. Now `100vh` is one screen,
+  // the hero is one screen tall, and the preview shows what a real visitor sees.
+  // No height postMessage, no re-measure loop, no reveal-hold: scale is decided
+  // once, from WIDTH.
+  //
+  //   * Wide pane (>= the logical desktop width): the iframe IS the pane width,
+  //     scale 1, no transform, no cream at the sides — the page lays out at the
+  //     real width like any site.
+  //   * Narrow pane: keep the DESKTOP layout (lay out at the logical width) and
+  //     transform-scale it down to fit the width, rather than tripping the page's
+  //     mobile reflow. The viewport height is still one pane-screen.
+  //   * 'full' (the zoom toggle): 1:1 at the logical width; may scroll sideways.
+  //
+  // In every case the iframe's LOGICAL height is paneH/scale, so after the
+  // transform the visible viewport is exactly the pane's height — one screen.
+  //
+  // Click-to-edit is unaffected: hit-testing is element-based and the browser
+  // maps pointer events back through the (uniform) transform and the iframe's
+  // own scroll.
+  var HC_PREVIEW_W = 1200;   // logical desktop width the narrow case lays out at
   function hcApplyPreviewFit(){
     var wrap = document.getElementById('hcCanvasFrameWrap');
     var frame = document.getElementById('hcPreviewFrame');
     var stage = document.getElementById('hcPreviewStage');
     if(!wrap || !frame || !stage) return;
-    var pageW = HC_PREVIEW_W;
-    var pageH = (hc.previewSize && hc.previewSize.h) ? hc.previewSize.h : Math.round(HC_PREVIEW_W * 1.35);
     var paneW = wrap.clientWidth || 1;
-    var scale;
+    var paneH = wrap.clientHeight || 1;
+    var scale, logicalW;
     if(hc.previewZoom === 'full'){
-      scale = 1;
+      scale = 1; logicalW = HC_PREVIEW_W;
+    } else if(paneW >= HC_PREVIEW_W){
+      scale = 1; logicalW = paneW;              // fill the pane, no transform, no cream
     } else {
-      // Fit WIDTH: fill the pane across, scroll down. Never scale a page UP past
-      // 1:1 (a page narrower than the pane just sits at 100%).
-      scale = Math.min(paneW / pageW, 1);
+      scale = paneW / HC_PREVIEW_W; logicalW = HC_PREVIEW_W;  // desktop layout, scaled to width
     }
-    stage.style.setProperty('--hc-pw', pageW + 'px');
-    stage.style.setProperty('--hc-ph', pageH + 'px');
+    // The viewport height is the PANE's height (in logical, pre-scale units) —
+    // NOT the document's content height. This is the whole fix.
+    var logicalH = paneH / scale;
+    stage.style.setProperty('--hc-pw', logicalW + 'px');
+    stage.style.setProperty('--hc-ph', logicalH + 'px');
     stage.style.setProperty('--hc-scale', String(scale));
-    frame.style.setProperty('--hc-fw', (pageW * scale) + 'px');
-    frame.style.setProperty('--hc-fh', (pageH * scale) + 'px');
+    frame.style.setProperty('--hc-fw', (logicalW * scale) + 'px');
+    frame.style.setProperty('--hc-fh', (logicalH * scale) + 'px');
     var zoom = document.getElementById('hcZoomBtn');
-    // The honest number: what's actually on screen right now. The title says what
-    // the click does, so the percentage doesn't have to double as a mystery button.
     if(zoom){
       zoom.textContent = Math.round(scale * 100) + '%';
-      zoom.title = (hc.previewZoom === 'full') ? 'Fit to width' : 'Zoom to 100%';
+      zoom.title = (hc.previewZoom === 'full') ? 'Fit to width' : 'Show at 100%';
     }
-  }
-
-  // Height-only update, used AFTER the preview has settled and is visible. Images
-  // loading make the page grow and re-report; we extend the scroll box to match
-  // but reuse the scale already on the stage — so the page never re-scales under
-  // the person. (A genuine pane resize goes through hcApplyPreviewFit instead,
-  // where recomputing the scale is what's wanted.)
-  function hcUpdatePreviewHeightOnly(){
-    var stage = document.getElementById('hcPreviewStage');
-    var frame = document.getElementById('hcPreviewFrame');
-    if(!stage || !frame || !hc.previewSize || !hc.previewSize.h) return;
-    var scale = parseFloat(stage.style.getPropertyValue('--hc-scale')) || 1;
-    var pageH = hc.previewSize.h;
-    stage.style.setProperty('--hc-ph', pageH + 'px');
-    frame.style.setProperty('--hc-fh', (pageH * scale) + 'px');
   }
 
   // Cache-busts so the exact same URL always forces a real fresh navigation
@@ -2256,22 +2239,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // FIT-TO-PANE (A1): the preview reports its real content height (it is
     // cross-origin, so we cannot read it) and we rescale to keep the whole page
     // visible. Width is always the fixed desktop width we lay it out at.
-    if(data.type === 'hcPreviewSize' && typeof data.height === 'number' && data.height > 0){
-      // Record the real height and settle ONCE. If the preview is already settled
-      // and visible, a later report (an image finishing, a reflow) does NOT
-      // re-scale it — that re-scale under the person is the bug being fixed.
-      hc.previewSize = { h: Math.round(data.height) };
-      if(hc.previewSettled){
-        // Already visible: as images finish loading the page grows and the
-        // preview re-reports a taller height. Track that height so the scroll
-        // area stays right — but at the FROZEN scale, never recomputing it.
-        // Growing the scroll box is not a re-scale; the page does not zoom.
-        hcUpdatePreviewHeightOnly();
-      } else {
-        hcMaybeSettlePreview();
-      }
-      return;
-    }
+    // (hcPreviewSize removed: the preview iframe is now a fixed pane-sized
+    // viewport that scrolls internally, so the page's content height is never
+    // measured or reported — hcApplyPreviewFit sizes from the pane, once.)
     if(data.type === 'hcInlineEdit' && (data.field === 'heroHeadline' || data.field === 'heroSubhead') && typeof data.value === 'string'){
       hcSendDirectEdit({ directEdit: { field: data.field, value: data.value } });
     } else if(data.type === 'hcInlineImageEdit' && data.field === 'heroImage' && typeof data.imageBase64 === 'string'){

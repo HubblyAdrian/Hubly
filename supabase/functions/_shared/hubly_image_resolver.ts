@@ -143,9 +143,19 @@ function realImg(el: ScannedEl, url: string): string {
   // list too. A freeform page carries 2–3 images, so eager loading costs
   // nothing and lazy costs a broken hero.
   const keep = ["class", "style", "width", "height", "id"];
-  const attrs = keep
+  let attrs = keep
     .map((k) => (el.attrs[k] != null ? ` ${k}="${escAttr(el.attrs[k])}"` : ""))
     .join("");
+  // If the marker carries no intrinsic size, take it from the rendition URL's
+  // w/h params (Pexels renditions are e.g. w=1200&h=627). Intrinsic width/height
+  // let the browser reserve the aspect ratio before the image decodes, so the
+  // layout doesn't shift as it lands. object-fit in the page CSS still governs
+  // the displayed box, so these never distort the image.
+  if (el.attrs["width"] == null && el.attrs["height"] == null) {
+    const w = /[?&]w=(\d+)/.exec(url);
+    const h = /[?&]h=(\d+)/.exec(url);
+    if (w && h) attrs += ` width="${w[1]}" height="${h[1]}"`;
+  }
   const alt = escAttr(attrOf(el, "alt"));
   return `<img src="${escAttr(url)}"${attrs} alt="${alt}">`;
 }
@@ -267,8 +277,16 @@ export function pexelsFetcher(apiKey: string | null | undefined): ((query: strin
     // First candidate whose alt text does not name a person.
     for (const p of photos) {
       if (PERSON_WORDS.test(p.alt || "")) continue;
+      const s = p.src || {};
+      // Prefer a SIZED rendition, never the raw original (which is multi-MB).
+      // `landscape` is ~1200x627 (~150KB) and ideal for a hero; `large`/`large2x`
+      // are already sized. Only if all are missing do we fall back to `original`,
+      // and then we append compression + a width cap so it can never serve a
+      // full-resolution file.
+      const sized = s.landscape || s.large2x || s.large ||
+        (s.original ? s.original + (s.original.includes("?") ? "&" : "?") + "auto=compress&cs=tinysrgb&w=1600" : "");
       return {
-        url: p.src?.landscape || p.src?.large || p.src?.original || "",
+        url: sized,
         assetId: String(p.id),
         photographer: p.photographer || "",
         sourceUrl: p.url || "",
@@ -285,5 +303,5 @@ interface PexelsPhoto {
   url: string;
   photographer: string;
   alt: string;
-  src: { original?: string; large?: string; landscape?: string };
+  src: { original?: string; large?: string; large2x?: string; landscape?: string };
 }
