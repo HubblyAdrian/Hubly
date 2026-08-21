@@ -230,6 +230,11 @@ button.ask-icon-left:focus-visible{outline:2px solid var(--brand);outline-offset
    audience cards with it. Hidden once the app is active; this runs after
    hcActivate's 420ms .hc-transforming animation, so it does not cut it short. */
 body.hc-active .footer,body.hc-active .hero{display:none}
+/* The "Keep this site" pill belongs to the builder, never the marketing hero.
+   Guarded on the builder being visible, not on a draft existing — so a stranger
+   on the landing can't see it even if the restore path misbehaves. */
+#hc-keep-btn{display:none}
+body.hc-active #hc-keep-btn{display:block}
 /* Drop target — a visible edge and a dimmed pane, so it is obvious the chat
    will take the file rather than the browser navigating away from it. */
 .hc-app.hc-dragging{outline:2px dashed var(--brand,#D9632D);outline-offset:-10px;}
@@ -948,7 +953,11 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       b.type = 'button';
       b.setAttribute('data-hc-claim', 'open');
       b.textContent = 'Keep this site';
-      b.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:9998;padding:12px 18px;border-radius:999px;border:none;background:#111;color:#fff;font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.22);cursor:pointer;';
+      // Brand pill, not the old black-on-cream slab. Structural styles only —
+      // whether it SHOWS is decided in CSS (#hc-keep-btn is display:none unless
+      // body.hc-active), so it can never render over the marketing hero even if
+      // this runs early.
+      b.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:9998;padding:12px 18px;border-radius:999px;border:none;background:var(--brand);color:#fff;font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(217,99,45,.32);cursor:pointer;';
       document.body.appendChild(b);
     }
   }
@@ -1552,15 +1561,29 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     });
   })();
 
+  // Reveal the builder — the ONE place #hcApp is made visible. Idempotent, so
+  // hcActivate (typing) and hcResumeDraft (coming back) both route through it and
+  // can never disagree about what "the builder is open" means.
+  function hcRevealApp(){
+    document.body.classList.add('hc-active');
+    var app = document.getElementById('hcApp');
+    if(app){ app.classList.add('is-active'); app.setAttribute('aria-hidden', 'false'); }
+  }
+
   function hcActivate(){
-    if(hc.active) return;
+    // Guard on the app being VISIBLE, not on hc.active. A restore sets hc.active
+    // before the app is shown; the old `if(hc.active) return` then made the hero
+    // input do nothing at all for a returning visitor — it early-returned without
+    // ever revealing the builder. Guarding on the class fixes that dead input.
+    if(document.body.classList.contains('hc-active')){
+      var open = document.getElementById('hcInput'); if(open) open.focus();
+      return;
+    }
     hc.active = true;
     var hero = document.querySelector('.hero');
     if(hero) hero.classList.add('hc-transforming');
     setTimeout(function(){
-      document.body.classList.add('hc-active');
-      var app = document.getElementById('hcApp');
-      if(app){ app.classList.add('is-active'); app.setAttribute('aria-hidden', 'false'); }
+      hcRevealApp();
       hcRenderCanvas();
       var input = document.getElementById('hcInput');
       if(input) input.focus();
@@ -2175,6 +2198,16 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       hc.active = true;
       hcAppendMessage('hubly', 'Welcome back — here’s the page you built. Pick up wherever you like, or keep it to your account.');
       hcSetView('site');
+      // Bring them INTO the builder. Without this the state was set and the
+      // greeting + preview were rendered into a still-hidden #hcApp, so the
+      // person saw the marketing hero with only a "Keep this site" pill floating
+      // over it. Reveal, then (if a page exists) open the split so the preview
+      // is on screen — the same end state as having just built it.
+      hcRevealApp();
+      if(res.hasPage){
+        var app = document.getElementById('hcApp');
+        if(app) app.classList.add('hc-has-draft');
+      }
       hcRenderCanvas();
       try{ hcEnsureClaimUi(); }catch(e){}
     }catch(e){ /* best-effort: a failure just means a fresh start */ }
