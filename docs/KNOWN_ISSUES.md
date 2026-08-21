@@ -2598,3 +2598,66 @@ told.
 **Caveat on the dates:** `businesses` has no claim/publish/launch timestamp —
 `created_at` is the row's creation, which approximates when onboarding STARTED,
 not when it completed. The ordering is right; the exact moment is not.
+
+## FIXED: the *.myhubly.app phishing-host hole
+
+The open security item is closed. Three layers, all verified by running the
+attack, not by reading:
+
+1. **create_business_document revoked from anon/authenticated.** A direct RPC
+   call with a valid draft token and arbitrary `p_rendered_html` — which
+   returned `{ok:true}` and stored a fake bank-login page immediately before the
+   fix — now returns `42501 permission denied`. Every legitimate caller is
+   service_role and unaffected; generation, inline edit and the public-URL
+   update were all re-run end to end after the revoke.
+
+2. **The stamping pass strips the harvesting mechanics** (forms unwrapped,
+   fields/submit-buttons/foreign-scripts/cross-origin-iframes removed, same-origin
+   kept), deterministically, recording each removal in `StampResult.removed`. A
+   fake bank login fed through it comes out with the copy intact and every
+   mechanism gone. Strips rather than refuses, because refusing means
+   regenerating (a full model call).
+
+3. **Draft creation rate-limited** to 10/IP/hour inside
+   `start_business_in_progress`, keyed on `cf-connecting-ip` (the edge sets it; a
+   spoofed x-forwarded-for cannot override it). The 11th call from one connection
+   returns `rate_limited`.
+
+Still open, deliberately out of scope: verified-account gating of the public
+subdomain, and Public Suffix List submission for myhubly.app.
+
+## account_kind: "how many customers" is now one query
+
+`businesses.account_kind` is `real` | `internal` | `test`, defaulting to `real`
+so an untagged account over-counts rather than hides. Tagged on 2026-08-21:
+
+```
+select count(*) from businesses where account_kind='real';   -- the customer count
+```
+
+Current: **8 real, 2 internal, 33 test.** The 8 "real" are the claimed accounts
+with outside emails that could not be attributed to a founder or a test — they
+are left as real on purpose; only their owner knows which are genuine customers.
+The 2 internal are adriansmithee@ and jacquelynsmithee@. Everything unclaimed
+(session generations, `your-business*`/`trigger-test`/`joyride` scaffolds) plus
+the `test@` emails are test.
+
+## Two accounts flagged for deletion have TEST data attached — not deleted
+
+`my-auto-detailing-shop` (asmayorga@outlook.com) and `my-business`
+(tom@mgai.com) were flagged for removal. Both have child rows that a first pass
+(documents/bookings/services) missed:
+
+```
+my-business:  2 marketplace_bookings, 2 jobs, 2 marketplace_customers,
+              2 marketplace_conversations, 1 marketplace_provider, 11 brain_executions
+my-auto...:   1 customers row, marketplace provider/conversation scaffolding
+```
+
+On inspection the attached data is **synthetic** — the customers are
+`Test Validation <test-validation@example.com>`, `Smoke Test`, and a
+`PWTest_...` Playwright row; the jobs are those same test names. So the accounts
+are almost certainly safe to remove. But per the stop rule ("if anything
+unexpected is attached, stop") the deletion was NOT performed — it is the
+owner's call now that the cascade is visible. Both are currently tagged `real`
+and probably should be `test` regardless of the delete decision.
