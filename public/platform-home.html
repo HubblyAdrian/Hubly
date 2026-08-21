@@ -512,6 +512,29 @@ body.hc-active #hc-keep-btn{display:block}
   .hc-canvas-frame-wrap.hc-just-updated::after{animation:none}
 }
 
+/* The card at the first edit — a card in the conversation thread, never a modal.
+   It must not block; it just sits in the transcript and stays. */
+.hc-claim-card{
+  align-self:stretch;max-width:640px;
+  background:var(--card-tint);border:1px solid rgba(217,99,45,.22);border-radius:16px;
+  padding:18px 18px 16px;margin-top:2px;
+  box-shadow:0 8px 24px rgba(217,99,45,.08);
+  animation:hcCardIn .4s cubic-bezier(.16,.8,.3,1) both;
+}
+.hc-claim-card-t{font-family:var(--display);font-weight:800;font-size:16px;color:var(--ink);margin-bottom:5px}
+.hc-claim-card-b{font-size:13.5px;line-height:1.5;color:var(--ink-2);margin-bottom:14px}
+.hc-claim-card-actions{display:flex;gap:10px}
+.hc-claim-card-cta{
+  padding:10px 18px;border:0;border-radius:10px;background:var(--brand);color:#fff;
+  font-size:13.5px;font-weight:700;cursor:pointer;transition:background .15s ease;
+}
+.hc-claim-card-cta:hover{background:var(--brand-dark)}
+.hc-claim-card-alt{
+  padding:10px 18px;border:1px solid var(--line-soft);border-radius:10px;background:none;color:var(--ink);
+  font-size:13.5px;font-weight:650;cursor:pointer;transition:border-color .15s ease,color .15s ease;
+}
+.hc-claim-card-alt:hover{border-color:var(--brand);color:var(--brand)}
+
 /* —— Sign-in: one door. A modal over the current page — no navigation, no
    second window. Continue with Google, or an email and a six-digit code. Same
    door for new and returning: the email either logs in or creates the account,
@@ -777,7 +800,7 @@ body.hc-active #hc-keep-btn{display:block}
   // created (business.startDraft) — { id, slug, draftToken, url }. Threaded
   // back to the server every turn exactly like `messages`; the server never
   // persists it either. This is what makes the canvas real instead of a mockup.
-  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false };
+  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false };
 
   // ── Draft claim session ───────────────────────────────────────────────────
   // A draft belongs to nobody until it is claimed. hubly-conversation returns a
@@ -960,6 +983,38 @@ body.hc-active #hc-keep-btn{display:block}
       b.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:9998;padding:12px 18px;border-radius:999px;border:none;background:var(--brand);color:#fff;font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(217,99,45,.32);cursor:pointer;';
       document.body.appendChild(b);
     }
+  }
+
+  // THE CARD AT THE FIRST EDIT. The corner pill is passive; this is the ask moved
+  // to the moment it earns its place — the first successful edit, or a second
+  // build, whichever comes first. It is a card in the conversation, not a modal
+  // over it: it must never block. They can ignore it and keep working, and it
+  // stays. It is about EDITING, not saving — it never mentions losing the page,
+  // and it promises only what the inline editor actually does today: change the
+  // words and the photos on the page. Both buttons open the same one door as the
+  // corner pill and the nav — hcSendClaimLink lives in the same modal (authOpen).
+  function hcMaybeShowClaimCard(){
+    if(hc.claimCardShown) return;
+    if(!hc.draftBusiness) return;
+    // Already has an account on this device? Don't ask them to make one.
+    try{ if(localStorage.getItem('hubly_account_claimed')) return; }catch(e){}
+    hc.claimCardShown = true;
+    var thread = document.getElementById('hcThread');
+    if(!thread) return;
+    var card = document.createElement('div');
+    card.className = 'hc-claim-card';
+    card.innerHTML =
+      '<div class="hc-claim-card-t">Make it yours</div>' +
+      '<p class="hc-claim-card-b">Change the words and the photos on this page whenever you like. Sign up free and it’s yours.</p>' +
+      '<div class="hc-claim-card-actions">' +
+        '<button type="button" class="hc-claim-card-cta" data-auth="signup">Sign up free</button>' +
+        '<button type="button" class="hc-claim-card-alt" data-auth="login">Log in</button>' +
+      '</div>';
+    Array.prototype.forEach.call(card.querySelectorAll('[data-auth]'), function(btn){
+      btn.addEventListener('click', function(){ try{ authOpen(); }catch(e){} });
+    });
+    thread.appendChild(card);
+    thread.scrollTop = thread.scrollHeight;
   }
 
   var hcGrantExchanged = false;
@@ -1665,6 +1720,10 @@ body.hc-active #hc-keep-btn{display:block}
           var hcAppElBuild = document.getElementById('hcApp');
           if(hcAppElBuild) hcAppElBuild.classList.add('hc-has-draft');
           hcPollForDocument(hc.draftBusiness.id, 0);
+          // A second build means they've built once and are now shaping it —
+          // the moment the claim card is worth offering (see hcMaybeShowClaimCard).
+          hc.buildCount++;
+          if(hc.buildCount >= 2) hcMaybeShowClaimCard();
         } else if(Array.isArray(data.concepts) && data.concepts.length){
           hc.canvasStage = 'concepts';
           hcRenderConcepts(data.concepts);
@@ -2035,6 +2094,9 @@ body.hc-active #hc-keep-btn{display:block}
         if(data && data.ok && data.draftBusiness){
           hc.draftBusiness = data.draftBusiness;
           hcRefreshCanvasFrame();
+          // First successful edit — they just changed the page and want to change
+          // more. This is the moment to offer to keep it (see hcMaybeShowClaimCard).
+          hcMaybeShowClaimCard();
         }
         if(data && data.draftGrant) hcExchangeDraftGrant(data.draftGrant);
         // SAY IT. The server computes exactly what changed and now returns it;
