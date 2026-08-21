@@ -392,22 +392,36 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   font-family:ui-monospace,'SF Mono',Menlo,monospace;flex-shrink:0;
 }
 .hc-canvas-url .hc-live-dot{width:6px;height:6px;border-radius:50%;background:#3ecf7a;box-shadow:0 0 6px rgba(62,207,122,.7);flex-shrink:0}
-.hc-canvas-url a{color:var(--ink-2);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hc-canvas-url a:hover{color:var(--ink);text-decoration:underline}
-/* The pane. FIT-TO-PANE (A1): the whole generated page is scaled to be visible
-   without scrolling by default. The stage is laid out at a fixed desktop width
-   and the page's real height (reported by the preview), then transform-scaled to
-   contain; the frame box carries the SCALED dimensions so there is no phantom
-   scrollbar from the transform. Cream letterboxing, not white, so the fitted page
-   reads as a framed object rather than a page that failed to fill. overflow:auto
-   so zooming to 100% can scroll for detail. */
-.hc-canvas-frame-wrap{flex:1;position:relative;background:var(--bg-1);min-height:0;overflow:auto;display:flex;align-items:flex-start;justify-content:center}
-.hc-preview-frame{position:relative;flex:0 0 auto;width:var(--hc-fw,100%);height:var(--hc-fh,100%)}
+.hc-canvas-url a{color:var(--ink-2);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.hc-canvas-url a:hover{color:var(--brand)}
+.hc-canvas-url a .hc-open-ico{width:12px;height:12px;flex-shrink:0;opacity:.55}
+.hc-canvas-url a:hover .hc-open-ico{opacity:1}
+/* Device toggle — replaces the zoom %, which stops meaning anything once the
+   preview renders a real device rectangle scaled to fit. */
+.hc-device-toggle{margin-left:auto;flex-shrink:0;display:inline-flex;gap:2px;background:var(--panel-2,rgba(28,22,16,.05));border:1px solid var(--line-soft);border-radius:8px;padding:2px}
+.hc-device-toggle button{background:none;border:0;border-radius:6px;padding:3px 11px;font-size:11px;font-weight:650;letter-spacing:.02em;color:var(--ink-3);cursor:pointer;font-family:inherit;transition:color .15s ease,background .15s ease}
+.hc-device-toggle button:hover{color:var(--ink)}
+.hc-device-toggle button.is-on{background:var(--bg);color:var(--ink);box-shadow:0 1px 2px rgba(28,22,16,.12)}
+/* THE PREVIEW IS A DEVICE IN A WORKSPACE. The iframe is a REAL device viewport —
+   1440x900 (desktop) or 390x844 (mobile) — and the whole rectangle is scaled to
+   fit the pane, aspect preserved. That is the only honest way to show height: the
+   pane is wide and short (the toolbars eat it), but the page is laid out against a
+   real 900/844px viewport, so `100vh` heroes resolve exactly as a visitor sees
+   them. Space around the frame is expected — the frame carries a border, radius
+   and shadow so it reads as a device sitting on a desk, not a page failing to
+   fill. The frame box holds the SCALED footprint; the stage is the device-sized
+   content transform-scaled into it. */
+.hc-canvas-frame-wrap{flex:1;position:relative;background:var(--bg-1);min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;padding:22px}
+.hc-preview-frame{
+  position:relative;flex:0 0 auto;width:var(--hc-fw,100%);height:var(--hc-fh,100%);
+  border-radius:14px;overflow:hidden;background:#fff;
+  border:1px solid var(--line);box-shadow:0 20px 64px -14px rgba(28,22,16,.32);
+}
 .hc-preview-stage{
   position:absolute;top:0;left:0;
-  width:var(--hc-pw,1200px);height:var(--hc-ph,100%);
+  width:var(--hc-pw,1440px);height:var(--hc-ph,900px);
   transform:scale(var(--hc-scale,1));transform-origin:top left;
-  background:#fff;box-shadow:0 6px 30px rgba(28,22,16,.14);
+  background:#fff;
 }
 /* Two stacked iframes, crossfaded — an update loads invisibly in the
    standby frame, then swaps in once ready. The person watches the real
@@ -417,15 +431,6 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   z-index:1;opacity:0;transition:opacity .5s ease;pointer-events:none;
 }
 .hc-preview-stage iframe.is-live{z-index:2;opacity:1;pointer-events:auto}
-/* A4: the zoom control lives in the preview toolbar (the URL bar), not floating
-   over the page. It shows the true current scale and toggles fit-width ↔ 100%. */
-.hc-zoom-btn{
-  margin-left:auto;flex-shrink:0;
-  background:none;border:1px solid var(--line-soft);border-radius:7px;
-  padding:3px 9px;font-size:11.5px;font-weight:650;color:var(--ink-2);cursor:pointer;
-  font-variant-numeric:tabular-nums;transition:border-color .15s ease,color .15s ease;
-}
-.hc-zoom-btn:hover{border-color:var(--brand);color:var(--brand)}
 .hc-canvas-loading{
   position:absolute;inset:0;z-index:3;display:flex;align-items:center;justify-content:center;
   background:var(--panel);color:var(--ink-3);font-size:12.5px;transition:opacity .3s ease;gap:8px;
@@ -1048,7 +1053,16 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     }
     var url = hc.draftBusiness.url;
     root.innerHTML =
-      '<div class="hc-canvas-url"><span class="hc-live-dot"></span><a href="' + hcEscape(url) + '" target="_blank" rel="noopener">' + hcEscape(url.replace(/^https?:\/\//,'')) + '</a><button type="button" class="hc-zoom-btn" id="hcZoomBtn">100%</button></div>' +
+      '<div class="hc-canvas-url"><span class="hc-live-dot"></span>' +
+        '<a href="' + hcEscape(url) + '" target="_blank" rel="noopener" title="Open your live site in a new tab">' +
+          hcEscape(url.replace(/^https?:\/\//,'')) +
+          '<svg class="hc-open-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+        '</a>' +
+        '<div class="hc-device-toggle" id="hcDeviceToggle">' +
+          '<button type="button" data-hc-device="desktop">Desktop</button>' +
+          '<button type="button" data-hc-device="mobile">Mobile</button>' +
+        '</div>' +
+      '</div>' +
       '<div class="hc-canvas-frame-wrap" id="hcCanvasFrameWrap">' +
         '<div class="hc-canvas-loading" id="hcCanvasLoading"><span class="hc-live-dot"></span>&nbsp;Loading your site…</div>' +
         '<div class="hc-preview-frame" id="hcPreviewFrame">' +
@@ -1074,74 +1088,55 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       // Never sit on the loader if the 'load' event was missed.
       setTimeout(function(){ var l=document.getElementById('hcCanvasLoading'); if(l) l.classList.add('is-hidden'); }, 4000);
     }
-    var zoom = document.getElementById('hcZoomBtn');
-    if(zoom) zoom.addEventListener('click', function(){
-      hc.previewZoom = (hc.previewZoom === 'full') ? 'fit' : 'full';
+    if(!hc.previewDevice) hc.previewDevice = 'desktop';   // default to desktop
+    var toggle = document.getElementById('hcDeviceToggle');
+    if(toggle) toggle.addEventListener('click', function(e){
+      var btn = e.target.closest('[data-hc-device]');
+      if(!btn) return;
+      hc.previewDevice = btn.getAttribute('data-hc-device');
       hcApplyPreviewFit();
     });
   }
 
-  // THE PREVIEW IS A BROWSER WINDOW, NOT A SCALED POSTER.
+  // THE PREVIEW IS A REAL DEVICE, SCALED TO FIT.
   //
-  // The old model sized the iframe to the page's *content* height and reported
-  // that height up so we could scale the whole tall thing into the pane. That was
-  // the bug: the pages use `min-height:100vh` on their hero/sections (correct,
-  // ordinary CSS), and `vh` resolves against the IFRAME's height — which we had
-  // set to the content height. So `100vh` meant "the whole page", every section
-  // inflated, the document grew, the next height report inflated it further, and
-  // a restaurant one-pager measured ~39,000px instead of ~6,000px. The dark
-  // image containers then read as giant black rectangles because they were
-  // thousands of px tall, and the visitor arrived on empty space with content
-  // pinned far below the fold.
+  // The iframe is laid out at a REAL device viewport — desktop 1440x900, mobile
+  // 390x844 — and the whole rectangle is scaled by min(fit-width, fit-height) to
+  // sit inside the pane with the aspect preserved. This is the only honest way to
+  // show height: the pane is wide and short (the toolbars eat the vertical room),
+  // so a page designed for real vertical space was getting letterboxed and the
+  // hero never resolved. Now the page renders against a true 900/844px viewport —
+  // `100vh` heroes are exactly what a visitor sees — and the device is shrunk to
+  // fit. Space around it is intentional (the frame has a border + shadow, so it
+  // reads as a device on a desk). Never upscale past 1:1.
   //
-  // The fix: the iframe is a FIXED viewport the size of the pane, and the page
-  // scrolls inside it — exactly like a browser window. Now `100vh` is one screen,
-  // the hero is one screen tall, and the preview shows what a real visitor sees.
-  // No height postMessage, no re-measure loop, no reveal-hold: scale is decided
-  // once, from WIDTH.
-  //
-  //   * Wide pane (>= the logical desktop width): the iframe IS the pane width,
-  //     scale 1, no transform, no cream at the sides — the page lays out at the
-  //     real width like any site.
-  //   * Narrow pane: keep the DESKTOP layout (lay out at the logical width) and
-  //     transform-scale it down to fit the width, rather than tripping the page's
-  //     mobile reflow. The viewport height is still one pane-screen.
-  //   * 'full' (the zoom toggle): 1:1 at the logical width; may scroll sideways.
-  //
-  // In every case the iframe's LOGICAL height is paneH/scale, so after the
-  // transform the visible viewport is exactly the pane's height — one screen.
-  //
-  // Click-to-edit is unaffected: hit-testing is element-based and the browser
-  // maps pointer events back through the (uniform) transform and the iframe's
-  // own scroll.
-  var HC_PREVIEW_W = 1200;   // logical desktop width the narrow case lays out at
+  // Click-to-edit is unaffected: hit-testing is element-based and the browser maps
+  // pointer events back through the uniform transform.
+  var HC_DEVICES = { desktop:{ w:1440, h:900 }, mobile:{ w:390, h:844 } };
   function hcApplyPreviewFit(){
     var wrap = document.getElementById('hcCanvasFrameWrap');
     var frame = document.getElementById('hcPreviewFrame');
     var stage = document.getElementById('hcPreviewStage');
     if(!wrap || !frame || !stage) return;
+    var dev = HC_DEVICES[hc.previewDevice] || HC_DEVICES.desktop;
+    // clientWidth/Height already exclude the wrap's own padding, which is the
+    // breathing room; fit the device rectangle inside that.
     var paneW = wrap.clientWidth || 1;
     var paneH = wrap.clientHeight || 1;
-    var scale, logicalW;
-    if(hc.previewZoom === 'full'){
-      scale = 1; logicalW = HC_PREVIEW_W;
-    } else if(paneW >= HC_PREVIEW_W){
-      scale = 1; logicalW = paneW;              // fill the pane, no transform, no cream
-    } else {
-      scale = paneW / HC_PREVIEW_W; logicalW = HC_PREVIEW_W;  // desktop layout, scaled to width
-    }
-    // The viewport height is the PANE's height (in logical, pre-scale units) —
-    // NOT the document's content height. This is the whole fix.
-    var logicalH = paneH / scale;
-    stage.style.setProperty('--hc-pw', logicalW + 'px');
-    stage.style.setProperty('--hc-ph', logicalH + 'px');
+    var scale = Math.min(paneW / dev.w, paneH / dev.h);
+    if(scale > 1) scale = 1;               // 1:1 is the ceiling
+    if(!(scale > 0)) scale = paneW / dev.w; // pathological (0-height pane) fallback
+    stage.style.setProperty('--hc-pw', dev.w + 'px');
+    stage.style.setProperty('--hc-ph', dev.h + 'px');
     stage.style.setProperty('--hc-scale', String(scale));
-    frame.style.setProperty('--hc-fw', (logicalW * scale) + 'px');
-    frame.style.setProperty('--hc-fh', (logicalH * scale) + 'px');
-    var zoom = document.getElementById('hcZoomBtn');
-    if(zoom){
-      zoom.textContent = Math.round(scale * 100) + '%';
-      zoom.title = (hc.previewZoom === 'full') ? 'Fit to width' : 'Show at 100%';
+    frame.style.setProperty('--hc-fw', (dev.w * scale) + 'px');
+    frame.style.setProperty('--hc-fh', (dev.h * scale) + 'px');
+    var toggle = document.getElementById('hcDeviceToggle');
+    if(toggle){
+      var btns = toggle.querySelectorAll('[data-hc-device]');
+      for(var i=0;i<btns.length;i++){
+        btns[i].classList.toggle('is-on', btns[i].getAttribute('data-hc-device') === hc.previewDevice);
+      }
     }
   }
 
@@ -1582,6 +1577,15 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           hcRenderCanvas();
           var hcAppEl = document.getElementById('hcApp');
           if(hcAppEl) hcAppEl.classList.add('hc-has-draft');
+          // FIRST-BUILD FOLLOW-UP: once, when the page first lands, Hubly says in
+          // WORDS what it can change — drawn from THIS page — and offers the logo.
+          // A star icon doesn't tell them what they're allowed to ask for; a
+          // sentence does. Delayed a beat so it lands after the page reveals.
+          if(!hc.postedBuildFollowup){
+            hc.postedBuildFollowup = true;
+            var _fhtml = Array.isArray(rows) ? (rows[0] && rows[0].rendered_html) : (rows && rows.rendered_html);
+            setTimeout(function(){ hcPostBuildFollowup(_fhtml || ''); }, 900);
+          }
           return;
         }
         if(st.status === 'stalled'){
@@ -1636,6 +1640,38 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     div.textContent = text;
     thread.appendChild(div);
     thread.scrollTop = thread.scrollHeight;
+  }
+
+  // The first-build follow-up message. Concrete, about THEIR page — not generic
+  // prompts. The section names come from the page's own nav labels (the readable
+  // ones the model wrote: Menu, Wholesale, Roasting…), so "lead with your
+  // roasting" is a real thing about this business, and the logo is offered in a
+  // sentence rather than as a card demanding a file.
+  function hcPostBuildFollowup(html){
+    var labels = [];
+    try{
+      var re = /data-hc="nav\.item\.\d+"[^>]*>([^<]{1,28})</gi, m;
+      while((m = re.exec(html)) && labels.length < 8){
+        var t = m[1].replace(/\s+/g,' ').trim();
+        // Drop CTAs and generic wayfinding — not useful as "lead with X".
+        if(t && !/book|reserve|call|contact|order|quote|get in touch/i.test(t)) labels.push(t);
+      }
+    }catch(e){}
+    var leadCands = labels.filter(function(t){ return !/visit|contact|hours|faq|about|location|find us|home/i.test(t); });
+    var lines = [];
+    if(leadCands.length >= 2){
+      lines.push('• lead with your ' + leadCands[1].toLowerCase() + ' instead of your ' + leadCands[0].toLowerCase());
+    } else if(leadCands.length === 1){
+      lines.push('• put your ' + leadCands[0].toLowerCase() + ' front and centre');
+    } else {
+      lines.push('• reorder the sections — lead with whatever matters most');
+    }
+    lines.push('• make it warmer, or more pared-back');
+    lines.push('• swap in your own photos — send them whenever');
+    var msg = "That's your site — live at the address up top. Want to shape it? A few things I can do right now:\n" +
+      lines.join('\n') +
+      "\n\nAnd if you've got a logo, send it over and I'll put it on. Otherwise just tell me what to change.";
+    hcAppendMessage('hubly', msg);
   }
 
   function hcAppendTyping(){
@@ -1881,7 +1917,11 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           // Anchored to the end of showNext rather than a matching timeout:
           // a delay tuned to today's interim count silently desynchronises the
           // first time a turn says three things instead of two.
-          if(data.askLogo === true && hc.draftBusiness) hcAppendLogoDropzone();
+          // Logo dropzone card REMOVED from the rail's standing UI: asking for a
+          // file before they've seen anything is asking for work before delivering
+          // value. Hubly now offers the logo in a sentence in the first-build
+          // follow-up (hcPostBuildFollowup), and the upload still works from the
+          // attach menu and drag-and-drop — the capability is unchanged.
         }
         showNext();
       })
