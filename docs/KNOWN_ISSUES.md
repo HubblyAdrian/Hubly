@@ -6,6 +6,42 @@ what would settle it.
 
 ---
 
+## A stale draft can resume from residual state after the cookie is cleared
+
+**Status:** open, observed 2026-08-21 during builder verification
+**Found:** clearing the draft, reloading, and submitting a new build — and getting
+someone else's draft back
+
+Sequence: `DELETE /api/draft-session` (200) → clear the `hubly_*` localStorage
+keys → reload → type a new business and submit. Expected a fresh draft;
+`hcResumeDraft()` still resurfaced a *previous* draft (a stale "detailing-business"
+from an earlier test), and the submit appeared to operate on that resumed draft
+rather than starting a clean one. Clearing **all** `hubly_*` keys AND confirming
+`/api/draft-session` returned no assertion before submitting was what finally gave
+a clean start.
+
+So a cookie DELETE plus a reload is **not** a reliable guarantee of a fresh
+builder — resume can still fire from residual browser state, and a same-turn
+submit can race it. Not chased now (it only bit automated back-to-back builds; a
+real user clears far less aggressively), but worth a look: the resume path should
+be idempotent against a just-cleared session, and a fresh submit should win over
+an in-flight resume.
+
+## The Supabase Management API SQL endpoint returns 403 (Cloudflare 1010) intermittently
+
+**Status:** environmental, noted 2026-08-21 so it isn't rediscovered
+**Found:** `POST https://api.supabase.com/v1/projects/<ref>/database/query`
+
+The Management API's `database/query` endpoint worked for applying a migration,
+then began returning `403 { "error code: 1010" }` (a Cloudflare block, not an auth
+failure — the same token still deployed functions fine). It appears rate-limited
+or WAF-throttled after a burst. **Workaround that worked:** verify via the public
+PostgREST RPC with the publishable key instead of the Management API, or space the
+Management calls out. Nothing to fix in our code; recorded so the next session
+doesn't treat the 403 as a broken token.
+
+---
+
 ## A public address now requires an owner — closed, but one path is unverified end-to-end
 
 **Status:** shipped 2026-08-20 (migration `20260821070000_draft_reads_and_public_gate.sql`,
