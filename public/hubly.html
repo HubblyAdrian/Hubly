@@ -53210,9 +53210,15 @@ function wireHcEditingSurface(doc, root){
       try{ (doc.documentElement || root).classList.add('hc-marks-on'); root.classList.add('hc-marks-on'); }catch(e){}
       doc.removeEventListener('scroll', revealMarks, true);
       doc.removeEventListener('pointerdown', revealMarks, true);
+      doc.removeEventListener('mouseover', revealMarks, true);
     };
+    // Hover is the reliable engagement signal here: fit-to-width scrolls the
+    // parent pane, not this document, so a scroll listener inside the iframe
+    // rarely fires. The first time the cursor moves over the page (or a click),
+    // the marks appear. Before that the page is clean.
     doc.addEventListener('scroll', revealMarks, true);
     doc.addEventListener('pointerdown', revealMarks, true);
+    doc.addEventListener('mouseover', revealMarks, true);
   }catch(e){}
 
   function post(msg){
