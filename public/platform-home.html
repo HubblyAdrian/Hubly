@@ -2208,13 +2208,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // asked us to open the one-door auth modal, passing which element they clicked
     // so we can reopen it for editing after they sign in and the draft is claimed.
     if(data.type === 'hcEditAuthNeeded'){
-      hc.pendingEditLabel = (typeof data.label === 'string' && data.label) ? data.label : null;
-      // Already signed in (the preview's flag was just stale, e.g. a click in the
-      // gap before the handshake landed)? No modal — claim (idempotent) and open
-      // the element straight away.
-      if(hcIsAuthed()){ hcAfterAuth(); return; }
-      try{ if(hc.pendingEditLabel && hc.draftBusiness) sessionStorage.setItem('hcPendingEdit:' + hc.draftBusiness.id, hc.pendingEditLabel); }catch(e){}
-      authOpen();
+      hcHandleEditAuthNeeded((typeof data.label === 'string' && data.label) ? data.label : null);
       return;
     }
     // FIT-TO-PANE (A1): the preview reports its real content height (it is
@@ -2499,15 +2493,41 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // ── C: SIGN-IN CLAIMS THE DRAFT ──────────────────────────────────────────────
   // A lightweight authed check (the SDK's stored session), so the preview can gate
   // an edit without loading the SDK just to ask.
+  function hcSbKey(){ try{ return 'sb-' + SUPA_URL.split('//')[1].split('.')[0] + '-auth-token'; }catch(e){ return null; } }
   function hcIsAuthed(){
     try{
-      var ref = SUPA_URL.split('//')[1].split('.')[0];
-      var raw = localStorage.getItem('sb-' + ref + '-auth-token');
+      var raw = localStorage.getItem(hcSbKey());
       if(!raw) return false;
       var o = JSON.parse(raw);
       var exp = o && (o.expires_at || (o.currentSession && o.currentSession.expires_at));
       return !exp || (exp * 1000 > Date.now());
     }catch(e){ return false; }
+  }
+  // Is there ANY stored session, even an expired one? An expired access token
+  // usually still has a live refresh token beside it, so "expired" is NOT the
+  // same as "signed out".
+  function hcHasStoredSession(){ try{ return !!localStorage.getItem(hcSbKey()); }catch(e){ return false; } }
+
+  // Deciding whether an edit-click needs sign-in. NEVER re-authenticate someone
+  // whose refresh token would have done it silently: the cheap storage read is the
+  // instant answer, but an EXPIRED token is confirmed with getSession() (which
+  // refreshes) before we ever show the modal. Only a truly signed-out visitor
+  // sees it.
+  async function hcHandleEditAuthNeeded(label){
+    hc.pendingEditLabel = label || null;
+    if(hcIsAuthed()){ hcAfterAuth(); return; }             // confidently signed in -> edit
+    if(hcHasStoredSession()){
+      // Aged-out access token: let getSession() refresh it rather than making them
+      // type a code. If it comes back valid, proceed with the edit.
+      try{
+        var c = await authGetClient();
+        var r = await c.auth.getSession();
+        if(r && r.data && r.data.session){ hcAfterAuth(); return; }
+      }catch(e){}
+    }
+    // Truly signed out (or the refresh failed) -> the one door.
+    try{ if(hc.pendingEditLabel && hc.draftBusiness) sessionStorage.setItem('hcPendingEdit:' + hc.draftBusiness.id, hc.pendingEditLabel); }catch(e){}
+    authOpen();
   }
   // The one privileged call. Uses the draft id + token the builder already holds
   // (populated from the cookie by resume-draft, so it survives the OAuth round

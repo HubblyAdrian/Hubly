@@ -17456,6 +17456,16 @@ var hcAuthedFlag = false;
 // Set by wireHcEditingSurface so hcAuthState can open the element they clicked
 // before signing in, once auth resolves.
 var hcOpenEditByLabel = null;
+// The builder that embeds this preview is the apex of our own registrable domain
+// (a business site is <slug>.myhubly.app / <slug>.hubly.app; the builder is
+// myhubly.app / hubly.app). Used to pin postMessage instead of '*'.
+function hcBuilderOrigin(){
+  try{
+    var parts = location.hostname.split('.');
+    var apex = parts.length >= 2 ? parts.slice(-2).join('.') : location.hostname;
+    return location.protocol + '//' + apex;
+  }catch(e){ return '*'; }
+}
 function hcRequestDraftToken(slug){
   return new Promise(function(resolve){
     if(!hcBuilderPreview()){ resolve(null); return; }
@@ -53435,7 +53445,9 @@ function wireHcEditingSurface(doc, root){
     // outline, cursor, marks) — only the click changes.
     if(!hcAuthedFlag){
       var lbl = target.getAttribute('data-hc') || target.getAttribute('data-node') || '';
-      try{ window.parent.postMessage({ type:'hcEditAuthNeeded', label: lbl }, '*'); }catch(err){}
+      // Origin-pinned to the builder (the apex of our own domain), not '*' — the
+      // rest of this handshake is pinned and this shouldn't be the exception.
+      try{ window.parent.postMessage({ type:'hcEditAuthNeeded', label: lbl }, hcBuilderOrigin()); }catch(err){}
       e.preventDefault(); e.stopPropagation();
       return;
     }
