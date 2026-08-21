@@ -1191,12 +1191,17 @@ body.hc-active #hc-keep-btn{display:block}
     });
   }
 
-  // FIT-TO-PANE (A1). The generated page is the most important thing on the
-  // screen; the person must see the WHOLE of it without scrolling. The stage is
-  // laid out at a fixed desktop width (so the page keeps its desktop design, not
-  // a reflowed mobile one) and the page's real height, reported by the preview
-  // via postMessage — cross-origin, so it cannot be measured from here. Then it
-  // is transform-scaled to contain. 'full' zoom is 1:1 with pane scrolling.
+  // FIT-TO-WIDTH (A1). The page fills the width of the pane at a readable scale
+  // and the person scrolls down it like any website — NOT shrunk to a thumbnail
+  // to avoid scrolling (a tall page as a narrow centred strip is worse than
+  // scrolling). The stage is laid out at a fixed desktop width (so the page keeps
+  // its desktop design, not a reflowed mobile one) and the page's real height,
+  // reported by the preview via postMessage (cross-origin, so it can't be
+  // measured here). Then it's transform-scaled to the pane width; the pane
+  // scrolls vertically. 'full' is 1:1.
+  //
+  // The zoom control shows the TRUE current scale as a percentage and toggles
+  // fit-width <-> 100%. It must never read one number while showing another.
   //
   // Click-to-edit is unaffected: hit-testing there is element-based (a click makes
   // the labelled element contentEditable; the edit is keyed by its data-hc label,
@@ -1212,13 +1217,13 @@ body.hc-active #hc-keep-btn{display:block}
     var pageW = HC_PREVIEW_W;
     var pageH = (hc.previewSize && hc.previewSize.h) ? hc.previewSize.h : Math.round(HC_PREVIEW_W * 1.35);
     var paneW = wrap.clientWidth || 1;
-    var paneH = wrap.clientHeight || 1;
     var scale;
     if(hc.previewZoom === 'full'){
       scale = 1;
     } else {
-      // Contain: the whole page fits both ways. Never scale a small page UP.
-      scale = Math.min(paneW / pageW, paneH / pageH, 1);
+      // Fit WIDTH: fill the pane across, scroll down. Never scale a page UP past
+      // 1:1 (a page narrower than the pane just sits at 100%).
+      scale = Math.min(paneW / pageW, 1);
     }
     stage.style.setProperty('--hc-pw', pageW + 'px');
     stage.style.setProperty('--hc-ph', pageH + 'px');
@@ -1226,7 +1231,12 @@ body.hc-active #hc-keep-btn{display:block}
     frame.style.setProperty('--hc-fw', (pageW * scale) + 'px');
     frame.style.setProperty('--hc-fh', (pageH * scale) + 'px');
     var zoom = document.getElementById('hcZoomBtn');
-    if(zoom) zoom.textContent = (hc.previewZoom === 'full') ? 'Fit' : '100%';
+    // The honest number: what's actually on screen right now. The title says what
+    // the click does, so the percentage doesn't have to double as a mystery button.
+    if(zoom){
+      zoom.textContent = Math.round(scale * 100) + '%';
+      zoom.title = (hc.previewZoom === 'full') ? 'Fit to width' : 'Zoom to 100%';
+    }
   }
 
   // Cache-busts so the exact same URL always forces a real fresh navigation
@@ -1458,6 +1468,14 @@ body.hc-active #hc-keep-btn{display:block}
   // policy is gone. Public access is get_public_business_document(slug, tag)
   // and nothing else, and it returns exactly (rendered_html, version) — never
   // the document column, in either format.
+  // "It's building now… it'll appear in about a minute." — the model keeps
+  // writing this on a build turn despite the prompt telling it not to. Stripped
+  // here, in code, because the skeleton and the steps card already say a build is
+  // running; a status line repeating it is noise.
+  function hcIsBuildFiller(t){
+    return /\b(it['’]s\s+)?building\s+(it\s+)?now\b|\b(will|it['’]ll|should)\s+appear\b|appears?\s+in\s+about\s+a\s+minute|on\s+its\s+way|hang\s+tight/i.test(String(t || ''));
+  }
+
   // Reveal the narration a sentence at a time — Hubly thinking out loud while it
   // works, not a wall of text landing at once (which the brief rightly calls
   // worse than silence). Stops itself if the build finishes and the node is gone.
@@ -1891,15 +1909,19 @@ body.hc-active #hc-keep-btn{display:block}
           if(i < interim.length){
             // Skip the line we're already showing as the skeleton narration —
             // one voice, one place (it can arrive here if the model front-loaded
-            // it as the first interim instead of in reply).
-            if(interim[i] !== buildNarration) hcAppendMessage('hubly', interim[i]);
+            // it as the first interim instead of in reply). And strip the
+            // "it's building now…" filler here rather than asking the model not
+            // to write it — a prompt-only rule it keeps violating; the steps card
+            // and the skeleton already say a build is happening.
+            if(interim[i] !== buildNarration && !(generatingDocument && hcIsBuildFiller(interim[i]))) hcAppendMessage('hubly', interim[i]);
             i++;
             setTimeout(showNext, 550);
             return;
           }
           // Don't echo the reply into chat when it's already carrying the wait
-          // as the build narration in the skeleton — one voice, one place.
-          if(data.reply && data.reply !== buildNarration) hcAppendMessage('hubly', data.reply);
+          // as the build narration in the skeleton — one voice, one place — and
+          // strip the "building now" filler on a build turn (see above).
+          if(data.reply && data.reply !== buildNarration && !(generatingDocument && hcIsBuildFiller(data.reply))) hcAppendMessage('hubly', data.reply);
           // THE DROPZONE COMES LAST, after the sentence that points at it.
           //
           // It used to be appended up with the canvas work above, which runs
@@ -2383,6 +2405,25 @@ body.hc-active #hc-keep-btn{display:block}
     hcSubmit.addEventListener('click', function(){ hcSend(hcInput); });
     hcInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') hcSend(hcInput); });
   }
+
+  // THE WHOLE BOX IS THE INPUT — the first interaction anyone has with Hubly.
+  // The ask box is tall (the text line at the top, then 62px of padding holding
+  // the mic and submit below it), so only a thin strip at the very top actually
+  // took a click; a click anywhere in the lower two-thirds hit the box div, not
+  // the field, the caret never appeared, and the first thing a new visitor did
+  // was nothing. Now a mousedown anywhere in the box (except on a real control)
+  // focuses its input. mousedown + preventDefault so focus lands and doesn't
+  // bounce; a direct click on the field keeps native caret placement.
+  Array.prototype.forEach.call(document.querySelectorAll('.ask-box'), function(box){
+    box.style.cursor = 'text';
+    box.addEventListener('mousedown', function(e){
+      if(e.target.closest('button')) return;                 // mic / submit still work
+      var inp = box.querySelector('input');
+      if(!inp) return;
+      if(e.target !== inp){ e.preventDefault(); }             // clicked the padding — don't let focus bounce
+      inp.focus();
+    });
+  });
 
   // ── WELCOME BACK: resume a draft after a closed tab ──────────────────────────
   //
