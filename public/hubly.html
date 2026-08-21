@@ -53176,20 +53176,43 @@ function wireHcEditingSurface(doc, root){
   // never red, never a warning icon. Every marked element is already a data-hc
   // leaf, so the existing click-to-edit replaces it and (server-side) drops the
   // mark.
+  // D: THE PAGE ARRIVES CLEAN. On landing there are NO marks — the page looks
+  // finished, not covered in dotted outlines (which reads as broken, not
+  // editable). Two rules:
+  //   * CAP: at most a handful of marks show, so the page is never a rash of
+  //     dotted lines. The rest stay fully editable (hover outline, click-to-edit)
+  //     — they just don't carry the "Hubly's suggestion" underline.
+  //   * REVEAL ON ENGAGEMENT: marks paint only after the first scroll or pointer
+  //     interaction in the page, via a .hc-marks-on class on the root. Before
+  //     that, the page is clean.
+  // Editability itself never depends on this — the per-element hover outline and
+  // click-to-edit below are always live, so the page always feels yours.
   try{
+    var guessEls = root.querySelectorAll('[data-hubly-guess]');
+    var MAX_MARKS = 9;
+    for(var gi = 0; gi < guessEls.length; gi++){
+      if(gi < MAX_MARKS) guessEls[gi].setAttribute('data-hc-mark', '1');
+    }
     if(!doc.getElementById('hubly-guess-style')){
       var gs = doc.createElement('style');
       gs.id = 'hubly-guess-style';
       gs.textContent =
-        '[data-hubly-guess]{text-decoration:underline dotted rgba(80,80,90,.5);text-underline-offset:4px;cursor:pointer;position:relative;}' +
-        '[data-hubly-guess]:hover{background:rgba(120,120,140,.08);}' +
-        '[data-hubly-guess]:hover::after{content:"✎ Hubly’s suggestion — click to make it yours";' +
+        '.hc-marks-on [data-hubly-guess][data-hc-mark]{text-decoration:underline dotted rgba(80,80,90,.5);text-underline-offset:4px;cursor:pointer;position:relative;}' +
+        '.hc-marks-on [data-hubly-guess][data-hc-mark]:hover{background:rgba(120,120,140,.08);}' +
+        '.hc-marks-on [data-hubly-guess][data-hc-mark]:hover::after{content:"✎ Hubly’s suggestion — click to make it yours";' +
         'position:absolute;left:0;top:100%;margin-top:6px;z-index:50;white-space:nowrap;' +
         'background:#12151f;color:#f5f6f8;font-size:11px;font-weight:600;letter-spacing:.01em;' +
         'padding:5px 9px;border-radius:7px;box-shadow:0 8px 22px rgba(0,0,0,.28);' +
         'font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;text-decoration:none;text-transform:none;}';
       (doc.head || doc.body || root).appendChild(gs);
     }
+    var revealMarks = function(){
+      try{ (doc.documentElement || root).classList.add('hc-marks-on'); root.classList.add('hc-marks-on'); }catch(e){}
+      doc.removeEventListener('scroll', revealMarks, true);
+      doc.removeEventListener('pointerdown', revealMarks, true);
+    };
+    doc.addEventListener('scroll', revealMarks, true);
+    doc.addEventListener('pointerdown', revealMarks, true);
   }catch(e){}
 
   function post(msg){
@@ -53385,6 +53408,38 @@ function wireHcEditingSurface(doc, root){
     target.addEventListener('mouseenter', function(){ target.style.outline = '2px dashed rgba(217,99,45,.7)'; target.style.outlineOffset = '3px'; });
     target.addEventListener('mouseleave', function(){ target.style.outline = ''; });
   }, true);
+
+  // G: REVIEWS — a genuinely empty container, BUILDER ONLY. Injected here, in the
+  // edit runtime that runs only under ?hcEdit=1, so it is NEVER part of the served
+  // HTML and never appears on the public page (an empty reviews block on a live
+  // site looks abandoned). No fabricated reviews, ratings or counts — ever, not
+  // even placeholder stars; it just shows the owner WHERE their real reviews will
+  // live once they add them. data-hubly-element marks it reserved, so click-to-edit
+  // ignores it.
+  try{
+    if(!doc.getElementById('hubly-reviews-builder')){
+      var rv = doc.createElement('section');
+      rv.id = 'hubly-reviews-builder';
+      rv.setAttribute('data-hubly-element', 'reviews');
+      rv.style.cssText = 'box-sizing:border-box;width:100%;padding:56px 24px;background:#f4f1ec;border-top:1px dashed rgba(120,120,140,.35);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;text-align:center;color:#1b1712;';
+      var cardHtml =
+        '<div style="border:1.5px dashed rgba(120,120,140,.35);border-radius:14px;padding:24px;min-height:118px;display:flex;flex-direction:column;justify-content:center;gap:10px;color:#9a938c;text-align:left;">' +
+          '<div style="width:30px;height:3px;border-radius:3px;background:rgba(120,120,140,.3);"></div>' +
+          '<div style="font-size:13px;line-height:1.5;">A real review from a real customer will appear here.</div>' +
+        '</div>';
+      rv.innerHTML =
+        '<div style="max-width:960px;margin:0 auto;">' +
+          '<div style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#D9632D;font-weight:700;margin-bottom:8px;">Reviews</div>' +
+          '<h2 style="margin:0 0 8px;font-size:26px;font-weight:800;">What your customers say</h2>' +
+          '<p style="margin:0 auto 26px;max-width:52ch;color:#5a544e;font-size:15px;line-height:1.5;">This is where your reviews will live. Add real ones once you have a Hubly account — Hubly never writes fake reviews.</p>' +
+          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">' + cardHtml + cardHtml + cardHtml + '</div>' +
+          '<div style="margin-top:22px;font-size:12px;color:#9a938c;">Only you can see this in the builder — it won’t appear on your live site until you add real reviews.</div>' +
+        '</div>';
+      var footer = root.querySelector('footer');
+      if(footer && footer.parentNode) footer.parentNode.insertBefore(rv, footer);
+      else root.appendChild(rv);
+    }
+  }catch(e){}
 }
 </script>
 </body>

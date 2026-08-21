@@ -230,11 +230,6 @@ button.ask-icon-left:focus-visible{outline:2px solid var(--brand);outline-offset
    audience cards with it. Hidden once the app is active; this runs after
    hcActivate's 420ms .hc-transforming animation, so it does not cut it short. */
 body.hc-active .footer,body.hc-active .hero{display:none}
-/* The "Keep this site" pill belongs to the builder, never the marketing hero.
-   Guarded on the builder being visible, not on a draft existing — so a stranger
-   on the landing can't see it even if the restore path misbehaves. */
-#hc-keep-btn{display:none}
-body.hc-active #hc-keep-btn{display:block}
 /* Drop target — a visible edge and a dimmed pane, so it is obvious the chat
    will take the file rather than the browser navigating away from it. */
 .hc-app.hc-dragging{outline:2px dashed var(--brand,#D9632D);outline-offset:-10px;}
@@ -294,6 +289,10 @@ body.hc-active #hc-keep-btn{display:block}
    screen — a centred, comfortable column at the ask box's width, not a panel
    pushed to one side of an empty canvas. */
 .hc-app:not(.hc-has-draft) .hc-thread{width:100%;max-width:640px;margin:0 auto}
+/* A2: once it's a rail, the thread fills the whole column to a single 16px
+   gutter — no more narrow centred stack with dead cream either side. */
+.hc-app.hc-has-draft .hc-thread{padding:20px 16px 16px;gap:16px}
+.hc-app.hc-has-draft .hc-msg{max-width:none}
 
 /* The preview's view bar — outside #hcCanvas so it survives every view's
    innerHTML, which is the whole reason there was no way back. */
@@ -313,16 +312,6 @@ body.hc-active #hc-keep-btn{display:block}
 .hc-skel-row{display:flex;gap:12px}
 .hc-skel-row span{flex:1;height:76px}
 @keyframes hcSkelShimmer{0%{background-position:100% 0}100%{background-position:0 0}}
-/* Build narration (Part B) — Hubly saying what it's about to build, in its own
-   voice, revealed a sentence at a time above the skeleton shapes. */
-.hc-build-narration{display:flex;flex-direction:column;gap:9px;padding:2px 2px 12px;margin-bottom:4px}
-.hc-build-narration-line{
-  font-size:14.5px;line-height:1.55;color:var(--ink);max-width:54ch;
-  animation:hcNarrIn .45s ease both;
-}
-.hc-build-narration-line:first-child{font-weight:650}
-@keyframes hcNarrIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){ .hc-build-narration-line{animation:none} }
 @media (prefers-reduced-motion:reduce){
   .hc-skel-bar,.hc-skel-hero,.hc-skel-block,.hc-skel-row span{animation:none}
 }
@@ -347,8 +336,14 @@ body.hc-active #hc-keep-btn{display:block}
 }
 .hc-work-chip .hc-dot{width:6px;height:6px;border-radius:50%;background:var(--brand);animation:hcPulse 1.3s infinite}
 @keyframes hcPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}
-.hc-input-bar{padding:16px clamp(22px,4vw,60px) 28px;flex-shrink:0}
-.hc-input-bar .ask-box{padding:14px 16px 14px 16px;border-radius:18px}
+/* A3: dock the composer. It's anchored to the bottom of the rail, spans the full
+   width to the 16px gutter, and a top border separates it from the thread that
+   scrolls behind it. It reads as part of the rail, not an island hovering over it. */
+.hc-input-bar{padding:12px 16px 14px;flex-shrink:0;border-top:1px solid var(--line);background:var(--bg)}
+/* Pre-build the composer stays centred to match the 640 conversation column;
+   once it's a rail it fills the full rail width. */
+.hc-app.hc-has-draft .hc-input-bar .ask-wrap{max-width:none;margin:0;width:100%}
+.hc-input-bar .ask-box{padding:14px 16px 14px 16px;border-radius:14px}
 .hc-input-bar .ask-box input{padding:6px 40px 6px 40px}
 .hc-input-bar .ask-icon-left{bottom:auto;top:50%;transform:translateY(-50%);left:16px}
 .hc-input-bar .ask-submit{bottom:auto;top:50%;transform:translateY(-50%);right:10px;width:36px;height:36px}
@@ -410,12 +405,13 @@ body.hc-active #hc-keep-btn{display:block}
   z-index:1;opacity:0;transition:opacity .5s ease;pointer-events:none;
 }
 .hc-preview-stage iframe.is-live{z-index:2;opacity:1;pointer-events:auto}
-/* Zoom toggle — fit ↔ 100%. Detail is a click away; the default is the whole page. */
+/* A4: the zoom control lives in the preview toolbar (the URL bar), not floating
+   over the page. It shows the true current scale and toggles fit-width ↔ 100%. */
 .hc-zoom-btn{
-  position:absolute;top:10px;right:12px;z-index:6;
-  background:rgba(255,255,255,.92);border:1px solid var(--line-soft);border-radius:8px;
-  padding:5px 11px;font-size:12px;font-weight:650;color:var(--ink);cursor:pointer;
-  box-shadow:0 2px 10px rgba(28,22,16,.12);backdrop-filter:blur(4px);
+  margin-left:auto;flex-shrink:0;
+  background:none;border:1px solid var(--line-soft);border-radius:7px;
+  padding:3px 9px;font-size:11.5px;font-weight:650;color:var(--ink-2);cursor:pointer;
+  font-variant-numeric:tabular-nums;transition:border-color .15s ease,color .15s ease;
 }
 .hc-zoom-btn:hover{border-color:var(--brand);color:var(--brand)}
 .hc-canvas-loading{
@@ -891,180 +887,18 @@ body.hc-active #hc-keep-btn{display:block}
   // the Edge Function: that is *.supabase.co, so the cookie would be
   // third-party and SameSite=Lax would never send it back.
 
-  // ── Keep this site: claim an unowned draft ────────────────────────────────
-  // A stranger built something real. It exists with no owner. This is the only
-  // path from "I made this" to "this is mine".
-  //
-  // Two independent facts are required and neither is enough alone: the draft
-  // session cookie (you built it) and a verified email (the address is yours).
-  // The cookie is httpOnly, so this code cannot read it — /api/draft-session
-  // reads it and returns a short-lived signed assertion instead.
-  //
-  // No route change: the modal opens over the builder, because the person is
-  // standing in front of the thing they just made and navigating away from it
-  // is how you lose them.
-  var hcClaim = { open: false, busy: false, sent: false, error: '', email: '' };
+  // "Keep this site" — the corner pill and its email-magic-link claim modal —
+  // was removed 2026-08-21. Claiming a draft now happens through the one-door
+  // auth modal (Continue with Google / email six-digit code); the pill and the
+  // separate email-link flow it opened are gone. hcExchangeDraftGrant (below)
+  // stays — it exchanges the claim grant for the httpOnly cookie that lets a
+  // draft survive a closed tab, which is unrelated to the pill.
 
-  function hcClaimEl(){ return document.getElementById('hc-claim'); }
-
-  function hcRenderClaim(){
-    var el = hcClaimEl();
-    if(!el) return;
-    if(!hcClaim.open){ el.style.display = 'none'; el.innerHTML = ''; return; }
-    el.style.display = 'flex';
-    var body = hcClaim.sent
-      ? '<h2 style="margin:0 0 8px;font-size:20px;font-weight:800;">Check your email</h2>'
-        + '<p style="margin:0 0 18px;color:#555;line-height:1.5;">We sent a link to <b>' + hcEsc(hcClaim.email) + '</b>. '
-        + 'Open it on any device — your site will be waiting.</p>'
-        + '<button type="button" data-hc-claim="close" style="width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;background:#fff;font-weight:600;cursor:pointer;">Done</button>'
-      : '<h2 style="margin:0 0 8px;font-size:20px;font-weight:800;">Keep this site</h2>'
-        + '<p style="margin:0 0 16px;color:#555;line-height:1.5;">Enter your email and we\'ll send a link to save it to your account. No password needed.</p>'
-        + '<input id="hc-claim-email" type="email" inputmode="email" autocomplete="email" placeholder="you@yourbusiness.com" '
-        + 'style="width:100%;padding:12px;border-radius:10px;border:1.5px solid #ddd;font-size:15px;margin-bottom:10px;box-sizing:border-box;">'
-        + (hcClaim.error ? '<div style="color:#b91c1c;font-size:13px;margin-bottom:10px;">' + hcEsc(hcClaim.error) + '</div>' : '')
-        + '<button type="button" data-hc-claim="send" ' + (hcClaim.busy ? 'disabled' : '') + ' '
-        + 'style="width:100%;padding:12px;border-radius:10px;border:none;background:#111;color:#fff;font-weight:700;font-size:15px;cursor:pointer;opacity:' + (hcClaim.busy ? '.6' : '1') + ';">'
-        + (hcClaim.busy ? 'Sending…' : 'Email me a link') + '</button>'
-        + '<button type="button" data-hc-claim="close" style="width:100%;padding:10px;margin-top:8px;border:none;background:none;color:#777;font-size:13px;cursor:pointer;">Not now</button>';
-    el.innerHTML = '<div style="background:#fff;border-radius:16px;padding:24px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);">' + body + '</div>';
-    var input = document.getElementById('hc-claim-email');
-    if(input){ input.value = hcClaim.email; setTimeout(function(){ try{ input.focus(); }catch(e){} }, 30); }
-  }
-
-  function hcEsc(v){
-    return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function hcOpenClaim(){ hcClaim.open = true; hcClaim.error = ''; hcRenderClaim(); }
-  function hcCloseClaim(){ hcClaim.open = false; hcRenderClaim(); }
-
-  async function hcSendClaimLink(){
-    var input = document.getElementById('hc-claim-email');
-    var email = String((input && input.value) || '').trim();
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-      hcClaim.error = 'Enter a valid email address'; hcRenderClaim(); return;
-    }
-    hcClaim.email = email; hcClaim.busy = true; hcClaim.error = ''; hcRenderClaim();
-    try{
-      // 1. Only /api/draft-session can read the httpOnly cookie. It returns a
-      //    5-minute signed assertion that Supabase can verify.
-      var sess = await fetch('/api/draft-session', { credentials: 'same-origin' }).then(function(r){ return r.json(); });
-      if(!sess || !sess.ok || !sess.assertion){
-        hcClaim.busy = false;
-        hcClaim.error = 'This build session has expired. Refresh the page and try again.';
-        hcRenderClaim(); return;
-      }
-      // 2. Record the binding BEFORE any email goes out, so the claim survives
-      //    the link being opened on a different device.
-      var started = await fetch(SUPA_URL + '/functions/v1/claim-draft-business', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY },
-        body: JSON.stringify({ action: 'start', email: email, assertion: sess.assertion })
-      }).then(function(r){ return r.json(); });
-      if(!started || !started.ok){
-        hcClaim.busy = false;
-        hcClaim.error = (started && started.error) || 'Could not start the claim. Try again.';
-        hcRenderClaim(); return;
-      }
-      // 3. Supabase owns verification end to end — this code never handles a
-      //    token that could sign anyone in.
-      var otp = await fetch(SUPA_URL + '/auth/v1/otp?redirect_to=' + encodeURIComponent(location.origin + location.pathname), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: SUPA_ANON_KEY },
-        body: JSON.stringify({ email: email, create_user: true })
-      });
-      if(!otp.ok){
-        hcClaim.busy = false;
-        hcClaim.error = 'Could not send the email. Check the address and try again.';
-        hcRenderClaim(); return;
-      }
-      hcClaim.busy = false; hcClaim.sent = true; hcRenderClaim();
-    }catch(e){
-      hcClaim.busy = false;
-      hcClaim.error = 'Something went wrong. Try again.';
-      hcRenderClaim();
-    }
-  }
-
-  // Back from the magic link. Supabase puts the session in the URL fragment,
-  // which never reaches a server — this reads it, finishes the claim, then
-  // strips it so a shared or bookmarked URL carries no session.
-  async function hcConsumeClaimReturn(){
-    var hash = String(location.hash || '');
-    if(hash.indexOf('access_token=') < 0) return;
-    var token = '';
-    hash.replace(/^#/, '').split('&').forEach(function(kv){
-      var p = kv.split('=');
-      if(p[0] === 'access_token') token = decodeURIComponent(p[1] || '');
-    });
-    try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
-    if(!token) return;
-    try{
-      var res = await fetch(SUPA_URL + '/functions/v1/claim-draft-business', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + token },
-        body: JSON.stringify({ action: 'finish' })
-      }).then(function(r){ return r.json(); });
-      if(res && res.claimed){
-        // The draft is theirs. Clear the cookie — it authorises nothing now.
-        try{ fetch('/api/draft-session', { method: 'DELETE', credentials: 'same-origin' }); }catch(e){}
-        hcClaim.open = false; hcRenderClaim();
-        window.location.href = '/app';
-      }
-    }catch(e){ /* leave them on the builder rather than a dead end */ }
-  }
-
-  document.addEventListener('click', function(ev){
-    var t = ev.target && ev.target.closest && ev.target.closest('[data-hc-claim]');
-    if(!t) return;
-    var act = t.getAttribute('data-hc-claim');
-    if(act === 'send') hcSendClaimLink();
-    else if(act === 'close') hcCloseClaim();
-    else if(act === 'open') hcOpenClaim();
-  });
-  document.addEventListener('keydown', function(ev){
-    if(ev.key === 'Enter' && hcClaim.open && !hcClaim.sent && document.activeElement && document.activeElement.id === 'hc-claim-email'){
-      ev.preventDefault(); hcSendClaimLink();
-    }
-    if(ev.key === 'Escape' && hcClaim.open) hcCloseClaim();
-  });
-  try{ hcConsumeClaimReturn(); }catch(e){}
-
-
-  // The modal host and the button that opens it are created only once a draft
-  // actually exists — there is nothing to keep before that.
-  function hcEnsureClaimUi(){
-    if(!hc.draftBusiness) return;
-    if(!document.getElementById('hc-claim')){
-      var host = document.createElement('div');
-      host.id = 'hc-claim';
-      host.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:20px;';
-      host.addEventListener('click', function(e){ if(e.target === host) hcCloseClaim(); });
-      document.body.appendChild(host);
-    }
-    if(!document.getElementById('hc-keep-btn')){
-      var b = document.createElement('button');
-      b.id = 'hc-keep-btn';
-      b.type = 'button';
-      b.setAttribute('data-hc-claim', 'open');
-      b.textContent = 'Keep this site';
-      // Brand pill, not the old black-on-cream slab. Structural styles only —
-      // whether it SHOWS is decided in CSS (#hc-keep-btn is display:none unless
-      // body.hc-active), so it can never render over the marketing hero even if
-      // this runs early.
-      b.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:9998;padding:12px 18px;border-radius:999px;border:none;background:var(--brand);color:#fff;font-weight:700;font-size:14px;box-shadow:0 8px 24px rgba(217,99,45,.32);cursor:pointer;';
-      document.body.appendChild(b);
-    }
-  }
-
-  // THE CARD AT THE FIRST EDIT. The corner pill is passive; this is the ask moved
-  // to the moment it earns its place — the first successful edit, or a second
-  // build, whichever comes first. It is a card in the conversation, not a modal
-  // over it: it must never block. They can ignore it and keep working, and it
-  // stays. It is about EDITING, not saving — it never mentions losing the page,
-  // and it promises only what the inline editor actually does today: change the
-  // words and the photos on the page. Both buttons open the same one door as the
-  // corner pill and the nav — hcSendClaimLink lives in the same modal (authOpen).
+  // THE CARD AT THE FIRST EDIT. A card in the conversation, not a modal over it:
+  // it must never block. They can ignore it and keep working, and it stays. It is
+  // about EDITING, not saving — it never mentions losing the page, and it promises
+  // only what the inline editor actually does today: change the words and the
+  // photos on the page. Both buttons open the one-door auth modal (authOpen).
   function hcMaybeShowClaimCard(){
     if(hc.claimCardShown) return;
     if(!hc.draftBusiness) return;
@@ -1194,10 +1028,9 @@ body.hc-active #hc-keep-btn{display:block}
     }
     var url = hc.draftBusiness.url;
     root.innerHTML =
-      '<div class="hc-canvas-url"><span class="hc-live-dot"></span><a href="' + hcEscape(url) + '" target="_blank" rel="noopener">' + hcEscape(url.replace(/^https?:\/\//,'')) + '</a></div>' +
+      '<div class="hc-canvas-url"><span class="hc-live-dot"></span><a href="' + hcEscape(url) + '" target="_blank" rel="noopener">' + hcEscape(url.replace(/^https?:\/\//,'')) + '</a><button type="button" class="hc-zoom-btn" id="hcZoomBtn">100%</button></div>' +
       '<div class="hc-canvas-frame-wrap" id="hcCanvasFrameWrap">' +
         '<div class="hc-canvas-loading" id="hcCanvasLoading"><span class="hc-live-dot"></span>&nbsp;Loading your site…</div>' +
-        '<button type="button" class="hc-zoom-btn" id="hcZoomBtn">100%</button>' +
         '<div class="hc-preview-frame" id="hcPreviewFrame">' +
           '<div class="hc-preview-stage" id="hcPreviewStage">' +
             '<iframe class="is-live" id="hcCanvasFrameA" src="' + hcEscape(hcBust(url)) + '" title="Live preview"></iframe>' +
@@ -1504,25 +1337,6 @@ body.hc-active #hc-keep-btn{display:block}
     return /\b(it['’]s\s+)?building\s+(it\s+)?now\b|\b(will|it['’]ll|should)\s+appear\b|appears?\s+in\s+about\s+a\s+minute|on\s+its\s+way|hang\s+tight/i.test(String(t || ''));
   }
 
-  // Reveal the narration a sentence at a time — Hubly thinking out loud while it
-  // works, not a wall of text landing at once (which the brief rightly calls
-  // worse than silence). Stops itself if the build finishes and the node is gone.
-  function hcRevealNarration(el, text){
-    if(!el || !text) return;
-    var parts = text.split(/(?<=[.!?])\s+/).map(function(s){ return s.trim(); }).filter(Boolean);
-    var i = 0;
-    (function next(){
-      if(!document.getElementById('hcBuildNarration')) return;   // view moved on
-      if(i >= parts.length) return;
-      var p = document.createElement('p');
-      p.className = 'hc-build-narration-line';
-      p.textContent = parts[i];
-      el.appendChild(p);
-      i++;
-      setTimeout(next, 850);
-    })();
-  }
-
   // THE STEPS CARD — the real stages of a build, ticking in the chat as each one
   // genuinely completes. The middle three are invisible from here on their own
   // (they run inside one server call); the server writes each to the job row as
@@ -1534,7 +1348,7 @@ body.hc-active #hc-keep-btn{display:block}
   var HC_BUILD_STEPS = [
     { key: 'understanding', label: 'Understanding your business' },
     { key: 'creating',      label: 'Creating your website' },
-    { key: 'photos',        label: 'Finding your photographs' },
+    { key: 'photos',        label: 'Adding your photographs' },
     { key: 'booking',       label: 'Connecting booking' },
     { key: 'finalizing',    label: 'Finalizing design' }
   ];
@@ -1592,35 +1406,19 @@ body.hc-active #hc-keep-btn{display:block}
   }
 
   var hcDocPollTimer = null;
-  function hcRenderDocumentBuilding(narration){
+  function hcRenderDocumentBuilding(){
       hc.canvasView = 'site';
       try{ hcMountViewBar(); }catch(e){}
       var root = document.getElementById('hcCanvas');
       if(!root) return;
-      // A SKELETON, NOT A PROGRESS BAR.
-      //
-      // generateDocument cannot stream, checked before building this: HublyAI
-      // has no streaming support at all, document_generate is jsonMode so the
-      // tree is not valid until the closing brace, and the call runs in
-      // EdgeRuntime.waitUntil after the response has already been sent — there
-      // is no connection to stream over. So sections cannot arrive one by one.
-      //
-      // What is honest instead is the SHAPE of what is coming, plus elapsed
-      // time, which is a real fact. No percentage, no bar: both would be
-      // inventing knowledge of progress we do not have.
-      //
-      // NARRATION (Part B). The conversation model already spoke in the turn that
-      // dispatched this build; when that reply is a real, business-specific say
-      // of what it's about to build and why, we show it here to fill the wait.
-      // IMPORTANT: this is the conversation model's INTENT, not the generator's
-      // actual plan — they are two different calls and can diverge. It is never
-      // labelled "what Hubly built". If the reply is thin or missing, we show no
-      // tailored line at all — the honest elapsed note carries the wait, never a
-      // fixed paragraph pretending to be about this business.
-      var narr = (typeof narration === 'string') ? narration.trim() : '';
+      // A SKELETON, AND NOTHING ELSE. The white preview pane shows the page being
+      // built and, when done, the real page — never prose. Hubly's design-say
+      // (the narration) belongs in the chat rail with the rest of the
+      // conversation, not split off onto the preview (see the generatingDocument
+      // branch, which appends it via hcAppendMessage). No percentage, no bar:
+      // just the shape of what's coming and an honest elapsed-time note.
       root.innerHTML =
         '<div class="hc-skel" id="hcSkel">' +
-          (narr ? '<div class="hc-build-narration" id="hcBuildNarration"></div>' : '') +
           '<div class="hc-skel-note"><span class="hc-live-dot"></span>&nbsp;<span id="hcSkelNote">Writing your page — about a minute.</span></div>' +
           '<div class="hc-skel-bar"></div>' +
           '<div class="hc-skel-hero"></div>' +
@@ -1628,7 +1426,6 @@ body.hc-active #hc-keep-btn{display:block}
           '<div class="hc-skel-block"></div>' +
           '<div class="hc-skel-row"><span></span><span></span></div>' +
         '</div>';
-      if(narr) hcRevealNarration(document.getElementById('hcBuildNarration'), narr);
       // Elapsed-time copy. True statements only: it says how long it has been,
       // never how far along it is.
       var started = Date.now();
@@ -1944,7 +1741,6 @@ body.hc-active #hc-keep-btn{display:block}
         // Exchange the claim grant the moment a draft appears, so whoever just
         // built this can keep it.
         if(data.draftGrant) hcExchangeDraftGrant(data.draftGrant);
-        hcEnsureClaimUi();
         // generateDocument just started (real:false, raw.status==='building')
         // — the page doesn't exist yet, so there's nothing for the normal
         // render/refresh branches below to show. Highest priority: this
@@ -1964,13 +1760,18 @@ body.hc-active #hc-keep-btn{display:block}
           // The build narration is the model's substantial design say. It's told
           // to put it in "reply"; be robust to it front-loading it as the first
           // interim line instead. A near-silent "On it." / "Done." is NOT a
-          // narration and must never be dressed up as tailored: below the length
-          // bar -> no narration at all, just the honest elapsed note. Whatever we
-          // show in the skeleton is then NOT echoed into the chat.
+          // narration and never dressed up as tailored: below the length bar ->
+          // no narration line at all.
           var hcReplyNarr = (data.reply && data.reply.trim().length >= 80) ? data.reply.trim() : '';
           var hcInterim0 = (Array.isArray(data.interimMessages) && data.interimMessages[0] && String(data.interimMessages[0]).trim().length >= 80) ? String(data.interimMessages[0]).trim() : '';
           buildNarration = hcReplyNarr || hcInterim0;
-          hcRenderDocumentBuilding(buildNarration);
+          // A1: the narration goes in the CHAT RAIL — under the user's message,
+          // above the steps card — like any other Hubly message. The preview
+          // stays prose-free. The duplicate (the model's OTHER design paragraph)
+          // is suppressed in showNext, not this one; hcIsBuildFiller still guards
+          // against a "building now…" line slipping in as the narration.
+          if(buildNarration && !hcIsBuildFiller(buildNarration)) hcAppendMessage('hubly', buildNarration);
+          hcRenderDocumentBuilding();
           hcRenderStepsCard();   // the real stages, ticking in the chat
           var hcAppElBuild = document.getElementById('hcApp');
           if(hcAppElBuild) hcAppElBuild.classList.add('hc-has-draft');
@@ -2561,7 +2362,6 @@ body.hc-active #hc-keep-btn{display:block}
         if(app) app.classList.add('hc-has-draft');
       }
       hcRenderCanvas();
-      try{ hcEnsureClaimUi(); }catch(e){}
     }catch(e){ /* best-effort: a failure just means a fresh start */ }
   }
   hcResumeDraft();
