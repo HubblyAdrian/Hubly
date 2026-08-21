@@ -1497,7 +1497,7 @@ export async function generateFreeformPage(
     "1. ONLINE BOOKING. This business can take bookings online; Hubly supplies the whole booking flow. " +
     "Place a booking call-to-action wherever it genuinely belongs for this trade, and give it exactly " +
     'href="#hubly-book". To preselect one service, use href="#hubly-book?svc=NAME" with a service name from the record. ' +
-    "AT MOST THREE booking CTAs on the whole page — one in the header, one in the hero, one near the end — no more. " +
+    "AT MOST THREE booking CTAs on the whole page, each placed where someone would naturally be ready to book — no more. " +
     "Secondary links like 'view services' or 'see pricing' are fine and do not count. " +
     "Treat the phone number as the SECONDARY option, not the only one — do not build a page whose only action is a phone call.\n" +
     "2. A CHAT ASSISTANT. Every Hubly site carries one; it is added automatically after you finish and it floats in the bottom-right corner. " +
@@ -1523,8 +1523,8 @@ export async function generateFreeformPage(
     "data-subject is a specific art-direction phrase — the subject, the mood, the framing — e.g. " +
     '"a premium dark close-up of a luxury car after detailing, no people" — not just "a car". Always design the subject with NO people in frame.\n' +
     (hasLogo
-      ? '- THE LOGO: this business has uploaded a logo. Put <img src="#hubly-logo" alt="LOGO"> in the header as the brand mark. Do NOT draw a monogram or initials — the real logo exists and must be used.\n'
-      : "- No logo is on file, so a clean typographic wordmark or monogram in the header is correct.\n") +
+      ? '- THE LOGO: this business has uploaded a logo. Use <img src="#hubly-logo" alt="LOGO"> for the brand mark, placed wherever the design calls for it. Do NOT draw a monogram or initials — the real logo exists and must be used.\n'
+      : "- No logo is on file, so a clean typographic wordmark or monogram, placed wherever the design calls for it, is correct.\n") +
     (photoCount > 0
       ? `- This business has ${photoCount} of its OWN photo(s). Give it a section that shows its work (role="gallery" or "work") so those real photos are used.\n`
       : "- This business has no photos of its own yet. Still mark hero/atmosphere images; they will be filled with fitting stock or a designed colour field.\n") +
@@ -1540,7 +1540,8 @@ export async function generateFreeformPage(
   const system =
     "You write a complete, standalone HTML page for one real local service business — a single file, with its own <style> block in the head. " +
     "No frameworks, no external requests, no scripts of your own. Use real, specific copy for THIS business, drawn only from the record below. " +
-    "Write the page you think this business should have — you choose the sections, the order and the layout.\n\n" +
+    "Write the page you think this business should have — you choose the sections, the order and the layout.\n" +
+    "How the brand mark and navigation appear is entirely yours to decide: a top nav bar is ONE option, not a requirement. A full-bleed hero with the business name set in the headline, a slim side rail, a minimal footer-only nav, or something else the trade suggests are all equally available. The only things that must be true: the brand is identifiable somewhere, and booking is reachable. Two different trades should not open with the same shape.\n\n" +
     markingBlock + "\n\n" +
     imageBlock + "\n\n" +
     capabilities + "\n\n" +
