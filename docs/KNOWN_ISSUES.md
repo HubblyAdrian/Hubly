@@ -6,6 +6,28 @@ what would settle it.
 
 ---
 
+## Placeholder marks are capped by document order, not by importance
+
+**Status:** open, deliberate approximation — shipped 2026-08-21
+**Where:** `wireHcEditingSurface` in `public/hubly.html` (the `data-hc-mark` cap)
+
+A generated page can carry dozens of `data-hubly-guess` marks (a florist page had
+**58**). Showing all of them turns the preview into a rash of dotted underlines
+that reads as broken, so the builder caps the *visible* marks at 9 — the rest stay
+fully editable, just unmarked.
+
+The cap is **document order** (the first 9), not semantic importance. In practice
+the first 9 are the top-of-page elements — headline, tagline, hero copy — which
+are usually the ones that matter, so it approximates "mark the important ones."
+But it's an approximation: a page whose first nine invented elements happen to be
+minor (a sequence of small labels) would mark those and leave the headline
+unmarked further down.
+
+**The follow-up** (not built): rank marks by role — always the headline, tagline,
+and an invented process; never the FAQ lines — and show the top N by rank rather
+than by position. Left for later so we don't gold-plate before the ordering
+heuristic proves insufficient in real use.
+
 ## A stale draft can resume from residual state after the cookie is cleared
 
 **Status:** open, observed 2026-08-21 during builder verification
