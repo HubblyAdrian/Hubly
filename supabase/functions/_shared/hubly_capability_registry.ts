@@ -1495,7 +1495,9 @@ export async function generateFreeformPage(
     "1. ONLINE BOOKING. This business can take bookings online; Hubly supplies the whole booking flow. " +
     "Place a booking call-to-action wherever it genuinely belongs for this trade, and give it exactly " +
     'href="#hubly-book". To preselect one service, use href="#hubly-book?svc=NAME" with a service name from the record. ' +
-    "You may place more than one. Treat the phone number as the SECONDARY option, not the only one — do not build a page whose only action is a phone call.\n" +
+    "AT MOST THREE booking CTAs on the whole page — one in the header, one in the hero, one near the end — no more. " +
+    "Secondary links like 'view services' or 'see pricing' are fine and do not count. " +
+    "Treat the phone number as the SECONDARY option, not the only one — do not build a page whose only action is a phone call.\n" +
     "2. A CHAT ASSISTANT. Every Hubly site carries one; it is added automatically after you finish and it floats in the bottom-right corner. " +
     "Do NOT design a chat window, a message form, or a support widget yourself, and do not put anything in the bottom-right corner that it would cover.\n" +
     "Do not write any other <script>, and do not build a booking form of your own — the sentinel link is how booking is reached.";

@@ -79,6 +79,21 @@ const ctx = { businessId:"b", brandColor:"#123456", photos:[], fetchStock:stock 
     assert.ok(!/background:#(ccc|ddd|eee|grey|gray)/i.test(r.html), 'never a grey box');
   });
 
+  it('never shows the art-direction phrase to a visitor', () => {
+    // The empty state used to watermark "a clean garage, no people" onto the
+    // live page. The phrase must survive in the markup (for the owner and the
+    // resolver) but never be visible text.
+    const r = resolve(PAGE, `const ctx = { businessId:"b", brandColor:"#c25a3a", logoUrl:null, photos:[], fetchStock: undefined };`);
+    // kept for tooling
+    assert.match(r.html, /data-art-direction="clean garage, no people"/i);
+    // the blank div has no text content between its tags
+    for (const m of r.html.matchAll(/<div class="hubly-img-blank"[^>]*>([\s\S]*?)<\/div>/g)) {
+      assert.equal(m[1].trim(), '', 'the colour field must render no visible text');
+    }
+    // and it is hidden from assistive tech rather than announced
+    assert.match(r.html, /class="hubly-img-blank"[^>]*aria-hidden="true"/);
+  });
+
   it('records provenance for every placed image', () => {
     const r = resolve(PAGE, `${STOCK}
 const ctx = { businessId:"b", brandColor:"#0f766e", logoUrl:"https://s/logo.png", photos:[{url:"https://s/van.jpg",kind:"portfolio"}], fetchStock:stock };`);

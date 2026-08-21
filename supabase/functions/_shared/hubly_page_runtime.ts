@@ -39,7 +39,7 @@
  *   it, injects exactly one, and would strip a second.
  */
 
-import { scanHtml, spliceAll, type Splice } from "./hubly_html_scan.ts";
+import { scanHtml, spliceAll, type ScannedEl, type Splice } from "./hubly_html_scan.ts";
 
 /** The sentinel the generation prompt asks the model to use for a booking CTA. */
 export const BOOK_SENTINEL = "#hubly-book";
@@ -200,11 +200,36 @@ export function injectHublyRuntime(html: string, ctx: RuntimeContext): RuntimeIn
   const edits: Splice[] = [];
   let rewrittenCtas = 0;
 
-  // 1. THE MODEL'S BOOKING CTAs. Rewrite, never duplicate.
-  for (const el of scan.all) {
-    if (el.name !== "a") continue;
+  // 1. THE MODEL'S BOOKING CTAs. Rewrite the ones we keep, remove the surplus.
+  //
+  // CAP AT THREE PRIMARY BOOKING CTAs. Earlier builds placed 6–7 per page, which
+  // reads as spam. The target is one in the header, one in the hero, one at the
+  // end — and in document order that is the first two markers plus the last.
+  // Enforced here deterministically (never by regenerating — see the standing
+  // rule in KNOWN_ISSUES): the model is also asked for three, but the pass is
+  // what makes it true. Secondary links ("view services") carry no sentinel and
+  // are untouched.
+  const bookEls = scan.all.filter((el) =>
+    el.name === "a" && ((el.attrs.href || "").trim() === BOOK_SENTINEL || (el.attrs.href || "").trim().startsWith(BOOK_SENTINEL + "?"))
+  );
+  const MAX_CTAS = 3;
+  const keep = new Set<ScannedEl>();
+  if (bookEls.length <= MAX_CTAS) {
+    for (const el of bookEls) keep.add(el);
+  } else {
+    keep.add(bookEls[0]);                    // header
+    keep.add(bookEls[1]);                    // hero
+    keep.add(bookEls[bookEls.length - 1]);   // end
+  }
+
+  for (const el of bookEls) {
+    if (!keep.has(el)) {
+      // Surplus CTA: remove the whole <a>…</a>. Booking stays reachable from the
+      // kept ones, so nothing is orphaned.
+      edits.push({ start: el.openStart, end: Math.max(el.closeEnd, el.openEnd), text: "" });
+      continue;
+    }
     const href = (el.attrs.href || "").trim();
-    if (href !== BOOK_SENTINEL && !href.startsWith(BOOK_SENTINEL + "?")) continue;
     // Preserve a service the model named: #hubly-book?svc=Half-day%20coverage
     let target = bookBase;
     const q = href.indexOf("?");

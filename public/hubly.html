@@ -17481,6 +17481,17 @@ async function loadPublicProfile(slug){
       // the generated stylesheet is literal values, not variables — and it is
       // recorded as such rather than faked with a button.
       try{ var tt=document.querySelector('.theme-toggle'); if(tt) tt.style.display='none'; }catch(e){}
+      // THE LANGUAGE FLOAT, hidden here for the same reason and by the same
+      // precedent as the theme toggle above. toggleLang() translates the
+      // classic renderer's DOM (#ws-header-nav, #ws-page, #p-storefront) via
+      // data-i18n keys. A freeform page is a whole document inside an iframe
+      // with none of those selectors and no data-i18n on its own copy, so the
+      // control translates NOTHING here — it has floated dead over the
+      // top-left corner of every generated page, overlapping content. Making it
+      // real means translating arbitrary model-authored HTML inside the frame,
+      // a genuine translation pipeline, not an hour's work (see KNOWN_ISSUES).
+      // A dead control is worse than no control, so it is removed on this view.
+      try{ var lf=document.getElementById('lang-btn-float'); if(lf) lf.style.display='none'; }catch(e){}
       if(!data.owner_id) hcNoIndex();
       showP('p-hubly-document');
       try{wireHublyDocumentReserved();}catch(e){console.warn('wireHublyDocumentReserved failed',e);}

@@ -97,3 +97,39 @@ describe('hubly runtime injection', () => {
     assert.ok(!/<script>alert\(1\)<\/script>/.test(r.html), 'must not inject executable markup');
   });
 });
+
+describe('booking CTA cap', () => {
+  const CTX2 = { businessId: 'b', businessName: 'Acme', slug: 'acme', supabaseUrl: 'https://x.supabase.co', publishableKey: 'k', accent: '#123456' };
+  function inj(html) {
+    const expr = `console.log(JSON.stringify(m.injectHublyRuntime(${JSON.stringify(html)}, ${JSON.stringify(CTX2)})));`;
+    const modPath = join(root, 'supabase/functions/_shared/hubly_page_runtime.ts');
+    return JSON.parse(execFileSync('deno', ['eval', '--quiet', `import * as m from "${modPath}";\n${expr}`], { encoding: 'utf8' }));
+  }
+  const bookLinks = (html) => (html.match(/href="[^"]*book=1[^"]*"/g) || []).length;
+
+  it('keeps at most three booking CTAs', () => {
+    const seven = '<body><header><a href="#hubly-book">A</a></header>' +
+      '<section><a href="#hubly-book">B</a><a href="#hubly-book">C</a><a href="#hubly-book">D</a>' +
+      '<a href="#hubly-book">E</a><a href="#hubly-book">F</a></section>' +
+      '<footer><a href="#hubly-book">G</a></footer></body>';
+    const r = inj(seven);
+    assert.equal(bookLinks(r.html), 3, 'exactly three booking links survive');
+    // header (A), hero (B) and end (G) are kept; the middle are removed
+    assert.match(r.html, />A</);
+    assert.match(r.html, />B</);
+    assert.match(r.html, />G</);
+    assert.ok(!/>D</.test(r.html) && !/>E</.test(r.html), 'surplus removed');
+  });
+
+  it('leaves three or fewer untouched in count', () => {
+    const three = '<body><header><a href="#hubly-book">A</a></header><section><a href="#hubly-book">B</a></section><footer><a href="#hubly-book">C</a></footer></body>';
+    assert.equal(bookLinks(inj(three).html), 3);
+    const two = '<body><a href="#hubly-book">A</a><a href="#hubly-book">B</a></body>';
+    assert.equal(bookLinks(inj(two).html), 2);
+  });
+
+  it('a secondary (non-sentinel) link is never touched', () => {
+    const r = inj('<body><header><a href="#hubly-book">Book</a><a href="#services">View services</a></header></body>');
+    assert.match(r.html, /href="#services"/, 'secondary link survives');
+  });
+});

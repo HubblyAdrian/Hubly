@@ -117,13 +117,20 @@ function isLogoMarker(el: ScannedEl): boolean {
 /** The colour-field treatment for a deliberate nothing. Brand-derived, never grey. */
 function blankField(brand: string | null | undefined, alt: string, extraStyle: string): string {
   const c = brand && /^#[0-9a-f]{3,8}$/i.test(brand) ? brand : "#1a3a6e";
-  // A soft diagonal wash of the brand colour into a darker shade of itself, with
-  // the alt text as a faint watermark so the space reads as intentional.
-  return `<div class="hubly-img-blank" role="img" aria-label="${escAttr(alt)}" ` +
-    `style="${extraStyle}background:linear-gradient(135deg, ${escAttr(c)}, rgba(0,0,0,.55));` +
-    `display:flex;align-items:center;justify-content:center;min-height:180px;color:rgba(255,255,255,.32);` +
-    `font-family:inherit;font-size:13px;letter-spacing:.08em;text-transform:uppercase;text-align:center;padding:24px;">` +
-    `${escAttr(alt).slice(0, 60)}</div>`;
+  // A soft diagonal wash of the brand colour into a darker shade of itself.
+  //
+  // THE ART-DIRECTION PHRASE IS NEVER SHOWN. It used to be watermarked into the
+  // field, which put stage directions on the stage — a visitor read
+  // "A CLEAN RESIDENTIAL ROOFLINE UNDER A DRAMATIC SKY" on the live page. The
+  // phrase stays in the markup, on `data-art-direction`, for the owner and the
+  // resolver; it is not rendered. What the visitor sees is a plain, deliberate
+  // colour field — a design decision, not a note to self. A faint hairline
+  // adds a little craft without saying anything.
+  return `<div class="hubly-img-blank" role="presentation" aria-hidden="true" ` +
+    `data-art-direction="${escAttr(alt)}" ` +
+    `style="${extraStyle}min-height:200px;` +
+    `background:linear-gradient(135deg, ${escAttr(c)} 0%, rgba(0,0,0,.45) 100%);` +
+    `border:1px solid rgba(255,255,255,.06);border-radius:inherit;"></div>`;
 }
 
 /** Copy the marker's non-src attributes onto a real <img>. */
@@ -219,8 +226,10 @@ export async function resolveImages(html: string, ctx: ImageResolveContext): Pro
       }
     }
 
-    // 3. DELIBERATE NOTHING — a brand-coloured field, not a grey box.
-    edits.push({ start: el.openStart, end: el.openEnd, text: blankField(ctx.brandColor, alt, inlineStyle) });
+    // 3. DELIBERATE NOTHING — a brand-coloured field, not a grey box. The
+    //    art-direction phrase (subject) is stored on the div for the owner and a
+    //    future stock retry, never shown.
+    edits.push({ start: el.openStart, end: el.openEnd, text: blankField(ctx.brandColor, subject, inlineStyle) });
     blanks++;
     decisions.push({ role, outcome: "blank", subject });
   }
