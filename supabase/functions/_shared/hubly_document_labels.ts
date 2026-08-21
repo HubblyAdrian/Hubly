@@ -116,6 +116,126 @@ export interface StampResult {
   };
   /** True when the incoming HTML already carried data-hc attributes we discarded. */
   strippedModelLabels: number;
+  /** What the content-safety pass removed, and why. Empty on a clean page. */
+  removed: SanitizerRemoval[];
+}
+
+export interface SanitizerRemoval {
+  what: string;
+  reason: string;
+  sample: string;
+}
+
+/**
+ * REMOVE THE MECHANICS OF CREDENTIAL HARVESTING, deterministically, with no
+ * model involvement — same discipline as labelling.
+ *
+ * A Hubly page never needs an arbitrary form: booking is a Hubly widget, chat is
+ * a Hubly widget, contact is ours (injected by hubly_page_runtime.ts, after this
+ * pass). So a generated page has no legitimate reason to contain a <form>, a
+ * password field, a third-party <script>, or a cross-origin <iframe>. Rather
+ * than try to detect malicious INTENT, this removes the CAPABILITY.
+ *
+ * STRIP, NOT REFUSE. Refusing a page means regenerating it — a full model call,
+ * which is exactly the cost the freeform format exists to avoid, and the same
+ * "reject and regenerate" the labelling pass was built to never do. A stripped
+ * page still serves, still labels, still works; it has simply lost a capability
+ * it should never have had. So every case below strips, and records what it
+ * removed so the removal is auditable rather than silent.
+ *
+ * WHAT AND WHY, per the brief:
+ *   <form>                     -> unwrapped (children kept, the <form> tags and
+ *                                 its action/method removed). The visible copy a
+ *                                 designer wrote stays; the submission mechanism
+ *                                 does not.
+ *   <input>/<select>/<textarea>/<button type=submit>
+ *                              -> removed. No field, no capture. A password or
+ *                                 card field is the acute case but ALL of them go,
+ *                                 because a text field posting to an attacker is
+ *                                 the same attack without the word "password".
+ *   <script> not Hubly's       -> removed whole. hubly_page_runtime injects its
+ *                                 own AFTER this pass, so nothing legitimate is
+ *                                 in the model's output.
+ *   <iframe> cross-origin      -> removed whole. A same-origin frame (our own
+ *                                 booking deep-link, say) is allowed; anything
+ *                                 pointing elsewhere is a place to host a login.
+ */
+const FORMY_LEAF = new Set(["input", "select", "textarea"]);
+const SELF_ORIGIN_RE = /^(\/|#|\.|https?:\/\/[^/]*\.myhubly\.app(\/|$|#|\?))/i;
+
+export function sanitizeFreeformHtml(html: string): { html: string; removed: SanitizerRemoval[] } {
+  let src = String(html || "");
+  const removed: SanitizerRemoval[] = [];
+
+  // Iterate to a fixed point: removing a wrapping element shifts offsets, and a
+  // form can contain a script can contain a field. Re-scan after each pass;
+  // bounded because every pass strictly removes bytes.
+  for (let pass = 0; pass < 12; pass++) {
+    const scan = scanHtml(src);
+    const cuts: Splice[] = [];
+    let unwrappedForm = false;
+
+    for (const el of scan.all) {
+      // Whole-element removals (open tag through close tag).
+      const cutWhole = (what: string, reason: string) => {
+        cuts.push({ start: el.openStart, end: Math.max(el.closeEnd, el.openEnd), text: "" });
+        removed.push({ what, reason, sample: src.slice(el.openStart, Math.min(el.openStart + 80, el.openEnd)) });
+      };
+
+      if (el.name === "script") {
+        // Hubly injects its own runtime AFTER stamping, so any <script> present
+        // in the model's output is the model's, and not wanted.
+        cutWhole("<script>", "the page must not carry model-authored script");
+        continue;
+      }
+      if (el.name === "iframe") {
+        const srcAttr = (el.attrs.src || "").trim();
+        if (srcAttr && !SELF_ORIGIN_RE.test(srcAttr)) {
+          cutWhole("<iframe> (cross-origin)", `points off-domain: ${srcAttr.slice(0, 60)}`);
+        }
+        continue;
+      }
+      if (FORMY_LEAF.has(el.name)) {
+        cutWhole(`<${el.name}>`, "no field may collect input on a generated page");
+        continue;
+      }
+      if (el.name === "button") {
+        const t = (el.attrs.type || "").toLowerCase();
+        if (t === "submit" || t === "" ) {
+          // A default-type button inside a form submits it. Once the form is
+          // unwrapped it is inert, but remove it so a "Sign in" button cannot
+          // imply a working login.
+          cutWhole("<button type=submit>", "no submit control on a generated page");
+        }
+        continue;
+      }
+      if (el.name === "form" && !unwrappedForm) {
+        // Unwrap: drop the <form ...> open tag and its </form> close, keep the
+        // children. The action/method (where a harvest would post) go with the
+        // open tag. Only one per pass — offsets shift — then re-scan.
+        const openTagEnd = el.openEnd;
+        cuts.push({ start: el.openStart, end: openTagEnd, text: "" });
+        if (el.closeEnd > el.closeStart) cuts.push({ start: el.closeStart, end: el.closeEnd, text: "" });
+        removed.push({ what: "<form>", reason: "unwrapped — submission mechanism removed, copy kept", sample: src.slice(el.openStart, Math.min(el.openStart + 80, openTagEnd)) });
+        unwrappedForm = true;
+      }
+    }
+
+    if (!cuts.length) break;
+    // Non-overlapping by construction within a pass? A form and a field inside
+    // it can both match. Drop any cut fully contained in another, keep the outer.
+    cuts.sort((a, b) => a.start - b.start || b.end - a.end);
+    const kept: Splice[] = [];
+    let lastEnd = -1;
+    for (const c of cuts) {
+      if (c.start < lastEnd) continue; // contained in a prior (outer) cut
+      kept.push(c);
+      lastEnd = c.end;
+    }
+    src = spliceAll(src, kept);
+  }
+
+  return { html: src, removed };
 }
 
 function isOpaque(el: ScannedEl): boolean {
@@ -292,7 +412,12 @@ function valueRoleFor(el: ScannedEl, src: string): string | null {
 }
 
 export function stampFreeformHtml(html: string): StampResult {
-  const source = String(html || "");
+  // 0. CONTENT SAFETY, before anything else. Strip the mechanics of credential
+  //    harvesting (forms, fields, foreign scripts, cross-origin frames) so a
+  //    labelled, served page cannot be a phishing form. Runs first so labelling
+  //    never stamps an element that is about to be removed.
+  const sanitized = sanitizeFreeformHtml(html);
+  const source = sanitized.html;
 
   // 1. Discard any data-hc the model emitted, precisely (by attribute range,
   //    not by regex over the document — a regex cannot tell an attribute from
@@ -464,5 +589,6 @@ export function stampFreeformHtml(html: string): StampResult {
     labels,
     coverage: { editable: editable.length, labelled: L.assigned.size, missed: [] },
     strippedModelLabels,
+    removed: sanitized.removed,
   };
 }
