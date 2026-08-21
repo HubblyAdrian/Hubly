@@ -2772,3 +2772,101 @@ Two defects the live page surfaced (a function returning a URL would not have):
    branch hid it once, but `showP()` re-set it to `flex` on every call because
    `p-hubly-document` was not in its hide-list. Hidden authoritatively in
    `showP` now.
+
+## Placeholders: mark what Hubly guessed, strip what it must never invent
+
+A generated page contains content the model invented because it had nothing to
+work from — a photographer's "01 Book · 02 Set the tone · 03 Receive direction"
+process she never described. Useful proposals, but published as fact.
+
+- **The model marks its own guesses** inline: `data-hubly-guess="a suggested
+  tagline"`. It knows what it invented. No extra model call, no regeneration.
+- **A deterministic pass (`hubly_placeholders.ts`) strips the never-invent
+  credentials**, grounding each against the record: star ratings, review/customer
+  counts, and licence/insurance/certification/guarantee/award claims (no record
+  source → always stripped); a price that matches no recorded service price; a
+  "N years" that isn't `yearsInBusiness`. Stripped, NOT marked — an unnoticed
+  fake credential that ships is real damage.
+- **A backstop** marks a narrow forgotten class (a numbered process block). It
+  does not attempt to detect arbitrary invented prose — that is inherently the
+  model's job, which is why the model marks its own. Honest limit: a paragraph
+  the model neither marked nor credential-shaped is not caught.
+- **The mark is OWNER-ONLY.** The dotted-underline + "Hubly's suggestion" styling
+  is injected inside `wireHcEditingSurface`, which runs only under `?hcEdit=1`.
+  A public visitor sees an ordinary page; the owner sees which words are Hubly's.
+- **Editing clears the mark.** `applyFreeformEdit` drops `data-hubly-guess` when
+  it replaces an element's text.
+- **Count is queryable**: `countPlaceholders(html)`, or over stored pages via the
+  `data-hubly-guess` attribute.
+
+Verified on two served pages (marlow-vance 25, brightleaf-cleaning 38 marks),
+zero credentials on either, grounded prices kept ($120/$260), build time
+unchanged (55–63s), and an edit dropping a mark (25→24). Marking granularity is
+generous — a rich page carries 25–38 marks, not "six" — which is the safe
+direction (over-mark, never under-mark); grouping a section's marks into one is a
+possible refinement, not a defect.
+
+## Draft lifecycle: what happens between a sentence and a kept site (report)
+
+Investigated 2026-08-21. Read-only; nothing changed.
+
+**1. A draft does NOT survive a tab-close into the builder.** `hc.draftBusiness`
+(the id + draft_token) is held in memory and echoed back each turn; there is no
+`localStorage`, no restore-on-load. Reopening myhubly.app is a fresh
+conversation with no draft. What DOES survive: the PAGE itself (stored in
+`business_documents`, served at `{slug}.myhubly.app` — permanently, until
+deleted) and a 7-day httpOnly claim cookie (businessId only, set right after
+draft creation). The `draft_token` is a permanent column on `businesses`,
+server-side, never expiring until the row is claimed; it never reaches the
+browser except in-memory. So: the published page is durable; the *editing
+session* is not. Resuming the builder tomorrow would need the cookie's businessId
+to hand back the draft_token — essentially the claim flow — so it is more than a
+wire-up.
+
+**2. Claiming.** A "Keep this site" button (bottom-right) appears once a draft
+exists (`hcEnsureClaimUi`, called at platform-home:1616). It opens a modal:
+enter email → `claim-draft-business` records the binding → the client calls
+`supabase.auth.signInWithOtp` → the magic link, opened on any device, finishes
+the claim and sets `businesses.owner_id`. So the earlier "no signup button after
+a build" is no longer true — the button exists. (Note, not verified in-browser
+this session: the button sits bottom-right at z-index 9998, the same corner as
+the freeform chat FAB inside the iframe — a possible visual collision.)
+
+**3. Email capture** happens ONLY at claim, in that modal. Before claim, no
+personal email is captured; the `businesses.email` from the sentence is the
+*business's* contact email, not an account.
+
+**4. The numbers** (queried, not estimated):
+```
+drafts ever created ............ 48   (40 test, 6 internal, 2 real)
+...that produced a page ........ 30   (ALL test — no real/founder freeform page)
+...ever claimed (owner_id set) . 10   (6 internal, 2 real, 2 test)
+...came back on a 2nd day ...... 0
+```
+"Came back on a 2nd day" = a business whose stored page has document versions on
+two different calendar days. Zero. Caveat: this measures EDITING across days, not
+viewing; and all 48 are our own testing done in single sessions, so this is a
+statement about test behaviour, not customer behaviour — there are no freeform
+customers yet.
+
+**5. Public vs draft — the gate.** `get_public_business_document(slug)` serves
+`rendered_html` for ANY business with that slug, claimed or not. So **an
+unclaimed draft's `{slug}.myhubly.app` is live to anyone with the link** —
+confirmed: marlow-vance (unclaimed) serves 32,679 bytes to an anonymous caller.
+Unclaimed drafts are `noindex, nofollow` (`hcNoIndex`), so they won't appear in
+search, but a direct link works. This is the same public-serving path that made
+the phishing exposure possible (now mitigated at write-time by the
+`create_business_document` revoke + rate limit).
+
+**What it would take to hold the public address back until claimed + email
+verified:** `get_public_business_document` would gate on `owner_id IS NOT NULL`.
+The obstacle is that the BUILDER previews the draft through this SAME public RPC
+(`{slug}.myhubly.app?hcEdit=1`, iframed in platform-home). So gating public
+serving would break the owner's own preview unless the preview moves to an
+authenticated path (the builder already holds the draft_token and could fetch
+through a draft-scoped route). Concretely: (a) add `owner_id is not null` to the
+public RPC; (b) give the builder a `get_draft_business_document(slug,
+draft_token)` it can call to preview an unclaimed page; (c) optionally require
+`email_confirmed_at` on the owner before serving, for verified-email gating. That
+gate is what makes placeholders safe to publish AND closes the phishing exposure
+at read-time — the same gate, both problems.
