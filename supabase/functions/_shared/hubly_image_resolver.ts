@@ -135,12 +135,19 @@ function blankField(brand: string | null | undefined, alt: string, extraStyle: s
 
 /** Copy the marker's non-src attributes onto a real <img>. */
 function realImg(el: ScannedEl, url: string): string {
-  const keep = ["class", "style", "width", "height", "loading", "id"];
+  // NOT loading="lazy". A freeform page renders inside a srcdoc iframe, and lazy
+  // loading there has no reliable intersection root — verified live: with lazy,
+  // all three images (the in-view hero included) stayed unloaded and the hero
+  // showed a blank white box; forcing eager loaded all three. The model may have
+  // emitted a `loading` attribute of its own, so it is dropped from the keep
+  // list too. A freeform page carries 2–3 images, so eager loading costs
+  // nothing and lazy costs a broken hero.
+  const keep = ["class", "style", "width", "height", "id"];
   const attrs = keep
     .map((k) => (el.attrs[k] != null ? ` ${k}="${escAttr(el.attrs[k])}"` : ""))
     .join("");
   const alt = escAttr(attrOf(el, "alt"));
-  return `<img src="${escAttr(url)}"${attrs} alt="${alt}" loading="lazy">`;
+  return `<img src="${escAttr(url)}"${attrs} alt="${alt}">`;
 }
 
 export async function resolveImages(html: string, ctx: ImageResolveContext): Promise<ImageResolveResult> {

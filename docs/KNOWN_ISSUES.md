@@ -2718,3 +2718,57 @@ The measure the brief set — "how many pages need no stock" — is met for any
 business with its own photos: the roofer needed none. The hero of a photo-less
 business is where stock would help most, and that is exactly what the key
 unlocks.
+
+## STANDING RULE: no validation or cleanup pass may cause a second generation
+
+The Content Value Rule on the AST path cost a full extra model call on every
+build — 60–86 seconds and roughly half the token spend — to delete one section
+the model shouldn't have written. Rejecting the model's output and asking again
+is the most expensive possible way to fix anything, and it is never necessary.
+
+**Anything that needs correcting after the model writes gets corrected
+deterministically in a pass, or told to the model up front. Never by rejecting
+and regenerating.**
+
+Every correction in the freeform pipeline already obeys this and must continue
+to:
+
+- **labelling** (`data-hc`) — a deterministic stamping pass, never a re-ask
+- **content safety** (strip forms/scripts) — a pass
+- **image resolution** — a pass (customer photo → stock → colour field)
+- **the CTA cap** (≤3 booking links) — a pass that removes surplus sentinels,
+  plus an up-front model instruction; NOT a regeneration when the model emits 7
+- **the empty-state colour field** — a pass
+
+If you find yourself about to re-run generation to fix a defect in the output,
+stop: the fix belongs in a pass or in the prompt. A regeneration is only ever
+the OWNER explicitly asking for a different page.
+
+## Freeform images: live-verified, plus two bugs the live page found
+
+Stock images now land on real pages. `PEXELS_API_KEY` was set; confirmed present
+at runtime and valid (a throwaway probe returned 200 with a real roof photo).
+
+Two businesses with no uploads (thornbury-landscapes, kestrel-plumbing),
+verified on the served pages:
+- Real Pexels photographs visible (3 and 2), zero colour fields, full
+  provenance in `placed_images` (photographer + Pexels licence each).
+- Both rules held on a live fetch: zero stock in a work-role slot, no
+  person-words in any placed alt.
+- ≤3 booking CTAs each, no art-direction text visible, no floating language
+  toggle.
+- Build time 64.7s / 64.8s — within the prior freeform range, unchanged by image
+  resolution.
+
+Two defects the live page surfaced (a function returning a URL would not have):
+
+1. **`loading="lazy"` does not work inside a srcdoc iframe.** With it, all three
+   images — the in-view hero included — stayed unloaded and the hero showed a
+   white box; forcing `eager` loaded all three. A freeform page renders in a
+   srcdoc iframe with no reliable lazy-load intersection root, so `realImg` no
+   longer emits `loading="lazy"` (and drops any the model wrote). 2–3 images per
+   page means eager costs nothing.
+2. **The language toggle re-showed after being hidden.** The document-render
+   branch hid it once, but `showP()` re-set it to `flex` on every call because
+   `p-hubly-document` was not in its hide-list. Hidden authoritatively in
+   `showP` now.
