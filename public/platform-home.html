@@ -265,11 +265,17 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   .hc-app-left,.hc-app-right{transition:none}
   .hc-app.hc-has-draft .hc-app-right{animation:none}
 }
-/* overflow-x:hidden is explicit, not incidental: setting only overflow-y makes
-   overflow-x COMPUTE to `auto` (a CSS quirk), which lets the thread scroll — and
-   therefore clip — horizontally the moment anything is wider than it. Pinning it
-   to hidden means the rail can never shift text off its left edge. */
-.hc-thread{flex:1;overflow-y:auto;overflow-x:hidden;padding:36px clamp(22px,4vw,60px) 18px;display:flex;flex-direction:column;gap:22px}
+/* THE GUTTER IS STRUCTURAL. The rail-clipping bug — every line losing its first
+   character — is a whole-block leftward shift under a clip, and it survived every
+   attempt to find the cause. So it's made IMPOSSIBLE by construction rather than
+   chased: two nested boxes. The OUTER (.hc-thread) is the vertical scroll box and
+   pins overflow-x to `clip` — not `hidden`: `clip` forbids ALL horizontal scroll,
+   programmatic included, so nothing can ever shift the content sideways under the
+   clip. The INNER (.hc-thread-inner) carries the left/right padding as a gutter
+   the content sits inside, and clips its own overflow-x, so no scrollbar, no
+   overflowing sibling and no stray descendant can eat into it. Belt and braces. */
+.hc-thread{flex:1;min-height:0;overflow-y:auto;overflow-x:clip}
+.hc-thread-inner{display:flex;flex-direction:column;gap:22px;padding:36px clamp(22px,4vw,60px) 18px;min-width:0;overflow-x:clip;box-sizing:border-box}
 /* min-width:0 + overflow-wrap:anywhere so a long unbreakable token wraps inside
    the rail instead of pushing the message wider than its column. */
 .hc-msg{max-width:640px;min-width:0;overflow-wrap:anywhere;font-size:16px;line-height:1.65;white-space:pre-wrap}
@@ -294,10 +300,10 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 /* Before the first build there is no page, so the conversation is the whole
    screen — a centred, comfortable column at the ask box's width, not a panel
    pushed to one side of an empty canvas. */
-.hc-app:not(.hc-has-draft) .hc-thread{width:100%;max-width:640px;margin:0 auto}
+.hc-app:not(.hc-has-draft) .hc-thread-inner{max-width:640px;margin:0 auto;width:100%}
 /* A2: once it's a rail, the thread fills the whole column to a single 16px
    gutter — no more narrow centred stack with dead cream either side. */
-.hc-app.hc-has-draft .hc-thread{padding:20px 16px 16px;gap:16px}
+.hc-app.hc-has-draft .hc-thread-inner{padding:20px 16px 16px;gap:16px}
 .hc-app.hc-has-draft .hc-msg{max-width:none}
 
 /* The preview's view bar — outside #hcCanvas so it survives every view's
@@ -391,11 +397,18 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   border-bottom:1px solid var(--line);font-size:11.5px;color:var(--ink-3);
   font-family:ui-monospace,'SF Mono',Menlo,monospace;flex-shrink:0;
 }
+#hcAddressPill{display:inline-flex;align-items:center;gap:8px;min-width:0;overflow:hidden}
 .hc-canvas-url .hc-live-dot{width:6px;height:6px;border-radius:50%;background:#3ecf7a;box-shadow:0 0 6px rgba(62,207,122,.7);flex-shrink:0}
-.hc-canvas-url a{color:var(--ink-2);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+/* Reserved (unclaimed): the address is NOT a live link yet, so it says so — a
+   muted dot and a lock, and it doesn't navigate. It becomes the green live link
+   the moment the draft is claimed. Telling the truth here is the sign-up pitch. */
+.hc-canvas-url .hc-live-dot.is-reserved{background:var(--ink-3);box-shadow:none}
+.hc-canvas-url a,.hc-canvas-url .hc-addr-reserved{color:var(--ink-2);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;min-width:0}
 .hc-canvas-url a:hover{color:var(--brand)}
-.hc-canvas-url a .hc-open-ico{width:12px;height:12px;flex-shrink:0;opacity:.55}
+.hc-canvas-url .hc-addr-reserved{cursor:default;color:var(--ink-3)}
+.hc-canvas-url .hc-open-ico{width:12px;height:12px;flex-shrink:0;opacity:.55}
 .hc-canvas-url a:hover .hc-open-ico{opacity:1}
+.hc-canvas-url .hc-lock-ico{width:11px;height:11px;flex-shrink:0;opacity:.7}
 /* Device toggle — replaces the zoom %, which stops meaning anything once the
    preview renders a real device rectangle scaled to fit. */
 .hc-device-toggle{margin-left:auto;flex-shrink:0;display:inline-flex;gap:2px;background:var(--panel-2,rgba(28,22,16,.05));border:1px solid var(--line-soft);border-radius:8px;padding:2px}
@@ -777,7 +790,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 -->
 <div class="hc-app" id="hcApp" aria-hidden="true">
   <div class="hc-app-left">
-    <div class="hc-thread" id="hcThread"></div>
+    <div class="hc-thread" id="hcThread"><div class="hc-thread-inner" id="hcThreadBody"></div></div>
     <div class="hc-input-bar">
       <div class="ask-wrap">
         <div class="ask-glow" aria-hidden="true"></div>
@@ -930,7 +943,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // Already has an account on this device? Don't ask them to make one.
     try{ if(localStorage.getItem('hubly_account_claimed')) return; }catch(e){}
     hc.claimCardShown = true;
-    var thread = document.getElementById('hcThread');
+    var thread = hcThreadBody();
     if(!thread) return;
     var card = document.createElement('div');
     card.className = 'hc-claim-card';
@@ -945,7 +958,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       btn.addEventListener('click', function(){ try{ authOpen(); }catch(e){} });
     });
     thread.appendChild(card);
-    thread.scrollTop = thread.scrollHeight;
+    hcThreadScrollToEnd();
   }
 
   var hcGrantExchanged = false;
@@ -1040,6 +1053,33 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     if(btn) btn.addEventListener('click', hcShowPage);
   }
 
+  // The address pill tells the truth about whether the URL is live.
+  //   * UNCLAIMED (the default in the builder): the address is RESERVED, not a
+  //     live link — a muted dot and a lock, and it does not navigate. The public
+  //     URL is gated until the draft is claimed, so a click would show "not live
+  //     yet"; saying so instead is the sign-up pitch.
+  //   * CLAIMED: the green live link with the open-in-new icon, and it opens.
+  // The draft token NEVER goes in a URL — the gate is not relaxed, we just stop
+  // pretending the address is live before it is.
+  function hcAddressPillHtml(url){
+    var claimed = !!hc.draftClaimed;
+    var host = hcEscape(String(url || '').replace(/^https?:\/\//, ''));
+    var dot = '<span class="hc-live-dot' + (claimed ? '' : ' is-reserved') + '"></span>';
+    if(claimed){
+      return dot +
+        '<a href="' + hcEscape(url) + '" target="_blank" rel="noopener" title="Open your live site in a new tab">' + host +
+        '<svg class="hc-open-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>';
+    }
+    return dot +
+      '<span class="hc-addr-reserved" title="Reserved for you — goes live the moment you make an account">' + host +
+      '<svg class="hc-lock-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>';
+  }
+  // Repaint just the pill (not the toggle) when the claim state changes.
+  function hcUpdateAddressBar(){
+    var p = document.getElementById('hcAddressPill');
+    if(p && hc.draftBusiness) p.innerHTML = hcAddressPillHtml(hc.draftBusiness.url);
+  }
+
   function hcRenderCanvas(){
     hc.canvasView = 'site';
     try{ hcMountViewBar(); }catch(e){}
@@ -1053,11 +1093,8 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     }
     var url = hc.draftBusiness.url;
     root.innerHTML =
-      '<div class="hc-canvas-url"><span class="hc-live-dot"></span>' +
-        '<a href="' + hcEscape(url) + '" target="_blank" rel="noopener" title="Open your live site in a new tab">' +
-          hcEscape(url.replace(/^https?:\/\//,'')) +
-          '<svg class="hc-open-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
-        '</a>' +
+      '<div class="hc-canvas-url">' +
+        '<span id="hcAddressPill">' + hcAddressPillHtml(url) + '</span>' +
         '<div class="hc-device-toggle" id="hcDeviceToggle">' +
           '<button type="button" data-hc-device="desktop">Desktop</button>' +
           '<button type="button" data-hc-device="mobile">Mobile</button>' +
@@ -1398,7 +1435,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     return i < 0 ? 1 : i;   // null/unknown while running -> 'creating' (understanding is done)
   }
   function hcRenderStepsCard(){
-    var thread = document.getElementById('hcThread');
+    var thread = hcThreadBody();
     if(!thread || document.getElementById('hcStepsCard')) return;
     var card = document.createElement('div');
     card.className = 'hc-steps-card';
@@ -1412,7 +1449,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       '<ul class="hc-steps-list" id="hcStepsList"></ul>';
     thread.appendChild(card);
     hcUpdateStepsCard('creating', 'running');
-    thread.scrollTop = thread.scrollHeight;
+    hcThreadScrollToEnd();
   }
   function hcUpdateStepsCard(stage, status){
     var list = document.getElementById('hcStepsList');
@@ -1516,7 +1553,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   }
 
   function hcAppendRetryBuild(){
-    var thread = document.getElementById('hcThread');
+    var thread = hcThreadBody();
     if(!thread || thread.querySelector('[data-hc-retry-build]')) return;
     var wrap = document.createElement('div');
     // Not .hc-drop: that is the dashed drop-target frame, and a button inside
@@ -1539,7 +1576,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     });
     wrap.appendChild(btn);
     thread.appendChild(wrap);
-    thread.scrollTop = thread.scrollHeight;
+    hcThreadScrollToEnd();
   }
 
   function hcPollForDocument(businessId, attempt){
@@ -1632,14 +1669,21 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       '<div class="hc-canvas-loading" style="position:static;flex:1"><span class="hc-live-dot"></span>&nbsp;' + label + '</div>';
   }
 
+  // Everything that used to append to #hcThread now appends to the INNER gutter
+  // box; the OUTER #hcThread is the scroll container. hcThreadBody() is the append
+  // target, hcThreadScrollToEnd() scrolls the outer. Both fall back to the outer
+  // if the inner isn't present, so nothing breaks if the markup changes.
+  function hcThreadBody(){ var b = document.getElementById('hcThreadBody'); return b || document.getElementById('hcThread'); }
+  function hcThreadScrollToEnd(){ var t = document.getElementById('hcThread'); if(t) t.scrollTop = t.scrollHeight; }
+
   function hcAppendMessage(role, text){
-    var thread = document.getElementById('hcThread');
+    var thread = hcThreadBody();
     if(!thread) return;
     var div = document.createElement('div');
     div.className = 'hc-msg ' + (role === 'user' ? 'user' : 'hubly');
     div.textContent = text;
     thread.appendChild(div);
-    thread.scrollTop = thread.scrollHeight;
+    hcThreadScrollToEnd();
   }
 
   // The first-build follow-up message. Concrete, about THEIR page — not generic
@@ -1676,6 +1720,11 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       }
     }catch(e){}
     var leadCands = labels.filter(function(t){ return !/visit|contact|hours|faq|about|location|find us|home/i.test(t); });
+    // EVERY suggestion here must be something Hubly can do RIGHT NOW, for free,
+    // just by talking — conversational regeneration is the free loop that proves
+    // the product. Files (photos, logo) and click-to-edit need an account, so
+    // they are NEVER offered here; they come after, carrying the door in the same
+    // breath. See the account line below.
     var lines = [];
     if(leadCands.length >= 2){
       lines.push('• lead with your ' + leadCands[1].toLowerCase() + ' instead of your ' + leadCands[0].toLowerCase());
@@ -1685,21 +1734,35 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       lines.push('• reorder the sections — lead with whatever matters most');
     }
     lines.push('• make it warmer, or more pared-back');
-    lines.push('• swap in your own photos — send them whenever');
-    var msg = "That's your site — live at the address up top. Want to shape it? A few things I can do right now:\n" +
-      lines.join('\n') +
-      "\n\nAnd if you've got a logo, send it over and I'll put it on. Otherwise just tell me what to change.";
+    lines.push('• reword anything — just tell me what to say');
+
+    var claimed = !!hc.draftClaimed;
+    var host = String((hc.draftBusiness && hc.draftBusiness.url) || '').replace(/^https?:\/\//, '');
+    var msg;
+    if(claimed){
+      // Already theirs: the address IS live and files are available to them.
+      msg = "That's your site — live at " + host + ". Want to shape it? A few things I can do:\n" +
+        lines.join('\n') +
+        "\n\nOr send your own photos and logo any time and I'll put them on.";
+    } else {
+      // Reserved: don't claim it's live, and don't offer anything gated. The
+      // account offer comes after, separately, framed as the reward.
+      msg = "That's your site. The address " + host + " is reserved for you — it goes live the moment you make an account.\n\n" +
+        "Want to shape it? A few things I can do right now, just by talking:\n" +
+        lines.join('\n') +
+        "\n\nWant your own photos and logo on it, and the address live? That takes an account — about ten seconds.";
+    }
     hcAppendMessage('hubly', msg);
   }
 
   function hcAppendTyping(){
-    var thread = document.getElementById('hcThread');
+    var thread = hcThreadBody();
     if(!thread) return null;
     var div = document.createElement('div');
     div.className = 'hc-msg hubly typing';
     div.textContent = 'Hubly is thinking…';
     thread.appendChild(div);
-    thread.scrollTop = thread.scrollHeight;
+    hcThreadScrollToEnd();
     return div;
   }
 
@@ -2042,7 +2105,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   }
 
   function hcAppendLogoDropzone(){
-    var thread = document.getElementById('hcThread');
+    var thread = hcThreadBody();
     if(!thread) return;
     hcClearLogoDropzones();
 
@@ -2101,7 +2164,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     });
 
     thread.appendChild(zone);
-    thread.scrollTop = thread.scrollHeight;
+    hcThreadScrollToEnd();
   }
 
   function hcSendContent(parts, displayText){
@@ -2655,7 +2718,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // draft token is valid) — so never a dead end. Offer a one-tap retry in the rail
   // rather than leave it unexplained.
   function hcShowClaimRetry(){
-    var thread = document.getElementById('hcThread'); if(!thread) return;
+    var thread = hcThreadBody(); if(!thread) return;
     var d = document.createElement('div'); d.className = 'hc-claim-retry';
     d.innerHTML = '<p>You’re signed in, and you can keep editing this page. I couldn’t link it to your account just yet.</p>' +
       '<button type="button" class="hc-claim-retry-btn">Save to my account</button>';
@@ -2665,7 +2728,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       if(r && r.ok){ d.remove(); hcAppendMessage('hubly', 'Saved to your account — this page is yours now.'); }
       else { b.disabled = false; b.textContent = 'Save to my account'; }
     });
-    thread.appendChild(d); thread.scrollTop = thread.scrollHeight;
+    thread.appendChild(d); hcThreadScrollToEnd();
   }
   // After auth resolves (either path). Claim the draft in play and return them to
   // editing; a plain landing sign-in with no draft goes to the dashboard.
@@ -2678,8 +2741,10 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     hc.pendingEditLabel = null;
     var res = await hcClaimDraft();
     if(res && res.ok){
+      hc.draftClaimed = true;                        // the address is live now
+      hcUpdateAddressBar();                           // pill: reserved -> live link
       hcTellPreviewAuthed(pending);                 // preview can edit now; open the clicked element
-      if(res.claimed) hcAppendMessage('hubly', 'Saved to your account — this page is yours now. Keep editing whenever you like.');
+      if(res.claimed) hcAppendMessage('hubly', 'Saved to your account — this page is yours now, and ' + hcEscape(String(hc.draftBusiness.url||'').replace(/^https?:\/\//,'')) + ' is live. Keep editing whenever you like.');
     } else if(res && res.error === 'already_claimed'){
       hcAppendMessage('hubly', "You’re signed in — but this page is already saved to a different account, so I can’t add it to yours.");
     } else {

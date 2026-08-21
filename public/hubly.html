@@ -17380,6 +17380,21 @@ function hcMountDocumentHtml(root,html){
   // builder size the outer iframe to the content, which made `100vh` in the page
   // resolve against a content-sized viewport and inflate without bound. The page
   // is a browser window here, nothing to report.
+  //
+  // ARRIVE AT THE TOP, ALWAYS. A generated page sometimes came up scrolled to the
+  // bottom (cause never pinned down — not autofocus, not a runtime focus-on-load).
+  // Rather than keep hunting, force it: the srcdoc is same-origin, so reset its
+  // scroll to 0 on load and again on the next frame in case something scrolls just
+  // after. Instant (the 2-arg scrollTo ignores scroll-behavior:smooth), so it's a
+  // reset, not a visible scroll-up.
+  frame.addEventListener('load', function(){
+    try{
+      var w = frame.contentWindow; if(!w) return;
+      w.scrollTo(0, 0);
+      requestAnimationFrame(function(){ try{ w.scrollTo(0, 0); }catch(e){} });
+      setTimeout(function(){ try{ w.scrollTo(0, 0); }catch(e){} }, 120);
+    }catch(e){}
+  });
   return frame;
 }
 function hcFreeformFrame(){
