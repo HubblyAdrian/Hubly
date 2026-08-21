@@ -1550,6 +1550,7 @@ export async function generateFreeformPage(
   // STAGE: creating (the model call is running). Understanding already returned.
   await updateDocumentBuildStage(jobId, "creating");
   let text = "";
+  let finishReason = "";
   const usage = emptyUsage();
   let modelUsed: string | undefined;
   try {
@@ -1564,6 +1565,7 @@ export async function generateFreeformPage(
       jsonMode: false,
     });
     text = String(ai.text || "");
+    finishReason = String((ai as { finishReason?: string }).finishReason || "");
     addUsage(usage, ai.usage);
     modelUsed = (ai as { model?: string }).model;
   } catch (e) {
@@ -1576,6 +1578,19 @@ export async function generateFreeformPage(
   const raw = (fenced ? fenced[1] : text).trim();
   if (!/<html[\s>]|<body[\s>]|<!doctype/i.test(raw)) {
     return { ok: false, error: "model did not return an HTML document" };
+  }
+  // TRUNCATION GUARD. A page cut off at the token cap renders as a nav and then a
+  // void, and until now the only check was "does it START like HTML" — so a
+  // half-page was stored as a success. Reject it two ways: an explicit length
+  // finish reason from the provider, and — for when the finish reason isn't
+  // captured — an HTML string with no closing </html>, which a complete document
+  // always has. A truncated page fails HONESTLY (the build can retry) instead of
+  // storing a broken half. Fewer complete pages beat one broken one.
+  if (/^(length|max_tokens|max_output_tokens)$/i.test(finishReason)) {
+    return { ok: false, error: "generation_truncated_length" };
+  }
+  if (!/<\/html\s*>/i.test(raw)) {
+    return { ok: false, error: "generation_incomplete_no_close" };
   }
   // STAGE: photos (the model produced a valid page; now resolving images).
   await updateDocumentBuildStage(jobId, "photos");

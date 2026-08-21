@@ -444,6 +444,10 @@ export type HublyAIResult = {
    *  separately because it's usually the dominant cost for a reasoning
    *  model and worth seeing on its own. */
   usage?: { promptTokens: number; completionTokens: number; reasoningTokens?: number };
+  /** Provider finish reason — "stop"/"end_turn" is natural, "length"/"max_tokens"
+   *  means the output was truncated at the token cap. A caller storing a document
+   *  must reject a truncated one rather than persist a half-page as a success. */
+  finishReason?: string;
 };
 
 /** @deprecated use HublySkillId */
@@ -828,6 +832,10 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
 
   const data = await res.json();
   const text = String(data?.choices?.[0]?.message?.content || "").trim();
+  // The finish reason. "length" means the output was cut off at the token cap —
+  // a truncated answer, which a caller storing a document MUST be able to reject
+  // rather than persist as if it were whole.
+  const finishReason = String(data?.choices?.[0]?.finish_reason || "");
   const rawUsage = data?.usage;
   const usage = rawUsage
     ? {
@@ -843,6 +851,7 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
     task: opts.task,
     memoryKeys: memoryKeys(opts.memory),
     usage,
+    finishReason,
   };
 }
 

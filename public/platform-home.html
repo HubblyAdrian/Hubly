@@ -1047,17 +1047,44 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         '</div>' +
       '</div>';
     hc.activeFrame = 'A';
-    hcApplyPreviewFit();
+    // SETTLE ONCE (fix): a fresh page must NOT paint at a guessed scale and then
+    // jump when the real height arrives ("zooms in mid-build"). So we keep the
+    // stage behind the loading cover until the preview reports its true height,
+    // fit to THAT, and only then reveal — and never re-scale after it's visible.
+    hc.previewSize = null;
+    hc.previewSettled = false;
+    hc.frameLoaded = false;
+    hcApplyPreviewFit();   // lays out the (hidden) stage; the visible fit happens at settle
     var frameA = document.getElementById('hcCanvasFrameA');
-    var loading = document.getElementById('hcCanvasLoading');
-    if(frameA && loading){
-      frameA.addEventListener('load', function(){ loading.classList.add('is-hidden'); }, { once:true });
+    if(frameA){
+      frameA.addEventListener('load', function(){
+        hc.frameLoaded = true;
+        hcMaybeSettlePreview();
+        // Fallback: if the height report never comes (an older preview, a blocked
+        // message), reveal anyway rather than sit on the loader forever — fit to
+        // width at the default height.
+        setTimeout(function(){ if(!hc.previewSettled) hcMaybeSettlePreview(true); }, 3500);
+      }, { once:true });
     }
     var zoom = document.getElementById('hcZoomBtn');
     if(zoom) zoom.addEventListener('click', function(){
       hc.previewZoom = (hc.previewZoom === 'full') ? 'fit' : 'full';
       hcApplyPreviewFit();
     });
+  }
+
+  // Reveal the preview exactly once, at the correct scale. Called when the frame
+  // loads and when the height report lands; it only fires when BOTH are true (or
+  // `force`, the timeout fallback). After it settles, later height reports are
+  // ignored so the page never re-scales under the person (the image-load reflow
+  // that caused the "zoom in mid-build" is exactly a later report).
+  function hcMaybeSettlePreview(force){
+    if(hc.previewSettled) return;
+    if(!force && !(hc.frameLoaded && hc.previewSize)) return;
+    hcApplyPreviewFit();
+    hc.previewSettled = true;
+    var loading = document.getElementById('hcCanvasLoading');
+    if(loading) loading.classList.add('is-hidden');
   }
 
   // FIT-TO-WIDTH (A1). The page fills the width of the pane at a readable scale
@@ -1106,6 +1133,21 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       zoom.textContent = Math.round(scale * 100) + '%';
       zoom.title = (hc.previewZoom === 'full') ? 'Fit to width' : 'Zoom to 100%';
     }
+  }
+
+  // Height-only update, used AFTER the preview has settled and is visible. Images
+  // loading make the page grow and re-report; we extend the scroll box to match
+  // but reuse the scale already on the stage — so the page never re-scales under
+  // the person. (A genuine pane resize goes through hcApplyPreviewFit instead,
+  // where recomputing the scale is what's wanted.)
+  function hcUpdatePreviewHeightOnly(){
+    var stage = document.getElementById('hcPreviewStage');
+    var frame = document.getElementById('hcPreviewFrame');
+    if(!stage || !frame || !hc.previewSize || !hc.previewSize.h) return;
+    var scale = parseFloat(stage.style.getPropertyValue('--hc-scale')) || 1;
+    var pageH = hc.previewSize.h;
+    stage.style.setProperty('--hc-ph', pageH + 'px');
+    frame.style.setProperty('--hc-fh', (pageH * scale) + 'px');
   }
 
   // Cache-busts so the exact same URL always forces a real fresh navigation
@@ -2215,8 +2257,19 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // cross-origin, so we cannot read it) and we rescale to keep the whole page
     // visible. Width is always the fixed desktop width we lay it out at.
     if(data.type === 'hcPreviewSize' && typeof data.height === 'number' && data.height > 0){
+      // Record the real height and settle ONCE. If the preview is already settled
+      // and visible, a later report (an image finishing, a reflow) does NOT
+      // re-scale it — that re-scale under the person is the bug being fixed.
       hc.previewSize = { h: Math.round(data.height) };
-      hcApplyPreviewFit();
+      if(hc.previewSettled){
+        // Already visible: as images finish loading the page grows and the
+        // preview re-reports a taller height. Track that height so the scroll
+        // area stays right — but at the FROZEN scale, never recomputing it.
+        // Growing the scroll box is not a re-scale; the page does not zoom.
+        hcUpdatePreviewHeightOnly();
+      } else {
+        hcMaybeSettlePreview();
+      }
       return;
     }
     if(data.type === 'hcInlineEdit' && (data.field === 'heroHeadline' || data.field === 'heroSubhead') && typeof data.value === 'string'){
