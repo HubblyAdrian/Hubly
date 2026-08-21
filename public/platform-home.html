@@ -265,8 +265,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   .hc-app-left,.hc-app-right{transition:none}
   .hc-app.hc-has-draft .hc-app-right{animation:none}
 }
-.hc-thread{flex:1;overflow-y:auto;padding:36px clamp(22px,4vw,60px) 18px;display:flex;flex-direction:column;gap:22px}
-.hc-msg{max-width:640px;font-size:16px;line-height:1.65;white-space:pre-wrap}
+/* overflow-x:hidden is explicit, not incidental: setting only overflow-y makes
+   overflow-x COMPUTE to `auto` (a CSS quirk), which lets the thread scroll — and
+   therefore clip — horizontally the moment anything is wider than it. Pinning it
+   to hidden means the rail can never shift text off its left edge. */
+.hc-thread{flex:1;overflow-y:auto;overflow-x:hidden;padding:36px clamp(22px,4vw,60px) 18px;display:flex;flex-direction:column;gap:22px}
+/* min-width:0 + overflow-wrap:anywhere so a long unbreakable token wraps inside
+   the rail instead of pushing the message wider than its column. */
+.hc-msg{max-width:640px;min-width:0;overflow-wrap:anywhere;font-size:16px;line-height:1.65;white-space:pre-wrap}
 .hc-msg.hubly{color:var(--ink)}
 /* The user's own words as a filled bubble at the column's right edge. A
    brand-orange fill was measured first and rejected: white on #D9632D is
@@ -343,6 +349,12 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 /* Pre-build the composer stays centred to match the 640 conversation column;
    once it's a rail it fills the full rail width. */
 .hc-app.hc-has-draft .hc-input-bar .ask-wrap{max-width:none;margin:0;width:100%}
+/* The composer glow is width:116% (a soft bleed that reads fine on the centred
+   pre-build box). In the narrow rail that 16% overhangs the column on BOTH sides
+   — the "stack wider than its container" that makes the rail's scrollWidth exceed
+   its clientWidth. Pin it to the column width here so nothing in the rail extends
+   past the rail's own edges. Height still bleeds vertically; only width is caged. */
+.hc-app.hc-has-draft .hc-input-bar .ask-glow{width:100%}
 .hc-input-bar .ask-box{padding:14px 16px 14px 16px;border-radius:14px}
 .hc-input-bar .ask-box input{padding:6px 40px 6px 40px}
 .hc-input-bar .ask-icon-left{bottom:auto;top:50%;transform:translateY(-50%);left:16px}
