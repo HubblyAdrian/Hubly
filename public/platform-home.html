@@ -573,6 +573,34 @@ body.hc-active #hc-keep-btn{display:block}
 }
 .hc-claim-card-alt:hover{border-color:var(--brand);color:var(--brand)}
 
+/* The steps card (item 3) — the real stages of a build, in the chat, each
+   ticking only when it genuinely completes. Completed steps sit above the
+   current (spinning) one; pending ones below. */
+.hc-steps-card{
+  align-self:stretch;
+  background:var(--bg-2);border:1px solid var(--line);border-radius:14px;
+  padding:16px 16px 14px;margin-top:2px;box-shadow:0 4px 16px rgba(28,22,16,.06);
+  animation:hcCardIn .4s cubic-bezier(.16,.8,.3,1) both;
+}
+.hc-steps-card.is-failed{border-color:rgba(220,38,38,.35)}
+.hc-steps-head{display:flex;gap:10px;align-items:flex-start;margin-bottom:13px}
+.hc-steps-spark{color:var(--brand);font-size:15px;line-height:1.3;flex-shrink:0}
+.hc-steps-title{font-weight:750;font-size:14.5px;color:var(--ink)}
+.hc-steps-sub{font-size:12.5px;color:var(--ink-3);margin-top:1px}
+.hc-steps-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.hc-step{display:flex;align-items:center;gap:11px}
+.hc-step-ico{width:18px;height:18px;flex-shrink:0;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;box-sizing:border-box}
+.hc-step-ico.hc-step-done{background:#16a34a;color:#fff}
+.hc-step-ico.hc-step-failed{background:#dc2626;color:#fff}
+.hc-step-ico.hc-step-pending{border:2px solid var(--line-soft);background:transparent}
+.hc-step-ico.hc-step-active{border:2px solid rgba(217,99,45,.28);border-top-color:var(--brand);animation:hcStepSpin .7s linear infinite}
+@keyframes hcStepSpin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){ .hc-step-ico.hc-step-active{animation:none} }
+.hc-step-label{font-size:13px;color:var(--ink-2);transition:color .2s ease}
+.hc-step.hc-step-active .hc-step-label{color:var(--ink);font-weight:650}
+.hc-step.hc-step-pending .hc-step-label{color:var(--ink-3)}
+.hc-step.hc-step-failed .hc-step-label{color:#b42318;font-weight:650}
+
 /* —— Sign-in: one door. A modal over the current page — no navigation, no
    second window. Continue with Google, or an email and a six-digit code. Same
    door for new and returning: the email either logs in or creates the account,
@@ -1495,6 +1523,74 @@ body.hc-active #hc-keep-btn{display:block}
     })();
   }
 
+  // THE STEPS CARD — the real stages of a build, ticking in the chat as each one
+  // genuinely completes. The middle three are invisible from here on their own
+  // (they run inside one server call); the server writes each to the job row as
+  // its prior stage's work finishes and get_document_build_status.stage carries
+  // it, so nothing on this card claims progress that hasn't happened. Understanding
+  // is done the moment a build starts (the conversation turn returned); the final
+  // step ticks when the document is stored. Completed steps sit ABOVE the current
+  // one, which carries the spinner (the reference had that inverted).
+  var HC_BUILD_STEPS = [
+    { key: 'understanding', label: 'Understanding your business' },
+    { key: 'creating',      label: 'Creating your website' },
+    { key: 'photos',        label: 'Finding your photographs' },
+    { key: 'booking',       label: 'Connecting booking' },
+    { key: 'finalizing',    label: 'Finalizing design' }
+  ];
+  function hcStepIndex(stage){
+    var keys = HC_BUILD_STEPS.map(function(s){ return s.key; });
+    var i = keys.indexOf(stage);
+    return i < 0 ? 1 : i;   // null/unknown while running -> 'creating' (understanding is done)
+  }
+  function hcRenderStepsCard(){
+    var thread = document.getElementById('hcThread');
+    if(!thread || document.getElementById('hcStepsCard')) return;
+    var card = document.createElement('div');
+    card.className = 'hc-steps-card';
+    card.id = 'hcStepsCard';
+    card.innerHTML =
+      '<div class="hc-steps-head">' +
+        '<span class="hc-steps-spark" aria-hidden="true">✦</span>' +
+        '<div><div class="hc-steps-title">Building your website</div>' +
+        '<div class="hc-steps-sub" id="hcStepsSub">Creating your first version…</div></div>' +
+      '</div>' +
+      '<ul class="hc-steps-list" id="hcStepsList"></ul>';
+    thread.appendChild(card);
+    hcUpdateStepsCard('creating', 'running');
+    thread.scrollTop = thread.scrollHeight;
+  }
+  function hcUpdateStepsCard(stage, status){
+    var list = document.getElementById('hcStepsList');
+    if(!list) return;
+    var cur = hcStepIndex(stage);
+    var done = status === 'succeeded';
+    var failed = status === 'stalled' || status === 'failed';
+    var html = '';
+    for(var i = 0; i < HC_BUILD_STEPS.length; i++){
+      var state;
+      if(done) state = 'done';
+      else if(i < cur) state = 'done';
+      else if(i === cur) state = failed ? 'failed' : 'active';
+      else state = failed ? 'pending' : 'pending';
+      var ico = state === 'done' ? '<span class="hc-step-ico hc-step-done">✓</span>'
+              : state === 'failed' ? '<span class="hc-step-ico hc-step-failed">!</span>'
+              : state === 'active' ? '<span class="hc-step-ico hc-step-active"></span>'
+              : '<span class="hc-step-ico hc-step-pending"></span>';
+      html += '<li class="hc-step hc-step-' + state + '">' + ico +
+              '<span class="hc-step-label">' + hcEscape(HC_BUILD_STEPS[i].label) + '</span></li>';
+    }
+    list.innerHTML = html;
+    var sub = document.getElementById('hcStepsSub');
+    if(sub){
+      sub.textContent = done ? 'Your first version is ready.'
+                       : failed ? 'This build stopped — we can start it again.'
+                       : HC_BUILD_STEPS[cur].label + '…';
+    }
+    var card = document.getElementById('hcStepsCard');
+    if(card){ card.classList.toggle('is-done', done); card.classList.toggle('is-failed', !!failed); }
+  }
+
   var hcDocPollTimer = null;
   function hcRenderDocumentBuilding(narration){
       hc.canvasView = 'site';
@@ -1639,6 +1735,7 @@ body.hc-active #hc-keep-btn{display:block}
         var docExists = Array.isArray(rows) ? !!(rows[0] && rows[0].rendered_html) : !!(rows && rows.rendered_html);
         var st = pair[1] || {};
         if(docExists || st.hasDocument || st.status === 'succeeded'){
+          hcUpdateStepsCard(null, 'succeeded');   // every step ticks
           hc.canvasStage = 'site';
           hcRenderCanvas();
           var hcAppEl = document.getElementById('hcApp');
@@ -1646,18 +1743,23 @@ body.hc-active #hc-keep-btn{display:block}
           return;
         }
         if(st.status === 'stalled'){
+          hcUpdateStepsCard(st.stage, 'stalled');
           hcBuildFailed("The build stopped partway and never finished — that's on us, not on anything you did. Nothing was saved, so nothing is half-built.");
           return;
         }
         if(st.status === 'failed'){
+          hcUpdateStepsCard(st.stage, 'failed');
           hcBuildFailed("I couldn't finish building the page that time. Nothing was saved, so we can start it again cleanly.");
           return;
         }
         if(attempt >= MAX_ATTEMPTS){
+          hcUpdateStepsCard(st.stage, 'stalled');
           hcBuildFailed("I've been waiting on this build for four minutes and it hasn't arrived. Rather than leave you watching a loading screen, let's start it again.");
           return;
         }
-        hcDocPollTimer = setTimeout(function(){ hcPollForDocument(businessId, attempt + 1); }, 4000);
+        // Still running — tick the card to the real stage the server reports.
+        hcUpdateStepsCard(st.stage || 'creating', 'running');
+        hcDocPollTimer = setTimeout(function(){ hcPollForDocument(businessId, attempt + 1); }, 3000);
       })
       .catch(function(){
         // A network blip is not a failed build; keep polling and let the
@@ -1869,6 +1971,7 @@ body.hc-active #hc-keep-btn{display:block}
           var hcInterim0 = (Array.isArray(data.interimMessages) && data.interimMessages[0] && String(data.interimMessages[0]).trim().length >= 80) ? String(data.interimMessages[0]).trim() : '';
           buildNarration = hcReplyNarr || hcInterim0;
           hcRenderDocumentBuilding(buildNarration);
+          hcRenderStepsCard();   // the real stages, ticking in the chat
           var hcAppElBuild = document.getElementById('hcApp');
           if(hcAppElBuild) hcAppElBuild.classList.add('hc-has-draft');
           hcPollForDocument(hc.draftBusiness.id, 0);

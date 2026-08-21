@@ -1475,6 +1475,7 @@ export async function generateFreeformPage(
   businessId: string,
   brief: string,
   record: Record<string, unknown>,
+  jobId?: string | null,
 ): Promise<{ ok: true; html: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string; imagesPlaced?: number; imageBlanks?: number; placeholders?: number; strippedCredentials?: number } | { ok: false; error: string }> {
   // WHAT HUBLY SUPPLIES, told to the model so it can DESIGN for it.
   //
@@ -1545,6 +1546,8 @@ export async function generateFreeformPage(
     capabilities + "\n\n" +
     `THE BUSINESS RECORD:\n${JSON.stringify(record, null, 1)}`;
 
+  // STAGE: creating (the model call is running). Understanding already returned.
+  await updateDocumentBuildStage(jobId, "creating");
   let text = "";
   const usage = emptyUsage();
   let modelUsed: string | undefined;
@@ -1573,6 +1576,8 @@ export async function generateFreeformPage(
   if (!/<html[\s>]|<body[\s>]|<!doctype/i.test(raw)) {
     return { ok: false, error: "model did not return an HTML document" };
   }
+  // STAGE: photos (the model produced a valid page; now resolving images).
+  await updateDocumentBuildStage(jobId, "photos");
 
   // IMAGE RESOLUTION, before stamping so labels land on resolved <img>s (or on
   // nothing, for a marker that collapsed to a colour field). The model marked
@@ -1605,6 +1610,8 @@ export async function generateFreeformPage(
     },
   };
   const resolved = await resolveImages(raw, imgCtx);
+  // STAGE: booking (photos resolved; labelling + booking/chat injection next).
+  await updateDocumentBuildStage(jobId, "booking");
 
   // PLACEHOLDER PASS. Strips ungrounded credentials (prices/ratings/reviews/
   // years/licence/insurance/certification/guarantee — the never-invent list)
@@ -1635,6 +1642,8 @@ export async function generateFreeformPage(
     publishableKey: requirePublishableKey(),
     accent: String((record as Record<string, unknown>)?.brand_color || ""),
   });
+  // STAGE: finalizing (booking wired; the document is about to be stored).
+  await updateDocumentBuildStage(jobId, "finalizing");
   return {
     ok: true,
     html: wired.html,
@@ -2167,6 +2176,26 @@ export async function finishDocumentBuildJob(
   }
 }
 
+/** Non-terminal progress marker, best-effort. Lets the builder tick the REAL
+ *  stages of a build as each one genuinely completes — the value is written the
+ *  moment the prior stage's work finished (see get_document_build_status.stage
+ *  and hcRenderStepsCard). A build never fails on a status write, so this
+ *  swallows its own errors. STAGES, in order:
+ *    creating   — the model call is running (understanding already returned)
+ *    photos     — model done; resolveImages is running
+ *    booking    — images done; labelling + booking/chat injection running
+ *    finalizing — injection done; storing the document
+ *  succeeded/failed are the terminal states written by finishDocumentBuildJob. */
+export async function updateDocumentBuildStage(
+  jobId: string | null | undefined,
+  stage: "creating" | "photos" | "booking" | "finalizing",
+): Promise<void> {
+  if (!jobId) return;
+  try {
+    await adminClient().from("document_build_jobs").update({ stage }).eq("id", jobId);
+  } catch (_e) { /* visibility only — never fail a build on a progress write */ }
+}
+
 /** The most recent job for a business, for deciding whether to resume one. */
 export async function latestDocumentBuildJob(
   businessId: string,
@@ -2296,6 +2325,7 @@ async function runFreeformGeneration(
   draftToken: string,
   brief: string,
   sw: ReturnType<typeof stopwatch>,
+  jobId?: string | null,
 ): Promise<CapabilityActionResult> {
   const bizRow = await selectOne("businesses", "id", draftId, "name,phone,email,address,slug,brand_color,logo_url,city,state,service_area_cities,business_type,years_in_business,meta");
   sw.mark("selectBusinessRow");
@@ -2306,7 +2336,7 @@ async function runFreeformGeneration(
   sw.mark("loadBusinessRecord");
 
   const genStarted = Date.now();
-  const gen = await generateFreeformPage(draftId, brief, { ...(record as any), ...(bizRow || {}) });
+  const gen = await generateFreeformPage(draftId, brief, { ...(record as any), ...(bizRow || {}) }, jobId);
   sw.mark("modelAndStamp");
   const generationMs = Date.now() - genStarted;
   if (!gen.ok) {
@@ -2344,6 +2374,7 @@ export async function runDocumentGeneration(
   draftToken: string,
   brief: string,
   benchmarkModel?: string,
+  jobId?: string | null,
 ): Promise<CapabilityActionResult> {
   const sw = stopwatch();
           if (!draftId || !draftToken) {
@@ -2374,7 +2405,7 @@ export async function runDocumentGeneration(
           const existing = await selectLatestBusinessDocument(draftId, "website");
           sw.mark("readExistingDocument");
           if (!existing || existing.format === "html") {
-            return await runFreeformGeneration(draftId, draftToken, brief, sw);
+            return await runFreeformGeneration(draftId, draftToken, brief, sw, jobId);
           }
           const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,meta");
           sw.mark("selectBusinessRow");

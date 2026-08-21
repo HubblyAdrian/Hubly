@@ -119,7 +119,7 @@ Deno.serve(async (req) => {
   // runtime has no reason to recycle the isolate underneath it.
   try {
     const preamble = Math.round(performance.now() - fnStart);
-    const result = await runDocumentGeneration(draftId, draftToken, brief);
+    const result = await runDocumentGeneration(draftId, draftToken, brief, undefined, jobId);
     const inFunction = Math.round(performance.now() - fnStart);
     // dispatchedAt is stamped by hubly-conversation immediately before the HTTP
     // call, so (arrival - dispatchedAt) is the round trip plus cold boot -- the
