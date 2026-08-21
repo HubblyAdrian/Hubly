@@ -257,7 +257,10 @@ body.hc-active #hc-keep-btn{display:block}
    visible change is the explanation" only works if it has the room to be
    seen. Chat stays comfortable to read, just no longer fighting for equal
    space with the thing it's actually describing. */
-.hc-app.hc-has-draft .hc-app-left{flex:0 1 30%;min-width:340px;border-right:1px solid var(--line)}
+/* Once a page exists the page is the point, so chat becomes a readable sidebar
+   column — a fixed ~360px, not 30% of a wide screen (which left one line of text
+   floating in half a panel). The canvas takes everything else. */
+.hc-app.hc-has-draft .hc-app-left{flex:0 0 360px;min-width:0;border-right:1px solid var(--line)}
 /* The site arriving: fades and settles in from the right as the chat gives up
    the space. One motion, not a panel that was always sitting there. */
 .hc-app.hc-has-draft .hc-app-right{display:flex;flex:1 1 70%;animation:hcCanvasArrive .5s cubic-bezier(.22,.61,.36,1) both}
@@ -287,7 +290,10 @@ body.hc-active #hc-keep-btn{display:block}
    mode from the first keystroke, so the transcript spanned the whole window
    while the input sat centred, and the user's own message ran off the right
    edge of the viewport. */
-.hc-app:not(.hc-has-draft) .hc-thread{width:100%;max-width:760px;margin:0 auto}
+/* Before the first build there is no page, so the conversation is the whole
+   screen — a centred, comfortable column at the ask box's width, not a panel
+   pushed to one side of an empty canvas. */
+.hc-app:not(.hc-has-draft) .hc-thread{width:100%;max-width:640px;margin:0 auto}
 
 /* The preview's view bar — outside #hcCanvas so it survives every view's
    innerHTML, which is the whole reason there was no way back. */
@@ -307,6 +313,16 @@ body.hc-active #hc-keep-btn{display:block}
 .hc-skel-row{display:flex;gap:12px}
 .hc-skel-row span{flex:1;height:76px}
 @keyframes hcSkelShimmer{0%{background-position:100% 0}100%{background-position:0 0}}
+/* Build narration (Part B) — Hubly saying what it's about to build, in its own
+   voice, revealed a sentence at a time above the skeleton shapes. */
+.hc-build-narration{display:flex;flex-direction:column;gap:9px;padding:2px 2px 12px;margin-bottom:4px}
+.hc-build-narration-line{
+  font-size:14.5px;line-height:1.55;color:var(--ink);max-width:54ch;
+  animation:hcNarrIn .45s ease both;
+}
+.hc-build-narration-line:first-child{font-weight:650}
+@keyframes hcNarrIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){ .hc-build-narration-line{animation:none} }
 @media (prefers-reduced-motion:reduce){
   .hc-skel-bar,.hc-skel-hero,.hc-skel-block,.hc-skel-row span{animation:none}
 }
@@ -1442,8 +1458,27 @@ body.hc-active #hc-keep-btn{display:block}
   // policy is gone. Public access is get_public_business_document(slug, tag)
   // and nothing else, and it returns exactly (rendered_html, version) — never
   // the document column, in either format.
+  // Reveal the narration a sentence at a time — Hubly thinking out loud while it
+  // works, not a wall of text landing at once (which the brief rightly calls
+  // worse than silence). Stops itself if the build finishes and the node is gone.
+  function hcRevealNarration(el, text){
+    if(!el || !text) return;
+    var parts = text.split(/(?<=[.!?])\s+/).map(function(s){ return s.trim(); }).filter(Boolean);
+    var i = 0;
+    (function next(){
+      if(!document.getElementById('hcBuildNarration')) return;   // view moved on
+      if(i >= parts.length) return;
+      var p = document.createElement('p');
+      p.className = 'hc-build-narration-line';
+      p.textContent = parts[i];
+      el.appendChild(p);
+      i++;
+      setTimeout(next, 850);
+    })();
+  }
+
   var hcDocPollTimer = null;
-  function hcRenderDocumentBuilding(){
+  function hcRenderDocumentBuilding(narration){
       hc.canvasView = 'site';
       try{ hcMountViewBar(); }catch(e){}
       var root = document.getElementById('hcCanvas');
@@ -1459,8 +1494,19 @@ body.hc-active #hc-keep-btn{display:block}
       // What is honest instead is the SHAPE of what is coming, plus elapsed
       // time, which is a real fact. No percentage, no bar: both would be
       // inventing knowledge of progress we do not have.
+      //
+      // NARRATION (Part B). The conversation model already spoke in the turn that
+      // dispatched this build; when that reply is a real, business-specific say
+      // of what it's about to build and why, we show it here to fill the wait.
+      // IMPORTANT: this is the conversation model's INTENT, not the generator's
+      // actual plan — they are two different calls and can diverge. It is never
+      // labelled "what Hubly built". If the reply is thin or missing, we show no
+      // tailored line at all — the honest elapsed note carries the wait, never a
+      // fixed paragraph pretending to be about this business.
+      var narr = (typeof narration === 'string') ? narration.trim() : '';
       root.innerHTML =
         '<div class="hc-skel" id="hcSkel">' +
+          (narr ? '<div class="hc-build-narration" id="hcBuildNarration"></div>' : '') +
           '<div class="hc-skel-note"><span class="hc-live-dot"></span>&nbsp;<span id="hcSkelNote">Writing your page — about a minute.</span></div>' +
           '<div class="hc-skel-bar"></div>' +
           '<div class="hc-skel-hero"></div>' +
@@ -1468,6 +1514,7 @@ body.hc-active #hc-keep-btn{display:block}
           '<div class="hc-skel-block"></div>' +
           '<div class="hc-skel-row"><span></span><span></span></div>' +
         '</div>';
+      if(narr) hcRevealNarration(document.getElementById('hcBuildNarration'), narr);
       // Elapsed-time copy. True statements only: it says how long it has been,
       // never how far along it is.
       var started = Date.now();
@@ -1791,9 +1838,16 @@ body.hc-active #hc-keep-btn{display:block}
         // Retry was clicked, or because this turn happened to be the next thing
         // after a build that died in silence.
         if(data.buildResumed && hc.draftBusiness) generatingDocument = true;
+        var buildNarration = '';
         if(generatingDocument && hc.draftBusiness){
           hc.canvasStage = 'site';
-          hcRenderDocumentBuilding();
+          // Only treat a real, substantial reply as the build narration — the
+          // near-silent "On it." / "Done." a normal turn produces is not it, and
+          // must never be dressed up as a tailored say. Thin/empty -> no
+          // narration, just the honest elapsed note. Shown in the skeleton and
+          // therefore NOT duplicated into the chat below (hc.buildNarrationShown).
+          buildNarration = (data.reply && data.reply.trim().length >= 80) ? data.reply.trim() : '';
+          hcRenderDocumentBuilding(buildNarration);
           var hcAppElBuild = document.getElementById('hcApp');
           if(hcAppElBuild) hcAppElBuild.classList.add('hc-has-draft');
           hcPollForDocument(hc.draftBusiness.id, 0);
@@ -1837,7 +1891,9 @@ body.hc-active #hc-keep-btn{display:block}
             setTimeout(showNext, 550);
             return;
           }
-          if(data.reply) hcAppendMessage('hubly', data.reply);
+          // Don't echo the reply into chat when it's already carrying the wait
+          // as the build narration in the skeleton — one voice, one place.
+          if(data.reply && data.reply !== buildNarration) hcAppendMessage('hubly', data.reply);
           // THE DROPZONE COMES LAST, after the sentence that points at it.
           //
           // It used to be appended up with the canvas work above, which runs
