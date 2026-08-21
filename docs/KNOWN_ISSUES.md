@@ -28,55 +28,58 @@ and an invented process; never the FAQ lines — and show the top N by rank rath
 than by position. Left for later so we don't gold-plate before the ordering
 heuristic proves insufficient in real use.
 
-## A dark image container reads as a void until a heavy photo paints — and image misses are swallowed
+## The preview sized the iframe to content, so `vh` ran away (FIXED) — plus a latent image-miss swallow
 
-**Status:** open, confirmed 2026-08-21 from the stored HTML of the two builds the
-void was reported in
-**Where:** the freeform model's own CSS (dark container backgrounds) +
-`resolveImages` / `blankField` in
-`supabase/functions/_shared/hubly_image_resolver.ts`
+**Status:** root cause FIXED 2026-08-21 (commit "Preview: the iframe is a browser
+window…"). Two earlier wrong diagnoses are recorded below because the *way* they
+were wrong is the lesson.
+**Where:** `hcApplyPreviewFit` / `hcMountDocumentHtml` (preview sizing) +
+`resolveImages` / `blankField` (the latent swallow).
 
-Two separate things live here. The **observed** void is the first; the second is a
-real latent defect that did *not* cause it, kept because the user asked for it in
-writing and because it will bite eventually.
+### 1 · The real cause: `vh` resolved against a content-sized viewport
 
-### 1 · What actually produced the reported black rectangle (measured)
+The freeform pages use `min-height:100vh` (and `92vh`) on their hero and section
+blocks — correct, ordinary CSS. But the builder preview **sized the iframe to the
+page's own content height** (it measured `documentElement.scrollHeight` in
+`hcReportPreviewSize` and reported it up; the parent set the outer iframe to that
+height so it could scale the whole thing into the pane). So `vh` resolved against
+a viewport that was itself the content height: `100vh` meant "the whole page",
+every section inflated, the document grew, the next height report inflated it
+further. It is a feedback loop, and it was measured on the exact page:
 
-I pulled the stored HTML of the exact two builds named — `ember-oak` ("Ember &
-Oak", restaurant) and `ironside-barbers` (barber) — and counted the resolved
-image artefacts (the `#hubly-image` markers are already replaced by the time the
-HTML is stored, so a resolved marker is either an `<img>` or a `hubly-img-blank`
-div):
+| viewport height fed in | page's resulting height | hero height (`92vh`) |
+|---|---|---|
+| 800px (a real browser) | **3,712px** | 1,012px |
+| 3,712px (fed back) | 6,115px | 3,415px |
+| 6,115px (fed back) | 8,326px | 5,626px |
 
-| build | image markers | resolved to live `<img>` | fell through to `blankField` | document complete |
-|---|---|---|---|---|
-| Ember & Oak | 3 | **3** (all `images.pexels.com`) | **0** | yes, ends `</html>` |
-| Ironside | 4 | **4** (all `images.pexels.com`) | **0** | yes, ends `</html>` |
+The old preview ran that loop ~17 times and converged near **39,000px** for a
+restaurant one-pager that is really **3,712px**. That is why the hero read as a
+giant dark rectangle (the container was thousands of px tall, not slow to paint)
+and why the visitor arrived on empty space with content far below the fold.
 
-**Zero blank fields in either.** Every marker got a real Pexels image, and every
-one of those 7 URLs returns `200 image/jpeg` on a live fetch. So the void is **not**
-a `blankField` and **not** a resolution failure.
+**The fix:** the iframe is a **fixed, pane-sized viewport** and the page scrolls
+inside it, exactly like a browser window. `100vh` is one screen again. No height
+postMessage, no re-measure loop, no reveal-hold; scale is decided once, from
+width. Verified live: `--hc-ph` is now `764px` (one pane-screen), not 38,946px,
+and the hero renders one screen tall with the photo present. **The generated CSS
+was NOT changed — `100vh` is right, the preview was wrong.**
 
-What it is: the model designs its image containers with **dark backgrounds of
-their own**. Ironside's hero is `.hero-card { background: var(--ink-2);
-min-height:570px }` with the photo layered over it; Ember & Oak's hero is a
-full-bleed image behind a `::after` scrim of `rgba(23,50,38,.94)` plus a black
-overlay, with the image itself dimmed to `brightness(.72)`. When the Pexels photo
-has not painted yet, the container's **own** dark fill is what shows — a large
-dark rounded rectangle exactly where the picture goes. And these photos are
-**heavy**: 1.4–3.4 MB each (Ember & Oak places ~7.8 MB of imagery, Ironside
-~9 MB), so in the build preview there is a real window where the container is dark
-and the photo is still downloading. A screenshot in that window is the void.
+### 1b · Two wrong diagnoses on the way here (the lesson)
 
-**What would settle it:** ask Pexels for a smaller rendition (the URLs carry
-`?auto=compress&h=…&w=…` but still resolve to multi-MB originals — constrain them
-harder, or use a `tiny`/`medium` size), and/or give the container a light
-placeholder fill rather than a near-black one so an unpainted image doesn't read
-as a hole. This is the image FIX the user described (retry / fall back / collapse)
-aimed at the mechanism that was actually observed — **left as report-only per the
-"nothing else" scope of this session.**
+- *"It's re-scaling"* — no; the scale is width-based and was stable.
+- *"It's paint latency behind a dark container, and the photos are 1.4–3.4 MB"* —
+  the dark container is real, but it was thousands of px tall because of the `vh`
+  runaway, not because a heavy photo was mid-download. And the photos are **not**
+  1.4–3.4 MB: that number came from `curl`-ing the **entity-encoded** `&amp;` URL,
+  which Pexels reads as unknown `amp;h`/`amp;w` params and answers with the
+  multi-MB **original**. A browser decodes `&amp;`→`&` and downloads the sized
+  `landscape` rendition — **~61–63 KB each** (measured). The instrumentation
+  (9,542→38,946px, "17 growth updates") already contained the proof and was
+  attributed to images finishing; images finishing do not add 29,000px. **Read
+  your own numbers before naming a cause.**
 
-### 2 · The swallow-and-succeed (latent, did NOT fire here)
+### 2 · The swallow-and-succeed (latent, did NOT fire in the reported builds)
 
 `resolveImages(html, …)` returns `{ html, placed, blanks, decisions }` with **no
 ok/fail flag**. A page where every image resolved and a page where the hero fell
@@ -106,6 +109,14 @@ deployed resolver placed **7 live `images.pexels.com` images** across them, all
 returning `200 image/jpeg` now. That is the deployed key working right now,
 demonstrated through the function that uses it — not `secrets list` showing the
 name exists.
+
+**Rendition weight (corrected, measured):** the resolver already picked the
+`landscape` rendition (~61–63 KB in the browser), so page image weight was already
+fine — the "1.4–3.4 MB" claim was the `&amp;` curl artifact above. Hardened anyway
+2026-08-21: `pexelsFetcher` now prefers `landscape`/`large2x`/`large` and, if it
+ever falls through to `original`, appends `auto=compress&w=1600` so a raw
+multi-MB file can never be served; and `realImg` adds intrinsic `width`/`height`
+from the rendition URL so the layout reserves the aspect ratio before decode.
 
 ## A stale draft can resume from residual state after the cookie is cleared
 
