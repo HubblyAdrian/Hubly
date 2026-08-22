@@ -1471,6 +1471,55 @@ export async function applyDirectFreeformEdit(
  * makes "a partially labelled page must not be reachable" true of the system
  * and not just of the stamping function.
  */
+
+/**
+ * NAME-PROTECTION PASS — the business name is never truncated, anywhere. A person
+ * who sees their own name clipped stops trusting the page, so this is a hard
+ * guarantee enforced deterministically, not left to the prompt.
+ *
+ * It does two things and REMOVES/overrides only — it never regenerates:
+ *   1. Tags every element whose own text is the business name (nav wordmark, hero
+ *      headline, footer, announcement bar) with `data-hubly-name`, and strips any
+ *      clip-causing INLINE style off it (text-overflow:ellipsis, white-space:
+ *      nowrap, a fixed height).
+ *   2. Injects one !important rule, last in the head so it wins over the page's
+ *      own CSS: the name may WRAP (break a too-long word if it must) but can never
+ *      be ellipsised, clipped, or cut by oversized type overflowing an
+ *      overflow:hidden ancestor. That last case — an h1 at ~118px whose word is
+ *      wider than its column — is the one actually observed, and overflow-wrap
+ *      is what defuses it: the word wraps instead of overflowing to be clipped.
+ */
+export function protectBusinessName(html: string, rawName: string | null | undefined): string {
+  const name = String(rawName || "").trim();
+  if (name.length < 2) return html;
+  // Match the name allowing entity-encoded & and flexible whitespace.
+  const pattern = name
+    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    .replace(/&(?:amp;)?/g, "(?:&|&amp;)")
+    .replace(/\s+/g, "\\s+");
+  const nameRe = new RegExp(pattern, "i");
+  // Tag leaf-ish elements whose text is (or contains) the name, and clean inline styles.
+  let out = html.replace(/<([a-z0-9]+)([^>]*)>([^<]+)/gi, (m, tag, attrs, text) => {
+    if (/data-hubly-name/i.test(attrs)) return m;
+    if (!nameRe.test(text)) return m;
+    let a = String(attrs);
+    const sm = /style\s*=\s*"([^"]*)"/i.exec(a);
+    if (sm) {
+      const cleaned = sm[1]
+        .replace(/text-overflow\s*:\s*ellipsis\s*;?/gi, "")
+        .replace(/white-space\s*:\s*nowrap\s*;?/gi, "")
+        .replace(/(?<!min-)(?<!max-)height\s*:\s*\d+(px|rem|em)\s*;?/gi, "");
+      a = a.replace(sm[0], `style="${cleaned}"`);
+    }
+    return `<${tag}${a} data-hubly-name>${text}`;
+  });
+  const guard =
+    "<style>[data-hubly-name]{overflow-wrap:break-word!important;white-space:normal!important;" +
+    "text-overflow:clip!important;max-height:none!important;-webkit-line-clamp:none!important;}</style>";
+  out = /<\/head>/i.test(out) ? out.replace(/<\/head>/i, guard + "</head>") : guard + out;
+  return out;
+}
+
 export async function generateFreeformPage(
   businessId: string,
   brief: string,
@@ -1542,6 +1591,7 @@ export async function generateFreeformPage(
     "No frameworks, no external requests, no scripts of your own. Use real, specific copy for THIS business, drawn only from the record below. " +
     "Write the page you think this business should have — you choose the sections, the order and the layout.\n" +
     "How the brand mark and navigation appear is entirely yours to decide: a top nav bar is ONE option, not a requirement. A full-bleed hero with the business name set in the headline, a slim side rail, a minimal footer-only nav, or something else the trade suggests are all equally available. The only things that must be true: the brand is identifiable somewhere, and booking is reachable. Two different trades should not open with the same shape.\n\n" +
+    "THE BUSINESS NAME IS NEVER TRUNCATED, ELLIPSISED OR CLIPPED — anywhere it appears (nav wordmark, hero headline, footer, announcement bar). This is a hard rule: someone who sees their own name cut off will not trust the page. Size the type for a LONG name, not a short one — a name may be forty characters or contain a long single word, and it must still fit or WRAP, never overflow its container. So: keep hero headline maximums modest (a clamp topping out around 64–80px is plenty; do NOT reach 100px+ where a long word overflows its column), let the name wrap (do not force it onto one line with white-space:nowrap), and never put text-overflow:ellipsis, a fixed height, or an overflow:hidden container around the name that could cut it. A name that wraps to two lines is fine; a name with a letter missing is a trust failure.\n\n" +
     markingBlock + "\n\n" +
     imageBlock + "\n\n" +
     capabilities + "\n\n" +
@@ -1646,11 +1696,19 @@ export async function generateFreeformPage(
   // THE STAMPING PASS. Not a validation gate: it cannot reject the page and it
   // never triggers a regeneration. It takes whatever came back and labels it.
   const stamped = stampFreeformHtml(annotated.html);
+  // THE NAME-PROTECTION PASS. The business name must NEVER be truncated — a
+  // person who sees their own name clipped trusts nothing else on the page. The
+  // observed cause is not ellipsis or nowrap: it's oversized hero type (an h1 up
+  // to ~118px) whose long word overflows its column and gets cut by an
+  // ancestor's overflow:hidden. So this removes the clip behaviours from every
+  // name-bearing element AND guarantees the name can wrap/break rather than
+  // overflow. It only removes/overrides; it never regenerates.
+  const named = protectBusinessName(stamped.html, (record as Record<string, unknown>)?.name as string);
   // THEN HUBLY'S MACHINERY. Also not a gate: it rewrites the model's booking
   // CTA to a working URL, adds one if there is none, and injects the chat
   // widget. Ordered after stamping so the injected runtime is not itself
   // labelled as editable content — the owner edits their page, not our widget.
-  const wired = injectHublyRuntime(stamped.html, {
+  const wired = injectHublyRuntime(named, {
     businessId,
     businessName: String((record as Record<string, unknown>)?.name || "this business"),
     slug: String((record as Record<string, unknown>)?.slug || ""),
