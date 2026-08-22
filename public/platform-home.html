@@ -3261,7 +3261,11 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       // (not /dashboard) so the draft resumes and we can claim it + reopen the
       // clicked element; stash the pending edit for the return. No draft -> the
       // dashboard, as a plain sign-in.
-      var redirect = hc.draftBusiness ? (location.origin + '/?hcauth=1') : (location.origin + '/dashboard');
+      // Always return to the BUILDER (never /dashboard). With a draft: resume +
+      // claim it. Without: the owner read path loads their business(es) or leaves
+      // them on the build prompt. hcauth=1 makes the init await the session before
+      // deciding (see the init IIFE + hcAfterAuth).
+      var redirect = location.origin + '/?hcauth=1';
       if(hc.draftBusiness && hc.pendingEditLabel){ try{ sessionStorage.setItem('hcPendingEdit:' + hc.draftBusiness.id, hc.pendingEditLabel); }catch(e){} }
       await c.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirect } });
     }catch(e){
@@ -3419,6 +3423,11 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // editing; a plain landing sign-in with no draft goes to the dashboard.
   async function hcAfterAuth(){
     authClose();
+    // On a Google return the init owner-load runs first and may already have opened
+    // an owned business (draftClaimed=true). There's nothing to claim then — they're
+    // already in the builder on their site. Guard so we don't attempt to claim an
+    // owned, tokenless business and fall into the retry branch.
+    if(hc.draftClaimed){ hcAuthTrace('afterauth', 'TERMINAL: owned business already loaded -> in builder'); return; }
     if(!hc.draftBusiness){
       // No draft in play (a plain landing sign-in): land in the BUILDER, not the old
       // /dashboard app. hcLoadOwnedBusiness is the owner read path + picker that
