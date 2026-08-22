@@ -48,6 +48,24 @@ prohibitions on purpose: when in doubt, the prohibited thing is prohibited.
    over-claiming success; this one guards against under-claiming it, and it is the rule
    that catches a silent success.
 
+## The notification standard
+
+Every Hubly notification — email, SMS, in-product, and everything after — must:
+
+- **Name what happened** — the event, in plain words, in the subject/first line.
+- **Say who it involves** — the business and/or person, not a generic "activity."
+- **Link straight to the thing** — one tap to the booking, the site, the signup. If
+  the recipient has to open something else to act on it, the notification has not
+  done its job.
+
+Two consequences that bind:
+- A notification may not report a fact the system never recorded. Reporting a device,
+  a source, or a count we didn't capture is the same defect as a checkmark we never
+  earned (prohibition 2) — omit the field, don't approximate it.
+- Delivery is best-effort; the in-product record is the source of truth. If a
+  notification fails to send, that failure is visible (prohibition 6), never silent —
+  and the thing it was announcing is still reachable inside Hubly.
+
 ## Working agreement (how work is run here)
 
 - **Verify by using it, not by reading it.** A change isn't done because the code
