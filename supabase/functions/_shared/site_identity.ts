@@ -170,6 +170,47 @@ RULES
 - Photographs and placeholders: give the frame an aspect-* class. Never min-h-screen on a picture frame.`;
 
 /** The structural vocabulary as prompt text. `leadWith` comes from section_order[0]. */
+/**
+ * THE PALETTE BLOCK.
+ *
+ * The generation prompt used to say NOTHING about colour, and brand_color was
+ * never shown to the model — so it free-fell into its own prior for "tasteful
+ * small business website": warm off-white background with a serif. Measured
+ * across stored pages, the soft/editorial trades (books, coffee, cafés,
+ * florists) clustered on cream while the model varied on its own for harder
+ * trades — but the variation was luck, not instruction.
+ *
+ * Nav experiments failed because "put the brand wherever" gave the model nothing
+ * to compute from. Colour is different: the trade is a real source. So this
+ * instructs POSITIVELY (decide from the business) and names the specific,
+ * diagnosable failure (cream + serif) so the model can recognise and avoid it.
+ */
+export function buildPaletteBlock(): string {
+  return `PALETTE — decided by the business, then committed to.
+
+The palette comes from what this business actually IS: the trade, the materials
+it works in, the place it's in, and the light people associate with it. A
+barbershop is not a bakery. A tattoo studio is not a florist. A plumber is not a
+yoga studio. Decide the palette from the business in front of you, then commit to
+it — carry one deliberate scheme through the background, the type and the accents
+so the whole page reads as one considered thing, not a template with the name
+swapped in.
+
+Let the trade pull you somewhere specific: dark and high-contrast, metal and
+concrete, saturated and loud, cool and clinical, earthy and matte, bright and
+fresh — whatever THIS business genuinely is. The background is a decision, not a
+canvas colour; a black barbershop, a deep-green grocer, an oxblood tattoo studio,
+a stark-white gallery are all more honest than the same off-white every time.
+
+NAME THE FAILURE, because it is specific and it is the thing to avoid: warm
+off-white (cream, ivory, #faf…, #fff…f0) paired with a serif is the internet's
+default for "tasteful small business website," and reaching for it makes every
+Hubly page look like every other Hubly page regardless of trade. Do NOT default
+to it. Use it only when THIS particular business genuinely calls for it (a
+patisserie, a stationer, a wedding florist might) — never as the safe choice
+because nothing else came to mind.`;
+}
+
 export function buildPageStructureBlock(leadWith?: unknown): string {
   const want = String(leadWith || "").trim().toLowerCase();
   const lead = LEAD_GUIDANCE[want] || LEAD_GUIDANCE.services;

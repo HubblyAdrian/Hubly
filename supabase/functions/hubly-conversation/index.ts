@@ -141,51 +141,6 @@ async function selectDraftFactGaps(businessId: string): Promise<{ missing: boole
  * before the response so a recycled isolate can't drop the write; a failure here
  * is logged, never fatal to the reply.
  */
-function sanitizeTurnContent(content: unknown): unknown {
-  // A photo turn is a parts array whose image/document part carries the raw
-  // base64 in `data`. The real photo lives in the photo pipeline; the transcript
-  // only needs the display record, so drop `data` (which would otherwise store
-  // MBs of base64 per turn) while keeping the text and the {type, mediaType}
-  // marker so a restore can render "a photo was sent here".
-  if (Array.isArray(content)) {
-    return content.map((p) => {
-      if (p && typeof p === "object" && "data" in (p as Record<string, unknown>)) {
-        const q = { ...(p as Record<string, unknown>) };
-        delete q.data;
-        return q;
-      }
-      return p;
-    });
-  }
-  return content;
-}
-
-async function persistConversationTurn(
-  businessId: string | null | undefined,
-  userMessage: HublyMessage | null,
-  replyText: string,
-): Promise<void> {
-  if (!businessId) return;
-  const rows: Array<{ role: string; content: unknown }> = [];
-  if (userMessage && userMessage.role === "user" && userMessage.content != null) {
-    rows.push({ role: "user", content: sanitizeTurnContent(userMessage.content) });
-  }
-  const reply = (replyText || "").trim();
-  if (reply) rows.push({ role: "assistant", content: reply });
-  if (!rows.length) return;
-  try {
-    const url = (Deno.env.get("SUPABASE_URL") || "").trim();
-    if (!url) return;
-    await fetch(`${url}/rest/v1/rpc/append_business_conversation`, {
-      method: "POST",
-      headers: { ...adminHeaders(), "content-type": "application/json" },
-      body: JSON.stringify({ p_business_id: businessId, p_messages: rows }),
-    });
-  } catch (e) {
-    console.error("persistConversationTurn failed", e);
-  }
-}
-
 const DETERMINISTIC_OPENING =
   "I'd love to help.\n\nBefore I make recommendations or build anything, I'd like to learn about your business.\n\nYou can paste a website, your Google Business Profile, Facebook page, Instagram, upload screenshots, or simply tell me you're starting from scratch.";
 
@@ -1472,10 +1427,10 @@ Deno.serve(async (req) => {
       // rebuildSkippedNote is empty unless a rebuild was refused over the
       // owner's manual edits, in which case they are told and offered one.
       const finalReply = (deduped.reply || "") + rebuildSkippedNote;
-      // Persist this display turn (the person's message + this reply) so the
-      // conversation survives a reload. Awaited before the response; keyed to the
-      // business that now exists (possibly created this very turn).
-      await persistConversationTurn(draftBusiness?.id, incoming[incoming.length - 1] || null, finalReply);
+      // NOTE: the transcript is written by the CLIENT, not here — it stores what
+      // the person actually saw as Hubly's voice (on a build turn that's the
+      // narration in interimMessages, not this reply field, which is the
+      // exhausted-rounds fallback). See platform-home.html hcPersist.
       return jsonRes({
         ok: true,
         reply: finalReply,
@@ -1497,7 +1452,6 @@ Deno.serve(async (req) => {
     // Exhausted capability rounds without a final natural-language reply —
     // stop honestly instead of looping forever.
     const exhaustedReply = "I've gathered what I can for now — what would you like to do next?";
-    await persistConversationTurn(draftBusiness?.id, incoming[incoming.length - 1] || null, exhaustedReply);
     return jsonRes({
       ok: true,
       reply: exhaustedReply,

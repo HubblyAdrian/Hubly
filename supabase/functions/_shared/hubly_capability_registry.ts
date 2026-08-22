@@ -70,7 +70,7 @@ import { applyFreeformEdit, humanFreeformSummary, labelInventory, labelsPresent,
 import { adminHeaders, requireSecretKey, resolvePublishableKey, requirePublishableKey } from "./supabase_admin.ts";
 import { adminClient } from "./marketplace_provider.ts";
 import { getWebsiteAvailability, createWebsiteBookingJob } from "./hubly_booking_execution.ts";
-import { buildPageStructureBlock, paletteById, palettePromptList, sectionOrderFor } from "./site_identity.ts";
+import { buildPageStructureBlock, buildPaletteBlock, paletteById, palettePromptList, sectionOrderFor } from "./site_identity.ts";
 
 const APP_ORIGIN = (Deno.env.get("HUBLY_APP_ORIGIN") || "").trim() || "https://myhubly.app";
 
@@ -585,7 +585,7 @@ export async function rebuildDocumentFromRecord(
     const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,meta");
     const record = await loadBusinessRecord(draftId);
     const leadWith = Array.isArray(bizRow?.section_order) ? bizRow.section_order[0] : undefined;
-    const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${buildDocumentSchemaPromptBlock()}\n\n${buildPageStructureBlock(leadWith)}\n\n${buildBusinessRecordBlock(record)}`;
+    const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${buildDocumentSchemaPromptBlock()}\n\n${buildPageStructureBlock(leadWith)}\n\n${buildPaletteBlock()}\n\n${buildBusinessRecordBlock(record)}`;
 
     const brief = `Rebuild this page for ${bizRow?.name || "this business"} using THE BUSINESS RECORD above as the source of every fact. New information has just been added to the record (${changes.join(", ")}), and the current page was written before it existed. Use the real services, prices, photos, service area and contact details exactly as recorded. Do not invent anything the record does not contain.`;
 
@@ -2580,7 +2580,7 @@ export async function runDocumentGeneration(
           sw.mark("loadBusinessRecord");
           const recordBlock = buildBusinessRecordBlock(record);
           sw.mark("buildRecordBlock");
-          const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${schemaBlock}\n\n${structureBlock}\n\n${recordBlock}`;
+          const system = `You generate a real webpage for a real local service business, in the Hubly Document format below. Write real, specific copy for THIS business — never generic placeholder text, never "Lorem ipsum", never a literal business-name placeholder if a real name was given. Only place a reserved Hubly element (booking, reviews, etc.) where it's genuinely relevant to what a visitor needs next — never decorative.\n\n${schemaBlock}\n\n${structureBlock}\n\n${buildPaletteBlock()}\n\n${recordBlock}`;
           // benchmarkModel is intentionally absent from argsSchema/description —
           // the conversational AI never sees or sets it. Internal-only override
           // for the model benchmark harness so the exact same code path can be

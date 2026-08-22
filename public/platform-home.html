@@ -919,7 +919,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // created (business.startDraft) — { id, slug, draftToken, url }. Threaded
   // back to the server every turn exactly like `messages`; the server never
   // persists it either. This is what makes the canvas real instead of a mockup.
-  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false };
+  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null };
 
   // ── Draft claim session ───────────────────────────────────────────────────
   // A draft belongs to nobody until it is claimed. hubly-conversation returns a
@@ -1129,6 +1129,13 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // re-scales, and `100vh` in the page means one screen (see hcApplyPreviewFit).
     // Size it once from the pane width, then reveal when the frame has loaded.
     hcApplyPreviewFit();
+    // When we arrive here straight from a reveal — the picker path opens the app
+    // and renders the canvas in the same tick — the pane can still be settling
+    // its width, which freezes the fit at a thumbnail scale and squeezes the
+    // device-toggle row with it. Re-fit on the next frame and once more after
+    // layout settles so it lands full-size regardless of how we got here.
+    try{ requestAnimationFrame(hcApplyPreviewFit); }catch(e){}
+    setTimeout(hcApplyPreviewFit, 160);
     var frameA = document.getElementById('hcCanvasFrameA');
     if(frameA){
       frameA.addEventListener('load', function(){
@@ -1766,6 +1773,11 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         "\n\nWant your own photos and logo on it, and the address live? That takes an account — about ten seconds.";
     }
     hcAppendMessage('hubly', msg);
+    // These are the first setup asks Hubly makes — the shaping suggestions and
+    // the account offer. Generated client-side, but they are Hubly's voice, so
+    // they belong in the transcript (the state engine needs to know they were
+    // made). See hcPersist.
+    hcPersist('assistant', msg);
   }
 
   function hcAppendTyping(){
@@ -1945,7 +1957,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           // stays prose-free. The duplicate (the model's OTHER design paragraph)
           // is suppressed in showNext, not this one; hcIsBuildFiller still guards
           // against a "building now…" line slipping in as the narration.
-          if(buildNarration && !hcIsBuildFiller(buildNarration)) hcAppendMessage('hubly', buildNarration);
+          if(buildNarration && !hcIsBuildFiller(buildNarration)){ hcAppendMessage('hubly', buildNarration); hcPersist('assistant', buildNarration); }
           hcRenderDocumentBuilding();
           hcRenderStepsCard();   // the real stages, ticking in the chat
           var hcAppElBuild = document.getElementById('hcApp');
@@ -1999,7 +2011,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           // Same on the reply: on a build turn it's the skeleton narration (or
           // "building now" filler) — never echoed into the chat. On a normal turn
           // it shows.
-          if(!generatingDocument && data.reply) hcAppendMessage('hubly', data.reply);
+          if(!generatingDocument && data.reply && !hcIsFallbackReply(data.reply)){ hcAppendMessage('hubly', data.reply); hcPersist('assistant', data.reply); }
           // THE DROPZONE COMES LAST, after the sentence that points at it.
           //
           // It used to be appended up with the canvas work above, which runs
@@ -2044,6 +2056,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     }
     hcActivate();
     hcAppendMessage('user', text);
+    hcPersist('user', text);
     hc.messages.push({ role: 'user', content: text });
     hcCall();
   }
@@ -2184,6 +2197,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     if(hc.busy) return;
     hcActivate();
     hcAppendMessage('user', displayText);
+    hcPersist('user', displayText);
     hc.messages.push({ role: 'user', content: parts });
     hcCall();
   }
@@ -2592,6 +2606,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     hc.draftBusiness = { id: biz.id, slug: biz.slug, name: biz.name, draftToken: biz.draftToken || null, url: biz.url };
     hc.draftClaimed = true;
     hc.active = true;
+    // Clear whatever was in the thread first — chiefly the picker's "which site?"
+    // prompt, which must not sit above the restored conversation.
+    var tb0 = hcThreadBody(); if(tb0) tb0.innerHTML = '';
     // Remember which one, so a reload returns here (not to the newest) when the
     // owner has several.
     try{ localStorage.setItem('hcLastBusiness', biz.id); }catch(e){}
@@ -2656,6 +2673,55 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       return out.join(' ').trim() || '📎 attachment';
     }
     return '';
+  }
+  // ── PERSIST WHAT THE PERSON SAW AS HUBLY'S VOICE ─────────────────────────────
+  // The transcript stores what was displayed as a message — the person's own
+  // lines, and whatever Hubly actually said (on a build turn that's the intent
+  // NARRATION, on a normal turn the reply, and the post-build shaping suggestions
+  // + account offer, wherever they were generated). NEVER stored: capability
+  // results, "On it"/build-step status, the steps card, the exhausted-rounds
+  // fallback. The client is the only place that knows what was shown, so it is
+  // the single writer. Gated exactly like the reads: draft token before a claim,
+  // owner after. Seq is allocated server-side, so two tabs can't collide.
+  function hcIsFallbackReply(t){
+    // The internal "no natural-language reply this turn" filler. Never shown,
+    // never stored — it is machinery, not something Hubly said.
+    return /^\s*I've gathered what I can for now/i.test(t) ||
+           /^\s*I'm here — what would you like help with\?\s*$/i.test(t);
+  }
+  function hcPersist(role, text){
+    text = (text || '').trim();
+    if(!text) return;
+    if(hcIsFallbackReply(text)) return;
+    if(typeof hcIsBuildFiller === 'function' && hcIsBuildFiller(text)) return; // "building now…" status
+    hc.pendingPersist.push({ role: role === 'user' ? 'user' : 'assistant', content: text });
+    if(hc._persistTimer) clearTimeout(hc._persistTimer);
+    hc._persistTimer = setTimeout(hcFlushPersist, 600);
+  }
+  async function hcFlushPersist(){
+    var d = hc.draftBusiness;
+    // No business yet (early pre-draft turns): keep buffered. The moment a draft
+    // exists — even several turns later — the whole backlog flushes in order.
+    if(!d || !d.id || !hc.pendingPersist.length) return;
+    var batch = hc.pendingPersist.slice();
+    try{
+      var okWrite = false;
+      if(hc.draftClaimed && hcIsAuthed()){
+        var c = await authGetClient();
+        var res = await c.rpc('append_my_business_conversation', { p_business_id: d.id, p_messages: batch });
+        okWrite = !(res && res.error);
+      } else if(d.draftToken){
+        var H = { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' };
+        var r = await fetch(SUPA_URL + '/rest/v1/rpc/append_draft_business_conversation', {
+          method: 'POST', headers: H,
+          body: JSON.stringify({ p_business_id: d.id, p_draft_token: d.draftToken, p_messages: batch })
+        });
+        okWrite = r.ok;
+      }
+      // On success drop exactly what we flushed (anything queued during the await
+      // stays for the next flush); on failure keep the buffer and retry next tick.
+      if(okWrite) hc.pendingPersist = hc.pendingPersist.slice(batch.length);
+    }catch(e){ /* keep buffer; a later hcPersist reschedules the flush */ }
   }
   // Owns more than one: a plain picker in the rail — their sites, newest first,
   // name + address, click one to open it. Deliberately NOT a dashboard (no
