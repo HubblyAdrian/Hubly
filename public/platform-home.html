@@ -3317,13 +3317,25 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // editing; a plain landing sign-in with no draft goes to the dashboard.
   async function hcAfterAuth(){
     authClose();
-    if(!hc.draftBusiness){ hcAuthTrace('afterauth', 'no draft in memory -> redirecting to /dashboard'); location.assign('/dashboard'); return; }
+    if(!hc.draftBusiness){ hcAuthTrace('afterauth', 'TERMINAL: verified but no draft in memory -> redirecting to /dashboard'); location.assign('/dashboard'); return; }
     var pending = hc.pendingEditLabel;
     if(!pending){ try{ pending = sessionStorage.getItem('hcPendingEdit:' + hc.draftBusiness.id); }catch(e){} }
     try{ sessionStorage.removeItem('hcPendingEdit:' + hc.draftBusiness.id); }catch(e){}
     hc.pendingEditLabel = null;
     var res = await hcClaimDraft();
-    hcAuthTrace('claim', (res && res.ok) ? ('ok' + (res.claimed ? ' (claimed)' : ' (already yours)')) : ('FAILED: ' + ((res && res.error) || 'unknown') + ' -> back to chat'));
+    // EVERY terminal state gets a line — success that told the user, success that
+    // said nothing (mode 5, indistinguishable from failure to the person), and
+    // each distinct failure. A tracer that only names failures would show a clean
+    // banner on a silent success and read as "nothing happened" — the same trap.
+    var claimLine;
+    if(res && res.ok){
+      claimLine = res.claimed
+        ? 'TERMINAL: verified + claimed + told user ✓ (real success)'
+        : 'TERMINAL: verified + alreadyYours -> SUCCEEDED SILENTLY (no user-visible confirmation) [mode 5]';
+    } else {
+      claimLine = 'TERMINAL: verified but claim FAILED: ' + ((res && res.error) || 'unknown') + ' -> back to chat [mode 4]';
+    }
+    hcAuthTrace('claim', claimLine);
     if(res && res.ok){
       hc.draftClaimed = true;                        // the address is live now
       hcUpdateAddressBar();                           // pill: reserved -> live link
