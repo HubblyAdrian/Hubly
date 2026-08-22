@@ -657,6 +657,13 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   box-shadow:0 30px 80px rgba(28,22,16,.28);
   width:100%;max-width:400px;padding:30px 28px 26px;text-align:center;
   animation:authIn .22s cubic-bezier(.2,.7,.3,1) both;
+  /* On a phone with the keyboard up, cap the card to the (dynamic) viewport and
+     let it scroll internally so its lower half — the code field and the verify
+     button — is never stranded behind the keyboard. dvh tracks the keyboard on
+     iOS 16.4+; the vh line is the fallback. */
+  max-height:calc(100vh - 32px);
+  max-height:calc(100dvh - 32px);
+  overflow-y:auto;
 }
 @keyframes authIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){ .auth-card{animation:none} }
@@ -667,12 +674,19 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 .auth-close:hover{color:var(--ink);background:var(--line)}
 .auth-card h2{font-family:var(--display);font-weight:800;font-size:21px;letter-spacing:-.02em;color:var(--ink);margin-bottom:6px}
 .auth-card .auth-sub{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin-bottom:20px}
+/* Google is the PRIMARY sign-in — one tap, and it survives the mobile round-trip
+   the email code can't. Solid brand treatment, everywhere (not viewport-gated —
+   two hierarchies by screen size is a maintenance trap). The email path below is
+   demoted to secondary. */
 .auth-google{
   display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
-  padding:12px;border:1px solid var(--line-soft);border-radius:12px;background:var(--bg-2);
-  color:var(--ink);font-size:14.5px;font-weight:650;cursor:pointer;transition:background .15s ease,border-color .15s ease;
+  padding:14px;border:1px solid var(--brand);border-radius:12px;background:var(--brand);
+  color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s ease,border-color .15s ease;
 }
-.auth-google:hover{background:var(--bg-1);border-color:var(--ink-3)}
+.auth-google:hover{background:var(--brand-dark);border-color:var(--brand-dark)}
+/* On the brand button the multi-colour G loses contrast; a white rounded chip
+   keeps it legible and on-brand. */
+.auth-google svg{background:#fff;border-radius:4px;padding:2px;box-sizing:content-box}
 .auth-google svg{width:18px;height:18px;flex-shrink:0}
 .auth-or{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--ink-3);font-size:12px}
 .auth-or::before,.auth-or::after{content:'';flex:1;height:1px;background:var(--line)}
@@ -690,6 +704,12 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 }
 .auth-primary:hover{background:var(--brand-dark)}
 .auth-primary:disabled{opacity:.55;cursor:default}
+/* The email "Continue" is now the SECONDARY path (Google is primary), so it's
+   outlined rather than solid. Targets the send-code button by id only — the code
+   step's "Verify & continue" stays the solid primary, since it's the main action
+   once you're on that step. */
+#authSendCode{background:var(--bg-2);color:var(--ink);border:1px solid var(--line-soft);font-weight:650}
+#authSendCode:hover{background:var(--bg-1);border-color:var(--ink-3)}
 .auth-err{color:#B42318;font-size:13px;margin-top:10px;min-height:1em}
 .auth-back{margin-top:14px;background:none;border:0;color:var(--ink-3);font-size:12.5px;text-decoration:underline;cursor:pointer}
 .auth-back:hover{color:var(--ink)}
@@ -2767,6 +2787,10 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         if(!hc.draftBusiness) await hcLoadOwnedBusiness();
       }
     }catch(e){}
+    // If a code was requested and the tab reloaded (iOS discarding it while the
+    // person was in Mail), reopen the code step with their email filled in so they
+    // can just paste — over whatever draft/owner state was restored above.
+    try{ authReopenPendingIfAny(); }catch(e){}
   })();
 
   // ── ONE DOOR: sign in / sign up ────────────────────────────────────────────
@@ -2810,6 +2834,49 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   function authClose(){
     if(!authOv) return;
     authOv.classList.remove('is-open'); authOv.hidden = true;
+    // Every authClose is terminal — success (hcAfterAuth) or a deliberate close
+    // (×, backdrop, Escape). In all of them the pending verification is over, so
+    // clear it. Prevents a stale code step reopening later.
+    authClearPending();
+  }
+  // ── EMAIL-CODE SURVIVES A TAB DISCARD (mobile) ───────────────────────────────
+  // On a phone, fetching the emailed code means leaving for Mail and coming back;
+  // iOS discards the backgrounded tab and reloads it, which wipes the in-memory
+  // modal — the person returns holding a code with nowhere to type it. So the
+  // pending verification (the email + that we're on the code step) is mirrored
+  // into sessionStorage, which survives that discard/reload. On load we reopen the
+  // code step with the email already filled, and they just paste. sessionStorage
+  // (not local) so it dies when the tab is truly closed; a timestamp expires it so
+  // a long-stale attempt never reopens a modal.
+  var HC_OTP_KEY = 'hcPendingOtp';
+  var HC_OTP_TTL_MS = 30 * 60 * 1000;   // 30 min — comfortably inside code validity, short enough to not resurrect a dead attempt
+  function authPersistPending(email){
+    try{ sessionStorage.setItem(HC_OTP_KEY, JSON.stringify({ email: email, ts: Date.now() })); }catch(e){}
+  }
+  function authClearPending(){
+    try{ sessionStorage.removeItem(HC_OTP_KEY); }catch(e){}
+  }
+  function authReadPending(){
+    try{
+      var raw = sessionStorage.getItem(HC_OTP_KEY);
+      if(!raw) return null;
+      var p = JSON.parse(raw);
+      if(!p || !p.email || !p.ts || (Date.now() - p.ts) > HC_OTP_TTL_MS){ authClearPending(); return null; }
+      return p;
+    }catch(e){ return null; }
+  }
+  // Reopen the code step after a reload if a verification was in flight. Returns
+  // true if it reopened.
+  function authReopenPendingIfAny(){
+    var p = authReadPending();
+    if(!p || !authOv) return false;
+    authEmailValue = p.email;
+    authOv.hidden = false; authOv.classList.add('is-open');
+    authShowStep('code');
+    authEl('authEmailEcho').textContent = p.email;
+    authEl('authErr2').textContent = '';
+    setTimeout(function(){ try{ authEl('authCode').focus(); }catch(e){} }, 60);
+    return true;
   }
   var authEmailValue = '';
   async function authSendCode(){
@@ -2824,6 +2891,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       authEmailValue = email;
       authEl('authEmailEcho').textContent = email;
       authShowStep('code');
+      // Mirror to sessionStorage so the code step survives a tab discard while the
+      // person is in Mail fetching the code (see authReopenPendingIfAny).
+      authPersistPending(email);
       setTimeout(function(){ try{ authEl('authCode').focus(); }catch(e){} }, 40);
     }catch(e){
       authEl('authErr').textContent = (e && e.message) ? e.message : 'Could not send the code. Try again.';
@@ -3002,7 +3072,26 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     authEl('authEmailForm').addEventListener('submit', function(e){ e.preventDefault(); authSendCode(); });
     authEl('authVerify').addEventListener('click', authVerify);
     authEl('authCode').addEventListener('keydown', function(e){ if(e.key === 'Enter') authVerify(); });
-    authEl('authBack').addEventListener('click', function(){ authShowStep('start'); authEl('authErr2').textContent = ''; });
+    authEl('authBack').addEventListener('click', function(){ authShowStep('start'); authEl('authErr2').textContent = ''; authClearPending(); });
+    // KEYBOARD VISIBILITY (mobile). The card scrolls internally (see .auth-card
+    // max-height), but the browser won't always bring the focused field above the
+    // keyboard on its own. On focus, and whenever the visual viewport shrinks (the
+    // keyboard opening), pull the active field into view. Harmless on desktop.
+    function authKeepFieldVisible(el){
+      if(!el) return;
+      try{ el.scrollIntoView({ block: 'center' }); }catch(e){ try{ el.scrollIntoView(); }catch(_){} }
+    }
+    ['authEmail','authCode'].forEach(function(id){
+      var el = authEl(id);
+      if(el) el.addEventListener('focus', function(){ setTimeout(function(){ authKeepFieldVisible(el); }, 280); });
+    });
+    if(window.visualViewport){
+      window.visualViewport.addEventListener('resize', function(){
+        if(!authOv.classList.contains('is-open')) return;
+        var a = document.activeElement;
+        if(a && (a.id === 'authEmail' || a.id === 'authCode')) authKeepFieldVisible(a);
+      });
+    }
   }
 })();
 </script>
