@@ -1520,6 +1520,49 @@ export function protectBusinessName(html: string, rawName: string | null | undef
   return out;
 }
 
+/**
+ * DECORATIVE-NUMBERING PASS — removal only, never a regeneration.
+ *
+ * Cards get badged 01 / 02 / 03 when nothing about them is sequential — a list of
+ * what a place offers is not a sequence, and the numbering is a tell that a
+ * template wrote it. This strips two forms:
+ *   - an element whose ENTIRE text is a bare ordinal (zero-padded 01–09, or a
+ *     1–2 digit number carrying a number/step/count/index badge class), and
+ *   - CSS counters on a card grid (a ::before/::after whose content is a
+ *     counter(), plus the counter-increment/reset that feeds it).
+ * The one exception is a genuinely ordered PROCESS (a "how it works" / "steps"
+ * block): a 500-char context window is checked and left alone. Returns the count
+ * so the caller can log it.
+ */
+export function stripDecorativeOrdinals(html: string): { html: string; removed: number } {
+  let removed = 0;
+  const src = html;
+  const isProcess = (ctx: string) =>
+    /how it works|how it goes|the process\b|step\s*\d|\bsteps?\b|what to expect|first,|then,/i.test(ctx);
+  // (A) Bare-ordinal badge elements.
+  let out = src.replace(
+    /<(span|div|p|b|strong|em|small)\b([^>]*)>\s*(0[1-9]|[1-9]\d?)\s*[.)]?\s*<\/\1>/gi,
+    (m: string, _tag: string, attrs: string, num: string, offset: number) => {
+      if (isProcess(src.slice(Math.max(0, offset - 500), offset))) return m;
+      const zeroPadded = /^0[1-9]$/.test(num);
+      const badgeClass = /class="[^"]*(?:num|count|index|step|badge|ordinal)/i.test(attrs);
+      if (!zeroPadded && !badgeClass) return m; // a lone 1–2 digit with no badge cue: leave it
+      removed++;
+      return "";
+    },
+  );
+  // (B) CSS-counter numbering on card grids.
+  out = out.replace(/[^{}]*::(?:before|after)\s*\{[^}]*content:\s*counter\([^{}]*\}/gi, () => {
+    removed++;
+    return "";
+  });
+  out = out.replace(/counter-(?:increment|reset)\s*:[^;}]*;?/gi, () => {
+    removed++;
+    return "";
+  });
+  return { html: out, removed };
+}
+
 export async function generateFreeformPage(
   businessId: string,
   brief: string,
@@ -1589,7 +1632,12 @@ export async function generateFreeformPage(
   const system =
     "You write a complete, standalone HTML page for one real local service business — a single file, with its own <style> block in the head. " +
     "No frameworks, no external requests, no scripts of your own. Use real, specific copy for THIS business, drawn only from the record below. " +
-    "Write the page you think this business should have — you choose the sections, the order and the layout.\n" +
+    "Write the page you think this business should have — you choose the sections, the order and the layout.\n\n" +
+    "WRITE LIKE THE PERSON WHO RUNS THIS PLACE, NOT LIKE A BROCHURE. This is what separates a real page from an obviously-generated one, and it matters more than the layout:\n" +
+    "- FACTS, NOT ADJECTIVES. Prefer a concrete fact over an evaluation, every time. NEVER describe the business as warm, welcoming, cosy, inviting, calm, relaxed, comfortable, thoughtful, curated, lived-in, charming, quaint, vibrant, bespoke, or any cousin of those — they tell the reader nothing and they are the single loudest sign nobody wrote this. Real small-business copy is specific and comes from the RECORD: hours ('open until eight'), services and what they cost, location, how to reach you, how long they've been going. When you have no fact for a slot, write a SHORTER sentence — or drop the slot entirely. Never reach for an adjective to fill space.\n" +
+    "- THE FULL NAME STAYS OUT OF BODY COPY. The full business name belongs in the nav, hero, footer and announcement bar — nowhere else. Inside a sentence, refer to the business the way its owner would out loud: a short form ('the shop', 'the cafe side', 'the studio'), 'we', or nothing at all. NEVER write the full name inside a descriptive sentence. This reads worst with long names, which is exactly when the temptation is highest.\n" +
+    "- THE HERO HEADLINE IS NOT A SERVICES LIST. Never set the headline to the list of services the owner typed, read back to them ('Weekly bouquets, wedding flowers, and workshops'). That is inventory, not a reason to walk in. The headline is ONE thing worth saying about this business — what it is, or what it's for. The services get their own section further down.\n" +
+    "- NUMBER THINGS ONLY WHEN THE ORDER IS REAL. Do not badge a set of offerings 01 / 02 / 03, and do not add CSS counters to a card grid — a list of what a place offers is not a sequence; nothing happens first. Number ONLY a genuinely ordered process (how booking works, step 1 then 2 then 3) where the reader actually needs the order.\n\n" +
     "How the brand mark and navigation appear is entirely yours to decide: a top nav bar is ONE option, not a requirement. A full-bleed hero with the business name set in the headline, a slim side rail, a minimal footer-only nav, or something else the trade suggests are all equally available. The only things that must be true: the brand is identifiable somewhere, and booking is reachable. Two different trades should not open with the same shape.\n\n" +
     "THE BUSINESS NAME IS NEVER TRUNCATED, ELLIPSISED OR CLIPPED — anywhere it appears (nav wordmark, hero headline, footer, announcement bar). This is a hard rule: someone who sees their own name cut off will not trust the page. Size the type for a LONG name, not a short one — a name may be forty characters or contain a long single word, and it must still fit or WRAP, never overflow its container. So: keep hero headline maximums modest (a clamp topping out around 64–80px is plenty; do NOT reach 100px+ where a long word overflows its column), let the name wrap (do not force it onto one line with white-space:nowrap), and never put text-overflow:ellipsis, a fixed height, or an overflow:hidden container around the name that could cut it. A name that wraps to two lines is fine; a name with a letter missing is a trust failure.\n\n" +
     "THIS PAGE MUST WORK ON A PHONE — most local-business visitors are on one. Two hard rules:\n" +
@@ -1699,6 +1747,12 @@ export async function generateFreeformPage(
   // THE STAMPING PASS. Not a validation gate: it cannot reject the page and it
   // never triggers a regeneration. It takes whatever came back and labels it.
   const stamped = stampFreeformHtml(annotated.html);
+  // THE DECORATIVE-NUMBERING PASS. Removes 01/02/03 badges and card-grid CSS
+  // counters that imply an order where there is none. Removal only.
+  const deordinal = stripDecorativeOrdinals(stamped.html);
+  if (deordinal.removed > 0) {
+    console.log(`freeform [${businessId}] stripped ${deordinal.removed} decorative ordinal(s)/counter(s)`);
+  }
   // THE NAME-PROTECTION PASS. The business name must NEVER be truncated — a
   // person who sees their own name clipped trusts nothing else on the page. The
   // observed cause is not ellipsis or nowrap: it's oversized hero type (an h1 up
@@ -1706,7 +1760,7 @@ export async function generateFreeformPage(
   // ancestor's overflow:hidden. So this removes the clip behaviours from every
   // name-bearing element AND guarantees the name can wrap/break rather than
   // overflow. It only removes/overrides; it never regenerates.
-  const named = protectBusinessName(stamped.html, (record as Record<string, unknown>)?.name as string);
+  const named = protectBusinessName(deordinal.html, (record as Record<string, unknown>)?.name as string);
   // THEN HUBLY'S MACHINERY. Also not a gate: it rewrites the model's booking
   // CTA to a working URL, adds one if there is none, and injects the chat
   // widget. Ordered after stamping so the injected runtime is not itself
