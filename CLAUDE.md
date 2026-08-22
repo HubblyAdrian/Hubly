@@ -5,7 +5,7 @@ for by a real failure that shipped while reporting success. They bind every sess
 including ones that never saw the conversation that produced them. Phrased as
 prohibitions on purpose: when in doubt, the prohibited thing is prohibited.
 
-## The five prohibitions
+## The six prohibitions
 
 1. **No cleanup, validation, or post-processing pass may ever cause a second
    generation.** A pass that strips, stamps, collapses, labels, or repairs the model's
@@ -31,9 +31,22 @@ prohibitions on purpose: when in doubt, the prohibited thing is prohibited.
    disappears from navigation is announced — never a control that silently shows up,
    vanishes, or relocates between states.
 
-5. **Navigation is capped at 4, positions are stable once assigned, and nothing
-   reshuffles on usage.** Once a nav item has a position it keeps it. Frequency,
-   recency, or "smart" reordering of navigation is forbidden.
+5. **A place appears in navigation only once the business has earned it — on every
+   device; positions are stable and never reshuffle.** The earned-only rule is
+   universal: desktop does not get to show empty rooms just because it has the space.
+   Once a place has a position it keeps it — navigation never reorders by frequency,
+   recency, or any "smart" signal. When a place goes dormant and steps out, the next
+   new place takes the freed slot; the remaining items do not shift. **Mobile only:**
+   the bottom bar holds at most 4 places. Desktop renders the same earned places as a
+   sidebar list (no bar, no cap).
+
+6. **Silence after a request is a failure mode.** If a person asked for something and
+   it succeeded, they must be told. A state change the user requested may not complete
+   without visible confirmation. An operation that works, updates the database, and
+   says nothing is indistinguishable from one that failed — and is treated here as a
+   defect of equal severity, not a cosmetic gap. Every other rule here guards against
+   over-claiming success; this one guards against under-claiming it, and it is the rule
+   that catches a silent success.
 
 ## Working agreement (how work is run here)
 
