@@ -119,6 +119,11 @@ verify_jwt = false
 [functions.booking-notify]
 verify_jwt = false
 
+# Same server-to-server shape as booking-notify: the claim trigger presents the
+# cron secret; the handler checks OUR key, not a JWT.
+[functions.signup-notify]
+verify_jwt = false
+
 # SCRATCH — delete with the function.
 [functions.scratch-freeform]
 verify_jwt = false

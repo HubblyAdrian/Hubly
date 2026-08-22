@@ -1260,6 +1260,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // pointer events back through the uniform transform.
   var HC_DEVICES = { desktop:{ w:1440, h:900 }, mobile:{ w:390, h:844 } };
   function hcIsMobile(){ try{ return window.matchMedia('(max-width:700px)').matches; }catch(e){ return false; } }
+  // The real device, for the signup notification — captured at the moment, from the
+  // user agent, never inferred from viewport later.
+  function hcDeviceKind(){ try{ return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'phone' : 'desktop'; }catch(e){ return ''; } }
   function hcApplyPreviewFit(){
     var wrap = document.getElementById('hcCanvasFrameWrap');
     var frame = document.getElementById('hcPreviewFrame');
@@ -3444,6 +3447,19 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     if(!pending){ try{ pending = sessionStorage.getItem('hcPendingEdit:' + hc.draftBusiness.id); }catch(e){} }
     try{ sessionStorage.removeItem('hcPendingEdit:' + hc.draftBusiness.id); }catch(e){}
     hc.pendingEditLabel = null;
+    // Record the device on the draft BEFORE claiming (still unclaimed, so the
+    // draft token authorises it), so the claim trigger's signup notification carries
+    // it. Best-effort; captured now, never inferred later.
+    try{
+      var _dev = hcDeviceKind();
+      if(_dev && hc.draftBusiness && hc.draftBusiness.draftToken){
+        await fetch(SUPA_URL + '/rest/v1/rpc/set_draft_signup_device', {
+          method: 'POST',
+          headers: { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' },
+          body: JSON.stringify({ p_business_id: hc.draftBusiness.id, p_draft_token: hc.draftBusiness.draftToken, p_device: _dev })
+        });
+      }
+    }catch(e){}
     var res = await hcClaimDraft();
     if(res && res.ok){
       hc.draftClaimed = true;                        // the address is live now
