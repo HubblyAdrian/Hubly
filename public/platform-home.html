@@ -291,6 +291,13 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   padding:10px 14px;max-width:min(560px,82%);
 }
 .hc-msg.typing{color:var(--ink-3);font-style:italic}
+/* Multi-business picker: plain rows, a name and an address. A picker, not a
+   dashboard — enough to choose which site to open, nothing more. */
+.hc-biz-picker{display:flex;flex-direction:column;gap:8px;margin-top:2px}
+.hc-biz-row{display:flex;flex-direction:column;align-items:flex-start;gap:3px;width:100%;text-align:left;cursor:pointer;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;transition:border-color .15s ease,background .15s ease}
+.hc-biz-row:hover{border-color:var(--brand)}
+.hc-biz-name{font-size:15px;font-weight:650;color:var(--ink)}
+.hc-biz-addr{font-size:12px;color:var(--ink-3);font-family:ui-monospace,'SF Mono',Menlo,monospace}
 
 /* TWO STATES, BOTH NOW IMPLEMENTED. Pre-build there is no preview, so the
    conversation is a centred column at the input's width. The app was in panel
@@ -2562,19 +2569,52 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     if(!hcIsAuthed()) return false;
     try{
       var c = await authGetClient();
-      var res = await c.rpc('get_my_business');
-      var biz = res && res.data;
-      if(!biz || !biz.id) return false;
-      hc.draftBusiness = { id: biz.id, slug: biz.slug, name: biz.name, draftToken: biz.draftToken || null, url: biz.url };
-      hc.draftClaimed = true;
-      hc.active = true;
-      hcAppendMessage('hubly', 'Welcome back — this is your site. Pick up wherever you like.');
-      hcSetView('site');
-      hcRevealApp();
-      if(biz.hasPage){ var app = document.getElementById('hcApp'); if(app) app.classList.add('hc-has-draft'); }
-      hcRenderCanvas();
+      var res = await c.rpc('get_my_businesses');   // every business this uid owns
+      var list = (res && res.data) || [];
+      if(!Array.isArray(list) || list.length === 0) return false;   // owns none -> anon flow
+      if(list.length === 1){ hcOpenOwnedBusiness(list[0]); return true; }   // owns one -> load it
+      hcRenderBusinessPicker(list);   // owns more than one -> a picker, not a dashboard
       return true;
     }catch(e){ return false; }
+  }
+  // Bring one owned business INTO the builder — the same end state as building it.
+  function hcOpenOwnedBusiness(biz){
+    hc.draftBusiness = { id: biz.id, slug: biz.slug, name: biz.name, draftToken: biz.draftToken || null, url: biz.url };
+    hc.draftClaimed = true;
+    hc.active = true;
+    hcAppendMessage('hubly', 'Welcome back — this is ' + (biz.name || 'your site') + '. Pick up wherever you like.');
+    hcSetView('site');
+    hcRevealApp();
+    if(biz.hasPage){ var app = document.getElementById('hcApp'); if(app) app.classList.add('hc-has-draft'); }
+    hcRenderCanvas();
+  }
+  // Owns more than one: a plain picker in the rail — their sites, newest first,
+  // name + address, click one to open it. Deliberately NOT a dashboard (no
+  // bookings, messages, settings or billing) — just enough to choose which site
+  // to work on. Once picked, everything downstream behaves exactly as today.
+  function hcRenderBusinessPicker(list){
+    hc.active = true;
+    hcRevealApp();
+    var thread = hcThreadBody(); if(!thread) return;
+    hcAppendMessage('hubly', "You've got a few sites here. Which one do you want to work on?");
+    var wrap = document.createElement('div');
+    wrap.className = 'hc-biz-picker';
+    list.forEach(function(biz){
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'hc-biz-row';
+      row.innerHTML =
+        '<span class="hc-biz-name"></span><span class="hc-biz-addr"></span>';
+      row.querySelector('.hc-biz-name').textContent = biz.name || biz.slug || 'Your site';
+      row.querySelector('.hc-biz-addr').textContent = String(biz.url || '').replace(/^https?:\/\//, '');
+      row.addEventListener('click', function(){
+        if(wrap.parentNode) wrap.parentNode.removeChild(wrap);
+        hcOpenOwnedBusiness(biz);
+      });
+      wrap.appendChild(row);
+    });
+    thread.appendChild(wrap);
+    hcThreadScrollToEnd();
   }
   // On load: the OWNER's page first, then the anonymous draft cookie, then — if
   // this is the return leg of a Google sign-in started from the builder
@@ -2800,8 +2840,16 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       if(res.claimed) hcAppendMessage('hubly', 'Saved to your account — this page is yours now, and ' + hcEscape(String(hc.draftBusiness.url||'').replace(/^https?:\/\//,'')) + ' is live. Keep editing whenever you like.');
     } else if(res && res.error === 'already_claimed'){
       hcAppendMessage('hubly', "You’re signed in — but this page is already saved to a different account, so I can’t add it to yours.");
+    } else if(res && res.error === 'bad_token'){
+      // A REAL reason, not a network blip. The claim copy used to blame the
+      // network for everything; name what actually happened.
+      hcTellPreviewAuthed(pending);
+      hcAppendMessage('hubly', "You’re signed in, but I couldn’t confirm this page belongs to this session — the draft link didn’t match. You can keep editing here; if saving to your account keeps failing, start the page again and it’ll attach cleanly.");
+    } else if(res && res.error === 'not_found'){
+      hcAppendMessage('hubly', "You’re signed in, but this draft no longer exists to save — let’s build it again and it’ll be yours.");
     } else {
-      // Transient (token gone after the hop, network). Still editable; retry offered.
+      // Genuinely transient (token lost across the hop, a network drop). Still
+      // editable; offer a one-tap retry.
       hcTellPreviewAuthed(pending);
       hcShowClaimRetry();
     }
