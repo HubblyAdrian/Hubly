@@ -70,6 +70,10 @@ img{max-width:100%;display:block}
 }
 .nav-signin svg{width:17px;height:17px;flex-shrink:0}
 .nav-signin:hover{color:var(--brand);border-color:var(--brand)}
+/* Signed-in: a calm status, not a call to action. */
+.nav-signin.is-authed{color:var(--ink-2);border-color:var(--line);cursor:default}
+.nav-signin.is-authed:hover{color:var(--ink-2);border-color:var(--line)}
+.nav-signin.is-authed svg{display:none}
 
 /* —— Hero —— */
 .hero{
@@ -569,13 +573,59 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 .hc-insp-back{align-self:flex-start;font-size:11.5px;color:var(--ink-3);background:none;border:none;cursor:pointer;padding:0}
 .hc-insp-back:hover{color:var(--ink)}
 @media(max-width:860px){
+  /* min-height:0 is load-bearing: without it a column flex item takes its CONTENT
+     height, so the chat (a full conversation) grows past the viewport and shoves
+     the preview off the bottom — measured at 996px chat / preview at y=1060, the
+     exact "no website appears" bug. With it, the 40/60 stack actually holds. */
   .hc-app{flex-direction:column}
-  .hc-app-left{border-right:0;border-bottom:1px solid var(--line);flex:1 1 52%;min-width:0}
-  .hc-app-right{flex:1 1 48%}
-  .hc-app.hc-has-draft .hc-app-left{flex:1 1 40%;min-width:0}
-  .hc-app.hc-has-draft .hc-app-right{flex:1 1 60%}
+  .hc-app-left{border-right:0;border-bottom:1px solid var(--line);flex:1 1 52%;min-width:0;min-height:0}
+  .hc-app-right{flex:1 1 48%;min-height:0}
+  .hc-app.hc-has-draft .hc-app-left{flex:1 1 40%;min-width:0;min-height:0}
+  .hc-app.hc-has-draft .hc-app-right{flex:1 1 60%;min-height:0}
   .hc-insp-grid{grid-template-columns:1fr}
   .hc-insp-card.hc-insp-primary{grid-column:auto}
+}
+
+/* ── PHONE: one screen at a time ──────────────────────────────────────────────
+   Cramming a conversation and a website into 390px serves neither. On a phone
+   each gets the full screen; a slim segmented toggle (permanent chrome, kept as
+   short as possible) moves between them, and the build auto-switches to the site
+   the moment it's ready — that's the payoff moment. The preview renders at NATIVE
+   width and scrolls: it's a real website in a real viewport, not a scaled toy
+   device (the person is already holding the device). */
+.hc-mobile-tabs{ display:none; }
+@media(max-width:700px){
+  /* The shell tracks the DYNAMIC viewport so the chat input rides above the soft
+     keyboard instead of behind it. dvh shrinks with the keyboard on iOS 16.4+;
+     the visualViewport JS handler is the fallback + keeps the focused field in
+     view (see hcWireMobileKeyboard). */
+  .hc-app{ flex-direction:column; bottom:auto; height:calc(100svh - var(--nav-h)); height:calc(100dvh - var(--nav-h)); }
+
+  /* Slim toggle — every pixel here is a pixel of their site they can't see. */
+  .hc-app.hc-has-draft .hc-mobile-tabs{ display:flex; }
+  .hc-mobile-tabs{ flex:0 0 auto; align-items:stretch; gap:0; height:38px; border-bottom:1px solid var(--line); background:var(--bg); }
+  .hc-mtab{ flex:1; border:0; background:none; font:inherit; font-size:13px; font-weight:650; color:var(--ink-3); cursor:pointer; letter-spacing:.01em; position:relative; }
+  .hc-mtab.is-on{ color:var(--ink); }
+  .hc-mtab.is-on::after{ content:''; position:absolute; left:22%; right:22%; bottom:0; height:2px; border-radius:2px; background:var(--brand); }
+
+  /* Both panes fill the area below the toggle; show exactly one at a time. */
+  .hc-app-left, .hc-app.hc-has-draft .hc-app-left{ flex:1 1 auto; width:100%; min-width:0; min-height:0; border:0; }
+  .hc-app-right, .hc-app.hc-has-draft .hc-app-right{ display:flex; flex:1 1 auto; width:100%; min-width:0; min-height:0; animation:none; }
+  .hc-app[data-mview="site"] .hc-app-left{ display:none; }
+  .hc-app:not([data-mview="site"]) .hc-app-right{ display:none; }
+  /* No site yet -> chat is the whole screen, no toggle, nothing to switch to. */
+  .hc-app:not(.hc-has-draft) .hc-app-right{ display:none; }
+
+  /* Preview: native width, no device frame, no scale — a website in a viewport. */
+  .hc-canvas-frame-wrap{ padding:0; display:block; overflow:auto; -webkit-overflow-scrolling:touch; }
+  .hc-preview-frame{ width:100%!important; height:100%!important; box-shadow:none!important; border-radius:0!important; }
+  .hc-preview-stage{ transform:none!important; width:100%!important; height:100%!important; }
+  #hcCanvasFrameA, #hcCanvasFrameB{ width:100%!important; height:100%!important; }
+  .hc-device-toggle{ display:none!important; }   /* they're holding the device; nothing to simulate */
+
+  /* Address pill stays — slim. On a phone it's the "this is real, live at an
+     address" signal, and a phone is where they'd show someone. */
+  .hc-canvas-url{ padding:8px 12px; }
 }
 @media (prefers-reduced-motion: reduce){
   .hc-concept-card,.hc-insp-card{animation:none;opacity:1}
@@ -711,6 +761,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 #authSendCode{background:var(--bg-2);color:var(--ink);border:1px solid var(--line-soft);font-weight:650}
 #authSendCode:hover{background:var(--bg-1);border-color:var(--ink-3)}
 .auth-err{color:#B42318;font-size:13px;margin-top:10px;min-height:1em}
+/* Temporary sign-in diagnostic — removed once the mobile cause is identified. */
+.auth-diag{margin-top:8px;font-size:11px;line-height:1.4;color:var(--ink-3);font-family:ui-monospace,Menlo,monospace;word-break:break-word}
+.auth-diag[hidden]{display:none}
 .auth-back{margin-top:14px;background:none;border:0;color:var(--ink-3);font-size:12.5px;text-decoration:underline;cursor:pointer}
 .auth-back:hover{color:var(--ink)}
 .auth-foot{margin-top:16px;font-size:11.5px;color:var(--ink-3);line-height:1.5}
@@ -815,7 +868,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   directions, then the real live site), never Business Understanding as
   data. See supabase/functions/hubly-conversation/index.ts.
 -->
-<div class="hc-app" id="hcApp" aria-hidden="true">
+<div class="hc-app" id="hcApp" aria-hidden="true" data-mview="chat">
+  <!-- MOBILE ONLY (hidden on desktop, hidden until a site exists). Slim segmented
+       toggle: on a phone the conversation and the site each get the full screen,
+       and this is the always-visible way to move between them. -->
+  <div class="hc-mobile-tabs" id="hcMobileTabs" role="tablist" aria-label="Chat or site">
+    <button type="button" class="hc-mtab is-on" data-mview="chat" role="tab">Chat</button>
+    <button type="button" class="hc-mtab" data-mview="site" role="tab">Site</button>
+  </div>
   <div class="hc-app-left">
     <div class="hc-thread" id="hcThread"><div class="hc-thread-inner" id="hcThreadBody"></div></div>
     <div class="hc-input-bar">
@@ -897,6 +957,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       <input type="text" class="auth-field auth-code" id="authCode" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" aria-label="Six-digit code">
       <button type="button" class="auth-primary" id="authVerify">Verify &amp; continue</button>
       <div class="auth-err" id="authErr2" role="alert"></div>
+      <!-- TEMPORARY diagnostic (remove once the mobile cause is known): shows which
+           of the two verify failures fired so a real-phone tester can report it. -->
+      <div class="auth-diag" id="authDiag" hidden></div>
       <button type="button" class="auth-back" id="authBack">Use a different email</button>
     </div>
   </div>
@@ -1067,6 +1130,8 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     }
     hcSetView('site');
     hcRenderCanvas();
+    // On a phone "show me the page" means switch to the full-screen site view.
+    if(hcIsMobile()) hcSetMobileView('site');
   }
 
   function hcMountViewBar(){
@@ -1190,11 +1255,20 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // Click-to-edit is unaffected: hit-testing is element-based and the browser maps
   // pointer events back through the uniform transform.
   var HC_DEVICES = { desktop:{ w:1440, h:900 }, mobile:{ w:390, h:844 } };
+  function hcIsMobile(){ try{ return window.matchMedia('(max-width:700px)').matches; }catch(e){ return false; } }
   function hcApplyPreviewFit(){
     var wrap = document.getElementById('hcCanvasFrameWrap');
     var frame = document.getElementById('hcPreviewFrame');
     var stage = document.getElementById('hcPreviewStage');
     if(!wrap || !frame || !stage) return;
+    // On a phone there is nothing to simulate — the page renders at native width
+    // and scrolls, so clear any scale the desktop path set and let CSS size it 1:1.
+    if(hcIsMobile()){
+      stage.style.removeProperty('--hc-scale');
+      stage.style.removeProperty('--hc-pw'); stage.style.removeProperty('--hc-ph');
+      frame.style.removeProperty('--hc-fw'); frame.style.removeProperty('--hc-fh');
+      return;
+    }
     var dev = HC_DEVICES[hc.previewDevice] || HC_DEVICES.desktop;
     // clientWidth/Height already exclude the wrap's own padding, which is the
     // breathing room; fit the device rectangle inside that.
@@ -1216,6 +1290,82 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       }
     }
   }
+
+  // ── MOBILE: one screen at a time (chat OR site) ──────────────────────────────
+  // Desktop shows both panes side by side; on a phone we show one full-screen and
+  // switch with the slim toggle. hc.mobileView is the source of truth, mirrored to
+  // #hcApp[data-mview] which the CSS keys off.
+  function hcSetMobileView(view){
+    hc.mobileView = (view === 'site') ? 'site' : 'chat';
+    var app = document.getElementById('hcApp');
+    if(app) app.setAttribute('data-mview', hc.mobileView);
+    var tabs = document.getElementById('hcMobileTabs');
+    if(tabs){
+      var btns = tabs.querySelectorAll('[data-mview]');
+      for(var i=0;i<btns.length;i++){
+        btns[i].classList.toggle('is-on', btns[i].getAttribute('data-mview') === hc.mobileView);
+      }
+    }
+    // Switching TO site: the native-width iframe needs a beat to have real box
+    // dimensions before anything measures it.
+    if(hc.mobileView === 'site'){ try{ requestAnimationFrame(hcApplyPreviewFit); }catch(e){} }
+  }
+  // Mid-sentence = holding text they haven't sent. Auto-switch must never yank
+  // them out of that. (Mere focus on an empty field isn't mid-sentence — a build
+  // finishing while they stare at an empty box should still show them the site.)
+  function hcInputBusy(){
+    var el = document.getElementById('hcInput');
+    return !!(el && String(el.value || '').trim());
+  }
+  // A build or edit finished and there's a real site to see: on a phone, take them
+  // to it — that's the moment the whole free product exists for. Exception: if
+  // they're mid-sentence, defer until they send or the field loses focus.
+  function hcMobileAutoSite(){
+    if(!hcIsMobile() || !hc.draftBusiness) return;
+    if(hcInputBusy()){ hc._pendingMobileSite = true; return; }
+    hc._pendingMobileSite = false;
+    hcSetMobileView('site');
+  }
+  // Run a deferred auto-switch once they're no longer mid-sentence.
+  function hcFlushPendingMobileSite(){
+    if(hc._pendingMobileSite && !hcInputBusy()){ hc._pendingMobileSite = false; hcSetMobileView('site'); }
+  }
+  // Wire the toggle + the deferred-switch triggers + the keyboard handling. The
+  // markup exists above this script, so it's safe to wire immediately.
+  (function hcWireMobile(){
+    var tabs = document.getElementById('hcMobileTabs');
+    if(tabs) tabs.addEventListener('click', function(e){
+      var b = e.target.closest('[data-mview]'); if(!b) return;
+      hc._pendingMobileSite = false;            // an explicit choice cancels any pending auto-switch
+      hcSetMobileView(b.getAttribute('data-mview'));
+    });
+    var input = document.getElementById('hcInput');
+    if(input) input.addEventListener('blur', function(){ setTimeout(hcFlushPendingMobileSite, 60); });
+    // THE SHELL RIDES ABOVE THE KEYBOARD. On a phone the conversation is a full
+    // screen with the input at the bottom; without this the soft keyboard covers
+    // it. dvh in CSS handles iOS 16.4+; this visualViewport handler is the
+    // fallback (older iOS) and also keeps the focused input in view.
+    if(window.visualViewport){
+      var app = document.getElementById('hcApp');
+      var vv = window.visualViewport;
+      var apply = function(){
+        if(!app) return;
+        if(!hcIsMobile()){ app.style.removeProperty('height'); return; }
+        // Height from the top of the app (below the fixed nav) to the top of the
+        // keyboard. offsetTop accounts for any page shift iOS applies.
+        var navH = 64;
+        try{ navH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--nav-h')) || 64; }catch(e){}
+        var h = Math.round(vv.height - (navH - vv.offsetTop));
+        if(h > 120) app.style.height = h + 'px';
+        var a = document.activeElement;
+        if(a && a.id === 'hcInput'){ try{ a.scrollIntoView({ block:'nearest' }); }catch(e){} }
+      };
+      vv.addEventListener('resize', apply);
+      vv.addEventListener('scroll', apply);
+    }
+    // Start on chat; the build's completion is what flips it to site.
+    try{ hcSetMobileView('chat'); }catch(e){}
+  })();
 
   // Cache-busts so the exact same URL always forces a real fresh navigation
   // — without this, re-setting an unchanged-looking src can silently no-op.
@@ -1255,6 +1405,8 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       wrap.classList.remove('hc-just-updated');
       void wrap.offsetWidth; // restart the pulse animation even if it's already mid-run
       wrap.classList.add('hc-just-updated');
+      // An edit just landed on the page — on a phone, show it (unless mid-sentence).
+      hcMobileAutoSite();
     }, { once: true });
     standby.src = hcBust(hc.draftBusiness.url);
   }
@@ -1654,6 +1806,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           hcRenderCanvas();
           var hcAppEl = document.getElementById('hcApp');
           if(hcAppEl) hcAppEl.classList.add('hc-has-draft');
+          // The payoff moment on a phone: the page is ready, so show it (unless
+          // they're mid-sentence — then it waits, see hcMobileAutoSite).
+          hcMobileAutoSite();
           // FIRST-BUILD FOLLOW-UP: once, when the page first lands, Hubly says in
           // WORDS what it can change — drawn from THIS page — and offers the logo.
           // A star icon doesn't tell them what they're allowed to ask for; a
@@ -2079,6 +2234,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     hcPersist('user', text);
     hc.messages.push({ role: 'user', content: text });
     hcCall();
+    // Sending is a release point for a deferred auto-switch (they're no longer
+    // mid-sentence). The field is already cleared, so this flushes cleanly.
+    hcFlushPendingMobileSite();
   }
 
   function hcSend(inputEl){
@@ -2791,6 +2949,8 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // person was in Mail), reopen the code step with their email filled in so they
     // can just paste — over whatever draft/owner state was restored above.
     try{ authReopenPendingIfAny(); }catch(e){}
+    // Show real auth state in the header (it never used to change on sign-in).
+    try{ hcReflectAuthState(); }catch(e){}
   })();
 
   // ── ONE DOOR: sign in / sign up ────────────────────────────────────────────
@@ -2825,6 +2985,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   }
   function authOpen(){
     if(!authOv) return;
+    // Already signed in — the header shows "Signed in", so don't reopen the
+    // sign-in dialog. (An account panel is a later block; nothing to open yet.)
+    if(hcIsAuthed()){ hcReflectAuthState(); return; }
     authOv.hidden = false; authOv.classList.add('is-open');
     authShowStep('start');
     authEl('authErr').textContent = ''; authEl('authErr2').textContent = '';
@@ -2899,23 +3062,66 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       authEl('authErr').textContent = (e && e.message) ? e.message : 'Could not send the code. Try again.';
     }finally{ btn.disabled = false; btn.textContent = 'Continue'; }
   }
+  // TEMPORARY sign-in diagnostic (remove once the mobile cause is known). Writes a
+  // short code to the console AND on screen, so a real-phone tester can report
+  // which failure fired — the two need completely different fixes.
+  function authDiag(tag, detail){
+    try{ console.log('[hubly-auth-diag] ' + tag, detail || ''); }catch(e){}
+    try{
+      var el = authEl('authDiag');
+      if(el){ el.hidden = false; el.textContent = 'diag: ' + tag + (detail ? ' · ' + detail : ''); }
+    }catch(e){}
+  }
   async function authVerify(){
     var token = String((authEl('authCode') || {}).value || '').replace(/\D/g, '').trim();
-    authEl('authErr2').textContent = '';
+    authEl('authErr2').textContent = ''; try{ authEl('authDiag').hidden = true; }catch(e){}
     if(token.length !== 6){ authEl('authErr2').textContent = 'Enter the six-digit code.'; return; }
     var btn = authEl('authVerify'); btn.disabled = true; btn.textContent = 'Verifying…';
     try{
       var c = await authGetClient();
       var res = await c.auth.verifyOtp({ email: authEmailValue, token: token, type: 'email' });
-      if(res.error) throw res.error;
-      // The good path: resolves in place. No navigation — claim the draft and
-      // return them to the builder with it still on screen (hcAfterAuth). A plain
-      // landing sign-in with no draft goes to the dashboard, inside hcAfterAuth.
+      if(res && res.error) throw res.error;
+      // A response with NO session is a failure even though there's no error —
+      // this is the silent path that used to close the modal on a non-signed-in
+      // user. CAUSE 1 (auth-flow): verifyOtp came back with no session at all.
+      var session = res && res.data && res.data.session;
+      if(!session){
+        authDiag('no-session', 'verifyOtp returned data but no session');
+        throw new Error('__no_session');
+      }
+      // CAUSE 2 (storage): a session came back but the browser didn't persist it
+      // to localStorage — what a reload (and every later call) reads. On iOS
+      // Safari this is ITP / partitioned storage / Private Browsing, a much deeper
+      // hole than the auth flow. Give the SDK a tick to write, then check STORAGE
+      // specifically, not the in-memory session.
+      await new Promise(function(r){ setTimeout(r, 80); });
+      var stored = null; try{ stored = localStorage.getItem(hcSbKey()); }catch(e){ stored = 'blocked'; }
+      if(!stored || stored === 'blocked'){
+        authDiag('session-not-persisted', 'had session; localStorage ' + (stored === 'blocked' ? 'threw' : 'empty'));
+        throw new Error('__not_persisted');
+      }
+      // Real, persisted session. Now it's safe to declare success.
+      authClearPending();
       btn.textContent = 'Signed in';
+      hcReflectAuthState();                 // visible confirmation (the header never changed before)
       await hcAfterAuth();
     }catch(e){
-      authEl('authErr2').textContent = (e && e.message) ? e.message : "That code didn't match. Check it and try again.";
+      var code = e && e.message;
+      var msg;
+      if(code === '__no_session'){
+        msg = "That didn't finish signing you in — the code may have expired. Send a new code and try again.";
+      } else if(code === '__not_persisted'){
+        msg = "You're verified, but this browser blocked saving your session — this is usually Private Browsing or strict tracking protection on iPhone. Try “Continue with Google” instead, or turn off Private Browsing and retry.";
+      } else if(/expired|invalid|token/i.test(String(code || ''))){
+        msg = "That code didn't match or has expired. Check it, or send a new one.";
+      } else if(/network|fetch|Failed to fetch/i.test(String(code || ''))){
+        msg = "Couldn't reach the server to verify — check your connection and try again.";
+      } else {
+        msg = code ? code : "That code didn't match. Check it and try again.";
+      }
+      authEl('authErr2').textContent = msg;
       btn.disabled = false; btn.textContent = 'Verify & continue';
+      // The modal STAYS OPEN on every failure, so they can retry.
     }
   }
   async function authGoogle(){
@@ -2956,6 +3162,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       var exp = o && (o.expires_at || (o.currentSession && o.currentSession.expires_at));
       return !exp || (exp * 1000 > Date.now());
     }catch(e){ return false; }
+  }
+  // Sign-in used to be invisible even when it worked — the header said "Sign in"
+  // whether you were signed in or not. Reflect the real state so success shows.
+  function hcReflectAuthState(){
+    var btn = document.getElementById('navSignin');
+    if(!btn) return;
+    if(hcIsAuthed()){ btn.classList.add('is-authed'); btn.textContent = 'Signed in'; }
+    else { btn.classList.remove('is-authed'); btn.textContent = 'Sign in'; }
   }
   // Is there ANY stored session, even an expired one? An expired access token
   // usually still has a live refresh token beside it, so "expired" is NOT the
