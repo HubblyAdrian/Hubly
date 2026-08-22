@@ -149,15 +149,17 @@ Deno.serve(async (req) => {
       await recordRecovery('failed', null, 'owner email not readable');
       recovery = { ok: false, reason: 'owner_email_unreadable' };
     } else {
+      // Points back into the product, never at this inbox (nobody reads it).
+      const appUrl = `https://${PUBLIC_DOMAIN}`;
       const rHtml =
         `<p>Your site is live:</p>` +
         `<p><a href="${esc(url)}" style="font-size:20px;font-weight:700">${esc(url)}</a></p>` +
         `<p>You're signed in as ${esc(ownerEmail)} — use that address to come back any time.</p>` +
-        `<p>Reply here and tell me anything you'd like changed, and I'll take care of it.</p>`;
+        `<p>To change anything, come back to <a href="${esc(appUrl)}">${esc(appUrl)}</a> and just tell Hubly what you'd like.</p>`;
       const rText =
         `Your site is live:\n${url}\n\n` +
         `You're signed in as ${ownerEmail} — use that address to come back any time.\n\n` +
-        `Reply here and tell me anything you'd like changed, and I'll take care of it.\n`;
+        `To change anything, come back to ${appUrl} and just tell Hubly what you'd like.\n`;
       const sent = await send(ownerEmail, `Your site is live — ${url}`, rHtml, rText);
       await recordRecovery(sent.ok ? 'sent' : 'failed', (sent.id as string) || null, (sent.error as string) || null);
       recovery = sent;

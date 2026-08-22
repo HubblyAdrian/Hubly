@@ -57,6 +57,9 @@ Every Hubly notification — email, SMS, in-product, and everything after — mu
 - **Link straight to the thing** — one tap to the booking, the site, the signup. If
   the recipient has to open something else to act on it, the notification has not
   done its job.
+- **Never invite a reply to an address nobody reads.** A notification's call to action
+  points back into the product (a link, a next step), never "reply to this email" when
+  that inbox is unmonitored. A dead reply path is a promise the product silently breaks.
 
 Two consequences that bind:
 - A notification may not report a fact the system never recorded. Reporting a device,
