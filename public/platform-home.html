@@ -70,10 +70,14 @@ img{max-width:100%;display:block}
 }
 .nav-signin svg{width:17px;height:17px;flex-shrink:0}
 .nav-signin:hover{color:var(--brand);border-color:var(--brand)}
-/* Signed-in: a calm status, not a call to action. */
-.nav-signin.is-authed{color:var(--ink-2);border-color:var(--line);cursor:default}
-.nav-signin.is-authed:hover{color:var(--ink-2);border-color:var(--line)}
+/* Signed-in: a calm status that still opens the account menu (sign out). */
+.nav-signin.is-authed{color:var(--ink-2);border-color:var(--line);cursor:pointer}
+.nav-signin.is-authed:hover{color:var(--ink);border-color:var(--ink-3)}
 .nav-signin.is-authed svg{display:none}
+/* Account menu (sign out) — anchored under the header pill. */
+.hc-acct-menu{position:fixed;z-index:9998;background:var(--bg-2);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(28,22,16,.18);padding:6px;min-width:150px}
+.hc-acct-menu .hc-acct-signout{display:block;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:10px 12px;font:inherit;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer}
+.hc-acct-menu .hc-acct-signout:hover{background:var(--bg-1)}
 
 /* —— Hero —— */
 .hero{
@@ -1873,12 +1877,13 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 
   function hcAppendMessage(role, text){
     var thread = hcThreadBody();
-    if(!thread) return;
+    if(!thread) return null;
     var div = document.createElement('div');
     div.className = 'hc-msg ' + (role === 'user' ? 'user' : 'hubly');
     div.textContent = text;
     thread.appendChild(div);
     hcThreadScrollToEnd();
+    return div;
   }
 
   // The first-build follow-up message. Concrete, about THEIR page — not generic
@@ -1947,7 +1952,11 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         lines.join('\n') +
         "\n\nWant your own photos and logo on it, and the address live? That takes an account — about ten seconds.";
     }
-    hcAppendMessage('hubly', msg);
+    var _fuEl = hcAppendMessage('hubly', msg);
+    // Tag the pre-account ("reserved for you") message so a successful sign-in can
+    // supersede it — leaving it standing would tell a signed-in owner their live
+    // site isn't live (Rule 6). The already-claimed variant is fine to leave.
+    if(!claimed && _fuEl) _fuEl.setAttribute('data-hc-msg', 'preaccount');
     // These are the first setup asks Hubly makes — the shaping suggestions and
     // the account offer. Generated client-side, but they are Hubly's voice, so
     // they belong in the transcript (the state engine needs to know they were
@@ -2992,11 +3001,38 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     authEl('authStepStart').hidden = (which !== 'start');
     authEl('authStepCode').hidden = (which !== 'code');
   }
+  // Signed-in account menu — currently just Sign out, so a person on a borrowed or
+  // shared phone can actually get out. A control that looks tappable must do
+  // something; this is the something.
+  async function hcSignOut(){
+    try{ var c = await authGetClient(); await c.auth.signOut(); }catch(e){}
+    try{ localStorage.removeItem(hcSbKey()); }catch(e){}
+    try{ localStorage.removeItem('hcLastBusiness'); localStorage.removeItem('hubly_account_claimed'); }catch(e){}
+    location.assign('/');   // back to the landing page, signed out
+  }
+  function hcToggleAccountMenu(){
+    var existing = document.getElementById('hcAcctMenu');
+    if(existing){ existing.remove(); return; }
+    var btn = document.getElementById('navSignin'); if(!btn) return;
+    var m = document.createElement('div'); m.id = 'hcAcctMenu'; m.className = 'hc-acct-menu';
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'hc-acct-signout'; b.textContent = 'Sign out';
+    m.appendChild(b);
+    document.body.appendChild(m);
+    var r = btn.getBoundingClientRect();
+    m.style.top = (r.bottom + 6) + 'px';
+    m.style.right = Math.max(8, (window.innerWidth - r.right)) + 'px';
+    b.addEventListener('click', hcSignOut);
+    setTimeout(function(){
+      document.addEventListener('click', function onDoc(e){
+        if(!m.contains(e.target) && e.target !== btn){ try{ m.remove(); }catch(_){} document.removeEventListener('click', onDoc); }
+      });
+    }, 0);
+  }
   function authOpen(){
     if(!authOv) return;
-    // Already signed in — the header shows "Signed in", so don't reopen the
-    // sign-in dialog. (An account panel is a later block; nothing to open yet.)
-    if(hcIsAuthed()){ hcReflectAuthState(); return; }
+    // Already signed in — the header shows "Signed in"; tapping it opens the account
+    // menu (sign out), never the sign-in dialog.
+    if(hcIsAuthed()){ hcReflectAuthState(); hcToggleAccountMenu(); return; }
     authOv.hidden = false; authOv.classList.add('is-open');
     authShowStep('start');
     authEl('authErr').textContent = ''; authEl('authErr2').textContent = '';
@@ -3313,6 +3349,26 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     });
     thread.appendChild(d); hcThreadScrollToEnd();
   }
+  // Rule 6: a successful, requested state change MUST be visibly confirmed. Supersedes
+  // the stale pre-account ("reserved for you — make an account") message so it can't
+  // stand as Hubly's last word to a signed-in owner whose site is live, then posts a
+  // real confirmation as the last thing said. Returns whether that confirmation is
+  // actually in the DOM — the caller's "told user" claim is asserted on THIS, never
+  // on the RPC verdict.
+  function hcConfirmSignedIn(){
+    try{
+      var stale = document.querySelectorAll('[data-hc-msg="preaccount"]');
+      for(var i=0;i<stale.length;i++) stale[i].parentNode && stale[i].parentNode.removeChild(stale[i]);
+    }catch(e){}
+    var host = String((hc.draftBusiness && hc.draftBusiness.url) || '').replace(/^https?:\/\//,'');
+    var text = "You're in — this is your site, and it's live at " + host + ". Keep editing whenever you like.";
+    var el = hcAppendMessage('hubly', text);
+    if(el){ el.setAttribute('data-hc-msg', 'signedin'); hcPersist('assistant', text); }
+    // Assert the render: is the confirmation actually in the thread now?
+    var rendered = false;
+    try{ rendered = !!(el && el.isConnected && document.querySelector('[data-hc-msg="signedin"]')); }catch(e){ rendered = false; }
+    return rendered;
+  }
   // After auth resolves (either path). Claim the draft in play and return them to
   // editing; a plain landing sign-in with no draft goes to the dashboard.
   async function hcAfterAuth(){
@@ -3323,36 +3379,37 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     try{ sessionStorage.removeItem('hcPendingEdit:' + hc.draftBusiness.id); }catch(e){}
     hc.pendingEditLabel = null;
     var res = await hcClaimDraft();
-    // EVERY terminal state gets a line — success that told the user, success that
-    // said nothing (mode 5, indistinguishable from failure to the person), and
-    // each distinct failure. A tracer that only names failures would show a clean
-    // banner on a silent success and read as "nothing happened" — the same trap.
-    var claimLine;
-    if(res && res.ok){
-      claimLine = res.claimed
-        ? 'TERMINAL: verified + claimed + told user ✓ (real success)'
-        : 'TERMINAL: verified + alreadyYours -> SUCCEEDED SILENTLY (no user-visible confirmation) [mode 5]';
-    } else {
-      claimLine = 'TERMINAL: verified but claim FAILED: ' + ((res && res.error) || 'unknown') + ' -> back to chat [mode 4]';
-    }
-    hcAuthTrace('claim', claimLine);
     if(res && res.ok){
       hc.draftClaimed = true;                        // the address is live now
       hcUpdateAddressBar();                           // pill: reserved -> live link
       hcTellPreviewAuthed(pending);                 // preview can edit now; open the clicked element
-      if(res.claimed) hcAppendMessage('hubly', 'Saved to your account — this page is yours now, and ' + hcEscape(String(hc.draftBusiness.url||'').replace(/^https?:\/\//,'')) + ' is live. Keep editing whenever you like.');
+      // Rule 6: confirm the success in words, superseding the stale pre-account
+      // message. Both claimed AND alreadyYours are successes and both must confirm
+      // (alreadyYours was the silent mode 5).
+      var toldRendered = hcConfirmSignedIn();
+      // The confirmation lives in Chat; on a phone make sure that's where they land
+      // so "you're in" is actually seen (resolves the switch-to-Site conflict).
+      if(hcIsMobile()){ try{ hcSetMobileView('chat'); }catch(e){} }
+      try{ hcThreadScrollToEnd(); }catch(e){}
+      // TRACER now asserts the RENDER, not the RPC verdict — the old "told user ✓"
+      // fired on res.claimed being true, an assumed postcondition inside the very
+      // instrument built to catch assumed postconditions.
+      var kind = res.claimed ? 'claimed' : 'alreadyYours';
+      hcAuthTrace('claim', toldRendered
+        ? ('TERMINAL: verified + ' + kind + ' + confirmation RENDERED ✓ (real success)')
+        : ('TERMINAL: verified + ' + kind + ' but confirmation FAILED TO RENDER [mode 5 still live]'));
     } else if(res && res.error === 'already_claimed'){
+      hcAuthTrace('claim', 'TERMINAL: claim refused: already_claimed (different account) -> message shown');
       hcAppendMessage('hubly', "You’re signed in — but this page is already saved to a different account, so I can’t add it to yours.");
     } else if(res && res.error === 'bad_token'){
-      // A REAL reason, not a network blip. The claim copy used to blame the
-      // network for everything; name what actually happened.
+      hcAuthTrace('claim', 'TERMINAL: claim FAILED: bad_token -> back to chat [mode 4]');
       hcTellPreviewAuthed(pending);
       hcAppendMessage('hubly', "You’re signed in, but I couldn’t confirm this page belongs to this session — the draft link didn’t match. You can keep editing here; if saving to your account keeps failing, start the page again and it’ll attach cleanly.");
     } else if(res && res.error === 'not_found'){
+      hcAuthTrace('claim', 'TERMINAL: claim FAILED: not_found -> back to chat [mode 4]');
       hcAppendMessage('hubly', "You’re signed in, but this draft no longer exists to save — let’s build it again and it’ll be yours.");
     } else {
-      // Genuinely transient (token lost across the hop, a network drop). Still
-      // editable; offer a one-tap retry.
+      hcAuthTrace('claim', 'TERMINAL: claim FAILED: ' + ((res && res.error) || 'unknown') + ' -> retry offered [mode 4]');
       hcTellPreviewAuthed(pending);
       hcShowClaimRetry();
     }
