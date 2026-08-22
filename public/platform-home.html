@@ -2948,9 +2948,18 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // If a code was requested and the tab reloaded (iOS discarding it while the
     // person was in Mail), reopen the code step with their email filled in so they
     // can just paste — over whatever draft/owner state was restored above.
-    try{ authReopenPendingIfAny(); }catch(e){}
+    var _reopened = false; try{ _reopened = authReopenPendingIfAny(); }catch(e){}
     // Show real auth state in the header (it never used to change on sign-in).
     try{ hcReflectAuthState(); }catch(e){}
+    // TRACE (Phase-1): if a code was issued recently, report on load whether the
+    // code step reopened and whether storage survived — the mode-3 / eviction
+    // signal (e.g. Private tab drops both the pending OTP and the session).
+    try{
+      var _probe = JSON.parse(localStorage.getItem('hcAuthProbe') || 'null');
+      if(_probe && (Date.now() - _probe.t) < 30 * 60 * 1000){
+        hcAuthTrace('load-after-issue', 'codeStepReopened=' + (_reopened ? 'YES' : 'NO') + ' · ' + hcAuthStorageProbe());
+      }
+    }catch(e){}
   })();
 
   // ── ONE DOOR: sign in / sign up ────────────────────────────────────────────
@@ -3018,6 +3027,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   }
   function authClearPending(){
     try{ sessionStorage.removeItem(HC_OTP_KEY); }catch(e){}
+    try{ localStorage.removeItem('hcAuthProbe'); sessionStorage.removeItem('hcAuthProbe'); }catch(e){}   // TRACE probe (Phase-1)
   }
   function authReadPending(){
     try{
@@ -3057,20 +3067,62 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       // Mirror to sessionStorage so the code step survives a tab discard while the
       // person is in Mail fetching the code (see authReopenPendingIfAny).
       authPersistPending(email);
+      // TRACE: a code was issued via signInWithOtp (email OTP). Drop probes into
+      // BOTH storages so a later load can tell whether either survived the trip to
+      // Mail and back — the Private/eviction signal.
+      try{ var pr = JSON.stringify({ t: Date.now() }); localStorage.setItem('hcAuthProbe', pr); sessionStorage.setItem('hcAuthProbe', pr); }catch(e){}
+      hcAuthTrace('otp-issued', 'signInWithOtp(email); verify uses type=email · ' + hcAuthStorageProbe());
       setTimeout(function(){ try{ authEl('authCode').focus(); }catch(e){} }, 40);
     }catch(e){
       authEl('authErr').textContent = (e && e.message) ? e.message : 'Could not send the code. Try again.';
     }finally{ btn.disabled = false; btn.textContent = 'Continue'; }
   }
-  // TEMPORARY sign-in diagnostic (remove once the mobile cause is known). Writes a
-  // short code to the console AND on screen, so a real-phone tester can report
-  // which failure fired — the two need completely different fixes.
+  // ── TEMPORARY SIGN-IN TRACER (Phase-1 measurement; remove once the cause is
+  //    known). Emits ONE persistent, on-screen line + console + a ring buffer, so
+  //    a real-phone test names which of the four failure modes fired — even after
+  //    the modal has closed or the tab was evicted and reloaded by iOS. Purely
+  //    observational: it changes NO sign-in behaviour.
+  function hcAuthTraceBanner(text){
+    try{
+      var el = document.getElementById('hcAuthTraceBanner');
+      if(!el){
+        el = document.createElement('div'); el.id = 'hcAuthTraceBanner';
+        el.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:100000;background:#0b0b0b;color:#7CFC7C;font:11px/1.45 ui-monospace,Menlo,monospace;padding:6px 12px;white-space:pre-wrap;word-break:break-word;border-top:1px solid #2a2a2a;';
+        el.addEventListener('click', function(){ try{ el.remove(); }catch(e){} });
+        document.body.appendChild(el);
+      }
+      el.textContent = 'AUTH-DIAG (tap to hide): ' + text;
+    }catch(e){}
+  }
+  function hcAuthTrace(event, detail){
+    var line = event + (detail ? ' · ' + detail : '');
+    try{ console.log('[auth-trace] ' + line); }catch(e){}
+    var rec = { t: Date.now(), line: line };
+    try{ var arr = JSON.parse(sessionStorage.getItem('hcAuthTrace') || '[]'); arr.push(rec); sessionStorage.setItem('hcAuthTrace', JSON.stringify(arr.slice(-24))); }catch(e){}
+    hcAuthTraceBanner(line);
+  }
+  // Storage-persistence snapshot: distinguishes a Private/evicted tab (where the
+  // Supabase session can't survive) from a working one. Reads the probe authSendCode
+  // wrote, and whether a real Supabase session key is present.
+  function hcAuthStorageProbe(){
+    var lsWritable = false; try{ localStorage.setItem('__hcw','1'); localStorage.removeItem('__hcw'); lsWritable = true; }catch(e){}
+    var ssWritable = false; try{ sessionStorage.setItem('__hcw','1'); sessionStorage.removeItem('__hcw'); ssWritable = true; }catch(e){}
+    var lsProbe = null; try{ lsProbe = JSON.parse(localStorage.getItem('hcAuthProbe') || 'null'); }catch(e){}
+    var ssProbe = null; try{ ssProbe = JSON.parse(sessionStorage.getItem('hcAuthProbe') || 'null'); }catch(e){}
+    var hasSession = false; try{ hasSession = !!localStorage.getItem(hcSbKey()); }catch(e){}
+    return 'LSwritable=' + lsWritable + ' SSwritable=' + ssWritable +
+           ' LSprobe=' + (lsProbe ? (Math.round((Date.now() - lsProbe.t) / 1000) + 's') : 'GONE') +
+           ' SSprobe=' + (ssProbe ? 'ok' : 'GONE') +
+           ' session=' + (hasSession ? 'present' : 'ABSENT');
+  }
+  // Existing modal diagnostic — kept, and now also mirrored to the persistent
+  // tracer so it survives the modal closing.
   function authDiag(tag, detail){
-    try{ console.log('[hubly-auth-diag] ' + tag, detail || ''); }catch(e){}
     try{
       var el = authEl('authDiag');
       if(el){ el.hidden = false; el.textContent = 'diag: ' + tag + (detail ? ' · ' + detail : ''); }
     }catch(e){}
+    hcAuthTrace(tag, detail);
   }
   async function authVerify(){
     var token = String((authEl('authCode') || {}).value || '').replace(/\D/g, '').trim();
@@ -3080,7 +3132,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     try{
       var c = await authGetClient();
       var res = await c.auth.verifyOtp({ email: authEmailValue, token: token, type: 'email' });
-      if(res && res.error) throw res.error;
+      if(res && res.error){ hcAuthTrace('verify-error', (res.error.message || '') + ' [type=email]'); throw res.error; }
       // A response with NO session is a failure even though there's no error —
       // this is the silent path that used to close the modal on a non-signed-in
       // user. CAUSE 1 (auth-flow): verifyOtp came back with no session at all.
@@ -3101,6 +3153,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         throw new Error('__not_persisted');
       }
       // Real, persisted session. Now it's safe to declare success.
+      hcAuthTrace('verify-ok', 'session persisted · draftInMemory=' + (!!hc.draftBusiness));
       authClearPending();
       btn.textContent = 'Signed in';
       hcReflectAuthState();                 // visible confirmation (the header never changed before)
@@ -3246,12 +3299,13 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // editing; a plain landing sign-in with no draft goes to the dashboard.
   async function hcAfterAuth(){
     authClose();
-    if(!hc.draftBusiness){ location.assign('/dashboard'); return; }
+    if(!hc.draftBusiness){ hcAuthTrace('afterauth', 'no draft in memory -> redirecting to /dashboard'); location.assign('/dashboard'); return; }
     var pending = hc.pendingEditLabel;
     if(!pending){ try{ pending = sessionStorage.getItem('hcPendingEdit:' + hc.draftBusiness.id); }catch(e){} }
     try{ sessionStorage.removeItem('hcPendingEdit:' + hc.draftBusiness.id); }catch(e){}
     hc.pendingEditLabel = null;
     var res = await hcClaimDraft();
+    hcAuthTrace('claim', (res && res.ok) ? ('ok' + (res.claimed ? ' (claimed)' : ' (already yours)')) : ('FAILED: ' + ((res && res.error) || 'unknown') + ' -> back to chat'));
     if(res && res.ok){
       hc.draftClaimed = true;                        // the address is live now
       hcUpdateAddressBar();                           // pill: reserved -> live link
