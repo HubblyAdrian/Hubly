@@ -852,8 +852,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         Continue with Google
       </button>
       <div class="auth-or">or</div>
-      <input type="email" class="auth-field" id="authEmail" inputmode="email" autocomplete="email" placeholder="you@yourbusiness.com" aria-label="Email address">
-      <button type="button" class="auth-primary" id="authSendCode">Continue</button>
+      <!-- A real <form> with a named email field: Chrome only offers (and fills)
+           a saved email into a form field it recognises. Without the form + name,
+           selecting the saved-address suggestion did nothing — friction on the one
+           screen where friction loses the customer. -->
+      <form id="authEmailForm" novalidate>
+        <input type="email" class="auth-field" id="authEmail" name="email" inputmode="email" autocomplete="email" placeholder="you@yourbusiness.com" aria-label="Email address">
+        <button type="submit" class="auth-primary" id="authSendCode">Continue</button>
+      </form>
       <div class="auth-err" id="authErr" role="alert"></div>
       <p class="auth-foot">No password needed. By continuing you agree to Hubly's Terms.</p>
     </div>
@@ -2313,9 +2319,13 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   function hcSendDirectEdit(payload){
     if(hc.busy || !hc.draftBusiness) return;
     hc.busy = true;
+    // apikey is the gateway credential (anon/publishable). authorization carries
+    // the USER's JWT when signed in, so the server can authorise an owner's edit
+    // off the session; otherwise the anon key (unclaimed drafts, token path).
+    var at = hcAccessToken();
     fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'apikey': SUPA_ANON_KEY, 'authorization': 'Bearer ' + SUPA_ANON_KEY },
+      headers: { 'content-type': 'application/json', 'apikey': SUPA_ANON_KEY, 'authorization': 'Bearer ' + (at || SUPA_ANON_KEY) },
       body: JSON.stringify(Object.assign({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness }, payload))
     })
       .then(function(r){ return r.json(); })
@@ -2537,16 +2547,49 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       hcRenderCanvas();
     }catch(e){ /* best-effort: a failure just means a fresh start */ }
   }
-  // On load: resume the draft, then — if this is the return leg of a Google
-  // sign-in started from the builder (hcauth=1) — parse the OAuth session, claim
-  // the draft, and reopen the element they were editing (C's Google path).
+
+  // THE OWNER READ PATH. If the visitor is signed in, load the business they OWN
+  // (get_my_business, scoped to auth.uid() server-side — no slug or token the
+  // client supplies) and bring it into the builder: same page, preview, editable,
+  // address pill live. This is what was missing — after a claim, the anonymous
+  // cookie path (hcResumeDraft) deliberately refuses a claimed draft, so an owner
+  // had no way back to their own page. Precedence: OWNER first, cookie second — a
+  // signed-in owner's own page wins over any stale draft cookie in the browser.
+  // Returns true if it loaded something. (If the user owns more than one, the RPC
+  // returns the MOST RECENT — the point at which a real dashboard is needed.)
+  async function hcLoadOwnedBusiness(){
+    if(hc.draftBusiness) return true;
+    if(!hcIsAuthed()) return false;
+    try{
+      var c = await authGetClient();
+      var res = await c.rpc('get_my_business');
+      var biz = res && res.data;
+      if(!biz || !biz.id) return false;
+      hc.draftBusiness = { id: biz.id, slug: biz.slug, name: biz.name, draftToken: biz.draftToken || null, url: biz.url };
+      hc.draftClaimed = true;
+      hc.active = true;
+      hcAppendMessage('hubly', 'Welcome back — this is your site. Pick up wherever you like.');
+      hcSetView('site');
+      hcRevealApp();
+      if(biz.hasPage){ var app = document.getElementById('hcApp'); if(app) app.classList.add('hc-has-draft'); }
+      hcRenderCanvas();
+      return true;
+    }catch(e){ return false; }
+  }
+  // On load: the OWNER's page first, then the anonymous draft cookie, then — if
+  // this is the return leg of a Google sign-in started from the builder
+  // (hcauth=1) — parse the OAuth session, claim, and reopen the clicked element.
   (async function(){
-    await hcResumeDraft();
+    var owned = await hcLoadOwnedBusiness();
+    if(!owned) await hcResumeDraft();
     try{
       if(new URLSearchParams(location.search).get('hcauth') === '1'){
         try{ await authGetClient(); }catch(e){}         // detectSessionInUrl parses the fragment
         try{ history.replaceState(null, '', location.pathname); }catch(e){}
         await hcAfterAuth();
+        // Google leg: the just-claimed page may not have been in memory (fresh
+        // load after the redirect), so load it by ownership now.
+        if(!hc.draftBusiness) await hcLoadOwnedBusiness();
       }
     }catch(e){}
   })();
@@ -2650,6 +2693,16 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // A lightweight authed check (the SDK's stored session), so the preview can gate
   // an edit without loading the SDK just to ask.
   function hcSbKey(){ try{ return 'sb-' + SUPA_URL.split('//')[1].split('.')[0] + '-auth-token'; }catch(e){ return null; } }
+  // The signed-in user's access token (JWT), or null. Sent as Authorization on
+  // edits so the server can authorise an OWNER's edit off the session — a claimed
+  // business is edited by owning it, not by the draft token.
+  function hcAccessToken(){
+    try{
+      var o = JSON.parse(localStorage.getItem(hcSbKey()));
+      var at = o && (o.access_token || (o.currentSession && o.currentSession.access_token));
+      return at || null;
+    }catch(e){ return null; }
+  }
   function hcIsAuthed(){
     try{
       var raw = localStorage.getItem(hcSbKey());
@@ -2761,8 +2814,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     authOv.addEventListener('click', function(e){ if(e.target === authOv) authClose(); });
     document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && authOv.classList.contains('is-open')) authClose(); });
     authEl('authGoogle').addEventListener('click', authGoogle);
-    authEl('authSendCode').addEventListener('click', authSendCode);
-    authEl('authEmail').addEventListener('keydown', function(e){ if(e.key === 'Enter') authSendCode(); });
+    // The button is type=submit inside #authEmailForm; handle submit (covers both
+    // the click and Enter) and preventDefault so it never navigates.
+    authEl('authEmailForm').addEventListener('submit', function(e){ e.preventDefault(); authSendCode(); });
     authEl('authVerify').addEventListener('click', authVerify);
     authEl('authCode').addEventListener('keydown', function(e){ if(e.key === 'Enter') authVerify(); });
     authEl('authBack').addEventListener('click', function(){ authShowStep('start'); authEl('authErr2').textContent = ''; });

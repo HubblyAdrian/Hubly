@@ -17451,6 +17451,9 @@ var hcAuthedFlag = false;
 // Set by wireHcEditingSurface so hcAuthState can open the element they clicked
 // before signing in, once auth resolves.
 var hcOpenEditByLabel = null;
+// Which label the post-auth reopen has already fired for, so the ~6 retry
+// messages from hcTellPreviewAuthed open the editor once, not six times.
+var hcReopenedLabel = null;
 // The builder that embeds this preview is the apex of our own registrable domain
 // (a business site is <slug>.myhubly.app / <slug>.hubly.app; the builder is
 // myhubly.app / hubly.app). Used to pin postMessage instead of '*'.
@@ -17488,7 +17491,14 @@ window.addEventListener('message', function(ev){
   var d = ev.data;
   if(!d || d.type !== 'hcAuthState') return;
   hcAuthedFlag = !!d.authed;
-  if(d.authed && d.openEditLabel && typeof hcOpenEditByLabel === 'function'){
+  // FIRE THE REOPEN ONCE. hcTellPreviewAuthed re-sends this message ~6x (so the
+  // authed flag survives the Google reload where the frame may not be ready yet),
+  // but each message used to re-trigger the editor — and openTextEditor tears the
+  // overlay down and rebuilds it every time, so the editor "opened then locked",
+  // flickering for 3 seconds. Keep updating the flag on every message; open the
+  // clicked element only the first time we see that label.
+  if(d.authed && d.openEditLabel && d.openEditLabel !== hcReopenedLabel && typeof hcOpenEditByLabel === 'function'){
+    hcReopenedLabel = d.openEditLabel;
     try{ hcOpenEditByLabel(d.openEditLabel); }catch(e){}
   }
 });

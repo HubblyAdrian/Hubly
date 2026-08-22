@@ -1238,8 +1238,9 @@ export async function applyDirectDocumentPatch(
   draftId: string,
   draftToken: string,
   op: DirectPatchOpInput,
+  ownerId?: string | null,
 ): Promise<CapabilityActionResult> {
-  if (!draftId || !draftToken) {
+  if (!draftId || (!draftToken && !ownerId)) {
     return { ok: false, real: false, summary: "No draft business exists yet to edit.", error: "missing_draft" };
   }
   if (op.op !== "update_text" && op.op !== "update_attrs") {
@@ -1280,6 +1281,7 @@ export async function applyDirectDocumentPatch(
     p_document: patchResult.document,
     p_rendered_html: html,
     p_created_by: "patch",
+    p_owner_id: ownerId ?? null,
   });
   if (!r || r.ok !== true) {
     return { ok: false, real: false, summary: "The edit was computed but could not be saved.", error: "rpc_failed" };
@@ -1407,8 +1409,11 @@ export async function applyDirectFreeformEdit(
   draftId: string,
   draftToken: string,
   edit: { label: string; text?: string; src?: string; prevText?: string },
+  ownerId?: string | null,
 ): Promise<CapabilityActionResult> {
-  if (!draftId || !draftToken) {
+  // An unclaimed draft authorises by token; a claimed business authorises by the
+  // verified owner (ownerId, set by the edge function after checking the JWT).
+  if (!draftId || (!draftToken && !ownerId)) {
     return { ok: false, real: false, summary: "No draft business exists yet to edit.", error: "missing_draft" };
   }
   if (!edit?.label) {
@@ -1444,6 +1449,7 @@ export async function applyDirectFreeformEdit(
     p_rendered_html: result.html,
     p_created_by: "patch",
     p_format: "html",
+    p_owner_id: ownerId ?? null,
   });
   if (!r || r.ok !== true) {
     return { ok: false, real: false, summary: "The edit was computed but could not be saved.", error: "rpc_failed" };
@@ -1890,8 +1896,9 @@ export async function uploadAndPatchFreeformImage(
   label: string,
   imageBase64: string,
   mediaType: string,
+  ownerId?: string | null,
 ): Promise<CapabilityActionResult> {
-  if (!draftId || !draftToken) {
+  if (!draftId || (!draftToken && !ownerId)) {
     return { ok: false, real: false, summary: "No draft business exists yet to edit.", error: "missing_draft" };
   }
   if (!label) {
@@ -1899,7 +1906,7 @@ export async function uploadAndPatchFreeformImage(
   }
   const uploaded = await uploadImageToStorage(draftId, imageBase64, mediaType, "doc-image");
   if (!uploaded.ok) return uploaded.result;
-  const patched = await applyDirectFreeformEdit(draftId, draftToken, { label, src: uploaded.url });
+  const patched = await applyDirectFreeformEdit(draftId, draftToken, { label, src: uploaded.url }, ownerId);
   return patched.ok ? { ...patched, humanNote: "Done — that photo is on the page now." } : patched;
 }
 
@@ -1909,8 +1916,9 @@ export async function uploadAndPatchDocumentImage(
   nodeId: string,
   imageBase64: string,
   mediaType: string,
+  ownerId?: string | null,
 ): Promise<CapabilityActionResult> {
-  if (!draftId || !draftToken) {
+  if (!draftId || (!draftToken && !ownerId)) {
     return { ok: false, real: false, summary: "No draft business exists yet to edit.", error: "missing_draft" };
   }
   if (!nodeId) {
@@ -1918,7 +1926,7 @@ export async function uploadAndPatchDocumentImage(
   }
   const uploaded = await uploadImageToStorage(draftId, imageBase64, mediaType, "doc-image");
   if (!uploaded.ok) return uploaded.result;
-  const patched = await applyDirectDocumentPatch(draftId, draftToken, { op: "update_attrs", id: nodeId, attrs: { src: uploaded.url } });
+  const patched = await applyDirectDocumentPatch(draftId, draftToken, { op: "update_attrs", id: nodeId, attrs: { src: uploaded.url } }, ownerId);
   // Said in terms of what the person just did — they dropped a picture on a
   // picture — rather than the generic diff clause the patch path produces.
   return patched.ok ? { ...patched, humanNote: "Done — that photo is on the page now." } : patched;

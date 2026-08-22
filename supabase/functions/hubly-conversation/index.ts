@@ -1025,10 +1025,33 @@ Deno.serve(async (req) => {
         }
       : null;
 
+  // An authenticated owner editing a CLAIMED business is authorised by OWNERSHIP,
+  // not by the draft token — which create_business_document no longer accepts once
+  // owner_id is set. Resolve the caller's verified user id from a real user JWT
+  // (the client sends its access token as Authorization when signed in); the
+  // anon/publishable key isn't a JWT and resolves to null. The RPC then enforces
+  // that this uid actually owns the business, so a forged id can't write.
+  async function resolveOwnerUid(): Promise<string | null> {
+    const tok = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+    if (!tok || !tok.startsWith("eyJ")) return null; // not a user JWT (anon/publishable key)
+    const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+    if (!supabaseUrl) return null;
+    try {
+      const r = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        headers: { ...adminHeaders(), authorization: `Bearer ${tok}` },
+      });
+      const j = await r.json().catch(() => null);
+      return r.ok && j?.id ? String(j.id) : null;
+    } catch {
+      return null;
+    }
+  }
+
   if (directEdit || directImageEdit || directDocumentPatch || directDocumentImageEdit || directFreeformEdit || directFreeformImageEdit) {
     if (!draftBusiness) {
       return jsonRes({ ok: false, error: "no_draft_to_edit" }, 400);
     }
+    const ownerUid = await resolveOwnerUid();
     // Click-to-edit only ever operates on an already-generated document, so
     // this path can't structurally be reached while the feature is dark —
     // but checked explicitly anyway, same discipline as the other two
@@ -1060,19 +1083,19 @@ Deno.serve(async (req) => {
     } else if (directDocumentImageEdit) {
       isDocumentAction = true;
       actionName = "patchDocument";
-      result = await uploadAndPatchDocumentImage(draftBusiness.id, draftBusiness.draftToken, directDocumentImageEdit.id, directDocumentImageEdit.imageBase64, directDocumentImageEdit.mediaType);
+      result = await uploadAndPatchDocumentImage(draftBusiness.id, draftBusiness.draftToken, directDocumentImageEdit.id, directDocumentImageEdit.imageBase64, directDocumentImageEdit.mediaType, ownerUid);
     } else if (directFreeformImageEdit) {
       isDocumentAction = true;
       actionName = "patchDocument";
-      result = await uploadAndPatchFreeformImage(draftBusiness.id, draftBusiness.draftToken, directFreeformImageEdit.label, directFreeformImageEdit.imageBase64, directFreeformImageEdit.mediaType);
+      result = await uploadAndPatchFreeformImage(draftBusiness.id, draftBusiness.draftToken, directFreeformImageEdit.label, directFreeformImageEdit.imageBase64, directFreeformImageEdit.mediaType, ownerUid);
     } else if (directFreeformEdit) {
       isDocumentAction = true;
       actionName = "patchDocument";
-      result = await applyDirectFreeformEdit(draftBusiness.id, draftBusiness.draftToken, directFreeformEdit);
+      result = await applyDirectFreeformEdit(draftBusiness.id, draftBusiness.draftToken, directFreeformEdit, ownerUid);
     } else {
       isDocumentAction = true;
       actionName = "patchDocument";
-      result = await applyDirectDocumentPatch(draftBusiness.id, draftBusiness.draftToken, directDocumentPatch!);
+      result = await applyDirectDocumentPatch(draftBusiness.id, draftBusiness.draftToken, directDocumentPatch!, ownerUid);
     }
     // SAY WHAT HAPPENED. This path used to return reply: "" unconditionally and
     // throw away the summary it had already computed, so a real edit landed and
