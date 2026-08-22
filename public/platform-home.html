@@ -2573,7 +2573,13 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       var list = (res && res.data) || [];
       if(!Array.isArray(list) || list.length === 0) return false;   // owns none -> anon flow
       if(list.length === 1){ hcOpenOwnedBusiness(list[0]); return true; }   // owns one -> load it
-      hcRenderBusinessPicker(list);   // owns more than one -> a picker, not a dashboard
+      // Owns more than one. If they were last working on one they still own, go
+      // straight back to THAT — a reload should never bounce them to a different
+      // (e.g. the newest) site. Otherwise, the picker.
+      var lastId = null; try{ lastId = localStorage.getItem('hcLastBusiness'); }catch(e){}
+      var last = lastId && list.filter(function(b){ return b.id === lastId; })[0];
+      if(last){ hcOpenOwnedBusiness(last); return true; }
+      hcRenderBusinessPicker(list);   // a picker, not a dashboard
       return true;
     }catch(e){ return false; }
   }
@@ -2582,6 +2588,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     hc.draftBusiness = { id: biz.id, slug: biz.slug, name: biz.name, draftToken: biz.draftToken || null, url: biz.url };
     hc.draftClaimed = true;
     hc.active = true;
+    // Remember which one, so a reload returns here (not to the newest) when the
+    // owner has several.
+    try{ localStorage.setItem('hcLastBusiness', biz.id); }catch(e){}
     hcAppendMessage('hubly', 'Welcome back — this is ' + (biz.name || 'your site') + '. Pick up wherever you like.');
     hcSetView('site');
     hcRevealApp();
