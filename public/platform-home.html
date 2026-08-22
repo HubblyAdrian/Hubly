@@ -2539,7 +2539,6 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       if(!res || !res.ok || !res.draftBusiness) return;   // already claimed / expired / gone
       hc.draftBusiness = res.draftBusiness;
       hc.active = true;
-      hcAppendMessage('hubly', 'Welcome back — here’s the page you built. Pick up wherever you like, or keep it to your account.');
       hcSetView('site');
       // Bring them INTO the builder. Without this the state was set and the
       // greeting + preview were rendered into a still-hidden #hcApp, so the
@@ -2552,6 +2551,11 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         if(app) app.classList.add('hc-has-draft');
       }
       hcRenderCanvas();
+      // Restore the stored conversation (anon draft-token path). Only fall back
+      // to the generic welcome line when there's nothing stored to show.
+      hcLoadConversation().then(function(restored){
+        if(!restored) hcAppendMessage('hubly', 'Welcome back — here’s the page you built. Pick up wherever you like, or keep it to your account.');
+      });
     }catch(e){ /* best-effort: a failure just means a fresh start */ }
   }
 
@@ -2591,11 +2595,67 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // Remember which one, so a reload returns here (not to the newest) when the
     // owner has several.
     try{ localStorage.setItem('hcLastBusiness', biz.id); }catch(e){}
-    hcAppendMessage('hubly', 'Welcome back — this is ' + (biz.name || 'your site') + '. Pick up wherever you like.');
     hcSetView('site');
     hcRevealApp();
     if(biz.hasPage){ var app = document.getElementById('hcApp'); if(app) app.classList.add('hc-has-draft'); }
     hcRenderCanvas();
+    // Restore the stored conversation. Only if there is none do we fall back to
+    // the generic welcome line — the real thread IS the welcome back.
+    hcLoadConversation().then(function(restored){
+      if(!restored) hcAppendMessage('hubly', 'Welcome back — this is ' + (biz.name || 'your site') + '. Pick up wherever you like.');
+    });
+  }
+  // Restore the builder conversation for the business now in hc.draftBusiness
+  // (Block 3 — persistence). Read rules mirror the document gates exactly: before
+  // a claim the draft token, after a claim the owner (auth.uid()), and never a
+  // public path. Renders the stored turns and lands at the bottom — the person
+  // sees where they left off; older turns are above, reached by scrolling.
+  // Build narration was never persisted, so there is none to scroll past. Seeds
+  // hc.messages so the next turn's model call carries the prior context. Returns
+  // true if it rendered anything.
+  async function hcLoadConversation(){
+    var d = hc.draftBusiness;
+    if(!d || !d.id) return false;
+    var rows = null;
+    try{
+      if(hc.draftClaimed && hcIsAuthed()){
+        var c = await authGetClient();
+        var res = await c.rpc('get_my_business_conversation', { p_business_id: d.id });
+        rows = (res && res.data) || null;
+      } else if(d.draftToken){
+        var H = { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' };
+        rows = await fetch(SUPA_URL + '/rest/v1/rpc/get_draft_business_conversation', {
+          method: 'POST', headers: H,
+          body: JSON.stringify({ p_business_id: d.id, p_draft_token: d.draftToken })
+        }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+      }
+    }catch(e){ return false; }
+    if(!Array.isArray(rows) || rows.length === 0) return false;
+    rows.sort(function(a, b){ return (a.seq || 0) - (b.seq || 0); });
+    // Seed model context with the clean restored transcript (the edge slices it
+    // to MAX_HISTORY next turn). Cleaner than the polluted in-memory history.
+    hc.messages = rows.map(function(m){ return { role: m.role, content: m.content }; });
+    for(var i = 0; i < rows.length; i++){
+      hcAppendMessage(rows[i].role === 'user' ? 'user' : 'hubly', hcMessageToText(rows[i].content));
+    }
+    hcThreadScrollToEnd();
+    return true;
+  }
+  // A stored message's content is a string (usual) or a parts array (a photo
+  // turn: a text part plus an attachment part whose raw bytes were stripped
+  // before storage). Flatten to the line the person saw.
+  function hcMessageToText(content){
+    if(typeof content === 'string') return content;
+    if(Array.isArray(content)){
+      var out = [];
+      content.forEach(function(p){
+        if(typeof p === 'string') out.push(p);
+        else if(p && typeof p.text === 'string') out.push(p.text);
+        else if(p && (p.type === 'image' || p.type === 'image_url' || p.type === 'document')) out.push('📎 attachment');
+      });
+      return out.join(' ').trim() || '📎 attachment';
+    }
+    return '';
   }
   // Owns more than one: a plain picker in the rail — their sites, newest first,
   // name + address, click one to open it. Deliberately NOT a dashboard (no
