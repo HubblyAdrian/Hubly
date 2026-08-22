@@ -41,6 +41,7 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const rec = (body && body.record) || {};
+    const recoveryDeliveryId = (body && body.recovery_delivery_id) || null;
     const businessId = String(rec.id || '').trim();
     if (!businessId) {
       return new Response(JSON.stringify({ ok: false, error: 'no_business' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
@@ -88,41 +89,81 @@ Deno.serve(async (req) => {
       else if ((count || 0) > 0) editsLine = `${count} edit${count === 1 ? '' : 's'}`;
     } catch (_e) { editsLine = '(edit count unreadable)'; }
 
-    if (!OWNER_EMAIL) {
-      // Honest, not silent: nothing to send to.
-      return new Response(JSON.stringify({ ok: false, reason: 'not_configured', detail: 'PLATFORM_OWNER_EMAIL unset' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    }
     if (!RESEND_KEY) {
       return new Response(JSON.stringify({ ok: false, reason: 'not_configured', detail: 'RESEND_API_KEY unset' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
-
-    // Plain and short — read on a phone. URL first and tappable; email plain to
-    // copy. No marketing line. Fields in the agreed order. No PII in any URL.
     const deviceLine = device ? (device === 'phone' ? 'Phone' : device === 'desktop' ? 'Desktop' : device) : 'not recorded';
-    const html =
-      `<p><a href="${esc(url)}" style="font-size:17px;font-weight:700">${esc(url)}</a></p>` +
-      `<p>Reply to: <a href="mailto:${esc(ownerEmail)}">${esc(ownerEmail)}</a></p>` +
-      `<p><b>They asked for:</b><br>${esc(brief).replace(/\n/g, '<br>')}</p>` +
-      `<p><b>Business:</b> ${esc(name)}<br>` +
-      `<b>Built on:</b> ${esc(deviceLine)}<br>` +
-      `<b>Edits:</b> ${esc(editsLine)}</p>`;
-    const text =
-      `${url}\n\nReply to: ${ownerEmail}\n\nThey asked for:\n${brief}\n\n` +
-      `Business: ${name}\nBuilt on: ${deviceLine}\nEdits: ${editsLine}\n`;
 
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: RESEND_FROM, to: [OWNER_EMAIL], subject: `New signup: ${name}`, html, text }),
-    });
-    const resText = await res.text().catch(() => '');
-    if (!res.ok) {
-      console.error('signup-notify: resend rejected', res.status, resText.slice(0, 300));
-      return new Response(JSON.stringify({ ok: false, status: res.status, error: resText.slice(0, 300) }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    // One Resend send. Returns { ok, id?, error? }.
+    async function send(to: string, subject: string, html: string, text: string) {
+      try {
+        const r = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${RESEND_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from: RESEND_FROM, to: [to], subject, html, text }),
+        });
+        const t = await r.text().catch(() => '');
+        if (!r.ok) return { ok: false, error: `resend ${r.status}: ${t.slice(0, 200)}` };
+        let id: string | null = null; try { id = JSON.parse(t).id || null; } catch (_e) { /* ignore */ }
+        return { ok: true, id };
+      } catch (e) { return { ok: false, error: (e as Error)?.message || 'threw' }; }
     }
-    let id: string | null = null;
-    try { id = JSON.parse(resText).id || null; } catch (_e) { /* ignore */ }
-    return new Response(JSON.stringify({ ok: true, accepted: true, id }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    // Record the recovery send by flipping the pending row the trigger wrote, so a
+    // stuck 'pending' means the call never landed and a failed send is on the record.
+    async function recordRecovery(status: string, providerMessageId: string | null, error: string | null) {
+      try {
+        if (recoveryDeliveryId) {
+          await admin.from('notification_deliveries').update({
+            recipient: ownerEmail, provider: 'resend', provider_message_id: providerMessageId,
+            status, error: error ? String(error).slice(0, 500) : null, attempted_at: new Date().toISOString(),
+          }).eq('id', recoveryDeliveryId);
+        } else {
+          await admin.from('notification_deliveries').insert({
+            business_id: businessId, subject_type: 'signup', subject_id: businessId, recipient_role: 'owner',
+            recipient: ownerEmail, channel: 'email', provider: 'resend', provider_message_id: providerMessageId,
+            status, error: error ? String(error).slice(0, 500) : null,
+          });
+        }
+      } catch (e) { console.error('recordRecovery failed', (e as Error)?.message); }
+    }
+
+    // ── 1. PLATFORM-OWNER notification (only if configured) ───────────────────
+    let platform: Record<string, unknown> = { skipped: 'PLATFORM_OWNER_EMAIL unset' };
+    if (OWNER_EMAIL) {
+      const html =
+        `<p><a href="${esc(url)}" style="font-size:17px;font-weight:700">${esc(url)}</a></p>` +
+        `<p>Reply to: <a href="mailto:${esc(ownerEmail)}">${esc(ownerEmail)}</a></p>` +
+        `<p><b>They asked for:</b><br>${esc(brief).replace(/\n/g, '<br>')}</p>` +
+        `<p><b>Business:</b> ${esc(name)}<br><b>Built on:</b> ${esc(deviceLine)}<br><b>Edits:</b> ${esc(editsLine)}</p>`;
+      const text = `${url}\n\nReply to: ${ownerEmail}\n\nThey asked for:\n${brief}\n\nBusiness: ${name}\nBuilt on: ${deviceLine}\nEdits: ${editsLine}\n`;
+      platform = await send(OWNER_EMAIL, `New signup: ${name}`, html, text);
+    }
+
+    // ── 2. RECOVERY email to the PERSON — their way back if they forget which
+    //       address they used. Independent of PLATFORM_OWNER_EMAIL. URL first and
+    //       most prominent (it's what they'll forward). Reads like a person wrote it.
+    let recovery: Record<string, unknown>;
+    const ownerEmailOk = ownerEmail && ownerEmail.indexOf('@') !== -1;
+    if (!ownerEmailOk) {
+      // Never invent a recipient. Record honestly that we couldn't reach them.
+      await recordRecovery('failed', null, 'owner email not readable');
+      recovery = { ok: false, reason: 'owner_email_unreadable' };
+    } else {
+      const rHtml =
+        `<p>Your site is live:</p>` +
+        `<p><a href="${esc(url)}" style="font-size:20px;font-weight:700">${esc(url)}</a></p>` +
+        `<p>You're signed in as ${esc(ownerEmail)} — use that address to come back any time.</p>` +
+        `<p>Reply here and tell me anything you'd like changed, and I'll take care of it.</p>`;
+      const rText =
+        `Your site is live:\n${url}\n\n` +
+        `You're signed in as ${ownerEmail} — use that address to come back any time.\n\n` +
+        `Reply here and tell me anything you'd like changed, and I'll take care of it.\n`;
+      const sent = await send(ownerEmail, `Your site is live — ${url}`, rHtml, rText);
+      await recordRecovery(sent.ok ? 'sent' : 'failed', (sent.id as string) || null, (sent.error as string) || null);
+      recovery = sent;
+    }
+
+    return new Response(JSON.stringify({ ok: true, platform, recovery }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (e) {
     console.error('signup-notify failed', (e as Error)?.message);
     return new Response(JSON.stringify({ ok: false, error: (e as Error)?.message || 'threw' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
