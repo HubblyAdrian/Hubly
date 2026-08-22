@@ -2840,7 +2840,13 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // to MAX_HISTORY next turn). Cleaner than the polluted in-memory history.
     hc.messages = rows.map(function(m){ return { role: m.role, content: m.content }; });
     for(var i = 0; i < rows.length; i++){
-      hcAppendMessage(rows[i].role === 'user' ? 'user' : 'hubly', hcMessageToText(rows[i].content));
+      var txt = hcMessageToText(rows[i].content);
+      // TRANSCRIPT-SIDE SUPERSEDE: once the business is claimed, the pre-account
+      // "reserved for you — make an account" line is a lie in the history. Don't
+      // re-render it on reload (it's matched by content because a restored message
+      // has no data-hc-msg tag). The site being live is confirmed elsewhere.
+      if(hc.draftClaimed && rows[i].role !== 'user' && hcIsPreAccountMsg(txt)) continue;
+      hcAppendMessage(rows[i].role === 'user' ? 'user' : 'hubly', txt);
     }
     hcThreadScrollToEnd();
     return true;
@@ -2848,6 +2854,16 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // A stored message's content is a string (usual) or a parts array (a photo
   // turn: a text part plus an attachment part whose raw bytes were stripped
   // before storage). Flatten to the line the person saw.
+  // True for the pre-account "reserved for you — make an account" follow-up. Matched
+  // by CONTENT (not just the data-hc-msg tag) so it also catches messages restored
+  // from the transcript on reload, which carry no attribute. One source of truth for
+  // both the live supersede (hcConfirmSignedIn) and the reload filter.
+  function hcIsPreAccountMsg(text){
+    var t = String(text || '');
+    return /reserved for you/i.test(t) ||
+           /goes live the moment you make an account/i.test(t) ||
+           /that takes an account/i.test(t);
+  }
   function hcMessageToText(content){
     if(typeof content === 'string') return content;
     if(Array.isArray(content)){
@@ -3356,9 +3372,19 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // actually in the DOM — the caller's "told user" claim is asserted on THIS, never
   // on the RPC verdict.
   function hcConfirmSignedIn(){
+    // Supersede the stale pre-account message(s). Match the tag AND the content —
+    // an in-session message carries data-hc-msg="preaccount", but one restored from
+    // the transcript on reload carries no attribute, so content is what catches it.
+    var superseded = 0;
     try{
-      var stale = document.querySelectorAll('[data-hc-msg="preaccount"]');
-      for(var i=0;i<stale.length;i++) stale[i].parentNode && stale[i].parentNode.removeChild(stale[i]);
+      var body = hcThreadBody();
+      var msgs = body ? body.querySelectorAll('.hc-msg.hubly') : [];
+      for(var i=0;i<msgs.length;i++){
+        var m = msgs[i];
+        if(m.getAttribute('data-hc-msg') === 'preaccount' || hcIsPreAccountMsg(m.textContent)){
+          if(m.parentNode){ m.parentNode.removeChild(m); superseded++; }
+        }
+      }
     }catch(e){}
     var host = String((hc.draftBusiness && hc.draftBusiness.url) || '').replace(/^https?:\/\//,'');
     var text = "You're in — this is your site, and it's live at " + host + ". Keep editing whenever you like.";
@@ -3367,7 +3393,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // Assert the render: is the confirmation actually in the thread now?
     var rendered = false;
     try{ rendered = !!(el && el.isConnected && document.querySelector('[data-hc-msg="signedin"]')); }catch(e){ rendered = false; }
-    return rendered;
+    return { rendered: rendered, superseded: superseded };
   }
   // After auth resolves (either path). Claim the draft in play and return them to
   // editing; a plain landing sign-in with no draft goes to the dashboard.
@@ -3386,18 +3412,19 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       // Rule 6: confirm the success in words, superseding the stale pre-account
       // message. Both claimed AND alreadyYours are successes and both must confirm
       // (alreadyYours was the silent mode 5).
-      var toldRendered = hcConfirmSignedIn();
+      var conf = hcConfirmSignedIn();
+      // TRACER FIRST — assert the RENDER and the SUPERSEDE, and emit before anything
+      // that could throw (e.g. the mobile switch), so a successful sign-in can never
+      // leave us with no banner line. Reports the supersede count so "green" can't
+      // hide a no-op removal.
+      var kind = res.claimed ? 'claimed' : 'alreadyYours';
+      hcAuthTrace('claim', conf.rendered
+        ? ('TERMINAL: verified + ' + kind + ' + confirmation RENDERED ✓, superseded ' + conf.superseded + ' stale msg(s)')
+        : ('TERMINAL: verified + ' + kind + ' but confirmation FAILED TO RENDER [mode 5 still live]'));
       // The confirmation lives in Chat; on a phone make sure that's where they land
       // so "you're in" is actually seen (resolves the switch-to-Site conflict).
-      if(hcIsMobile()){ try{ hcSetMobileView('chat'); }catch(e){} }
+      if(typeof hcIsMobile === 'function' && hcIsMobile()){ try{ hcSetMobileView('chat'); }catch(e){} }
       try{ hcThreadScrollToEnd(); }catch(e){}
-      // TRACER now asserts the RENDER, not the RPC verdict — the old "told user ✓"
-      // fired on res.claimed being true, an assumed postcondition inside the very
-      // instrument built to catch assumed postconditions.
-      var kind = res.claimed ? 'claimed' : 'alreadyYours';
-      hcAuthTrace('claim', toldRendered
-        ? ('TERMINAL: verified + ' + kind + ' + confirmation RENDERED ✓ (real success)')
-        : ('TERMINAL: verified + ' + kind + ' but confirmation FAILED TO RENDER [mode 5 still live]'));
     } else if(res && res.error === 'already_claimed'){
       hcAuthTrace('claim', 'TERMINAL: claim refused: already_claimed (different account) -> message shown');
       hcAppendMessage('hubly', "You’re signed in — but this page is already saved to a different account, so I can’t add it to yours.");
