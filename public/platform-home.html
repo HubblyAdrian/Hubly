@@ -3078,11 +3078,29 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     }finally{ btn.disabled = false; btn.textContent = 'Continue'; }
   }
   // ── TEMPORARY SIGN-IN TRACER (Phase-1 measurement; remove once the cause is
-  //    known). Emits ONE persistent, on-screen line + console + a ring buffer, so
-  //    a real-phone test names which of the four failure modes fired — even after
-  //    the modal has closed or the tab was evicted and reloaded by iOS. Purely
-  //    observational: it changes NO sign-in behaviour.
+  //    known). The ring buffer records ALWAYS, flag or no flag, so a real person's
+  //    failure is captured even if nobody was watching — dump it with hcAuthDump()
+  //    in the console. The visible green banner is gated behind ?authdiag=1 (sticky
+  //    once seen) so no real user sees debug chrome. Purely observational: it
+  //    changes NO sign-in behaviour.
+  function hcAuthDiagEnabled(){
+    try{
+      if(/[?&]authdiag=1/.test(location.search)){ localStorage.setItem('hcAuthDiagOn', '1'); return true; }
+      if(/[?&]authdiag=0/.test(location.search)){ localStorage.removeItem('hcAuthDiagOn'); return false; }
+      return localStorage.getItem('hcAuthDiagOn') === '1';
+    }catch(e){ return false; }
+  }
+  // Dump the full trace on demand — works flag or no flag, so a real person who
+  // hits this before we do still leaves a record we can read.
+  try{
+    window.hcAuthDump = function(){
+      var a = []; try{ a = JSON.parse(sessionStorage.getItem('hcAuthTrace') || '[]'); }catch(e){}
+      try{ console.table(a.map(function(r){ return { at: new Date(r.t).toISOString().slice(11, 19), line: r.line }; })); }catch(e){ console.log(a); }
+      return a;
+    };
+  }catch(e){}
   function hcAuthTraceBanner(text){
+    if(!hcAuthDiagEnabled()) return;   // buffer still records (see hcAuthTrace); only the visible banner is gated
     try{
       var el = document.getElementById('hcAuthTraceBanner');
       if(!el){
