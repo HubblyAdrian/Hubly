@@ -17501,6 +17501,10 @@ window.addEventListener('message', function(ev){
     hcReopenedLabel = d.openEditLabel;
     try{ hcOpenEditByLabel(d.openEditLabel); }catch(e){}
   }
+  // ACK back to the builder so it knows the preview received this and editing is
+  // live — Rule 3: confirm receipt instead of leaving the builder to fire blind
+  // retries with no idea whether any landed.
+  try{ (ev.source || window.parent).postMessage({ type:'hcAuthStateAck', authed: hcAuthedFlag }, (ev.origin && ev.origin !== 'null') ? ev.origin : '*'); }catch(e){}
 });
 
 async function loadPublicProfile(slug){
