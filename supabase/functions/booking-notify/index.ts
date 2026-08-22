@@ -96,7 +96,7 @@ function googleCalendarLink(opts: { summary: string; location: string; descripti
  */
 async function sendEmail(
   supabase: ReturnType<typeof createAdminClient>,
-  ledger: { businessId: string | null; subjectType: string; subjectId: string | null; role: string },
+  ledger: { businessId: string | null; subjectType: string; subjectId: string | null; role: string; deliveryId?: string | null },
   to: string | null,
   subject: string,
   html: string,
@@ -104,21 +104,35 @@ async function sendEmail(
 ) {
   const record = async (status: 'sent' | 'failed' | 'skipped', extra: { providerMessageId?: string | null; error?: string | null }) => {
     try {
-      const { error } = await supabase.from('notification_deliveries').insert({
-        business_id: ledger.businessId,
-        subject_type: ledger.subjectType,
-        subject_id: ledger.subjectId,
-        recipient_role: ledger.role,
-        recipient: to,
-        channel: 'email',
-        provider: 'resend',
-        provider_message_id: extra.providerMessageId ?? null,
-        status,
-        error: extra.error ? String(extra.error).slice(0, 500) : null,
-      });
-      if (error) console.error('notification_deliveries insert failed:', error.message);
+      let error;
+      if (ledger.deliveryId) {
+        // FLIP the pending row the caller wrote before the call. A row left at
+        // 'pending' therefore means this function never ran — the call never landed.
+        ({ error } = await supabase.from('notification_deliveries').update({
+          recipient: to,
+          provider: 'resend',
+          provider_message_id: extra.providerMessageId ?? null,
+          status,
+          error: extra.error ? String(extra.error).slice(0, 500) : null,
+          attempted_at: new Date().toISOString(),
+        }).eq('id', ledger.deliveryId));
+      } else {
+        ({ error } = await supabase.from('notification_deliveries').insert({
+          business_id: ledger.businessId,
+          subject_type: ledger.subjectType,
+          subject_id: ledger.subjectId,
+          recipient_role: ledger.role,
+          recipient: to,
+          channel: 'email',
+          provider: 'resend',
+          provider_message_id: extra.providerMessageId ?? null,
+          status,
+          error: extra.error ? String(extra.error).slice(0, 500) : null,
+        }));
+      }
+      if (error) console.error('notification_deliveries write failed:', error.message);
     } catch (e) {
-      console.error('notification_deliveries insert threw:', e);
+      console.error('notification_deliveries write threw:', e);
     }
   };
 
@@ -245,6 +259,9 @@ Deno.serve(async (req) => {
 
     const payload = await req.json();
     const booking = payload.record;
+    // The caller's pre-written pending row (if any). We flip it for the OWNER send,
+    // so a stuck 'pending' means this call never landed.
+    const deliveryId = payload.delivery_id ?? null;
     if (!booking) return new Response(JSON.stringify({ ok: true, skipped: 'no record' }));
 
     // A row with status 'abandoned' is a LEAD, not a booking. It is written the
@@ -360,7 +377,7 @@ Deno.serve(async (req) => {
 
     const ledgerBase = { businessId: business.id ?? null, subjectType: 'booking_request', subjectId: booking.id ?? null };
     await Promise.all([
-      sendEmail(supabase, { ...ledgerBase, role: 'owner' }, business.email, `New booking from ${booking.customer_name}`, ownerHtml),
+      sendEmail(supabase, { ...ledgerBase, role: 'owner', deliveryId }, business.email, `New booking from ${booking.customer_name}`, ownerHtml),
       sendEmail(supabase, { ...ledgerBase, role: 'customer' }, booking.customer_email, `Booking request sent to ${business.name}`, customerHtml, { filename: 'appointment.ics', content: icsBase64 }),
     ]);
 

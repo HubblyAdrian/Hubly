@@ -72,6 +72,28 @@ export async function notifyBookingReal(
       .maybeSingle();
     if (error || !row) return { sent: false, reason: "row_not_found" };
 
+    // PENDING BEFORE THE CALL — same shape as the completion trigger, so this path
+    // is observable too. booking-notify flips it to sent/failed by id; a row stuck
+    // at 'pending' means the call never landed (e.g. a 403 at the secret gate,
+    // which is exactly the failure that was invisible here).
+    let deliveryId: string | null = null;
+    try {
+      const { data: del } = await admin
+        .from("notification_deliveries")
+        .insert({
+          business_id: (row as Record<string, unknown>).business_id ?? null,
+          subject_type: "booking",
+          subject_id: (row as Record<string, unknown>).id ?? null,
+          recipient_role: "owner",
+          channel: "email",
+          provider: "resend",
+          status: "pending",
+        })
+        .select("id")
+        .maybeSingle();
+      deliveryId = (del as { id?: string } | null)?.id ?? null;
+    } catch (_e) { /* best-effort; absence just means no pending row to flip */ }
+
     // booking-notify still expects the trigger's payload shape ({ record }), so
     // the same function serves both callers while the trigger is being retired.
     const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/booking-notify`;
@@ -84,10 +106,21 @@ export async function notifyBookingReal(
         ...notifyHeaders,
         "content-type": "application/json",
               },
-      body: JSON.stringify({ record: row, hubly_notify_reason: reason }),
+      body: JSON.stringify({ record: row, hubly_notify_reason: reason, delivery_id: deliveryId }),
     });
     if (!res.ok) {
-      console.error("[booking_notify] non-2xx", id, res.status, (await res.text()).slice(0, 200));
+      const bodyText = (await res.text()).slice(0, 200);
+      console.error("[booking_notify] non-2xx", id, res.status, bodyText);
+      // This path CAN observe the failure, so don't leave the row 'pending' — mark
+      // it failed. (A stuck 'pending' is reserved for calls that truly never landed,
+      // e.g. the fire-and-forget trigger.)
+      if (deliveryId) {
+        try {
+          await admin.from("notification_deliveries")
+            .update({ status: "failed", error: `caller saw http_${res.status}`, attempted_at: new Date().toISOString() })
+            .eq("id", deliveryId);
+        } catch (_e) { /* keep going */ }
+      }
       return { sent: false, reason: `http_${res.status}` };
     }
     return { sent: true };
