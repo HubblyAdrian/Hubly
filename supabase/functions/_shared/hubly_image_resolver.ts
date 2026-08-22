@@ -37,7 +37,7 @@
  * planning every image on the page costs nothing beyond generation itself.
  */
 
-import { scanHtml, spliceAll, type ScannedEl, type Splice } from "./hubly_html_scan.ts";
+import { scanHtml, spliceAll, ownText, innerText, type ScannedEl, type Splice } from "./hubly_html_scan.ts";
 
 export const IMAGE_SENTINEL = "#hubly-image";
 export const LOGO_SENTINEL = "#hubly-logo";
@@ -266,6 +266,121 @@ export async function resolveImages(html: string, ctx: ImageResolveContext): Pro
  * erroring. Landscape orientation and a no-people query are the structural
  * bias; the description filter in the resolver is the second line.
  */
+/**
+ * COLLAPSE EMPTY IMAGE SLOTS — removal only, never a regeneration.
+ *
+ * A work-role slot with no customer photo (and any slot stock legitimately can't
+ * fill) resolves to blankField: a dark gradient block. Refusing stock for a work
+ * role is correct — a stock photo of someone else's job presented as "our work"
+ * would be a lie. Rendering a void is the only mistake. So:
+ *   - collapse the slot (remove the blank and any now-empty wrapper around it), and
+ *   - if a section is left with no real content — or it's a work/gallery section
+ *     with no real photo — remove the whole section. The page closes up around it.
+ *
+ * The model's art-direction INTENT for each removed slot is preserved as an HTML
+ * comment at the point of removal, so when the owner sends photos of their own
+ * work we can put a real photo exactly where the model meant one.
+ *
+ * Returns the removals so the caller can log how often this fires.
+ */
+export function collapseEmptyImageSlots(
+  html: string,
+): { html: string; removed: Array<{ kind: "section" | "slot"; where: string; artDirection: string }> } {
+  const src = html;
+  const removed: Array<{ kind: "section" | "slot"; where: string; artDirection: string }> = [];
+  const scan = scanHtml(src);
+  const els = scan.all;
+  const hasClass = (e: ScannedEl, c: string) => new RegExp(`(^|\\s)${c}(\\s|$)`).test(e.attrs["class"] || "");
+  const blanks = els.filter((e) => hasClass(e, "hubly-img-blank"));
+  if (blanks.length === 0) return { html: src, removed };
+
+  const contains = (p: ScannedEl, c: ScannedEl) => p.openStart < c.openStart && c.closeEnd <= p.closeEnd && p !== c;
+  const sections = els.filter((e) => e.name === "section");
+  const nearestSection = (el: ScannedEl): ScannedEl | null => {
+    let best: ScannedEl | null = null;
+    for (const s of sections) if (contains(s, el) && (!best || s.openStart > best.openStart)) best = s;
+    return best;
+  };
+  const isRealImg = (e: ScannedEl) =>
+    e.name === "img" && !!(e.attrs["src"] || "").trim() && !(e.attrs["src"] || "").trim().startsWith("#");
+  const realImgIn = (c: ScannedEl) => els.some((e) => isRealImg(e) && contains(c, e));
+  const headingIn = (c: ScannedEl) => {
+    const h = els.find((e) => /^h[1-6]$/.test(e.name) && contains(c, e));
+    return h ? innerText(h, src) : "";
+  };
+  const isWorkSection = (s: ScannedEl) => {
+    const cid = ((s.attrs["class"] || "") + " " + (s.attrs["id"] || "")).toLowerCase();
+    if (/\b(work|gallery|portfolio|showcase|projects)\b/.test(cid)) return true;
+    return /our work|recent work|portfolio|gallery|our projects|the work|see our work|past projects/i.test(headingIn(s));
+  };
+  const parentOf = (el: ScannedEl): ScannedEl | null => {
+    let best: ScannedEl | null = null;
+    for (const e of els) if (contains(e, el) && (!best || e.openStart > best.openStart)) best = e;
+    return best;
+  };
+  const esc = (v: string) => String(v).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+  const artOf = (e: ScannedEl) => e.attrs["data-art-direction"] || "";
+
+  const splices: Splice[] = [];
+  const removedRanges: Array<[number, number]> = [];
+  const within = (a: number, b: number) => removedRanges.some(([s, e]) => a >= s && b <= e);
+  const doneSections = new Set<number>();
+
+  // PASS 1 — a work/gallery section with no real photo: the whole section goes.
+  for (const b of blanks) {
+    const sec = nearestSection(b);
+    if (!sec || doneSections.has(sec.openStart)) continue;
+    if (isWorkSection(sec) && !realImgIn(sec)) {
+      doneSections.add(sec.openStart);
+      const dirs = blanks.filter((x) => contains(sec, x)).map(artOf).filter(Boolean);
+      removed.push({ kind: "section", where: sec.attrs["id"] || sec.attrs["class"] || "section", artDirection: dirs.join(" | ") });
+      splices.push({ start: sec.openStart, end: sec.closeEnd, text: `<!--hubly-collapsed-section role="work" reason="no-owner-photos" art-direction="${esc(dirs.join(" | "))}"-->` });
+      removedRanges.push([sec.openStart, sec.closeEnd]);
+    }
+  }
+
+  // PASS 2 — collapse each remaining blank plus any now-empty wrapper around it.
+  for (const b of blanks) {
+    if (within(b.openStart, b.closeEnd)) continue;
+    const sec = nearestSection(b);
+    let target: ScannedEl = b;
+    for (let up = 0; up < 4; up++) {
+      const p = parentOf(target);
+      if (!p || p.name === "section" || p === sec) break;
+      if (ownText(p, src)) break; // the wrapper has its own words -> not a pure wrapper
+      const otherKids = els.some((e) => parentOf(e) === p && !(e.openStart === target.openStart && e.closeEnd === target.closeEnd));
+      if (otherKids) break; // the wrapper holds something else too
+      target = p;
+    }
+    if (within(target.openStart, target.closeEnd)) continue;
+    removed.push({ kind: "slot", where: sec ? (sec.attrs["id"] || sec.attrs["class"] || "section") : "(page)", artDirection: artOf(b) });
+    splices.push({ start: target.openStart, end: target.closeEnd, text: `<!--hubly-image-slot art-direction="${esc(artOf(b))}"-->` });
+    removedRanges.push([target.openStart, target.closeEnd]);
+  }
+
+  let out = spliceAll(src, splices);
+
+  // PASS 3 — remove any section now left with no real content at all.
+  const scan2 = scanHtml(out);
+  const els2 = scan2.all;
+  const contains2 = (p: ScannedEl, c: ScannedEl) => p.openStart < c.openStart && c.closeEnd <= p.closeEnd && p !== c;
+  const sp2: Splice[] = [];
+  for (const s of els2.filter((e) => e.name === "section")) {
+    if (innerText(s, out).replace(/\s+/g, "")) continue; // still has visible text
+    const keep = els2.some(
+      (e) =>
+        contains2(s, e) &&
+        ((e.name === "img" && !!(e.attrs["src"] || "").trim() && !(e.attrs["src"] || "").trim().startsWith("#")) ||
+          e.name === "form" || e.name === "input" || e.name === "iframe"),
+    ) || out.slice(s.openStart, s.closeEnd).includes("#hubly-book");
+    if (keep) continue;
+    removed.push({ kind: "section", where: s.attrs["id"] || s.attrs["class"] || "section", artDirection: "" });
+    sp2.push({ start: s.openStart, end: s.closeEnd, text: `<!--hubly-collapsed-section reason="empty-after-collapse"-->` });
+  }
+  if (sp2.length) out = spliceAll(out, sp2);
+  return { html: out, removed };
+}
+
 export function pexelsFetcher(apiKey: string | null | undefined): ((query: string) => Promise<StockResult | null>) | undefined {
   if (!apiKey) return undefined;
   return async (query: string): Promise<StockResult | null> => {

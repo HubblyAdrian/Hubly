@@ -61,7 +61,7 @@ import {
 import { imageDimensions, type ImageDims } from "./hubly_image_dims.ts";
 import { stampFreeformHtml } from "./hubly_document_labels.ts";
 import { injectHublyRuntime } from "./hubly_page_runtime.ts";
-import { resolveImages, pexelsFetcher, type PlacedImageRow } from "./hubly_image_resolver.ts";
+import { resolveImages, collapseEmptyImageSlots, pexelsFetcher, type PlacedImageRow } from "./hubly_image_resolver.ts";
 import { annotatePlaceholders } from "./hubly_placeholders.ts";
 import { applyFreeformEdit, humanFreeformSummary, labelInventory, labelsPresent, type LabelEntry } from "./hubly_freeform.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
@@ -1734,6 +1734,19 @@ export async function generateFreeformPage(
     },
   };
   const resolved = await resolveImages(raw, imgCtx);
+  // THE EMPTY-SLOT COLLAPSE PASS. resolveImages leaves a dark "blank" div wherever
+  // no customer photo and no honest stock image could fill a slot. A business with
+  // no photographs of its own work should not get an empty work section — not a
+  // gradient, not a placeholder, not a void. So this removes each unfillable slot,
+  // any wrapper it leaves empty, and any whole section (work/gallery) left with no
+  // real content. The model's art-direction intent for each removed slot is kept as
+  // an HTML comment at the point of removal, so when the owner sends photos of their
+  // own work we can put a real photo exactly where the model meant one. Removal only;
+  // no model call, no regeneration.
+  const collapsed = collapseEmptyImageSlots(resolved.html);
+  if (collapsed.removed.length) {
+    console.log(`freeform [${businessId}] collapsed ${collapsed.removed.length} empty image slot(s)/section(s): ${JSON.stringify(collapsed.removed)}`);
+  }
   // STAGE: booking (photos resolved; labelling + booking/chat injection next).
   await updateDocumentBuildStage(jobId, "booking");
 
@@ -1742,7 +1755,7 @@ export async function generateFreeformPage(
   // and keeps the model's own data-hubly-guess marks, adding a light backstop
   // for forgotten ones. Deterministic, no model call, no regeneration. Runs
   // before stamping so labels land on what survives, not on a stripped element.
-  const annotated = annotatePlaceholders(resolved.html, {
+  const annotated = annotatePlaceholders(collapsed.html, {
     services: Array.isArray((record as any).services) ? (record as any).services : [],
     yearsInBusiness: ((record as any).yearsInBusiness ?? (rec.years_in_business as number)) || null,
     reviews: Array.isArray((record as any).reviews) ? (record as any).reviews : [],
