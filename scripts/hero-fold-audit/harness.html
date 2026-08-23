@@ -1,0 +1,38 @@
+<!doctype html><meta charset="utf-8"><title>hero measure</title>
+<body style="margin:0;font:14px monospace">
+<div id="status">loading…</div>
+<iframe id="fr" style="width:1440px;height:900px;border:0;position:absolute;left:-99999px"></iframe>
+<script>
+window.RESULTS = null;
+async function run(){
+  const pages = await (await fetch('corpus.json')).json();
+  const fr = document.getElementById('fr');
+  const out = [];
+  for (let i=0;i<pages.length;i++){
+    const p = pages[i];
+    document.getElementById('status').textContent = `${i+1}/${pages.length} ${p.slug}`;
+    await new Promise(res=>{
+      fr.onload = ()=>setTimeout(res, 60);
+      fr.srcdoc = p.html;
+    });
+    try{
+      const d = fr.contentDocument, w = fr.contentWindow;
+      const R = e => e ? e.getBoundingClientRect().height : null;
+      const hero = d.querySelector('.hero') || d.querySelector('main section') || d.querySelector('section');
+      const headline = d.querySelector('[data-hc="hero.headline"]') || (hero && hero.querySelector('h1')) || d.querySelector('h1');
+      const hh = R(headline), heroH = R(hero);
+      out.push({
+        slug: p.slug,
+        headlineH: hh!=null?Math.round(hh):null,
+        heroH: heroH!=null?Math.round(heroH):null,
+        vh: w.innerHeight,
+        ratio_hero: (hh&&heroH)? +(hh/heroH).toFixed(3):null,
+        ratio_fold: (hh)? +(hh/w.innerHeight).toFixed(3):null
+      });
+    }catch(e){ out.push({slug:p.slug, err:String(e).slice(0,80)}); }
+  }
+  window.RESULTS = out;
+  document.getElementById('status').textContent = 'DONE '+out.length;
+}
+run();
+</script>

@@ -55,8 +55,13 @@ export const HC_ROLE_TOKENS: ReadonlySet<string> = new Set([
   "nav", "item",
   "hero", "headline", "subhead", "cta",
   "section", "heading", "subheading", "body", "title",
-  "contact", "phone", "email", "address", "hours",
+  "contact", "phone", "email", "address",
   "footer", "page", "image", "text",
+  // "hours" removed 2026-08-22: valueRoleFor never stamps a contact.hours element
+  // and there is no place on a page for hours to live, so keeping the token let an
+  // edit LOOK addressable and go nowhere. A promise we can't keep is worse than an
+  // absent one. Hours remain a real RECORD fact (applyExtractedFacts p_hours);
+  // this only removes the never-honored PAGE label.
 ]);
 
 /**
@@ -65,7 +70,7 @@ export const HC_ROLE_TOKENS: ReadonlySet<string> = new Set([
  * not "this is the third thing in the second section".
  */
 export const HC_VALUE_ROLES: ReadonlySet<string> = new Set([
-  "contact.phone", "contact.email", "contact.address", "contact.hours",
+  "contact.phone", "contact.email", "contact.address",
   "business.name", "business.logo",
 ]);
 

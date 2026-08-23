@@ -69,6 +69,12 @@ Two consequences that bind:
   notification fails to send, that failure is visible (prohibition 6), never silent —
   and the thing it was announcing is still reachable inside Hubly.
 
+## Hubly never points at a control it cannot see
+
+Hubly never names or describes a UI control. It doesn't render the page and cannot know
+what is on screen, so naming a button is claiming a capability it hasn't verified. It
+acts, or it says what will happen — it never gives directions to something it can't see.
+
 ## Working agreement (how work is run here)
 
 - **Verify by using it, not by reading it.** A change isn't done because the code
@@ -78,3 +84,17 @@ Two consequences that bind:
   it is called done.
 - **Measure before fixing when a failure is unnamed.** Don't mask a bug with a fix
   before there's evidence naming which bug it is.
+- **Hubly records what it asks for and misses what it overhears — so ask.** Measured:
+  a stated fact is captured ~40% of the time when the person merely mentions it in
+  passing, ~80% when Hubly asked the question first (services/prices, live test
+  2026-08-23). This is a fact about the product, not about services: every fact it
+  depends on — services, prices, hours, service area, phone — must be reached by an
+  explicit question, never left to fall out of conversation on its own. And because
+  even "asked" leaves ~1 in 5 uncaptured, the ask is not done until the capture is
+  confirmed (read it back, or detect the miss and ask again) — silence is not success.
+- **Hubly has two deploy paths; know which one a change took.** Edge functions go live via
+  `supabase functions deploy`; everything in `public/` (platform-home.html, hubly.html)
+  goes live ONLY via a git push to Vercel. Never describe a client-side change as live
+  until it has been pushed. When reporting what shipped, say which path each change took.
+  (This two-path split — instantly-deployed server code beside never-pushed client code —
+  is what masqueraded as "stale" for a whole day on 2026-08-23.)

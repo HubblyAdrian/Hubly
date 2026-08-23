@@ -781,7 +781,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   </a>
   <button type="button" class="nav-signin" id="navSignin" aria-haspopup="dialog">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.6-3.6 4.6-5.4 7.5-5.4s5.9 1.8 7.5 5.4"/></svg>
-    Sign in
+    Log in or sign up
   </button>
 </header>
 
@@ -1006,7 +1006,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // created (business.startDraft) — { id, slug, draftToken, url }. Threaded
   // back to the server every turn exactly like `messages`; the server never
   // persists it either. This is what makes the canvas real instead of a mockup.
-  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null };
+  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null, pendingCapture: null };
 
   // ── Draft claim session ───────────────────────────────────────────────────
   // A draft belongs to nobody until it is claimed. hubly-conversation returns a
@@ -1078,6 +1078,57 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // The grant is not retained anywhere. Nothing reads it again.
   }
 
+  // ── THE CAPTURE GUARD ───────────────────────────────────────────────────────
+  // Hubly records what it asks for and misses what it overhears (CLAUDE.md). When the
+  // server flags a turn as an ASK (data.askedFor = services|hours|area|phone) and the
+  // person's next reply answers it but nothing was recorded, this notices and re-asks,
+  // OWNING the miss ("I didn't get those down"), and logs it so capture is measurable
+  // before/after. ONE contract for every fact: the server names what it asked, the
+  // client holds it pending, and the same check runs regardless of which fact it was —
+  // adding a new fact is one HC_CAPTURE entry, never a new detector.
+  // Start LOOSE: over-asking costs a sentence, under-capturing costs the owner's prices.
+  var HC_CAPTURE = {
+    services: { answerLooksPresent: function(t){ return /\d/.test(t) || /,/.test(t); },
+                captured: function(a){ return a.some(function(x){ return x.capabilityAction==='setServices' && x.ok; }); } },
+    phone:    { answerLooksPresent: function(t){ return t.replace(/\D/g,'').length>=7; },
+                captured: function(a){ return a.some(function(x){ return x.capabilityAction==='updateDraft' && x.ok; }); } },
+    hours:    { answerLooksPresent: function(t){ return /\d/.test(t) || /(mon|tue|wed|thu|fri|sat|sun|weekday|weekend|open|clos)/i.test(t); },
+                captured: function(a){ return a.some(function(x){ return x.capabilityAction==='recordFacts' && x.ok; }); } },
+    area:     { answerLooksPresent: function(t){ return t.trim().length>1; },
+                captured: function(a){ return a.some(function(x){ return x.capabilityAction==='recordFacts' && x.ok; }); } }
+  };
+  function hcLastUserMessage(){
+    for(var i=hc.messages.length-1;i>=0;i--){ if(hc.messages[i] && hc.messages[i].role==='user') return String(hc.messages[i].content||''); }
+    return '';
+  }
+  function hcRecordCaptureMiss(askedFor){
+    try{
+      if(!hc.draftBusiness || !hc.draftBusiness.id) return;
+      fetch(SUPA_URL + '/rest/v1/rpc/record_capture_miss', {
+        method:'POST',
+        headers:{ apikey:SUPA_ANON_KEY, authorization:'Bearer '+SUPA_ANON_KEY, 'content-type':'application/json' },
+        body: JSON.stringify({ p_business_id: hc.draftBusiness.id, p_asked_for: askedFor })
+      }).catch(function(){});
+    }catch(e){}
+  }
+  // Consumes the pending ask (pc) against this turn's response. Re-asks + re-arms (capped)
+  // on a detected miss and returns true; otherwise returns false. Never throws.
+  function hcCheckCaptureMiss(pc, data){
+    if(!pc) return false;
+    var cfg = HC_CAPTURE[pc.askedFor];
+    if(!cfg) return false;
+    var actions = Array.isArray(data.actions) ? data.actions : [];
+    var present = cfg.answerLooksPresent(hcLastUserMessage());
+    var captured = cfg.captured(actions);
+    if(present && !captured && pc.tries < 2){
+      hcRecordCaptureMiss(pc.askedFor);
+      hcAppendMessage('hubly', "I didn't get those down — say them again?");
+      hcPersist('assistant', "I didn't get those down — say them again?");
+      hc.pendingCapture = { askedFor: pc.askedFor, tries: pc.tries + 1 };   // re-arm, capped at 2
+      return true;
+    }
+    return false;
+  }
 
   function hcMergePatch(base, patch){
     if(!patch || typeof patch !== 'object') return base;
@@ -2115,6 +2166,18 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         // Exchange the claim grant the moment a draft appears, so whoever just
         // built this can keep it.
         if(data.draftGrant) hcExchangeDraftGrant(data.draftGrant);
+        // THE ACCOUNT DOOR, OPENED FROM INSIDE THE CONVERSATION. openAccount is a
+        // CONTRACT, not a wire to a specific widget: the assistant decided, mid-thread,
+        // that it's time to make an account (the person agreed). hcHandleOpenAccount is
+        // the single seam that renders that contract — today as the one-door modal,
+        // later as the claim happening IN THE THREAD with no modal at all. The model is
+        // bound to the FLAG, never to the modal, so this can change without touching it.
+        if(data.openAccount === true) hcHandleOpenAccount();
+        // Snapshot any ask that was pending from the PREVIOUS turn, then clear it. The
+        // miss-check runs after the reply is shown (in showNext); arming from THIS turn's
+        // data.askedFor also happens there, so we check the prior ask before the new one.
+        var hcPriorCapture = hc.pendingCapture;
+        hc.pendingCapture = null;
         // generateDocument just started (real:false, raw.status==='building')
         // — the page doesn't exist yet, so there's nothing for the normal
         // render/refresh branches below to show. Highest priority: this
@@ -2199,6 +2262,13 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           // "building now" filler) — never echoed into the chat. On a normal turn
           // it shows.
           if(!generatingDocument && data.reply && !hcIsFallbackReply(data.reply)){ hcAppendMessage('hubly', data.reply); hcPersist('assistant', data.reply); }
+          // THE CAPTURE GUARD, after the reply so the re-ask lands last. Check the ask
+          // that was pending from last turn; if it wasn't recorded, own the miss and
+          // re-ask. Then arm from THIS turn's ask (unless a re-ask already re-armed it).
+          var hcReasked = hcCheckCaptureMiss(hcPriorCapture, data);
+          if(!hcReasked && ['services','hours','area','phone'].indexOf(data.askedFor) >= 0){
+            hc.pendingCapture = { askedFor: data.askedFor, tries: 0 };
+          }
           // THE DROPZONE COMES LAST, after the sentence that points at it.
           //
           // It used to be appended up with the canvas work above, which runs
@@ -3064,6 +3134,15 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     setTimeout(function(){ try{ authEl('authEmail').focus(); }catch(e){} }, 40);
     authGetClient().catch(function(){});   // warm up the SDK before the first click
   }
+  // THE CONTRACT SEAM for openAccount (see the response handler). The assistant,
+  // from inside the conversation, has decided it's time to make an account. TODAY
+  // that is rendered as the one-door modal. When the claim moves INTO the thread
+  // (no modal), only this function changes — the model and the openAccount flag do
+  // not. Already-signed-in is a no-op door (authOpen handles that case itself).
+  function hcHandleOpenAccount(){
+    try{ if(hcIsAuthed && hcIsAuthed()) return; }catch(e){}
+    try{ authOpen(); }catch(e){}
+  }
   function authClose(){
     if(!authOv) return;
     authOv.classList.remove('is-open'); authOv.hidden = true;
@@ -3305,7 +3384,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     var btn = document.getElementById('navSignin');
     if(!btn) return;
     if(hcIsAuthed()){ btn.classList.add('is-authed'); btn.textContent = 'Signed in'; }
-    else { btn.classList.remove('is-authed'); btn.textContent = 'Sign in'; }
+    else { btn.classList.remove('is-authed'); btn.textContent = 'Log in or sign up'; }
   }
   // Is there ANY stored session, even an expired one? An expired access token
   // usually still has a live refresh token beside it, so "expired" is NOT the

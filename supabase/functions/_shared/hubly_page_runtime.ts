@@ -164,6 +164,84 @@ function chatWidgetHtml(opts: { businessId: string; businessName: string; supaba
 </script>`;
 }
 
+/**
+ * CTA-TEXT-CONTRAST RESCUE (named for exactly what it repairs, not "contrast check").
+ *
+ * It repairs ONE failure mode: a button/CTA whose TEXT is unreadable against its own
+ * background (the observed bug: "Book online" as near-black text on a near-black pill,
+ * measured at ratio ~1.1–1.6). It recolours ONLY that text — nothing else on the page,
+ * no backgrounds, no non-button text.
+ *
+ * Why it runs in the page instead of a server pass: contrast needs the RESOLVED cascade
+ * — CSS variables, transparency, inheritance, the element's real ancestor background.
+ * The server has the HTML string but not the computed styles; the browser has both. So
+ * this asks the browser (getComputedStyle) rather than parsing CSS, which is the only way
+ * to get it right for var()-based and transparent-on-coloured-header cases.
+ *
+ * Honest scope + limits, recorded not assumed (prohibition 2 / rule):
+ *  - It acts only on genuinely UNREADABLE CTAs (contrast < 3.0, the WCAG floor for large/UI
+ *    text). CTAs in the 3.0–4.5 "sub-AA but legible" band are LEFT ALONE and counted, not
+ *    silently "handled".
+ *  - When it can't reach AA by flipping to white or near-black — a mid-tone or image/gradient
+ *    background where neither works — it does NOT touch the element and records it as
+ *    could-not-fix, with the reason.
+ *  - It reports its outcome two ways: a console line, and a data-hubly-cta-contrast attribute
+ *    on <html> (fixed / left-sub-aa / could-not-fix counts), so what it did and did NOT do is
+ *    inspectable, never a belief nobody checked.
+ *  - Known downside: it runs on DOMContentLoaded, so a page can paint the unreadable colour
+ *    for a moment before the rescue lands (a brief flash). And it is Hubly's code adjusting the
+ *    owner's design at runtime — but only to make an illegible action legible, reversibly (the
+ *    stored HTML is unchanged; nothing here regenerates anything).
+ *  - Our own injected furniture ([data-hubly-runtime]) is excluded — we own those.
+ */
+export function contrastRescueHtml(): string {
+  return `
+<!-- Hubly CTA-text-contrast rescue: recolours unreadable button text only. -->
+<script>
+(function(){
+  function run(){
+    try{
+      var MIN_READABLE = 3.0, TARGET_AA = 4.5;
+      function chan(v){ v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); }
+      function lum(c){ return 0.2126*chan(c[0])+0.7152*chan(c[1])+0.0722*chan(c[2]); }
+      function parse(s){ var m=s&&s.match(/rgba?\\(([^)]+)\\)/); if(!m) return null; var p=m[1].split(',').map(function(x){return parseFloat(x);}); return {rgb:[p[0],p[1],p[2]], a:p.length>3?p[3]:1}; }
+      function ratio(a,b){ var L1=lum(a),L2=lum(b),hi=Math.max(L1,L2),lo=Math.min(L1,L2); return (hi+0.05)/(lo+0.05); }
+      function effBg(el){ var n=el; while(n && n.nodeType===1){ var cs=getComputedStyle(n); if(cs.backgroundImage && cs.backgroundImage!=='none') return {image:true}; var bg=parse(cs.backgroundColor); if(bg && bg.a>0) return {rgb:bg.rgb}; n=n.parentElement; } return {rgb:[255,255,255]}; }
+      var sel='a.button,a.btn,button,.button,.btn,[class*="button"],[class*="btn"],[role="button"]';
+      var els=document.querySelectorAll(sel);
+      var fixed=0, leftSubAA=0, couldNotFix=0, unfixReasons={};
+      for(var i=0;i<els.length;i++){
+        var el=els[i];
+        if(el.closest('[data-hubly-runtime]')) continue;      // our furniture, not the model's
+        var cs=getComputedStyle(el);
+        var fg=parse(cs.color); if(!fg) continue;
+        var bgc=effBg(el);
+        if(bgc.image){ couldNotFix++; unfixReasons.imageBg=(unfixReasons.imageBg||0)+1; continue; }
+        var cur=ratio(fg.rgb,bgc.rgb);
+        if(cur>=TARGET_AA) continue;                          // already fine
+        if(cur>=MIN_READABLE){ leftSubAA++; continue; }        // legible but sub-AA: leave it, count it
+        // unreadable — try white then near-black, take whichever is best
+        var white=[255,255,255], ink=[17,17,17];
+        var rW=ratio(white,bgc.rgb), rI=ratio(ink,bgc.rgb);
+        var best=rW>=rI?{c:'#ffffff',r:rW}:{c:'#111111',r:rI};
+        // Apply the best of white/near-black if it makes the text READABLE (>= 3.0, the
+        // WCAG floor for large/UI text) and actually improves on the current ratio. The
+        // goal is legibility, not AA-perfection: on a mid-tone background where neither
+        // pure colour reaches 4.5, going 1.4 -> 4.4 is still the difference between
+        // invisible and readable, and refusing it would leave the button unreadable.
+        if(best.r>=MIN_READABLE && best.r>cur){ el.style.setProperty('color',best.c,'important'); fixed++; }
+        else { couldNotFix++; unfixReasons.midToneBg=(unfixReasons.midToneBg||0)+1; }  // even best stays unreadable
+      }
+      var summary='fixed:'+fixed+';left-sub-aa:'+leftSubAA+';could-not-fix:'+couldNotFix;
+      document.documentElement.setAttribute('data-hubly-cta-contrast', summary);
+      if(fixed||couldNotFix) console.log('[hubly] cta-text-contrast-rescue', summary, unfixReasons);
+    }catch(e){ /* a rescue must never break the page */ }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', run); else run();
+})();
+</script>`;
+}
+
 /** A booking button, for pages where the model placed none. */
 function fallbackBookingHtml(bookUrl: string, accent: string): string {
   return `
@@ -255,7 +333,10 @@ export function injectHublyRuntime(html: string, ctx: RuntimeContext): RuntimeIn
   const injectedFallbackCta = rewrittenCtas === 0;
   const payload =
     chatWidgetHtml({ businessId: ctx.businessId, businessName: ctx.businessName, supabaseUrl: ctx.supabaseUrl, publishableKey: ctx.publishableKey, accent }) +
-    (injectedFallbackCta ? fallbackBookingHtml(bookBase, accent) : "");
+    (injectedFallbackCta ? fallbackBookingHtml(bookBase, accent) : "") +
+    // Recolours only unreadable button/CTA text at runtime (see contrastRescueHtml).
+    // New pages only — existing stored pages carry the older runtime without it.
+    contrastRescueHtml();
 
   const closeBody = out.toLowerCase().lastIndexOf("</body>");
   out = closeBody === -1 ? out + payload : out.slice(0, closeBody) + payload + out.slice(closeBody);

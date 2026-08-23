@@ -468,7 +468,7 @@ export interface FreeformRegenerationPlan {
 /** Labels whose meaning survives a structural rewrite. */
 const CARRIES_ACROSS = new Set([
   "hero.headline", "hero.subhead", "hero.cta",
-  "contact.phone", "contact.email", "contact.address", "contact.hours",
+  "contact.phone", "contact.email", "contact.address",
   "business.name", "business.logo",
 ]);
 
@@ -1569,6 +1569,49 @@ export function stripDecorativeOrdinals(html: string): { html: string; removed: 
   return { html: out, removed };
 }
 
+/**
+ * Deterministic svh-companion repair.
+ *
+ * The registry prompt tells the model that full-height sections must pair bare vh
+ * with svh (`min-height:100vh; min-height:100svh;`) so the block does not JUMP as
+ * the mobile address bar shows/hides. Measured compliance is ~90%: one page in ten
+ * ships a bare vh height with no svh companion. A prompt rule at 90% is not a rule.
+ *
+ * This closes the gap without the model: wherever a stylesheet sizing declaration
+ * (height / min-height / max-height) uses a bare `vh` length and does NOT already
+ * have an svh companion for the same property immediately after it, append the
+ * companion. vh stays FIRST as the older-browser fallback; svh follows and wins
+ * where supported — exactly the pattern the prompt asks for.
+ *
+ * Scope is deliberately narrow and safe:
+ *  - Only inside <style> blocks. The companion pattern is two declarations of the
+ *    same property, which only works in a stylesheet — an inline style="" attribute
+ *    keeps just the last value, so there is nothing to repair there.
+ *  - Only the three viewport-height SIZING properties, where the address-bar jump
+ *    actually manifests. It never touches font-size, transforms, etc.
+ *  - Only bare `vh` (\d+vh). dvh / lvh / svh are left alone (the digit-before-v
+ *    test never matches them), so re-running is a no-op — this cannot cascade.
+ *
+ * Deterministic, single-pass, and it CANNOT trigger a second generation: it edits
+ * the string in place and returns it. `added` is the number of companions inserted.
+ */
+export function pairViewportUnits(html: string): { html: string; added: number } {
+  let added = 0;
+  // A bare-vh sizing declaration NOT already followed by an svh companion for a
+  // height-family property. The lookahead is what makes the pass idempotent.
+  const decl = /\b(min-height|max-height|height)\s*:\s*([^;{}]*?\d*\.?\d+vh\b[^;{}]*?)\s*;(?!\s*(?:min-height|max-height|height)\s*:[^;{}]*svh)/gi;
+  const out = html.replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gi, (block: string, css: string) => {
+    const fixedCss = css.replace(decl, (m: string, prop: string, val: string) => {
+      const svhVal = val.replace(/(\d*\.?\d+)vh\b/gi, "$1svh");
+      if (svhVal === val) return m; // nothing bare-vh to pair (defensive)
+      added++;
+      return `${prop}: ${val}; ${prop}: ${svhVal};`;
+    });
+    return block.replace(css, fixedCss);
+  });
+  return { html: out, added };
+}
+
 export async function generateFreeformPage(
   businessId: string,
   brief: string,
@@ -1649,7 +1692,8 @@ export async function generateFreeformPage(
     "THE BUSINESS NAME IS NEVER TRUNCATED, ELLIPSISED OR CLIPPED — anywhere it appears (nav wordmark, hero headline, footer, announcement bar). This is a hard rule: someone who sees their own name cut off will not trust the page. Size the type for a LONG name, not a short one — a name may be forty characters or contain a long single word, and it must still fit or WRAP, never overflow its container. So: keep hero headline maximums modest (a clamp topping out around 64–80px is plenty; do NOT reach 100px+ where a long word overflows its column), let the name wrap (do not force it onto one line with white-space:nowrap), and never put text-overflow:ellipsis, a fixed height, or an overflow:hidden container around the name that could cut it. A name that wraps to two lines is fine; a name with a letter missing is a trust failure.\n\n" +
     "THIS PAGE MUST WORK ON A PHONE — most local-business visitors are on one. Two hard rules:\n" +
     "1. FULL-HEIGHT SECTIONS USE svh, NOT bare vh. A hero or section sized to fill the screen must use svh (the small viewport height) so it does not JUMP as the mobile address bar shows and hides — bare 100vh does exactly that. Write BOTH, the vh line first as a fallback for older browsers, then svh: e.g. `min-height: 100vh; min-height: 100svh;`. Never a bare `min-height:100vh` on its own for a full-height block.\n" +
-    "2. HERO PHOTOGRAPHS STAY FULL-BLEED AND LANDSCAPE ON MOBILE. The stock photos are landscape (roughly 1200×627). On a phone, never squeeze a hero photo into a tall narrow portrait box with indents — object-fit:cover then shows a thin vertical SLICE of the image, which looks broken. In your mobile layout, give the hero image the full column width and keep a landscape-ish shape (an aspect-ratio around 3/2 or 16/9, or a bounded height like 240–300px) so the whole photograph reads as a photograph. This applies to the hero image specifically; smaller in-content images can be shaped however suits.\n\n" +
+    "2. HERO PHOTOGRAPHS STAY FULL-BLEED AND LANDSCAPE ON MOBILE. The stock photos are landscape (roughly 1200×627). On a phone, never squeeze a hero photo into a tall narrow portrait box with indents — object-fit:cover then shows a thin vertical SLICE of the image, which looks broken. In your mobile layout, give the hero image the full column width and keep a landscape-ish shape (an aspect-ratio around 3/2 or 16/9, or a bounded height like 240–300px) so the whole photograph reads as a photograph. This applies to the hero image specifically; smaller in-content images can be shaped however suits.\n" +
+    "3. THE PRIMARY ACTION MUST BE REACHABLE WITHOUT SCROLLING. The main hero action — the button that starts a booking or contact — must be FULLY VISIBLE on first load, its entire box above the fold, on a phone (≈390×844) and on a laptop (≈1440×900). How you achieve that is yours: a shorter headline, a smaller type scale, a shorter hero, placing the action higher, or something else. The only requirement is the outcome on both screens — never a prescribed layout. A common failure is a full-height hero that vertically CENTERS a tall headline: the action then lands at the bottom of the first screen and clips below the fold. Whatever you do, the button a visitor came to press cannot start its life off-screen.\n\n" +
     markingBlock + "\n\n" +
     imageBlock + "\n\n" +
     capabilities + "\n\n" +
@@ -1781,11 +1825,19 @@ export async function generateFreeformPage(
   // name-bearing element AND guarantees the name can wrap/break rather than
   // overflow. It only removes/overrides; it never regenerates.
   const named = protectBusinessName(deordinal.html, (record as Record<string, unknown>)?.name as string);
+  // THE svh-COMPANION PASS. The prompt asks full-height sections to pair vh with
+  // svh so they don't jump with the mobile address bar; ~10% of pages ship a bare
+  // vh anyway. This adds the missing companion deterministically. Runs BEFORE the
+  // runtime injection so it only repairs the model's stylesheet, not our widget.
+  const paired = pairViewportUnits(named);
+  if (paired.added > 0) {
+    console.log(`freeform [${businessId}] paired ${paired.added} bare-vh height(s) with an svh companion`);
+  }
   // THEN HUBLY'S MACHINERY. Also not a gate: it rewrites the model's booking
   // CTA to a working URL, adds one if there is none, and injects the chat
   // widget. Ordered after stamping so the injected runtime is not itself
   // labelled as editable content — the owner edits their page, not our widget.
-  const wired = injectHublyRuntime(named, {
+  const wired = injectHublyRuntime(paired.html, {
     businessId,
     businessName: String((record as Record<string, unknown>)?.name || "this business"),
     slug: String((record as Record<string, unknown>)?.slug || ""),

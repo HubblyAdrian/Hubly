@@ -159,11 +159,21 @@ export function extractByPattern(text: string): ExtractedFacts {
  * names and descriptions. This is the floor: when the model does not call it,
  * or calls it after the build, the prices someone typed are still recorded.
  *
- * Requires a currency symbol. "Sweep and inspection 189" is a sentence about a
- * number; "Sweep and inspection $189" is a price.
+ * GATED, deliberately conservative (2026-08-23). This floor exists only for the
+ * brief; the model's setServices is the real path and handles natural phrasing
+ * ("full detail is 175") reliably, so a JUNK NAME here is worse than a miss — a
+ * miss the model catches, a junk name ("I charge", "a full detail and") ships. So:
+ *   - Requires a currency symbol AND an unambiguous label delimiter (":", em/en
+ *     dash, or a spaced hyphen) between the name and the price. This is the shape
+ *     of a price LIST ("Full Detail — $175", "Interior Only: $110"), not of prose
+ *     ("I charge $175 for a full detail"), which is where the junk came from.
+ *   - Rejects any name carrying a first-person/verb/connective token as a backstop.
+ * "Full Detail $175" (no delimiter) is intentionally MISSED — the model gets it.
  */
 const PRICE_LINE_RE =
-  /([A-Za-z][A-Za-z' \-&/]{2,60}?)\s*(?:is|are|:|from|starts? at|starting at|—|-|–)?\s*\$\s?([\d,]+(?:\.\d{2})?)/g;
+  /([A-Za-z][A-Za-z'&/ -]{2,50}?)\s*(?::|—|–|\s-\s)\s*\$\s?([\d,]+(?:\.\d{2})?)/g;
+// A name is junk if it carries prose tokens no real service label contains.
+const JUNK_NAME_RE = /\b(?:i|i'm|im|we|our|you|your|us|charge[sd]?|charging|cost[s]?|price[sd]?|pricing|pay|paid|for|per|is|are|was|were|do|does|offer[s]?)\b/i;
 
 export function extractPricedServices(text: string): { name: string; price: number }[] {
   const src = String(text || "");
@@ -172,13 +182,13 @@ export function extractPricedServices(text: string): { name: string; price: numb
   PRICE_LINE_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
   while ((m = PRICE_LINE_RE.exec(src))) {
-    // Trim leading connectives that get swept up by a greedy name capture.
     const name = m[1]
-      .replace(/^(?:and|or|the|a|an|we|our|also|plus|with|for|do|does|offer|offers)\b\s*/i, "")
+      .replace(/^(?:and|or|the|a|an|plus|also|with|for)\b\s*/i, "")  // drop a leading connective swept in
       .replace(/[,;:\-–—\s]+$/, "")
       .trim();
     const price = Number(m[2].replace(/,/g, ""));
     if (!name || name.length < 3 || !isFinite(price) || price <= 0) continue;
+    if (JUNK_NAME_RE.test(name)) continue;              // reject prose masquerading as a name
     const key = name.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
