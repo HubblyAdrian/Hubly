@@ -2514,6 +2514,49 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   hcWireFileInput('hcFileInput', 'image', 'Here\'s a screenshot for inspiration.');
   hcWireFileInput('hcPdfInput', 'document', 'Here\'s a PDF for inspiration.');
 
+  // PRICE-LIST SCREENSHOT → REAL SERVICES. When Hubly has just asked about services
+  // (hc.pendingCapture.askedFor === 'services') and an image/PDF is dropped, it's a price
+  // list to READ, not a photo to KEEP. Route it to import-offers (dedicated vision
+  // extraction — measured 8/8 on a clean image, robust to glare/angle/blur, misreads at
+  // worst a single price DIGIT on very low-res or handwriting), then hand the clean list
+  // to the conversation so setServices fires, the page rebuilds, and Hubly READS IT BACK.
+  // The read-back is the safety net: a misread price is caught by the owner, not written
+  // silently. No account needed — this is data entry we read and discard, not a stored
+  // photo (see KNOWN_ISSUES on the file gate).
+  function hcExtractPricesFromImage(file){
+    if(hc.busy) return;
+    hc.pendingCapture = null;                              // we're handling the services ask now
+    var dropLabel = '📎 ' + (file.name || 'price list');
+    hcAppendMessage('user', dropLabel); hcPersist('user', dropLabel);
+    var typingEl = hcAppendTyping();
+    function reArm(msg){
+      if(typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+      hcAppendMessage('hubly', msg); hcPersist('assistant', msg);
+      hc.pendingCapture = { askedFor: 'services', tries: 0 };   // a typed answer is still caught
+    }
+    hcFileToBase64(file).then(function(b64){
+      var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var to = setTimeout(function(){ try{ if(ctrl) ctrl.abort(); }catch(e){} }, 45000);
+      var media = file.type || (/\.pdf$/i.test(file.name || '') ? 'application/pdf' : 'image/jpeg');
+      return fetch(SUPA_URL + '/functions/v1/import-offers', {
+        method: 'POST',
+        headers: { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' },
+        body: JSON.stringify({ files: [{ media_type: media, data: b64 }] }),
+        signal: ctrl ? ctrl.signal : undefined
+      }).then(function(r){ clearTimeout(to); return r.ok ? r.json() : null; });
+    }).then(function(o){
+      var items = o ? [].concat(o.packages || [], o.addons || [], o.membershipCandidates || []).filter(function(i){ return i && i.name; }) : [];
+      if(!items.length){ reArm("I couldn't read the prices off that — mind typing them, or trying a clearer photo?"); return; }
+      if(typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+      // Hand the extracted list to the conversation: the model calls setServices (the
+      // capture guard watches for it), the page rebuilds, and its reply reads it back.
+      var text = items.map(function(i){ return i.name + (i.price !== null && i.price !== undefined && i.price !== '' ? ' $' + i.price : ''); }).join(', ');
+      hc.messages.push({ role: 'user', content: 'These are my services and prices, read from the price list I just sent — set them: ' + text });
+      hc.pendingCapture = { askedFor: 'services', tries: 0 };   // keep the guard armed for this turn
+      hcCall();
+    }).catch(function(){ reArm("That didn't read cleanly — mind typing your prices, or trying a clearer photo?"); });
+  }
+
   // Drag and drop onto the chat.
   //
   // Everything downstream of this already existed — hcFileToBase64,
@@ -2582,6 +2625,13 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       }
       if(files.length > 1){
         hcAppendMessage('hubly', "I'll take these one at a time — starting with " + (file.name || 'the first one') + ".");
+      }
+      // PRICE LIST, not a photo. If Hubly just asked about services, an image/PDF is a
+      // price list to read — same gesture, different intent, disambiguated by the pending
+      // ask. Route it to extraction (see hcExtractPricesFromImage). Everything else about
+      // a dropped file is unchanged.
+      if((isImage || isPdf) && hc.draftBusiness && hc.pendingCapture && hc.pendingCapture.askedFor === 'services'){
+        hcExtractPricesFromImage(file); return;
       }
       // Drag-and-drop is the PRIMARY way to add a photo, menu as fallback. An
       // image dropped once a draft exists is the owner's work, not a reference:

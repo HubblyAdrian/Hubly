@@ -3085,3 +3085,30 @@ draft_token)` it can call to preview an unclaimed page; (c) optionally require
 `email_confirmed_at` on the owner before serving, for verified-email gating. That
 gate is what makes placeholders safe to publish AND closes the phishing exposure
 at read-time — the same gate, both problems.
+
+## The file-upload account gate is PROMPT-ONLY — the claim and the code disagree
+
+**Status:** open, 2026-08-23. Not a bug fix — a decision we have to make.
+
+**What we tell people vs. what the code does.** Hubly tells every new person that
+photos and a logo need an account (`hubly-conversation/index.ts:520`, `:509` — model
+narrative only). But the backend accepts an upload from **any unclaimed draft holding a
+draft token**: `uploadDraftLogo`/`uploadDraftPhoto`/`uploadDraftHeroImage`
+(`hubly_capability_registry.ts:2021-2023`, `:2154-2156`, `:2186-2188`) gate on
+`draftId && draftToken` only — no owner/claim/account check — and the client blocks only
+on `!hc.draftBusiness` ("no draft yet"), not on "not claimed"
+(`platform-home.html` photo/logo drop). An unclaimed draft has a token, so the upload
+succeeds. The account requirement is a thing the model is *told to say*, not a thing the
+code enforces.
+
+**We must pick one — this is a decision, not a defect:**
+- **Make the gate real** (Adrian's instinct, and mine): require a claimed owner before a
+  file is *kept* (logo/photo/hero → storage). Photos-for-an-account is a fair exchange and
+  the main concrete reason anyone signs up.
+- **Or stop claiming it:** if uploads are free, don't tell people they need an account for
+  them.
+
+Related and deliberately NOT gated: reading a **price-list screenshot** to extract
+services is data entry, not a stored photo (`import-offers`, read-and-discard), and that
+ask ships free — see the services-capture work. Whichever way the *kept-file* gate goes,
+the screenshot-extraction path is a separate, ungated case.

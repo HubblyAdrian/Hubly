@@ -62,8 +62,9 @@ export interface ImageResolveContext {
   photos: CustomerPhoto[];
   businessType?: string | null;
   businessName?: string | null;
-  /** Injected so the resolver is testable without network or a live DB. */
-  fetchStock?: (query: string) => Promise<StockResult | null>;
+  /** Injected so the resolver is testable without network or a live DB. The optional
+   *  seed decorrelates same-category businesses (see pexelsFetcher). */
+  fetchStock?: (query: string, seed?: string) => Promise<StockResult | null>;
   recordPlacement?: (row: PlacedImageRow) => Promise<void> | void;
 }
 
@@ -228,7 +229,8 @@ export async function resolveImages(html: string, ctx: ImageResolveContext): Pro
     if (!isWork && ctx.fetchStock) {
       const query = `${subject} — no people`;
       let stock: StockResult | null = null;
-      try { stock = await ctx.fetchStock(query); } catch { stock = null; }
+      // Seed with the business id so two same-category businesses get different photos.
+      try { stock = await ctx.fetchStock(query, ctx.businessId); } catch { stock = null; }
       // Reject a candidate whose own description names a person.
       if (stock && PERSON_WORDS.test(stock.description || "")) stock = null;
       if (stock) {
@@ -381,35 +383,49 @@ export function collapseEmptyImageSlots(
   return { html: out, removed };
 }
 
-export function pexelsFetcher(apiKey: string | null | undefined): ((query: string) => Promise<StockResult | null>) | undefined {
+/**
+ * Stable string hash (FNV-1a). Deterministic across runs and processes, so the same
+ * business always rebuilds to the same photo, while two different businesses decorrelate.
+ */
+function hashString(s: string): number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return h >>> 0;
+}
+
+export function pexelsFetcher(apiKey: string | null | undefined): ((query: string, seed?: string) => Promise<StockResult | null>) | undefined {
   if (!apiKey) return undefined;
-  return async (query: string): Promise<StockResult | null> => {
-    const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=5&orientation=landscape`;
+  return async (query: string, seed?: string): Promise<StockResult | null> => {
+    // Wider pool (per_page 5 -> 30) so same-category businesses can be SPREAD across
+    // results instead of every detailer landing on the identical top hit.
+    const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=30&orientation=landscape`;
     const res = await fetch(url, { headers: { Authorization: apiKey } });
     if (!res.ok) return null;
     const json = await res.json().catch(() => null) as { photos?: PexelsPhoto[] } | null;
     const photos = json?.photos || [];
-    // First candidate whose alt text does not name a person.
-    for (const p of photos) {
-      if (PERSON_WORDS.test(p.alt || "")) continue;
-      const s = p.src || {};
-      // Prefer a SIZED rendition, never the raw original (which is multi-MB).
-      // `landscape` is ~1200x627 (~150KB) and ideal for a hero; `large`/`large2x`
-      // are already sized. Only if all are missing do we fall back to `original`,
-      // and then we append compression + a width cap so it can never serve a
-      // full-resolution file.
-      const sized = s.landscape || s.large2x || s.large ||
-        (s.original ? s.original + (s.original.includes("?") ? "&" : "?") + "auto=compress&cs=tinysrgb&w=1600" : "");
-      return {
-        url: sized,
-        assetId: String(p.id),
-        photographer: p.photographer || "",
-        sourceUrl: p.url || "",
-        license: "Pexels License (https://www.pexels.com/license/)",
-        description: p.alt || "",
-      };
-    }
-    return null;
+    // Eligible = candidates whose alt text does not name a person.
+    const eligible = photos.filter((p) => !PERSON_WORDS.test(p.alt || ""));
+    if (!eligible.length) return null;
+    // DETERMINISTIC SPREAD. Index into the eligible pool by a hash of the business seed:
+    // the same business always rebuilds identically, but two same-category businesses get
+    // DIFFERENT photos instead of both taking eligible[0]. No seed -> first (old behaviour).
+    const p = eligible[seed ? (hashString(seed) % eligible.length) : 0];
+    const s = p.src || {};
+    // Prefer a SIZED rendition, never the raw original (which is multi-MB).
+    // `landscape` is ~1200x627 (~150KB) and ideal for a hero; `large`/`large2x`
+    // are already sized. Only if all are missing do we fall back to `original`,
+    // and then we append compression + a width cap so it can never serve a
+    // full-resolution file.
+    const sized = s.landscape || s.large2x || s.large ||
+      (s.original ? s.original + (s.original.includes("?") ? "&" : "?") + "auto=compress&cs=tinysrgb&w=1600" : "");
+    return {
+      url: sized,
+      assetId: String(p.id),
+      photographer: p.photographer || "",
+      sourceUrl: p.url || "",
+      license: "Pexels License (https://www.pexels.com/license/)",
+      description: p.alt || "",
+    };
   };
 }
 
