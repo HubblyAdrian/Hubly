@@ -1873,8 +1873,10 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           // sentence does. Delayed a beat so it lands after the page reveals.
           if(!hc.postedBuildFollowup){
             hc.postedBuildFollowup = true;
-            var _fhtml = Array.isArray(rows) ? (rows[0] && rows[0].rendered_html) : (rows && rows.rendered_html);
-            setTimeout(function(){ hcPostBuildFollowup(_fhtml || ''); }, 900);
+            // Hand the first post-build message to the model (services-first), with a
+            // mandatory deterministic fallback if that call fails or hangs. No artificial
+            // delay — the round-trip provides its own beat and the typing dots show.
+            hcPostBuildTurn();
           }
           return;
         }
@@ -1940,82 +1942,81 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     return div;
   }
 
-  // The first-build follow-up message. Concrete, about THEIR page — not generic
-  // prompts. The section names come from the page's own nav labels (the readable
-  // ones the model wrote: Menu, Wholesale, Roasting…), so "lead with your
-  // roasting" is a real thing about this business, and the logo is offered in a
-  // sentence rather than as a card demanding a file.
+  // POST-BUILD: the model's turn, not a client template. When the page lands we hand
+  // the first post-build message to the MODEL (event:"post_build") so the tested
+  // services-first prompt actually runs — it names the real services and asks one plain
+  // question, no menu. (We used to compose a bulleted "lead with your X" menu here; the
+  // model does that job now.) The account/"reserved for you" line stays CLIENT-side
+  // (hcAppendAccountOffer) so the supersede-on-sign-in tagging is preserved.
   //
-  // The public doc RPC is gated for an UNCLAIMED draft, so the html handed in
-  // here is usually empty. Fetch it via the DRAFT RPC (the token the builder
-  // already holds) so the suggestions can name real sections; fall back to the
-  // generic wording only if that fails too.
-  function hcPostBuildFollowup(html){
-    if(html && /data-hc="nav\.item/i.test(html)){ hcPostBuildFollowupWith(html); return; }
-    var d = hc.draftBusiness;
-    if(!d || !d.slug || !d.draftToken){ hcPostBuildFollowupWith(''); return; }
-    var H = { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' };
-    fetch(SUPA_URL + '/rest/v1/rpc/get_draft_business_document', {
-      method: 'POST', headers: H,
-      body: JSON.stringify({ p_slug: d.slug, p_tag: 'website', p_draft_token: d.draftToken })
-    }).then(function(r){ return r.ok ? r.json() : null; }).then(function(rows){
-      var h = Array.isArray(rows) ? (rows[0] && rows[0].rendered_html) : (rows && rows.rendered_html);
-      hcPostBuildFollowupWith(h || '');
-    }).catch(function(){ hcPostBuildFollowupWith(''); });
-  }
-  function hcPostBuildFollowupWith(html){
-    var labels = [];
-    try{
-      var re = /data-hc="nav\.item\.\d+"[^>]*>([^<]{1,28})</gi, m;
-      while((m = re.exec(html)) && labels.length < 8){
-        var t = m[1].replace(/\s+/g,' ').trim();
-        // Drop CTAs and generic wayfinding — not useful as "lead with X".
-        if(t && !/book|reserve|call|contact|order|quote|get in touch/i.test(t)) labels.push(t);
-      }
-    }catch(e){}
-    var leadCands = labels.filter(function(t){ return !/visit|contact|hours|faq|about|location|find us|home/i.test(t); });
-    // EVERY suggestion here must be something Hubly can do RIGHT NOW, for free,
-    // just by talking — conversational regeneration is the free loop that proves
-    // the product. Files (photos, logo) and click-to-edit need an account, so
-    // they are NEVER offered here; they come after, carrying the door in the same
-    // breath. See the account line below.
-    var lines = [];
-    if(leadCands.length >= 2){
-      lines.push('• lead with your ' + leadCands[1].toLowerCase() + ' instead of your ' + leadCands[0].toLowerCase());
-    } else if(leadCands.length === 1){
-      lines.push('• put your ' + leadCands[0].toLowerCase() + ' front and centre');
-    } else {
-      lines.push('• reorder the sections — lead with whatever matters most');
+  // Handing a turn to the model adds a call that can fail or hang, and the failure mode
+  // is SILENCE at the single biggest moment in the product (Rule 6). So the fallback is
+  // mandatory and deterministic — one honest line, no menu, nothing invented — and it is
+  // logged so we can see how often it fires.
+  function hcPostBuildTurn(){
+    if(hc.busy){                                   // another call is mid-flight; still guarantee a message + the offer
+      var b = "That's your site. Tell me what you'd like to change.";
+      hcAppendMessage('hubly', b); hcPersist('assistant', b);
+      hcAppendAccountOffer();
+      return;
     }
-    lines.push('• make it warmer, or more pared-back');
-    lines.push('• reword anything — just tell me what to say');
-
+    hc.busy = true;
+    var typingEl = hcAppendTyping();               // show Hubly composing — the round-trip is its own beat (no artificial delay)
+    var done = false;
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = setTimeout(function(){ if(!done){ try{ if(ctrl) ctrl.abort(); }catch(e){} finish(null, true); } }, 18000);
+    function finish(reply, fell){
+      if(done) return; done = true;
+      clearTimeout(timer);
+      if(typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+      hc.busy = false;
+      if(fell){
+        hcRecordPostbuildFallback();
+        var fb = "That's your site. Tell me what you'd like to change.";
+        hcAppendMessage('hubly', fb); hcPersist('assistant', fb);
+      } else if(reply){
+        hcAppendMessage('hubly', reply); hcPersist('assistant', reply);
+      }
+      hcAppendAccountOffer();                       // the door, client-side, preaccount-tagged
+    }
+    fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
+      method: 'POST',
+      headers: { 'content-type':'application/json', 'apikey': SUPA_ANON_KEY, 'authorization': 'Bearer ' + SUPA_ANON_KEY },
+      body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, event: 'post_build' }),
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if(!data || data.ok !== true || !data.reply || hcIsFallbackReply(data.reply)){ finish(null, true); return; }
+      // Arm the capture guard from this ask, exactly as a normal turn would.
+      if(['services','hours','area','phone'].indexOf(data.askedFor) >= 0){ hc.pendingCapture = { askedFor: data.askedFor, tries: 0 }; }
+      if(data.draftGrant) hcExchangeDraftGrant(data.draftGrant);
+      finish(String(data.reply), false);
+    }).catch(function(){ finish(null, true); });
+  }
+  // The account/"reserved for you" offer — kept CLIENT-side because the supersede-on-sign-in
+  // logic keys off its data-hc-msg="preaccount" tag (Rule 6: a signed-in owner must never be
+  // told their live site isn't live). Services are the model's job now; this is just the door.
+  function hcAppendAccountOffer(){
     var claimed = !!hc.draftClaimed;
     var host = String((hc.draftBusiness && hc.draftBusiness.url) || '').replace(/^https?:\/\//, '');
     var msg;
     if(claimed){
-      // Already theirs: the address IS live and files are available to them.
-      msg = "That's your site — live at " + host + ". Want to shape it? A few things I can do:\n" +
-        lines.join('\n') +
-        "\n\nOr send your own photos and logo any time and I'll put them on.";
+      msg = "Your address " + host + " is live. Send your own photos and logo any time and I'll put them on.";
     } else {
-      // Reserved: don't claim it's live, and don't offer anything gated. The
-      // account offer comes after, separately, framed as the reward.
-      msg = "That's your site. The address " + host + " is reserved for you — it goes live the moment you make an account.\n\n" +
-        "Want to shape it? A few things I can do right now, just by talking:\n" +
-        lines.join('\n') +
-        "\n\nWant your own photos and logo on it, and the address live? That takes an account — about ten seconds.";
+      msg = "The address " + host + " is reserved for you — it goes live the moment you make an account. Want your own photos and logo on it, and the address live? That takes an account — about ten seconds.";
     }
-    var _fuEl = hcAppendMessage('hubly', msg);
-    // Tag the pre-account ("reserved for you") message so a successful sign-in can
-    // supersede it — leaving it standing would tell a signed-in owner their live
-    // site isn't live (Rule 6). The already-claimed variant is fine to leave.
-    if(!claimed && _fuEl) _fuEl.setAttribute('data-hc-msg', 'preaccount');
-    // These are the first setup asks Hubly makes — the shaping suggestions and
-    // the account offer. Generated client-side, but they are Hubly's voice, so
-    // they belong in the transcript (the state engine needs to know they were
-    // made). See hcPersist.
+    var el = hcAppendMessage('hubly', msg);
+    if(!claimed && el) el.setAttribute('data-hc-msg', 'preaccount');
     hcPersist('assistant', msg);
+  }
+  function hcRecordPostbuildFallback(){
+    try{
+      if(!hc.draftBusiness || !hc.draftBusiness.id) return;
+      fetch(SUPA_URL + '/rest/v1/rpc/record_postbuild_fallback', {
+        method:'POST',
+        headers:{ apikey:SUPA_ANON_KEY, authorization:'Bearer '+SUPA_ANON_KEY, 'content-type':'application/json' },
+        body: JSON.stringify({ p_business_id: hc.draftBusiness.id })
+      }).catch(function(){});
+    }catch(e){}
   }
 
   function hcAppendTyping(){
@@ -2283,7 +2284,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           // Logo dropzone card REMOVED from the rail's standing UI: asking for a
           // file before they've seen anything is asking for work before delivering
           // value. Hubly now offers the logo in a sentence in the first-build
-          // follow-up (hcPostBuildFollowup), and the upload still works from the
+          // follow-up (the account offer in hcPostBuildTurn), and the upload still works from the
           // attach menu and drag-and-drop — the capability is unchanged.
         }
         showNext();

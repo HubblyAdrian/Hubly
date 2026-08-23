@@ -98,3 +98,11 @@ acts, or it says what will happen — it never gives directions to something it 
   until it has been pushed. When reporting what shipped, say which path each change took.
   (This two-path split — instantly-deployed server code beside never-pushed client code —
   is what masqueraded as "stale" for a whole day on 2026-08-23.)
+- **Before editing a prompt to change what Hubly SAYS, confirm the model is the one saying
+  it.** Some of Hubly's speech is composed CLIENT-side (e.g. the post-build follow-up in
+  `hcPostBuildFollowup`, the claim card, the "reserved for you" line) — a prompt edit there
+  changes a turn that never happens. Twice on 2026-08-23 a prompt was edited for words the
+  client actually writes (the phantom sign-up guidance; the post-build services question).
+  Tells that a message is client-composed, not model output: a fixed menu/bullets the model
+  is told never to produce, slot-filled broken grammar, or a string that greps to a literal
+  in `public/`. Find the source first; fix it where it's written.
