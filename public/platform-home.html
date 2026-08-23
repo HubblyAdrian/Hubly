@@ -887,20 +887,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         <div class="ask-glow" aria-hidden="true"></div>
         <div class="ask-box">
           <input id="hcInput" type="text" autocomplete="off" placeholder="Reply to Hubly…" aria-label="Reply to Hubly">
-          <button type="button" class="ask-icon-left" id="hcAttachBtn" aria-label="Attach a reference or find inspiration" aria-haspopup="true" aria-expanded="false">
+          <button type="button" class="ask-icon-left" id="hcAttachBtn" aria-label="Attach a photo or file">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>
           </button>
-          <div class="hc-attach-menu" id="hcAttachMenu" role="menu" hidden>
-            <button type="button" role="menuitem" data-act="logo">🏷️ Your logo</button>
-            <button type="button" role="menuitem" data-act="photo">📷 Your photos</button>
-            <div class="hc-attach-sep" role="separator">Inspiration</div>
-            <button type="button" role="menuitem" data-act="url">🔗 Website URL</button>
-            <button type="button" role="menuitem" data-act="screenshot">🖼️ Screenshot</button>
-            <button type="button" role="menuitem" data-act="pdf">📄 PDF</button>
-            <button type="button" role="menuitem" data-act="figma">🎨 Figma</button>
-            <button type="button" role="menuitem" data-act="pinterest">📌 Pinterest</button>
-            <button type="button" role="menuitem" data-act="auto">✨ Find inspiration for me</button>
-          </div>
           <button type="button" class="ask-submit" id="hcSubmit" aria-label="Send">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
@@ -915,6 +904,10 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     <div class="hc-canvas-bar" id="hcCanvasBar" hidden></div>
     <div class="hc-canvas-body" id="hcCanvas"></div>
   </div>
+  <!-- The one attach input the composer button opens. Images + PDFs; routed by what
+       Hubly asked for (see hcHandleIncomingFile). The older per-kind inputs below remain
+       only for the logo dropzone card and the photo picker they were already wired to. -->
+  <input type="file" id="hcAttachInput" accept="image/*,application/pdf" multiple style="display:none">
   <input type="file" id="hcFileInput" accept="image/*" style="display:none">
   <input type="file" id="hcPdfInput" accept="application/pdf" style="display:none">
   <input type="file" id="hcLogoInput" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none">
@@ -2401,6 +2394,57 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     });
   })();
 
+  // A logo, from a File (parity with hcSendPhoto). Sets the one-shot pendingLogoUpload
+  // and sends the turn that uploads it.
+  function hcSendLogo(file){
+    if(!file) return;
+    if(!/^image\//i.test(file.type || '')){ hcAppendMessage('hubly', "A logo needs to be an image — PNG, JPG, SVG or WebP."); return; }
+    if(hc.busy){ hcAppendMessage('hubly', "One moment — still working on the last thing."); return; }
+    if(!hc.draftBusiness){ hcAppendMessage('hubly', "Tell me what you do first and I'll build the page — then your logo has somewhere to go."); return; }
+    hcFileToBase64(file).then(function(data){
+      if(typeof hcClearLogoDropzones === 'function') hcClearLogoDropzones();
+      hc.pendingLogoUpload = { imageBase64: data, mediaType: file.type || 'image/png' };
+      hcSendText("Here's our logo.");
+    }).catch(function(){ hcAppendMessage('hubly', "That image couldn't be read — mind trying a different one?"); });
+  }
+
+  // Nothing was pending — hand the file to the model as a multimodal part. The model asks
+  // ONE open question ("what would you like me to do with this?") and acts on the reply.
+  function hcSendFileToModel(file, isPdf){
+    hcFileToBase64(file).then(function(data){
+      hcSendContent([
+        { type: 'text', text: isPdf ? "Here's a PDF." : "Here's an image." },
+        { type: isPdf ? 'document' : 'image', mediaType: file.type || (isPdf ? 'application/pdf' : 'image/png'), data: data }
+      ], (isPdf ? '📄 ' : '🖼️ ') + (file.name || 'file'));
+    }).catch(function(){ hcAppendMessage('hubly', "That file couldn't be read — mind trying a different one?"); });
+  }
+
+  // THE ONE HANDLER every entry point funnels into — drag, paste, and the attach button.
+  // A file arriving IS the answer to whatever Hubly just asked; route by hc.pendingCapture,
+  // never by a menu asking the person to classify it. Waiting on services → it's a price
+  // list (import-offers, the primary target — this is the path a PHONE user reaches, since
+  // a phone can't drag). Waiting on the logo → it's the logo. On photos → a photo. Nothing
+  // pending → the model asks one open question.
+  function hcHandleIncomingFile(file){
+    if(!file) return;
+    if(hc.busy){ hcAppendMessage('hubly', "One moment — still working on the last thing."); return; }
+    var isPdf = /pdf$/i.test(file.type || '') || /\.pdf$/i.test(file.name || '');
+    var isImage = /^image\//i.test(file.type || '');
+    if(!isImage && !isPdf){ hcAppendMessage('hubly', "I can work with images and PDFs — that one I can't read."); return; }
+    var pending = hc.pendingCapture && hc.pendingCapture.askedFor;
+    if(pending === 'services'){ hcExtractPricesFromImage(file); return; }   // price list (handles PDF too)
+    if(pending === 'logo' && isImage){ hcSendLogo(file); return; }
+    if(pending === 'photos' && isImage){ hcSendPhoto(file); return; }
+    hcSendFileToModel(file, isPdf);                                          // nothing pending
+  }
+  // Several images at once: one per turn (the server handles one turn at a time).
+  function hcHandleIncomingFiles(files){
+    files = Array.prototype.slice.call(files || []).filter(function(f){ return f; });
+    if(!files.length) return;
+    if(files.length > 1) hcAppendMessage('hubly', "I'll take these one at a time — starting with " + (files[0].name || 'the first') + ".");
+    hcHandleIncomingFile(files[0]);
+  }
+
   function hcClearLogoDropzones(){
     var nodes = document.querySelectorAll('.hc-drop[data-drop="logo"]');
     for(var i = 0; i < nodes.length; i++) nodes[i].remove();
@@ -2612,45 +2656,24 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         hcAppendMessage('hubly', "One moment — I'm still working on the last thing. Try that again in a second.");
         return;
       }
-      var files = (ev.dataTransfer && ev.dataTransfer.files) || [];
-      if(!files.length) return;
-      // One file per turn: each becomes a message, and several at once would
-      // fire several requests at a server that handles one turn at a time.
-      var file = files[0];
-      var isPdf = /pdf$/i.test(file.type || '') || /\.pdf$/i.test(file.name || '');
-      var isImage = /^image\//i.test(file.type || '');
-      if(!isImage && !isPdf){
-        hcAppendMessage('hubly', "I can work with images and PDFs — that one I can't read.");
-        return;
-      }
-      if(files.length > 1){
-        hcAppendMessage('hubly', "I'll take these one at a time — starting with " + (file.name || 'the first one') + ".");
-      }
-      // PRICE LIST, not a photo. If Hubly just asked about services, an image/PDF is a
-      // price list to read — same gesture, different intent, disambiguated by the pending
-      // ask. Route it to extraction (see hcExtractPricesFromImage). Everything else about
-      // a dropped file is unchanged.
-      if((isImage || isPdf) && hc.draftBusiness && hc.pendingCapture && hc.pendingCapture.askedFor === 'services'){
-        hcExtractPricesFromImage(file); return;
-      }
-      // Drag-and-drop is the PRIMARY way to add a photo, menu as fallback. An
-      // image dropped once a draft exists is the owner's work, not a reference:
-      // that is the common case, and the inspiration path is still reachable
-      // from the attach menu for the rarer one.
-      if(!isPdf && hc.draftBusiness){ hcSendPhoto(file); return; }
-      hcFileToBase64(file).then(function(data){
-        var kind = isPdf ? 'document' : 'image';
-        var caption = isPdf ? "Here's a PDF." : "Here's a photo.";
-        hcSendContent(
-          [
-            { type: 'text', text: caption },
-            { type: kind, mediaType: file.type || (isPdf ? 'application/pdf' : 'image/png'), data: data }
-          ],
-          caption + ' (' + (file.name || 'file') + ')'
-        );
-      }).catch(function(){
-        hcAppendMessage('hubly', "That file couldn't be read — mind trying a different one?");
-      });
+      // Route through the ONE handler — it decides by what Hubly just asked for.
+      hcHandleIncomingFiles((ev.dataTransfer && ev.dataTransfer.files) || []);
+    });
+  })();
+
+  // PASTE an image into the composer — same handler as drag and attach. A phone can't
+  // drag; paste + the attach button are how a mobile user gets a photo in. Pure text
+  // paste is left alone. (Desktop-verified; iOS Safari image-paste is limited — flagged.)
+  (function hcWirePaste(){
+    var box = document.getElementById('hcInput');
+    if(!box) return;
+    box.addEventListener('paste', function(ev){
+      var items = (ev.clipboardData && ev.clipboardData.items) || [];
+      var files = [];
+      for(var i = 0; i < items.length; i++){ if(items[i].kind === 'file'){ var f = items[i].getAsFile(); if(f) files.push(f); } }
+      if(!files.length) return;              // no image on the clipboard — normal text paste
+      ev.preventDefault();
+      hcHandleIncomingFiles(files);
     });
   })();
 
@@ -2769,40 +2792,21 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     figma: 'Paste your Figma link…',
     pinterest: 'Paste your Pinterest link…'
   };
-  function hcAttachMenuAct(act){
-    if(act === 'auto' || act === 'screenshot' || act === 'pdf'){ hcInspirationAct(act); return; }
-    var placeholder = HC_LINK_PLACEHOLDERS[act];
-    if(!placeholder) return;
-    var input = document.getElementById('hcInput') || document.getElementById('heroInput');
-    if(input){
-      input.placeholder = placeholder;
-      input.focus();
-    }
-  }
-
+  // ONE plain attach button — opens the file picker, no menu. The 8-item classification
+  // menu (logo/photos/URL/screenshot/PDF/Figma/Pinterest/"find inspiration") was deleted:
+  // 6 of the 8 were dead, links are pasted into the box (a pasted URL already reads as
+  // inspiration), and "find inspiration" is a sentence, not a button. Whatever comes in is
+  // routed by what Hubly just asked for (hcHandleIncomingFile) — never by asking the person
+  // to categorise a file before sending it.
   var hcAttachBtn = document.getElementById('hcAttachBtn');
-  var hcAttachMenu = document.getElementById('hcAttachMenu');
-  function hcCloseAttachMenu(){
-    if(!hcAttachMenu || hcAttachMenu.hidden) return;
-    hcAttachMenu.hidden = true;
-    if(hcAttachBtn) hcAttachBtn.setAttribute('aria-expanded', 'false');
-  }
-  if(hcAttachBtn && hcAttachMenu){
-    hcAttachBtn.addEventListener('click', function(e){
-      e.stopPropagation();
-      var open = hcAttachMenu.hidden;
-      hcAttachMenu.hidden = !open;
-      hcAttachBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  var hcAttachInput = document.getElementById('hcAttachInput');
+  if(hcAttachBtn && hcAttachInput){
+    hcAttachBtn.addEventListener('click', function(e){ e.stopPropagation(); try{ hcAttachInput.click(); }catch(err){} });
+    hcAttachInput.addEventListener('change', function(){
+      var files = hcAttachInput.files ? Array.prototype.slice.call(hcAttachInput.files) : [];
+      hcAttachInput.value = '';
+      hcHandleIncomingFiles(files);
     });
-    Array.prototype.forEach.call(hcAttachMenu.querySelectorAll('button[data-act]'), function(btn){
-      btn.addEventListener('click', function(e){
-        e.stopPropagation();
-        hcCloseAttachMenu();
-        hcAttachMenuAct(btn.getAttribute('data-act'));
-      });
-    });
-    document.addEventListener('click', hcCloseAttachMenu);
-    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') hcCloseAttachMenu(); });
   }
 
   // Logo upload is its own path, not hcSendContent — the image has to reach

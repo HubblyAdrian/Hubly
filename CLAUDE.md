@@ -92,6 +92,10 @@ acts, or it says what will happen — it never gives directions to something it 
   explicit question, never left to fall out of conversation on its own. And because
   even "asked" leaves ~1 in 5 uncaptured, the ask is not done until the capture is
   confirmed (read it back, or detect the miss and ask again) — silence is not success.
+- **Don't ship copy that offers an action until a working path to it has been tested end
+  to end.** On 2026-08-23 we deployed "drop a screenshot of your price list" while the
+  attach button was broken and paste was unwired. This is the same failure as naming a
+  control that doesn't exist — the model isn't the one lying, the copy is.
 - **Hubly has two deploy paths; know which one a change took.** Edge functions go live via
   `supabase functions deploy`; everything in `public/` (platform-home.html, hubly.html)
   goes live ONLY via a git push to Vercel. Never describe a client-side change as live
