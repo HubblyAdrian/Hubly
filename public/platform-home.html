@@ -1006,7 +1006,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // created (business.startDraft) — { id, slug, draftToken, url }. Threaded
   // back to the server every turn exactly like `messages`; the server never
   // persists it either. This is what makes the canvas real instead of a mockup.
-  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null, pendingCapture: null };
+  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null, pendingCapture: null, accountOfferShown: false, postBuildTurns: 0 };
 
   // ── Draft claim session ───────────────────────────────────────────────────
   // A draft belongs to nobody until it is claimed. hubly-conversation returns a
@@ -1954,11 +1954,10 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // mandatory and deterministic — one honest line, no menu, nothing invented — and it is
   // logged so we can see how often it fires.
   function hcPostBuildTurn(){
-    if(hc.busy){                                   // another call is mid-flight; still guarantee a message + the offer
+    if(hc.busy){                                   // another call is mid-flight; still guarantee a message
       var b = "That's your site. Tell me what you'd like to change.";
       hcAppendMessage('hubly', b); hcPersist('assistant', b);
-      hcAppendAccountOffer();
-      return;
+      return;                                        // the account offer is earned later, on the first real change
     }
     hc.busy = true;
     var typingEl = hcAppendTyping();               // show Hubly composing — the round-trip is its own beat (no artificial delay)
@@ -1977,7 +1976,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       } else if(reply){
         hcAppendMessage('hubly', reply); hcPersist('assistant', reply);
       }
-      hcAppendAccountOffer();                       // the door, client-side, preaccount-tagged
+      // No account offer here — the post-build turn says ONLY the services question. The
+      // offer is EARNED on the first real change (or a backstop of a couple of turns), in
+      // the response handler, so it's concrete and never beside the first question.
     }
     fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
       method: 'POST',
@@ -2269,6 +2270,20 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           var hcReasked = hcCheckCaptureMiss(hcPriorCapture, data);
           if(!hcReasked && ['services','hours','area','phone'].indexOf(data.askedFor) >= 0){
             hc.pendingCapture = { askedFor: data.askedFor, tries: 0 };
+          }
+          // EARN THE ACCOUNT OFFER. Not beside the first question — it appears AFTER the
+          // first real change lands (they've just watched Hubly change their own site from
+          // one sentence, so the door is concrete). Backstop: if they never make a change,
+          // show it after a couple of post-build turns anyway, so the door is never
+          // invisible. Once only, and NEVER for a claimed draft (a returning owner gets no
+          // offer). Copy + preaccount tag are unchanged, so supersede-on-sign-in still holds.
+          if(hc.postedBuildFollowup && !hc.accountOfferShown && !hc.draftClaimed){
+            hc.postBuildTurns = (hc.postBuildTurns || 0) + 1;
+            var _realChange = Array.isArray(data.actions) && data.actions.some(function(a){ return a.ok && a.real; });
+            if(_realChange || hc.postBuildTurns >= 2){
+              hc.accountOfferShown = true;
+              hcAppendAccountOffer();
+            }
           }
           // THE DROPZONE COMES LAST, after the sentence that points at it.
           //
