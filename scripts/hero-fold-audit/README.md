@@ -80,3 +80,13 @@ real. Until then it's a script you run by hand.
 - Only claimed/published businesses render their real page from a live subdomain; this
   tool sidesteps that by rendering the stored `rendered_html` directly, so it covers the
   whole corpus regardless of claim status.
+
+## Capability / market ratios: filter to real businesses
+
+The design sweeps above run over ALL generated pages on purpose (new test pages are the
+most diagnostic — they're what the current prompt produces). But any CAPABILITY or MARKET
+ratio — claim rate, % with services, bookings, "empty booking page" — must filter to real
+businesses: `where account_kind = 'real'`. As of 2026-08-23 the corpus was ~125 businesses
+but only 9 real; measuring capability over the whole table measured our own testing. The
+`account_kind` column is now trustworthy (claim-time trigger + creation-flag RPC +
+backfill, migration `20260823140000`).
