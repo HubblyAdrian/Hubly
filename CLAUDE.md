@@ -92,6 +92,12 @@ acts, or it says what will happen — it never gives directions to something it 
   explicit question, never left to fall out of conversation on its own. And because
   even "asked" leaves ~1 in 5 uncaptured, the ask is not done until the capture is
   confirmed (read it back, or detect the miss and ask again) — silence is not success.
+- **Design sweeps run over every page; user/value numbers filter to real.** A broken
+  layout is broken regardless of who made it — so layout/quality sweeps run over all
+  generated pages. But any number that describes users, adoption, or value must filter
+  `account_kind = 'real'`, and you state the denominator every time. A ratio without a
+  denominator is a claim we can't check. (On 2026-08-23 a week of priorities rested on
+  ratios from a corpus that was ~93% our own test drafts; the real N was 9.)
 - **Don't ship copy that offers an action until a working path to it has been tested end
   to end.** On 2026-08-23 we deployed "drop a screenshot of your price list" while the
   attach button was broken and paste was unwired. This is the same failure as naming a
