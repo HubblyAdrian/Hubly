@@ -127,3 +127,6 @@ verify_jwt = false
 # SCRATCH — delete with the function.
 [functions.scratch-freeform]
 verify_jwt = false
+
+[functions.page-view]
+verify_jwt = false

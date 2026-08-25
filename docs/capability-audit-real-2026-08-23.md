@@ -61,7 +61,8 @@ cannot yet be read as conversion vs. distribution — opposite fixes. A visitor 
 ```sql
 select b.name, b.owner_identified, count(pl.*) as non_owner_loads, min(pl.loaded_at) as first_load
 from businesses b
-left join page_loads pl on pl.business_id = b.id and pl.is_owner_preview = false
+left join page_loads pl on pl.business_id = b.id
+                          and pl.is_owner_preview = false and pl.device_class <> 'bot'
 where b.account_kind = 'market'
 group by b.id, b.name, b.owner_identified
 order by non_owner_loads desc;
