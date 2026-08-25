@@ -1,58 +1,65 @@
-# Capability audit — REAL businesses only (2026-08-23)
+# Capability audit — by account category (2026-08-23, revised 2026-08-25)
 
-> ⚠️ **READ THIS BEFORE USING ANY NUMBER FROM THE EARLIER AUDIT.**
-> The capability audit circulated earlier (125 businesses; "62 of 108 empty booking
-> pages"; "79% never claim"; "53 with services"; "17% photo repeat") was computed over a
-> corpus that was **~93% our own test drafts** — a week of Claude Code's and Adrian's
-> testing, created in the 2026-08-20→23 flood. Those ratios describe **us talking to
-> ourselves, not the market.** Do not make design or product decisions from them.
+> ⚠️ **The denominator that matters is MARKET, not "real".**
+> `account_kind` now has three values: **test** (our own drafts), **internal** (founders,
+> us, family — a real account but not an outside customer), **market** (a genuine outside
+> business). Any number about users, adoption, or value filters `account_kind='market'`
+> and states its denominator. The earlier "125 businesses / 62 empty / 79% never claim /
+> 17% photo repeat" ratios were computed over a corpus that was ~93% **test** — us talking
+> to ourselves. Do not use them.
 >
-> This document is the real-filtered replacement: `account_kind = 'real'`, **N = 9**.
-> No percentages — at N=9 a percentage hides more than it shows. The rows are printed in
-> full; read the rows.
+> **Market N = 7.** Classifications below are Adrian's, by hand (2026-08-25), source of
+> truth — not inferred.
 
-## The nine real businesses
+## The businesses (test excluded; 9 non-test rows)
 
-`Y` = present · `·` = absent · numbers are counts.
+`Y` = present · `·` = absent · counts otherwise.
 
-| business | email | created | renderer | freeform page | services | priced | hours | logo | own photos | real bookings | chatbot |
+| business | category | email | created | freeform page | services | priced | hours | logo | own photos | bookings | chatbot |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Aquaspeed | aquaspeed723@gmail.com | 2026-07-11 | classic | · | 3 | 3 | 0 | Y | 0 | **2** | **1** |
-| Graef's AutoCare | austinjgraef@gmail.com | 2026-07-11 | classic | · | 0 | 0 | 0 | Y | 0 | **6** | 0 |
-| Devdetailing661 | fdevin180@gmail.com | 2026-07-13 | classic | · | 0 | 0 | 0 | Y | 0 | 0 | 0 |
-| Bucket Mobile Detailing | bucketmobiledetailing@outlook.com | 2026-07-20 | classic | · | 0 | 0 | 0 | Y | 0 | **1** | 0 |
-| Cotter Aviation | cotterjp@gmail.com | 2026-07-25 | classic | · | 0 | 0 | 0 | · | 0 | 0 | 0 |
-| My Auto Detailing | jjake486@gmail.com | 2026-07-25 | classic | · | 0 | 0 | 0 | · | 0 | 0 | 0 |
-| Detailing Chemicals, Equipment & Courses † | andres.mayorga1616@email.bakersfieldcollege.edu | 2026-08-22 | classic | Y | 4 | 0 | 0 | · | 0 | 0 | 0 |
-| Mobile Auto Detailing in Los Angeles † | andres.mayorga1616@email.bakersfieldcollege.edu | 2026-08-22 | classic | Y | 0 | 0 | 0 | · | 0 | 0 | 0 |
-| Lugnutz | kaptn.awesome@gmail.com | 2026-08-22 | classic | Y | 3 | 0 | 0 | · | 0 | 0 | 0 |
+| Aquaspeed | market | aquaspeed723@gmail.com | 07-11 | · | 3 | 3 | 0 | Y | 0 | 0† | 0† |
+| Graef's AutoCare | market | austinjgraef@gmail.com | 07-11 | · | 0 | 0 | 0 | Y | 0 | see ‡ | 0 |
+| Devdetailing661 | market | fdevin180@gmail.com | 07-13 | · | 0 | 0 | 0 | Y | 0 | 0 | 0 |
+| Bucket Mobile Detailing | market | bucketmobiledetailing@outlook.com | 07-20 | · | 0 | 0 | 0 | Y | 0 | 0† | 0 |
+| **My Auto Detailing** ⚑ | market | jjake486@gmail.com | 07-25 | · | 0 | 0 | 0 | · | 0 | 0 | 0 |
+| **Detailing Chemicals…** ⚑ | market | andres.mayorga1616@…bakersfieldcollege.edu | 08-22 | Y | 4 | 0 | 0 | · | 0 | 0 | 0 |
+| **Mobile Auto Detailing in LA** ⚑ | market | andres.mayorga1616@…bakersfieldcollege.edu | 08-22 | Y | 0 | 0 | 0 | · | 0 | 0 | 0 |
+| Cotter Aviation | internal | cotterjp@gmail.com | 07-25 | · | 0 | 0 | 0 | · | 0 | 0 | 0 |
+| Lugnutz | internal | kaptn.awesome@gmail.com | 08-22 | Y | 3 | 0 | 0 | · | 0 | 0‡ | 0 |
 
-† **Borderline, kept REAL deliberately.** Both rows are the same college address
-(`andres.mayorga1616@email.bakersfieldcollege.edu`) with generic/SEO-ish names. They may
-be a genuine student/local operator or a tester. At N=9 each row is ~11%, and wrongly
-excluding a real user is worse than including a possible tester — so they are counted real.
-Named here so we never silently include or exclude them again.
+**⚑ Unrecognized by Adrian — flagged, not guessed.** Two people: `jjake486@gmail.com` (My
+Auto Detailing, 07-25) and `andres.mayorga1616@email.bakersfieldcollege.edu`, who built
+**two** sites on 08-22 (the second in Los Angeles). Counted market. If they are strangers
+who signed up on their own, they are the most valuable rows in the company and worth a
+direct conversation.
 
-## What is actually true at N=9
-- **Bookings — the only value signal — go to the CLASSIC renderer, not the new builder.**
-  All 9 real bookings landed on classic-renderer businesses from July (Graef's 6,
-  Aquaspeed 2, Bucket 1). The 3 businesses with a freeform page (the builder's output) are
-  all from 2026-08-22 and have **0 bookings so far.** The freeform builder — the whole
-  week's work — has produced 3 real pages and, as yet, no real booking.
-- **Chatbot:** used by exactly one real customer, ever (Aquaspeed, 1 conversation).
-- **Prices:** one business has real prices (Aquaspeed). **Hours:** zero. **Own photos:**
-  zero — no real business has uploaded a real photograph; every page relies on stock or
-  nothing.
-- **Logo:** 4 of 9.
+† / ‡ see the booking-contamination pass below — none of these are public bookings.
 
-## The correction to the queue
-The services-first capture and screenshot-extraction we shipped are still correct — Hubly
-genuinely never asked for services, and now it does. But the *urgency ranking* behind them
-came from test-inflated ratios. At N=9, polish measured on the test corpus is not the
-priority; the value that exists is bookings through real (classic-renderer) sites, and the
-open question is whether the new builder can convert a real person the way the classic
-renderer already has.
+## Corrected value (Job 2)
 
-*Method: `account_kind='real'` (trustworthy as of migration `20260823140000` — claim-time
-trigger + creation-flag RPC + backfill). Design/layout sweeps still run over ALL generated
-pages on purpose; only capability/market/value numbers filter to real.*
+**7 market businesses have a live Hubly site. Zero have ever received a booking from a
+member of the public. Every booking in the database traces to an owner, a family member, a
+founder, or a test harness.**
+
+The 10 booking rows on non-test businesses, by the account/name/phone/email test signals:
+- Aquaspeed ×2 — a **proof-mode test harness** (`proof-mode+…@hubly.test`, 555 phones).
+- Bucket ×1 — **Adrian** (`adrian@brnno.com`).
+- Graef's AutoCare ×6 — the **owner testing his own form pre-change, plus family** (per
+  Adrian): 3 are the owner's own name, 3 are the Graef family. No stranger.
+- Lugnutz ×1 (abandoned) — **Talmage Harrison, a founder** (per Adrian; my earlier "only
+  stranger" read was wrong).
+- Aquaspeed's single chatbot conversation was the **same 2026-07-22 proof-mode session** as
+  its test bookings — not a real customer.
+
+## The instrumentation gap (the actual priority — see the separate cost analysis)
+We cannot tell whether any human has ever *loaded* a market site — there is no pageview /
+analytics / view-count anywhere; the only proof of a visitor is a booking or a chat, and
+by that proxy the market sites have **zero known visitors** (Lugnutz's one visitor is a
+founder). So "zero public bookings" cannot yet be read as a conversion problem vs. a
+distribution problem — those have opposite fixes, and we can't tell them apart until page
+loads are counted.
+
+*Method: `account_kind` (test/internal/market) is trustworthy as of migrations
+`20260823140000` + `20260825120000`. Layout/quality sweeps still run over ALL generated
+pages (a broken layout is broken regardless of who made it); only user/adoption/value
+numbers filter market. No conclusions about renderers are drawn here.*
