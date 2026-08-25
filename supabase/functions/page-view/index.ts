@@ -57,7 +57,10 @@ Deno.serve(async (req) => {
     const key = requireSecretKey().key;
     const admin = createClient(SUPABASE_URL, key, { auth: { persistSession: false } });
 
-    // BASIC RATE GUARD (public, unauthenticated endpoint): cap bursts per business.
+    // RATE GUARD (public, unauthenticated endpoint). LIMIT: 60 rows per business_id per rolling
+    // 60 seconds. ON EXCEED: the load is DROPPED SILENTLY — no row, no alert, still HTTP 204 to
+    // the page. Coarse anti-inflation only; a real site's traffic never approaches this, and the
+    // daily dedup already caps a single device to one row/day.
     const { count: recent } = await admin.from("page_loads").select("id", { count: "exact", head: true })
       .eq("business_id", businessId).gte("loaded_at", new Date(Date.now() - 60_000).toISOString());
     if ((recent || 0) > 60) return done();
@@ -82,7 +85,12 @@ Deno.serve(async (req) => {
     // 3. Client hint, last: builder/edit-mode load the page flagged.
     if (!isOwner && body?.is_owner_preview === true) { isOwner = true; ownerDecision = "client_hint"; }
 
-    // WRITE the row (dedup index collapses same device/day; 23505 is expected, not an error).
+    // WRITE the row. loaded_day is passed EXPLICITLY (the same `day` the visitor_hash used) so the
+    // row's day and the hash's day are identical by construction — never the column's current_date
+    // default, which is the DB timezone and could disagree at a day boundary and silently break dedup.
+    // A unique-violation (23505) is the dedup index doing its job = "on conflict do nothing", SILENT:
+    // it is expected, not a failure, and must never console.error — training ourselves to ignore loud
+    // logs would destroy their value everywhere. console.error is reserved for writes that ACTUALLY failed.
     const { error } = await admin.from("page_loads").insert({
       business_id: businessId, loaded_day: day, referrer, device_class: dev,
       is_owner_preview: isOwner, owner_decision: ownerDecision, visitor_hash: visitorHash,

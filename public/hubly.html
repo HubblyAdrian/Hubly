@@ -17507,6 +17507,21 @@ window.addEventListener('message', function(ev){
   try{ (ev.source || window.parent).postMessage({ type:'hcAuthStateAck', authed: hcAuthedFlag }, (ev.origin && ev.origin !== 'null') ? ev.origin : '*'); }catch(e){}
 });
 
+// FIRE-AND-FORGET visitor beacon. One call, on a public site mount, NEVER awaited and never in
+// the render path. Owner-ness is decided SERVER-side: functions.invoke automatically forwards the
+// viewer's session JWT if they happen to be signed in (the owner viewing their own live site),
+// which the edge function matches against owner_id; the ?hcEdit/builder-preview flag is only a
+// fallback hint. A stranger sends the anon key and lands owner_decision='visitor'.
+function hcFirePageView(businessId){
+  try{
+    if(!businessId || typeof getSlugFromHost!=='function' || !getSlugFromHost()) return;  // public slug-host loads only
+    var ownerHint=(typeof hcEditEnabled==='function' && hcEditEnabled()) || (typeof hcBuilderPreview==='function' && hcBuilderPreview());
+    var ref=''; try{ ref=document.referrer||''; }catch(e){}
+    waitForDb().then(function(db){
+      db.functions.invoke('page-view',{ body:{ business_id:businessId, is_owner_preview:!!ownerHint, referrer:ref } }).catch(function(){});
+    }).catch(function(){});
+  }catch(e){}
+}
 async function loadPublicProfile(slug){
   const dbClient=await waitForDb();
   // Reads through get_public_business(slug), not the table. businesses carried
@@ -17536,6 +17551,7 @@ async function loadPublicProfile(slug){
     return;
   }
   currentBusiness=data;
+  hcFirePageView(data.id);   // fire-and-forget visitor beacon; not awaited, not in the render path
   // Dedicated shareable Storefront route: <slug>.myhubly.app/store — render the standalone
   // store (Commerce public API) from the saved Storefront AST (meta.storefront), instead of the
   // website, and stop. Same products/availability as the website Store embed; never touches S.storeOs.
