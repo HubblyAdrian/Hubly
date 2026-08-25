@@ -16,7 +16,11 @@ const OWNER_EMAIL = (Deno.env.get("PLATFORM_OWNER_EMAIL") || "").trim();
 const PUBLIC_DOMAIN = (Deno.env.get("HUBLY_PUBLIC_DOMAIN") || "myhubly.app").trim();
 const SALT = (Deno.env.get("PAGE_LOAD_SALT") || "").trim();
 
-const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization, content-type", "access-control-allow-methods": "POST, OPTIONS" };
+// allow-headers MUST list every header supabase-js attaches to functions.invoke — it sends
+// `apikey` and `x-client-info` in addition to authorization/content-type. Omit either and the
+// browser's CORS preflight is rejected and the fetch throws BEFORE reaching us (curl, which
+// does no preflight, still works — which is exactly how this hid). This is the documented default.
+const CORS = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization, x-client-info, apikey, content-type", "access-control-allow-methods": "POST, OPTIONS" };
 const done = () => new Response(null, { status: 204, headers: CORS });
 
 // Preview/link-unfurl fetchers and generic bots. An owner sharing their link fires these
