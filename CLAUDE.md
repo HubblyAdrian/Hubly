@@ -125,3 +125,12 @@ acts, or it says what will happen — it never gives directions to something it 
   Tells that a message is client-composed, not model output: a fixed menu/bullets the model
   is told never to produce, slot-filled broken grammar, or a string that greps to a literal
   in `public/`. Find the source first; fix it where it's written.
+- **Never reveal a live secret to the terminal.** `supabase projects api-keys --reveal` (and
+  anything like it) prints a key into scrollback, shell history, and any transcript that later
+  gets shared — that is exactly how a key leaked on 2026-08-25, and it nearly happened twice
+  because the replacement key went through the same command an hour later. If a script needs a
+  key, Adrian sets it in the environment and the script reads it from there; Claude Code never
+  prints, echoes, `sed`s, or writes a key to a file. To identify a key, use its NAME and PREFIX,
+  never its value (e.g. `edgefunctions202608` / `sb_secret_NmJ3E…`). A key that has appeared in
+  terminal output is compromised and must be rotated — treat the appearance itself as the breach,
+  before asking whether anyone saw it.

@@ -7,7 +7,7 @@
 // filtered by UA and an unknown/missing UA is treated as NON-human. Fails silently to the
 // page (always 204) and loudly in our logs. Stores no raw IP.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { requireSecretKey } from "../_shared/supabase_admin.ts";
+import { createAdminClient } from "../_shared/supabase_admin.ts";
 
 const SUPABASE_URL = (Deno.env.get("SUPABASE_URL") || "").trim();
 const RESEND_KEY = (Deno.env.get("RESEND_API_KEY") || "").trim();
@@ -58,8 +58,12 @@ Deno.serve(async (req) => {
     const day = new Date().toISOString().slice(0, 10);
     const visitorHash = await sha256hex(`${SALT}|${ip}|${ua}|${businessId}|${day}`);
 
-    const key = requireSecretKey().key;
-    const admin = createClient(SUPABASE_URL, key, { auth: { persistSession: false } });
+    // Use the SHARED admin client — it sends new sb_secret_ keys as `apikey` only, never as a
+    // Bearer token (which PostgREST rejects as "Invalid JWT"). This function used to hand-roll
+    // createClient(url, key), the one snowflake on that path; it worked only while the platform
+    // still accepted the secret as a Bearer, and would have broken alone and confusingly the day
+    // it stopped. One door, one lock.
+    const admin = createAdminClient();
 
     // RATE GUARD (public, unauthenticated endpoint). LIMIT: 60 rows per business_id per rolling
     // 60 seconds. ON EXCEED: the load is DROPPED SILENTLY — no row, no alert, still HTTP 204 to

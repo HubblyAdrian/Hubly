@@ -6,6 +6,26 @@ what would settle it.
 
 ---
 
+## Signup / recovery email is UNVERIFIED after the 2026-08-25 secret rotation
+
+**Status:** open, unverified — not a known defect, an unproven path
+**Where:** `signup-notify` + the recovery delivery, fired by the claim triggers
+(`20260822130000`, `20260822150000`)
+
+After the secret key was rotated on 2026-08-25, page-view, booking notifications,
+and the conversation function were each exercised end to end and confirmed working.
+Signup/recovery was NOT: its real trigger is a **claim**, which requires
+authenticating an account, and that is barred here. The structural case that it's
+fine is strong — both triggers present the same `x-hubly-cron-secret` from Vault as
+booking-notify (rotation-independent), and the downstream (`createAdminClient` →
+Resend → `notification_deliveries`) is the identical chain booking proved. But that
+is a code-reading claim, not a row in a table. **What settles it:** the next real
+claim — Adrian's owner calls fire `signup-notify` for real — leaves a `sent`
+`notification_deliveries` row with a provider id. This closes itself; do not build a
+test for it.
+
+---
+
 ## Placeholder marks are capped by document order, not by importance
 
 **Status:** open, deliberate approximation — shipped 2026-08-21
