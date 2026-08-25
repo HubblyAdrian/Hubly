@@ -92,6 +92,12 @@ acts, or it says what will happen — it never gives directions to something it 
   explicit question, never left to fall out of conversation on its own. And because
   even "asked" leaves ~1 in 5 uncaptured, the ask is not done until the capture is
   confirmed (read it back, or detect the miss and ask again) — silence is not success.
+- **A category that describes people may not default to the flattering value.** When the
+  system cannot know who someone is, it must say it doesn't know and ask Adrian — never
+  guess the answer that makes us look better. `account_kind` defaulted to 'real' and cost a
+  week; the claim trigger then silently promoted unrecognized signups to 'market' — the same
+  bug one level up. The honest value is the default; confirmation is the manual action, not
+  the reverse (see `owner_identified`, migration `20260825130000`).
 - **Design sweeps run over every page; user/value numbers filter to MARKET.** A broken
   layout is broken regardless of who made it — so layout/quality sweeps run over all
   generated pages. But `account_kind` has three values — **test** (our drafts), **internal**
