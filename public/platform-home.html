@@ -1054,21 +1054,58 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     hcThreadScrollToEnd();
   }
 
-  var hcGrantExchanged = false;
-  function hcExchangeDraftGrant(grant){
-    if(!grant || hcGrantExchanged) return;
-    hcGrantExchanged = true;              // one exchange per page; the grant is single-use
+  // ── DRAFT PERSISTENCE: the fix for "refresh gave me a new empty business" ──────
+  // The draft's only durable pointer in the browser is the httpOnly `hubly_draft`
+  // cookie. It is written by exchanging a one-time grant here. The OLD version fired
+  // that exchange once and forgot it: a single dropped POST — a phone on flaky wifi,
+  // or a refresh that beat the async call — left the just-built draft unreachable, and
+  // the next message spawned a BRAND-NEW business. That is the duplicate bug. It cost
+  // real signups (Andres, 2026-08-22: four businesses in 40 minutes, two orphaned with
+  // full pages). Two changes close it:
+  //   1. Stash the grant in sessionStorage so the very refresh that used to destroy the
+  //      draft can COMPLETE the exchange it missed (hcResumeDraft redeems it on load).
+  //   2. Post-and-CONFIRM with retries instead of fire-and-forget; if it truly can't be
+  //      saved, say so (Rule 6) rather than pretend it worked.
+  // SECURITY NOTE (flagged for review): this persists a short-lived bearer grant to
+  // sessionStorage — reversing the deliberate "grant is never retained" choice in
+  // api/draft-session.js. Bounded on purpose: unclaimed draft only, one tab, cleared on
+  // tab close AND the instant the cookie is confirmed, ≤10-min server expiry. The trade
+  // is: a bounded grant in one tab vs. silently deleting a first-time user's work.
+  var HC_GRANT_KEY = 'hcDraftGrant';
+  var hcGrantConfirmed = false;
+  async function hcCookieSet(){
     try{
-      fetch('/api/draft-session', {
+      var g = await fetch('/api/draft-session', { credentials:'same-origin' })
+        .then(function(r){ return r.json(); }).catch(function(){ return null; });
+      return !!(g && g.ok && g.businessId);
+    }catch(e){ return false; }
+  }
+  async function hcPostGrant(grant){
+    try{
+      var r = await fetch('/api/draft-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',       // required for Set-Cookie to stick
         body: JSON.stringify({ grant: grant })
-      }).then(function(r){
-        if(!r.ok) hcGrantExchanged = false;   // allow a retry on a later turn
-      }).catch(function(){ hcGrantExchanged = false; });
-    }catch(e){ hcGrantExchanged = false; }
-    // The grant is not retained anywhere. Nothing reads it again.
+      });
+      return !!(r && r.ok);
+    }catch(e){ return false; }
+  }
+  async function hcExchangeDraftGrant(grant){
+    if(!grant || hcGrantConfirmed) return;
+    try{ sessionStorage.setItem(HC_GRANT_KEY, grant); }catch(e){}   // survive a refresh
+    for(var attempt = 0; attempt < 4 && !hcGrantConfirmed; attempt++){
+      if(await hcCookieSet()){ hcGrantConfirmed = true; break; }
+      await hcPostGrant(grant);
+      if(await hcCookieSet()){ hcGrantConfirmed = true; break; }
+      await new Promise(function(res){ setTimeout(res, 400 * (attempt + 1)); });
+    }
+    if(hcGrantConfirmed){
+      try{ sessionStorage.removeItem(HC_GRANT_KEY); }catch(e){}     // no longer needed
+    } else {
+      // Couldn't save a way back. Never silent — the whole point of the fix.
+      try{ hcAppendMessage('hubly', 'One heads-up: I couldn’t save a way back to this draft on this device, so refreshing might lose it. Sign up now and it’s yours for good.'); }catch(e){}
+    }
   }
 
   // ── THE CAPTURE GUARD ───────────────────────────────────────────────────────
@@ -2873,6 +2910,17 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   async function hcResumeDraft(){
     if(hc.draftBusiness) return;
     try{
+      // REFRESH RECOVERY: this load may be the reload that used to orphan the draft —
+      // it happened before the grant was exchanged for the cookie. If we stashed that
+      // grant (hcExchangeDraftGrant), redeem it NOW so the read below finds a live draft
+      // session instead of dropping the person onto a fresh, empty builder.
+      try{
+        var pendingGrant = sessionStorage.getItem(HC_GRANT_KEY);
+        if(pendingGrant && !(await hcCookieSet())){
+          await hcPostGrant(pendingGrant);
+          if(await hcCookieSet()){ hcGrantConfirmed = true; try{ sessionStorage.removeItem(HC_GRANT_KEY); }catch(e){} }
+        }
+      }catch(e){}
       var sess = await fetch('/api/draft-session', { credentials: 'same-origin' }).then(function(r){ return r.json(); }).catch(function(){ return null; });
       if(!sess || !sess.ok || !sess.assertion) return;
       var res = await fetch(SUPA_URL + '/functions/v1/resume-draft', {
