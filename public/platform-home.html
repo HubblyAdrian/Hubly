@@ -2347,9 +2347,24 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // pane anyway.
   var HC_SHOW_PAGE_RE = /^(?:can (?:i|we) )?(?:i )?(?:c(?:a|')?n'?t see|show me|go back to|back to|see|view|where is|wheres|where's|open)\s+(?:the |my |our )?(?:page|site|website|preview)\b/i;
 
-  function hcSendText(text){
+  async function hcSendText(text){
     text = (text || '').trim();
     if(!text || hc.busy) return;
+    // ── NEVER SPAWN A DUPLICATE OVER AN IN-PROGRESS DRAFT ──────────────────────
+    // The home input is submittable the instant the page paints, but hc.draftBusiness
+    // is populated only by hcResumeDraft — two async round-trips. A returning person who
+    // types before that resolves used to send draftBusiness:null, and the server made a
+    // BRAND-NEW empty business, orphaning the work they came back to (Andres lost four
+    // builds to exactly this). So if we don't yet hold a draft, give resume its chance to
+    // finish FIRST: an unclaimed draft in progress is ALWAYS continued, never replaced —
+    // whatever they just typed is treated as the next turn of that build.
+    //   Scope: this rescues the ANONYMOUS draft-cookie case only. A SIGNED-IN OWNER with a
+    //   CLAIMED business is deliberately left as-is — "start a second site vs. edit this
+    //   one" is a real ambiguity that belongs to the post-claim work, not here. It is
+    //   recorded as untouched in docs/KNOWN_ISSUES.md so it is not silently assumed fixed.
+    if(!hc.draftBusiness){
+      try{ await hcResumeDraft(); }catch(e){}
+    }
     if(HC_SHOW_PAGE_RE.test(text) && hc.draftBusiness){
       hcActivate();
       hcAppendMessage('user', text);
@@ -2907,7 +2922,16 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // /api/draft-session (the only reader of that cookie) turns it into a signed
   // assertion, and resume-draft turns THAT back into the draft. If a live draft
   // already exists this turn (a fresh build), we do nothing.
-  async function hcResumeDraft(){
+  // Resume is awaited from TWO places now: the on-load orchestration, and a home-input
+  // submit that races it (see hcSendText). They share ONE promise so resume-draft never
+  // fires twice, and a racing submit blocks on the very result the page load is fetching.
+  var _hcResumePromise = null;
+  function hcResumeDraft(){
+    if(hc.draftBusiness) return Promise.resolve();
+    if(!_hcResumePromise) _hcResumePromise = _hcResumeDraftOnce();
+    return _hcResumePromise;
+  }
+  async function _hcResumeDraftOnce(){
     if(hc.draftBusiness) return;
     try{
       // REFRESH RECOVERY: this load may be the reload that used to orphan the draft —

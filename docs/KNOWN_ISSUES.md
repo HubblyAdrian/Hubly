@@ -6,6 +6,29 @@ what would settle it.
 
 ---
 
+## Signed-in owner typing in the home input: continue-vs-new is UNRESOLVED
+
+**Status:** open, deliberately untouched — scoped out of the 2026-08-26 duplicate fix
+**Where:** `hcSendText` / `hcCall` in `public/platform-home.html`
+
+The home-input duplicate vector was fixed for the case that destroys work: an
+**anonymous** visitor with an unclaimed draft in progress now always **continues** that
+draft instead of spawning a new empty business (`hcSendText` awaits `hcResumeDraft`
+before it can start a new build). That fix was scoped **on purpose** to the anon
+draft-cookie case.
+
+The **signed-in owner** case is intentionally left as-is: when someone who already owns a
+claimed business types a fresh prompt into the home box, it is genuinely ambiguous whether
+they want to **edit that site** or **start a second one**. Andres wanted two sites; braxton
+may have (an orphaned "Mobile Detail Business" draft appeared six minutes after he claimed
+"Window Washing", while he was a signed-in owner — unattributable, but consistent). Unlike
+the anon case, neither branch here silently destroys unrecoverable work, so it does not meet
+the bar for an emergency fix. **What settles it:** the post-claim / multi-site work (a real
+owner surface that offers "edit this / start another"), not a guessed default. Do not assume
+this is handled by the duplicate fix — it is not.
+
+---
+
 ## Signup / recovery email is UNVERIFIED after the 2026-08-25 secret rotation
 
 **Status:** open, unverified — not a known defect, an unproven path

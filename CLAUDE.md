@@ -98,6 +98,14 @@ acts, or it says what will happen — it never gives directions to something it 
   week; the claim trigger then silently promoted unrecognized signups to 'market' — the same
   bug one level up. The honest value is the default; confirmation is the manual action, not
   the reverse (see `owner_identified`, migration `20260825130000`).
+- **A default that destroys work is never acceptable, even when the alternative is
+  ambiguous.** When Hubly can't tell whether someone wants to continue or start over, it
+  **continues** — losing an unfinished draft is unrecoverable, while starting a second site
+  is one sentence away. The costs are not symmetric, so the tie does not go to the
+  destructive option. Andres lost four builds in forty minutes to a default that chose
+  "start over" because the code couldn't tell an in-progress draft from a fresh visit (the
+  home-input duplicate vector; fixed by always continuing an unclaimed draft in progress).
+  Ambiguity is a reason to preserve, never a licence to discard.
 - **Design sweeps run over every page; user/value numbers filter to MARKET.** A broken
   layout is broken regardless of who made it — so layout/quality sweeps run over all
   generated pages. But `account_kind` has three values — **test** (our drafts), **internal**
