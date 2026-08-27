@@ -2368,9 +2368,16 @@ body.hc-active .footer,body.hc-active .hero{display:none}
               if(_realChange || hc.postBuildTurns >= 2) hc.accountOfferHeld = true;   // earned; now wait for a clear floor
             }
             if(hc.accountOfferHeld){
-              var _floorClear = !!_reply && !hcReasked
+              // The offer trails what Hubly ACTUALLY said last this turn — which is often an
+              // interimMessage (e.g. "…— done." on a setServices turn), not data.reply, so we
+              // must look at both or the offer never fires. Fire only if Hubly said something,
+              // it wasn't a question, and no capture ask/re-ask is on the floor.
+              var _shown = (Array.isArray(interim) ? interim.slice() : []);
+              if(_reply) _shown.push(_reply);
+              var _lastSaid = _shown.length ? String(_shown[_shown.length - 1]) : '';
+              var _floorClear = !!_lastSaid && !hcReasked
                 && !(hc.pendingCapture && hc.pendingCapture.askedFor)
-                && !/\?\s*["'”’)]*\s*$/.test(String(_reply));
+                && !/\?\s*["'”’)]*\s*$/.test(_lastSaid);
               if(_floorClear){ hc.accountOfferShown = true; hcAppendAccountOffer(); }
             }
           }
