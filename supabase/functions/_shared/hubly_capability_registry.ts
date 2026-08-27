@@ -1372,7 +1372,18 @@ async function uploadImageToStorage(
     body: bytes as unknown as BodyInit,
   });
   if (!uploadRes.ok) {
-    return { ok: false, result: { ok: false, real: false, summary: "The image could not be uploaded right now.", error: "storage_upload_failed" } };
+    // Say WHAT failed, never a blanket "couldn't upload". The client now shrinks
+    // and re-encodes to JPEG before sending, so these should be rare — but if the
+    // bucket still rejects, the person deserves the actual reason. The bucket
+    // returns 413 for over-size and 415 for a disallowed mime type.
+    const st = uploadRes.status;
+    if (st === 413) {
+      return { ok: false, result: { ok: false, real: false, summary: "That photo is too large even after shrinking — a smaller one will go right on.", error: "storage_too_large" } };
+    }
+    if (st === 415) {
+      return { ok: false, result: { ok: false, real: false, summary: "That image format isn't one I can put on a page — a JPG or PNG will work.", error: "storage_bad_format" } };
+    }
+    return { ok: false, result: { ok: false, real: false, summary: "The photo didn't make it to storage — trying again in a moment should do it.", error: "storage_upload_failed" } };
   }
   // Measured from the bytes we already have in hand, before they go anywhere.
   // The header needs the SHAPE of a logo to lay it out -- a wordmark and a

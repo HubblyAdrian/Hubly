@@ -2463,10 +2463,10 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // photo dropped in chat reaches the generator and rebuilds the page.
   function hcSendPhoto(file){
     if(!file) return;
-    if(!/^image\//i.test(file.type||'')){
-      hcAppendMessage('hubly', "A photo needs to be an image — PNG, JPG or WebP.");
-      return;
-    }
+    // No MIME pre-check: a HEIC from the camera roll often arrives with an empty
+    // or non-standard file.type, and rejecting on that is exactly how the iPhone
+    // default gets blocked. hcPrepareImageForUpload re-encodes to JPEG and tells
+    // us honestly if it truly can't decode the bytes.
     if(hc.busy){
       hcAppendMessage('hubly', "One moment — still working on the last thing.");
       return;
@@ -2475,11 +2475,21 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       hcAppendMessage('hubly', "Tell me what you do first and I'll build the page — then your photos have somewhere to go.");
       return;
     }
-    hcFileToBase64(file).then(function(data){
-      hc.pendingPhotoUpload = { imageBase64: data, mediaType: file.type || 'image/jpeg' };
+    hcPrepareImageForUpload(file).then(function(prepared){
+      hc.pendingPhotoUpload = prepared;   // { imageBase64, mediaType:'image/jpeg' } — already shrunk + converted
       hcSendText("Here's a photo of my work.");
-    }).catch(function(){
-      hcAppendMessage('hubly', "That image couldn't be read — mind trying a different one?");
+    }).catch(function(err){
+      var code = err && err.code;
+      if(code === 'format'){
+        // The browser could not DECODE the source at all. On a phone this is rare
+        // (iOS hands us a JPEG), but a raw HEIC opened on a desktop browser that
+        // lacks the codec lands here — say what's wrong, not "couldn't upload".
+        hcAppendMessage('hubly', "I can't read that image format on my end — if it's an iPhone HEIC, saving it as a JPG first will do it, and then it goes straight onto your page.");
+      } else if(code === 'read'){
+        hcAppendMessage('hubly', "That file wouldn't open — mind trying the photo again?");
+      } else {
+        hcAppendMessage('hubly', "Something went wrong preparing that image — try a different photo and I'll put it on your page.");
+      }
     });
   }
 
@@ -2634,6 +2644,49 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         resolve(comma !== -1 ? result.slice(comma + 1) : result);
       };
       reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Prepare a photo for UPLOAD TO STORAGE: decode it, apply EXIF orientation,
+  // downscale the longest edge to <=2000px, and re-encode as JPEG. One canvas
+  // pass handles all three of the things that block a real phone photo today:
+  //   - FORMAT: the bucket allows only jpeg/png/webp/gif, so a raw HEIC is
+  //     rejected. Drawing to a canvas and exporting image/jpeg converts it — on
+  //     any browser that can DECODE the source (iOS Safari decodes HEIC; a file
+  //     picker whose accept excludes .heic also makes iOS hand us JPEG already).
+  //   - SIZE: an 8-12MB phone photo exceeds the 5MB bucket cap. At 2000px/JPEG
+  //     it lands well under a megabyte.
+  //   - ORIENTATION: a canvas draw bakes in the EXIF rotation, so a portrait
+  //     shot is no longer sideways.
+  // Ported from hubly.html's compressImageDataUrl — the code existed, it was just
+  // on the legacy editor path, never on the builder chat. Rejects with an Error
+  // whose .code says WHY, so the caller can tell the person what actually failed
+  // instead of a blanket "couldn't upload". Model-VISION images (a price list to
+  // read) deliberately do NOT go through here: OCR needs full resolution.
+  function hcPrepareImageForUpload(file){
+    var MAX = 2000;
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onerror = function(){ var e = new Error('read failed'); e.code = 'read'; reject(e); };
+      reader.onload = function(){
+        var img = new Image();
+        img.onload = function(){
+          try {
+            var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+            if(!w || !h){ var e0 = new Error('empty image'); e0.code = 'format'; reject(e0); return; }
+            if(w > MAX || h > MAX){ if(w >= h){ h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; } }
+            var c = document.createElement('canvas'); c.width = w; c.height = h;
+            c.getContext('2d').drawImage(img, 0, 0, w, h);
+            var dataUrl = c.toDataURL('image/jpeg', 0.85);
+            if(!/^data:image\/jpeg/.test(dataUrl)){ var e1 = new Error('encode failed'); e1.code = 'decode'; reject(e1); return; }
+            var comma = dataUrl.indexOf(',');
+            resolve({ imageBase64: comma !== -1 ? dataUrl.slice(comma + 1) : dataUrl, mediaType: 'image/jpeg' });
+          } catch(err){ var e2 = new Error('canvas failed'); e2.code = 'decode'; reject(e2); }
+        };
+        img.onerror = function(){ var e = new Error('decode failed'); e.code = 'format'; reject(e); };
+        img.src = String(reader.result || '');
+      };
       reader.readAsDataURL(file);
     });
   }
