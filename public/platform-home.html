@@ -1001,6 +1001,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // persists it either. This is what makes the canvas real instead of a mockup.
   var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null, pendingCapture: null, accountOfferShown: false, postBuildTurns: 0 };
 
+  // Build-flow diagnostic (parity with ?authdiag). Gated behind ?builddiag=1 and
+  // deliberately WRITE-ONLY: it exposes a way to reset the in-memory draft POINTER so the
+  // draft-continuation guard can be verified by forcing its exact precondition
+  // (hc.draftBusiness=null on a page that still holds a live draft cookie), WITHOUT ever
+  // exposing hc itself — hc.draftBusiness carries the draftToken bearer credential, which
+  // must never become globally readable. Returns only the prior id (never the token).
+  try{ if(/[?&]builddiag=1/.test(location.search)) window.__hcClearDraft = function(){ var had = hc.draftBusiness; hc.draftBusiness = null; return had ? had.id : null; }; }catch(e){}
+
   // ── Draft claim session ───────────────────────────────────────────────────
   // A draft belongs to nobody until it is claimed. hubly-conversation returns a
   // short-lived signed GRANT the first time it creates one; this exchanges it
@@ -2143,11 +2151,34 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     }, 420);
   }
 
-  function hcCall(extra){
+  async function hcCall(extra){
     if(hc.busy) return;
     hc.busy = true;
     if(!hc.draftBusiness) hcRenderCanvasThinking();
     var typingEl = hcAppendTyping();
+    // ── CONTINUE AN IN-PROGRESS DRAFT, NEVER SPAWN A DUPLICATE ─────────────────
+    // If we don't yet hold the draft (the home input is live before hcResumeDraft's
+    // async round-trips finish), resolve it FIRST so this turn continues the draft
+    // instead of creating a new empty business (the home-input duplicate vector; Andres
+    // lost four builds to it). ORDER MATTERS: the caller has already shown the user's
+    // bubble and the typing indicator is on screen just above, so the person has SEEN
+    // that Hubly heard them — we never block acknowledgement on this network call (Rule 6).
+    // BOUNDED (~3s): a hung /api/draft-session on a phone must not swallow the message. If
+    // resume hasn't resolved in time, proceed with what we know and let the send go — a
+    // duplicate is recoverable, a vanished message is not. The timeout is logged so we can
+    // see how often it fires for the very people this fix is for.
+    if(!hc.draftBusiness){
+      try{
+        await Promise.race([
+          hcResumeDraft(),
+          new Promise(function(_res, rej){ setTimeout(function(){ rej(new Error('resume_timeout')); }, 3000); })
+        ]);
+      }catch(e){
+        if(e && e.message === 'resume_timeout'){
+          try{ console.warn('[hubly] draft resume did not resolve in 3s — sending anyway so the message is never lost'); }catch(_e){}
+        }
+      }
+    }
     var logoUploadForThisCall = hc.pendingLogoUpload || null;
     hc.pendingLogoUpload = null; // one-shot — never resent on a later, unrelated call
     var photoUploadForThisCall = hc.pendingPhotoUpload || null;
@@ -2347,24 +2378,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // pane anyway.
   var HC_SHOW_PAGE_RE = /^(?:can (?:i|we) )?(?:i )?(?:c(?:a|')?n'?t see|show me|go back to|back to|see|view|where is|wheres|where's|open)\s+(?:the |my |our )?(?:page|site|website|preview)\b/i;
 
-  async function hcSendText(text){
+  function hcSendText(text){
     text = (text || '').trim();
     if(!text || hc.busy) return;
-    // ── NEVER SPAWN A DUPLICATE OVER AN IN-PROGRESS DRAFT ──────────────────────
-    // The home input is submittable the instant the page paints, but hc.draftBusiness
-    // is populated only by hcResumeDraft — two async round-trips. A returning person who
-    // types before that resolves used to send draftBusiness:null, and the server made a
-    // BRAND-NEW empty business, orphaning the work they came back to (Andres lost four
-    // builds to exactly this). So if we don't yet hold a draft, give resume its chance to
-    // finish FIRST: an unclaimed draft in progress is ALWAYS continued, never replaced —
-    // whatever they just typed is treated as the next turn of that build.
-    //   Scope: this rescues the ANONYMOUS draft-cookie case only. A SIGNED-IN OWNER with a
-    //   CLAIMED business is deliberately left as-is — "start a second site vs. edit this
-    //   one" is a real ambiguity that belongs to the post-claim work, not here. It is
-    //   recorded as untouched in docs/KNOWN_ISSUES.md so it is not silently assumed fixed.
-    if(!hc.draftBusiness){
-      try{ await hcResumeDraft(); }catch(e){}
-    }
     if(HC_SHOW_PAGE_RE.test(text) && hc.draftBusiness){
       hcActivate();
       hcAppendMessage('user', text);
@@ -2922,13 +2938,20 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // /api/draft-session (the only reader of that cookie) turns it into a signed
   // assertion, and resume-draft turns THAT back into the draft. If a live draft
   // already exists this turn (a fresh build), we do nothing.
-  // Resume is awaited from TWO places now: the on-load orchestration, and a home-input
-  // submit that races it (see hcSendText). They share ONE promise so resume-draft never
-  // fires twice, and a racing submit blocks on the very result the page load is fetching.
+  // Resume is awaited from TWO places now: the on-load orchestration, and hcCall (a
+  // submit that raced the load). They share ONE in-flight promise so resume-draft never
+  // fires twice for the same race. It is cleared ON SETTLE, deliberately: dedupe covers
+  // concurrent callers, but if we STILL hold no draft afterwards, a later submit must be
+  // able to try again rather than get a stale, cached "nothing". (A resolved cache would
+  // also make hc.draftBusiness impossible to recover once nulled — which is exactly the
+  // forced-precondition test for this guard.)
   var _hcResumePromise = null;
   function hcResumeDraft(){
     if(hc.draftBusiness) return Promise.resolve();
-    if(!_hcResumePromise) _hcResumePromise = _hcResumeDraftOnce();
+    if(!_hcResumePromise){
+      _hcResumePromise = _hcResumeDraftOnce();
+      _hcResumePromise.then(function(){ _hcResumePromise = null; }, function(){ _hcResumePromise = null; });
+    }
     return _hcResumePromise;
   }
   async function _hcResumeDraftOnce(){
