@@ -1617,7 +1617,7 @@ export async function generateFreeformPage(
   brief: string,
   record: Record<string, unknown>,
   jobId?: string | null,
-): Promise<{ ok: true; html: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string; imagesPlaced?: number; imageBlanks?: number; placeholders?: number; strippedCredentials?: number } | { ok: false; error: string }> {
+): Promise<{ ok: true; html: string; plan: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string; imagesPlaced?: number; imageBlanks?: number; placeholders?: number; strippedCredentials?: number } | { ok: false; error: string }> {
   // WHAT HUBLY SUPPLIES, told to the model so it can DESIGN for it.
   //
   // The first three freeform pages were call-only brochures for one reason:
@@ -1707,12 +1707,45 @@ export async function generateFreeformPage(
   let finishReason = "";
   const usage = emptyUsage();
   let modelUsed: string | undefined;
+  // ── TWO-PASS: a cheap planning call commits to THIS page's shape in plain words BEFORE any
+  // HTML exists; the generation then executes that commitment (prepended to the system prompt,
+  // ahead of the general rules). Reasoning stays LOW on both; the planner is capped small so
+  // total build stays near ~40s. The plan is persisted in design_rationale (cheapest debugging
+  // artifact: when a page comes out wrong we can read what it MEANT to build).
+  let plan = "";
+  try {
+    const planResp = await HublyAI.complete({
+      feature: "hubly-freeform-plan",
+      task: "chat",
+      reasoningEffort: "low",
+      maxTokens: 500,
+      system:
+        "You decide what ONE web page should BE for a specific local business, before any HTML exists. You are NOT writing the page — you commit to its shape in plain words so a builder executes exactly that. Think about THIS trade specifically: in the first three seconds, what must a visitor see to know they're in the right place and can act; what would be a WASTE of space for this trade (a section generic templates include but this business does not need); what is the ONE thing this page is for; and what SHAPE that implies. Be opinionated and trade-specific — a roofer after a hailstorm is not a bakery is not a bookkeeper, and they should NOT end up the same shape. Do NOT default to 'top nav + hero-with-image-on-the-right + three service cards' unless it is genuinely right for THIS trade. Then COMMIT in 3-5 sentences: the overall shape, the one hero image or none, nav or no nav, how many sections and what each is for, and where the single action lives. Concrete, e.g. 'One full-bleed photo of a finished roof, the phone number huge over it, three sentences of what you do and a request-a-look button — no top nav, no card grid; roofing is an emergency, not a browse.' Output ONLY the commitment. No preamble, no options, no bullet lists of alternatives.",
+      messages: [{ role: "user", content: `THE BUSINESS RECORD:\n${JSON.stringify(record, null, 1)}\n\nThe owner's own words: ${brief}` }],
+      jsonMode: false,
+    });
+    plan = String(planResp.text || "").trim();
+    addUsage(usage, planResp.usage);
+    if (!plan) throw new Error("planner returned an empty plan");
+  } catch (e) {
+    // LOUD + COUNTABLE — never a silent fallback. If the planner starts failing, every page
+    // quietly regresses to single-pass; this makes "how often did the planner not run" a query,
+    // not a guess (same discipline as postbuild_fallback_events). The build still proceeds
+    // single-pass so the owner still gets a page — but the degradation is on the record, and a
+    // page built without a plan has a NULL design_rationale so it is distinguishable after the fact.
+    plan = "";
+    console.error(`freeform-planner FAILED [${businessId}] — building single-pass without a plan: ${String((e as Error)?.message || e).slice(0, 200)}`);
+    try { await callBusinessRpc("record_planner_fallback", { p_business_id: businessId, p_error: String((e as Error)?.message || e).slice(0, 300) }); } catch (_r) { /* recording must not fail the build */ }
+  }
+  const genBrief = plan
+    ? `THE PLAN — build EXACTLY this page. Execute its shape faithfully; do NOT fall back to a generic nav+hero+cards layout if the plan says otherwise:\n${plan}\n\nThe owner's own words: ${brief}`
+    : brief;
   try {
     const ai = await HublyAI.complete({
       feature: "hubly-freeform-generate",
       task: "document_generate",
       system,
-      messages: [{ role: "user", content: brief }],
+      messages: [{ role: "user", content: genBrief }],
       // The document_generate route sets jsonMode because the AST path returns
       // JSON. This one returns an HTML document, and leaving JSON mode on makes
       // the provider wrap or refuse it.
@@ -1852,6 +1885,7 @@ export async function generateFreeformPage(
   return {
     ok: true,
     html: wired.html,
+    plan,
     brief: { brief, images: resolved.placed.map((p) => ({ url: p.imageUrl, provider: p.provider, slot: p.slot })), generatedAt: new Date().toISOString() },
     labels: stamped.coverage.labelled,
     usage,
@@ -2558,6 +2592,7 @@ async function runFreeformGeneration(
     p_rendered_html: gen.html,
     p_created_by: "ai",
     p_format: "html",
+    p_design_rationale: (gen as { plan?: string }).plan || null,
   });
   sw.mark("persistDocument");
   if (!r || r.ok !== true) {
