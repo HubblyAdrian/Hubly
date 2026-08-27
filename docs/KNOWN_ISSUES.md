@@ -6,6 +6,43 @@ what would settle it.
 
 ---
 
+## The model's history is missing the post_build turn (the first services ask)
+
+**Status:** open, higher priority than it looks — the client-side tail strip is a STOPGAP for it
+**Where:** `hcPostBuildTurn` in `public/platform-home.html` (the success handler ~line 2046);
+compare the normal `hcCall` handler, which threads via `hc.messages = data.messages`
+
+When the page finishes building, the first services question is a `post_build` turn. The
+server composes it correctly and returns the full thread (`messages: history`, including the
+assistant ask), but `hcPostBuildTurn` never stores it back into `hc.messages` — it appends the
+reply to the screen and returns. So from the model's point of view, **it asked the single most
+important question in the product and then has no record of having asked it.** Every later turn
+is composed from a transcript with a hole at that exact moment. The repeated price-list photo
+tail is one visible symptom (the model re-offers because it doesn't know it already did);
+expect other, unattributed symptoms.
+
+**The client-side `hcOncePhotoOffer` strip exists only because of this** — it papers over the
+repeated tail on the display side. It is a stopgap and must be removed once the history is
+whole; do not read that regex and assume the conversation is sound.
+
+**What threading it would take, and the cost (do not fix without weighing this — it touches the
+services-capture flow we spent the week building):**
+- Minimal change is one line — `hc.messages = data.messages` in `hcPostBuildTurn`'s success
+  handler — BUT the server's returned history also contains the synthetic `role:"user"`
+  event Hubly injects to trigger the ask (`"[SYSTEM EVENT: the website just finished
+  building… give your post-build first message NOW… the SERVICES question…]"`, line ~647).
+  Threading it wholesale sends that fake user instruction to the model on **every** later
+  turn, which can re-trigger services-first behaviour or read oddly. A clean fix therefore
+  also strips that synthetic event from the threaded history (server splices it out before
+  returning, or client filters it) — a few lines, not one.
+- Must re-verify the capture guard (`pendingCapture` / `hcCheckCaptureMiss`) and the
+  "ask once, confirm capture" measurement still hold with the ask now in history, via a real
+  build — this is the capture moment, so it can't be trusted from code review.
+- Once history is whole, the server-side `priorAssistantSaid` check works and the client
+  strip should be deleted.
+
+---
+
 ## draftToken lives in client memory (existing design, worth revisiting)
 
 **Status:** open, existing design — not introduced here, flagged for a later look

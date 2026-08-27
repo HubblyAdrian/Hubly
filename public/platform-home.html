@@ -2352,24 +2352,26 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           if(!hcReasked && ['services','hours','area','phone'].indexOf(data.askedFor) >= 0){
             hc.pendingCapture = { askedFor: data.askedFor, tries: 0 };
           }
-          // EARN THE ACCOUNT OFFER. Not beside the first question — it appears AFTER the
-          // first real change lands (they've just watched Hubly change their own site from
-          // one sentence, so the door is concrete). Backstop: if they never make a change,
-          // show it after a couple of post-build turns anyway, so the door is never
-          // invisible. Once only, and NEVER for a claimed draft (a returning owner gets no
-          // offer). Copy + preaccount tag are unchanged, so supersede-on-sign-in still holds.
-          if(hc.postedBuildFollowup && !hc.accountOfferShown && !hc.accountOfferHeld && !hc.draftClaimed){
-            hc.postBuildTurns = (hc.postBuildTurns || 0) + 1;
-            var _realChange = Array.isArray(data.actions) && data.actions.some(function(a){ return a.ok && a.real; });
-            if(_realChange || hc.postBuildTurns >= 2){
-              // EARN, then WAIT — never append here. Appending in this handler puts the
-              // offer in the SAME beat as the model's reply, which is exactly the "two
-              // composers talking over each other" defect (2026-08-26): the offer landed
-              // on the back of the model's follow-up question. Instead ARM it; the person's
-              // NEXT message fires it standalone (hcSendText), in the clear gap before Hubly
-              // speaks again. Released whatever they say — good answer or not — so it can
-              // never be starved by a model that asks something every turn.
-              hc.accountOfferHeld = true;
+          // EARN, THEN ADD THE ACCOUNT NOTE — after Hubly has ANSWERED, never into an open
+          // question. Earned by the first real change (or a couple of post-build turns as a
+          // backstop; once only, never for a claimed draft). It then fires on the first turn
+          // whose reply is a clean statement — a model reply was shown, it doesn't end in a
+          // question, and no capture ask/re-ask is on the floor — so the sequence reads:
+          // person speaks -> Hubly answers them -> Hubly adds the note. Answer first, then the
+          // note (same principle as one ask at a time). Never stapled to a question; if the
+          // floor isn't clear this turn, it waits for one that is. (accountOfferHeld = earned
+          // and waiting.) Copy + preaccount tag unchanged, so supersede-on-sign-in still holds.
+          if(hc.postedBuildFollowup && !hc.accountOfferShown && !hc.draftClaimed){
+            if(!hc.accountOfferHeld){
+              hc.postBuildTurns = (hc.postBuildTurns || 0) + 1;
+              var _realChange = Array.isArray(data.actions) && data.actions.some(function(a){ return a.ok && a.real; });
+              if(_realChange || hc.postBuildTurns >= 2) hc.accountOfferHeld = true;   // earned; now wait for a clear floor
+            }
+            if(hc.accountOfferHeld){
+              var _floorClear = !!_reply && !hcReasked
+                && !(hc.pendingCapture && hc.pendingCapture.askedFor)
+                && !/\?\s*["'”’)]*\s*$/.test(String(_reply));
+              if(_floorClear){ hc.accountOfferShown = true; hcAppendAccountOffer(); }
             }
           }
           // THE DROPZONE COMES LAST, after the sentence that points at it.
@@ -2418,15 +2420,6 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     hcAppendMessage('user', text);
     hcPersist('user', text);
     hc.messages.push({ role: 'user', content: text });
-    // Release a HELD account offer here — in the gap right after the person's message and
-    // before Hubly replies. It was earned last turn but withheld because a question was on
-    // the floor; this message clears the floor, whatever it says. Standalone, once only,
-    // never stapled to a model message (one ask at a time; no two composers in one beat).
-    if(hc.accountOfferHeld && !hc.accountOfferShown && !hc.draftClaimed){
-      hc.accountOfferHeld = false;
-      hc.accountOfferShown = true;
-      hcAppendAccountOffer();
-    }
     hcCall();
     // Sending is a release point for a deferred auto-switch (they're no longer
     // mid-sentence). The field is already cleared, so this flushes cleanly.
