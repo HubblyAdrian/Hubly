@@ -999,7 +999,26 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // created (business.startDraft) — { id, slug, draftToken, url }. Threaded
   // back to the server every turn exactly like `messages`; the server never
   // persists it either. This is what makes the canvas real instead of a mockup.
-  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null, pendingCapture: null, accountOfferShown: false, accountOfferHeld: false, postBuildTurns: 0 };
+  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null, pendingCapture: null, accountOfferShown: false, accountOfferHeld: false, photoOfferShown: false, postBuildTurns: 0 };
+
+  // ONE price-list photo offer per conversation. The model reliably repeats the canned
+  // "send a photo of your price list" tail on every price ask — a form, not a person
+  // (2026-08-26). The prompt asks for once-only but does not reliably comply, and the FIRST
+  // ask is a post_build turn whose reply is never threaded into hc.messages — so the server
+  // can't catch the repeat. The client displays every reply, so it strips here: keep the
+  // offer the first time it appears, strip the trailing tail every time after. Deterministic,
+  // display-side, removes text only — never re-prompts (prohibition 1). The plain price
+  // question stays; if stripping the tail leaves it without end punctuation, restore a "?".
+  function hcOncePhotoOffer(text){
+    text = String(text || '');
+    if(!/a photo of your price list/i.test(text)) return text;
+    if(!hc.photoOfferShown){ hc.photoOfferShown = true; return text; }   // first time: keep it
+    var TAIL = /\s*[—–,.-]?\s*(?:tell me,?\s*)?(?:or\s+)?send\s+(?:me\s+)?a photo of your price list[^.!?]*[.!?]?\s*$/i;
+    var stripped = text.replace(TAIL, '').trim();
+    if(!stripped) return text;                              // never blank the whole message
+    if(!/[.!?]$/.test(stripped)) stripped += '?';           // the question lost its punctuation with the tail
+    return stripped;
+  }
 
   // Build-flow diagnostic (parity with ?authdiag). Gated behind ?builddiag=1 and
   // deliberately WRITE-ONLY: it exposes a way to reset the in-memory draft POINTER so the
@@ -2012,6 +2031,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         var fb = "That's your site. Tell me what you'd like to change.";
         hcAppendMessage('hubly', fb); hcPersist('assistant', fb);
       } else if(reply){
+        reply = hcOncePhotoOffer(reply);
         hcAppendMessage('hubly', reply); hcPersist('assistant', reply);
       }
       // No account offer here — the post-build turn says ONLY the services question. The
@@ -2324,7 +2344,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           // Same on the reply: on a build turn it's the skeleton narration (or
           // "building now" filler) — never echoed into the chat. On a normal turn
           // it shows.
-          if(!generatingDocument && data.reply && !hcIsFallbackReply(data.reply)){ hcAppendMessage('hubly', data.reply); hcPersist('assistant', data.reply); }
+          if(!generatingDocument && data.reply && !hcIsFallbackReply(data.reply)){ var _reply = hcOncePhotoOffer(data.reply); hcAppendMessage('hubly', _reply); hcPersist('assistant', _reply); }
           // THE CAPTURE GUARD, after the reply so the re-ask lands last. Check the ask
           // that was pending from last turn; if it wasn't recorded, own the miss and
           // re-ask. Then arm from THIS turn's ask (unless a re-ask already re-armed it).

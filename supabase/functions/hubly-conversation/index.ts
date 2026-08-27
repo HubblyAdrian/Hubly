@@ -1445,18 +1445,11 @@ Deno.serve(async (req) => {
       const deduped = dedupeConversationMessages(interimMessages, finalText, priorAssistantSaid);
       // rebuildSkippedNote is empty unless a rebuild was refused over the
       // owner's manual edits, in which case they are told and offered one.
-      let finalReply = (deduped.reply || "") + rebuildSkippedNote;
-      // ONE price-list photo offer per conversation. The model reliably repeats the canned
-      // "send a photo of your price list" tail on every price re-ask — a form, not a person
-      // (2026-08-26). The prompt asks for once-only, but prompt adherence is not reliable for
-      // "never repeat X", so this is the deterministic backstop: if the offer was already
-      // made on an earlier assistant turn, strip the whole sentence carrying it from THIS
-      // reply. One pass, removes text only, never re-prompts (prohibition 1) — the plain
-      // price question stays, just without the repeated tail.
-      const PHOTO_OFFER_SENTENCE_RE = /(?:^|(?<=[.!?]))\s*[^.!?]*\bsend\b[^.!?]*a photo of your price list[^.!?]*[.!?]/i;
-      if (priorAssistantSaid.some((t) => /a photo of your price list/i.test(t)) && PHOTO_OFFER_SENTENCE_RE.test(finalReply)) {
-        finalReply = finalReply.replace(PHOTO_OFFER_SENTENCE_RE, "").replace(/[ \t]{2,}/g, " ").replace(/\s+([.!?,])/g, "$1").trim();
-      }
+      const finalReply = (deduped.reply || "") + rebuildSkippedNote;
+      // NOTE: the "offer the price-list photo ONCE per conversation" rule is enforced on the
+      // CLIENT (hcOncePhotoOffer), not here: the first ask is a post_build turn whose reply is
+      // never threaded back into `messages`, so this handler can't see it to know the offer was
+      // already made. The client displays every reply, so it is the one place that can.
       // NOTE: the transcript is written by the CLIENT, not here — it stores what
       // the person actually saw as Hubly's voice (on a build turn that's the
       // narration in interimMessages, not this reply field, which is the
