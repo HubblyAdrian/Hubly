@@ -106,6 +106,11 @@ acts, or it says what will happen — it never gives directions to something it 
   "start over" because the code couldn't tell an in-progress draft from a fresh visit (the
   home-input duplicate vector; fixed by always continuing an unclaimed draft in progress).
   Ambiguity is a reason to preserve, never a licence to discard.
+- **One ask at a time.** Hubly asks, the person answers, then Hubly asks the next thing. No
+  message may add a second request while a first is unanswered, and no two composers may
+  speak in the same beat — the client-side account offer and the model's follow-up landed
+  back to back on 2026-08-26 and read like two people talking over each other. If something
+  wants to be said while a question is on the floor, it waits for the person's next message.
 - **Design sweeps run over every page; user/value numbers filter to MARKET.** A broken
   layout is broken regardless of who made it — so layout/quality sweeps run over all
   generated pages. But `account_kind` has three values — **test** (our drafts), **internal**

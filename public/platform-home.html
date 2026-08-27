@@ -999,7 +999,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // created (business.startDraft) — { id, slug, draftToken, url }. Threaded
   // back to the server every turn exactly like `messages`; the server never
   // persists it either. This is what makes the canvas real instead of a mockup.
-  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null, pendingCapture: null, accountOfferShown: false, postBuildTurns: 0 };
+  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null, pendingCapture: null, accountOfferShown: false, accountOfferHeld: false, postBuildTurns: 0 };
 
   // Build-flow diagnostic (parity with ?authdiag). Gated behind ?builddiag=1 and
   // deliberately WRITE-ONLY: it exposes a way to reset the in-memory draft POINTER so the
@@ -2041,7 +2041,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     if(claimed){
       msg = "Your address " + host + " is live. Send your own photos and logo any time and I'll put them on.";
     } else {
-      msg = "The address " + host + " is reserved for you — it goes live the moment you make an account. Want your own photos and logo on it, and the address live? That takes an account — about ten seconds.";
+      msg = "The address " + host + " is reserved for you. Making an account takes about ten seconds and puts it live.";
     }
     var el = hcAppendMessage('hubly', msg);
     if(!claimed && el) el.setAttribute('data-hc-msg', 'preaccount');
@@ -2338,12 +2338,18 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           // show it after a couple of post-build turns anyway, so the door is never
           // invisible. Once only, and NEVER for a claimed draft (a returning owner gets no
           // offer). Copy + preaccount tag are unchanged, so supersede-on-sign-in still holds.
-          if(hc.postedBuildFollowup && !hc.accountOfferShown && !hc.draftClaimed){
+          if(hc.postedBuildFollowup && !hc.accountOfferShown && !hc.accountOfferHeld && !hc.draftClaimed){
             hc.postBuildTurns = (hc.postBuildTurns || 0) + 1;
             var _realChange = Array.isArray(data.actions) && data.actions.some(function(a){ return a.ok && a.real; });
             if(_realChange || hc.postBuildTurns >= 2){
-              hc.accountOfferShown = true;
-              hcAppendAccountOffer();
+              // EARN, then WAIT — never append here. Appending in this handler puts the
+              // offer in the SAME beat as the model's reply, which is exactly the "two
+              // composers talking over each other" defect (2026-08-26): the offer landed
+              // on the back of the model's follow-up question. Instead ARM it; the person's
+              // NEXT message fires it standalone (hcSendText), in the clear gap before Hubly
+              // speaks again. Released whatever they say — good answer or not — so it can
+              // never be starved by a model that asks something every turn.
+              hc.accountOfferHeld = true;
             }
           }
           // THE DROPZONE COMES LAST, after the sentence that points at it.
@@ -2392,6 +2398,15 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     hcAppendMessage('user', text);
     hcPersist('user', text);
     hc.messages.push({ role: 'user', content: text });
+    // Release a HELD account offer here — in the gap right after the person's message and
+    // before Hubly replies. It was earned last turn but withheld because a question was on
+    // the floor; this message clears the floor, whatever it says. Standalone, once only,
+    // never stapled to a model message (one ask at a time; no two composers in one beat).
+    if(hc.accountOfferHeld && !hc.accountOfferShown && !hc.draftClaimed){
+      hc.accountOfferHeld = false;
+      hc.accountOfferShown = true;
+      hcAppendAccountOffer();
+    }
     hcCall();
     // Sending is a release point for a deferred auto-switch (they're no longer
     // mid-sentence). The field is already cleared, so this flushes cleanly.

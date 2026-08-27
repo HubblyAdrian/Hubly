@@ -6,6 +6,24 @@ what would settle it.
 
 ---
 
+## draftToken lives in client memory (existing design, worth revisiting)
+
+**Status:** open, existing design — not introduced here, flagged for a later look
+**Where:** `hc.draftBusiness.draftToken` in `public/platform-home.html`; returned by
+`resume-draft` and `hubly-conversation`
+
+An unclaimed draft's `draftToken` is a bearer credential for that business. It is
+threaded to the client and held in `hc.draftBusiness.draftToken`, and sent back to
+`hubly-conversation` every turn. So anything that can read `hc` (an XSS on the page, or
+a debug hook that exposes `hc`) can lift it and act on that unclaimed draft. This is
+long-standing design, not a regression — noting it because it is the reason the
+`?builddiag=1` diagnostic is write-only and never exposes `hc` (see docs/DIAGNOSTIC_FLAGS.md).
+**What would settle it:** keep the draft credential server-side (mint a short, per-turn,
+purpose-scoped grant the way `/api/draft-session` does) so the permanent token never enters
+the browser. Not urgent, not this task.
+
+---
+
 ## Signed-in owner typing in the home input: continue-vs-new is UNRESOLVED
 
 **Status:** open, deliberately untouched — scoped out of the 2026-08-26 duplicate fix
