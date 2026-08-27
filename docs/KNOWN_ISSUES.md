@@ -6,6 +6,31 @@ what would settle it.
 
 ---
 
+## Two Hubly messages acknowledge the same action (interim + model reply)
+
+**Status:** open, logged during the 2026-08-27 offer-move verification — same family as the
+account-offer "two composers" defect
+**Where:** the interimMessages vs data.reply split in `hubly-conversation` / `showNext` in
+`public/platform-home.html`
+
+On a setServices turn, the person's ONE message drew THREE Hubly replies, two of which say
+the same thing — the interim confirmation and the model's reply both acknowledge the same
+setServices action. Verbatim from the verification transcript (ZZ Verify7 Carpet):
+
+> YOU: We do steam cleaning 110, stain removal 75, and pet odor treatment 95.
+> HUBLY: Steam cleaning $110, stain removal $75, pet odor treatment $95 — done.
+> HUBLY: Done — those three services are on the site now.
+> HUBLY: The address zz-verify7-carpet.myhubly.app is reserved for you. Making an account takes about ten seconds and puts it live.
+
+The first two are redundant: a read-back with "— done." and then a second "Done — … on the
+site now." Both narrate the same capability result. This is the same two-composers shape as
+the account offer — an interim line and the model's own reply speaking to the same beat.
+**What would settle it:** one acknowledgement per action — suppress the interim confirmation
+when the model's reply already acknowledges it, or vice versa. Not fixed now (logged during
+the render investigation).
+
+---
+
 ## The model's history is missing the post_build turn (the first services ask)
 
 **Status:** open, higher priority than it looks — the client-side tail strip is a STOPGAP for it
