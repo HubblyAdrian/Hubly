@@ -227,12 +227,20 @@ export async function resolveImages(html: string, ctx: ImageResolveContext): Pro
 
     // 2. STOCK — atmosphere roles only, never a work role, only if configured.
     if (!isWork && ctx.fetchStock) {
-      const query = `${subject} — no people`;
+      // The ART-DIRECTION PHRASE decides whether people belong — not a blanket rule. The
+      // generator prompt writes "no people" into the subject for object/result shots (a
+      // finished roofline, a coated wheel) and leaves it out for people-facing work (a barber
+      // at the chair, a roofer on a roof). So we pass the subject AS WRITTEN and only strip
+      // people when the subject actually asked for none. The two halves must agree: this and
+      // pexelsFetcher both key off the literal "no people" in the phrase. (Was: forced
+      // "— no people" onto every query, which contradicted a prompt that now permits people.)
+      const wantsNoPeople = /\bno\s*people\b|without people|no one\b/i.test(subject);
+      const query = subject;
       let stock: StockResult | null = null;
       // Seed with the business id so two same-category businesses get different photos.
       try { stock = await ctx.fetchStock(query, ctx.businessId); } catch { stock = null; }
-      // Reject a candidate whose own description names a person.
-      if (stock && PERSON_WORDS.test(stock.description || "")) stock = null;
+      // Reject a person-described candidate ONLY when the subject wanted no people.
+      if (wantsNoPeople && stock && PERSON_WORDS.test(stock.description || "")) stock = null;
       if (stock) {
         edits.push({ start: el.openStart, end: el.openEnd, text: realImg(el, stock.url) });
         placed.push({
@@ -403,8 +411,12 @@ export function pexelsFetcher(apiKey: string | null | undefined): ((query: strin
     if (!res.ok) return null;
     const json = await res.json().catch(() => null) as { photos?: PexelsPhoto[] } | null;
     const photos = json?.photos || [];
-    // Eligible = candidates whose alt text does not name a person.
-    const eligible = photos.filter((p) => !PERSON_WORDS.test(p.alt || ""));
+    // Eligible = every candidate, UNLESS the query asked for no people — then drop the ones
+    // whose alt names a person. Must agree with resolveImages, which keys off the same literal
+    // "no people" in the art-direction phrase (the query IS that phrase). Permitting people in
+    // the prompt while unconditionally stripping them here would be a silent contradiction.
+    const wantsNoPeople = /\bno\s*people\b|without people|no one\b/i.test(query);
+    const eligible = wantsNoPeople ? photos.filter((p) => !PERSON_WORDS.test(p.alt || "")) : photos;
     if (!eligible.length) return null;
     // DETERMINISTIC SPREAD. Index into the eligible pool by a hash of the business seed:
     // the same business always rebuilds identically, but two same-category businesses get

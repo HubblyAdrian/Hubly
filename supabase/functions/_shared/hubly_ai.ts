@@ -505,6 +505,12 @@ const TASK_ROUTES: Record<HublyAITask, TaskRoute> = {
   // in this format is closer to structured content generation than deep
   // logical reasoning, so a lower effort level should cost little in
   // quality while cutting the dominant cost (hidden reasoning tokens).
+  // DO NOT RAISE THIS to "high" for design quality — tested 2026-08-27 across 5 trades:
+  // "high" produced NO perceptible design change (same page shape, palette, imagery), cost
+  // 1.5-3x the wall clock (~40s -> 46-126s), and combined with a longer prompt it pushed a
+  // build past the ~150s gateway limit so it FAILED entirely. A slower site is bad; a site
+  // that never appears is worse. The page's sameness lives in the model's prior, not the
+  // reasoning dial — don't re-run this expecting effort to fix convergence.
   document_generate: { provider: "openai", model: DEFAULT_REASONING_MODEL, maxTokens: 20000, jsonMode: true, reasoningEffort: "low" },
   // Storefront Builder AST generate/patch — reasoningEffort "low" so the reasoning model
   // spends its budget on the JSON output, not hidden reasoning (same lesson as document_generate).
