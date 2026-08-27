@@ -1813,6 +1813,26 @@ export async function generateFreeformPage(
     },
   };
   const resolved = await resolveImages(raw, imgCtx);
+  // IMAGE-SLOT TELEMETRY (additive, countable). One row per slot: the model's
+  // art-direction phrase, the query we sent, how many stock results came back,
+  // how many survived filtering, and what the slot became. Feeds image_slot_probe
+  // so "how often does a slot end empty, and why" is a query, not a guess. A write
+  // failure here never fails a build (best-effort, like recordPlacement).
+  try {
+    const purl = (Deno.env.get("SUPABASE_URL") || "").trim();
+    if (purl && resolved.probes?.length) {
+      await fetch(`${purl}/rest/v1/image_slot_probe`, {
+        method: "POST",
+        headers: { ...adminHeaders(), "content-type": "application/json" },
+        body: JSON.stringify(resolved.probes.map((p) => ({
+          business_id: businessId, role: p.role, subject: p.subject, query: p.query,
+          wants_no_people: p.wantsNoPeople, is_work_role: p.isWorkRole, stock_queried: p.stockQueried,
+          raw_count: p.rawCount, raw_count_any_orient: p.rawCountAnyOrient, eligible_count: p.eligibleCount,
+          outcome: p.outcome,
+        }))),
+      }).catch(() => {});
+    }
+  } catch { /* telemetry must not fail a build */ }
   // THE EMPTY-SLOT COLLAPSE PASS. resolveImages leaves a dark "blank" div wherever
   // no customer photo and no honest stock image could fill a slot. A business with
   // no photographs of its own work should not get an empty work section — not a

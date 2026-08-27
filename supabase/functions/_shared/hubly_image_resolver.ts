@@ -63,9 +63,35 @@ export interface ImageResolveContext {
   businessType?: string | null;
   businessName?: string | null;
   /** Injected so the resolver is testable without network or a live DB. The optional
-   *  seed decorrelates same-category businesses (see pexelsFetcher). */
-  fetchStock?: (query: string, seed?: string) => Promise<StockResult | null>;
+   *  seed decorrelates same-category businesses (see pexelsFetcher). The optional sink
+   *  is a telemetry channel: when passed, the fetcher fills it with per-call counts
+   *  (raw results, survivors, any-orientation shadow). Purely additive — a caller that
+   *  omits it gets identical behaviour and pays no extra cost. */
+  fetchStock?: (query: string, seed?: string, sink?: StockProbe) => Promise<StockResult | null>;
   recordPlacement?: (row: PlacedImageRow) => Promise<void> | void;
+}
+
+/** Per-call stock counts, filled by the fetcher when a caller passes a sink (telemetry). */
+export interface StockProbe {
+  rawCount: number;
+  eligibleCount: number;
+  rawCountAnyOrient: number;
+  wantsNoPeople: boolean;
+  httpOk: boolean;
+}
+
+/** One image slot's full story: what the model asked, what we sent, what came back, what it became. */
+export interface ImageSlotProbe {
+  role: string;
+  subject: string;
+  query: string;
+  wantsNoPeople: boolean;
+  isWorkRole: boolean;
+  stockQueried: boolean;
+  rawCount: number | null;
+  rawCountAnyOrient: number | null;
+  eligibleCount: number | null;
+  outcome: "customer" | "pexels" | "blank";
 }
 
 export interface StockResult {
@@ -98,6 +124,8 @@ export interface ImageResolveResult {
   blanks: number;
   /** Diagnostic: what each marker became. */
   decisions: { role: string; outcome: "customer" | "pexels" | "logo" | "blank"; subject: string }[];
+  /** Per-slot telemetry (populated when the caller passes a fetchStock that fills a sink). */
+  probes: ImageSlotProbe[];
 }
 
 function attrOf(el: ScannedEl, name: string): string {
@@ -167,6 +195,7 @@ export async function resolveImages(html: string, ctx: ImageResolveContext): Pro
   const edits: Splice[] = [];
   const placed: PlacedImageRow[] = [];
   const decisions: ImageResolveResult["decisions"] = [];
+  const probes: ImageSlotProbe[] = [];
   let blanks = 0;
 
   // Customer photos are a consumable pool — each is used once, so a two-photo
@@ -216,12 +245,15 @@ export async function resolveImages(html: string, ctx: ImageResolveContext): Pro
     // Preserve the container's own dimensions on the blank fallback.
     const inlineStyle = el.attrs.style ? `${el.attrs.style};` : "";
 
+    const wantsNoPeopleSlot = /\bno\s*people\b|without people|no one\b/i.test(subject);
+
     // 1. CUSTOMER PHOTO — this marker's claim from the work-first allocation.
     const own = claimed.get(el);
     if (own) {
       edits.push({ start: el.openStart, end: el.openEnd, text: realImg(el, own.url) });
       placed.push({ businessId: ctx.businessId, documentVersion: ctx.documentVersion, provider: "customer", imageUrl: own.url, slot: role, role, alt });
       decisions.push({ role, outcome: "customer", subject });
+      probes.push({ role, subject, query: subject, wantsNoPeople: wantsNoPeopleSlot, isWorkRole: isWork, stockQueried: false, rawCount: null, rawCountAnyOrient: null, eligibleCount: null, outcome: "customer" });
       continue;
     }
 
@@ -237,8 +269,9 @@ export async function resolveImages(html: string, ctx: ImageResolveContext): Pro
       const wantsNoPeople = /\bno\s*people\b|without people|no one\b/i.test(subject);
       const query = subject;
       let stock: StockResult | null = null;
+      const sink: StockProbe = { rawCount: -1, eligibleCount: -1, rawCountAnyOrient: -1, wantsNoPeople, httpOk: false };
       // Seed with the business id so two same-category businesses get different photos.
-      try { stock = await ctx.fetchStock(query, ctx.businessId); } catch { stock = null; }
+      try { stock = await ctx.fetchStock(query, ctx.businessId, sink); } catch { stock = null; }
       // Reject a person-described candidate ONLY when the subject wanted no people.
       if (wantsNoPeople && stock && PERSON_WORDS.test(stock.description || "")) stock = null;
       if (stock) {
@@ -249,8 +282,14 @@ export async function resolveImages(html: string, ctx: ImageResolveContext): Pro
           imageUrl: stock.url, slot: role, role, alt,
         });
         decisions.push({ role, outcome: "pexels", subject });
+        probes.push({ role, subject, query, wantsNoPeople, isWorkRole: false, stockQueried: true, rawCount: sink.rawCount, rawCountAnyOrient: sink.rawCountAnyOrient, eligibleCount: sink.eligibleCount, outcome: "pexels" });
         continue;
       }
+      // Stock was queried but nothing usable came back -> falls through to blank below.
+      probes.push({ role, subject, query, wantsNoPeople, isWorkRole: false, stockQueried: true, rawCount: sink.rawCount, rawCountAnyOrient: sink.rawCountAnyOrient, eligibleCount: sink.eligibleCount, outcome: "blank" });
+    } else {
+      // Work role (stock forbidden) or no fetcher configured -> never queried.
+      probes.push({ role, subject, query: subject, wantsNoPeople: wantsNoPeopleSlot, isWorkRole: isWork, stockQueried: false, rawCount: null, rawCountAnyOrient: null, eligibleCount: null, outcome: "blank" });
     }
 
     // 3. DELIBERATE NOTHING — a brand-coloured field, not a grey box. The
@@ -267,7 +306,7 @@ export async function resolveImages(html: string, ctx: ImageResolveContext): Pro
     for (const row of placed) { try { await ctx.recordPlacement(row); } catch { /* provenance write must not fail a build */ } }
   }
 
-  return { html: out, placed, blanks, decisions };
+  return { html: out, placed, blanks, decisions, probes };
 }
 
 /**
@@ -401,22 +440,52 @@ function hashString(s: string): number {
   return h >>> 0;
 }
 
-export function pexelsFetcher(apiKey: string | null | undefined): ((query: string, seed?: string) => Promise<StockResult | null>) | undefined {
+export function pexelsFetcher(apiKey: string | null | undefined): ((query: string, seed?: string, sink?: StockProbe) => Promise<StockResult | null>) | undefined {
   if (!apiKey) return undefined;
-  return async (query: string, seed?: string): Promise<StockResult | null> => {
+  return async (query: string, seed?: string, sink?: StockProbe): Promise<StockResult | null> => {
     // Wider pool (per_page 5 -> 30) so same-category businesses can be SPREAD across
     // results instead of every detailer landing on the identical top hit.
     const url = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=30&orientation=landscape`;
+    const wantsNoPeople = /\bno\s*people\b|without people|no one\b/i.test(query);
     const res = await fetch(url, { headers: { Authorization: apiKey } });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      // TELEMETRY (opt-in via sink): a failed fetch is a zero-result slot; record it.
+      if (sink) { sink.rawCount = 0; sink.eligibleCount = 0; sink.rawCountAnyOrient = -1; sink.wantsNoPeople = wantsNoPeople; sink.httpOk = false; }
+      return null;
+    }
     const json = await res.json().catch(() => null) as { photos?: PexelsPhoto[] } | null;
     const photos = json?.photos || [];
     // Eligible = every candidate, UNLESS the query asked for no people — then drop the ones
     // whose alt names a person. Must agree with resolveImages, which keys off the same literal
     // "no people" in the art-direction phrase (the query IS that phrase). Permitting people in
     // the prompt while unconditionally stripping them here would be a silent contradiction.
-    const wantsNoPeople = /\bno\s*people\b|without people|no one\b/i.test(query);
     const eligible = wantsNoPeople ? photos.filter((p) => !PERSON_WORDS.test(p.alt || "")) : photos;
+    // TELEMETRY (opt-in via sink; ZERO extra work in production where sink is undefined).
+    // The shadow query re-runs the search WITHOUT the landscape filter, so we can measure
+    // whether landscape-only is discarding usable candidates. Only fires when a caller asks
+    // for a probe — a normal build passes no sink and pays for nothing here.
+    if (sink) {
+      sink.rawCount = photos.length;
+      sink.eligibleCount = eligible.length;
+      sink.wantsNoPeople = wantsNoPeople;
+      sink.httpOk = true;
+      sink.rawCountAnyOrient = -1;
+      // The base counts above are free (already computed). The shadow query below
+      // is the ONLY extra cost — a second Pexels call to measure whether the
+      // landscape filter discards usable candidates. Gated OFF by default; set
+      // IMAGE_PROBE_SHADOW=1 to collect it (measurement runs only), so permanent
+      // always-on telemetry never doubles the API calls.
+      if ((globalThis as { Deno?: { env: { get(k: string): string | undefined } } }).Deno?.env.get("IMAGE_PROBE_SHADOW") === "1") {
+        try {
+          const url2 = `https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=30`;
+          const r2 = await fetch(url2, { headers: { Authorization: apiKey } });
+          if (r2.ok) {
+            const j2 = await r2.json().catch(() => null) as { photos?: PexelsPhoto[] } | null;
+            sink.rawCountAnyOrient = (j2?.photos || []).length;
+          }
+        } catch { sink.rawCountAnyOrient = -1; }
+      }
+    }
     if (!eligible.length) return null;
     // DETERMINISTIC SPREAD. Index into the eligible pool by a hash of the business seed:
     // the same business always rebuilds identically, but two same-category businesses get
