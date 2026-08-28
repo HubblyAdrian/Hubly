@@ -88,7 +88,14 @@ loaded), and `test_fix.js` for before/after.
 
 ---
 
-## 3. Prices are never read back
+## 3. Prices are never read back — CLOSED 2026-08-28
+
+**Closed by the item-7 seam.** `servicesTruth` now composes the acknowledgement from
+the actual patch result and enumerates every service + price: verified live —
+"Cold brew $8, Pour-over $6 and Breakfast tacos $4 are on your page now, in the
+services section." A wrong digit is now visible in the read-back before it's live.
+(Photo-OCR read-back still wants its own confirming pass, but the setServices path —
+typed or from the loop — reads every number back.)
 
 **Severity:** correctness / trust — OCR misreads digits and the read-back is the only
 safety net before a wrong price goes live.
@@ -137,7 +144,15 @@ enumeration point in #3 at the same seam.
 
 ---
 
-## 5. "On the site now" doesn't say WHERE — worse on mobile
+## 5. "On the site now" doesn't say WHERE — CLOSED 2026-08-28 (desktop); mobile note stands
+
+**Closed by the item-7 seam for services.** Every services acknowledgement now names
+the place — "…are on your page now, **in the services section**" — and says so only
+because the patch put them there. Verified live. The photo path already did this; the
+two highest-frequency "it's on your page" lines (photos, services) now both name the
+location. The mobile separate-tab reality (a change is real but on another tab the
+person isn't looking at) is a UX point that still wants a real-phone pass, but the
+dishonesty of a vague "on the site now" is gone for services.
 
 **Severity:** polish / honesty, mobile-specific.
 
@@ -243,14 +258,28 @@ one seam):**
 - Loud + countable: a price that saves and doesn't appear is a `services-placement`
   row in `record_rebuild_outcome`, never a silence.
 
-**STILL OPEN — the live render proof.** The placement logic is validated against the
-real dawn-patrol stored HTML (3 prices onto the right cards, none in the hero,
-idempotent updates), and both edge functions are deployed. But the model-driven
-end-to-end proof Adrian asked for — set services on a build, change a price by
-talking, watch the page update with the new figure + the truthful message — is
-BLOCKED: the OpenAI account is out of quota (`429`, "no quota left"), so
-`hubly-conversation` can't run `setServices` at all. Restore quota, then the one
-test closes it: change a price by talking and confirm both the page and the words.
+**CLOSED — verified live end to end 2026-08-28** (on the existing dawn-patrol-coffee
+freeform build, changing prices by talking):
+- **Page updates with the new figure, in the right card.** Rendered the stored doc:
+  the menu section shows Cold brew **$8**, Pour-overs **$6**, Breakfast tacos **$4**,
+  each price under its heading in its own card.
+- **Read-back names prices + where, true because the patch happened:** "Cold brew $8,
+  Pour-over $6 and Breakfast tacos $4 are on your page now, in the services section."
+- **Second change updates in place:** cold brew $7 → $8 left exactly one
+  `data-hubly-price="Cold brew"` span (value $8), no duplicate.
+- **Countable:** two `services-placement` rows in `rebuild_outcome_events`,
+  `landed=true` — one `placed`, one `partial` whose `detail` names the missed service.
+- **The case that must not work:** a `cortado` with no card was reported honestly
+  ("I couldn't find Cortado on the page as it's built … want me to rebuild") and
+  never forced — no `data-hubly-price="Cortado"` anywhere in the HTML.
+- **Hero/footer check:** all three price spans sit inside `<section id="menu">`
+  (`section.1.item.N.title`); none in a hero, header, or footer element.
+
+One robustness fix came out of the run: the model re-sends a service name with
+singular/plural drift ("Pour-over" vs the page's "Pour-overs"), which first read as a
+false miss; the matcher now tolerates trailing punctuation and a simple plural 's'
+(commit d96daf7), turning only a miss into a match on the same word, never a price
+onto the wrong card.
 
 ---
 
