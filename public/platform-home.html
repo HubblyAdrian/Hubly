@@ -2046,7 +2046,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     }).then(function(r){ return r.json(); }).then(function(data){
       if(!data || data.ok !== true || !data.reply || hcIsFallbackReply(data.reply)){ finish(null, true); return; }
       // Arm the capture guard from this ask, exactly as a normal turn would.
-      if(['services','hours','area','phone'].indexOf(data.askedFor) >= 0){ hc.pendingCapture = { askedFor: data.askedFor, tries: 0 }; }
+      if(['services','hours','area','phone','logo','photos'].indexOf(data.askedFor) >= 0){ hc.pendingCapture = { askedFor: data.askedFor, tries: 0 }; }
       if(data.draftGrant) hcExchangeDraftGrant(data.draftGrant);
       finish(String(data.reply), false);
     }).catch(function(){ finish(null, true); });
@@ -2349,7 +2349,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           // that was pending from last turn; if it wasn't recorded, own the miss and
           // re-ask. Then arm from THIS turn's ask (unless a re-ask already re-armed it).
           var hcReasked = hcCheckCaptureMiss(hcPriorCapture, data);
-          if(!hcReasked && ['services','hours','area','phone'].indexOf(data.askedFor) >= 0){
+          if(!hcReasked && ['services','hours','area','phone','logo','photos'].indexOf(data.askedFor) >= 0){
             hc.pendingCapture = { askedFor: data.askedFor, tries: 0 };
           }
           // EARN, THEN ADD THE ACCOUNT NOTE — after Hubly has ANSWERED, never into an open
@@ -2421,6 +2421,15 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       hcAppendMessage('user', text);
       hcShowPage();
       hcAppendMessage('hubly', "Here it is.");
+      return;
+    }
+    // A photo is held pending "is this your work?" — this message is the answer.
+    // Show it, then route on it (upload the held photo, or drop and carry on).
+    if(hc.heldPhoto){
+      hcActivate();
+      hcAppendMessage('user', text);
+      hcPersist('user', text);
+      hcResolveHeldPhoto(text);
       return;
     }
     hcActivate();
@@ -2507,6 +2516,59 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     });
   })();
 
+  // HOLD A PHOTO WHILE WE ASK WHAT IT IS.
+  //
+  // Two cases need it: an image arrives with nothing pending (is it work, or a
+  // logo?), and a non-price image arrives while we asked for a price list (is it
+  // a photo of the work?). The old behaviour was brutal — the image went to the
+  // model and evaporated, or Hubly said "I couldn't read the prices" and the
+  // owner's best photo was treated as an unreadable document. The fix is to hold
+  // the PREPARED bytes (already shrunk + JPEG, once) and ask. When the person
+  // confirms, we upload the photo they ALREADY sent — never "great, send it
+  // again", which would make them do the work twice.
+  function hcHoldPhotoAndAsk(prepared, kind, question){
+    hc.heldPhoto = { prepared: prepared, kind: kind };
+    hcAppendMessage('hubly', question);
+    hcPersist('assistant', question);
+  }
+  // We only have the raw File: prepare it (shrink + JPEG), then hold + ask. A
+  // decode failure is reported honestly, same as the direct photo path.
+  function hcPrepareHoldAndAsk(file, kind, question){
+    hcPrepareImageForUpload(file).then(function(prepared){
+      hcHoldPhotoAndAsk(prepared, kind, question);
+    }).catch(function(err){
+      var code = err && err.code;
+      hcAppendMessage('hubly', code === 'format'
+        ? "I can't read that image format on my end — if it's an iPhone HEIC, saving it as a JPG first will do it, and then it goes straight onto your page."
+        : "That image wouldn't open on my end — mind trying a different photo?");
+    });
+  }
+  // The person answered a held-photo question. Route on the answer; the bytes are
+  // already in hand, so a "yes" uploads what they sent with no second upload. If
+  // it isn't a photo (or they changed the subject), drop the hold and let their
+  // message carry on the conversation normally. The visible user bubble was
+  // already shown by hcSendText — here we only push to the model history + act.
+  function hcResolveHeldPhoto(text){
+    var held = hc.heldPhoto; hc.heldPhoto = null;
+    var t = (text || '').toLowerCase();
+    var saysLogo = /\blogo\b/.test(t);
+    var saysWork = /\b(work|my work|the work|a photo of|photo of my|job|jobs|portfolio|yes|yeah|yep|yup|it is|correct|please|go ahead|do it|put it)\b/.test(t);
+    var saysNo   = /\b(no|nope|nah|not|neither|price|prices|price list|never ?mind)\b/.test(t);
+    if(saysLogo && !saysWork){
+      hc.pendingLogoUpload = held.prepared;   // { imageBase64, mediaType:'image/jpeg' }
+      hc.messages.push({ role: 'user', content: text + "\n[That image is our logo — use it as the logo.]" });
+      hcCall(); return;
+    }
+    if(saysWork && !saysNo){
+      hc.pendingPhotoUpload = held.prepared;
+      hc.messages.push({ role: 'user', content: text + "\n[Yes — that's a photo of my work. Put it on the page.]" });
+      hcCall(); return;
+    }
+    // Not a photo, or the subject changed — drop the held bytes, carry on.
+    hc.messages.push({ role: 'user', content: text });
+    hcCall();
+  }
+
   // A logo, from a File (parity with hcSendPhoto). Sets the one-shot pendingLogoUpload
   // and sends the turn that uploads it.
   function hcSendLogo(file){
@@ -2548,7 +2610,16 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     if(pending === 'services'){ hcExtractPricesFromImage(file); return; }   // price list (handles PDF too)
     if(pending === 'logo' && isImage){ hcSendLogo(file); return; }
     if(pending === 'photos' && isImage){ hcSendPhoto(file); return; }
-    hcSendFileToModel(file, isPdf);                                          // nothing pending
+    // Nothing pending, and it's an IMAGE — almost always their work or their
+    // logo. Hold it and ask which, rather than handing it to the model where it
+    // evaporates. A PDF with nothing pending still goes to the model.
+    if(isImage){
+      var lbl = '🖼️ ' + (file.name || 'photo');
+      hcAppendMessage('user', lbl); hcPersist('user', lbl);
+      hcPrepareHoldAndAsk(file, 'work_or_logo', "Got it. Is that a photo of your work, or your logo? Either way I'll put it where it belongs.");
+      return;
+    }
+    hcSendFileToModel(file, isPdf);                                          // a PDF, nothing pending
   }
   // Several images at once: one per turn (the server handles one turn at a time).
   function hcHandleIncomingFiles(files){
@@ -2746,7 +2817,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       }).then(function(r){ clearTimeout(to); return r.ok ? r.json() : null; });
     }).then(function(o){
       var items = o ? [].concat(o.packages || [], o.addons || [], o.membershipCandidates || []).filter(function(i){ return i && i.name; }) : [];
-      if(!items.length){ reArm("I couldn't read the prices off that — mind typing them, or trying a clearer photo?"); return; }
+      if(!items.length){
+        // No prices in it — but an owner sending his best photo of the work should
+        // NEVER be told it's an unreadable document. Hold the bytes we already have
+        // and ask; a "yes" uses this exact image, no re-upload.
+        if(typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+        hcPrepareHoldAndAsk(file, 'is_work', "That doesn't look like a price list — is it a photo of your work? I'll put it on your page. (If you meant to send prices, type them or try a clearer shot.)");
+        return;
+      }
       if(typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
       // Hand the extracted list to the conversation: the model calls setServices (the
       // capture guard watches for it), the page rebuilds, and its reply reads it back.
