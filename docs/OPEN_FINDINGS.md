@@ -188,31 +188,50 @@ one session and confirming both land on the page.
 
 ---
 
-## 7. UNVERIFIED: do service cards actually appear on a freeform page?
+## 7. VERIFIED: service NAMES reach a freeform page (baked at build); PRICES set AFTER the build do not
 
-**Severity:** unknown — could be a silent hole under everything.
+**Severity:** correctness / trust — the acknowledgement says a change is "on the site"
+when, for anything set after the first build, it is not.
 
-**What's known / not known:** `setServices` is called and the model reads prices
-back, and the builder's step list says "services are on the page." But **nobody has
-confirmed, by looking at a rendered freeform page, that the service cards/prices the
-owner entered actually render on it.** The freeform generator reads services from the
-record (`buildBusinessRecordBlock`), but a freeform page is a single generation — if
-the model omits a services section, or setServices updates the record without a
-rebuild that shows them, the prices could be set-but-invisible. This is exactly the
-"freeform pages have no update path" gap (see KNOWN_ISSUES): a `services`
-recordChange returns `not_applicable` on a freeform rebuild, and services only
-"appear" because `setServices` patches through its own inline path — which has not
-been visually verified end to end.
+**The answer, with evidence (investigated 2026-08-28):**
 
-**What's been tried:** nothing directly — every test this week set services during
-the FIRST build (so they were generated in), never added/changed after the page
-existed and confirmed the page updated.
+- **(a) Do services render on a freeform page at all? YES — the names, at build
+  time.** The freeform generator reads services from the record
+  (`buildBusinessRecordBlock`) and the model bakes them into the single generation.
+  Visual proof: `dawn-patrol-coffee.myhubly.app` renders three service cards — Cold
+  brew, Pour-overs, Breakfast tacos — exactly the three named before the build.
+  Corpus: across freeform pages whose business has services, **35/42 (83%)** have
+  the service names present in their stored HTML.
 
-**What would close it:** on a real freeform build, (a) confirm the entered services +
-prices are visibly on the rendered page after the initial build, and (b) change a
-price by talking AFTER the page exists and confirm the page updates to show it (not
-just the record). If (b) fails, that's the freeform-immutability finding biting a
-core capability, and it's bigger than a cosmetic bug.
+- **(b) What happens when services/prices are set AFTER the build? The RECORD is
+  written; the stored HTML is NOT.** `setServices` calls the
+  `set_business_draft_services` RPC (record only) and returns a spoken "now shows N
+  real services" — but it runs no HTML patch. Live proof on the same dawn-patrol
+  build: prices given after the build (cold brew $5, pour-over $6, tacos $4) were
+  read back and acknowledged, but **do not appear on the page cards** (the cards show
+  the baked descriptions, no prices). This is the "freeform pages have no update path"
+  gap biting a core capability: a `services` recordChange returns `not_applicable` on
+  a freeform rebuild. Corpus: only **11/42 (26%)** of those pages have any price text
+  in their HTML — the prices set post-build never landed.
+
+- **(c) Does the Book page show them? YES — it reads the RECORD, not the page HTML.**
+  The booking landing queries the `services` table directly
+  (`db.from('services')...` at hubly.html:15189) and renders `#bkland-services`, so
+  services set after the build ARE bookable even though they're invisible on the
+  freeform page.
+
+**Net:** the acknowledgement "those services are on the site now" is true for the
+NAMES generated at build and true for the BOOK page, but false for the freeform page
+when a price/service is set or changed after the initial build. Same shape as the
+photo gap that FIX 1–4 closed (2026-08-27); the fix is probably small (give
+`setServices` a targeted freeform patch, like `placeOwnerPhotoInFreeform` got).
+**Reported to Adrian; not fixed yet, per his instruction to report first.**
+
+**What would fully close it:** give the post-build `services` recordChange a real
+freeform patch path (locate the services section in the stored HTML and rewrite the
+cards with names + prices), then re-render and confirm a price changed by talking
+shows on the page — not just the record. Until then, the "on the site now" line must
+not claim the freeform page shows a post-build price it doesn't (finding #5).
 
 ---
 
