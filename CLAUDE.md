@@ -147,3 +147,13 @@ acts, or it says what will happen — it never gives directions to something it 
   never its value (e.g. `edgefunctions202608` / `sb_secret_NmJ3E…`). A key that has appeared in
   terminal output is compromised and must be rotated — treat the appearance itself as the breach,
   before asking whether anyone saw it.
+- **A layout that cannot be read is a defect, not a style choice.** Text columns collapsing to
+  min-content, content clipped off the page, elements overlapping — deterministically detectable,
+  and must be caught by a pass rather than left to prompt guidance. The model's layout freedom
+  ends where legibility does. Found shipping on 2026-08-27, four days after it was first spotted
+  and deferred. (First real instance: a numbered-steps `li{display:grid;grid-template-columns:38px
+  1fr}` whose single child crammed into the 38px number column — fixed by an appended CSS
+  invariant, `:where(li,dd,dt)>*:only-child{grid-column:1/-1}`, that spans a sole grid child. And
+  MEASURE THE LAYOUT WITH IMAGES LOADED: aborting them makes an `<img>` fall back to its width
+  attribute and manufactures min-content collapses that do not happen on the real page — a whole
+  false-positive sweep on 2026-08-27 came from exactly that.)

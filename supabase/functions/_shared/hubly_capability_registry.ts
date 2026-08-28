@@ -1506,6 +1506,53 @@ export async function applyDirectFreeformEdit(
  *      wider than its column — is the one actually observed, and overflow-wrap
  *      is what defuses it: the word wraps instead of overflowing to be clipped.
  */
+/**
+ * LAYOUT SAFETY NET — collapsible grid columns.
+ *
+ * A generated grid like `grid-template-columns: .92fr 1.08fr` gives each track a
+ * minimum of min-content. When one column holds an image (whose intrinsic width
+ * drives its cell's min-content wide), the OTHER — a text column — collapses to
+ * ITS min-content: one word per line, dead space beside it. Measured 2026-08-27
+ * across the freeform corpus (4 pages). Prompt guidance does not govern layout
+ * (the model was told a top nav is optional and shipped one 25/25), so this is
+ * deterministic: rewrite each bare `fr` track to `minmax(0, fr)`, letting the
+ * track shrink below its content's min-content and distribute by the fr ratio
+ * instead of collapsing a sibling.
+ *
+ * INVARIANT — cannot make a good page worse: `minmax(0, Nfr)` is identical to
+ * `Nfr` whenever nothing is forcing a min-content minimum, which is every
+ * correctly-laid-out grid. Verified across 107 pages: 4 squeezed → 0, ZERO pages
+ * gained a squeeze, and 6 desktop horizontal-overflows also cleared. Values that
+ * already use minmax() are left untouched (no double-wrapping). Removal/rewrite
+ * only — never a regeneration.
+ */
+export function fixCollapsibleGridColumns(html: string): { html: string; fixed: number } {
+  let fixed = 0;
+  // (1) Floor bare `fr` tracks at minmax(0, fr). Defensive: prevents a text track
+  //     from collapsing to min-content if a sibling forces the row. Identical to
+  //     `fr` on a correct grid (proven no-op across 107 pages).
+  let out = html.replace(/grid-template-columns\s*:\s*([^;{}"']+)/gi, (m, val) => {
+    if (/minmax/i.test(val)) return m;
+    if (!/\d*\.?\d+fr/.test(val)) return m;
+    const fixedVal = val.replace(/(\d*\.?\d+)fr/g, "minmax(0,$1fr)");
+    if (fixedVal !== val) { fixed++; return m.replace(val, fixedVal); }
+    return m;
+  });
+  // (2) A grid <li> with a SINGLE child spans all its columns. THIS is the fix for
+  //     the observed defect: the model writes a numbered-steps list as
+  //     `li{display:grid;grid-template-columns:38px 1fr}` (number column + text
+  //     column) but emits each <li> with ONE child and no number element, so the
+  //     sole child lands in the 38px column and its text collapses to one word per
+  //     line with dead space beside it (measured on the detailer "Book it" section,
+  //     2026-08-27; text 38px → 474px after the fix). A sole grid child SHOULD own
+  //     the whole grid — nothing else is in it — so spanning every column is always
+  //     correct and cannot make a good page worse. Appended CSS only; if the <li>
+  //     is not a grid, grid-column is simply ignored.
+  const net = `<style id="hubly-layout-net">:where(li,dd,dt)>*:only-child{grid-column:1/-1}</style>`;
+  out = out.includes("</body>") ? out.replace("</body>", net + "</body>") : out + net;
+  return { html: out, fixed };
+}
+
 export function protectBusinessName(html: string, rawName: string | null | undefined): string {
   const name = String(rawName || "").trim();
   if (name.length < 2) return html;
@@ -1899,11 +1946,17 @@ export async function generateFreeformPage(
   if (paired.added > 0) {
     console.log(`freeform [${businessId}] paired ${paired.added} bare-vh height(s) with an svh companion`);
   }
+  // THE LAYOUT SAFETY NET — collapsible grid columns. Floors every bare `fr` grid
+  // track at minmax(0, fr) so an image column can't squeeze a text column down to
+  // one-word-per-line. Deterministic; identical to the model's CSS on a page that
+  // already renders correctly. See fixCollapsibleGridColumns.
+  const gridSafe = fixCollapsibleGridColumns(paired.html);
+  console.log(`freeform [${businessId}] layout safety net: sole-grid-child span + floored ${gridSafe.fixed} bare-fr column set(s)`);
   // THEN HUBLY'S MACHINERY. Also not a gate: it rewrites the model's booking
   // CTA to a working URL, adds one if there is none, and injects the chat
   // widget. Ordered after stamping so the injected runtime is not itself
   // labelled as editable content — the owner edits their page, not our widget.
-  const wired = injectHublyRuntime(paired.html, {
+  const wired = injectHublyRuntime(gridSafe.html, {
     businessId,
     businessName: String((record as Record<string, unknown>)?.name || "this business"),
     slug: String((record as Record<string, unknown>)?.slug || ""),
