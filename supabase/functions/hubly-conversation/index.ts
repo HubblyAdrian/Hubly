@@ -1435,7 +1435,24 @@ Deno.serve(async (req) => {
             " Your page has manual edits, so I have not rebuilt it — the new details are saved on your record. Want me to rebuild the page around them?";
         } else {
           const rebuild = rebuildDocumentFromRecord(draftBusiness.id, draftBusiness.draftToken, changes)
-            .then((r) => console.log(`record rebuild [${draftBusiness.id}] ${changes.join(",")} -> ${r.status}${r.detail ? " (" + r.detail + ")" : ""}`))
+            .then(async (r) => {
+              // Did a NEW version actually result? Only these three states produce one.
+              const landed = ["rebuilt", "rerendered", "patched"].includes(r.status);
+              const line = `record rebuild [${draftBusiness.id}] ${changes.join(",")} -> ${r.status}${r.detail ? " (" + r.detail + ")" : ""}${landed ? "" : " [DID NOT LAND]"}`;
+              if (landed) console.log(line); else console.error(line);
+              // LOUD + COUNTABLE. A rebuild that was triggered but produced no new
+              // version is the invisible failure (a photo that stores and never
+              // appears). Record every outcome so "how often did a rebuild not
+              // land" is a query, same discipline as planner_fallback_events.
+              try {
+                const u = (Deno.env.get("SUPABASE_URL") || "").trim();
+                if (u) await fetch(`${u}/rest/v1/rpc/record_rebuild_outcome`, {
+                  method: "POST",
+                  headers: { ...adminHeaders(), "content-type": "application/json" },
+                  body: JSON.stringify({ p_business_id: draftBusiness.id, p_changes: changes.join(","), p_status: r.status, p_detail: r.detail || null, p_landed: landed }),
+                });
+              } catch (_e) { /* telemetry must never fail the turn */ }
+            })
             .catch((e) => console.error("record rebuild failed", e));
           try {
             const rt = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
