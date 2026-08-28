@@ -6,6 +6,53 @@ what would settle it.
 
 ---
 
+## Freeform pages have NO update path — they are frozen after generation except the contact line
+
+**Status:** open, confirmed empirically 2026-08-27 during the photo-path repair. This is
+the big one: it almost certainly answers the "can an owner edit their site after claiming"
+question before that investigation is even run, and it shapes the whole post-claim build.
+**Where:** `rebuildDocumentFromRecord` → `syncFreeformFacts` in `hubly_capability_registry.ts`;
+the collapse pass `collapseEmptyImageSlots` in `hubly_image_resolver.ts`.
+
+Every record change to a freeform page routes to `syncFreeformFacts`, which handles ONLY
+`contact` (name / phone / email / address — text value swaps) and returns `not_applicable`
+for everything else:
+
+> `if (!changes.includes("contact")) { return { status: "not_applicable", detail: changes.join(",") }; }`
+
+So `photos`, `logo`, `services`, `area`, `hours` all no-op. The full-regeneration branch that
+DOES handle them is `latest.format === "ast"` only — it never runs for a freeform page.
+Confirmed live via `rebuild_outcome_events`: a `photos` change records
+`status=not_applicable, landed=false`, the photo stores, no new version appears. (This is not
+the `waitUntil` teardown it looked like — the outcome row itself lands fast, so the task was
+not killed; there is simply no code path.) Services still APPEAR because `setServices` patches
+the page through its own inline path, not through this rebuild — which masked the gap.
+
+**And the collapse pass destroyed the obvious repair.** The intended target for a late photo is
+a slot the model marked and the collapse pass emptied. But `collapseEmptyImageSlots` REPLACES an
+unfillable work section with a bare `<!--hubly-collapsed-section ...-->` comment — the section's
+markup is gone, only the art-direction survives. Measured across 158 recent freeform pages:
+`hubly-image-slot` comments = 0, `hubly-collapsed-section` = 4, and none are restorable. The
+other ~144 pages have no marker at all — every image slot is Pexels-filled. So there is nothing
+on an existing page to slot an owner photo into.
+
+**What this means:** a generated freeform page is effectively immutable after build. Talking to
+Hubly can swap the contact line and (via setServices) the service cards; nothing else a record
+change touches — a photo, a logo, a new section, a swapped image — has any path onto the page.
+The only operation that updates the whole page is a full regeneration (`hubly-document-build`),
+which rewrites copy and layout and destroys owner edits, which is exactly why the freeform path
+refuses to call it automatically.
+
+**What would settle it** (decided direction, 2026-08-27): targeted placement — insert an owner
+photo/logo into the existing rendered HTML and save a new version, never a silent regeneration.
+Because existing pages have no restorable slot, delivering an automatic "appears on its own"
+requires the collapse pass to PRESERVE a hidden, restorable slot (hide the empty work section
+rather than delete it) so a later photo can un-hide and fill it in the page's own styling. For
+pages without such a slot, the honest fallback is to offer a rebuild the owner explicitly
+approves. See the photo-path FIXES 1–4 thread.
+
+---
+
 ## Two Hubly messages acknowledge the same action (interim + model reply)
 
 **Status:** open, logged during the 2026-08-27 offer-move verification — same family as the
