@@ -52903,10 +52903,13 @@ if(document.readyState==='loading'){
 -->
 <script>
 (function(){
-  function hcEditEnabled(){
-    try{ return new URL(location.href).searchParams.get('hcEdit')==='1'; }catch(e){ return false; }
+  // Editing turns on ONLY when the parent set hcEditable=1 (draft claimed + owner
+  // signed in). hcEdit=1 alone means "builder preview, show the draft" and must NOT
+  // enable editing — an unclaimed page has no click-to-edit at all.
+  function hcEditableEnabled(){
+    try{ return new URL(location.href).searchParams.get('hcEditable')==='1'; }catch(e){ return false; }
   }
-  if(!hcEditEnabled()) return;
+  if(!hcEditableEnabled()) return;
 
   var TEXT_FIELDS = {
     'ws-hero-headline': 'heroHeadline',
@@ -53192,7 +53195,10 @@ function wireHublyDocumentReserved(){
 
 function wireHublyDocumentClickToEdit(){
   try{
-    if(new URL(location.href).searchParams.get('hcEdit') !== '1') return;
+    // hcEditable=1 (claimed + owner signed in), NOT hcEdit=1 (which only means
+    // "builder preview, show the draft"). Pre-claim there is no editing surface at
+    // all — no hover, no cursor, no tap handler, no "click to make it yours" pill.
+    if(new URL(location.href).searchParams.get('hcEditable') !== '1') return;
   }catch(e){ return; }
   var host = document.getElementById('hc-doc-root');
   if(!host) return;

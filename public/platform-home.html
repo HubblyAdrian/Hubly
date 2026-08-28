@@ -1491,17 +1491,22 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // Cache-busts so the exact same URL always forces a real fresh navigation
   // — without this, re-setting an unchanged-looking src can silently no-op.
   function hcBust(url){
-    // hcEdit=1 turns on hubly.html's inline click-to-edit (hover outline, cursor,
-    // tap handlers, the "click to make it yours" pill). NOTHING on the page is
-    // editable until the draft is CLAIMED and its owner is signed in. Before that,
-    // no hcEdit param -> wireHublyDocumentClickToEdit returns early -> there is no
-    // tap handler, no hover, no cursor change, no affordance at all. Tapping a photo
-    // does nothing; the page is simply a page. Half-gated editing — an affordance
-    // that looks live and then blocks you — was the whole class of bug this removes.
+    // TWO separate signals, deliberately split (they used to be one, which is what
+    // made editing leak onto unclaimed pages):
+    //   hcEdit=1     — "this is the builder preview": show the DRAFT (request its
+    //                  token) instead of the public "not live yet" gate. ALWAYS on
+    //                  for the preview, claimed or not — otherwise the owner can't
+    //                  even SEE their unclaimed draft.
+    //   hcEditable=1 — "editing is on": the hover outline, cursor, tap handlers and
+    //                  the "click to make it yours" pill. ONLY once the draft is
+    //                  CLAIMED and its owner is signed in. Before that there is NO
+    //                  affordance at all — tapping a photo does nothing, the page is
+    //                  simply a page. Half-gated editing (looks live, then blocks)
+    //                  was the whole class of bug this removes.
     var editable = false;
     try{ editable = !!(hc.draftClaimed && hcIsAuthed()); }catch(e){}
-    var q = url + (url.indexOf('?') === -1 ? '?' : '&') + '_r=' + Date.now();
-    return editable ? q + '&hcEdit=1' : q;
+    var q = url + (url.indexOf('?') === -1 ? '?' : '&') + '_r=' + Date.now() + '&hcEdit=1';
+    return editable ? q + '&hcEditable=1' : q;
   }
 
   // A real upload affordance, not a text question — shown once Hubly asks
