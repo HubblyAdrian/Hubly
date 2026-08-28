@@ -383,8 +383,17 @@ export function collapseEmptyImageSlots(
       doneSections.add(sec.openStart);
       const dirs = blanks.filter((x) => contains(sec, x)).map(artOf).filter(Boolean);
       removed.push({ kind: "section", where: sec.attrs["id"] || sec.attrs["class"] || "section", artDirection: dirs.join(" | ") });
-      splices.push({ start: sec.openStart, end: sec.closeEnd, text: `<!--hubly-collapsed-section role="work" reason="no-owner-photos" art-direction="${esc(dirs.join(" | "))}"-->` });
-      removedRanges.push([sec.openStart, sec.closeEnd]);
+      // CHANGE A: do NOT delete the work section — HIDE it, preserving its markup
+      // and styling, so a photo the owner sends later can un-hide it and fill the
+      // slot in the page's own design (placeOwnerPhotoInFreeform LADDER 1). A
+      // display:none wrapper is visually identical to deletion while empty, and it
+      // never leaves a void. Wrapping (not editing the section's own tag) avoids a
+      // duplicate style attribute and hides reliably regardless of the page CSS.
+      // NOT added to removedRanges: PASS 2 still collapses the inner blank to an
+      // <!--hubly-image-slot--> comment (the fill point), and PASS 3 keeps the
+      // section (its heading text survives).
+      splices.push({ start: sec.openStart, end: sec.openStart, text: `<div data-hubly-photo-slot="1" data-art-direction="${esc(dirs.join(" | "))}" style="display:none">` });
+      splices.push({ start: sec.closeEnd, end: sec.closeEnd, text: `</div>` });
     }
   }
 

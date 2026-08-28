@@ -2212,6 +2212,122 @@ async function rerenderLatestDocument(
  * model cannot reliably reproduce multi-KB base64, and asking it to would risk
  * silently corrupting the upload.
  */
+/**
+ * TARGETED PLACEMENT — put an owner's photo onto the EXISTING freeform page
+ * without regenerating it. A freeform record change otherwise no-ops (see
+ * syncFreeformFacts / KNOWN_ISSUES "freeform pages have no update path"), so a
+ * stored photo never appears. This is the ladder that fixes that, in fidelity
+ * order:
+ *
+ *   1. A restorable slot the collapse pass PRESERVED (a hidden `.hubly-photo-slot`
+ *      work section). The model marked this exact spot for a real photo, so it is
+ *      the highest-fidelity home — un-hide it and drop the image in, in the page's
+ *      own styling.
+ *   2. Otherwise, SWAP a stock atmosphere image whose subject DEPICTS THE WORK for
+ *      the owner's photo. The model asked that slot to show "a barber mid-cut" or
+ *      "a detailed wheel" — the owner's photo of that same work is a strictly
+ *      better version of the same slot, so this fulfils the design rather than
+ *      overriding it. Prefer a feature/section role over the hero, but the hero is
+ *      fine if it is the only slot. Never a slot whose subject is clearly NOT the
+ *      work (storefront, sign, map) — that is the wrong-place case, which falls to:
+ *   3. No usable slot at all -> report `no_slot`, so the caller can offer the owner
+ *      a deliberate rebuild rather than force the photo somewhere it does not fit.
+ *
+ * Returns the outcome AND, on a hit, the new HTML for the caller to persist.
+ */
+type FreeformPlacement = { status: "placed" | "swapped" | "no_slot" | "failed"; where?: string; replacedAlt?: string; html?: string; detail?: string };
+
+/** Human name for a slot role — for telling the owner WHERE their photo landed. */
+function slotWhere(role: string): string {
+  const r = (role || "").toLowerCase();
+  if (r === "hero") return "top of the page";
+  if (r === "feature") return "feature section";
+  if (/(result|work|gallery|portfolio|project)/.test(r)) return "work section";
+  return "page";
+}
+/** Alt words that mean a stock slot is DEPICTING THE WORK — a fair home for an owner work photo. */
+const WORK_DEPICTING = /\b(work|job|jobs|finished|result|detail|detailed|detailing|cut|coat|coating|repair|install|build|built|clean|cleaned|cleaning|paint|painted|roof|roofing|bake|baked|baking|project|before|after|shine|wash|washed|trim|shave|groom|chair|counter|kitchen|driveway|vehicle|car|hair)\b/i;
+/** Alt words that mean a slot is NOT the work — avoid these unless nothing else exists. */
+const NON_WORK_SUBJECT = /\b(storefront|shopfront|store ?front|building exterior|exterior of|street|skyline|map|neighbou?rhood|signage|\bsign\b|logo)\b/i;
+/** Escape a URL the way realImg wrote it into <img src>, so an indexOf finds it. */
+function escUrlForMatch(s: string): string {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+async function placeOwnerPhotoInFreeform(
+  draftId: string,
+  imageUrl: string,
+  latest: Extract<LatestBusinessDocument, { format: "html" }>,
+): Promise<FreeformPlacement> {
+  let html = latest.renderedHtml;
+
+  // LADDER 1 — a hidden work-slot the collapse pass preserved: the whole work
+  // section, wrapped in a `<div data-hubly-photo-slot ... style="display:none">`
+  // rather than deleted (see collapseEmptyImageSlots). Un-hide the wrapper and drop
+  // the image into the slot comment inside it, so the photo lands in the section's
+  // own styling. Nested tags make a full-content regex unreliable, so operate on
+  // the opening tag + the inner marker, not the wrapper's whole body.
+  const wrapOpen = /<div data-hubly-photo-slot="1"[^>]*>/i.exec(html);
+  if (wrapOpen) {
+    const shown = wrapOpen[0].replace(/\s*style="display:none"/i, "");
+    let h2 = html.replace(wrapOpen[0], shown);
+    const img = `<img src="${escUrlForMatch(imageUrl)}" alt="Our own work" style="width:100%;height:auto;display:block">`;
+    if (/<!--hubly-image-slot[^>]*-->/i.test(h2)) h2 = h2.replace(/<!--hubly-image-slot[^>]*-->/i, img);
+    else h2 = h2.replace(shown, shown + img); // no inner marker — put it right inside the wrapper
+    return { status: "placed", where: "work section", html: h2 };
+  }
+
+  // LADDER 2 — swap a stock atmosphere image whose subject depicts the work.
+  const placed = await selectMany("placed_images", "business_id", draftId, "image_url,role,alt,provider");
+  const pexels = (placed || []).filter((p) => p && (p as { provider?: string }).provider === "pexels" && (p as { image_url?: string }).image_url);
+  const rolePref = (role: string) => {
+    const r = (role || "").toLowerCase();
+    if (r === "feature") return 0;
+    if (/(section|result|work|gallery|portfolio|project)/.test(r)) return 1;
+    return 2; // hero and anything else last
+  };
+  const candidates = pexels
+    .map((p) => {
+      const pp = p as { image_url: string; role?: string; alt?: string };
+      return { url: String(pp.image_url), role: String(pp.role || "section"), alt: String(pp.alt || ""), depicts: WORK_DEPICTING.test(String(pp.alt || "")), nonWork: NON_WORK_SUBJECT.test(String(pp.alt || "")) };
+    })
+    .filter((c) => !c.nonWork)  // never the wrong-subject slot Adrian warned about
+    .sort((a, b) => (Number(b.depicts) - Number(a.depicts)) || (rolePref(a.role) - rolePref(b.role)));
+  for (const c of candidates) {
+    for (const needle of [`src="${escUrlForMatch(c.url)}"`, `src="${c.url}"`]) {
+      if (html.indexOf(needle) !== -1) {
+        html = html.replace(needle, `src="${escUrlForMatch(imageUrl)}"`);
+        return { status: "swapped", where: slotWhere(c.role), replacedAlt: c.alt, html };
+      }
+    }
+  }
+
+  return { status: "no_slot" };
+}
+
+/** Run the placement and, on a hit, persist a new version + record provenance. */
+async function applyOwnerPhotoToFreeform(draftId: string, draftToken: string, imageUrl: string): Promise<FreeformPlacement> {
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest || latest.format !== "html") return { status: "no_slot", detail: "not_freeform" };
+  const r = await placeOwnerPhotoInFreeform(draftId, imageUrl, latest);
+  if ((r.status === "placed" || r.status === "swapped") && r.html) {
+    const saved = await callBusinessRpc("create_business_document", {
+      p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
+      p_document: latest.brief, p_rendered_html: r.html, p_created_by: "patch", p_format: "html",
+    });
+    if (!saved || saved.ok !== true) return { status: "failed", detail: "save" };
+    // Provenance: record the customer placement (best-effort).
+    try {
+      const url = (Deno.env.get("SUPABASE_URL") || "").trim();
+      if (url) await fetch(`${url}/rest/v1/placed_images`, {
+        method: "POST", headers: { ...adminHeaders(), "content-type": "application/json" },
+        body: JSON.stringify({ business_id: draftId, provider: "customer", image_url: imageUrl, slot: r.where || "page", role: "work", alt: "Owner's own work" }),
+      }).catch(() => {});
+    } catch (_e) { /* provenance must not fail the placement */ }
+  }
+  return r;
+}
+
 export async function uploadDraftPhoto(
   draftId: string,
   draftToken: string,
@@ -2236,11 +2352,33 @@ export async function uploadDraftPhoto(
     return { ok: false, real: false, summary: "The photo uploaded but could not be attached to the business.", error: "photo_row_failed" };
   }
   const count = existing.length + 1;
+
+  // PLACE IT ON THE PAGE NOW — synchronously, so the reply can tell the truth
+  // about what actually happened (FIX 4). A freeform page has no automatic update
+  // path, so without this the photo stores and never appears.
+  let placement: FreeformPlacement = { status: "no_slot" };
+  try { placement = await applyOwnerPhotoToFreeform(draftId, draftToken, uploaded.url); }
+  catch (e) { placement = { status: "failed", detail: String((e as Error)?.message || e).slice(0, 120) }; }
+  const landed = placement.status === "placed" || placement.status === "swapped";
+
+  // The summary IS the owner-facing truth (see the dispatch: the reply is composed
+  // from it). Say what happened AND where — never "it's on your page" unless it is.
+  const summary = landed
+    ? (placement.status === "swapped"
+        ? `That's on your page now — in the ${placement.where || "page"}, in place of the stock photo that was there. If you'd rather keep the old one, just say so.`
+        : `That's on your page now, in the ${placement.where || "work section"}.`)
+    : placement.status === "no_slot"
+      ? `Real photo saved to the business. There's no open spot for it on the page as it's built — do NOT claim it is showing; offer to rebuild the page around it, and if they say yes that is a deliberate rebuild they chose.`
+      : `Real photo saved to the business, but I couldn't place it on the page just now — say that plainly and offer to rebuild the page around it.`;
+
   return {
     ok: true,
     real: true,
-    summary: `Real photo added — the business now has ${count} photo${count === 1 ? "" : "s"} on record, and the page is being rebuilt to use ${count === 1 ? "it" : "them"}.`,
-    raw: { url: uploaded.url, count, recordChange: ["photos"] },
+    summary,
+    // No 'photos' recordChange for a freeform page: placement already happened here,
+    // and the async rebuild would only no-op. An AST page (legacy) still rebuilds
+    // via that path, so keep the marker ONLY there.
+    raw: { url: uploaded.url, count, placement: placement.status, where: placement.where || null, ...(placement.detail === "not_freeform" ? { recordChange: ["photos"] } : {}) },
   };
 }
 

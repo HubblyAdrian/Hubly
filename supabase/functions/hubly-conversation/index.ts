@@ -958,10 +958,16 @@ Deno.serve(async (req) => {
     });
   }
 
+  // FIX 4: the deterministic, truthful reply for a photo-upload turn (set below).
+  // When set, it REPLACES the model's composed reply, because the model cannot see
+  // the image bytes and used to hedge ("I don't see the photo") over a real
+  // placement. The truth is what uploadDraftPhoto actually did to the page.
+  let photoTruth = "";
+
   // Same shape as logoUpload, and for the same reason: the bytes come straight
-  // from the client and never through the model. A photo lands in storage and
-  // in portfolio_photos, which loadBusinessRecord reads -- so it reaches the
-  // generator, and its recordChange rebuilds the page around it.
+  // from the client and never through the model. A photo lands in storage and is
+  // PLACED on the freeform page synchronously by uploadDraftPhoto (freeform pages
+  // have no async update path), so the reply can tell the truth about it.
   const photoUpload =
     body?.photoUpload && typeof body.photoUpload === "object" && typeof body.photoUpload.imageBase64 === "string"
       ? { imageBase64: body.photoUpload.imageBase64, mediaType: String(body.photoUpload.mediaType || "image/jpeg") }
@@ -978,6 +984,23 @@ Deno.serve(async (req) => {
       const rc = (photoResult as { raw?: { recordChange?: unknown } })?.raw?.recordChange;
       if (Array.isArray(rc)) for (const c of rc) if (typeof c === "string") recordChanges.add(c);
     } catch (_e) { /* never fail a turn on instrumentation */ }
+    // FIX 4 — the confirmation is the ACTUAL placement result, not the model's
+    // guess. uploadDraftPhoto placed the photo on the freeform page synchronously
+    // (or reported honestly that it couldn't), and its summary is the owner-facing
+    // truth. Use it verbatim as the reply, so the page and the words agree — the
+    // model can no longer say "I don't see the photo" over a real success.
+    photoTruth = String(photoResult.summary || "").trim();
+    // Loud + countable: record whether the placement actually landed on the page.
+    try {
+      const place = (photoResult as { raw?: { placement?: string } })?.raw?.placement || "unknown";
+      const landed = place === "placed" || place === "swapped";
+      if (!landed) console.error(`photo placement [${draftBusiness.id}] -> ${place} [DID NOT LAND]`);
+      const u = (Deno.env.get("SUPABASE_URL") || "").trim();
+      if (u) await fetch(`${u}/rest/v1/rpc/record_rebuild_outcome`, {
+        method: "POST", headers: { ...adminHeaders(), "content-type": "application/json" },
+        body: JSON.stringify({ p_business_id: draftBusiness.id, p_changes: "photo-placement", p_status: place, p_detail: photoResult.error || null, p_landed: landed }),
+      });
+    } catch (_e) { /* telemetry must never fail the turn */ }
   }
 
   // Inline canvas edit — click headline/subhead/hero-image directly inside
@@ -1464,7 +1487,11 @@ Deno.serve(async (req) => {
       const deduped = dedupeConversationMessages(interimMessages, finalText, priorAssistantSaid);
       // rebuildSkippedNote is empty unless a rebuild was refused over the
       // owner's manual edits, in which case they are told and offered one.
-      const finalReply = (deduped.reply || "") + rebuildSkippedNote;
+      // FIX 4: on a photo-upload turn, the truth about what landed on the page
+      // OVERRIDES whatever the model composed — the model can't see the image and
+      // used to deny a real placement. photoTruth is uploadDraftPhoto's own
+      // owner-facing summary of what it actually did.
+      const finalReply = (photoTruth || deduped.reply || "") + rebuildSkippedNote;
       // NOTE: the "offer the price-list photo ONCE per conversation" rule is enforced on the
       // CLIENT (hcOncePhotoOffer), not here: the first ask is a post_build turn whose reply is
       // never threaded back into `messages`, so this handler can't see it to know the offer was
