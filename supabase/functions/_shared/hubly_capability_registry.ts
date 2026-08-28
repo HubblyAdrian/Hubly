@@ -2500,13 +2500,20 @@ function findServiceHeading(html: string, name: string): { index: number; length
   const target = name.trim().toLowerCase().replace(/\s+/g, " ");
   if (!target) return null;
   const strip = (s: string) => s.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim().toLowerCase();
+  // Comparison key: trailing punctuation and a simple plural 's' removed, so the
+  // model's "Pour-over" matches the page's "Pour-overs" and "Haircut" matches
+  // "Haircuts". Only ever loosens toward a MISS being a match, never one service
+  // onto another — an irregular plural just falls through to the honest missing
+  // case rather than landing a price on the wrong card.
+  const key = (s: string) => s.replace(/[.,:;!?]+$/, "").replace(/s$/i, "");
+  const targetKey = key(target);
   const re = /<(h[1-6]|strong|dt|b)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
   let m: RegExpExecArray | null;
   let best: { index: number; length: number; tag: string; attrs: string } | null = null;
   let bestScore = -Infinity;
   while ((m = re.exec(html))) {
     const inner = strip(m[3]);
-    const exact = inner === target;
+    const exact = inner === target || key(inner) === targetKey;
     // Prefix only when the remainder starts with a price/dash — "Cold Brew $5",
     // never "Cold Brew Flight".
     const prefix = !exact && inner.startsWith(target) && /^[\s$\d.,:–—-]/.test(inner.slice(target.length));
