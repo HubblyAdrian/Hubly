@@ -299,6 +299,13 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   padding:10px 14px;max-width:min(560px,82%);
 }
 .hc-msg.typing{color:var(--ink-3);font-style:italic}
+/* An action button rendered INSIDE a Hubly chat message (edit-needs-account offer,
+   account offer). The button IS the action — it never points at a control elsewhere.
+   Big tap target so a phone can hit it. */
+.hc-inline-cta{display:inline-flex;align-items:center;justify-content:center;margin-top:12px;
+  min-height:44px;padding:11px 20px;border:none;border-radius:999px;background:#d2582a;color:#fff;
+  font:inherit;font-size:15px;font-weight:700;cursor:pointer;-webkit-appearance:none}
+.hc-inline-cta:active{transform:translateY(1px)}
 /* Multi-business picker: plain rows, a name and an address. A picker, not a
    dashboard — enough to choose which site to open, nothing more. */
 .hc-biz-picker{display:flex;flex-direction:column;gap:8px;margin-top:2px}
@@ -726,6 +733,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   border:0;background:none;color:var(--ink-3);font-size:20px;line-height:1;cursor:pointer;
 }
 .auth-close:hover{color:var(--ink);background:var(--line)}
+.auth-dismiss{display:block;width:100%;margin-top:14px;min-height:44px;padding:10px;border:0;
+  background:none;color:var(--ink-3);font:inherit;font-size:15px;font-weight:600;cursor:pointer;-webkit-appearance:none}
+.auth-dismiss:active{color:var(--ink)}
 .auth-card h2{font-family:var(--display);font-weight:800;font-size:21px;letter-spacing:-.02em;color:var(--ink);margin-bottom:6px}
 .auth-card .auth-sub{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin-bottom:20px}
 /* Google is the PRIMARY sign-in — one tap, and it survives the mobile round-trip
@@ -946,6 +956,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       </form>
       <div class="auth-err" id="authErr" role="alert"></div>
       <p class="auth-foot">No password needed. By continuing you agree to Hubly's Terms.</p>
+      <!-- A big, obvious way out. The × is a tiny target and the backdrop is a sliver
+           on a phone, which is how the modal became a trap. This never fails to close. -->
+      <button type="button" class="auth-dismiss" id="authMaybeLater">Maybe later</button>
     </div>
 
     <div id="authStepCode" hidden>
@@ -3739,9 +3752,35 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         if(r && r.data && r.data.session){ hcAfterAuth(); return; }
       }catch(e){}
     }
-    // Truly signed out (or the refresh failed) -> the one door.
+    // Truly signed out. Do NOT throw up the full-screen auth modal here. On a phone
+    // that modal covered the whole builder and could not be easily dismissed (a tiny
+    // ×, a sliver of backdrop, no Escape key) — a login wall for a tap the person
+    // never meant as a login, and the reported "no buttons respond after tapping an
+    // image" bug. Editing IS gated, so we SAY so, in the thread, where every control
+    // stays live; the account door is one deliberate tap away (the always-present
+    // header button, or the account offer's button), never a trap. Remember which
+    // element they clicked so the edit reopens once they DO claim.
     try{ if(hc.pendingEditLabel && hc.draftBusiness) sessionStorage.setItem('hcPendingEdit:' + hc.draftBusiness.id, hc.pendingEditLabel); }catch(e){}
-    authOpen();
+    hcOfferAccountForEdit();
+  }
+  // A non-trapping, in-thread offer shown when an anonymous visitor tries to edit
+  // the page (tap a photo, tap the words). It NEVER covers the interface. The button
+  // it renders IS the action (opens the account door) — not a pointer to a control
+  // elsewhere — so it satisfies the never-name-a-control rule while giving the person
+  // a real way to act. Shown once per idle stretch so repeated taps don't spam.
+  function hcOfferAccountForEdit(){
+    if(hc._editOfferPending) return;             // don't stack offers on repeated taps
+    hc._editOfferPending = true;
+    var wrap = hcAppendMessage('hubly', "Want to change that yourself — swap the photo, fix the words? That's one of the things an account unlocks, along with your own photos and the address going live. About ten seconds.");
+    try{
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'hc-inline-cta';
+      btn.textContent = 'Create your account';
+      btn.addEventListener('click', function(){ hc._editOfferPending = false; hcHandleOpenAccount(); });
+      if(wrap && wrap.appendChild) wrap.appendChild(btn);
+    }catch(e){}
+    // Let the next genuine tap offer again after a short cool-off.
+    setTimeout(function(){ hc._editOfferPending = false; }, 6000);
   }
   // The one privileged call. Uses the draft id + token the builder already holds
   // (populated from the cookie by resume-draft, so it survives the OAuth round
@@ -3912,6 +3951,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     var navSignin = document.getElementById('navSignin');
     if(navSignin) navSignin.addEventListener('click', authOpen);
     authEl('authClose').addEventListener('click', authClose);
+    try{ authEl('authMaybeLater').addEventListener('click', authClose); }catch(e){}
     authOv.addEventListener('click', function(e){ if(e.target === authOv) authClose(); });
     document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && authOv.classList.contains('is-open')) authClose(); });
     authEl('authGoogle').addEventListener('click', authGoogle);
