@@ -299,6 +299,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   padding:10px 14px;max-width:min(560px,82%);
 }
 .hc-msg.typing{color:var(--ink-3);font-style:italic}
+/* The "Create your account" button inside the reserved-for-you offer message. The
+   button IS the action (opens the account door) — never a pointer to a control
+   elsewhere. BLOCK level, its own line, full-width, 44px tall so a thumb hits it on
+   a phone (the last attempt was inline-flex and sat mid-sentence). */
+.hc-account-cta{display:block;width:100%;margin-top:14px;min-height:44px;padding:12px 20px;border:0;
+  border-radius:14px;background:#d2582a;color:#fff;font:inherit;font-size:15px;font-weight:700;
+  cursor:pointer;-webkit-appearance:none;text-align:center;box-sizing:border-box}
+.hc-account-cta:active{transform:translateY(1px)}
 /* Multi-business picker: plain rows, a name and an address. A picker, not a
    dashboard — enough to choose which site to open, nothing more. */
 .hc-biz-picker{display:flex;flex-direction:column;gap:8px;margin-top:2px}
@@ -2082,8 +2090,25 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       msg = "The address " + host + " is reserved for you. Making an account takes about ten seconds and puts it live.";
     }
     var el = hcAppendMessage('hubly', msg);
-    if(!claimed && el) el.setAttribute('data-hc-msg', 'preaccount');
+    if(!claimed && el){ el.setAttribute('data-hc-msg', 'preaccount'); hcAttachAccountCta(el); }
     hcPersist('assistant', msg);
+  }
+  // A block-level "Create your account" button inside the reserved-for-you offer, so
+  // the person can ACT on it instead of having to type "let's sign up". The button IS
+  // the action — it opens the account door directly (hcHandleOpenAccount); it never
+  // points at a control elsewhere. Idempotent, and re-attached on reload (the
+  // transcript replays the message as plain text without it — see hcLoadConversation),
+  // so it never evaporates on refresh. openAccount still works for people who answer in
+  // words — this is an addition, not a replacement.
+  function hcAttachAccountCta(msgEl){
+    if(!msgEl || (msgEl.querySelector && msgEl.querySelector('.hc-account-cta'))) return;
+    try{
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'hc-account-cta';
+      b.textContent = 'Create your account';
+      b.addEventListener('click', function(){ try{ hcHandleOpenAccount(); }catch(e){} });
+      msgEl.appendChild(b);
+    }catch(e){}
   }
   function hcRecordPostbuildFallback(){
     try{
@@ -3268,7 +3293,10 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       // re-render it on reload (it's matched by content because a restored message
       // has no data-hc-msg tag). The site being live is confirmed elsewhere.
       if(hc.draftClaimed && rows[i].role !== 'user' && hcIsPreAccountMsg(txt)) continue;
-      hcAppendMessage(rows[i].role === 'user' ? 'user' : 'hubly', txt);
+      var _el = hcAppendMessage(rows[i].role === 'user' ? 'user' : 'hubly', txt);
+      // Re-attach the account button to the reserved-for-you offer on reload (the
+      // transcript stores only text, so the button would otherwise evaporate).
+      if(!hc.draftClaimed && rows[i].role !== 'user' && hcIsPreAccountMsg(txt)) hcAttachAccountCta(_el);
     }
     hcThreadScrollToEnd();
     return true;
