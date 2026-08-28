@@ -220,18 +220,37 @@ when, for anything set after the first build, it is not.
   services set after the build ARE bookable even though they're invisible on the
   freeform page.
 
-**Net:** the acknowledgement "those services are on the site now" is true for the
+**Net:** the acknowledgement "those services are on the site now" was true for the
 NAMES generated at build and true for the BOOK page, but false for the freeform page
-when a price/service is set or changed after the initial build. Same shape as the
-photo gap that FIX 1–4 closed (2026-08-27); the fix is probably small (give
-`setServices` a targeted freeform patch, like `placeOwnerPhotoInFreeform` got).
-**Reported to Adrian; not fixed yet, per his instruction to report first.**
+when a price/service was set or changed after the initial build. Same shape as the
+photo gap that FIX 1–4 closed (2026-08-27).
 
-**What would fully close it:** give the post-build `services` recordChange a real
-freeform patch path (locate the services section in the stored HTML and rewrite the
-cards with names + prices), then re-render and confirm a price changed by talking
-shows on the page — not just the record. Until then, the "on the site now" line must
-not claim the freeform page shows a post-build price it doesn't (finding #5).
+**FIX — built + deployed 2026-08-28 (mirrors the photo ladder; closes #3 and #5,
+one seam):**
+- `markServiceHeadingsInFreeform` — a generation-time pass in `generateFreeformPage`
+  stamps each service heading `data-hubly-service="<name>"`, the reliable anchor for
+  later price patches (the way the hidden photo slot was added).
+- `placeServicesInFreeform` ladder in the `setServices` handler, run synchronously
+  like `uploadDraftPhoto`: (1) a `data-hubly-price` span a prior patch wrote → update
+  its text; (2) a marked or plain service heading → place the price with it
+  (text-match covers the ~83% of existing pages with names baked in); (3) name not on
+  the page → `missing`, the honest rebuild offer, never a forced card. A scored
+  matcher prefers real headings over inline `<strong>` and penalises hero/nav/footer,
+  so a price never lands in the hero sentence.
+- `servicesTruth` (#3, #5): the reply is the ACTUAL placement — "Cold brew $7 … are on
+  your page now, in the services section" — names + prices + where, true only because
+  the patch happened; if a service isn't on the page it says so and offers the rebuild.
+- Loud + countable: a price that saves and doesn't appear is a `services-placement`
+  row in `record_rebuild_outcome`, never a silence.
+
+**STILL OPEN — the live render proof.** The placement logic is validated against the
+real dawn-patrol stored HTML (3 prices onto the right cards, none in the hero,
+idempotent updates), and both edge functions are deployed. But the model-driven
+end-to-end proof Adrian asked for — set services on a build, change a price by
+talking, watch the page update with the new figure + the truthful message — is
+BLOCKED: the OpenAI account is out of quota (`429`, "no quota left"), so
+`hubly-conversation` can't run `setServices` at all. Restore quota, then the one
+test closes it: change a price by talking and confirm both the page and the words.
 
 ---
 
