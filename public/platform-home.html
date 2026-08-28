@@ -1113,12 +1113,21 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // tab close AND the instant the cookie is confirmed, ≤10-min server expiry. The trade
   // is: a bounded grant in one tab vs. silently deleting a first-time user's work.
   var HC_GRANT_KEY = 'hcDraftGrant';
-  var hcGrantConfirmed = false;
-  async function hcCookieSet(){
+  // The business id the durable cookie is confirmed to point at — NOT a bare
+  // boolean. A device that built one draft already has a `hubly_draft` cookie; a
+  // bare "is any cookie set?" flag treated that stale pointer as proof this draft
+  // was saved, short-circuited the exchange, and left the NEW draft with no way
+  // back — so a refresh resurrected the OLD business (or nothing, if it was gone)
+  // and silently lost the work in progress. Confirmation is per-business now.
+  var hcGrantConfirmedFor = null;
+  // Does the durable cookie point at THIS draft? When expectedId is given, a
+  // cookie for a DIFFERENT business is not a match — that is the whole fix.
+  async function hcCookieSet(expectedId){
     try{
       var g = await fetch('/api/draft-session', { credentials:'same-origin' })
         .then(function(r){ return r.json(); }).catch(function(){ return null; });
-      return !!(g && g.ok && g.businessId);
+      if(!(g && g.ok && g.businessId)) return false;
+      return expectedId ? (String(g.businessId) === String(expectedId)) : true;
     }catch(e){ return false; }
   }
   async function hcPostGrant(grant){
@@ -1132,16 +1141,25 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       return !!(r && r.ok);
     }catch(e){ return false; }
   }
-  async function hcExchangeDraftGrant(grant){
-    if(!grant || hcGrantConfirmed) return;
+  async function hcExchangeDraftGrant(grant, expectedId){
+    // Already confirmed for THIS draft? Nothing to do. But if the confirmed
+    // business differs (a second draft built on the same device this session),
+    // fall through and save a way back to the new one — never assume the last
+    // draft's cookie covers this one.
+    if(!grant) return;
+    if(expectedId && String(hcGrantConfirmedFor) === String(expectedId)) return;
     try{ sessionStorage.setItem(HC_GRANT_KEY, grant); }catch(e){}   // survive a refresh
-    for(var attempt = 0; attempt < 4 && !hcGrantConfirmed; attempt++){
-      if(await hcCookieSet()){ hcGrantConfirmed = true; break; }
+    var confirmed = false;
+    for(var attempt = 0; attempt < 4 && !confirmed; attempt++){
+      // Confirm the cookie points at THIS draft, not merely that some cookie
+      // exists — a pre-existing cookie from an earlier draft must NOT count.
+      if(await hcCookieSet(expectedId)){ confirmed = true; break; }
       await hcPostGrant(grant);
-      if(await hcCookieSet()){ hcGrantConfirmed = true; break; }
+      if(await hcCookieSet(expectedId)){ confirmed = true; break; }
       await new Promise(function(res){ setTimeout(res, 400 * (attempt + 1)); });
     }
-    if(hcGrantConfirmed){
+    if(confirmed){
+      hcGrantConfirmedFor = expectedId || hcGrantConfirmedFor;
       try{ sessionStorage.removeItem(HC_GRANT_KEY); }catch(e){}     // no longer needed
     } else {
       // Couldn't save a way back. Never silent — the whole point of the fix.
@@ -2073,7 +2091,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       if(!data || data.ok !== true || !data.reply || hcIsFallbackReply(data.reply)){ finish(null, true); return; }
       // Arm the capture guard from this ask, exactly as a normal turn would.
       if(['services','hours','area','phone','logo','photos'].indexOf(data.askedFor) >= 0){ hc.pendingCapture = { askedFor: data.askedFor, tries: 0 }; }
-      if(data.draftGrant) hcExchangeDraftGrant(data.draftGrant);
+      if(data.draftGrant) hcExchangeDraftGrant(data.draftGrant, hc.draftBusiness && hc.draftBusiness.id);
       finish(String(data.reply), false);
     }).catch(function(){ finish(null, true); });
   }
@@ -2291,7 +2309,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         }
         // Exchange the claim grant the moment a draft appears, so whoever just
         // built this can keep it.
-        if(data.draftGrant) hcExchangeDraftGrant(data.draftGrant);
+        if(data.draftGrant) hcExchangeDraftGrant(data.draftGrant, hc.draftBusiness && hc.draftBusiness.id);
         // THE ACCOUNT DOOR, OPENED FROM INSIDE THE CONVERSATION. openAccount is a
         // CONTRACT, not a wire to a specific widget: the assistant decided, mid-thread,
         // that it's time to make an account (the person agreed). hcHandleOpenAccount is
@@ -2985,7 +3003,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           // more. This is the moment to offer to keep it (see hcMaybeShowClaimCard).
           hcMaybeShowClaimCard();
         }
-        if(data && data.draftGrant) hcExchangeDraftGrant(data.draftGrant);
+        if(data && data.draftGrant) hcExchangeDraftGrant(data.draftGrant, hc.draftBusiness && hc.draftBusiness.id);
         // SAY IT. The server computes exactly what changed and now returns it;
         // this used to ignore the reply entirely, so an edit that worked and an
         // edit that failed looked identical from the chair. Failures come back
@@ -3171,10 +3189,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       // grant (hcExchangeDraftGrant), redeem it NOW so the read below finds a live draft
       // session instead of dropping the person onto a fresh, empty builder.
       try{
+        // A stashed grant means the exchange never CONFIRMED for its draft — so
+        // redeem it now, overwriting whatever (possibly stale, from an earlier
+        // draft) cookie is present. Do NOT skip just because "a cookie exists":
+        // that check is exactly what let a stale pointer shadow this draft.
         var pendingGrant = sessionStorage.getItem(HC_GRANT_KEY);
-        if(pendingGrant && !(await hcCookieSet())){
+        if(pendingGrant){
           await hcPostGrant(pendingGrant);
-          if(await hcCookieSet()){ hcGrantConfirmed = true; try{ sessionStorage.removeItem(HC_GRANT_KEY); }catch(e){} }
+          if(await hcCookieSet()){ try{ sessionStorage.removeItem(HC_GRANT_KEY); }catch(e){} }
         }
       }catch(e){}
       var sess = await fetch('/api/draft-session', { credentials: 'same-origin' }).then(function(r){ return r.json(); }).catch(function(){ return null; });
