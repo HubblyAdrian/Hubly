@@ -404,6 +404,57 @@ function jsonRes(body: unknown, status = 200) {
   });
 }
 
+// The truthful services read-back (findings #3 + #5). Composed from what
+// applyServicesToFreeform ACTUALLY did — names, prices, and the place — so the
+// acknowledgement is true because the patch happened, never in place of it.
+type ServicesPlacementLike = {
+  status: string;
+  placed: { name: string; price?: number }[];
+  missing?: string[];
+  where?: string;
+  detail?: string;
+};
+function fmtSvcPrice(n: number): string {
+  return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
+}
+/** "A, B and C" / "A, B and N more" — named, not counted, until the tail. */
+function andList(items: string[], overflowAfter = 3): string {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  if (items.length <= overflowAfter) return items.slice(0, -1).join(", ") + " and " + items[items.length - 1];
+  const more = items.length - overflowAfter;
+  return items.slice(0, overflowAfter).join(", ") + ` and ${more} more`;
+}
+function composeServicesTruth(placement: ServicesPlacementLike, url: string): string {
+  const priced = (placement.placed || []).filter((p) => typeof p.price === "number");
+  const wherePhrase = placement.where === "services section" ? "in the services section" : "on your page";
+  const missing = placement.missing || [];
+  const rebuildOffer = url
+    ? ` Want me to rebuild the page around the full list?`
+    : ` Want me to rebuild the page around them?`;
+
+  if (placement.status === "failed") {
+    return `I saved those to your record, but couldn't update the page just now — so don't take them as showing yet.${rebuildOffer}`;
+  }
+  if (placement.status === "none_on_page") {
+    // Never claim a card that isn't there — the honest rebuild case.
+    return `I saved those to your record, but the page as it's built doesn't have a place for them, so they aren't showing on it yet.${rebuildOffer}`;
+  }
+  if (placement.status === "no_prices") {
+    // Names are on the page; no prices were given. Let the model ask for them —
+    // don't override with a price read-back that has no prices to read.
+    return "";
+  }
+  // placed / partial — at least one price landed. Read them back with the numbers.
+  const readback = andList(priced.map((p) => `${p.name} ${fmtSvcPrice(p.price as number)}`));
+  const landedLine = `${readback} ${priced.length === 1 ? "is" : "are"} on your page now, ${wherePhrase}.`;
+  if (placement.status === "partial" && missing.length) {
+    const missWord = andList(missing);
+    return `${landedLine} I couldn't find ${missWord} on the page as it's built, so ${missing.length === 1 ? "it isn't" : "they aren't"} showing yet.${rebuildOffer}`;
+  }
+  return landedLine;
+}
+
 function extractJson(rawText: string): string {
   const cleaned = String(rawText || "")
     .replace(/^```(?:json)?/i, "")
@@ -963,6 +1014,11 @@ Deno.serve(async (req) => {
   // the image bytes and used to hedge ("I don't see the photo") over a real
   // placement. The truth is what uploadDraftPhoto actually did to the page.
   let photoTruth = "";
+  // Same mechanism, one seam over (findings #3 + #5): when setServices patches a
+  // freeform page, the read-back is the ACTUAL placement — names, prices, and the
+  // place — not the model's paraphrase (which dropped the numbers). Set below from
+  // the setServices result; when set, it replaces the model's composed reply.
+  let servicesTruth = "";
 
   // Same shape as logoUpload, and for the same reason: the bytes come straight
   // from the client and never through the model. A photo lands in storage and is
@@ -1360,6 +1416,31 @@ Deno.serve(async (req) => {
           if (Array.isArray(rc)) for (const c of rc) if (typeof c === "string") recordChanges.add(c);
         } catch (_e) { /* instrumentation must never fail a turn */ }
 
+        // setServices on a FREEFORM page: the page was patched synchronously in the
+        // handler. Compose the read-back from what ACTUALLY landed (names + prices +
+        // where), and record a countable outcome — the same discipline as the photo
+        // path. This is what makes findings #3 (prices never read back) and #5 ("on
+        // the site" doesn't say where) true instead of hopeful.
+        if (capabilityName === "business" && actionName === "setServices" && result?.ok) {
+          try {
+            const placement = (result.raw as { services?: ServicesPlacementLike } | undefined)?.services;
+            const url = String((result.raw as { url?: string } | undefined)?.url || (draftBusiness?.url || ""));
+            if (placement && placement.status !== "not_freeform") {
+              const truth = composeServicesTruth(placement, url);
+              if (truth) servicesTruth = truth;
+              // Loud + countable: a price that saved but didn't appear is a row we
+              // can query, never a silence.
+              const landed = placement.status === "placed" || placement.status === "partial" || placement.status === "no_prices";
+              if (!landed) console.error(`services placement [${draftBusiness?.id}] -> ${placement.status} [DID NOT LAND]`);
+              const u = (Deno.env.get("SUPABASE_URL") || "").trim();
+              if (u && draftBusiness?.id) await fetch(`${u}/rest/v1/rpc/record_rebuild_outcome`, {
+                method: "POST", headers: { ...adminHeaders(), "content-type": "application/json" },
+                body: JSON.stringify({ p_business_id: draftBusiness.id, p_changes: "services-placement", p_status: placement.status, p_detail: (placement.missing || []).join(",") || placement.detail || null, p_landed: landed }),
+              });
+            }
+          } catch (_e) { /* the read-back is best-effort; never fail the turn on it */ }
+        }
+
         actions.push({
           capability: capabilityName,
           capabilityAction: actionName,
@@ -1490,8 +1571,11 @@ Deno.serve(async (req) => {
       // FIX 4: on a photo-upload turn, the truth about what landed on the page
       // OVERRIDES whatever the model composed — the model can't see the image and
       // used to deny a real placement. photoTruth is uploadDraftPhoto's own
-      // owner-facing summary of what it actually did.
-      const finalReply = (photoTruth || deduped.reply || "") + rebuildSkippedNote;
+      // owner-facing summary of what it actually did. servicesTruth is the same
+      // for a freeform setServices turn: the price read-back is what the patch
+      // actually did (findings #3 + #5), so it replaces the model's paraphrase
+      // which dropped the numbers and the location.
+      const finalReply = (photoTruth || servicesTruth || deduped.reply || "") + rebuildSkippedNote;
       // NOTE: the "offer the price-list photo ONCE per conversation" rule is enforced on the
       // CLIENT (hcOncePhotoOffer), not here: the first ask is a post_build turn whose reply is
       // never threaded back into `messages`, so this handler can't see it to know the offer was

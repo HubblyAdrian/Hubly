@@ -1938,11 +1938,19 @@ export async function generateFreeformPage(
   // name-bearing element AND guarantees the name can wrap/break rather than
   // overflow. It only removes/overrides; it never regenerates.
   const named = protectBusinessName(deordinal.html, (record as Record<string, unknown>)?.name as string);
+  // THE SERVICE-ANCHOR PASS. Stamp each service heading with data-hubly-service
+  // at generation time — the reliable anchor a later price change patches against,
+  // added the way the hidden photo slot was. Attribute only; no rewrite. Makes
+  // every page built from here patchable without depending on a fuzzy name match.
+  const svcNames = (Array.isArray((record as any).services) ? (record as any).services : [])
+    .map((s: any) => String(s?.name || "").trim()).filter(Boolean);
+  const svcMarked = markServiceHeadingsInFreeform(named, svcNames);
+  if (svcMarked.marked > 0) console.log(`freeform [${businessId}] marked ${svcMarked.marked} service heading(s) for price patching`);
   // THE svh-COMPANION PASS. The prompt asks full-height sections to pair vh with
   // svh so they don't jump with the mobile address bar; ~10% of pages ship a bare
   // vh anyway. This adds the missing companion deterministically. Runs BEFORE the
   // runtime injection so it only repairs the model's stylesheet, not our widget.
-  const paired = pairViewportUnits(named);
+  const paired = pairViewportUnits(svcMarked.html);
   if (paired.added > 0) {
     console.log(`freeform [${businessId}] paired ${paired.added} bare-vh height(s) with an svh companion`);
   }
@@ -2433,6 +2441,183 @@ export async function uploadDraftPhoto(
     // via that path, so keep the marker ONLY there.
     raw: { url: uploaded.url, count, placement: placement.status, where: placement.where || null, ...(placement.detail === "not_freeform" ? { recordChange: ["photos"] } : {}) },
   };
+}
+
+// ── SERVICE PRICES ON A FREEFORM PAGE ────────────────────────────────────────
+// The SAME problem the photo path solved (placeOwnerPhotoInFreeform), one seam
+// over: a freeform page is a single generation with NO async update path, so a
+// price set AFTER the build wrote the record and never reached the page. That is
+// exactly the gap that made "those services are on the site now" a false line,
+// and it's the thing the whole price-list-photo flow exists to deliver. This is
+// the mirror ladder:
+//
+//   1. A service HEADING marked `data-hubly-service="<name>"` at generation time
+//      (markServiceHeadingsInFreeform, below) — the reliable anchor, added the
+//      way the hidden photo slot was. Also matched: a `data-hubly-price` span a
+//      prior patch already wrote, whose text we just update.
+//   2. Otherwise, text-match the service name in a heading and place the price
+//      with it. Existing pages have the names baked in (~83%), so this covers the
+//      corpus we already have.
+//   3. If a service isn't on the page at all, it goes in `missing` — the honest
+//      rebuild case (never force a card where the design has no place for it).
+//
+// Deterministic, no model call, no regeneration. Returns what actually landed so
+// the reply can name the prices and the place — and say so ONLY because it did.
+type ServicesPlacement = {
+  status: "placed" | "partial" | "none_on_page" | "no_prices" | "not_freeform" | "failed";
+  placed: { name: string; price?: number }[];   // names confirmed on the page (price applied if given)
+  missing: string[];                             // service names not on the page at all
+  where?: string;                                // "services section" | "page"
+  changed?: boolean;
+  detail?: string;
+};
+
+function escRe(s: string): string {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function fmtServicePrice(n: number): string {
+  // Mirror buildBusinessRecordBlock's money(): integer dollars, no cents unless real.
+  return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
+}
+/** Purely for telling the owner WHERE — never a claim we can't back up. */
+function servicesWhereLabel(html: string): string {
+  if (/<section[^>]*class="[^"]*(menu|service|pricing|price|offer)[^"]*"/i.test(html)) return "services section";
+  if (/<(?:h[1-6])[^>]*>[^<]*\b(services|menu|pricing|what we (?:do|offer)|our work)\b/i.test(html)) return "services section";
+  return "page";
+}
+/** The heading element whose PRIMARY text is this service name (exact, or the
+ *  name followed by a price/description). Nested inline tags (data-hc spans) are
+ *  stripped before comparison, so `<h3 data-hc>Cold Brew</h3>` matches "Cold Brew".
+ *
+ *  SCORED, not first-match: a service name also appears in prose — the hero
+ *  subhead "Cold brew, pour-overs and breakfast tacos…" wraps each in <strong>,
+ *  and that <strong> comes BEFORE the real <h3> card in the document. So prefer a
+ *  real heading (h1–h6) over inline emphasis (strong/b), an exact text over a
+ *  prefix, and penalise a match sitting in the hero/nav/footer chrome. Injecting a
+ *  price into the hero sentence instead of the card is exactly the wrong-place bug
+ *  the photo ladder's NON_WORK_SUBJECT guard exists to avoid. */
+function findServiceHeading(html: string, name: string): { index: number; length: number; tag: string; attrs: string } | null {
+  const target = name.trim().toLowerCase().replace(/\s+/g, " ");
+  if (!target) return null;
+  const strip = (s: string) => s.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim().toLowerCase();
+  const re = /<(h[1-6]|strong|dt|b)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
+  let m: RegExpExecArray | null;
+  let best: { index: number; length: number; tag: string; attrs: string } | null = null;
+  let bestScore = -Infinity;
+  while ((m = re.exec(html))) {
+    const inner = strip(m[3]);
+    const exact = inner === target;
+    // Prefix only when the remainder starts with a price/dash — "Cold Brew $5",
+    // never "Cold Brew Flight".
+    const prefix = !exact && inner.startsWith(target) && /^[\s$\d.,:–—-]/.test(inner.slice(target.length));
+    if (!exact && !prefix) continue;
+    const tag = m[1].toLowerCase();
+    let score = /^h[1-6]$/.test(tag) ? 3 : tag === "dt" ? 2 : 1;   // real heading > <dt> > inline emphasis
+    if (exact) score += 1;                                          // exact text > prefix
+    if (/data-hc="(?:hero|nav|footer|announce|cta)/i.test(m[2])) score -= 5;   // prose/chrome, not a card
+    if (score > bestScore) { bestScore = score; best = { index: m.index, length: m[0].length, tag, attrs: m[2] }; }
+  }
+  return best;
+}
+/** Append the price-marker style ONCE. Same discipline as fixCollapsibleGridColumns:
+ *  a small deterministic CSS invariant, not a per-page guess. Block + light weight
+ *  so an injected price reads as a price and can't collapse a column. */
+function ensureServicePriceCss(html: string): string {
+  if (/\[data-hubly-price\]\s*\{/.test(html)) return html;
+  const css = "<style>[data-hubly-price]{display:block;margin-top:.35em;font-weight:600;opacity:.92}</style>";
+  return /<\/head>/i.test(html) ? html.replace(/<\/head>/i, css + "</head>") : html + css;
+}
+/** Place or update ONE service's price, in fidelity order. */
+function placeOneServicePrice(html: string, name: string, price: number): { html: string; placed: boolean; injected: boolean } {
+  const priceStr = fmtServicePrice(price);
+  // LADDER 1a — a data-hubly-price span a prior patch wrote: just update its text.
+  const spanRe = new RegExp(`(<span[^>]*data-hubly-price="${escRe(name)}"[^>]*>)[\\s\\S]*?(<\\/span>)`, "i");
+  if (spanRe.test(html)) return { html: html.replace(spanRe, `$1${priceStr}$2`), placed: true, injected: false };
+  // LADDER 1b/2 — a marked or plain service heading.
+  const h = findServiceHeading(html, name);
+  if (!h) return { html, placed: false, injected: false };
+  const afterAt = h.index + h.length;                       // right after `</tag>`
+  const rest = html.slice(afterAt);
+  // Bound the search so we never grab a NEIGHBOUR's price: stop at the next
+  // heading / next marked service / ~400 chars.
+  const stop = rest.search(/<(?:h[1-6]|strong|dt)\b|data-hubly-service=/i);
+  const winEnd = stop === -1 ? Math.min(rest.length, 400) : Math.min(stop, 400);
+  const win = rest.slice(0, winEnd);
+  const existing = win.match(/\$\s?\d[\d.,]*/);
+  const nameAttr = name.replace(/"/g, "");
+  if (existing) {
+    // A price is already shown here — update it in place, wrapping it so the next
+    // change is a clean LADDER 1a hit.
+    const newWin = win.replace(existing[0], `<span data-hubly-price="${nameAttr}">${priceStr}</span>`);
+    return { html: html.slice(0, afterAt) + newWin + rest.slice(winEnd), placed: true, injected: true };
+  }
+  // No price yet — inject one right after the heading.
+  const injected = `<span data-hubly-price="${nameAttr}">${priceStr}</span>`;
+  return { html: html.slice(0, afterAt) + injected + html.slice(afterAt), placed: true, injected: true };
+}
+/** Run the whole list over the page; report what landed and what's simply not there. */
+function placeServicesInFreeform(html: string, services: { name: string; price?: number }[]): ServicesPlacement {
+  let out = html;
+  const placed: { name: string; price?: number }[] = [];
+  const missing: string[] = [];
+  let anyPrice = false;
+  let injectedAny = false;
+  for (const s of services) {
+    if (typeof s.price === "number") {
+      anyPrice = true;
+      const r = placeOneServicePrice(out, s.name, s.price);
+      if (r.placed) { out = r.html; placed.push({ name: s.name, price: s.price }); if (r.injected) injectedAny = true; }
+      else missing.push(s.name);
+    } else {
+      // No price given — just confirm the name is (or isn't) on the page.
+      if (findServiceHeading(out, s.name)) placed.push({ name: s.name });
+      else missing.push(s.name);
+    }
+  }
+  if (injectedAny) out = ensureServicePriceCss(out);
+  let status: ServicesPlacement["status"];
+  if (!placed.length) status = "none_on_page";
+  else if (missing.length) status = "partial";
+  else if (!anyPrice) status = "no_prices";
+  else status = "placed";
+  return { status, placed, missing, where: servicesWhereLabel(out), changed: out !== html, html: out } as ServicesPlacement & { html: string };
+}
+/** Stamp each service heading with data-hubly-service at GENERATION time, so a
+ *  later price change has a reliable anchor. Adds an attribute only; never
+ *  reorders, rewrites, or regenerates. */
+export function markServiceHeadingsInFreeform(html: string, names: string[]): { html: string; marked: number } {
+  let out = html;
+  let marked = 0;
+  for (const raw of names) {
+    const name = String(raw || "").trim();
+    if (!name) continue;
+    const h = findServiceHeading(out, name);
+    if (!h) continue;
+    if (/data-hubly-service=/i.test(h.attrs)) continue;   // already marked
+    const open = out.slice(h.index, h.index + h.length);
+    const nameAttr = name.replace(/"/g, "");
+    const rebuilt = open.replace(/^<([a-z0-9]+)/i, `<$1 data-hubly-service="${nameAttr}"`);
+    out = out.slice(0, h.index) + rebuilt + out.slice(h.index + h.length);
+    marked++;
+  }
+  return { html: out, marked };
+}
+
+/** Run the placement and, on a change, persist a new version. Mirrors
+ *  applyOwnerPhotoToFreeform: not_freeform on an AST page (the async rebuild
+ *  handles those), otherwise a synchronous, targeted patch. */
+async function applyServicesToFreeform(draftId: string, draftToken: string, services: { name: string; price?: number }[]): Promise<ServicesPlacement> {
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest || latest.format !== "html") return { status: "not_freeform", placed: [], missing: services.map((s) => s.name) };
+  const r = placeServicesInFreeform(latest.renderedHtml, services) as ServicesPlacement & { html: string };
+  if (r.changed && r.html) {
+    const saved = await callBusinessRpc("create_business_document", {
+      p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
+      p_document: latest.brief, p_rendered_html: r.html, p_created_by: "patch", p_format: "html",
+    });
+    if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, where: r.where, detail: "save" };
+  }
+  return { status: r.status, placed: r.placed, missing: r.missing, where: r.where, changed: r.changed };
 }
 
 export async function uploadDraftHeroImage(
@@ -3819,15 +4004,33 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             return { ok: false, real: false, summary: "The services list could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
           }
           const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
+          // PLACE THE PRICES ON THE PAGE NOW — synchronously, mirroring
+          // uploadDraftPhoto. A freeform page has no async update path, so without
+          // this the record updates and the page keeps its old (or price-less)
+          // cards: the "now shows N real services" line would be false about the
+          // one thing the price flow exists to deliver. On an AST/classic page this
+          // is not_freeform and the async rebuild below handles it instead.
+          let placement: ServicesPlacement = { status: "not_freeform", placed: [], missing: services.map((s) => s.name) };
+          try { placement = await applyServicesToFreeform(draftId, draftToken, services); }
+          catch (e) { placement = { status: "failed", placed: [], missing: services.map((s) => s.name), detail: String((e as Error)?.message || e).slice(0, 120) }; }
+          const isFreeform = placement.status !== "not_freeform";
           return {
             ok: true,
             real: true,
             summary: `Real update — ${url} now shows ${r.count} real service${r.count === 1 ? "" : "s"}.`,
-            // recordChange is what makes the rebuild an EVENT rather than a decision:
-            // hubly-conversation reads it after the turn and fires exactly one rebuild.
-            // The model never chooses to rebuild, so the guard against calling
-            // generateDocument twice stays intact.
-            raw: { id: r.id, slug: r.slug, url, count: r.count, recordChange: ["services"] },
+            raw: {
+              id: r.id, slug: r.slug, url, count: r.count,
+              // The truthful placement result — hubly-conversation reads this to
+              // compose the read-back (names + prices + WHERE) and to record a
+              // countable outcome, exactly as the photo path does.
+              services: placement,
+              // recordChange ONLY on a non-freeform page: there the placement was a
+              // no-op and the async rebuild does the real work. On a freeform page
+              // the patch already happened here, so firing a rebuild would just
+              // no-op AND wrongly trip the "you have manual edits" note (this patch
+              // writes a 'patch' version). Same split as uploadDraftPhoto.
+              ...(isFreeform ? {} : { recordChange: ["services"] }),
+            },
           };
         },
       },
