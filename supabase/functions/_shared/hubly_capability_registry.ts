@@ -2467,7 +2467,10 @@ export async function uploadDraftPhoto(
 type ServicesPlacement = {
   status: "placed" | "partial" | "none_on_page" | "no_prices" | "not_freeform" | "failed";
   placed: { name: string; price?: number }[];   // names confirmed on the page (price applied if given)
-  missing: string[];                             // service names not on the page at all
+  missing: string[];                             // service names that could NOT be placed or inserted
+  inserted?: string[];                           // names added as a NEW entry cloned from a sibling
+  noSection?: boolean;                           // true only when there is no services section to insert into (the sole rebuild case)
+  lostEdits?: number;                            // when noSection: how many owner edits a rebuild would lose (named before the yes)
   where?: string;                                // "services section" | "page"
   changed?: boolean;
   detail?: string;
@@ -2655,34 +2658,145 @@ function placeOneServicePrice(html: string, name: string, price: number): { html
   const injected = `<span data-hubly-price="${keyAttr}">${priceStr}</span>`;
   return { html: html.slice(0, afterAt) + injected + html.slice(afterAt), placed: true, injected: true, via };
 }
+/** Index just past the matching close tag for an open tag of `tag` that starts at
+ *  `openStart` (the `<`). Accounts for nested same-tag elements. -1 if unbalanced. */
+function matchingCloseIndex(html: string, openStart: number, tag: string): number {
+  const re = new RegExp(`<${tag}\\b|</${tag}>`, "gi");
+  re.lastIndex = openStart;
+  let depth = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    if (m[0][1] === "/") { depth--; if (depth === 0) return re.lastIndex; }
+    else depth++;
+  }
+  return -1;
+}
+/** Every data-hubly-service anchor on the page, in document order. */
+function allServiceAnchors(html: string): { index: number; length: number; tag: string; text: string }[] {
+  const out: { index: number; length: number; tag: string; text: string }[] = [];
+  const re = /<([a-z0-9]+)\b[^>]*\bdata-hubly-service="([^"]*)"[^>]*>([\s\S]*?)<\/\1>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) out.push({ index: m.index, length: m[0].length, tag: m[1].toLowerCase(), text: stripElementText(m[3]) || m[2] });
+  return out;
+}
+/** The repeatable ENTRY element that contains (or is) a service-name anchor —
+ *  <li>, <tr>, <article>, a card <div>, or a <dt> extended over its <dd>. Cloning
+ *  THIS is what makes an inserted service match the page's own design; the page is
+ *  the template, we never author one. */
+function findServiceEntryBounds(html: string, anchorIndex: number, anchorLen: number, anchorTag: string): { start: number; end: number; kind: string } | null {
+  const anchorEnd = anchorIndex + anchorLen;
+  // Anchor is a definition term: the entry is the <dt> plus the following <dd>.
+  if (anchorTag === "dt") {
+    let end = anchorEnd;
+    const dd = html.slice(anchorEnd).match(/^\s*<dd\b[^>]*>[\s\S]*?<\/dd>/i);
+    if (dd) end = anchorEnd + dd[0].length;
+    return { start: anchorIndex, end, kind: "dl" };
+  }
+  // Anchor IS itself a row/card: use it directly.
+  if (["li", "tr", "article", "figure"].includes(anchorTag)) return { start: anchorIndex, end: anchorEnd, kind: anchorTag };
+  // Otherwise the name sits inside an entry (a <span> in <li>, an <h3> in <article>,
+  // a <td> in <tr>): find the nearest enclosing entry element.
+  const cands: { tag: string; start: number; end: number }[] = [];
+  for (const tag of ["li", "tr", "article", "figure", "div"]) {
+    const re = new RegExp(`<${tag}\\b`, "gi");
+    let m: RegExpExecArray | null; let lastOpen = -1;
+    while ((m = re.exec(html)) && m.index < anchorIndex) lastOpen = m.index;
+    if (lastOpen === -1) continue;
+    const end = matchingCloseIndex(html, lastOpen, tag);
+    if (end >= anchorEnd) cands.push({ tag, start: lastOpen, end });
+  }
+  if (!cands.length) return null;
+  cands.sort((a, b) => b.start - a.start);   // innermost first
+  // Prefer a candidate that REPEATS (a same-tag sibling right before/after) — the
+  // clear "one entry among several"; else the innermost non-div; else innermost.
+  const repeats = (e: { tag: string; start: number; end: number }) => {
+    if (new RegExp(`^<${e.tag}\\b`, "i").test(html.slice(e.end).replace(/^\s+/, ""))) return true;
+    return new RegExp(`</${e.tag}>$`, "i").test(html.slice(0, e.start).replace(/\s+$/, ""));
+  };
+  const chosen = cands.find(repeats) || cands.find((e) => e.tag !== "div") || cands[0];
+  return { start: chosen.start, end: chosen.end, kind: chosen.tag };
+}
+/** Clone a sibling entry's markup into a new one for {name, priceStr}: keep the
+ *  structure EXACTLY, blank the neighbour's words (so we don't copy its name, price
+ *  or description), then set the new name + price and re-key the anchor. Never
+ *  authors a template — the page's own entry is the template. */
+function buildClonedServiceEntry(entryHtml: string, newName: string, priceStr: string | null): string {
+  const nameAttr = newName.replace(/"/g, "");
+  let e = entryHtml;
+  e = e.replace(/(\bdata-hubly-service=")[^"]*(")/i, `$1${nameAttr}$2`);       // re-key name anchor
+  if (!/data-hubly-price=/i.test(e)) e = e.replace(/\$\s?\d[\d.,]*/, `<span data-hubly-price="${nameAttr}">$&</span>`); // wrap a bare price so it's addressable
+  e = e.replace(/(\bdata-hubly-price=")[^"]*(")/i, `$1${nameAttr}$2`);         // re-key price anchor
+  e = e.replace(/>[^<]*</g, "><");                                             // blank ALL text (name, price, description)
+  e = e.replace(/(\bdata-hubly-service="[^"]*"[^>]*>)</i, `$1${newName}<`);    // set the new name text
+  if (priceStr && /data-hubly-price=/i.test(e)) e = e.replace(/(\bdata-hubly-price="[^"]*"[^>]*>)</i, `$1${priceStr}<`); // set the new price
+  return e;
+}
+/** Add a service that isn't on the page by CLONING an existing entry in the same
+ *  section — the shape-agnostic alternative to a destructive rebuild (the rebuild
+ *  offer's whole reason for existing was that we had no way to add one). Returns the
+ *  new HTML on success, or a reason: `no_section` (no service entry to clone — the
+ *  ONLY case a rebuild is genuinely the answer). */
+function insertServiceIntoFreeform(html: string, name: string, price?: number): { ok: boolean; html?: string; kind?: string; single?: boolean; reason?: string } {
+  const anchors = allServiceAnchors(html);
+  if (!anchors.length) return { ok: false, reason: "no_section" };
+  const first = anchors[0];
+  const last = anchors[anchors.length - 1];
+  const tmpl = findServiceEntryBounds(html, first.index, first.length, first.tag);
+  const lastEntry = findServiceEntryBounds(html, last.index, last.length, last.tag);
+  if (!tmpl || !lastEntry) return { ok: false, reason: "no_entry" };
+  const priceStr = typeof price === "number" ? fmtServicePrice(price) : null;
+  const clone = buildClonedServiceEntry(html.slice(tmpl.start, tmpl.end), name, priceStr);
+  const at = lastEntry.end;
+  return { ok: true, html: html.slice(0, at) + clone + html.slice(at), kind: tmpl.kind, single: anchors.length === 1 };
+}
 /** Run the whole list over the page; report what landed and what's simply not there. */
 function placeServicesInFreeform(html: string, services: { name: string; price?: number }[]): ServicesPlacement {
   let out = html;
   const placed: { name: string; price?: number }[] = [];
   const missing: string[] = [];
+  const inserted: string[] = [];
   let anyPrice = false;
   let injectedAny = false;
+  let insertedAny = false;
+  let noSection = false;
   const paths = { anchor: 0, legacy: 0 };
+  // On a miss, ADD the service as a new entry cloned from a sibling — never the
+  // destructive rebuild. Only when there is genuinely no section to clone into does
+  // it fall through to `missing` + `noSection` (the sole legitimate rebuild case).
+  const tryInsert = (name: string, price?: number): boolean => {
+    const ins = insertServiceIntoFreeform(out, name, price);
+    if (ins.ok && ins.html) { out = ins.html; inserted.push(name); insertedAny = true; return true; }
+    if (ins.reason === "no_section") noSection = true;
+    return false;
+  };
   for (const s of services) {
     if (typeof s.price === "number") {
       anyPrice = true;
       const r = placeOneServicePrice(out, s.name, s.price);
       if (r.placed) { out = r.html; placed.push({ name: s.name, price: s.price }); if (r.injected) injectedAny = true; paths[r.via]++; }
+      else if (tryInsert(s.name, s.price)) placed.push({ name: s.name, price: s.price });
       else missing.push(s.name);
     } else {
-      // No price given — just confirm the name is (or isn't) on the page: anchor
-      // first, then the legacy heading matcher, mirroring placeOneServicePrice.
+      // No price given — confirm the name is on the page (anchor, then legacy
+      // heading matcher); if not, add it the same way.
       if (findServiceAnchor(out, s.name) || findServiceHeading(out, s.name)) placed.push({ name: s.name });
+      else if (tryInsert(s.name)) placed.push({ name: s.name });
       else missing.push(s.name);
     }
   }
-  if (injectedAny) out = ensureServicePriceCss(out);
+  if (injectedAny || insertedAny) out = ensureServicePriceCss(out);
+  // A new entry can change an entry count that a grid was laid out around (a one-item
+  // grid becoming two, a bare-fr column collapsing). Re-run the layout net so an
+  // insert can't ship a broken section. Deterministic; a no-op on a page that already
+  // renders. Does NOT catch a grid with an EXPLICIT fixed track count / :nth-child —
+  // that is checked by rendering (see the verification, and the note below).
+  if (insertedAny) out = fixCollapsibleGridColumns(out).html;
   let status: ServicesPlacement["status"];
   if (!placed.length) status = "none_on_page";
   else if (missing.length) status = "partial";
   else if (!anyPrice) status = "no_prices";
   else status = "placed";
-  return { status, placed, missing, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
+  return { status, placed, missing, inserted, noSection, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
 }
 /** Stamp a stable data-hubly-service ANCHOR on each service-name element at
  *  GENERATION time — whatever its shape (<h3>, <dt>, <li><span>, a table cell).
@@ -2722,9 +2836,16 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
       p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
       p_document: latest.brief, p_rendered_html: r.html, p_created_by: "patch", p_format: "html",
     });
-    if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, where: r.where, paths: r.paths, detail: "save" };
+    if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, inserted: r.inserted, noSection: r.noSection, where: r.where, paths: r.paths, detail: "save" };
   }
-  return { status: r.status, placed: r.placed, missing: r.missing, where: r.where, paths: r.paths, changed: r.changed };
+  // Only when there is genuinely no section to insert into is a rebuild the answer.
+  // Compute what that rebuild would COST now, so the offer names it BEFORE the owner
+  // agrees (how many of their edits it would lose), never in the past tense after.
+  let lostEdits: number | undefined;
+  if (r.noSection) {
+    try { const plan = await planFreeformRegeneration(draftId); lostEdits = plan.lost.length; } catch { /* best-effort */ }
+  }
+  return { status: r.status, placed: r.placed, missing: r.missing, inserted: r.inserted, noSection: r.noSection, lostEdits, where: r.where, paths: r.paths, changed: r.changed };
 }
 
 export async function uploadDraftHeroImage(

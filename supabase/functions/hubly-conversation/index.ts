@@ -411,6 +411,9 @@ type ServicesPlacementLike = {
   status: string;
   placed: { name: string; price?: number }[];
   missing?: string[];
+  inserted?: string[];
+  noSection?: boolean;
+  lostEdits?: number;
   where?: string;
   detail?: string;
   paths?: { anchor: number; legacy: number };
@@ -426,32 +429,53 @@ function andList(items: string[], overflowAfter = 3): string {
   const more = items.length - overflowAfter;
   return items.slice(0, overflowAfter).join(", ") + ` and ${more} more`;
 }
+/** The rebuild offer — LAST RESORT, only when there is genuinely no services section
+ *  to add an entry to. It names the cost (a full regenerate, and how many of the
+ *  owner's edits it would lose) BEFORE any yes, so the owner agrees to a price they
+ *  were told — never the past-tense "those edits didn't carry across" after the fact. */
+function rebuildLastResort(placement: ServicesPlacementLike): string {
+  const lost = placement.lostEdits || 0;
+  const editCost = lost > 0
+    ? ` — that starts the page over from scratch and loses the ${lost} edit${lost === 1 ? "" : "s"} you've made so far`
+    : ` — that starts the page over from scratch`;
+  return `Your page doesn't have a services section to add them to. The only way to add them is to rebuild the whole page${editCost}. If you want that, say so and I'll show you exactly what it would replace before doing it.`;
+}
 function composeServicesTruth(placement: ServicesPlacementLike, url: string): string {
   const priced = (placement.placed || []).filter((p) => typeof p.price === "number");
   const wherePhrase = placement.where === "services section" ? "in the services section" : "on your page";
   const missing = placement.missing || [];
-  const rebuildOffer = url
-    ? ` Want me to rebuild the page around the full list?`
-    : ` Want me to rebuild the page around them?`;
+  const inserted = new Set(placement.inserted || []);
 
   if (placement.status === "failed") {
-    return `I saved those to your record, but couldn't update the page just now — so don't take them as showing yet.${rebuildOffer}`;
+    return `I saved those to your record, but couldn't update the page just now — so don't take them as showing yet. Try again in a moment.`;
   }
   if (placement.status === "none_on_page") {
-    // Never claim a card that isn't there — the honest rebuild case.
-    return `I saved those to your record, but the page as it's built doesn't have a place for them, so they aren't showing on it yet.${rebuildOffer}`;
+    // Nothing landed. The ONLY reason a service can't be added is that there is no
+    // section to clone an entry into (noSection) — then, and only then, the rebuild
+    // offer, with its cost named up front.
+    if (placement.noSection) return `I saved those to your record, but ${rebuildLastResort(placement)}`;
+    return `I saved those to your record, but couldn't place them on the page — say so plainly rather than claiming they're showing.`;
   }
   if (placement.status === "no_prices") {
     // Names are on the page; no prices were given. Let the model ask for them —
     // don't override with a price read-back that has no prices to read.
     return "";
   }
-  // placed / partial — at least one price landed. Read them back with the numbers.
+  // placed / partial — at least one price landed. Read back what ACTUALLY happened:
+  // both the prices updated in place and any newly ADDED entries (the "added" claim
+  // comes from the placement result, never ahead of it).
   const readback = andList(priced.map((p) => `${p.name} ${fmtSvcPrice(p.price as number)}`));
-  const landedLine = `${readback} ${priced.length === 1 ? "is" : "are"} on your page now, ${wherePhrase}.`;
+  const addedNames = priced.map((p) => p.name).filter((n) => inserted.has(n));
+  const addedClause = addedNames.length
+    ? ` I added ${andList(addedNames)} as ${addedNames.length === 1 ? "a new entry" : "new entries"} in that section.`
+    : "";
+  const landedLine = `${readback} ${priced.length === 1 ? "is" : "are"} on your page now, ${wherePhrase}.${addedClause}`;
   if (placement.status === "partial" && missing.length) {
+    // A service the page has no cloneable entry for (rare). Say so honestly — no
+    // rebuild bait (a rebuild wouldn't obviously help place one service, and it
+    // would destroy the rest).
     const missWord = andList(missing);
-    return `${landedLine} I couldn't find ${missWord} on the page as it's built, so ${missing.length === 1 ? "it isn't" : "they aren't"} showing yet.${rebuildOffer}`;
+    return `${landedLine} I couldn't add ${missWord} to the page as it's built, so ${missing.length === 1 ? "it isn't" : "they aren't"} showing yet.`;
   }
   return landedLine;
 }
@@ -1438,8 +1462,9 @@ Deno.serve(async (req) => {
               // pages replace pre-anchor ones (finding #8).
               const p = placement.paths;
               const pathBit = p ? `paths anchor=${p.anchor} legacy=${p.legacy}` : "";
+              const insBit = (placement.inserted || []).length ? `inserted=${(placement.inserted || []).join(",")}` : "";
               const missBit = (placement.missing || []).length ? `missing=${(placement.missing || []).join(",")}` : "";
-              const detail = [pathBit, missBit].filter(Boolean).join("; ") || placement.detail || null;
+              const detail = [pathBit, insBit, missBit].filter(Boolean).join("; ") || placement.detail || null;
               const u = (Deno.env.get("SUPABASE_URL") || "").trim();
               if (u && draftBusiness?.id) await fetch(`${u}/rest/v1/rpc/record_rebuild_outcome`, {
                 method: "POST", headers: { ...adminHeaders(), "content-type": "application/json" },
