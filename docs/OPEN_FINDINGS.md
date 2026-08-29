@@ -275,11 +275,66 @@ freeform build, changing prices by talking):
 - **Hero/footer check:** all three price spans sit inside `<section id="menu">`
   (`section.1.item.N.title`); none in a hero, header, or footer element.
 
-One robustness fix came out of the run: the model re-sends a service name with
-singular/plural drift ("Pour-over" vs the page's "Pour-overs"), which first read as a
-false miss; the matcher now tolerates trailing punctuation and a simple plural 's'
-(commit d96daf7), turning only a miss into a match on the same word, never a price
-onto the wrong card.
+Two robustness fixes came out of the run:
+- **Singular/plural drift** — the model re-sends "Pour-over" vs the page's "Pour-overs";
+  the matcher now tolerates trailing punctuation and a plural 's' (commit d96daf7),
+  and a TRUE exact match always outscores a normalised one so "Wrap"/"Wraps" don't
+  collide.
+- **Drift-duplication** (found by the 2026-08-28 re-verification, commit 4f666fe) — the
+  existing-span lookup keyed off the model's spelling, so a spelling change nested a
+  second `data-hubly-price` span on one card. The span is now keyed off the page
+  HEADING TEXT and the lookup is bounded to the card, so a card carries exactly one
+  price span however the model words the name. Verified live: two "Pour-over" turns
+  onto a "Pour-overs" card → one span, `nested=false`.
+
+**Caveat on the closure — the OWNER view is proven, the PUBLIC view is not.** Every
+render above is the stored document as the OWNER sees it in the builder (draft-token
+path). A public visitor to an UNCLAIMED draft gets "This page isn't live yet" — drafts
+are private until claimed. So "a visitor sees $8" is NOT proven here and can't be on an
+unclaimed draft (Claude Code can't claim — account creation is prohibited). The public
+serving path itself works (a claimed site renders publicly) with ~0 staleness (the
+`hubly.html` shell is `max-age=0, must-revalidate`; the document is a POST-RPC read,
+uncacheable). Confirming a placed price on the PUBLIC URL needs a claimed site and a
+real phone — Adrian's to do.
+
+---
+
+## 8. Price patch doesn't cover list-menu rebuild layouts — OPEN (found 2026-08-28)
+
+**Severity:** correctness — a rebuilt page can become un-patchable, and a future price
+change on it reports a service as missing when it is present.
+
+**What's known:** the item-7 patch anchors on a service name in a HEADING
+(`findServiceHeading` matches `h1–h6/strong/dt/b`). But the "rebuild around the full
+list" path (verified delivering: it added the missing service and kept every price)
+often renders the menu as LIST ROWS — `<li><span>Cold brew</span><strong>$8</strong></li>`
+— where the name is in a `<span>`, not a heading. Consequences, both observed on the
+version-6 rebuild of dawn-patrol:
+- `markServiceHeadingsInFreeform` marked **0** headings (no `data-hubly-service`), so the
+  generation-time anchor doesn't exist on that page.
+- A future price change by talking would call `findServiceHeading`, MISS the `<span>`
+  row, and report "I couldn't find <service> on the page as it's built" + offer another
+  full rebuild — a FALSE miss (the service IS on the page) that turns every later price
+  edit into a full regeneration.
+
+**What's been tried:** nothing — flagged rather than rushed. Naively adding `<span>` to
+the matcher reintroduces the duplication class just fixed in #7 (the `<strong>` price is
+a window boundary, so a span match injects a SECOND price before it). A correct fix is
+`<li>`/row-scoped: find the row containing the name, update the price element inside it.
+
+**What would close it:** teach `findServiceHeading`/`placeOneServicePrice` about
+list/table menu rows (name in a `<span>`/`<td>` label cell, price in a sibling), with the
+window scoped to the row so no second price is injected; re-verify a price change lands
+on a rebuilt list-menu page with exactly one price element and no false miss.
+
+---
+
+## Also noted 2026-08-28
+
+- **Rebuild read-back is vague.** The "yes, rebuild" reply ("a completely new page is
+  live … with the full menu in mind") is truthful but does NOT enumerate prices or name
+  the service that was added, unlike the patch read-back (#3). The rebuild path should
+  read back what actually landed, same discipline.
 
 ---
 
