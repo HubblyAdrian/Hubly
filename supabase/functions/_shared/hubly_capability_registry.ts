@@ -2472,9 +2472,6 @@ type ServicesPlacement = {
   detail?: string;
 };
 
-function escRe(s: string): string {
-  return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
 function fmtServicePrice(n: number): string {
   // Mirror buildBusinessRecordBlock's money(): integer dollars, no cents unless real.
   return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
@@ -2500,11 +2497,16 @@ function findServiceHeading(html: string, name: string): { index: number; length
   const target = name.trim().toLowerCase().replace(/\s+/g, " ");
   if (!target) return null;
   const strip = (s: string) => s.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim().toLowerCase();
-  // Comparison key: trailing punctuation and a simple plural 's' removed, so the
-  // model's "Pour-over" matches the page's "Pour-overs" and "Haircut" matches
-  // "Haircuts". Only ever loosens toward a MISS being a match, never one service
-  // onto another — an irregular plural just falls through to the honest missing
-  // case rather than landing a price on the wrong card.
+  // Comparison key: trailing punctuation and ONE trailing plural 's' removed from
+  // both sides, so the model's "Pour-over" matches the page's "Pour-overs" and
+  // "Haircut" matches "Haircuts". What this actually does, precisely: a normalised
+  // match CAN collide when a business has two services that differ only by a
+  // trailing 's' (e.g. "Wrap" and "Wraps"). It does NOT silently pick the wrong one
+  // in that case, because a TRUE exact-text match always outscores a normalised
+  // one (see scoring below) — so "Wrap" lands on the "Wrap" heading whenever one
+  // exists, and only falls back to the normalised "Wraps" heading when there is no
+  // exact "Wrap" heading at all (the honest best guess). Irregular plurals aren't
+  // normalised and fall through to the missing case.
   const key = (s: string) => s.replace(/[.,:;!?]+$/, "").replace(/s$/i, "");
   const targetKey = key(target);
   const re = /<(h[1-6]|strong|dt|b)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
@@ -2513,14 +2515,15 @@ function findServiceHeading(html: string, name: string): { index: number; length
   let bestScore = -Infinity;
   while ((m = re.exec(html))) {
     const inner = strip(m[3]);
-    const exact = inner === target || key(inner) === targetKey;
+    const trueExact = inner === target;                       // page text IS the name
+    const normMatch = !trueExact && key(inner) === targetKey;  // same but for a plural/punct 's'
     // Prefix only when the remainder starts with a price/dash — "Cold Brew $5",
     // never "Cold Brew Flight".
-    const prefix = !exact && inner.startsWith(target) && /^[\s$\d.,:–—-]/.test(inner.slice(target.length));
-    if (!exact && !prefix) continue;
+    const prefix = !trueExact && !normMatch && inner.startsWith(target) && /^[\s$\d.,:–—-]/.test(inner.slice(target.length));
+    if (!trueExact && !normMatch && !prefix) continue;
     const tag = m[1].toLowerCase();
     let score = /^h[1-6]$/.test(tag) ? 3 : tag === "dt" ? 2 : 1;   // real heading > <dt> > inline emphasis
-    if (exact) score += 1;                                          // exact text > prefix
+    if (trueExact) score += 2; else if (normMatch) score += 1;     // exact BEATS normalised BEATS prefix
     if (/data-hc="(?:hero|nav|footer|announce|cta)/i.test(m[2])) score -= 5;   // prose/chrome, not a card
     if (score > bestScore) { bestScore = score; best = { index: m.index, length: m[0].length, tag, attrs: m[2] }; }
   }
@@ -2534,32 +2537,52 @@ function ensureServicePriceCss(html: string): string {
   const css = "<style>[data-hubly-price]{display:block;margin-top:.35em;font-weight:600;opacity:.92}</style>";
   return /<\/head>/i.test(html) ? html.replace(/<\/head>/i, css + "</head>") : html + css;
 }
-/** Place or update ONE service's price, in fidelity order. */
+/** Extract the plain text of a heading element `<tag ...>inner</tag>`. */
+function headingText(headEl: string): string {
+  return headEl.replace(/^<[^>]+>/, "").replace(/<\/[a-z0-9]+>\s*$/i, "")
+    .replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+}
+/** Place or update ONE service's price.
+ *
+ *  The span is ALWAYS keyed off the page's HEADING TEXT, never the model's
+ *  spelling for this turn. This is the fix for the drift-duplication bug: if a
+ *  prior turn keyed the span "Pour-over" and this turn the model says "Pour-overs"
+ *  (or vice-versa), keying by whatever the model typed made the exact-name lookup
+ *  miss the existing span, and the price got wrapped AROUND it — two
+ *  data-hubly-price attributes nested on one card. Now the existing-span lookup is
+ *  bounded to THIS card's window and matches ANY data-hubly-price span there
+ *  (whatever spelling wrote it), updates it in place, and re-keys it to the stable
+ *  heading text — so a card can only ever carry one price span, however the model
+ *  words the name across turns. */
 function placeOneServicePrice(html: string, name: string, price: number): { html: string; placed: boolean; injected: boolean } {
   const priceStr = fmtServicePrice(price);
-  // LADDER 1a — a data-hubly-price span a prior patch wrote: just update its text.
-  const spanRe = new RegExp(`(<span[^>]*data-hubly-price="${escRe(name)}"[^>]*>)[\\s\\S]*?(<\\/span>)`, "i");
-  if (spanRe.test(html)) return { html: html.replace(spanRe, `$1${priceStr}$2`), placed: true, injected: false };
-  // LADDER 1b/2 — a marked or plain service heading.
   const h = findServiceHeading(html, name);
   if (!h) return { html, placed: false, injected: false };
+  const keyAttr = headingText(html.slice(h.index, h.index + h.length)).replace(/"/g, "");
   const afterAt = h.index + h.length;                       // right after `</tag>`
   const rest = html.slice(afterAt);
-  // Bound the search so we never grab a NEIGHBOUR's price: stop at the next
-  // heading / next marked service / ~400 chars.
+  // Bound the search to THIS card: stop at the next heading / next marked service
+  // / ~400 chars. Everything inside is this service's own content, so "any price
+  // span here" can only be this card's — which is what makes updating it safe.
   const stop = rest.search(/<(?:h[1-6]|strong|dt)\b|data-hubly-service=/i);
   const winEnd = stop === -1 ? Math.min(rest.length, 400) : Math.min(stop, 400);
   const win = rest.slice(0, winEnd);
-  const existing = win.match(/\$\s?\d[\d.,]*/);
-  const nameAttr = name.replace(/"/g, "");
-  if (existing) {
-    // A price is already shown here — update it in place, wrapping it so the next
-    // change is a clean LADDER 1a hit.
-    const newWin = win.replace(existing[0], `<span data-hubly-price="${nameAttr}">${priceStr}</span>`);
+  // 1. A price span already on this card (whatever spelling keyed it): replace the
+  //    WHOLE span with one canonically keyed off the heading — never nest inside it.
+  const spanInWin = win.match(/<span\b[^>]*\bdata-hubly-price="[^"]*"[^>]*>[\s\S]*?<\/span>/i);
+  if (spanInWin) {
+    const rebuilt = `<span data-hubly-price="${keyAttr}">${priceStr}</span>`;
+    const newWin = win.slice(0, spanInWin.index) + rebuilt + win.slice((spanInWin.index || 0) + spanInWin[0].length);
+    return { html: html.slice(0, afterAt) + newWin + rest.slice(winEnd), placed: true, injected: false };
+  }
+  // 2. A bare price the model wrote inline (no span yet): wrap+replace it.
+  const bare = win.match(/\$\s?\d[\d.,]*/);
+  if (bare) {
+    const newWin = win.replace(bare[0], `<span data-hubly-price="${keyAttr}">${priceStr}</span>`);
     return { html: html.slice(0, afterAt) + newWin + rest.slice(winEnd), placed: true, injected: true };
   }
-  // No price yet — inject one right after the heading.
-  const injected = `<span data-hubly-price="${nameAttr}">${priceStr}</span>`;
+  // 3. No price yet — inject one right after the heading.
+  const injected = `<span data-hubly-price="${keyAttr}">${priceStr}</span>`;
   return { html: html.slice(0, afterAt) + injected + html.slice(afterAt), placed: true, injected: true };
 }
 /** Run the whole list over the page; report what landed and what's simply not there. */
