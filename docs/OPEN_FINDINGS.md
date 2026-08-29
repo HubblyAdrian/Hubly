@@ -351,6 +351,10 @@ Hubly keeps offering the thing that already failed.
   no-ops except `contact`; photos/logo now place via targeted placement (2026-08-27),
   but services/hours/area/logo-on-page still don't have a post-build path.
 - **Post-claim editor** — deferred investigation. The 2026-08-28 direction (editing
-  turns on at claim; the shell/Website Editor tab is "the next build") makes this the
-  decisive open question: after claiming, can an owner actually change copy, swap a
-  photo, fix a price, delete a section? Run read-only before building the shell.
+  turns on at claim; a shell is "the next build") makes this the decisive open
+  question: after claiming, can an owner actually change copy, swap a photo, fix a
+  price, delete a section? Run read-only before building the shell. CORRECTION
+  (2026-08-29, `docs/PRODUCT_SHAPE.md` §1): the Website Editor is NOT a universal
+  tab — the left rail renders per entitlement, and Website Editor exists only for an
+  account that has a site (a marketplace-only provider has none). Do not treat it as
+  the one shell tab everyone gets.
