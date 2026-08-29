@@ -2722,9 +2722,9 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
       p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
       p_document: latest.brief, p_rendered_html: r.html, p_created_by: "patch", p_format: "html",
     });
-    if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, where: r.where, detail: "save" };
+    if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, where: r.where, paths: r.paths, detail: "save" };
   }
-  return { status: r.status, placed: r.placed, missing: r.missing, where: r.where, changed: r.changed };
+  return { status: r.status, placed: r.placed, missing: r.missing, where: r.where, paths: r.paths, changed: r.changed };
 }
 
 export async function uploadDraftHeroImage(
