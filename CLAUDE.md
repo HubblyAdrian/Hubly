@@ -171,3 +171,17 @@ acts, or it says what will happen — it never gives directions to something it 
   anchor and no post-build update path (contact has a value-swap in `syncFreeformFacts`, the rest
   no-op). Do not build those now; when we do, it is one anchor pass at generation, not four
   matchers after the fact.
+- **A row is not evidence of a person.** Who a record represents — a real member of the public
+  vs an owner, family, a founder, or a test — is a CLAIM, and it needs the same proof as any
+  status we report, checked against the `account_kind` (market/test/internal) classification and
+  against Adrian. Never infer it from how the row reads: a customer name in a `booking_requests`
+  row is not proof a stranger asked for anything, exactly as a green checkmark is not proof a
+  step succeeded. The failure that produced this rule: a booking forensics doc demanded hard
+  evidence for whether a *notification was delivered* and then applied NONE to whether the
+  *requester was real* — it read the names and called three test bookings "real people whose
+  requests were dropped on the floor" (2026-08-29, docs/BOOKING_DESTINATION.md; Hubly has never
+  received a public booking — that count is zero, all the way back, and the corpus was
+  contaminated by this same "the row looks real" assumption once before). When a number or a
+  claim describes WHO someone is, the denominator and the identity both need proof; the honest
+  default when you can't prove it is "internal/unknown until confirmed", never the reading that
+  makes the story more dramatic or more flattering.

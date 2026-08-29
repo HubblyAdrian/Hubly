@@ -1,15 +1,34 @@
 # Where does a booking go — and can we prove a human saw it?
 
-Read-only forensics, 2026-08-29. Facts and file references only. Customer names are
-reduced to an initial; this is an internal doc but the requests are real people.
+Read-only forensics, 2026-08-29 (corrected 2026-08-29 — see the correction note below).
+Facts and file references only. Customer names are reduced to an initial.
 
-**The short answer up front.** Of the 9 real market bookings: **4 were seen and acted on
-by a human** (all Graef's AutoCare — accepted, turned into customers, 2 completed jobs);
-**3 are dead drops** (Bucket ×1, Aquaspeed ×2 — pending 37–39 days, the owner never created
-a single customer or job, no evidence anyone ever saw them); **2 are untouched with no
-evidence of being seen** (Graef's two membership signups, pending 13 days, arrived after
-the owner's last observed activity). **For none of the 9 can we prove a notification was
-delivered** — the delivery ledger did not exist until after the most recent booking.
+**Who the requesters are (corrected, source: Adrian).** None of the 9 bookings came from a
+member of the public. Every one traces back to an owner, family, a founder, or testing —
+the same as every booking in the corpus. **Hubly has never received a booking request from
+a stranger; that count is zero, all the way back.** So there are **zero dead drops** — no
+real customer's request was dropped on the floor. The 5 pending rows are **untouched test
+bookings, not lost demand.**
+
+**The short answer up front.** Of the 9 bookings (all internal — owner/family/founder/test):
+**4 were seen and acted on by a human** (all Graef's AutoCare — accepted by hand, turned into
+customers, 2 completed jobs); **5 sit untouched** (Bucket ×1, Aquaspeed ×2, Graef's two
+membership signups) — pending 13–39 days with no downstream artifact, i.e. no evidence the
+owner ever opened them, but they are tests, so nothing was lost. **For none of the 9 can we
+prove a notification was delivered** — the delivery ledger did not exist until after the most
+recent booking.
+
+**Correction note (the mistake this doc originally made).** The first version of this doc
+called Bucket's and Aquaspeed's pending rows "dead drops" and wrote that "real people asked
+these businesses for work and it was dropped on the floor." That was false. The error: it
+held a strict evidence standard for whether a *notification was delivered* ("don't claim it
+unless something confirms it") and then applied **no** standard at all to whether the
+*requester was a real customer* — it read a name in a row and treated the name as proof of a
+member of the public. A row is not a person. Who a booking's customer actually is (public vs
+owner/family/founder/test) is a claim that needed checking against the account
+classification and against Adrian, and it wasn't. The forensic facts below (timestamps,
+status, the 08-17→08-21 trigger blackout, the ledger start date, 0 portal tokens) are
+unchanged and stand; only the interpretation of who the customers were was wrong.
 
 ---
 
@@ -115,6 +134,10 @@ one created 2026-08-05 21:46:43 (customer A, scheduled 08-06) linked to #4; one 
   history** — no evidence they ever opened the owner app or touched a booking. Graef's #8/#9
   (membership signups) arrived `2026-08-15`, **after** the owner's last observed activity
   (`2026-08-11`), and sit untouched.
+- **Who these requesters are (source: Adrian):** all 9, including the 5 pending, trace to an
+  owner, family, a founder, or testing — not the public. So "untouched" here means an
+  **untouched test**, not a real request no one answered. The owner-activity facts above are
+  unchanged; the point is only that no genuine demand was dropped.
 
 ---
 
@@ -193,27 +216,35 @@ remaining place to look.)
 
 ---
 
-## Verdict — per booking, is there evidence a human saw it?
+## Verdict — per booking, is there evidence the owner saw it?
 
-| # | business / customer | verdict |
+Every requester is internal (owner / family / founder / test; source: Adrian), so "not seen"
+below means an untouched test, never a lost real request. **Dead drops: zero.**
+
+| # | business / requester (internal) | verdict |
 |---|---|---|
 | 4 | Graef's / A (08-05) | **SEEN & WORKED** — accepted by hand, job created and **completed** |
 | 5 | Graef's / L (08-05) | **SEEN** — accepted during the same proven active session |
 | 6 | Graef's / L (08-05) | **SEEN & WORKED** — job created and **completed** |
 | 7 | Graef's / A (08-11) | **SEEN** — accepted; customer created 27 s later |
-| 1 | Bucket / A (07-20) | **DEAD DROP** — pending 39 d; owner never created any customer/job; no delivery evidence |
-| 2 | Aquaspeed / P (07-22) | **DEAD DROP** — pending 37 d; owner never created any customer/job; no delivery evidence |
-| 3 | Aquaspeed / P (07-22) | **DEAD DROP** — pending 37 d; same |
-| 8 | Graef's / A (08-15, membership) | **NO EVIDENCE SEEN** — pending 13 d, no downstream, arrived after owner's last activity |
-| 9 | Graef's / A (08-15, membership) | **NO EVIDENCE SEEN** — pending 13 d, no downstream |
+| 1 | Bucket / A (07-20) | **NOT SEEN (untouched test)** — pending 39 d; owner created no customer/job; no delivery evidence |
+| 2 | Aquaspeed / P (07-22) | **NOT SEEN (untouched test)** — pending 37 d; owner created no customer/job; no delivery evidence |
+| 3 | Aquaspeed / P (07-22) | **NOT SEEN (untouched test)** — pending 37 d; same |
+| 8 | Graef's / A (08-15, membership) | **NOT SEEN (untouched test)** — pending 13 d, no downstream, after owner's last activity |
+| 9 | Graef's / A (08-15, membership) | **NOT SEEN (untouched test)** — pending 13 d, no downstream |
 
-**Plainly:** 3 real people (customer A at Bucket, customer P at Aquaspeed — P twice) asked
-these businesses for work and there is **no evidence anyone at Hubly or the business ever saw
-the request**; those are dropped on the floor. 2 more (Graef's membership signups) are
-untouched with no evidence of being seen, though that owner was demonstrably active earlier.
-The 4 Graef's service bookings were genuinely received, accepted, and in two cases the work
-was completed. And for **every** one of the 9, we cannot prove a notification was delivered,
-because the mechanism that would record it did not exist yet.
+**Plainly:** **no real customer's request was dropped** — Hubly has never received a booking
+from a member of the public; that count is still zero, all the way back. The 5 unseen rows
+are untouched **tests**, not lost demand. The 4 Graef's bookings were seen and acted on by a
+human (accepted, two jobs completed). And for **every** one of the 9, we cannot prove a
+notification was delivered, because the mechanism that would record one did not exist yet.
+
+**The design lesson survives the correction, as a hypothetical.** These 5 were tests, so
+nothing was lost — but the *mechanism* that left them unseen is real: a pending booking's only
+home is a signed-in dashboard the owner may never open, and (in the 08-17→08-21 window) with
+no notification trigger and no delivery ledger at all. If a real request had landed the same
+way, the same structure would have left it unseen and unrecorded. That is a fact about the
+plumbing, stated without inventing a victim.
 
 **Ambiguities flagged, not resolved:** (a) whether any notify trigger fired for the pre-08-17
 bookings (the original trigger's CREATE isn't in the current tree); (b) whether Resend

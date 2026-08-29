@@ -24,12 +24,20 @@ operational tables live there, not in `supabase/migrations/`, which holds deltas
 
 **The single most important terrain fact:** the businesses with a **stored website**
 (the 3 August `format='html'` freeform docs) have **zero** bookings/customers/jobs, and
-the businesses with **real activity** (graefs-autocare: 6 bookings / 4 customers / 2 jobs;
+the businesses with **pipeline data** (graefs-autocare: 6 bookings / 4 customers / 2 jobs;
 aquaspeed: 2 bookings) have **no stored website document at all** (`business_documents`
 = 0 **and** `website_pages` = 0 for all 4 July businesses). Their public site therefore
 renders from the classic archetype renderer off the `businesses` columns + `services`
 table, not from a stored document (classic renderer confirmed in §3). `graefs-autocare`
 is the only business exercising the booking→customer→job pipeline.
+
+**Who that pipeline data represents (do not read it as market demand):** every booking in
+the corpus — the 9 above included — traces to an owner, family, a founder, or testing, not
+to a member of the public. Hubly has never received a booking from a stranger (count is zero,
+all the way back; source: Adrian, and see `docs/BOOKING_DESTINATION.md`). So the booking/
+customer/job counts here are **real rows of internal/test activity**, not evidence of real
+customers. A row is not a person — treat these numbers as "the pipeline has been exercised",
+never as "N real customers booked".
 
 (Note on identity: `mobile-detailing`, `lugnutz`, `pike-holloway-tree-service`,
 `larkspur-landscaping` etc. are **not** `market` — do not count them here.)
@@ -291,7 +299,8 @@ edge function; job creation + Google-Calendar sync functions; one-way notificati
    from the claim flow) vs the classic `ed-shell` (editor B, richer, mostly working). The
    entry point into B post-claim is unproven from the client files.
 3. **The website/activity disjoint (§0)** — market businesses either have a stored freeform
-   site *or* real bookings, never both. A shell that assumes both exist for one business has
-   no market example to test against; graefs-autocare (most activity) has no stored document.
+   site *or* booking-pipeline rows (all internal/test — see §0), never both. A shell that
+   assumes both exist for one business has no market example to test against; graefs-autocare
+   (most pipeline data) has no stored document.
 4. **Customer portal scope** — read-mostly "what's next", not a full account; confirm whether
    the shell needs customer write/self-service.
