@@ -918,8 +918,8 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   <!-- The one attach input the composer button opens. Images + PDFs; routed by what
        Hubly asked for (see hcHandleIncomingFile). The older per-kind inputs below remain
        only for the logo dropzone card and the photo picker they were already wired to. -->
-  <input type="file" id="hcAttachInput" accept="image/*,application/pdf" multiple style="display:none">
-  <input type="file" id="hcFileInput" accept="image/*" style="display:none">
+  <input type="file" id="hcAttachInput" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf" multiple style="display:none">
+  <input type="file" id="hcFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
   <input type="file" id="hcPdfInput" accept="application/pdf" style="display:none">
   <input type="file" id="hcLogoInput" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none">
   <input type="file" id="hcPhotoInput" accept="image/png,image/jpeg,image/webp" multiple style="display:none">
@@ -2798,28 +2798,56 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   // read) deliberately do NOT go through here: OCR needs full resolution.
   function hcPrepareImageForUpload(file){
     var MAX = 2000;
-    return new Promise(function(resolve, reject){
+    // Downscale a decoded drawable (ImageBitmap OR <img>) to a JPEG data URL. One
+    // encoder for both decode paths; throws with .code on failure.
+    function encode(drawable, w, h){
+      if(!w || !h){ var e0 = new Error('empty image'); e0.code = 'format'; throw e0; }
+      if(w > MAX || h > MAX){ if(w >= h){ h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; } }
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      c.getContext('2d').drawImage(drawable, 0, 0, w, h);
+      var dataUrl = c.toDataURL('image/jpeg', 0.85);
+      if(!/^data:image\/jpeg/.test(dataUrl)){ var e1 = new Error('encode failed'); e1.code = 'decode'; throw e1; }
+      var comma = dataUrl.indexOf(',');
+      return { imageBase64: comma !== -1 ? dataUrl.slice(comma + 1) : dataUrl, mediaType: 'image/jpeg' };
+    }
+    // FALLBACK PATH — the original FileReader -> new Image(). Kept for browsers
+    // without createImageBitmap, and formats it decodes that the bitmap path didn't.
+    function viaImage(resolve, reject){
       var reader = new FileReader();
       reader.onerror = function(){ var e = new Error('read failed'); e.code = 'read'; reject(e); };
       reader.onload = function(){
         var img = new Image();
         img.onload = function(){
-          try {
-            var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
-            if(!w || !h){ var e0 = new Error('empty image'); e0.code = 'format'; reject(e0); return; }
-            if(w > MAX || h > MAX){ if(w >= h){ h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; } }
-            var c = document.createElement('canvas'); c.width = w; c.height = h;
-            c.getContext('2d').drawImage(img, 0, 0, w, h);
-            var dataUrl = c.toDataURL('image/jpeg', 0.85);
-            if(!/^data:image\/jpeg/.test(dataUrl)){ var e1 = new Error('encode failed'); e1.code = 'decode'; reject(e1); return; }
-            var comma = dataUrl.indexOf(',');
-            resolve({ imageBase64: comma !== -1 ? dataUrl.slice(comma + 1) : dataUrl, mediaType: 'image/jpeg' });
-          } catch(err){ var e2 = new Error('canvas failed'); e2.code = 'decode'; reject(e2); }
+          try { resolve(encode(img, img.naturalWidth || img.width, img.naturalHeight || img.height)); }
+          catch(err){ reject(err); }
         };
         img.onerror = function(){ var e = new Error('decode failed'); e.code = 'format'; reject(e); };
         img.src = String(reader.result || '');
       };
       reader.readAsDataURL(file);
+    }
+    return new Promise(function(resolve, reject){
+      // PRIMARY PATH — createImageBitmap takes the File directly and uses the
+      // platform image decoder, so it opens HEIC/HEIF on modern Safari where the
+      // FileReader -> new Image() path throws img.onerror (e.code='format'). That
+      // 'format' error is exactly what sent Adrian's IMG_...heic to the
+      // hand-convert message. imageOrientation:'from-image' preserves the EXIF
+      // rotation an iPhone photo carries, which <img> applies automatically and a
+      // bare ImageBitmap would otherwise drop.
+      if(typeof createImageBitmap === 'function'){
+        var opts; try { opts = { imageOrientation: 'from-image' }; } catch(_o){ opts = undefined; }
+        createImageBitmap(file, opts).then(function(bmp){
+          try { var out = encode(bmp, bmp.width, bmp.height); resolve(out); }
+          catch(err){ reject(err); }
+          finally { try { bmp.close && bmp.close(); } catch(_e){} }
+        }).catch(function(){
+          // The platform decoder couldn't open it — try the classic path, which
+          // ends in the honest 'format' error if it can't either.
+          viaImage(resolve, reject);
+        });
+      } else {
+        viaImage(resolve, reject);
+      }
     });
   }
 
