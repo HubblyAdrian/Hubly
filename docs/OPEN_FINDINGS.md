@@ -299,33 +299,39 @@ real phone — Adrian's to do.
 
 ---
 
-## 8. Price patch doesn't cover list-menu rebuild layouts — OPEN (found 2026-08-28)
+## 8. Price patch doesn't cover list-menu rebuild layouts — CLOSED 2026-08-29
 
-**Severity:** correctness — a rebuilt page can become un-patchable, and a future price
-change on it reports a service as missing when it is present.
+**The loop:** the item-7 patch anchored on a HEADING, but "rebuild around the full list"
+often renders the menu as LIST ROWS (`<li><span>Cold brew</span>…`) where the name is in
+a `<span>`. So a price change after a rebuild falsely missed and offered ANOTHER rebuild
+— a one-way door: accept once and you lose changing prices by talking, forever, while
+Hubly keeps offering the thing that already failed.
 
-**What's known:** the item-7 patch anchors on a service name in a HEADING
-(`findServiceHeading` matches `h1–h6/strong/dt/b`). But the "rebuild around the full
-list" path (verified delivering: it added the missing service and kept every price)
-often renders the menu as LIST ROWS — `<li><span>Cold brew</span><strong>$8</strong></li>`
-— where the name is in a `<span>`, not a heading. Consequences, both observed on the
-version-6 rebuild of dawn-patrol:
-- `markServiceHeadingsInFreeform` marked **0** headings (no `data-hubly-service`), so the
-  generation-time anchor doesn't exist on that page.
-- A future price change by talking would call `findServiceHeading`, MISS the `<span>`
-  row, and report "I couldn't find <service> on the page as it's built" + offer another
-  full rebuild — a FALSE miss (the service IS on the page) that turns every later price
-  edit into a full regeneration.
+**Fixed at the source — a build-time anchor, not a matcher per layout** (commit
+`125168c`, `48918b2`):
+- `markServiceAnchorsInFreeform` (build): stamps `data-hubly-service` on the service-NAME
+  element whatever its shape (`<h3>`, `<dt>`, `<li><span>`, a `<td>`) via a shape-agnostic
+  LEAF finder. Keyed off the element's OWN text, so drift-duplication can't return through
+  a new shape. This is the ONLY place layout is reasoned about.
+- `placeOneServicePrice`: PRIMARY path reads the anchor (`findServiceAnchor`) and places
+  the price relative to it — never a heading pattern — so every layout is one code path.
+  The window no longer stops at `<strong>`/`<dt>` (in a list row the price IS a `<strong>`),
+  so it updates the existing price instead of injecting a duplicate.
+- LEGACY fallback kept and marked (`findServiceHeading`, for pages predating the anchor
+  pass); `via` (anchor|legacy) is recorded per placement and the `services-placement`
+  row's `detail` carries `paths anchor=N legacy=N` so we can watch legacy fall out of use.
 
-**What's been tried:** nothing — flagged rather than rushed. Naively adding `<span>` to
-the matcher reintroduces the duplication class just fixed in #7 (the `<strong>` price is
-a window boundary, so a span match injects a SECOND price before it). A correct fix is
-`<li>`/row-scoped: find the row containing the name, update the price element inside it.
-
-**What would close it:** teach `findServiceHeading`/`placeOneServicePrice` about
-list/table menu rows (name in a `<span>`/`<td>` label cell, price in a sibling), with the
-window scoped to the row so no second price is injected; re-verify a price change lands
-on a rebuilt list-menu page with exactly one price element and no false miss.
+**Verified live on a rebuilt LIST-MENU (the exact #8 case), dawn-patrol v11→v13:**
+- rebuild stamped **4 anchors on the `<li><span>` rows**;
+- "set the cold brew to $15" landed in the RIGHT `<li>`:
+  `<li><span data-hubly-service="Cold brew">Cold brew</span><span><span data-hubly-price="Cold brew">$15</span></span></li>`;
+- read-back named it; the rendered price list showed **Cold brew $15**;
+- a drift turn ("the cold brews are $16") updated **in place** — the rendered list showed
+  **Cold brew $16**, one span, `nested=false`, no duplicate row;
+- both rows in `rebuild_outcome_events`: `paths anchor=4 legacy=0`, `landed=true`.
+- Also verified a HEADING-shaped rebuild (v7→v9) still works: anchor lands on the `<h3>`
+  not the hero mention, price updates in place, `paths anchor=4 legacy=0` — the thing that
+  already worked was not broken.
 
 ---
 
