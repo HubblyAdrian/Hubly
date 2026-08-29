@@ -413,6 +413,7 @@ type ServicesPlacementLike = {
   missing?: string[];
   where?: string;
   detail?: string;
+  paths?: { anchor: number; legacy: number };
 };
 function fmtSvcPrice(n: number): string {
   return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
@@ -1432,10 +1433,17 @@ Deno.serve(async (req) => {
               // can query, never a silence.
               const landed = placement.status === "placed" || placement.status === "partial" || placement.status === "no_prices";
               if (!landed) console.error(`services placement [${draftBusiness?.id}] -> ${placement.status} [DID NOT LAND]`);
+              // Record which placement path ran (anchor vs the legacy heading
+              // matcher) so we can watch the legacy path fall out of use as anchored
+              // pages replace pre-anchor ones (finding #8).
+              const p = placement.paths;
+              const pathBit = p ? `paths anchor=${p.anchor} legacy=${p.legacy}` : "";
+              const missBit = (placement.missing || []).length ? `missing=${(placement.missing || []).join(",")}` : "";
+              const detail = [pathBit, missBit].filter(Boolean).join("; ") || placement.detail || null;
               const u = (Deno.env.get("SUPABASE_URL") || "").trim();
               if (u && draftBusiness?.id) await fetch(`${u}/rest/v1/rpc/record_rebuild_outcome`, {
                 method: "POST", headers: { ...adminHeaders(), "content-type": "application/json" },
-                body: JSON.stringify({ p_business_id: draftBusiness.id, p_changes: "services-placement", p_status: placement.status, p_detail: (placement.missing || []).join(",") || placement.detail || null, p_landed: landed }),
+                body: JSON.stringify({ p_business_id: draftBusiness.id, p_changes: "services-placement", p_status: placement.status, p_detail: detail, p_landed: landed }),
               });
             }
           } catch (_e) { /* the read-back is best-effort; never fail the turn on it */ }

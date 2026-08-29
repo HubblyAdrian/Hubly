@@ -1938,14 +1938,15 @@ export async function generateFreeformPage(
   // name-bearing element AND guarantees the name can wrap/break rather than
   // overflow. It only removes/overrides; it never regenerates.
   const named = protectBusinessName(deordinal.html, (record as Record<string, unknown>)?.name as string);
-  // THE SERVICE-ANCHOR PASS. Stamp each service heading with data-hubly-service
-  // at generation time — the reliable anchor a later price change patches against,
-  // added the way the hidden photo slot was. Attribute only; no rewrite. Makes
-  // every page built from here patchable without depending on a fuzzy name match.
+  // THE SERVICE-ANCHOR PASS. Stamp data-hubly-service on each service-name element
+  // at generation time — whatever its shape (heading, list row, table cell) — the
+  // reliable anchor a later price change patches against, added the way the hidden
+  // photo slot was. Attribute only; no rewrite. Makes every page built from here
+  // patchable by anchor, so no per-layout matcher is ever needed (finding #8).
   const svcNames = (Array.isArray((record as any).services) ? (record as any).services : [])
     .map((s: any) => String(s?.name || "").trim()).filter(Boolean);
-  const svcMarked = markServiceHeadingsInFreeform(named, svcNames);
-  if (svcMarked.marked > 0) console.log(`freeform [${businessId}] marked ${svcMarked.marked} service heading(s) for price patching`);
+  const svcMarked = markServiceAnchorsInFreeform(named, svcNames);
+  if (svcMarked.marked > 0) console.log(`freeform [${businessId}] anchored ${svcMarked.marked} service name(s) for price patching`);
   // THE svh-COMPANION PASS. The prompt asks full-height sections to pair vh with
   // svh so they don't jump with the mobile address bar; ~10% of pages ship a bare
   // vh anyway. This adds the missing companion deterministically. Runs BEFORE the
@@ -2451,14 +2452,14 @@ export async function uploadDraftPhoto(
 // and it's the thing the whole price-list-photo flow exists to deliver. This is
 // the mirror ladder:
 //
-//   1. A service HEADING marked `data-hubly-service="<name>"` at generation time
-//      (markServiceHeadingsInFreeform, below) — the reliable anchor, added the
-//      way the hidden photo slot was. Also matched: a `data-hubly-price` span a
-//      prior patch already wrote, whose text we just update.
-//   2. Otherwise, text-match the service name in a heading and place the price
-//      with it. Existing pages have the names baked in (~83%), so this covers the
-//      corpus we already have.
-//   3. If a service isn't on the page at all, it goes in `missing` — the honest
+//   1. ANCHOR (primary): the service-name element marked `data-hubly-service` at
+//      generation time (markServiceAnchorsInFreeform, below), whatever its shape —
+//      heading, <dt>, list row, table cell. Placement reads the anchor and never a
+//      heading pattern, so no per-layout matcher is ever needed (finding #8).
+//   2. LEGACY (fallback): a page built before the anchor pass — text-match the
+//      service name in a HEADING (findServiceHeading). Covers the ~83% of existing
+//      heading pages with names baked in; `via` records when this path runs.
+//   3. If a service isn't found by either, it goes in `missing` — the honest
 //      rebuild case (never force a card where the design has no place for it).
 //
 // Deterministic, no model call, no regeneration. Returns what actually landed so
@@ -2470,6 +2471,7 @@ type ServicesPlacement = {
   where?: string;                                // "services section" | "page"
   changed?: boolean;
   detail?: string;
+  paths?: { anchor: number; legacy: number };    // which placement path handled each price (finding #8 instrumentation)
 };
 
 function fmtServicePrice(n: number): string {
@@ -2542,48 +2544,116 @@ function headingText(headEl: string): string {
   return headEl.replace(/^<[^>]+>/, "").replace(/<\/[a-z0-9]+>\s*$/i, "")
     .replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
 }
-/** Place or update ONE service's price.
+/** THE ONE comparison key for service-name matching, used on BOTH write (the
+ *  build-time anchor stamp) and lookup (placement), so a spelling drift across
+ *  turns can never split them. Lowercase, whitespace collapsed, trailing
+ *  punctuation and a single plural 's' removed. Where it can still collide: two
+ *  services differing ONLY by a trailing 's' ("Wrap"/"Wraps") share a key — every
+ *  finder that scores candidates prefers a TRUE exact match over a normalised one,
+ *  so a collision only ever picks the normalised card when no exact one exists. */
+function normServiceKey(s: string): string {
+  return String(s).replace(/&amp;/g, "&").replace(/\s+/g, " ").trim().toLowerCase()
+    .replace(/[.,:;!?]+$/, "").replace(/s$/i, "");
+}
+/** Plain text of an element's inner HTML. */
+function stripElementText(s: string): string {
+  return s.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+}
+/** BUILD-TIME finder — the element whose OWN text IS the service name, whatever
+ *  its shape: <h3>, <dt>, <li><span>, a <td>. Runs the LEAF regex (inner has no
+ *  nested tag) so it lands on the innermost element that directly holds the name —
+ *  the <span> in a list row, the <h3> in a card — and never gets swallowed by an
+ *  outer <li>/<div>. Scored to prefer a heading, a true exact over a normalised
+ *  match, and to avoid hero/nav/footer chrome (a service name also appears in the
+ *  hero sentence). This is the ONLY place layout shape is reasoned about; it hands
+ *  placement a stable anchor so placement never has to recognise a layout again. */
+function findServiceNameElement(html: string, name: string): { index: number; length: number; text: string; attrs: string } | null {
+  const exactTarget = String(name).replace(/&amp;/g, "&").replace(/\s+/g, " ").trim().toLowerCase();
+  const target = normServiceKey(name);
+  if (!target) return null;
+  const re = /<([a-z0-9]+)\b([^>]*)>([^<]*)<\/\1>/gi;   // leaf elements only
+  let m: RegExpExecArray | null;
+  let best: { index: number; length: number; text: string; attrs: string } | null = null;
+  let bestScore = -Infinity;
+  while ((m = re.exec(html))) {
+    const tag = m[1].toLowerCase();
+    const text = m[3].replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+    if (!text) continue;
+    const low = text.toLowerCase();
+    const trueExact = low === exactTarget;
+    const normMatch = !trueExact && normServiceKey(text) === target;
+    const prefix = !trueExact && !normMatch && low.startsWith(exactTarget) && /^[\s$\d.,:–—-]/.test(low.slice(exactTarget.length));
+    if (!trueExact && !normMatch && !prefix) continue;
+    let score = /^h[1-6]$/.test(tag) ? 3 : (tag === "dt" || tag === "th") ? 2 : 1;
+    if (trueExact) score += 2; else if (normMatch) score += 1;
+    if (/data-hc="(?:hero|nav|footer|announce|cta)/i.test(m[2])) score -= 5;
+    if (score > bestScore) { bestScore = score; best = { index: m.index, length: m[0].length, text, attrs: m[2] }; }
+  }
+  return best;
+}
+/** PLACEMENT PRIMARY path — the build-time anchor. Find the element carrying
+ *  data-hubly-service whose value matches this service (normalised, so the model's
+ *  spelling this turn can differ from the page's own text the anchor was keyed
+ *  with). Shape-agnostic: it does not care what tag the anchor sits on. */
+function findServiceAnchor(html: string, name: string): { index: number; length: number; text: string } | null {
+  const target = normServiceKey(name);
+  if (!target) return null;
+  const re = /<([a-z0-9]+)\b[^>]*\bdata-hubly-service="([^"]*)"[^>]*>([\s\S]*?)<\/\1>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    if (normServiceKey(m[2]) === target) return { index: m.index, length: m[0].length, text: stripElementText(m[3]) };
+  }
+  return null;
+}
+/** Place or update ONE service's price — SHAPE-AGNOSTIC.
  *
- *  The span is ALWAYS keyed off the page's HEADING TEXT, never the model's
- *  spelling for this turn. This is the fix for the drift-duplication bug: if a
- *  prior turn keyed the span "Pour-over" and this turn the model says "Pour-overs"
- *  (or vice-versa), keying by whatever the model typed made the exact-name lookup
- *  miss the existing span, and the price got wrapped AROUND it — two
- *  data-hubly-price attributes nested on one card. Now the existing-span lookup is
- *  bounded to THIS card's window and matches ANY data-hubly-price span there
- *  (whatever spelling wrote it), updates it in place, and re-keys it to the stable
- *  heading text — so a card can only ever carry one price span, however the model
- *  words the name across turns. */
-function placeOneServicePrice(html: string, name: string, price: number): { html: string; placed: boolean; injected: boolean } {
+ *  Primary path finds the build-time data-hubly-service ANCHOR (findServiceAnchor)
+ *  and places the price relative to it — so a <h3> card, a <dt>, a <li><span> menu
+ *  row and a table cell are all handled the same way, because the anchor was
+ *  stamped on whatever element held the name. It never looks for a heading pattern.
+ *  The span is keyed off the anchor's OWN text (the page's words), not the model's
+ *  spelling this turn, so the drift-duplication class can't return through a new
+ *  layout. LEGACY fallback: a page built before the anchor pass has no anchor, so
+ *  fall back to the heading-shape matcher (findServiceHeading) that covers the
+ *  heading pages predating it. `via` records which path ran so we can watch the
+ *  legacy one fall out of use. */
+function placeOneServicePrice(html: string, name: string, price: number): { html: string; placed: boolean; injected: boolean; via: "anchor" | "legacy" } {
   const priceStr = fmtServicePrice(price);
-  const h = findServiceHeading(html, name);
-  if (!h) return { html, placed: false, injected: false };
-  const keyAttr = headingText(html.slice(h.index, h.index + h.length)).replace(/"/g, "");
-  const afterAt = h.index + h.length;                       // right after `</tag>`
+  let el = findServiceAnchor(html, name);
+  let via: "anchor" | "legacy" = "anchor";
+  if (!el) {
+    const h = findServiceHeading(html, name);
+    if (!h) return { html, placed: false, injected: false, via: "legacy" };
+    el = { index: h.index, length: h.length, text: headingText(html.slice(h.index, h.index + h.length)) };
+    via = "legacy";
+  }
+  const keyAttr = (el.text || name).replace(/"/g, "");
+  const afterAt = el.index + el.length;                     // right after the name element's close tag
   const rest = html.slice(afterAt);
-  // Bound the search to THIS card: stop at the next heading / next marked service
-  // / ~400 chars. Everything inside is this service's own content, so "any price
-  // span here" can only be this card's — which is what makes updating it safe.
-  const stop = rest.search(/<(?:h[1-6]|strong|dt)\b|data-hubly-service=/i);
+  // Bound to THIS service: stop at the next anchor or heading. NOT <strong>/<dt> —
+  // in a list-menu the PRICE itself is a <strong>/<dd>, and stopping there would
+  // hide it and inject a duplicate (finding #8).
+  const stop = rest.search(/data-hubly-service=|<h[1-6]\b/i);
   const winEnd = stop === -1 ? Math.min(rest.length, 400) : Math.min(stop, 400);
   const win = rest.slice(0, winEnd);
-  // 1. A price span already on this card (whatever spelling keyed it): replace the
-  //    WHOLE span with one canonically keyed off the heading — never nest inside it.
+  // 1. A price span already here (whatever spelling keyed it): replace the WHOLE
+  //    span with one canonically keyed off the anchor text — never nest inside it.
   const spanInWin = win.match(/<span\b[^>]*\bdata-hubly-price="[^"]*"[^>]*>[\s\S]*?<\/span>/i);
   if (spanInWin) {
     const rebuilt = `<span data-hubly-price="${keyAttr}">${priceStr}</span>`;
     const newWin = win.slice(0, spanInWin.index) + rebuilt + win.slice((spanInWin.index || 0) + spanInWin[0].length);
-    return { html: html.slice(0, afterAt) + newWin + rest.slice(winEnd), placed: true, injected: false };
+    return { html: html.slice(0, afterAt) + newWin + rest.slice(winEnd), placed: true, injected: false, via };
   }
-  // 2. A bare price the model wrote inline (no span yet): wrap+replace it.
+  // 2. A bare price already shown for this service (e.g. <strong>$8</strong> in a
+  //    list row): wrap+replace it so the next change is a clean span update.
   const bare = win.match(/\$\s?\d[\d.,]*/);
   if (bare) {
     const newWin = win.replace(bare[0], `<span data-hubly-price="${keyAttr}">${priceStr}</span>`);
-    return { html: html.slice(0, afterAt) + newWin + rest.slice(winEnd), placed: true, injected: true };
+    return { html: html.slice(0, afterAt) + newWin + rest.slice(winEnd), placed: true, injected: true, via };
   }
-  // 3. No price yet — inject one right after the heading.
+  // 3. No price yet — inject one right after the name element.
   const injected = `<span data-hubly-price="${keyAttr}">${priceStr}</span>`;
-  return { html: html.slice(0, afterAt) + injected + html.slice(afterAt), placed: true, injected: true };
+  return { html: html.slice(0, afterAt) + injected + html.slice(afterAt), placed: true, injected: true, via };
 }
 /** Run the whole list over the page; report what landed and what's simply not there. */
 function placeServicesInFreeform(html: string, services: { name: string; price?: number }[]): ServicesPlacement {
@@ -2592,15 +2662,17 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   const missing: string[] = [];
   let anyPrice = false;
   let injectedAny = false;
+  const paths = { anchor: 0, legacy: 0 };
   for (const s of services) {
     if (typeof s.price === "number") {
       anyPrice = true;
       const r = placeOneServicePrice(out, s.name, s.price);
-      if (r.placed) { out = r.html; placed.push({ name: s.name, price: s.price }); if (r.injected) injectedAny = true; }
+      if (r.placed) { out = r.html; placed.push({ name: s.name, price: s.price }); if (r.injected) injectedAny = true; paths[r.via]++; }
       else missing.push(s.name);
     } else {
-      // No price given — just confirm the name is (or isn't) on the page.
-      if (findServiceHeading(out, s.name)) placed.push({ name: s.name });
+      // No price given — just confirm the name is (or isn't) on the page: anchor
+      // first, then the legacy heading matcher, mirroring placeOneServicePrice.
+      if (findServiceAnchor(out, s.name) || findServiceHeading(out, s.name)) placed.push({ name: s.name });
       else missing.push(s.name);
     }
   }
@@ -2610,24 +2682,29 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   else if (missing.length) status = "partial";
   else if (!anyPrice) status = "no_prices";
   else status = "placed";
-  return { status, placed, missing, where: servicesWhereLabel(out), changed: out !== html, html: out } as ServicesPlacement & { html: string };
+  return { status, placed, missing, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
 }
-/** Stamp each service heading with data-hubly-service at GENERATION time, so a
- *  later price change has a reliable anchor. Adds an attribute only; never
- *  reorders, rewrites, or regenerates. */
-export function markServiceHeadingsInFreeform(html: string, names: string[]): { html: string; marked: number } {
+/** Stamp a stable data-hubly-service ANCHOR on each service-name element at
+ *  GENERATION time — whatever its shape (<h3>, <dt>, <li><span>, a table cell).
+ *  This is what lets placeOneServicePrice stop caring about markup: it reads the
+ *  anchor, never a heading pattern, so no per-layout matcher is ever needed and the
+ *  list-menu one-way-door (finding #8) can't form. The anchor is keyed off the
+ *  element's OWN text (the page's words), so a later price change resolves to it
+ *  however the model spells the name — closing the drift-duplication class at the
+ *  source. Adds an attribute only; never reorders, rewrites, or regenerates. */
+export function markServiceAnchorsInFreeform(html: string, names: string[]): { html: string; marked: number } {
   let out = html;
   let marked = 0;
   for (const raw of names) {
     const name = String(raw || "").trim();
     if (!name) continue;
-    const h = findServiceHeading(out, name);
-    if (!h) continue;
-    if (/data-hubly-service=/i.test(h.attrs)) continue;   // already marked
-    const open = out.slice(h.index, h.index + h.length);
-    const nameAttr = name.replace(/"/g, "");
-    const rebuilt = open.replace(/^<([a-z0-9]+)/i, `<$1 data-hubly-service="${nameAttr}"`);
-    out = out.slice(0, h.index) + rebuilt + out.slice(h.index + h.length);
+    const el = findServiceNameElement(out, name);
+    if (!el) continue;
+    if (/data-hubly-service=/i.test(el.attrs)) continue;   // already marked
+    const open = out.slice(el.index, el.index + el.length);
+    const anchorVal = el.text.replace(/"/g, "");           // the page's OWN text, not the record spelling
+    const rebuilt = open.replace(/^<([a-z0-9]+)/i, `<$1 data-hubly-service="${anchorVal}"`);
+    out = out.slice(0, el.index) + rebuilt + out.slice(el.index + el.length);
     marked++;
   }
   return { html: out, marked };
