@@ -157,3 +157,17 @@ acts, or it says what will happen — it never gives directions to something it 
   MEASURE THE LAYOUT WITH IMAGES LOADED: aborting them makes an `<img>` fall back to its width
   attribute and manufactures min-content collapses that do not happen on the real page — a whole
   false-positive sweep on 2026-08-27 came from exactly that.)
+- **A generated page is patched by an anchor stamped at build time, never by re-recognizing
+  layout afterward.** A freeform page is a single generation with no update path, so anything a
+  later change must find on it has to be MARKED while we still know what it is — at generation,
+  where the fact and its element are both in hand. Re-finding it later by its markup shape is a
+  matcher per shape, and the model invents new shapes every rebuild (a heading one build, a
+  `<li><span>` price row the next, a table after that); each new shape is a silent miss and, worse,
+  a false "it's not on the page" that offers a destructive rebuild. This is settled for service
+  prices: `markServiceAnchorsInFreeform` stamps `data-hubly-service` on the name element whatever
+  its shape, keyed off the page's OWN text, and `placeOneServicePrice` reads only that anchor
+  (finding #8, 2026-08-29; the price value itself rides a `data-hubly-price` span). The SAME gap is
+  still open for **hours, logo, service area, and contact** on a freeform page — they have no
+  anchor and no post-build update path (contact has a value-swap in `syncFreeformFacts`, the rest
+  no-op). Do not build those now; when we do, it is one anchor pass at generation, not four
+  matchers after the fact.
