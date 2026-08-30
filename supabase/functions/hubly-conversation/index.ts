@@ -419,6 +419,7 @@ type ServicesPlacementLike = {
   detail?: string;
   paths?: { anchor: number; legacy: number };
   retroAnchored?: number;
+  leakedAttrText?: number;
 };
 function fmtSvcPrice(n: number): string {
   return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
@@ -471,7 +472,11 @@ function composeServicesTruth(placement: ServicesPlacementLike, url: string): st
   const addedClause = addedNames.length
     ? ` I added ${andList(addedNames)} as ${addedNames.length === 1 ? "a new entry" : "new entries"} in that section.`
     : "";
-  const landedLine = `${readback} ${priced.length === 1 ? "is" : "are"} on your page now, ${wherePhrase}.${addedClause}`;
+  // The where-clause is only additive when it names a specific place (the services
+  // section). When it is the generic "on your page", appending it duplicates the
+  // "on your page now" we just said ("…on your page now, on your page.") — so drop it.
+  const whereClause = placement.where === "services section" ? `, ${wherePhrase}` : "";
+  const landedLine = `${readback} ${priced.length === 1 ? "is" : "are"} on your page now${whereClause}.${addedClause}`;
   if (placement.status === "partial" && missing.length) {
     // A service the page has no cloneable entry for (rare). Say so honestly — no
     // rebuild bait (a rebuild wouldn't obviously help place one service, and it
@@ -1504,9 +1509,12 @@ Deno.serve(async (req) => {
               // retroactive-stamp gap made countable: watch it stay high while old
               // pre-anchor pages dominate, then fall as build-time capture lands.
               const retroBit = placement.retroAnchored ? `retroAnchored=${placement.retroAnchored}` : "";
+              // Loud + countable: our own markup leaking into visible text is a hard
+              // invariant breach, recorded on the row so it can never ship silently.
+              const leakBit = placement.leakedAttrText ? `LEAKED_ATTR_TEXT=${placement.leakedAttrText}` : "";
               const insBit = (placement.inserted || []).length ? `inserted=${(placement.inserted || []).join(",")}` : "";
               const missBit = (placement.missing || []).length ? `missing=${(placement.missing || []).join(",")}` : "";
-              const detail = [pathBit, retroBit, insBit, missBit].filter(Boolean).join("; ") || placement.detail || null;
+              const detail = [pathBit, retroBit, leakBit, insBit, missBit].filter(Boolean).join("; ") || placement.detail || null;
               const u = (Deno.env.get("SUPABASE_URL") || "").trim();
               if (u && draftBusiness?.id) await fetch(`${u}/rest/v1/rpc/record_rebuild_outcome`, {
                 method: "POST", headers: { ...adminHeaders(), "content-type": "application/json" },

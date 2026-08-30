@@ -2477,6 +2477,7 @@ type ServicesPlacement = {
   detail?: string;
   paths?: { anchor: number; legacy: number };    // which placement path handled each price (finding #8 instrumentation)
   retroAnchored?: number;                         // anchors stamped at PATCH time because the page arrived unanchored (services came after the build) — the measure of the retroactive-stamp gap
+  leakedAttrText?: number;                         // INVARIANT: our own data-hubly- markup that ended up as visible text (must be 0; non-zero = a replacement-string bug shipped)
 };
 
 function fmtServicePrice(n: number): string {
@@ -2653,7 +2654,7 @@ function placeOneServicePrice(html: string, name: string, price: number): { html
   //    list row): wrap+replace it so the next change is a clean span update.
   const bare = win.match(/\$\s?\d[\d.,]*/);
   if (bare) {
-    const newWin = win.replace(bare[0], `<span data-hubly-price="${keyAttr}">${priceStr}</span>`);
+    const newWin = win.replace(bare[0], () => `<span data-hubly-price="${keyAttr}">${priceStr}</span>`);  // fn form: priceStr like "$130" is inserted verbatim, never re-read as $1
     return { html: html.slice(0, afterAt) + newWin + rest.slice(winEnd), placed: true, injected: true, via };
   }
   // 3. No price yet — inject one right after the name element.
@@ -2726,18 +2727,55 @@ function escHtmlText(s: string): string {
  *  the `<dd>` in a `<dt>/<dd>` pair. A list row has none (its second cell is the
  *  price). Stamp it `data-hubly-desc` so a later fill can find it; returns the html
  *  unchanged if the entry simply has no description slot. */
-function stampDescElement(html: string, nameAttr: string): string {
+/** The number of word-like tokens in a text run. A one-line DESCRIPTION is prose
+ *  ("A weekly mow, edge, and blow." = 6); a UNIT or META is a short label
+ *  ("per visit" = 2, "About 45 minutes" = 3). Four is the floor that separates them
+ *  on every real card shape checked (evergreen unit/desc, summit/dawn-patrol
+ *  meta/desc) — see the verification. */
+function descriptiveWordCount(text: string): number {
+  return (text.match(/[A-Za-z][A-Za-z'-]*/g) || []).length;
+}
+/** Find the element that is genuinely the one-line DESCRIPTION inside a card — not
+ *  its name, not its price, and CRUCIALLY not the little unit/meta label beside the
+ *  price ("per visit", "About 45 minutes"). Getting this wrong once wrote a
+ *  description over the "per visit" element on three live cards (2026-08-30), so the
+ *  rule is: only pick a leaf we are CONFIDENT is prose, and otherwise pick nothing.
+ *  A leaf qualifies only if it is a real text leaf, carries no service/price/desc
+ *  anchor, is not a link/CTA, holds no price digits, AND reads as prose
+ *  (>= 4 word-tokens). Anything shorter — a unit, a duration, a one-word label — is
+ *  left untouched. Returns {index, openLen, tag, attrs} of the chosen open tag, or
+ *  null when nothing qualifies (the safe, do-nothing outcome). */
+function findDescElement(html: string): { index: number; openLen: number; tag: string; attrs: string } | null {
   const re = /<([a-z0-9]+)\b([^>]*)>([^<]*)<\/\1>/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html))) {
-    const attrs = m[2], text = m[3].trim();
+    const tag = m[1].toLowerCase(), attrs = m[2], text = m[3].trim();
     if (!text) continue;
+    if (tag === "a") continue;                                       // a CTA/link is never the blurb
     if (/data-hubly-service|data-hubly-price|data-hubly-desc/i.test(attrs)) continue;
-    if (/\$\s?\d/.test(text)) continue;   // that's a price cell, not a blurb
-    const openLen = (`<${m[1]}${attrs}>`).length;
-    return html.slice(0, m.index) + `<${m[1]} data-hubly-desc="${nameAttr}"${attrs}>` + html.slice(m.index + openLen);
+    if (/\$\s?\d/.test(text)) continue;                              // a price cell, not a blurb
+    if (descriptiveWordCount(text) < 4) continue;                   // a unit/meta label, not prose — LEAVE IT ALONE
+    return { index: m.index, openLen: (`<${m[1]}${attrs}>`).length, tag: m[1], attrs };
   }
-  return html;
+  return null;
+}
+function stampDescElement(html: string, nameAttr: string): string {
+  const el = findDescElement(html);
+  if (!el) return html;
+  return html.slice(0, el.index) + `<${el.tag} data-hubly-desc="${nameAttr}"${el.attrs}>` + html.slice(el.index + el.openLen);
+}
+/** INVARIANT: no `data-hubly-` marker may ever appear as VISIBLE page text. If it
+ *  does, a replacement string mangled our own markup into content (the "$130" ->
+ *  `data-hubly-price="...">30` class of bug, 2026-08-30). Scans text nodes (the runs
+ *  between tags) for a data-hubly- token and returns how many carry one. Zero is the
+ *  only acceptable answer; a non-zero count is recorded loud + countable by the
+ *  caller, the same discipline as every other placement outcome. */
+function countLeakedAttrText(html: string): number {
+  let n = 0;
+  const re = />([^<]*)</g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) { if (/data-hubly-[a-z]/i.test(m[1])) n++; }
+  return n;
 }
 /** Add display:none to the data-hubly-desc element (merging any existing style). */
 function hideDescElement(html: string): string {
@@ -2758,16 +2796,31 @@ function buildClonedServiceEntry(entryHtml: string, newName: string, priceStr: s
   // Keep the sibling's data-hc labels for now — insertServiceIntoFreeform re-numbers
   // them to the next free ordinal so the new entry is CLICK-editable (see there).
   let e = entryHtml;
-  e = e.replace(/(\bdata-hubly-service=")[^"]*(")/i, `$1${nameAttr}$2`);       // re-key name anchor
-  if (!/data-hubly-price=/i.test(e)) e = e.replace(/\$\s?\d[\d.,]*/, `<span data-hubly-price="${nameAttr}">$&</span>`); // wrap a bare price so it's addressable
-  e = e.replace(/(\bdata-hubly-price=")[^"]*(")/i, `$1${nameAttr}$2`);         // re-key price anchor
+  // EVERY interpolation below goes through a REPLACEMENT FUNCTION, never a
+  // replacement STRING. A string replacement re-reads $1/$2/$& in the interpolated
+  // value as backreferences, so a price of "$130" became the literal markup
+  // `data-hubly-price="...">30` on a live card (2026-08-30) — only prices starting
+  // "$1" broke, which is why "$40/$95/$220" sailed through testing. A function value
+  // is inserted verbatim. See assertNoLeakedAttrText for the invariant that now
+  // catches any regression of this class.
+  e = e.replace(/(\bdata-hubly-service=")[^"]*(")/i, (_m, p1, p2) => p1 + nameAttr + p2);       // re-key name anchor
+  if (!/data-hubly-price=/i.test(e)) e = e.replace(/\$\s?\d[\d.,]*/, (m) => `<span data-hubly-price="${nameAttr}">${m}</span>`); // wrap a bare price so it's addressable
+  e = e.replace(/(\bdata-hubly-price=")[^"]*(")/i, (_m, p1, p2) => p1 + nameAttr + p2);         // re-key price anchor
   e = stampDescElement(e, nameAttr);                                          // mark the blurb slot before blanking
+  // DROP a cloned booking CTA. A booking button is a PAGE-level element — the
+  // generator places a capped number of them where booking intent is highest, not
+  // one per card (verified on evergreen v1: only the first card had a button). An
+  // inserted card that carried the cloned sibling's button would (a) ship blank
+  // unless we re-keyed it, (b) point at the sibling's service via a stale href, and
+  // (c) give the new card a button its neighbours don't have. The new card uses the
+  // page's existing booking path; it does not manufacture a fourth CTA.
+  e = e.replace(/<a\b[^>]*\bbook=1[^>]*>[\s\S]*?<\/a>/gi, "");
   e = e.replace(/>[^<]*</g, "><");                                             // blank ALL text (name, price, description)
-  e = e.replace(/(\bdata-hubly-service="[^"]*"[^>]*>)</i, `$1${escHtmlText(newName)}<`);  // set the new name text
-  if (priceStr && /data-hubly-price=/i.test(e)) e = e.replace(/(\bdata-hubly-price="[^"]*"[^>]*>)</i, `$1${priceStr}<`); // set the new price
+  e = e.replace(/(\bdata-hubly-service="[^"]*"[^>]*>)</i, (_m, p1) => p1 + escHtmlText(newName) + "<");  // set the new name text
+  if (priceStr && /data-hubly-price=/i.test(e)) e = e.replace(/(\bdata-hubly-price="[^"]*"[^>]*>)</i, (_m, p1) => p1 + priceStr + "<"); // set the new price
   if (/data-hubly-desc=/i.test(e)) {                                           // handle the blurb: fill or hide
     e = descText && descText.trim()
-      ? e.replace(/(\bdata-hubly-desc="[^"]*"[^>]*>)</i, `$1${escHtmlText(descText.trim())}<`)
+      ? e.replace(/(\bdata-hubly-desc="[^"]*"[^>]*>)</i, (_m, p1) => p1 + escHtmlText(descText.trim()) + "<")
       : hideDescElement(e);
   }
   return e;
@@ -2788,11 +2841,12 @@ function placeServiceDescription(html: string, name: string, descText: string): 
   if (!bounds) return html;
   let entry = html.slice(bounds.start, bounds.end);
   const nameAttr = (anchor.text || name).replace(/"/g, "");
+  const desc = escHtmlText(descText.trim());
   if (/data-hubly-desc=/i.test(entry)) {
-    entry = entry.replace(/(<[a-z0-9]+\b[^>]*\bdata-hubly-desc="[^"]*"[^>]*)\s*style="[^"]*"([^>]*>)/i, "$1$2"); // un-hide
-    entry = entry.replace(/(\bdata-hubly-desc="[^"]*"[^>]*>)[\s\S]*?(<)/i, `$1${escHtmlText(descText.trim())}$2`);
+    entry = entry.replace(/(<[a-z0-9]+\b[^>]*\bdata-hubly-desc="[^"]*"[^>]*)\s*style="[^"]*"([^>]*>)/i, (_m, p1, p2) => p1 + p2); // un-hide
+    entry = entry.replace(/(\bdata-hubly-desc="[^"]*"[^>]*>)[\s\S]*?(<)/i, (_m, p1, p2) => p1 + desc + p2);  // fn form: a description containing "$1"/"$&" is inserted verbatim
   } else if (entryHasDescription(entry)) {
-    entry = stampDescElement(entry, nameAttr).replace(/(\bdata-hubly-desc="[^"]*"[^>]*>)[\s\S]*?(<)/i, `$1${escHtmlText(descText.trim())}$2`);
+    entry = stampDescElement(entry, nameAttr).replace(/(\bdata-hubly-desc="[^"]*"[^>]*>)[\s\S]*?(<)/i, (_m, p1, p2) => p1 + desc + p2);
   } else {
     return html;   // list row: no place for a blurb
   }
@@ -2923,7 +2977,11 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   else if (missing.length) status = "partial";
   else if (!anyPrice) status = "no_prices";
   else status = "placed";
-  return { status, placed, missing, inserted, descNeeded, noSection, retroAnchored, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
+  // INVARIANT CHECK. If any of our own markup leaked into visible text, say so loud
+  // and carry the count out so the countable row records it — never ship it silently.
+  const leakedAttrText = countLeakedAttrText(out);
+  if (leakedAttrText > 0) console.error(`freeform services placement LEAKED ${leakedAttrText} data-hubly- marker(s) into visible text — a replacement string mangled markup`);
+  return { status, placed, missing, inserted, descNeeded, noSection, retroAnchored, leakedAttrText, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
 }
 /** Stamp a stable data-hubly-service ANCHOR on each service-name element at
  *  GENERATION time — whatever its shape (<h3>, <dt>, <li><span>, a table cell).
@@ -2944,7 +3002,7 @@ export function markServiceAnchorsInFreeform(html: string, names: string[]): { h
     if (/data-hubly-service=/i.test(el.attrs)) continue;   // already marked
     const open = out.slice(el.index, el.index + el.length);
     const anchorVal = el.text.replace(/"/g, "");           // the page's OWN text, not the record spelling
-    const rebuilt = open.replace(/^<([a-z0-9]+)/i, `<$1 data-hubly-service="${anchorVal}"`);
+    const rebuilt = open.replace(/^<([a-z0-9]+)/i, (_m, p1) => `<${p1} data-hubly-service="${anchorVal}"`);  // fn form: a name like "$100 Package" is inserted verbatim, never re-read as $1
     out = out.slice(0, el.index) + rebuilt + out.slice(el.index + el.length);
     marked++;
   }
@@ -2963,7 +3021,7 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
       p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
       p_document: latest.brief, p_rendered_html: r.html, p_created_by: "patch", p_format: "html",
     });
-    if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, detail: "save" };
+    if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, leakedAttrText: r.leakedAttrText, detail: "save" };
   }
   // Only when there is genuinely no section to insert into is a rebuild the answer.
   // Compute what that rebuild would COST now, so the offer names it BEFORE the owner
@@ -2972,7 +3030,7 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
   if (r.noSection) {
     try { const plan = await planFreeformRegeneration(draftId); lostEdits = plan.lost.length; } catch { /* best-effort */ }
   }
-  return { status: r.status, placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, lostEdits, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, changed: r.changed };
+  return { status: r.status, placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, lostEdits, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, leakedAttrText: r.leakedAttrText, changed: r.changed };
 }
 
 export async function uploadDraftHeroImage(
