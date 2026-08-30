@@ -2754,12 +2754,9 @@ function hideDescElement(html: string): string {
  *  template — the page's own entry is the template. */
 function buildClonedServiceEntry(entryHtml: string, newName: string, priceStr: string | null, descText?: string | null): string {
   const nameAttr = newName.replace(/"/g, "");
-  // Strip the sibling's POSITIONAL edit labels (data-hc="section.1.item.N…") and its
-  // invented-copy marks (data-hubly-guess) — cloning them would duplicate an edit
-  // anchor, so a click on the new entry's text would patch the ORIGINAL, and repaint
-  // a stale "Hubly's suggestion" pill. The new entry stays editable by TALKING via its
-  // data-hubly-service/price/desc anchors; it just isn't a click-to-edit twin.
-  let e = entryHtml.replace(/\s+data-hc="[^"]*"/gi, "").replace(/\s+data-hubly-guess="[^"]*"/gi, "");
+  // Keep the sibling's data-hc labels for now — insertServiceIntoFreeform re-numbers
+  // them to the next free ordinal so the new entry is CLICK-editable (see there).
+  let e = entryHtml;
   e = e.replace(/(\bdata-hubly-service=")[^"]*(")/i, `$1${nameAttr}$2`);       // re-key name anchor
   if (!/data-hubly-price=/i.test(e)) e = e.replace(/\$\s?\d[\d.,]*/, `<span data-hubly-price="${nameAttr}">$&</span>`); // wrap a bare price so it's addressable
   e = e.replace(/(\bdata-hubly-price=")[^"]*(")/i, `$1${nameAttr}$2`);         // re-key price anchor
@@ -2805,7 +2802,7 @@ function placeServiceDescription(html: string, name: string, descText: string): 
  *  offer's whole reason for existing was that we had no way to add one). Returns the
  *  new HTML on success, or a reason: `no_section` (no service entry to clone — the
  *  ONLY case a rebuild is genuinely the answer). */
-function insertServiceIntoFreeform(html: string, name: string, price?: number, description?: string): { ok: boolean; html?: string; kind?: string; single?: boolean; reason?: string; hadDesc?: boolean } {
+function insertServiceIntoFreeform(html: string, name: string, price?: number, description?: string): { ok: boolean; html?: string; kind?: string; single?: boolean; reason?: string; hadDesc?: boolean; labeled?: boolean } {
   const anchors = allServiceAnchors(html);
   if (!anchors.length) return { ok: false, reason: "no_section" };
   const first = anchors[0];
@@ -2816,9 +2813,36 @@ function insertServiceIntoFreeform(html: string, name: string, price?: number, d
   const priceStr = typeof price === "number" ? fmtServicePrice(price) : null;
   const tmplHtml = html.slice(tmpl.start, tmpl.end);
   const hadDesc = entryHasDescription(tmplHtml);   // does this layout carry a blurb per entry?
-  const clone = buildClonedServiceEntry(tmplHtml, name, priceStr, description);
-  const at = lastEntry.end;
-  return { ok: true, html: html.slice(0, at) + clone + html.slice(at), kind: tmpl.kind, single: anchors.length === 1, hadDesc };
+  let clone = buildClonedServiceEntry(tmplHtml, name, priceStr, description);
+  // The sibling's data-hubly-guess marks its INVENTED copy for the editor's suggestion
+  // pill — a lie on the new entry's real values, so drop it.
+  clone = clone.replace(/\s+data-hubly-guess="[^"]*"/gi, "");
+  const at = lastEntry.end;   // append at the section end (the last anchor is the last item)
+  // POSITIONAL LABELS so the new entry is CLICK-editable (its own text and image, not
+  // the neighbour's). The labelling pass numbers items section.N.item.M in document
+  // order, contiguous, unique — and the editor resolves a click by EXACT data-hc match.
+  // So give the clone the next free M in section N (maxM+1): it matches the pass's own
+  // numbering, is unique, and — because we append at the section end — keeps document
+  // order == ordinal order. We NEVER renumber a sibling: if a labelled item somehow
+  // follows the insertion point (a non-service item at the section's tail), we assign no
+  // label rather than renumber, and the entry stays editable by talking.
+  let labeled = false;
+  const lab = /data-hc="section\.(\d+)\.item\.(\d+)\./.exec(clone);
+  if (lab) {
+    const N = lab[1], mSib = lab[2];
+    let maxM = 0;
+    const mre = new RegExp(`data-hc="section\\.${N}\\.item\\.(\\d+)\\.`, "g");
+    let mm: RegExpExecArray | null;
+    while ((mm = mre.exec(html))) maxM = Math.max(maxM, Number(mm[1]));
+    const midSection = new RegExp(`data-hc="section\\.${N}\\.item\\.`).test(html.slice(at)); // a labelled item follows -> would need renumbering
+    if (!midSection) {
+      clone = clone.replace(new RegExp(`(data-hc="section\\.${N}\\.item\\.)${mSib}(\\.)`, "g"), `$1${maxM + 1}$2`);
+      labeled = true;
+    } else {
+      clone = clone.replace(/\s+data-hc="[^"]*"/gi, "");   // don't renumber; add unlabelled (talk-editable only)
+    }
+  }
+  return { ok: true, html: html.slice(0, at) + clone + html.slice(at), kind: tmpl.kind, single: anchors.length === 1, hadDesc, labeled };
 }
 /** Run the whole list over the page; report what landed and what's simply not there. */
 function placeServicesInFreeform(html: string, services: { name: string; price?: number; description?: string }[]): ServicesPlacement {
