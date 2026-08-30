@@ -53264,6 +53264,35 @@ function wireHcEditingSurface(doc, root){
     }
   }catch(e){}
 
+  // EVERY labelled leaf is an entry point, not only Hubly's guesses. The guess pill
+  // is a HINT — "these are Hubly's words, click to make them yours" — never the gate.
+  // A price the owner stated, a photo the resolver chose, a service name: all equally
+  // theirs to change, so all get the same immediate hover affordance. It is driven by
+  // CSS on a marked attribute, NOT the old per-element mouseenter handler, which only
+  // painted the outline on the SECOND re-entry (it wired the listener mid-hover, after
+  // that entry's mouseenter had already fired) — so owner-supplied content read as dead
+  // on a normal hover, which is exactly why the cards looked un-editable.
+  function markEditable(el){
+    if(!el || el.hasAttribute('data-hc-editable-marked')) return;
+    if(el.closest('[data-hubly-element]')) return;
+    var isImg = el.tagName && el.tagName.toLowerCase() === 'img';
+    // A text entry point is a LEAF with text; an image entry point is the <img>. A
+    // wrapper that contains another labelled element is not itself editable.
+    if(!isImg && (el.children.length > 0 || !(el.textContent || '').trim())) return;
+    el.setAttribute('data-hc-editable-marked', '1');
+  }
+  try{
+    if(!doc.getElementById('hubly-editable-style')){
+      var es = doc.createElement('style'); es.id = 'hubly-editable-style';
+      es.textContent =
+        '[data-hc-editable-marked]{cursor:pointer;}' +
+        '[data-hc-editable-marked]:hover{outline:2px dashed rgba(217,99,45,.7);outline-offset:3px;}';
+      (doc.head || doc.body || root).appendChild(es);
+    }
+    var edEls = root.querySelectorAll('[data-node],[data-hc]');
+    for(var edi = 0; edi < edEls.length; edi++) markEditable(edEls[edi]);
+  }catch(e){}
+
   function post(msg){
     try{ window.parent.postMessage(msg, '*'); }catch(e){}
   }
@@ -53473,14 +53502,13 @@ function wireHcEditingSurface(doc, root){
     openTextEditor(target);
   }, true);
 
+  // Affordance is CSS now (see markEditable + #hubly-editable-style, injected on wiring
+  // and painted on :hover with no delay). This handler only MARKS elements that appear
+  // after wiring — a card inserted by chat, a section the editor just added — so they
+  // become entry points too, without re-running the whole pass.
   root.addEventListener('mouseover', function(e){
     var target = e.target && e.target.closest ? e.target.closest(EDITABLE_SEL) : null;
-    if(!target || !root.contains(target) || target.hasAttribute('data-hc-editable-marked')) return;
-    if(target.closest('[data-hubly-element]') || target.children.length > 0) return;
-    target.setAttribute('data-hc-editable-marked', '1');
-    target.style.cursor = 'pointer';
-    target.addEventListener('mouseenter', function(){ target.style.outline = '2px dashed rgba(217,99,45,.7)'; target.style.outlineOffset = '3px'; });
-    target.addEventListener('mouseleave', function(){ target.style.outline = ''; });
+    if(target && root.contains(target)) markEditable(target);
   }, true);
 
   // G: REVIEWS container REMOVED. It was Hubly furniture standing on the owner's
