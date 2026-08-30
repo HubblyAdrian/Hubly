@@ -2469,6 +2469,7 @@ type ServicesPlacement = {
   placed: { name: string; price?: number }[];   // names confirmed on the page (price applied if given)
   missing: string[];                             // service names that could NOT be placed or inserted
   inserted?: string[];                           // names added as a NEW entry cloned from a sibling
+  descNeeded?: string[];                         // inserted into a section that carries a blurb per entry, but no description was given — ask for one
   noSection?: boolean;                           // true only when there is no services section to insert into (the sole rebuild case)
   lostEdits?: number;                            // when noSection: how many owner edits a rebuild would lose (named before the yes)
   where?: string;                                // "services section" | "page"
@@ -2716,27 +2717,95 @@ function findServiceEntryBounds(html: string, anchorIndex: number, anchorLen: nu
   const chosen = cands.find(repeats) || cands.find((e) => e.tag !== "div") || cands[0];
   return { start: chosen.start, end: chosen.end, kind: chosen.tag };
 }
-/** Clone a sibling entry's markup into a new one for {name, priceStr}: keep the
- *  structure EXACTLY, blank the neighbour's words (so we don't copy its name, price
- *  or description), then set the new name + price and re-key the anchor. Never
- *  authors a template — the page's own entry is the template. */
-function buildClonedServiceEntry(entryHtml: string, newName: string, priceStr: string | null): string {
+function escHtmlText(s: string): string {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+/** The DESCRIPTION element of an entry — the text-bearing leaf that carries neither
+ *  the name nor the price anchor and holds no price token: the card's `<p>` blurb,
+ *  the `<dd>` in a `<dt>/<dd>` pair. A list row has none (its second cell is the
+ *  price). Stamp it `data-hubly-desc` so a later fill can find it; returns the html
+ *  unchanged if the entry simply has no description slot. */
+function stampDescElement(html: string, nameAttr: string): string {
+  const re = /<([a-z0-9]+)\b([^>]*)>([^<]*)<\/\1>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    const attrs = m[2], text = m[3].trim();
+    if (!text) continue;
+    if (/data-hubly-service|data-hubly-price|data-hubly-desc/i.test(attrs)) continue;
+    if (/\$\s?\d/.test(text)) continue;   // that's a price cell, not a blurb
+    const openLen = (`<${m[1]}${attrs}>`).length;
+    return html.slice(0, m.index) + `<${m[1]} data-hubly-desc="${nameAttr}"${attrs}>` + html.slice(m.index + openLen);
+  }
+  return html;
+}
+/** Add display:none to the data-hubly-desc element (merging any existing style). */
+function hideDescElement(html: string): string {
+  return html.replace(/<([a-z0-9]+)\b([^>]*\bdata-hubly-desc="[^"]*"[^>]*)>/i, (_m, tag, attrs) =>
+    /\bstyle=/i.test(attrs)
+      ? `<${tag}${attrs.replace(/style="([^"]*)"/i, 'style="$1;display:none"')}>`
+      : `<${tag}${attrs} style="display:none">`);
+}
+/** Clone a sibling entry's markup into a new one for {name, price, description}: keep
+ *  the structure EXACTLY, blank the neighbour's words, then set the new name + price,
+ *  re-key the anchor, and handle the description honestly — FILL it when the owner
+ *  gave one; when they didn't, HIDE the empty slot (the way collapseEmptyImageSlots
+ *  hides a photo slot) so the card renders clean and the blurb can be added later,
+ *  never a visible empty element beside siblings that have one. Never authors a
+ *  template — the page's own entry is the template. */
+function buildClonedServiceEntry(entryHtml: string, newName: string, priceStr: string | null, descText?: string | null): string {
   const nameAttr = newName.replace(/"/g, "");
-  let e = entryHtml;
+  // Strip the sibling's POSITIONAL edit labels (data-hc="section.1.item.N…") and its
+  // invented-copy marks (data-hubly-guess) — cloning them would duplicate an edit
+  // anchor, so a click on the new entry's text would patch the ORIGINAL, and repaint
+  // a stale "Hubly's suggestion" pill. The new entry stays editable by TALKING via its
+  // data-hubly-service/price/desc anchors; it just isn't a click-to-edit twin.
+  let e = entryHtml.replace(/\s+data-hc="[^"]*"/gi, "").replace(/\s+data-hubly-guess="[^"]*"/gi, "");
   e = e.replace(/(\bdata-hubly-service=")[^"]*(")/i, `$1${nameAttr}$2`);       // re-key name anchor
   if (!/data-hubly-price=/i.test(e)) e = e.replace(/\$\s?\d[\d.,]*/, `<span data-hubly-price="${nameAttr}">$&</span>`); // wrap a bare price so it's addressable
   e = e.replace(/(\bdata-hubly-price=")[^"]*(")/i, `$1${nameAttr}$2`);         // re-key price anchor
+  e = stampDescElement(e, nameAttr);                                          // mark the blurb slot before blanking
   e = e.replace(/>[^<]*</g, "><");                                             // blank ALL text (name, price, description)
-  e = e.replace(/(\bdata-hubly-service="[^"]*"[^>]*>)</i, `$1${newName}<`);    // set the new name text
+  e = e.replace(/(\bdata-hubly-service="[^"]*"[^>]*>)</i, `$1${escHtmlText(newName)}<`);  // set the new name text
   if (priceStr && /data-hubly-price=/i.test(e)) e = e.replace(/(\bdata-hubly-price="[^"]*"[^>]*>)</i, `$1${priceStr}<`); // set the new price
+  if (/data-hubly-desc=/i.test(e)) {                                           // handle the blurb: fill or hide
+    e = descText && descText.trim()
+      ? e.replace(/(\bdata-hubly-desc="[^"]*"[^>]*>)</i, `$1${escHtmlText(descText.trim())}<`)
+      : hideDescElement(e);
+  }
   return e;
+}
+/** Whether an entry has a description slot at all (a card/dl, not a list row). */
+function entryHasDescription(entryHtml: string): boolean {
+  return stampDescElement(entryHtml, "_probe_") !== entryHtml;
+}
+/** Fill (and un-hide) the description of a service already on the page. Used when the
+ *  owner answers the "what's its one-line description?" ask for an entry inserted
+ *  without one. Finds the entry's data-hubly-desc slot (or a heuristic blurb element
+ *  on an older card) and sets it; a list row has no slot, so this is a no-op there. */
+function placeServiceDescription(html: string, name: string, descText: string): string {
+  if (!descText || !descText.trim()) return html;
+  const anchor = findServiceAnchor(html, name);
+  if (!anchor) return html;
+  const bounds = findServiceEntryBounds(html, anchor.index, anchor.length, /<([a-z0-9]+)/.exec(html.slice(anchor.index))?.[1]?.toLowerCase() || "");
+  if (!bounds) return html;
+  let entry = html.slice(bounds.start, bounds.end);
+  const nameAttr = (anchor.text || name).replace(/"/g, "");
+  if (/data-hubly-desc=/i.test(entry)) {
+    entry = entry.replace(/(<[a-z0-9]+\b[^>]*\bdata-hubly-desc="[^"]*"[^>]*)\s*style="[^"]*"([^>]*>)/i, "$1$2"); // un-hide
+    entry = entry.replace(/(\bdata-hubly-desc="[^"]*"[^>]*>)[\s\S]*?(<)/i, `$1${escHtmlText(descText.trim())}$2`);
+  } else if (entryHasDescription(entry)) {
+    entry = stampDescElement(entry, nameAttr).replace(/(\bdata-hubly-desc="[^"]*"[^>]*>)[\s\S]*?(<)/i, `$1${escHtmlText(descText.trim())}$2`);
+  } else {
+    return html;   // list row: no place for a blurb
+  }
+  return html.slice(0, bounds.start) + entry + html.slice(bounds.end);
 }
 /** Add a service that isn't on the page by CLONING an existing entry in the same
  *  section — the shape-agnostic alternative to a destructive rebuild (the rebuild
  *  offer's whole reason for existing was that we had no way to add one). Returns the
  *  new HTML on success, or a reason: `no_section` (no service entry to clone — the
  *  ONLY case a rebuild is genuinely the answer). */
-function insertServiceIntoFreeform(html: string, name: string, price?: number): { ok: boolean; html?: string; kind?: string; single?: boolean; reason?: string } {
+function insertServiceIntoFreeform(html: string, name: string, price?: number, description?: string): { ok: boolean; html?: string; kind?: string; single?: boolean; reason?: string; hadDesc?: boolean } {
   const anchors = allServiceAnchors(html);
   if (!anchors.length) return { ok: false, reason: "no_section" };
   const first = anchors[0];
@@ -2745,16 +2814,19 @@ function insertServiceIntoFreeform(html: string, name: string, price?: number): 
   const lastEntry = findServiceEntryBounds(html, last.index, last.length, last.tag);
   if (!tmpl || !lastEntry) return { ok: false, reason: "no_entry" };
   const priceStr = typeof price === "number" ? fmtServicePrice(price) : null;
-  const clone = buildClonedServiceEntry(html.slice(tmpl.start, tmpl.end), name, priceStr);
+  const tmplHtml = html.slice(tmpl.start, tmpl.end);
+  const hadDesc = entryHasDescription(tmplHtml);   // does this layout carry a blurb per entry?
+  const clone = buildClonedServiceEntry(tmplHtml, name, priceStr, description);
   const at = lastEntry.end;
-  return { ok: true, html: html.slice(0, at) + clone + html.slice(at), kind: tmpl.kind, single: anchors.length === 1 };
+  return { ok: true, html: html.slice(0, at) + clone + html.slice(at), kind: tmpl.kind, single: anchors.length === 1, hadDesc };
 }
 /** Run the whole list over the page; report what landed and what's simply not there. */
-function placeServicesInFreeform(html: string, services: { name: string; price?: number }[]): ServicesPlacement {
+function placeServicesInFreeform(html: string, services: { name: string; price?: number; description?: string }[]): ServicesPlacement {
   let out = html;
   const placed: { name: string; price?: number }[] = [];
   const missing: string[] = [];
   const inserted: string[] = [];
+  const descNeeded: string[] = [];
   let anyPrice = false;
   let injectedAny = false;
   let insertedAny = false;
@@ -2763,9 +2835,15 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   // On a miss, ADD the service as a new entry cloned from a sibling — never the
   // destructive rebuild. Only when there is genuinely no section to clone into does
   // it fall through to `missing` + `noSection` (the sole legitimate rebuild case).
-  const tryInsert = (name: string, price?: number): boolean => {
-    const ins = insertServiceIntoFreeform(out, name, price);
-    if (ins.ok && ins.html) { out = ins.html; inserted.push(name); insertedAny = true; return true; }
+  const tryInsert = (name: string, price: number | undefined, description?: string): boolean => {
+    const ins = insertServiceIntoFreeform(out, name, price, description);
+    if (ins.ok && ins.html) {
+      out = ins.html; inserted.push(name); insertedAny = true;
+      // The section carries a blurb per entry but the owner gave none — Hubly should
+      // ask for a one-line description (the page is telling us one belongs).
+      if (ins.hadDesc && !(description && description.trim())) descNeeded.push(name);
+      return true;
+    }
     if (ins.reason === "no_section") noSection = true;
     return false;
   };
@@ -2773,14 +2851,20 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
     if (typeof s.price === "number") {
       anyPrice = true;
       const r = placeOneServicePrice(out, s.name, s.price);
-      if (r.placed) { out = r.html; placed.push({ name: s.name, price: s.price }); if (r.injected) injectedAny = true; paths[r.via]++; }
-      else if (tryInsert(s.name, s.price)) placed.push({ name: s.name, price: s.price });
+      if (r.placed) {
+        out = r.html; placed.push({ name: s.name, price: s.price }); if (r.injected) injectedAny = true; paths[r.via]++;
+        if (s.description && s.description.trim()) out = placeServiceDescription(out, s.name, s.description); // fill/update the blurb on an existing entry
+      }
+      else if (tryInsert(s.name, s.price, s.description)) placed.push({ name: s.name, price: s.price });
       else missing.push(s.name);
     } else {
       // No price given — confirm the name is on the page (anchor, then legacy
       // heading matcher); if not, add it the same way.
-      if (findServiceAnchor(out, s.name) || findServiceHeading(out, s.name)) placed.push({ name: s.name });
-      else if (tryInsert(s.name)) placed.push({ name: s.name });
+      if (findServiceAnchor(out, s.name) || findServiceHeading(out, s.name)) {
+        placed.push({ name: s.name });
+        if (s.description && s.description.trim()) out = placeServiceDescription(out, s.name, s.description);
+      }
+      else if (tryInsert(s.name, undefined, s.description)) placed.push({ name: s.name });
       else missing.push(s.name);
     }
   }
@@ -2796,7 +2880,7 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   else if (missing.length) status = "partial";
   else if (!anyPrice) status = "no_prices";
   else status = "placed";
-  return { status, placed, missing, inserted, noSection, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
+  return { status, placed, missing, inserted, descNeeded, noSection, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
 }
 /** Stamp a stable data-hubly-service ANCHOR on each service-name element at
  *  GENERATION time — whatever its shape (<h3>, <dt>, <li><span>, a table cell).
@@ -2827,7 +2911,7 @@ export function markServiceAnchorsInFreeform(html: string, names: string[]): { h
 /** Run the placement and, on a change, persist a new version. Mirrors
  *  applyOwnerPhotoToFreeform: not_freeform on an AST page (the async rebuild
  *  handles those), otherwise a synchronous, targeted patch. */
-async function applyServicesToFreeform(draftId: string, draftToken: string, services: { name: string; price?: number }[]): Promise<ServicesPlacement> {
+async function applyServicesToFreeform(draftId: string, draftToken: string, services: { name: string; price?: number; description?: string }[]): Promise<ServicesPlacement> {
   const latest = await selectLatestBusinessDocument(draftId, "website");
   if (!latest || latest.format !== "html") return { status: "not_freeform", placed: [], missing: services.map((s) => s.name) };
   const r = placeServicesInFreeform(latest.renderedHtml, services) as ServicesPlacement & { html: string };
@@ -2836,7 +2920,7 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
       p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
       p_document: latest.brief, p_rendered_html: r.html, p_created_by: "patch", p_format: "html",
     });
-    if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, inserted: r.inserted, noSection: r.noSection, where: r.where, paths: r.paths, detail: "save" };
+    if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, where: r.where, paths: r.paths, detail: "save" };
   }
   // Only when there is genuinely no section to insert into is a rebuild the answer.
   // Compute what that rebuild would COST now, so the offer names it BEFORE the owner
@@ -2845,7 +2929,7 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
   if (r.noSection) {
     try { const plan = await planFreeformRegeneration(draftId); lostEdits = plan.lost.length; } catch { /* best-effort */ }
   }
-  return { status: r.status, placed: r.placed, missing: r.missing, inserted: r.inserted, noSection: r.noSection, lostEdits, where: r.where, paths: r.paths, changed: r.changed };
+  return { status: r.status, placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, lostEdits, where: r.where, paths: r.paths, changed: r.changed };
 }
 
 export async function uploadDraftHeroImage(

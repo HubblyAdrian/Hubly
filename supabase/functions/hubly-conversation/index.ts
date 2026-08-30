@@ -412,6 +412,7 @@ type ServicesPlacementLike = {
   placed: { name: string; price?: number }[];
   missing?: string[];
   inserted?: string[];
+  descNeeded?: string[];
   noSection?: boolean;
   lostEdits?: number;
   where?: string;
@@ -476,6 +477,16 @@ function composeServicesTruth(placement: ServicesPlacementLike, url: string): st
     // would destroy the rest).
     const missWord = andList(missing);
     return `${landedLine} I couldn't add ${missWord} to the page as it's built, so ${missing.length === 1 ? "it isn't" : "they aren't"} showing yet.`;
+  }
+  // An entry was added into a section that carries a one-line blurb per item, but no
+  // description was given — the page is telling us one belongs, so ASK for it (a
+  // single question; the new card renders clean in the meantime, blurb hidden).
+  const descNeeded = placement.descNeeded || [];
+  if (descNeeded.length) {
+    const ask = descNeeded.length === 1
+      ? ` Your other items each have a one-line description — what should ${descNeeded[0]}'s be?`
+      : ` Your other items each have a one-line description — want to add one for ${andList(descNeeded)}? Just tell me and I'll put them in.`;
+    return `${landedLine}${ask}`;
   }
   return landedLine;
 }
