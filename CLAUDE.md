@@ -185,3 +185,26 @@ acts, or it says what will happen — it never gives directions to something it 
   claim describes WHO someone is, the denominator and the identity both need proof; the honest
   default when you can't prove it is "internal/unknown until confirmed", never the reading that
   makes the story more dramatic or more flattering.
+- **Never ask for what you were told; never state what you weren't. What Hubly says is derived
+  from what it actually knows and actually did — both directions of one discipline.** Asking for a
+  fact the person just gave is the worst version of not listening: it costs them a turn and tells
+  them we weren't paying attention. Stating a fact nobody gave (or claiming an action before it
+  happened) is the same defect pointed the other way. This is one rule with three scars already:
+  the premature "Adding X" that claimed a placement before it landed (fixed for that path by
+  `servicesTruth` — the reply composed from what ACTUALLY happened); the invented business hours
+  on all seven pages (a fact stated that no one supplied); and now the price ask — Summit Auto
+  Detail's owner wrote "Prices: Express Wash $60, Full Detail $180, Ceramic Coating $600" in his
+  first message (seq 1) and Hubly's next turn (seq 3) asked "what do you charge for each?"
+  (2026-08-29). `servicesTruth` is the pattern for the *reply* — composed from what happened; the
+  mirror is that every *ask* must be composed from what's known, and the state it reads has to be
+  populated from what was said. The trap here was structural: the prices reached the generation
+  *brief* (prose, one-way) but never became structured `services` state (setServices was never
+  called), so the anchor pass saw an empty list, the page shipped priceless, and the ask fired
+  against an empty field — one missing write, three symptoms. So the fix for this class lives at
+  EXTRACTION: if the person said it, the structured record holds it. A fix that only silences the
+  ask while the record stays empty is worse than the bug — the page is still priceless and now
+  nothing asks. And extraction is the model's job with the whole message in hand (prices arrive in
+  prose, in a list, mid-paragraph, on a photographed sheet, with and without dollar signs), never
+  a regex chasing the shapes we've already seen. When it misses anyway, the miss is countable
+  (a row, like `rebuild_outcome_events`), so we learn it from a table, not from Adrian finding a
+  priceless page two days later.
