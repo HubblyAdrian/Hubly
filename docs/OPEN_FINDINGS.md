@@ -333,6 +333,24 @@ Hubly keeps offering the thing that already failed.
   not the hero mention, price updates in place, `paths anchor=4 legacy=0` — the thing that
   already worked was not broken.
 
+**What that verification actually covered — read this before trusting it (added 2026-08-30).**
+Every check above was run on **dawn-patrol**, and a corpus sweep on 2026-08-30 found that
+dawn-patrol was the **only 1 of 116 freeform pages** carrying a service anchor at all — and it
+carried one only because the *insert* path had stamped it, never generation. The build-time
+anchor pass reads `record.services`, which is empty at generation (turn 1 is
+startDraft→generateDocument; setServices lands on turn 2), so it has always stamped an empty
+list. The mechanism was therefore **inert on every other page in the corpus, including all three
+market pages** — the placement logic was correct but had nothing to bind to. This does not undo
+#8: the anchor design and the placement paths are right. It records that "verified live" here
+meant "verified on the single page in the corpus that happened to be anchored," which proved less
+than it read. Two fixes closed the gap (2026-08-30, commit 07e4c92): a **retroactive patch-time
+stamp** so an already-built page gets anchored when services arrive (proven live on summit:
+`retroAnchored=3 paths anchor=3`, v1→v2 patch, three prices rendered), and **services extracted
+in the same model pass as the rest of the record** so a fresh build has structured services
+*before* generation and the pass finally has something to stamp. The `services-placement` row now
+also carries `retroAnchored=N`, so the share of pages reaching placement unanchored is measurable
+as it falls, rather than assumed to be zero.
+
 ---
 
 ## Also noted 2026-08-28
