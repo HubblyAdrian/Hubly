@@ -417,7 +417,7 @@ type ServicesPlacementLike = {
   lostEdits?: number;
   where?: string;
   detail?: string;
-  paths?: { anchor: number; legacy: number };
+  paths?: { anchor: number; legacy: number; inserted: number };
   retroAnchored?: number;
   leakedAttrText?: number;
 };
@@ -1503,7 +1503,7 @@ Deno.serve(async (req) => {
               // matcher) so we can watch the legacy path fall out of use as anchored
               // pages replace pre-anchor ones (finding #8).
               const p = placement.paths;
-              const pathBit = p ? `paths anchor=${p.anchor} legacy=${p.legacy}` : "";
+              const pathBit = p ? `paths anchor=${p.anchor} legacy=${p.legacy} inserted=${p.inserted ?? 0}` : "";
               // How many anchors had to be stamped at PATCH time because the page
               // arrived unanchored (services came after the build). This is the
               // retroactive-stamp gap made countable: watch it stay high while old

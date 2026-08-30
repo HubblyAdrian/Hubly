@@ -338,6 +338,39 @@ function findItemContainer(band: ScannedEl): ScannedEl | null {
 }
 
 /**
+ * Label a repeatable ITEM CONTAINER — a card grid, a menu list, a package row —
+ * under `prefix.item.M.<role>`, in document order. Extracted so it can run for the
+ * HERO band as well as sections: a grid of <article class="card"> is repeatable
+ * items wherever it sits, and before this ran only inside sections a card grid that
+ * shared a band with the <h1> was labelled `hero.text.*` — no per-item labels at
+ * all, which is precisely what breaks click-to-edit (and photo-swap) on a card page.
+ *
+ * It MUST run before the band's chrome (heading/subheading/hero.text), because every
+ * one of those checks `!L.has(e)`: claiming the items first is what stops the section
+ * heading from stealing card 1's name, and the hero.text sweep from eating the grid.
+ */
+function labelItemsInHost(itemHost: ScannedEl, prefix: string, L: Labeller, src: string): void {
+  const items = elementChildren(itemHost);
+  let m = 0;
+  for (const item of items) {
+    m++;
+    const ip = `${prefix}.item.${m}`;
+    const kids = [item, ...descendants(item)];
+    const t = kids.find((e) => !L.has(e) && isEditableLeaf(e, src) === "text" && (HEADINGS.has(e.name) || e.name === "strong" || e.name === "dt"));
+    if (t) L.put(t, `${ip}.title`, "text");
+    const bimg = kids.find((e) => !L.has(e) && isEditableLeaf(e, src) === "image");
+    if (bimg) L.put(bimg, `${ip}.image`, "image");
+    let bk = 0;
+    for (const e of kids) {
+      if (L.has(e)) continue;
+      if (isEditableLeaf(e, src) !== "text") continue;
+      bk++;
+      L.put(e, bk === 1 ? `${ip}.body` : `${ip}.body.${bk}`, "text");
+    }
+  }
+}
+
+/**
  * The page's top-level regions.
  *
  * WRAPPERS ARE NOT BANDS. <main> is a wrapper, and so is the lone <div id="app">
@@ -481,6 +514,12 @@ export function stampFreeformHtml(html: string): StampResult {
   // 6. Hero.
   if (heroBand && h1) {
     L.put(h1, "hero.headline", "text");
+    // A card grid can share the hero band with the headline (a "pick a plan" section
+    // whose <h1> sits above the cards). Claim it as repeatable ITEMS first, so the
+    // cards get hero.item.M.{title,image,body} instead of being swept into hero.text.*
+    // with no per-item labels — the defect that left every card page un-clickable.
+    const heroItems = findItemContainer(heroBand);
+    if (heroItems) labelItemsInHost(heroItems, "hero", L, src);
     const after = descendants(heroBand);
     const sub = after.find((e) => e !== h1 && !L.has(e) && isEditableLeaf(e, src) === "text" && (e.name === "p" || HEADINGS.has(e.name)) && after.indexOf(e) > after.indexOf(h1));
     if (sub) L.put(sub, "hero.subhead", "text");
@@ -511,33 +550,19 @@ export function stampFreeformHtml(html: string): StampResult {
     const p = `section.${sectionN}`;
     const inner = descendants(band);
 
+    // Repeated cards FIRST — before the heading/subheading finders below. A pure
+    // card-grid section has no separate heading; its first card's <h2> and meta line
+    // ARE the first heading and first <p>, so claiming the heading first stole card 1's
+    // name (it became section.N.heading, card 1 lost its .title). Labelling the items
+    // first means the heading finder's `!L.has(e)` skips them, and only a genuine
+    // section heading OUTSIDE the grid is left to claim.
+    const itemHost = findItemContainer(band);
+    if (itemHost) labelItemsInHost(itemHost, p, L, src);
+
     const heading = inner.find((e) => HEADINGS.has(e.name) && !L.has(e) && isEditableLeaf(e, src) === "text");
     if (heading) L.put(heading, `${p}.heading`, "text");
     const subheading = inner.find((e) => e !== heading && !L.has(e) && isEditableLeaf(e, src) === "text" && (HEADINGS.has(e.name) || e.name === "p"));
     if (subheading) L.put(subheading, `${p}.subheading`, "text");
-
-    // Repeated cards, if this section has them.
-    const itemHost = findItemContainer(band);
-    if (itemHost) {
-      const items = elementChildren(itemHost);
-      let m = 0;
-      for (const item of items) {
-        m++;
-        const ip = `${p}.item.${m}`;
-        const kids = [item, ...descendants(item)];
-        const t = kids.find((e) => !L.has(e) && isEditableLeaf(e, src) === "text" && (HEADINGS.has(e.name) || e.name === "strong" || e.name === "dt"));
-        if (t) L.put(t, `${ip}.title`, "text");
-        const bimg = kids.find((e) => !L.has(e) && isEditableLeaf(e, src) === "image");
-        if (bimg) L.put(bimg, `${ip}.image`, "image");
-        let bk = 0;
-        for (const e of kids) {
-          if (L.has(e)) continue;
-          if (isEditableLeaf(e, src) !== "text") continue;
-          bk++;
-          L.put(e, bk === 1 ? `${ip}.body` : `${ip}.body.${bk}`, "text");
-        }
-      }
-    }
 
     let bk = 1, ik = 1;
     for (const e of inner) {

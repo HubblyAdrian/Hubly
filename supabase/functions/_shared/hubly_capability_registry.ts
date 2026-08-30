@@ -2475,7 +2475,7 @@ type ServicesPlacement = {
   where?: string;                                // "services section" | "page"
   changed?: boolean;
   detail?: string;
-  paths?: { anchor: number; legacy: number };    // which placement path handled each price (finding #8 instrumentation)
+  paths?: { anchor: number; legacy: number; inserted: number };  // how each service was placed: anchor/legacy price update, or a new-entry insert (finding #8 instrumentation)
   retroAnchored?: number;                         // anchors stamped at PATCH time because the page arrived unanchored (services came after the build) — the measure of the retroactive-stamp gap
   leakedAttrText?: number;                         // INVARIANT: our own data-hubly- markup that ended up as visible text (must be 0; non-zero = a replacement-string bug shipped)
 };
@@ -2890,16 +2890,20 @@ function insertServiceIntoFreeform(html: string, name: string, price?: number, d
   // follows the insertion point (a non-service item at the section's tail), we assign no
   // label rather than renumber, and the entry stays editable by talking.
   let labeled = false;
-  const lab = /data-hc="section\.(\d+)\.item\.(\d+)\./.exec(clone);
+  // Items are labelled `<prefix>.item.<M>.<role>` where prefix is `section.N` OR
+  // `hero` (a card grid sharing the hero band — see labelItemsInHost). Match either,
+  // so a clone off a hero.item.* card is renumbered too and does not ship a duplicate.
+  const lab = /data-hc="([a-z]+(?:\.\d+)?)\.item\.(\d+)\./.exec(clone);
   if (lab) {
-    const N = lab[1], mSib = lab[2];
+    const prefix = lab[1], mSib = lab[2];
+    const escPrefix = prefix.replace(/\./g, "\\.");
     let maxM = 0;
-    const mre = new RegExp(`data-hc="section\\.${N}\\.item\\.(\\d+)\\.`, "g");
+    const mre = new RegExp(`data-hc="${escPrefix}\\.item\\.(\\d+)\\.`, "g");
     let mm: RegExpExecArray | null;
     while ((mm = mre.exec(html))) maxM = Math.max(maxM, Number(mm[1]));
-    const midSection = new RegExp(`data-hc="section\\.${N}\\.item\\.`).test(html.slice(at)); // a labelled item follows -> would need renumbering
+    const midSection = new RegExp(`data-hc="${escPrefix}\\.item\\.`).test(html.slice(at)); // a labelled item follows -> would need renumbering
     if (!midSection) {
-      clone = clone.replace(new RegExp(`(data-hc="section\\.${N}\\.item\\.)${mSib}(\\.)`, "g"), `$1${maxM + 1}$2`);
+      clone = clone.replace(new RegExp(`(data-hc="${escPrefix}\\.item\\.)${mSib}(\\.)`, "g"), `$1${maxM + 1}$2`);
       labeled = true;
     } else {
       clone = clone.replace(/\s+data-hc="[^"]*"/gi, "");   // don't renumber; add unlabelled (talk-editable only)
@@ -2918,7 +2922,11 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   let injectedAny = false;
   let insertedAny = false;
   let noSection = false;
-  const paths = { anchor: 0, legacy: 0 };
+  // anchor/legacy count PRICE placements; inserted counts new-entry clones — which
+  // never touch placeOneServicePrice, so without their own tally the row read
+  // "anchor=0 legacy=0" on a turn that added four services. Now every placement is
+  // accounted for, and the legacy count can still be watched dying out on its own.
+  const paths = { anchor: 0, legacy: 0, inserted: 0 };
   // RETROACTIVE ANCHOR STAMP (patch-time). The generation-time pass
   // (markServiceAnchorsInFreeform in generateFreeformPage) can only stamp anchors
   // for services known when the page is BUILT — but the record is empty at that
@@ -2943,7 +2951,7 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   const tryInsert = (name: string, price: number | undefined, description?: string): boolean => {
     const ins = insertServiceIntoFreeform(out, name, price, description);
     if (ins.ok && ins.html) {
-      out = ins.html; inserted.push(name); insertedAny = true;
+      out = ins.html; inserted.push(name); insertedAny = true; paths.inserted++;
       // The section carries a blurb per entry but the owner gave none — Hubly should
       // ask for a one-line description (the page is telling us one belongs).
       if (ins.hadDesc && !(description && description.trim())) descNeeded.push(name);
