@@ -712,7 +712,7 @@ export async function applyExtractedFacts(
     yearsInBusiness?: number;
     hours?: { weekday: number; open: string | null; close: string | null; closed: boolean }[];
   },
-  pricedServices?: { name: string; price: number }[],
+  pricedServices?: { name: string; price?: number; description?: string }[],
 ): Promise<ExtractedFactWrite> {
   const written: string[] = [];
   const skipped: string[] = [];
@@ -799,7 +799,7 @@ export async function applyExtractedFacts(
         const res = await found.handler({
           draftId,
           draftToken,
-          services: pricedServices.map((s) => ({ name: s.name, price: s.price })),
+          services: pricedServices.map((s) => ({ name: s.name, price: s.price, description: s.description })),
         });
         if (res.ok) { written.push(`services(${pricedServices.length})`); changes.add("services"); }
       }
@@ -2476,6 +2476,7 @@ type ServicesPlacement = {
   changed?: boolean;
   detail?: string;
   paths?: { anchor: number; legacy: number };    // which placement path handled each price (finding #8 instrumentation)
+  retroAnchored?: number;                         // anchors stamped at PATCH time because the page arrived unanchored (services came after the build) — the measure of the retroactive-stamp gap
 };
 
 function fmtServicePrice(n: number): string {
@@ -2856,6 +2857,24 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   let insertedAny = false;
   let noSection = false;
   const paths = { anchor: 0, legacy: 0 };
+  // RETROACTIVE ANCHOR STAMP (patch-time). The generation-time pass
+  // (markServiceAnchorsInFreeform in generateFreeformPage) can only stamp anchors
+  // for services known when the page is BUILT — but the record is empty at that
+  // moment: turn 1 is startDraft->generateDocument, setServices lands on turn 2
+  // (see the RE-RENDER comment above). So a normal page reaches here with NO
+  // anchors, and measured across the corpus that is nearly every page (1 of 116
+  // freeform pages carried an anchor, 2026-08-30). Without a patch-time stamp the
+  // whole anchor mechanism (finding #8) is inert on real pages: placement lands via
+  // the legacy heading matcher and leaves the name element unanchored, so the NEXT
+  // edit falls to legacy again, forever. Stamp now, from the names we are about to
+  // place, keyed off the page's own text. This is the SAME pass generation runs —
+  // attribute-only, no restructure, no regeneration, idempotent (skips names
+  // already anchored) — which is exactly why it is safe to run on a hand-edited
+  // (created_by='patch') page: it adds an attribute, it never destroys an edit.
+  const svcNames = services.map((s) => String(s?.name || "").trim()).filter(Boolean);
+  const retroStamp = markServiceAnchorsInFreeform(out, svcNames);
+  out = retroStamp.html;
+  const retroAnchored = retroStamp.marked;
   // On a miss, ADD the service as a new entry cloned from a sibling — never the
   // destructive rebuild. Only when there is genuinely no section to clone into does
   // it fall through to `missing` + `noSection` (the sole legitimate rebuild case).
@@ -2904,7 +2923,7 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   else if (missing.length) status = "partial";
   else if (!anyPrice) status = "no_prices";
   else status = "placed";
-  return { status, placed, missing, inserted, descNeeded, noSection, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
+  return { status, placed, missing, inserted, descNeeded, noSection, retroAnchored, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
 }
 /** Stamp a stable data-hubly-service ANCHOR on each service-name element at
  *  GENERATION time — whatever its shape (<h3>, <dt>, <li><span>, a table cell).
@@ -2944,7 +2963,7 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
       p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
       p_document: latest.brief, p_rendered_html: r.html, p_created_by: "patch", p_format: "html",
     });
-    if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, where: r.where, paths: r.paths, detail: "save" };
+    if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, detail: "save" };
   }
   // Only when there is genuinely no section to insert into is a rebuild the answer.
   // Compute what that rebuild would COST now, so the offer names it BEFORE the owner
@@ -2953,7 +2972,7 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
   if (r.noSection) {
     try { const plan = await planFreeformRegeneration(draftId); lostEdits = plan.lost.length; } catch { /* best-effort */ }
   }
-  return { status: r.status, placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, lostEdits, where: r.where, paths: r.paths, changed: r.changed };
+  return { status: r.status, placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, lostEdits, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, changed: r.changed };
 }
 
 export async function uploadDraftHeroImage(

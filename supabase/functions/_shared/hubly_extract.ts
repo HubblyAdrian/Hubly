@@ -52,7 +52,18 @@ export type ExtractedFacts = {
   travelRadiusMiles?: number;
   yearsInBusiness?: number;
   hours?: { weekday: number; open: string | null; close: string | null; closed: boolean }[];
+  // Services are extracted in the SAME model pass as the rest of the record, so a
+  // price stated in prose ("Express Wash $60") lands in the structured record from
+  // the same understanding that wrote the brief — not left to a second, separately
+  // remembered setServices call, and not chased by the price-line regex that only
+  // matches delimiter shapes (see extractPricedServices / PRICE_LINE_RE).
+  services?: PricedService[];
 };
+
+/** A service as extracted from a message — name always, price/description when the
+ *  message actually states them. The regex path leaves description undefined; the
+ *  model path fills it when a one-line blurb is present. */
+export type PricedService = { name: string; price?: number; description?: string };
 
 // ---------------------------------------------------------------------------
 // TIER A — patterns
@@ -175,9 +186,18 @@ const PRICE_LINE_RE =
 // A name is junk if it carries prose tokens no real service label contains.
 const JUNK_NAME_RE = /\b(?:i|i'm|im|we|our|you|your|us|charge[sd]?|charging|cost[s]?|price[sd]?|pricing|pay|paid|for|per|is|are|was|were|do|does|offer[s]?)\b/i;
 
-export function extractPricedServices(text: string): { name: string; price: number }[] {
+/** Does the message plausibly state a price at all? A `$N`, or "N dollars/bucks".
+ *  Deliberately loose: this only decides whether a ZERO-priced extraction is worth
+ *  recording as a miss, so a false positive costs one telemetry row, never a wrong
+ *  answer. It is NOT used to extract anything. */
+export function messageHasPriceSignal(text: string): boolean {
   const src = String(text || "");
-  const found: { name: string; price: number }[] = [];
+  return /\$\s?\d/.test(src) || /\b\d{1,6}\s?(?:dollars|bucks)\b/i.test(src);
+}
+
+export function extractPricedServices(text: string): PricedService[] {
+  const src = String(text || "");
+  const found: PricedService[] = [];
   const seen = new Set<string>();
   PRICE_LINE_RE.lastIndex = 0;
   let m: RegExpExecArray | null;
@@ -223,8 +243,21 @@ Use null (or [] for lists) when the message does not say — never omit a key, a
   "yearsInBusiness":   number|null,   // only if stated as years, not a founding date
   "hours": [                          // one entry per day MENTIONED; [] if none
     { "weekday": 0-6, "open": "HH:MM"|null, "close": "HH:MM"|null, "closed": boolean }
+  ],
+  "services": [                       // every service/package/product the message NAMES as something they sell; [] if none
+    {
+      "name":        string,          // the offering's name exactly as written, e.g. "Full Detail"
+      "price":       number|null,     // the price IF stated, as a plain number (60, not "$60"); null if the message gives no price for it
+      "description": string|null      // a one-line description IF the message gives one for THIS offering; null otherwise — never invent one
+    }
   ]
 }
+Services rules: include an item ONLY if the message presents it as a distinct thing the
+business sells or offers (a service, package, tier, or product). Prices arrive in every
+shape — "$60", "60 dollars", "sixty", in a labelled "Prices:" list, or mid-sentence; read
+the price wherever it is, but NEVER guess one that is not there (null instead). A name with
+no price is still a real service — return it with price null. Do not merge two offerings,
+split one, rename, or add any the message does not state.
 
 weekday: 0=Sunday, 1=Monday ... 6=Saturday. "Monday to Friday 8am-5pm" is FIVE
 entries, 1 through 5, each open "08:00" close "17:00".`;
@@ -318,6 +351,26 @@ export async function extractRecordFacts(
       if (byDay.size) out.hours = [...byDay.values()].sort((a, b) => a.weekday - b.weekday);
     }
 
+    if (Array.isArray(raw.services)) {
+      const seen = new Set<string>();
+      const services: PricedService[] = [];
+      for (const s of raw.services) {
+        const name = cleanString((s as Record<string, unknown>)?.name, 80);
+        if (!name) continue;                              // a nameless service is nothing to write
+        const key = name.toLowerCase();
+        if (seen.has(key)) continue;                      // the model occasionally repeats one
+        seen.add(key);
+        const price = cleanNumber((s as Record<string, unknown>)?.price);
+        const description = cleanString((s as Record<string, unknown>)?.description, 200);
+        const svc: PricedService = { name };
+        if (price && price > 0 && price <= 1_000_000) svc.price = price;   // a price of 0 is "not stated", not free
+        if (description) svc.description = description;
+        services.push(svc);
+        if (services.length >= 30) break;
+      }
+      if (services.length) out.services = services;
+    }
+
     return out;
   } catch (e) {
     // Extraction is a floor, not a gate. If it fails the turn continues exactly
@@ -330,4 +383,28 @@ export async function extractRecordFacts(
 /** Patterns first, then the pass — patterns win, because they cannot hallucinate. */
 export function mergeFacts(pattern: ExtractedFacts, pass: ExtractedFacts): ExtractedFacts {
   return { ...pass, ...pattern };
+}
+
+/** Union the regex-found priced services with the model-found ones, by normalised
+ *  name. The regex is a floor (a clean "Name — $60" line it matched cannot be a
+ *  hallucination); the model is the reach (it catches "Express Wash $60" and prose
+ *  the regex is deliberately blind to, and it alone carries descriptions). Where both
+ *  found the same name, keep a price/description from whichever has it — never drop a
+ *  price one side saw. Order: regex hits first (highest confidence), then model-only. */
+export function mergePricedServices(regexList: PricedService[], modelList: PricedService[]): PricedService[] {
+  const byKey = new Map<string, PricedService>();
+  const norm = (n: string) => n.toLowerCase().replace(/[\s\-–—]+/g, " ").replace(/s$/, "").trim();
+  const add = (s: PricedService) => {
+    const name = String(s?.name || "").trim();
+    if (!name) return;
+    const key = norm(name);
+    const prev = byKey.get(key);
+    if (!prev) { byKey.set(key, { ...s, name }); return; }
+    // Same service seen twice — fill the blanks, never overwrite a value with a blank.
+    if (prev.price === undefined && typeof s.price === "number") prev.price = s.price;
+    if (!prev.description && s.description) prev.description = s.description;
+  };
+  for (const s of regexList) add(s);
+  for (const s of modelList) add(s);
+  return [...byKey.values()];
 }

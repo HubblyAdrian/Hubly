@@ -62,7 +62,7 @@
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
 import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
-import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts } from "../_shared/hubly_extract.ts";
+import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
 import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
 import { reportAllowlistDrops } from "../_shared/hubly_allowlist.ts";
 import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
@@ -418,6 +418,7 @@ type ServicesPlacementLike = {
   where?: string;
   detail?: string;
   paths?: { anchor: number; legacy: number };
+  retroAnchored?: number;
 };
 function fmtSvcPrice(n: number): string {
   return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
@@ -920,6 +921,10 @@ Deno.serve(async (req) => {
   // which is necessarily before generateDocument can be dispatched.
   let pendingFacts: Awaited<ReturnType<typeof extractRecordFacts>> = {};
   let pendingPricedServices: ReturnType<typeof extractPricedServices> = [];
+  // A price appears in the intake message. Held so that if extraction still wrote
+  // no priced service, that miss is recorded as a countable row (see below) rather
+  // than surfacing days later as a bare page.
+  const intakePriceSignal = messageHasPriceSignal(latestUserMessage || "");
   if (latestUserMessage && latestUserMessage.trim()) {
     const pattern = extractByPattern(latestUserMessage);
     pendingPricedServices = extractPricedServices(latestUserMessage);
@@ -929,6 +934,13 @@ Deno.serve(async (req) => {
     const worthAPass = latestUserMessage.trim().length >= 25 && gaps.missing;
     const passed = worthAPass ? await extractRecordFacts(latestUserMessage, draftBusiness?.id) : {};
     pendingFacts = mergeFacts(pattern, passed);
+    // Services from the SAME model pass that read the rest of the record, unioned
+    // with the regex floor. This is what turns "Prices: Express Wash $60, ..." into
+    // structured services BEFORE the page builds — the regex alone missed it (no
+    // delimiter) and the record stayed empty, so the page shipped priceless, the
+    // anchor pass had nothing to stamp, and Hubly asked for a price it was just
+    // given. One understanding, both writes (brief + record), same turn.
+    pendingPricedServices = mergePricedServices(pendingPricedServices, passed.services || []);
   }
 
   /** Applies whatever was extracted, once. Safe to call more than once. */
@@ -1442,6 +1454,20 @@ Deno.serve(async (req) => {
             // generateDocument, because a fact written after the build lands on
             // a row the page was already rendered from.
             await flushExtractedFacts(draftBusiness.id, draftBusiness.draftToken);
+            // COUNTABLE MISS. The intake message stated a price but extraction wrote
+            // no structured priced service — the exact failure that shipped Summit
+            // Auto Detail's page priceless and then asked for a price already given.
+            // Record it now, at the one intake moment, so the miss rate is a row we
+            // can watch rather than something Adrian finds on a bare page days later.
+            // NOT a claim about a person — an internal signal about our extraction.
+            const intakePricedCount = pendingPricedServices.filter((s) => typeof s.price === "number").length;
+            if (intakePriceSignal && intakePricedCount === 0) {
+              const u = (Deno.env.get("SUPABASE_URL") || "").trim();
+              if (u) await fetch(`${u}/rest/v1/rpc/record_price_extraction_miss`, {
+                method: "POST", headers: { ...adminHeaders(), "content-type": "application/json" },
+                body: JSON.stringify({ p_business_id: draftBusiness.id, p_had_signal: true, p_structured: 0, p_detail: `intake; names=${pendingPricedServices.length} priced=0` }),
+              }).catch(() => {});
+            }
           } else if ((actionName === "updateDraft" || actionName === "setServices") && draftBusiness && raw.id) {
             draftBusiness = { ...draftBusiness, url: String(raw.url || draftBusiness.url) };
           }
@@ -1473,9 +1499,14 @@ Deno.serve(async (req) => {
               // pages replace pre-anchor ones (finding #8).
               const p = placement.paths;
               const pathBit = p ? `paths anchor=${p.anchor} legacy=${p.legacy}` : "";
+              // How many anchors had to be stamped at PATCH time because the page
+              // arrived unanchored (services came after the build). This is the
+              // retroactive-stamp gap made countable: watch it stay high while old
+              // pre-anchor pages dominate, then fall as build-time capture lands.
+              const retroBit = placement.retroAnchored ? `retroAnchored=${placement.retroAnchored}` : "";
               const insBit = (placement.inserted || []).length ? `inserted=${(placement.inserted || []).join(",")}` : "";
               const missBit = (placement.missing || []).length ? `missing=${(placement.missing || []).join(",")}` : "";
-              const detail = [pathBit, insBit, missBit].filter(Boolean).join("; ") || placement.detail || null;
+              const detail = [pathBit, retroBit, insBit, missBit].filter(Boolean).join("; ") || placement.detail || null;
               const u = (Deno.env.get("SUPABASE_URL") || "").trim();
               if (u && draftBusiness?.id) await fetch(`${u}/rest/v1/rpc/record_rebuild_outcome`, {
                 method: "POST", headers: { ...adminHeaders(), "content-type": "application/json" },
