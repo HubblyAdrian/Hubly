@@ -2771,10 +2771,18 @@ function stampDescElement(html: string, nameAttr: string): string {
  *  only acceptable answer; a non-zero count is recorded loud + countable by the
  *  caller, the same discipline as every other placement outcome. */
 function countLeakedAttrText(html: string): number {
+  // <style> and <script> legitimately MENTION data-hubly- (a `[data-hubly-price]{…}`
+  // rule, a selector in JS) — that is not leaked page text, so strip them first.
+  const body = html
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
   let n = 0;
   const re = />([^<]*)</g;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(html))) { if (/data-hubly-[a-z]/i.test(m[1])) n++; }
+  // The signature of a real leak is an attribute ASSIGNMENT rendered as text
+  // (`data-hubly-price="…"`), which only happens when a replacement mangled markup —
+  // a bare `[data-hubly-price]` CSS selector has no `=` and is not a leak.
+  while ((m = re.exec(body))) { if (/data-hubly-[a-z-]+\s*=/i.test(m[1])) n++; }
   return n;
 }
 /** Add display:none to the data-hubly-desc element (merging any existing style). */
