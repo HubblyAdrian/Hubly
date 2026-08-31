@@ -162,5 +162,50 @@ These are **named blanks**, not to be invented:
 
 ---
 
+## 8. The Website workspace editor — direction (recorded 2026-08-31, mostly not built)
+
+The claimed shell is now two modes on one generic switch: **Home** (the conversation is the
+screen) and a **workspace** (the thing becomes the large canvas, chat drops to an assistant
+panel). Website is the first workspace. This section records where its editor is going. **Only
+the two things at the end are built; the rest is the picture, not a build order.**
+
+**The model.** Hubly is the AI and the builder; the canvas is the *real* live site; manual
+controls appear **contextually, not as a permanent toolbox**. The target:
+- **Hovering a section outlines it**; **selecting one opens a small contextual inspector** —
+  content, image, layout, style, visibility — for that section only.
+- A **compact canvas toolbar** carries Desktop/Mobile and Undo (nothing else permanent).
+- A **Sections control opens on demand** for reorder, hide, duplicate.
+- **The AI highlights the section it is about to change before changing it** — the same
+  "name what you're about to touch" discipline the chat side already follows.
+- **Style discovery at first build** — a few real visual directions to choose from — rather
+  than dropping the owner into a blank editor.
+
+**Two honest constraints that bind any future editor sketch:**
+- **There is no draft-versus-live model, and that is deliberate.** Every edit goes live the
+  instant it's made (a new document version). So **there is no Publish button** — any toolbar
+  mock that shows one is describing a system we chose not to build. The safety is reversibility
+  (Undo), not a staging area.
+- **"Pick a style and Hubly rebuilds the site" is the destructive rebuild we retired** (it
+  discarded 18 accumulated edits). If style-switching returns, it is a full regeneration and it
+  gets the standing treatment: **name exactly what will be lost before the owner agrees**
+  (`planFreeformRegeneration` already computes the carried/lost edits). Small changes are
+  instant and reversible; only the irreversible one asks first.
+
+**What IS built now (this session):**
+- **Autosave + Undo, no Save button.** No draft state, no Publish, no "you've made N changes,
+  save them?" prompt — those breed unsaved-changes dialogs, the edit-for-an-hour-and-never-
+  publish failure, and confirmation fatigue. Undo is *step back one version*: the RPC
+  `restore_prev_business_document` appends the previous version's content as a **new** version
+  forward (history is never destroyed). It is offered two ways — an **Undo action beside the
+  change's confirmation message** (the message-carries-an-action primitive, `hcAttachMessage
+  Action`) and **in words** ("put that back" / "undo that", matched before the model sees it) —
+  and it **says what it restored** ("Put the photo back the way it was"), never a bare "done".
+- Two known refinements, deliberately deferred: **Undo is single-step for v1** (pressing it
+  again would restore the pre-undo state — a toggle, not a stack; a real multi-level history is
+  future), and the confirmation names the **kind** ("the photo", "the wording") but not the
+  specific card ("Basic Mow photo") — the specific name needs a label→service-name map.
+
+---
+
 *This document authorizes nothing. It is the shared picture; each build gets its own
 decision.*

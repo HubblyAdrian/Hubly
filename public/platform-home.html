@@ -290,10 +290,24 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 }
 /* THE RAIL. Hidden until claimed; when it appears, the room genuinely changes shape
    — a narrow column of places to the LEFT of the chat, so chat becomes the centre. */
-.hc-rail{display:none;flex:0 0 72px;flex-direction:column;align-items:center;justify-content:space-between;
-  padding:16px 0 14px;background:var(--panel);border-right:1px solid var(--line);z-index:2;
+/* ONE CONTINUOUS COLUMN, full viewport height: brand at the top, destinations beneath,
+   the settings gear at the foot (ChatGPT's left rail). Fixed to top:0 so it is a column,
+   not a strip floating below the header — the header and the app sit to its right. */
+.hc-rail{display:none;position:fixed;top:0;left:0;bottom:0;width:72px;z-index:70;
+  flex-direction:column;align-items:center;gap:12px;
+  padding:14px 0;background:var(--panel);border-right:1px solid var(--line);
   animation:hcRailArrive .5s cubic-bezier(.22,.61,.36,1) both}
 .hc-app.hc-claimed .hc-rail{display:flex}
+.hc-rail-brand{flex:0 0 auto;font-weight:800;font-size:20px;line-height:1;text-decoration:none;
+  color:var(--ink,#111);margin-bottom:4px}
+.hc-rail-brand .ly{color:var(--brand-600,#D9632D)}
+/* Desktop only: with the rail a full-height column, the header and the whole app start
+   to ITS right, and the header's own wordmark is dropped (the rail owns the logo now). */
+@media (min-width:761px){
+  body.hc-shell-claimed .nav{left:72px}
+  body.hc-shell-claimed .nav > a[aria-label="hubly home"]{display:none}
+  body.hc-shell-claimed .hc-app{left:72px}
+}
 @keyframes hcRailArrive{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
 .hc-rail-tabs{display:flex;flex-direction:column;gap:8px;width:100%;align-items:center}
 .hc-rail-tab{width:56px;min-height:56px;border:0;border-radius:15px;background:transparent;cursor:pointer;
@@ -303,7 +317,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 .hc-rail-lbl{font-size:9px;font-weight:700;letter-spacing:.02em;line-height:1;text-align:center}
 .hc-rail-tab:hover{background:rgba(0,0,0,.045)}
 .hc-rail-tab.is-on{background:rgba(217,99,45,.12);color:var(--brand-700,#8a3f1c)}
-.hc-rail-gear{width:46px;height:46px;border:0;border-radius:13px;background:transparent;cursor:pointer;
+.hc-rail-gear{width:46px;height:46px;margin-top:auto;border:0;border-radius:13px;background:transparent;cursor:pointer;
   color:var(--ink-400,#8a8f98);display:flex;align-items:center;justify-content:center;transition:background .15s ease}
 .hc-rail-gear:hover{background:rgba(0,0,0,.06);color:var(--ink-700,#374151)}
 /* v1 keeps the phone on its Chat/Site toggle — a one-item bottom bar isn't earned yet. */
@@ -317,6 +331,8 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   transition:border-color .15s,box-shadow .15s}
 .hc-arrival-act:hover{border-color:var(--brand-600,#D9632D);box-shadow:0 5px 16px -8px rgba(217,99,45,.35)}
 .hc-arrival-act:active{transform:translateY(1px)}
+/* An action attached to a normal chat message (e.g. Undo beside a change). */
+.hc-msg-action{display:inline-block;margin-top:8px;padding:6px 13px;font-size:13px;min-height:34px}
 /* THE GUTTER IS STRUCTURAL. The rail-clipping bug — every line losing its first
    character — is a whole-block leftward shift under a clip, and it survived every
    attempt to find the cause. So it's made IMPOSSIBLE by construction rather than
@@ -936,6 +952,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
        gear at the foot — a popout, never a tab. Desktop sidebar for v1; the phone
        keeps its Chat/Site toggle (a real bottom bar for one tab is not yet earned). -->
   <div class="hc-rail" id="hcRail" hidden aria-label="Your Hubly">
+    <a class="hc-rail-brand" href="/" aria-label="Hubly home"><span class="hubly-lockup">h<span class="ly">y</span></span></a>
     <div class="hc-rail-tabs" id="hcRailTabs" role="tablist"></div>
     <button type="button" class="hc-rail-gear" id="hcRailGear" aria-label="Settings" title="Settings">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -2185,6 +2202,52 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       msgEl.appendChild(b);
     }catch(e){}
   }
+  // THE PRIMITIVE, generalised: a chat message carries an ACTION. Undo uses it; the
+  // arrival uses it; every future workspace card ("View all jobs ->" -> Jobs, filtered)
+  // is this same call — a labelled button appended to the message that runs a function.
+  function hcAttachMessageAction(msgEl, label, fn){
+    if(!msgEl) return null;
+    try{
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'hc-arrival-act hc-msg-action';
+      b.textContent = label;
+      b.addEventListener('click', fn);
+      msgEl.appendChild(b);
+      return b;
+    }catch(e){ return null; }
+  }
+  // UNDO = step back one version (restore_prev_business_document appends the previous
+  // state as a new version forward — never destroys history). Autosave stays; the safety
+  // is reversibility, not a Save button. It SAYS what it put back — never a bare "done".
+  var hcUndoBusy = false;
+  async function hcUndoLastEdit(){
+    if(hcUndoBusy) return;
+    if(!hc.draftBusiness || !hc.draftClaimed){ return; }
+    if(!hc._lastEdit){ hcAppendMessage('hubly', "There's nothing to undo just now."); return; }
+    var noun = hc._lastEdit.noun || 'that change';
+    hcUndoBusy = true;
+    try{
+      var c = await authGetClient();
+      var res = await c.rpc('restore_prev_business_document', { p_business_id: hc.draftBusiness.id });
+      hcUndoBusy = false;
+      var out = res && res.data;
+      if(out && out.ok){
+        hc._lastEdit = null;                 // single-step; the button doesn't re-appear on this turn
+        try{ hcRefreshCanvasFrame(); }catch(e){}
+        var line = 'Put ' + noun + ' back the way it was.';
+        var m = hcAppendMessage('hubly', line); hcPersist('assistant', line);
+        void m;
+      } else {
+        var err = out && out.error;
+        hcAppendMessage('hubly', err === 'nothing_to_undo'
+          ? "There's nothing earlier to go back to."
+          : "I couldn't undo that just now — try again in a moment.");
+      }
+    }catch(e){
+      hcUndoBusy = false;
+      hcAppendMessage('hubly', "I couldn't undo that just now — try again in a moment.");
+    }
+  }
   function hcRecordPostbuildFallback(){
     try{
       if(!hc.draftBusiness || !hc.draftBusiness.id) return;
@@ -2563,6 +2626,15 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   function hcSend(inputEl){
     var text = (inputEl.value || '').trim();
     if(!text || hc.busy) return;
+    // WORDS-PATH UNDO. "put that back" / "undo that" is the SAME action as the Undo
+    // button beside the change — step back one version. Handled here so it never reaches
+    // the model as a brand-new edit request. Only in the claimed editor with a change to undo.
+    if(hc.draftClaimed && hc._lastEdit && /^\s*(undo( that| it| the last( change)?)?|actually[,]?\s*(put|change)\s*(it|that)\s*back|put\s*(it|that)\s*back|revert( that| it)?)\s*[.!]?\s*$/i.test(text)){
+      inputEl.value = '';
+      hcAppendMessage('user', text); hcPersist('user', text);
+      hcUndoLastEdit();
+      return;
+    }
     inputEl.value = '';
     hcSendText(text);
   }
@@ -3069,6 +3141,12 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   function hcSendDirectEdit(payload){
     if(hc.busy || !hc.draftBusiness) return;
     hc.busy = true;
+    // What kind of thing changed, for the Undo action's plain words ("Put the photo
+    // back"). Deriving the specific card name (e.g. "Basic Mow photo") needs a label->name
+    // map — a refinement noted in the editor doc; the noun here is honest and specific
+    // enough to never be a bare "done".
+    var _editNoun = (payload.directFreeformImageEdit || payload.directImageEdit || payload.directDocumentImageEdit) ? 'the photo'
+      : (payload.directFreeformEdit || payload.directEdit || payload.directDocumentPatch) ? 'the wording' : 'that change';
     // apikey is the gateway credential (anon/publishable). authorization carries
     // the USER's JWT when signed in, so the server can authorise an owner's edit
     // off the session; otherwise the anon key (unclaimed drafts, token path).
@@ -3093,7 +3171,12 @@ body.hc-active .footer,body.hc-active .hero{display:none}
         // this used to ignore the reply entirely, so an edit that worked and an
         // edit that failed looked identical from the chair. Failures come back
         // ok:false with their own sentence, which is the more important half.
-        if(data && data.reply) hcAppendMessage('hubly', data.reply);
+        if(data && data.reply){
+          var _m = hcAppendMessage('hubly', data.reply);
+          // AUTOSAVE + UNDO, no Save button: the change is already live (a new version).
+          // Its safety is reversibility — the confirmation carries an Undo beside it.
+          if(data.ok !== false && hc.draftClaimed){ hc._lastEdit = { noun: _editNoun }; hcAttachMessageAction(_m, 'Undo', function(){ hcUndoLastEdit(); }); }
+        }
         else if(data && data.ok === false) hcAppendMessage('hubly', "That edit didn't go through — mind trying it again?");
       })
       .catch(function(){
@@ -3407,6 +3490,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     var app = document.getElementById('hcApp');
     var claimed = !!hc.draftClaimed;
     if(app) app.classList.toggle('hc-claimed', claimed);
+    // Shell-level signal (outside #hcApp) so the header and app shift right of the
+    // full-height rail and the header drops its now-duplicate wordmark.
+    try{ document.body.classList.toggle('hc-shell-claimed', claimed); }catch(e){}
     if(!claimed){ rail.hidden = true; return; }
     rail.hidden = false;
     if(!hc.mode) hc.mode = 'home';
@@ -3436,7 +3522,13 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     hcRenderRail();
     // Home needs no canvas (the conversation is the screen). A workspace with a canvas
     // renders it lazily on entry — today only Website, which mounts the live site iframe.
-    if(id === 'website'){ hcSetView('site'); hcRenderCanvas(); }
+    if(id === 'website'){
+      hcSetView('site'); hcRenderCanvas();
+      // Tell the freshly-mounted preview the owner is authed, so click-to-edit is live
+      // from the first click (hcAuthedFlag inside the iframe). Without this the first tap
+      // has to bootstrap auth through hcEditAuthNeeded; with it, editing just works.
+      try{ if(hc.draftClaimed && hcIsAuthed()) hcTellPreviewAuthed(); }catch(e){}
+    }
     try{ hcThreadScrollToEnd(); }catch(e){}
   }
   // Settings: a POPOUT off the gear, never a tab. Reuses the account menu (sign out)
@@ -4149,7 +4241,21 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     // an owned business (draftClaimed=true). There's nothing to claim then — they're
     // already in the builder on their site. Guard so we don't attempt to claim an
     // owned, tokenless business and fall into the retry branch.
-    if(hc.draftClaimed){ hcAuthTrace('afterauth', 'TERMINAL: owned business already loaded -> in builder'); return; }
+    if(hc.draftClaimed){
+      // Already claimed (a returning owner): there is nothing to claim. But this path is
+      // ALSO where a returning owner's edit-tap lands — the preview posts hcEditAuthNeeded,
+      // hcHandleEditAuthNeeded sees us authed and calls hcAfterAuth. If we just return, the
+      // preview is never told it's authed (hcAuthedFlag stays false in the iframe) and the
+      // clicked element is never reopened, so click-to-edit silently does nothing. So tell
+      // the preview it's authed and reopen what they clicked, THEN return.
+      var pClaimed = hc.pendingEditLabel;
+      if(!pClaimed && hc.draftBusiness){ try{ pClaimed = sessionStorage.getItem('hcPendingEdit:' + hc.draftBusiness.id); }catch(e){} }
+      hc.pendingEditLabel = null;
+      try{ if(hc.draftBusiness) sessionStorage.removeItem('hcPendingEdit:' + hc.draftBusiness.id); }catch(e){}
+      try{ hcTellPreviewAuthed(pClaimed); }catch(e){}
+      hcAuthTrace('afterauth', 'TERMINAL: owned business already loaded -> told preview authed' + (pClaimed ? (' + reopen ' + pClaimed) : ''));
+      return;
+    }
     if(!hc.draftBusiness){
       // No draft in play (a plain landing sign-in): land in the BUILDER, not the old
       // /dashboard app. hcLoadOwnedBusiness is the owner read path + picker that
