@@ -327,6 +327,29 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
 .hc-arrival-act:active{transform:translateY(1px)}
 /* An action attached to a normal chat message (e.g. Undo beside a change). */
 .hc-msg-action{display:inline-block;margin-top:8px;padding:6px 13px;font-size:13px;min-height:34px}
+/* SETTINGS — a popout, never a tab. What genuinely isn't conversational; business facts
+   (hours, services, area) stay in chat, never duplicated here as a second source. */
+.hc-set-ov{position:fixed;inset:0;z-index:1000;background:rgba(15,17,23,.42);display:flex;align-items:center;justify-content:center;padding:24px}
+.hc-set{background:var(--bg,#fff);color:var(--ink,#111);width:min(520px,94vw);max-height:88vh;overflow:auto;border-radius:18px;
+  box-shadow:0 30px 80px -20px rgba(0,0,0,.5);border:1px solid var(--line,#e5e7eb)}
+.hc-set-hd{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line,#e5e7eb);position:sticky;top:0;background:var(--bg,#fff)}
+.hc-set-hd h2{margin:0;font-size:18px;font-weight:800}
+.hc-set-x{border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:var(--ink-400,#8a8f98);padding:2px 6px}
+.hc-set-sec{padding:16px 22px;border-bottom:1px solid var(--line,#eef0f3)}
+.hc-set-sec:last-child{border-bottom:0}
+.hc-set-sec h3{margin:0 0 4px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-500,#6b7280)}
+.hc-set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0}
+.hc-set-k{font-size:14px;color:var(--ink,#111)}
+.hc-set-v{font-size:14px;color:var(--ink-500,#5b616e);text-align:right;word-break:break-word}
+.hc-set-note{font-size:12px;color:var(--ink-500,#6b7280);line-height:1.5;margin-top:4px}
+.hc-set-btn{border:1px solid var(--line,#e5e7eb);background:var(--bg,#fff);color:var(--brand-700,#8a3f1c);font:inherit;font-size:13px;font-weight:700;
+  padding:8px 14px;border-radius:10px;cursor:pointer;min-height:36px}
+.hc-set-btn:hover{border-color:var(--brand-600,#D9632D)}
+.hc-set-btn.danger{color:#b23b3b}
+.hc-set-btn[disabled]{opacity:.55;cursor:default}
+.hc-set-pill{font-size:11px;font-weight:800;letter-spacing:.03em;padding:3px 9px;border-radius:999px}
+.hc-set-pill.on{color:#0f7a4d;background:rgba(16,122,77,.12)}
+.hc-set-pill.off{color:#8a8f98;background:rgba(0,0,0,.06)}
 /* THE GUTTER IS STRUCTURAL. The rail-clipping bug — every line losing its first
    character — is a whole-block leftward shift under a clip, and it survived every
    attempt to find the cause. So it's made IMPOSSIBLE by construction rather than
@@ -3526,27 +3549,102 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   }
   // Settings: a POPOUT off the gear, never a tab. Reuses the account menu (sign out)
   // and names the account, so the gear is a real door, not decoration.
+  // Authed call to a Stripe edge function, owner JWT attached (same shape marketplace-lite
+  // uses). The Connect machinery already exists — this is the DOOR to it, not a rebuild.
+  async function hcStripeApi(fn, body){
+    var c = await authGetClient();
+    var s = await c.auth.getSession();
+    var token = s && s.data && s.data.session && s.data.session.access_token;
+    var res = await fetch(SUPA_URL + '/functions/v1/' + fn, {
+      method:'POST',
+      headers:{ 'content-type':'application/json', apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + (token || SUPA_ANON_KEY) },
+      body: JSON.stringify(body || {})
+    });
+    var json = await res.json().catch(function(){ return {}; });
+    if(!res.ok || json.error) throw new Error(json.error || 'request failed');
+    return json;
+  }
+  function hcCloseSettings(){ var o = document.getElementById('hcSetOv'); if(o) o.remove(); }
   function hcOpenSettings(){
-    var existing = document.getElementById('hcSettingsPop');
-    if(existing){ existing.remove(); return; }
-    var gear = document.getElementById('hcRailGear'); if(!gear) return;
-    var m = document.createElement('div'); m.id = 'hcSettingsPop'; m.className = 'hc-acct-menu';
-    var who = document.createElement('div');
-    who.style.cssText = 'padding:8px 12px;font-size:12px;color:var(--ink-500,#6b7280);border-bottom:1px solid var(--line,#e5e7eb);max-width:220px;overflow:hidden;text-overflow:ellipsis;';
-    who.textContent = (hc.draftBusiness && hc.draftBusiness.name) ? hc.draftBusiness.name : 'Your account';
-    m.appendChild(who);
-    var out = document.createElement('button'); out.type = 'button'; out.className = 'hc-acct-signout'; out.textContent = 'Sign out';
-    out.addEventListener('click', hcSignOut);
-    m.appendChild(out);
-    document.body.appendChild(m);
-    var r = gear.getBoundingClientRect();
-    m.style.left = (r.right + 8) + 'px';
-    m.style.bottom = Math.max(8, (window.innerHeight - r.bottom)) + 'px';
-    setTimeout(function(){
-      document.addEventListener('click', function onDoc(e){
-        if(!m.contains(e.target) && e.target !== gear && !gear.contains(e.target)){ try{ m.remove(); }catch(_){} document.removeEventListener('click', onDoc); }
+    if(document.getElementById('hcSetOv')){ hcCloseSettings(); return; }
+    var biz = hc.draftBusiness || {};
+    var url = String(biz.url || '');
+    var host = url.replace(/^https?:\/\//i,'').replace(/\/$/,'');
+    var esc = function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+    var ov = document.createElement('div'); ov.id = 'hcSetOv'; ov.className = 'hc-set-ov';
+    // Sections appear only when they are real. Billing is omitted until pricing exists —
+    // an empty Billing panel is worse than none. Business facts (hours, services, area) are
+    // NOT here; they stay conversational so there is never a second source that can disagree.
+    ov.innerHTML =
+      '<div class="hc-set" role="dialog" aria-label="Settings">' +
+        '<div class="hc-set-hd"><h2>Settings</h2><button type="button" class="hc-set-x" aria-label="Close">&times;</button></div>' +
+        // ACCOUNT
+        '<div class="hc-set-sec"><h3>Account</h3>' +
+          '<div class="hc-set-row"><span class="hc-set-k">Email</span><span class="hc-set-v" id="hcSetEmail">…</span></div>' +
+          '<div class="hc-set-row"><span class="hc-set-k">Sign in</span><span class="hc-set-v">Magic link by email</span></div>' +
+          '<div class="hc-set-note">Adding a password or connecting Google is coming — both are standard and free.</div>' +
+          '<div class="hc-set-row"><span class="hc-set-k">Session</span><button type="button" class="hc-set-btn danger" id="hcSetSignout">Sign out</button></div>' +
+        '</div>' +
+        // NOTIFICATIONS
+        '<div class="hc-set-sec"><h3>Notifications</h3>' +
+          '<div class="hc-set-row"><span class="hc-set-k">When a booking arrives</span><span class="hc-set-v" id="hcSetNotify">Email</span></div>' +
+          '<div class="hc-set-note">Hubly emails you the moment a booking comes in, and records that it was sent. Text alerts are next — this is the link that most needs to be fast.</div>' +
+        '</div>' +
+        // WEBSITE
+        '<div class="hc-set-sec"><h3>Website</h3>' +
+          '<div class="hc-set-row"><span class="hc-set-k">Address</span><span class="hc-set-v">' + (host ? ('<a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(host) + '</a>') : '—') + '</span></div>' +
+          '<div class="hc-set-note">Connect your own domain is coming. Your myhubly.app address keeps working either way.</div>' +
+        '</div>' +
+        // INTEGRATIONS
+        '<div class="hc-set-sec"><h3>Integrations</h3>' +
+          '<div class="hc-set-row"><span class="hc-set-k">Stripe <span class="hc-set-pill off" id="hcSetStripePill">…</span></span><span class="hc-set-v" id="hcSetStripeAction"></span></div>' +
+          '<div class="hc-set-note">Take card payments when a customer books. Stripe’s processing rate passes straight through — Hubly takes no cut of a booking.</div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(ov);
+    ov.querySelector('.hc-set-x').addEventListener('click', hcCloseSettings);
+    ov.addEventListener('click', function(e){ if(e.target === ov) hcCloseSettings(); });
+    var so = document.getElementById('hcSetSignout'); if(so) so.addEventListener('click', hcSignOut);
+    // Email — from the auth user (never a second store).
+    (async function(){
+      try{ var c = await authGetClient(); var u = await c.auth.getUser(); var em = u && u.data && u.data.user && u.data.user.email; var el = document.getElementById('hcSetEmail'); if(el) el.textContent = em || '—'; }catch(e){ var el2 = document.getElementById('hcSetEmail'); if(el2) el2.textContent = '—'; }
+    })();
+    // Stripe status + the door.
+    hcSettingsRenderStripe(biz.id);
+  }
+  async function hcSettingsRenderStripe(businessId){
+    var pill = document.getElementById('hcSetStripePill');
+    var act = document.getElementById('hcSetStripeAction');
+    if(!pill || !act) return;
+    if(!businessId){ pill.textContent = 'unavailable'; return; }
+    try{
+      var st = await hcStripeApi('stripe-connect-connection', { business_id: businessId, action: 'status' });
+      var connected = !!(st && (st.charges_enabled || st.chargesEnabled));
+      pill.textContent = connected ? 'Connected' : 'Not connected';
+      pill.className = 'hc-set-pill ' + (connected ? 'on' : 'off');
+      if(connected){
+        act.innerHTML = '<button type="button" class="hc-set-btn" id="hcSetStripeDash">Open Stripe</button>';
+        document.getElementById('hcSetStripeDash').addEventListener('click', async function(){
+          try{ var d = await hcStripeApi('stripe-connect-connection', { business_id: businessId, action: 'dashboard' }); if(d && d.url) window.open(d.url, '_blank', 'noopener'); }catch(e){}
+        });
+      } else {
+        act.innerHTML = '<button type="button" class="hc-set-btn" id="hcSetStripeConnect">Connect Stripe</button>';
+        document.getElementById('hcSetStripeConnect').addEventListener('click', async function(){
+          var b = document.getElementById('hcSetStripeConnect'); if(b){ b.disabled = true; b.textContent = 'Opening…'; }
+          try{ var r = await hcStripeApi('stripe-connect-onboard', { business_id: businessId, return_to: location.href }); if(r && r.url){ location.href = r.url; return; } }catch(e){}
+          if(b){ b.disabled = false; b.textContent = 'Connect Stripe'; }
+        });
+      }
+    }catch(e){
+      pill.textContent = 'Not connected'; pill.className = 'hc-set-pill off';
+      act.innerHTML = '<button type="button" class="hc-set-btn" id="hcSetStripeConnect">Connect Stripe</button>';
+      var cb = document.getElementById('hcSetStripeConnect');
+      if(cb) cb.addEventListener('click', async function(){
+        cb.disabled = true; cb.textContent = 'Opening…';
+        try{ var r = await hcStripeApi('stripe-connect-onboard', { business_id: businessId, return_to: location.href }); if(r && r.url){ location.href = r.url; return; } }catch(err){}
+        cb.disabled = false; cb.textContent = 'Connect Stripe';
       });
-    }, 0);
+    }
   }
   // THE ARRIVAL. The first time an owner lands on their claimed site, Hubly speaks it
   // in the CHAT — the live address and the actions as message content — so the biggest
