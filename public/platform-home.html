@@ -327,6 +327,17 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
 .hc-arrival-act:active{transform:translateY(1px)}
 /* An action attached to a normal chat message (e.g. Undo beside a change). */
 .hc-msg-action{display:inline-block;margin-top:8px;padding:6px 13px;font-size:13px;min-height:34px}
+/* Direct-edit undo — a quiet transient control over the canvas, NOT a chat line. */
+.hc-app-right{position:relative}
+.hc-edit-toast{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);z-index:60;
+  display:flex;align-items:center;gap:12px;background:#12151f;color:#f5f6f8;
+  padding:9px 12px 9px 16px;border-radius:12px;box-shadow:0 12px 30px -8px rgba(0,0,0,.5);
+  font-size:13px;font-weight:600;animation:hcToastIn .25s ease both}
+.hc-edit-toast.is-out{opacity:0;transition:opacity .35s ease}
+.hc-edit-toast button{border:0;background:rgba(255,255,255,.16);color:#fff;font:inherit;font-weight:700;
+  padding:5px 12px;border-radius:8px;cursor:pointer}
+.hc-edit-toast button:hover{background:rgba(255,255,255,.26)}
+@keyframes hcToastIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
 /* SETTINGS — a popout, never a tab. What genuinely isn't conversational; business facts
    (hours, services, area) stay in chat, never duplicated here as a second source. */
 .hc-set-ov{position:fixed;inset:0;z-index:1000;background:rgba(15,17,23,.42);display:flex;align-items:center;justify-content:center;padding:24px}
@@ -1164,6 +1175,11 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   function hcMaybeShowClaimCard(){
     if(hc.claimCardShown) return;
     if(!hc.draftBusiness) return;
+    // Already CLAIMED — this is a signed-in owner on their own site. The "Make it yours /
+    // Sign up free" card is a PRE-claim prompt; showing it here is the app asking an owner
+    // to claim what they already own. (The localStorage check below misses this on any
+    // device where that flag was never set — the real gate is the claimed state itself.)
+    if(hc.draftClaimed) return;
     // Already has an account on this device? Don't ask them to make one.
     try{ if(localStorage.getItem('hubly_account_claimed')) return; }catch(e){}
     hc.claimCardShown = true;
@@ -3175,30 +3191,47 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       .then(function(r){ return r.json(); })
       .then(function(data){
         hc.busy = false;
-        if(data && data.ok && data.draftBusiness){
-          hc.draftBusiness = data.draftBusiness;
-          hcRefreshCanvasFrame();
-          // First successful edit — they just changed the page and want to change
-          // more. This is the moment to offer to keep it (see hcMaybeShowClaimCard).
-          hcMaybeShowClaimCard();
-        }
         if(data && data.draftGrant) hcExchangeDraftGrant(data.draftGrant, hc.draftBusiness && hc.draftBusiness.id);
-        // SAY IT. The server computes exactly what changed and now returns it;
-        // this used to ignore the reply entirely, so an edit that worked and an
-        // edit that failed looked identical from the chair. Failures come back
-        // ok:false with their own sentence, which is the more important half.
-        if(data && data.reply){
-          var _m = hcAppendMessage('hubly', data.reply);
-          // AUTOSAVE + UNDO, no Save button: the change is already live (a new version).
-          // Its safety is reversibility — the confirmation carries an Undo beside it.
-          if(data.ok !== false && hc.draftClaimed){ hc._lastEdit = { noun: _editNoun }; hcAttachMessageAction(_m, 'Undo', function(){ hcUndoLastEdit(); }); }
+        if(data && data.ok !== false){
+          if(data.draftBusiness) hc.draftBusiness = data.draftBusiness;
+          // NO RELOAD on success. The change was already painted in the iframe at the click
+          // (optimistic text/photo). Reloading the whole page in the standby iframe is what
+          // made a direct edit take ~2 minutes to appear — the edit itself returns in well
+          // under a second (the server short-circuits before any model turn). We skip it.
+          //
+          // NO SPOKEN LINE either. A direct edit is self-evident — the owner watched it
+          // happen; "that photo is on the page now" is the app explaining them to themselves.
+          // The undo is a quiet, transient control near the change, not a sentence in chat.
+          hc._lastEdit = { noun: _editNoun };
+          hcShowEditUndoToast(_editNoun);
+          hcMaybeShowClaimCard();
+        } else {
+          // The save FAILED, so the optimistic paint is now a lie on the page. Reconcile to
+          // the real server state (reload) and say so plainly — never silently leave a change
+          // that didn't persist, and never silently revert without a word.
+          hcRefreshCanvasFrame();
+          hcAppendMessage('hubly', "That change didn't save — I've put the page back to how it was. Try it again?");
         }
-        else if(data && data.ok === false) hcAppendMessage('hubly', "That edit didn't go through — mind trying it again?");
       })
       .catch(function(){
         hc.busy = false;
-        hcAppendMessage('hubly', "That edit didn't reach me — mind trying it again?");
+        hcRefreshCanvasFrame();
+        hcAppendMessage('hubly', "That change didn't save — I've put the page back. Try again in a moment.");
       });
+  }
+  // A quiet, transient control near the change — the direct-edit undo, off the chat. Fades
+  // on its own; clicking Undo steps back one version (the same reversibility as the chat path).
+  function hcShowEditUndoToast(noun){
+    var host = document.getElementById('hcCanvasPane') || document.getElementById('hcApp');
+    if(!host) return;
+    var old = document.getElementById('hcEditToast'); if(old) old.remove();
+    var t = document.createElement('div'); t.id = 'hcEditToast'; t.className = 'hc-edit-toast';
+    var label = document.createElement('span'); label.textContent = 'Changed ' + String(noun || 'that').replace(/^the /, '');
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Undo';
+    b.addEventListener('click', function(){ try{ t.remove(); }catch(_){} hcUndoLastEdit(); });
+    t.appendChild(label); t.appendChild(b);
+    host.appendChild(t);
+    setTimeout(function(){ try{ if(t && t.parentNode){ t.classList.add('is-out'); setTimeout(function(){ try{ t.remove(); }catch(_){} }, 400); } }catch(_){} }, 7000);
   }
 
   window.addEventListener('message', function(event){

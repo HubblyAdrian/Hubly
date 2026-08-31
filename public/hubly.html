@@ -53450,10 +53450,16 @@ function wireHcEditingSurface(doc, root){
   doc.body.appendChild(imgFileInput);
   var pendingImageNodeId = null;
   var pendingImageLabel = null;
+  var pendingImageEl = null;   // the <img> that was clicked — for the optimistic paint
   imgFileInput.addEventListener('change', function(){
     var file = imgFileInput.files && imgFileInput.files[0];
     imgFileInput.value = '';
     if(!file || (!pendingImageNodeId && !pendingImageLabel)) return;
+    // OPTIMISTIC PAINT — show the chosen photo the instant it's picked, exactly like the
+    // text edit paints its new words. The real upload runs in the background; without this
+    // the new photo only appears after the parent reloads the whole page (the ~2-minute
+    // wait). A blob URL is enough for the display; the server swaps in the stored URL.
+    try{ if(pendingImageEl && window.URL && URL.createObjectURL){ pendingImageEl.src = URL.createObjectURL(file); pendingImageEl.removeAttribute('srcset'); } }catch(_){}
     var reader = new FileReader();
     reader.onload = function(){
       var result = String(reader.result || '');
@@ -53461,7 +53467,7 @@ function wireHcEditingSurface(doc, root){
       var data = comma !== -1 ? result.slice(comma + 1) : result;
       if(pendingImageLabel) post({ type: 'hcFreeformInlineImageEdit', label: pendingImageLabel, imageBase64: data, mediaType: file.type || 'image/png' });
       else post({ type: 'hcDocInlineImageEdit', id: pendingImageNodeId, imageBase64: data, mediaType: file.type || 'image/png' });
-      pendingImageNodeId = null; pendingImageLabel = null;
+      pendingImageNodeId = null; pendingImageLabel = null; pendingImageEl = null;
     };
     reader.readAsDataURL(file);
   });
@@ -53479,7 +53485,7 @@ function wireHcEditingSurface(doc, root){
     try{ el = root.querySelector('[data-hc="' + (window.CSS && CSS.escape ? CSS.escape(label) : label) + '"]'); }catch(e){}
     if(!el){ try{ el = root.querySelector('[data-node="' + label + '"]'); }catch(e){} }
     if(!el) return;
-    if(el.tagName && el.tagName.toLowerCase() === 'img'){ pendingImageNodeId = el.getAttribute('data-node'); pendingImageLabel = el.getAttribute('data-hc'); imgFileInput.click(); }
+    if(el.tagName && el.tagName.toLowerCase() === 'img'){ pendingImageNodeId = el.getAttribute('data-node'); pendingImageLabel = el.getAttribute('data-hc'); pendingImageEl = el; imgFileInput.click(); }
     else openTextEditor(el);
   };
 
@@ -53507,6 +53513,7 @@ function wireHcEditingSurface(doc, root){
     if(target.tagName && target.tagName.toLowerCase() === 'img'){
       pendingImageNodeId = target.getAttribute('data-node');
       pendingImageLabel = target.getAttribute('data-hc');
+      pendingImageEl = target;   // paint the chosen photo onto THIS element instantly on pick
       imgFileInput.click();
       return;
     }
