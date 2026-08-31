@@ -87,7 +87,12 @@ Deno.serve(async (req: Request) => {
         .eq("id", businessId)
         .maybeSingle();
       if (!bizFindErr && biz?.owner_id === user.id) {
-        await admin.from("businesses").update({ email }).eq("id", businessId);
+        // Null the draft_token in the same breath as claim-draft-business (which
+        // clears it on claim): once a business has an owner, the anonymous write
+        // credential must stop existing, not merely be refused by every RPC's
+        // owner_id guard. Belt AND suspenders — closes the loose end where a claimed
+        // business kept a live-looking token.
+        await admin.from("businesses").update({ email, draft_token: null }).eq("id", businessId);
       }
     }
 
