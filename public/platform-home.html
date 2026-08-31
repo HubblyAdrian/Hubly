@@ -3353,19 +3353,12 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     try{ hcReflectAuthState(); }catch(e){}
     hcRenderRail();
     hcMaybeShowArrival(hc.draftBusiness);
-    // Restore the stored conversation — this is what carries the thread across the
-    // claim so it reads as the same room getting bigger, not a new empty one. A failed
-    // restore right after a claim is usually a RACE (auth not resolved yet, or the last
-    // turns not yet committed), not a genuinely empty history, so retry once before the
-    // generic welcome. The welcome is a last resort, only when the thread is truly empty.
+    // Restore the stored conversation. Only if there is none do we fall back to
+    // the generic welcome line — the real thread IS the welcome back.
+    // (The 900ms retry was reverted: it timed around a race we had not named. See the
+    // trace below, which names the cause on the next real claim instead of guessing.)
     hcLoadConversation().then(function(restored){
-      if(restored) return;
-      setTimeout(function(){
-        hcLoadConversation().then(function(restored2){
-          var hasMsg = false; try{ var tb = hcThreadBody(); hasMsg = !!(tb && tb.querySelector('.hc-msg')); }catch(e){}
-          if(!restored2 && !hasMsg) hcAppendMessage('hubly', 'Welcome back — this is ' + (biz.name || 'your site') + '. Pick up wherever you like.');
-        });
-      }, 900);
+      if(!restored) hcAppendMessage('hubly', 'Welcome back — this is ' + (biz.name || 'your site') + '. Pick up wherever you like.');
     });
   }
 
@@ -3493,11 +3486,19 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     var d = hc.draftBusiness;
     if(!d || !d.id) return false;
     var rows = null;
+    // TRACE (no behaviour change): name the empty-thread cause on the next real claim
+    // instead of theorising. Records which branch ran, whether the client's SESSION was
+    // actually present (get_my_business_conversation filters owner_id = auth.uid(), so an
+    // unhydrated client returns zero rows even though the rows exist), and the row count.
+    var _branch = (hc.draftClaimed && hcIsAuthed()) ? 'owner' : (d.draftToken ? 'draft' : 'none');
+    var _sess = '?', _err = '';
     try{
       if(hc.draftClaimed && hcIsAuthed()){
         var c = await authGetClient();
+        try{ var _s = await c.auth.getSession(); _sess = (_s && _s.data && _s.data.session) ? 'yes' : 'NO'; }catch(e){ _sess = 'err'; }
         var res = await c.rpc('get_my_business_conversation', { p_business_id: d.id });
         rows = (res && res.data) || null;
+        if(res && res.error) _err = String(res.error.message || res.error).slice(0, 40);
       } else if(d.draftToken){
         var H = { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' };
         rows = await fetch(SUPA_URL + '/rest/v1/rpc/get_draft_business_conversation', {
@@ -3505,7 +3506,8 @@ body.hc-active .footer,body.hc-active .hero{display:none}
           body: JSON.stringify({ p_business_id: d.id, p_draft_token: d.draftToken })
         }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
       }
-    }catch(e){ return false; }
+    }catch(e){ _err = String(e).slice(0,40); try{ hcAuthTrace('conv', 'branch=' + _branch + ' THREW ' + _err); }catch(_){} return false; }
+    try{ hcAuthTrace('conv', 'branch=' + _branch + ' authed=' + hcIsAuthed() + ' sess=' + _sess + ' rows=' + (Array.isArray(rows) ? rows.length : 'null') + (_err ? (' err=' + _err) : '')); }catch(_){}
     if(!Array.isArray(rows) || rows.length === 0) return false;
     rows.sort(function(a, b){ return (a.seq || 0) - (b.seq || 0); });
     // Seed model context with the clean restored transcript (the edge slices it

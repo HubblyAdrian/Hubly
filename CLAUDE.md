@@ -185,6 +185,19 @@ acts, or it says what will happen — it never gives directions to something it 
   claim describes WHO someone is, the denominator and the identity both need proof; the honest
   default when you can't prove it is "internal/unknown until confirmed", never the reading that
   makes the story more dramatic or more flattering.
+- **A verification screenshot may never contain fabricated content.** A screenshot sent as proof is
+  read as a picture of the real product, and it gets ACTED ON — design judged, defects filed, work
+  reprioritised — off whatever is in the frame. So a placeholder inside a proof is worse than no
+  proof: no proof gets verified, a fake one gets believed. If the real surface can't be reached
+  (an authed-only view, a claim you can't perform), take NO screenshot and say in words which part
+  is unverified and why — never hand-fill the missing region with invented content and present the
+  composite as the thing. This is the same discipline we spend every day applying to the product —
+  never render what wasn't confirmed — turned back on our own verification. The scar: a claimed-frame
+  screenshot where the site preview was hand-written mock HTML (two invented cards) because the real
+  authed preview couldn't be reached; it reached Adrian as the product, and the design was judged on
+  content that did not exist, AND its unauthed "Log in or sign up" header then seeded a false bug
+  theory for the real conversation-continuity question (2026-08-31). The real preview was fine; the
+  proof was the lie.
 - **Never ask for what you were told; never state what you weren't. What Hubly says is derived
   from what it actually knows and actually did — both directions of one discipline.** Asking for a
   fact the person just gave is the worst version of not listening: it costs them a turn and tells
