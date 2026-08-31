@@ -273,6 +273,51 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   .hc-app-left,.hc-app-right{transition:none}
   .hc-app.hc-has-draft .hc-app-right{animation:none}
 }
+/* THE RAIL. Hidden until claimed; when it appears, the room genuinely changes shape
+   — a narrow column of places to the LEFT of the chat, so chat becomes the centre. */
+.hc-rail{display:none;flex:0 0 72px;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:16px 0 14px;background:var(--panel);border-right:1px solid var(--line);z-index:2;
+  animation:hcRailArrive .5s cubic-bezier(.22,.61,.36,1) both}
+.hc-app.hc-claimed .hc-rail{display:flex}
+@keyframes hcRailArrive{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+.hc-rail-tabs{display:flex;flex-direction:column;gap:8px;width:100%;align-items:center}
+.hc-rail-tab{width:56px;min-height:56px;border:0;border-radius:15px;background:transparent;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink-500,#6b7280);
+  font:inherit;transition:background .15s ease,color .15s ease}
+.hc-rail-tab svg{width:22px;height:22px}
+.hc-rail-lbl{font-size:9px;font-weight:700;letter-spacing:.02em;line-height:1;text-align:center}
+.hc-rail-tab:hover{background:rgba(0,0,0,.045)}
+.hc-rail-tab.is-on{background:rgba(217,99,45,.12);color:var(--brand-700,#8a3f1c)}
+.hc-rail-gear{width:46px;height:46px;border:0;border-radius:13px;background:transparent;cursor:pointer;
+  color:var(--ink-400,#8a8f98);display:flex;align-items:center;justify-content:center;transition:background .15s ease}
+.hc-rail-gear:hover{background:rgba(0,0,0,.06);color:var(--ink-700,#374151)}
+/* v1 keeps the phone on its Chat/Site toggle — a one-item bottom bar isn't earned yet. */
+@media (max-width:760px){ .hc-app.hc-claimed .hc-rail{display:none} }
+
+/* THE ARRIVAL. Shown once, the first time an owner lands on a claimed site: not a
+   badge, a place that says what they now have and hands them the real, visitable link
+   and a true look at their live booking flow. Everything here is verifiably true at
+   the moment it renders — the site is live, the booking flow works. */
+.hc-arrival{max-width:560px;margin:0 auto;padding:min(9vh,72px) 24px 40px;display:flex;flex-direction:column;gap:18px}
+.hc-arrival-badge{align-self:flex-start;display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;
+  letter-spacing:.04em;text-transform:uppercase;color:#0f7a4d;background:rgba(16,122,77,.1);padding:5px 11px;border-radius:999px}
+.hc-arrival-h1{font-size:clamp(26px,4vw,36px);line-height:1.12;font-weight:800;margin:2px 0 0;color:var(--ink-900,#111)}
+.hc-arrival-sub{font-size:15px;line-height:1.5;color:var(--ink-500,#5b616e);margin:0}
+.hc-arrival-url{display:flex;align-items:center;justify-content:space-between;gap:12px;text-decoration:none;
+  background:var(--bg,#fff);border:1px solid var(--line,#e5e7eb);border-radius:14px;padding:15px 18px;
+  font-size:16px;font-weight:700;color:var(--brand-700,#8a3f1c);word-break:break-all;transition:border-color .15s,box-shadow .15s}
+.hc-arrival-url:hover{border-color:var(--brand-600,#D9632D);box-shadow:0 6px 20px -8px rgba(217,99,45,.35)}
+.hc-arrival-url .hc-arrival-arrow{flex:0 0 auto;opacity:.6;font-weight:600}
+.hc-arrival-book{background:var(--bg,#fff);border:1px solid var(--line,#e5e7eb);border-radius:16px;padding:18px 20px;
+  display:flex;flex-direction:column;gap:8px}
+.hc-arrival-book-h{font-size:13px;font-weight:800;letter-spacing:.02em;color:var(--ink-900,#111)}
+.hc-arrival-book p{margin:0;font-size:14px;line-height:1.5;color:var(--ink-500,#5b616e)}
+.hc-arrival-book-cta{align-self:flex-start;margin-top:4px;text-decoration:none;font-size:14px;font-weight:700;
+  color:var(--brand-700,#8a3f1c)}
+.hc-arrival-book-cta:hover{text-decoration:underline}
+.hc-arrival-edit{align-self:flex-start;margin-top:6px;border:0;border-radius:12px;cursor:pointer;
+  background:var(--brand-600,#D9632D);color:#fff;font:inherit;font-size:15px;font-weight:700;padding:13px 22px;min-height:46px}
+.hc-arrival-edit:active{transform:translateY(1px)}
 /* THE GUTTER IS STRUCTURAL. The rail-clipping bug — every line losing its first
    character — is a whole-block leftward shift under a clip, and it survived every
    attempt to find the cause. So it's made IMPOSSIBLE by construction rather than
@@ -884,6 +929,19 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   data. See supabase/functions/hubly-conversation/index.ts.
 -->
 <div class="hc-app" id="hcApp" aria-hidden="true" data-mview="chat">
+  <!-- THE RAIL. Appears only once the business is CLAIMED — the visible change of
+       room that says "this is yours now". Its tabs are declarative, driven by the
+       account's entitlements (hcEntitlements): a website account earns one tab,
+       Website Editor; Jobs and Storefront slot in here when those flags exist, with
+       no other change. We never render a tab with nothing behind it. Settings is the
+       gear at the foot — a popout, never a tab. Desktop sidebar for v1; the phone
+       keeps its Chat/Site toggle (a real bottom bar for one tab is not yet earned). -->
+  <div class="hc-rail" id="hcRail" hidden aria-label="Your Hubly">
+    <div class="hc-rail-tabs" id="hcRailTabs" role="tablist"></div>
+    <button type="button" class="hc-rail-gear" id="hcRailGear" aria-label="Settings" title="Settings">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
   <!-- MOBILE ONLY (hidden on desktop, hidden until a site exists). Slim segmented
        toggle: on a phone the conversation and the site each get the full screen,
        and this is the always-visible way to move between them. -->
@@ -3300,11 +3358,123 @@ body.hc-active .footer,body.hc-active .hero{display:none}
     hcRevealApp();
     if(biz.hasPage){ var app = document.getElementById('hcApp'); if(app) app.classList.add('hc-has-draft'); }
     hcRenderCanvas();
+    // THE CLAIMED FRAME. The rail is the visible change of room; the arrival screen
+    // is the one-time "here is what you now have" that fires the first time an owner
+    // lands on this site (never on a later reload — it would nag).
+    hcRenderRail();
+    hcMaybeShowArrival(hc.draftBusiness);
     // Restore the stored conversation. Only if there is none do we fall back to
     // the generic welcome line — the real thread IS the welcome back.
     hcLoadConversation().then(function(restored){
       if(!restored) hcAppendMessage('hubly', 'Welcome back — this is ' + (biz.name || 'your site') + '. Pick up wherever you like.');
     });
+  }
+
+  // ── THE CLAIMED FRAME (Part 2) ─────────────────────────────────────────────
+  // Icons kept inline so the rail needs no asset load.
+  var HC_RAIL_ICONS = {
+    website: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><circle cx="6" cy="6.5" r=".6" fill="currentColor"/><circle cx="8" cy="6.5" r=".6" fill="currentColor"/></svg>'
+  };
+  // ENTITLEMENTS -> tabs, declarative. A claimed account renders the tabs its FLAGS
+  // earn and nothing else. A website account earns Website Editor. Jobs (Marketplace
+  // provider) and Storefront are ONE push line each when those flags land on the
+  // business row — no other change. We never render a tab with nothing behind it:
+  // there is no Bookings tab because there are no bookings.
+  function hcEntitlements(){
+    var tabs = [];
+    var biz = hc.draftBusiness;
+    if(biz && hc.draftClaimed){
+      tabs.push({ id:'website', label:'Website', icon:HC_RAIL_ICONS.website });
+    }
+    // Future, gated on real flags (kept as the seam, not built):
+    //   if(biz && biz.marketplaceProvider) tabs.push({ id:'jobs',  label:'Jobs',  icon:HC_RAIL_ICONS.jobs });
+    //   if(biz && biz.storefront)          tabs.push({ id:'store', label:'Store', icon:HC_RAIL_ICONS.store });
+    return tabs;
+  }
+  var hcActiveTab = 'website';
+  function hcRenderRail(){
+    var rail = document.getElementById('hcRail'); if(!rail) return;
+    var app = document.getElementById('hcApp');
+    var claimed = !!hc.draftClaimed;
+    if(app) app.classList.toggle('hc-claimed', claimed);
+    if(!claimed){ rail.hidden = true; return; }
+    rail.hidden = false;
+    var host = document.getElementById('hcRailTabs'); if(!host) return;
+    var tabs = hcEntitlements();
+    host.innerHTML = tabs.map(function(t){
+      return '<button type="button" class="hc-rail-tab' + (t.id === hcActiveTab ? ' is-on' : '') + '" '
+        + 'data-tab="' + t.id + '" role="tab" aria-selected="' + (t.id === hcActiveTab) + '">'
+        + t.icon + '<span class="hc-rail-lbl">' + t.label + '</span></button>';
+    }).join('');
+    Array.prototype.forEach.call(host.querySelectorAll('.hc-rail-tab'), function(b){
+      b.addEventListener('click', function(){ hcSelectTab(b.getAttribute('data-tab')); });
+    });
+  }
+  function hcSelectTab(id){
+    hcActiveTab = id;
+    hcRenderRail();
+    // One tab today; selecting it returns to the site/editor. When Jobs/Storefront
+    // exist, each routes to its own surface here.
+    if(id === 'website'){ hcSetView('site'); hcRenderCanvas(); }
+  }
+  // Settings: a POPOUT off the gear, never a tab. Reuses the account menu (sign out)
+  // and names the account, so the gear is a real door, not decoration.
+  function hcOpenSettings(){
+    var existing = document.getElementById('hcSettingsPop');
+    if(existing){ existing.remove(); return; }
+    var gear = document.getElementById('hcRailGear'); if(!gear) return;
+    var m = document.createElement('div'); m.id = 'hcSettingsPop'; m.className = 'hc-acct-menu';
+    var who = document.createElement('div');
+    who.style.cssText = 'padding:8px 12px;font-size:12px;color:var(--ink-500,#6b7280);border-bottom:1px solid var(--line,#e5e7eb);max-width:220px;overflow:hidden;text-overflow:ellipsis;';
+    who.textContent = (hc.draftBusiness && hc.draftBusiness.name) ? hc.draftBusiness.name : 'Your account';
+    m.appendChild(who);
+    var out = document.createElement('button'); out.type = 'button'; out.className = 'hc-acct-signout'; out.textContent = 'Sign out';
+    out.addEventListener('click', hcSignOut);
+    m.appendChild(out);
+    document.body.appendChild(m);
+    var r = gear.getBoundingClientRect();
+    m.style.left = (r.right + 8) + 'px';
+    m.style.bottom = Math.max(8, (window.innerHeight - r.bottom)) + 'px';
+    setTimeout(function(){
+      document.addEventListener('click', function onDoc(e){
+        if(!m.contains(e.target) && e.target !== gear && !gear.contains(e.target)){ try{ m.remove(); }catch(_){} document.removeEventListener('click', onDoc); }
+      });
+    }, 0);
+  }
+  // THE ARRIVAL. Once per business — the first time an owner lands on their claimed
+  // site. It hands them the real, visitable address and a truthful look at the live
+  // booking flow (both verified to work). Not shown again; a later reload goes
+  // straight to the editor. Everything it states is true at the moment it renders.
+  function hcArrivalSeen(id){ try{ return !!localStorage.getItem('hcArrival_' + id); }catch(e){ return false; } }
+  function hcMaybeShowArrival(biz){
+    if(!biz || !biz.id || !hc.draftClaimed) return;
+    if(hcArrivalSeen(biz.id)) return;
+    try{ localStorage.setItem('hcArrival_' + biz.id, '1'); }catch(e){}
+    hcRenderArrival(biz);
+  }
+  function hcRenderArrival(biz){
+    var canvas = document.getElementById('hcCanvas'); if(!canvas) return;
+    var url = String((biz && biz.url) || '');
+    if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    var host = url.replace(/^https?:\/\//i, '').replace(/\/$/, '');
+    var name = (biz && biz.name) ? biz.name : 'Your site';
+    var esc = function(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+    canvas.innerHTML =
+      '<div class="hc-arrival">' +
+        '<span class="hc-arrival-badge"><span class="hc-live-dot"></span> Live</span>' +
+        '<h1 class="hc-arrival-h1">' + esc(name) + ' is live.</h1>' +
+        '<p class="hc-arrival-sub">This is yours now — a real address anyone can visit, not a preview.</p>' +
+        '<a class="hc-arrival-url" href="' + esc(url) + '" target="_blank" rel="noopener">' +
+          '<span>' + esc(host) + '</span><span class="hc-arrival-arrow">Visit ↗</span></a>' +
+        '<div class="hc-arrival-book">' +
+          '<div class="hc-arrival-book-h">What a customer sees when they book</div>' +
+          '<p>Your booking flow is live too, with your real services and prices.</p>' +
+          '<a class="hc-arrival-book-cta" href="' + esc(url) + '/?book=1" target="_blank" rel="noopener">See the booking flow ↗</a>' +
+        '</div>' +
+        '<button type="button" class="hc-arrival-edit" id="hcArrivalEdit">Start editing your site →</button>' +
+      '</div>';
+    var edit = document.getElementById('hcArrivalEdit');
+    if(edit) edit.addEventListener('click', function(){ hcActiveTab = 'website'; hcRenderRail(); hcRenderCanvas(); });
   }
   // Restore the builder conversation for the business now in hc.draftBusiness
   // (Block 3 — persistence). Read rules mirror the document gates exactly: before
@@ -3974,6 +4144,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
       hc.draftClaimed = true;                        // the address is live now
       hcUpdateAddressBar();                           // pill: reserved -> live link
       hcTellPreviewAuthed(pending);                 // preview can edit now; open the clicked element
+      // THE ROOM CHANGES. The rail appears (the visible "this is yours now"), and the
+      // first-time arrival screen hands over the live link + the working booking flow.
+      try{ hcRenderRail(); hcMaybeShowArrival(hc.draftBusiness); }catch(e){}
       // Rule 6: confirm the success in words, superseding the stale pre-account
       // message. Both claimed AND alreadyYours are successes and both must confirm
       // (alreadyYours was the silent mode 5).
@@ -4010,6 +4183,8 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   if(authOv){
     var navSignin = document.getElementById('navSignin');
     if(navSignin) navSignin.addEventListener('click', authOpen);
+    var railGear = document.getElementById('hcRailGear');
+    if(railGear) railGear.addEventListener('click', function(e){ e.stopPropagation(); hcOpenSettings(); });
     authEl('authClose').addEventListener('click', authClose);
     try{ authEl('authMaybeLater').addEventListener('click', authClose); }catch(e){}
     authOv.addEventListener('click', function(e){ if(e.target === authOv) authClose(); });
