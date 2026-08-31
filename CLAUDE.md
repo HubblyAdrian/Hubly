@@ -197,7 +197,25 @@ acts, or it says what will happen — it never gives directions to something it 
   authed preview couldn't be reached; it reached Adrian as the product, and the design was judged on
   content that did not exist, AND its unauthed "Log in or sign up" header then seeded a false bug
   theory for the real conversation-continuity question (2026-08-31). The real preview was fine; the
-  proof was the lie.
+  proof was the lie. **And fabricated STATE is the same defect as fabricated content:** a screenshot
+  of a hand-set claimed or authed surface (classes toggled, DOM injected, no real session) is NOT a
+  screenshot of the product — it renders as one but behaves differently in exactly the ways that
+  matter (the auth header, the click gate, what the server returns). Every such shot must say so on
+  its face — "simulated claimed state, not a real session" — never be handed over as the running
+  product. Two separate rounds of reasoning about non-existent defects in one night traced to a
+  hand-set-state screenshot read as real (the empty thread; the dead click).
+- **Look for the missing door before building the room.** When something in Hubly does not work, the
+  FIRST hypothesis is that the capability already exists and only its entry point is missing — not
+  that it needs building. Rebuilding what is already there is the more expensive mistake, and it
+  buries the real one-line fix (a handshake never triggered, a flag never set, a button never wired)
+  under a new system. In one night: the photo upload, the inline image editing, the trade-aware
+  booking wizard, and Stripe Connect were ALL built and working, and ALL unreachable — each looked
+  "not built" and was really "no door". So: prove the backend is dead (no code, no table, nothing
+  reads or writes it) before treating an area as greenfield; and when a feature is dark, trace the
+  path from the click to the capability and find where the door is missing. The click-to-edit fix
+  that closed 2026-08-31 was exactly this: the editing capability was wired and the affordance
+  painted, but the auth handshake that ungates the click never fired for a claimed page — one missing
+  call, not a broken editor.
 - **Never ask for what you were told; never state what you weren't. What Hubly says is derived
   from what it actually knows and actually did — both directions of one discipline.** Asking for a
   fact the person just gave is the worst version of not listening: it costs them a turn and tells

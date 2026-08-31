@@ -17630,6 +17630,15 @@ async function loadPublicProfile(slug){
       showP('p-hubly-document');
       try{wireHublyDocumentReserved();}catch(e){console.warn('wireHublyDocumentReserved failed',e);}
       try{wireHublyDocumentClickToEdit();}catch(e){}
+      // THE MISSING DOOR for click-to-edit on a CLAIMED page. hcAuthedFlag (the gate on
+      // whether a click edits or asks to sign in) is set by the draft-context handshake —
+      // but that handshake only runs on a doc-fetch FAILURE (above). For a claimed owner
+      // whose doc loads fine it never fired, so the click gate stayed closed and editing
+      // silently did nothing while the hover outline still painted. When editing is on,
+      // run the handshake here, iframe-initiated, so hcAuthedFlag is set the moment the
+      // page is ready — not left to the parent's post-timing. (Token side-effect is null
+      // for a claimed row; the `authed` field is what we need.)
+      try{ if(typeof hcEditableEnabled==='function' && hcEditableEnabled()){ hcRequestDraftToken(slug); } }catch(e){}
       return;
     }
   }catch(e){console.warn('loadPublicProfile: hubly document check failed, falling back to legacy renderer',e);}
@@ -53485,6 +53494,10 @@ function wireHcEditingSurface(doc, root){
     // outline, cursor, marks) — only the click changes.
     if(!hcAuthedFlag){
       var lbl = target.getAttribute('data-hc') || target.getAttribute('data-node') || '';
+      // Confirmable on the deployed site: if this fires for a signed-in owner, the auth
+      // handshake didn't reach us. With the iframe-initiated handshake (loadPublicProfile)
+      // this should be rare; the log names it if it recurs.
+      try{ console.log('[hc-edit] click gated: hcAuthedFlag=false, requesting auth for', lbl); }catch(_){}
       // Origin-pinned to the builder (the apex of our own domain), not '*' — the
       // rest of this handshake is pinned and this shouldn't be the exception.
       try{ window.parent.postMessage({ type:'hcEditAuthNeeded', label: lbl }, hcBuilderOrigin()); }catch(err){}

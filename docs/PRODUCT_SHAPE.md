@@ -205,6 +205,24 @@ controls appear **contextually, not as a permanent toolbox**. The target:
   future), and the confirmation names the **kind** ("the photo", "the wording") but not the
   specific card ("Basic Mow photo") — the specific name needs a label→service-name map.
 
+## 9. Filed for later (recorded 2026-08-31, not now)
+
+- **Pricing.** Free to claim, edit and publish on `myhubly.app`, and free **through the first
+  booking**. Paid only when Hubly starts *doing business* for them — ongoing bookings, jobs and
+  customers, taking payment, own domain. Market anchor: Jobber Core **$49/mo**, Housecall Pro
+  Basic **$79/mo** for one user, so **$29 is under-priced; $39–49 is defensible**. Storefront is
+  already decided (free-with-5% or $29/mo on Connect); Marketplace at 70/75. **Before finalising:
+  log tokens per business** so cost-per-customer is a real number, not a fear.
+- **Bring your own domain.** One **CNAME** (A/ALIAS for the apex), registered via the **Vercel
+  API** with automatic SSL, plus registrar-specific instructions in chat. **Never take over their
+  nameservers** — their email **MX** records live in the same DNS, and moving it kills their email
+  on launch day. The domain points at us; the DNS stays theirs.
+- **Read their existing site.** "What's your website address?" → fetch it, extract services,
+  prices, hours, phone, area, and **their own photos**, and rebuild from that. Fixes the
+  thin-record problem that made tonight's pages sparse, gives real work photos instead of stock,
+  and is the strongest switching pitch available. (Pairs with the `website.analyze` real-fields
+  rule already in the generation prompt — only what genuinely came back is cited as real.)
+
 ---
 
 *This document authorizes nothing. It is the shared picture; each build gets its own

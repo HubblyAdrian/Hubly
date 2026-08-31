@@ -290,24 +290,18 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 }
 /* THE RAIL. Hidden until claimed; when it appears, the room genuinely changes shape
    — a narrow column of places to the LEFT of the chat, so chat becomes the centre. */
-/* ONE CONTINUOUS COLUMN, full viewport height: brand at the top, destinations beneath,
-   the settings gear at the foot (ChatGPT's left rail). Fixed to top:0 so it is a column,
-   not a strip floating below the header — the header and the app sit to its right. */
-.hc-rail{display:none;position:fixed;top:0;left:0;bottom:0;width:72px;z-index:70;
-  flex-direction:column;align-items:center;gap:12px;
-  padding:14px 0;background:var(--panel);border-right:1px solid var(--line);
+/* A narrow rail (72px) running BENEATH a slim, real header — the full "hubly" wordmark
+   lives in the header, not clipped into the rail. The rail is a column from just under
+   the header to the foot: destinations at the top, settings gear at the bottom. It reads
+   as a rail meeting a real header, not a strip floating below a transparent nav — which
+   is why the header goes solid when claimed (below). */
+.hc-rail{display:none;flex:0 0 72px;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:16px 0 14px;background:var(--panel);border-right:1px solid var(--line);z-index:2;
   animation:hcRailArrive .5s cubic-bezier(.22,.61,.36,1) both}
 .hc-app.hc-claimed .hc-rail{display:flex}
-.hc-rail-brand{flex:0 0 auto;font-weight:800;font-size:20px;line-height:1;text-decoration:none;
-  color:var(--ink,#111);margin-bottom:4px}
-.hc-rail-brand .ly{color:var(--brand-600,#D9632D)}
-/* Desktop only: with the rail a full-height column, the header and the whole app start
-   to ITS right, and the header's own wordmark is dropped (the rail owns the logo now). */
-@media (min-width:761px){
-  body.hc-shell-claimed .nav{left:72px}
-  body.hc-shell-claimed .nav > a[aria-label="hubly home"]{display:none}
-  body.hc-shell-claimed .hc-app{left:72px}
-}
+/* Make the header a REAL slim header once claimed: solid ground + a hairline, so the rail
+   sits under something, not floating. The wordmark and account button stay where they are. */
+body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(--line)}
 @keyframes hcRailArrive{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
 .hc-rail-tabs{display:flex;flex-direction:column;gap:8px;width:100%;align-items:center}
 .hc-rail-tab{width:56px;min-height:56px;border:0;border-radius:15px;background:transparent;cursor:pointer;
@@ -317,7 +311,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 .hc-rail-lbl{font-size:9px;font-weight:700;letter-spacing:.02em;line-height:1;text-align:center}
 .hc-rail-tab:hover{background:rgba(0,0,0,.045)}
 .hc-rail-tab.is-on{background:rgba(217,99,45,.12);color:var(--brand-700,#8a3f1c)}
-.hc-rail-gear{width:46px;height:46px;margin-top:auto;border:0;border-radius:13px;background:transparent;cursor:pointer;
+.hc-rail-gear{width:46px;height:46px;border:0;border-radius:13px;background:transparent;cursor:pointer;
   color:var(--ink-400,#8a8f98);display:flex;align-items:center;justify-content:center;transition:background .15s ease}
 .hc-rail-gear:hover{background:rgba(0,0,0,.06);color:var(--ink-700,#374151)}
 /* v1 keeps the phone on its Chat/Site toggle — a one-item bottom bar isn't earned yet. */
@@ -952,7 +946,6 @@ body.hc-active .footer,body.hc-active .hero{display:none}
        gear at the foot — a popout, never a tab. Desktop sidebar for v1; the phone
        keeps its Chat/Site toggle (a real bottom bar for one tab is not yet earned). -->
   <div class="hc-rail" id="hcRail" hidden aria-label="Your Hubly">
-    <a class="hc-rail-brand" href="/" aria-label="Hubly home"><span class="hubly-lockup">h<span class="ly">y</span></span></a>
     <div class="hc-rail-tabs" id="hcRailTabs" role="tablist"></div>
     <button type="button" class="hc-rail-gear" id="hcRailGear" aria-label="Settings" title="Settings">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
