@@ -95,8 +95,21 @@ acts, or it says what will happen — it never gives directions to something it 
 
 ## Working agreement (how work is run here)
 
-- **Verify by using it, not by reading it.** A change isn't done because the code
-  looks right; it's done when the running product was exercised and did the thing.
+- **Verify by using it, not by reading it — AS THE OWNER, ON THE REAL THING.** A change
+  isn't done because the code looks right; it's done when the running product was exercised
+  and did the thing. And it must be exercised in the STATE a real person is in, not a
+  convenient one — most sharply, **claimed vs draft**. Everything a signed-in owner touches
+  is a different code path from a draft (the writers authorise by ownership, not the draft
+  token; the client sends a real JWT, not the anon key), so a green test on a draft proves
+  nothing about a claimed site. The week this rule was paid for (2026-09-01): every test was
+  green on drafts while THREE serious defects lived on the other side of a door nobody had
+  walked through — for a solid week EVERY claimed owner was unable to change their site by
+  talking (the fact-write path was locked the moment they signed up); the system filled in a
+  phone number nobody gave it; and a filter would have deleted five services off a live page.
+  All three surfaced the instant someone signed in as a real owner and typed four sentences —
+  not from the suite. So: reproduce the real state (sign in as the owner, on the claimed
+  business), do the thing the person would do, and read the RECORD and the PAGE back. A test
+  on the wrong state is not evidence.
 - **Claude Code cannot verify mobile.** There is no true 390px viewport and no soft
   keyboard in this environment. Anything mobile must be checked on a real phone before
   it is called done.
