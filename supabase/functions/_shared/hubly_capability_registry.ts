@@ -69,6 +69,7 @@ import {
   placeContactHoursInFreeform,
   type HoursRow,
 } from "./hubly_contact.ts";
+import { phoneGrounded, emailGrounded, reconcileServices } from "./hubly_grounding.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
 // Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
 // "Invalid JWT". Both behaviours are load-bearing -- see supabase_admin.ts.
@@ -732,6 +733,7 @@ export async function applyExtractedFacts(
   },
   pricedServices?: { name: string; price?: number; description?: string }[],
   ownerUid?: string | null,
+  userMessage?: string,
 ): Promise<ExtractedFactWrite> {
   const written: string[] = [];
   const skipped: string[] = [];
@@ -839,6 +841,7 @@ export async function applyExtractedFacts(
           draftId,
           draftToken,
           ownerUid: p_owner_id,
+          _userMessage: userMessage || "",   // extraction read these FROM this message -> they ground
           services: pricedServices.map((s) => ({ name: s.name, price: s.price, description: s.description })),
         });
         if (res.ok) { written.push(`services(${pricedServices.length})`); changes.add("services"); }
@@ -4474,7 +4477,9 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         handler: async (args) => {
           const draftId = String(args?.draftId || "").trim();
           const draftToken = String((args as any)?.draftToken || "").trim();
-          if (!draftId || !draftToken) {
+          const ownerUid = String((args as any)?.ownerUid || "").trim() || null;
+          const userMessage = String((args as any)?._userMessage || "");
+          if (!draftId || (!draftToken && !ownerUid)) {
             return { ok: false, real: false, summary: "No draft business exists yet to update — call startDraft first.", error: "missing_draft" };
           }
           const patch: Record<string, unknown> = {};
@@ -4483,9 +4488,27 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             phone: "phone", email: "email", city: "city", brandColor: "brand_color",
             heroHeadline: "gen_hero_headline", heroSubhead: "gen_hero_subhead", seoTitle: "gen_seo_title",
           };
+          // GROUND the exact-value facts (phone, email) in THIS message. A number
+          // or email the model supplied that the owner did not type this turn — a
+          // value lifted from earlier in the transcript — is refused, not written
+          // and not offered. Copy the model legitimately drafts (name, tagline,
+          // about, hero, colour) is not a stated fact and is not grounded.
+          const ungrounded: string[] = [];
           for (const [argKey, col] of Object.entries(map)) {
             const v = args?.[argKey];
-            if (typeof v === "string" && v.trim()) patch[col] = v.trim();
+            if (typeof v !== "string" || !v.trim()) continue;
+            const val = v.trim();
+            if (argKey === "phone" && !phoneGrounded(val, userMessage)) { ungrounded.push("phone number"); continue; }
+            if (argKey === "email" && !emailGrounded(val, userMessage)) { ungrounded.push("email"); continue; }
+            patch[col] = val;
+          }
+          // Provided a fact but it wasn't in this message, and nothing else to
+          // write -> write NOTHING and tell the model to ASK. Never surface the
+          // ungrounded value ("shall I use 801-888-8888?") — that is how it started.
+          if (ungrounded.length && Object.keys(patch).length === 0 && !String(args?.layout || "").trim()
+              && !(typeof args?.heroHeadline === "string" && args.heroHeadline.trim())) {
+            return { ok: false, real: false, error: "needs_value",
+              summary: `No ${ungrounded.join(" or ")} was given in this message — ask the owner for it and do not guess or reuse an earlier value.` };
           }
           // The renderer (public/hubly.html: applyBizMeta -> "if(meta.website)
           // S.website=meta.website") reads hero headline/subhead/SEO title
@@ -4507,6 +4530,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_draft_token: draftToken,
             p_patch: patch,
             p_website_meta: Object.keys(websiteMeta).length ? websiteMeta : null,
+            p_owner_id: ownerUid,
           });
           if (!r || r.ok !== true) {
             return { ok: false, real: false, summary: "The business record could not be updated — the draft may have already been claimed.", error: "rpc_failed" };
@@ -4566,17 +4590,39 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const draftId = String(args?.draftId || "").trim();
           const draftToken = String((args as any)?.draftToken || "").trim();
           const ownerUid = String((args as any)?.ownerUid || "").trim() || null;
+          const userMessage = String((args as any)?._userMessage || "");
           if (!draftId || (!draftToken && !ownerUid)) {
             return { ok: false, real: false, summary: "No draft business exists yet — call startDraft first.", error: "missing_draft" };
           }
           const list = Array.isArray(args?.services) ? args.services : [];
-          const services = list
+          let services = list
             .filter((s: any) => s && typeof s.name === "string" && s.name.trim())
             .map((s: any) => ({
               name: String(s.name).trim(),
               price: typeof s.price === "number" && Number.isFinite(s.price) ? s.price : undefined,
               description: typeof s.description === "string" && s.description.trim() ? s.description.trim() : undefined,
             }));
+          // GROUND against THIS message when one is present (the model-invoked
+          // path). set_business_draft_services is REPLACE-ALL, so a plain filter
+          // would delete the owner's other services — reconcile instead: keep an
+          // entry that is grounded in this message OR already on the record
+          // unchanged; drop only a genuinely new/changed entry the model lifted
+          // from earlier. If nothing real changed and a lift was dropped, WRITE
+          // NOTHING (the existing list is left exactly as it was) and ask.
+          if (userMessage) {
+            const existingRows = await selectMany("services", "business_id", draftId, "name,price");
+            const existing = (Array.isArray(existingRows) ? existingRows : []).map((r: any) => ({ name: String(r?.name || ""), price: r?.price != null ? Number(r.price) : undefined }));
+            const rec = reconcileServices(services, existing, userMessage);
+            if (rec.droppedLift.length && !rec.changed) {
+              return { ok: false, real: false, error: "needs_value",
+                summary: "No new service was stated in this message — ask the owner what to add and at what price; do not reuse a service from earlier in the chat. (Existing services were left unchanged.)" };
+            }
+            services = rec.allowed.map((s) => ({
+              name: s.name,
+              price: typeof s.price === "number" ? s.price : undefined,
+              description: (s as any).description,
+            }));
+          }
           const r = await callBusinessRpc("set_business_draft_services", {
             p_id: draftId,
             p_draft_token: draftToken,

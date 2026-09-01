@@ -972,7 +972,7 @@ Deno.serve(async (req) => {
     const ownerUid = await getOwnerUid();
     if (!token && !ownerUid) return;   // no credential at all
     factsApplied = true;
-    const applied = await applyExtractedFacts(id, token, pendingFacts, pendingPricedServices, ownerUid);
+    const applied = await applyExtractedFacts(id, token, pendingFacts, pendingPricedServices, ownerUid, latestUserMessage || "");
     for (const c of applied.recordChange) recordChanges.add(c);
     // A FACT WRITE ALWAYS PRODUCES A TRUTH — success or failure. The old code
     // returned silently when nothing was written, so a REFUSED write (e.g. a
@@ -1429,6 +1429,13 @@ Deno.serve(async (req) => {
         if (NEEDS_DRAFT_INJECTION && draftBusiness) {
           dispatchArgs.draftId = draftBusiness.id;
           dispatchArgs.draftToken = draftBusiness.draftToken;
+          // The verified owner (so a model-invoked write reaches a CLAIMED record —
+          // the class fix: extraction had the owner, the model path didn't), and the
+          // current user message (so the writer can GROUND each value: a phone or
+          // price the model lifted from earlier in the transcript is refused, not
+          // written). Both structural; redacted from the logged args below.
+          dispatchArgs.ownerUid = await getOwnerUid();
+          dispatchArgs._userMessage = latestUserMessage || "";
         }
         // Real page generation can run well past what a single request
         // should block on (confirmed live: 100-150+s, right at/over
@@ -1569,11 +1576,14 @@ Deno.serve(async (req) => {
           // it back inside the actions log even though the client already
           // has it (draftBusiness below is the one legitimate place it travels).
           args: (() => {
-            if (!dispatchArgs.draftToken && !dispatchArgs._ownerToken && dispatchArgs._storefrontAst === undefined) return dispatchArgs;
+            if (!dispatchArgs.draftToken && !dispatchArgs._ownerToken && dispatchArgs._storefrontAst === undefined
+                && dispatchArgs.ownerUid === undefined && dispatchArgs._userMessage === undefined) return dispatchArgs;
             const a: Record<string, unknown> = { ...dispatchArgs };
             if (a.draftToken) a.draftToken = "[redacted]";
             if (a._ownerToken) a._ownerToken = "[redacted]";
             if (a._storefrontAst !== undefined) a._storefrontAst = "[omitted]";
+            if (a.ownerUid !== undefined) a.ownerUid = "[redacted]";       // verified identity, not display data
+            if (a._userMessage !== undefined) a._userMessage = "[omitted]"; // structural (grounding), not display data
             return a;
           })(),
           ok: !!result.ok,

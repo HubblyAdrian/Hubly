@@ -472,9 +472,32 @@ export function placeContactHoursInFreeform(
     }
   }
 
+  // Whatever combination of inserts/adds ran, make the heading match the block's
+  // actual contents (a contact-first block that just gained hours must stop
+  // saying "Contact").
+  out = rederiveContactBlockHeading(out);
+
   const changed = out !== html;
   const via: ContactPlacement["via"] = inserted.length ? "inserted" : (updated.length ? "anchor" : "missed");
   return { html: out, changed, inserted, updated, alreadyPresent, missed, via, leaked: countLeaked(out) };
+}
+
+/** Re-derive the block's <h2> from what it ACTUALLY contains now. Needed because a
+ *  block can be built contact-first (heading "Contact") and then have hours added
+ *  into it — the heading has to become "Hours & Contact" or it lies. Idempotent;
+ *  a no-op when there is no block. */
+export function rederiveContactBlockHeading(html: string): string {
+  const blockRe = /(<section\b[^>]*\bdata-hubly-contact-block\b[^>]*>)([\s\S]*?)(<\/section>)/i;
+  const m = blockRe.exec(html);
+  if (!m) return html;
+  const inner = m[2];
+  const hasHours = /data-hubly-hours(?![-a-z])/i.test(inner) || /data-hubly-hours-note\b/i.test(inner);
+  const hasContact = /data-hubly-(?:phone|email|address)\b/i.test(inner);
+  if (!hasHours && !hasContact) return html;
+  const heading = deriveHeading(hasHours, hasContact);
+  const newInner = inner.replace(/<h2\b[^>]*>[\s\S]*?<\/h2>/i, `<h2>${escText(heading)}</h2>`);
+  if (newInner === inner) return html;
+  return html.slice(0, m.index) + m[1] + newInner + m[3] + html.slice(m.index + m[0].length);
 }
 
 /** Scoped stylesheet, appended once — the ensureServicePriceCss pattern. Type is
