@@ -48,6 +48,24 @@ prohibitions on purpose: when in doubt, the prohibited thing is prohibited.
    over-claiming success; this one guards against under-claiming it, and it is the rule
    that catches a silent success.
 
+## Never publish a fact the owner did not state — a capability invoked without a value ASKS
+
+A fact write requires a value **sourced from the current turn's user message**. When a
+capability that writes a fact (phone, email, address, hours, a service price) is invoked
+without a value in *this* exchange, the only correct behaviour is to **ask for it and write
+nothing** — never fill the gap from conversation history, from a default, or from anything
+that looks like a plausible value. This is the write-side of "never state what you weren't
+told" (below): the read-side stops Hubly *saying* an unstated fact; this stops it *writing*
+one to a live page a customer could act on. The failure that produced this rule (2026-09-01,
+evergreen-yard-care): on a re-asked "add my phone number" with no number given, the model
+lifted `801-888-8888` from an earlier turn in the transcript and moved to add it — a number
+nobody stated in that exchange, on a page a customer could call. Publishing an unstated fact
+is worse than saving nothing. The fix is structural, not a prompt line: the writer refuses a
+value it cannot ground in the current message, for every fact — if a phone can be lifted
+unstated, so can a price. And it binds hardest the moment the owner-authorised write path is
+threaded through the model's capabilities, because that is when an ungrounded value stops
+failing and starts persisting.
+
 ## The notification standard
 
 Every Hubly notification — email, SMS, in-product, and everything after — must:
