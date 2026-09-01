@@ -65,7 +65,7 @@ import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
 import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
 import { reportAllowlistDrops } from "../_shared/hubly_allowlist.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -1612,6 +1612,32 @@ Deno.serve(async (req) => {
       // silently is the swallow-failure shape from KNOWN_ISSUES -- they would add
       // services later, the record would update, the page would not, and there
       // would be no signal at all.
+      // CONTACT / HOURS placement runs SYNCHRONOUSLY (like setServices), so this
+      // turn can read back exactly what landed on the page — the background rebuild
+      // below fires after the reply and can't. It is a targeted patch (insert the
+      // block / update an anchor), safe to run even on an owner-edited page, and it
+      // writes a 'patch' version so Undo reverses it. We then drop contact/hours
+      // from recordChanges so the background rebuild doesn't re-place them.
+      let contactHoursTruth = "";
+      if ((recordChanges.has("contact") || recordChanges.has("hours")) && draftBusiness?.id && draftBusiness?.draftToken) {
+        try {
+          const ch = await applyContactHoursToFreeform(draftBusiness.id, draftBusiness.draftToken);
+          contactHoursTruth = composeContactHoursTruth(ch);
+          const landed = ch.status === "patched";
+          const line = `contact/hours placement [${draftBusiness.id}] -> ${ch.status} (${ch.detail})${landed ? "" : " [DID NOT LAND]"}`;
+          if (ch.status === "failed") console.error(line); else console.log(line);
+          try {
+            const u = (Deno.env.get("SUPABASE_URL") || "").trim();
+            if (u) await fetch(`${u}/rest/v1/rpc/record_rebuild_outcome`, {
+              method: "POST", headers: { ...adminHeaders(), "content-type": "application/json" },
+              body: JSON.stringify({ p_business_id: draftBusiness.id, p_changes: "contact-hours-placement", p_status: ch.status, p_detail: ch.detail || null, p_landed: landed }),
+            });
+          } catch (_e) { /* telemetry must never fail the turn */ }
+        } catch (e) { console.error("contact/hours placement failed", e); }
+        recordChanges.delete("contact");
+        recordChanges.delete("hours");
+      }
+
       let rebuildSkippedNote = "";
       if (recordChanges.size && draftBusiness?.id && draftBusiness?.draftToken) {
         const changes = [...recordChanges] as RecordChange[];
@@ -1658,7 +1684,12 @@ Deno.serve(async (req) => {
       // for a freeform setServices turn: the price read-back is what the patch
       // actually did (findings #3 + #5), so it replaces the model's paraphrase
       // which dropped the numbers and the location.
-      const finalReply = (photoTruth || servicesTruth || deduped.reply || "") + rebuildSkippedNote;
+      // contactHoursTruth is the page read-back for hours/contact — it overrides a
+      // vague model reply when it's the only truth, and is appended when another
+      // truth (services/photo) already leads.
+      const primaryReply = photoTruth || servicesTruth || contactHoursTruth || deduped.reply || "";
+      const extraTruth = (contactHoursTruth && primaryReply !== contactHoursTruth) ? " " + contactHoursTruth : "";
+      const finalReply = primaryReply + extraTruth + rebuildSkippedNote;
       // NOTE: the "offer the price-list photo ONCE per conversation" rule is enforced on the
       // CLIENT (hcOncePhotoOffer), not here: the first ask is a post_build turn whose reply is
       // never threaded back into `messages`, so this handler can't see it to know the offer was

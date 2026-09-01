@@ -40,6 +40,7 @@
  */
 
 import { HublyAI } from "./hubly_ai.ts";
+import { formatPhoneHouse } from "./hubly_contact.ts";
 
 export type ExtractedFacts = {
   phone?: string;
@@ -52,6 +53,10 @@ export type ExtractedFacts = {
   travelRadiusMiles?: number;
   yearsInBusiness?: number;
   hours?: { weekday: number; open: string | null; close: string | null; closed: boolean }[];
+  // Free-text hours phrasing that does NOT parse into weekday rows ("weekends by
+  // appointment", "24/7 emergency"). Captured VERBATIM — never normalized into
+  // invented times. See businesses.hours_note.
+  hoursNote?: string;
   // Services are extracted in the SAME model pass as the rest of the record, so a
   // price stated in prose ("Express Wash $60") lands in the structured record from
   // the same understanding that wrote the brief — not left to a second, separately
@@ -107,9 +112,11 @@ const STATES: Record<string, string> = {
 
 const STATE_NAMES = new Set(Object.values(STATES).map((s) => s.toLowerCase()));
 
-/** Normalised to the form people read back to themselves: 801-555-0301. */
+/** Normalised to the house form people read back to themselves: 801-555-0301.
+ *  Delegates to the shared server formatter so there is ONE implementation
+ *  (formatPhoneHouse, mirroring the client's formatPhoneValue). */
 function normalisePhone(area: string, mid: string, last: string): string {
-  return `${area}-${mid}-${last}`;
+  return formatPhoneHouse(`${area}${mid}${last}`);
 }
 
 /**
@@ -241,9 +248,13 @@ Use null (or [] for lists) when the message does not say — never omit a key, a
   "serviceAreaCities": string[],      // OTHER towns served; exclude the base city
   "travelRadiusMiles": number|null,
   "yearsInBusiness":   number|null,   // only if stated as years, not a founding date
-  "hours": [                          // one entry per day MENTIONED; [] if none
+  "hours": [                          // one entry per day MENTIONED as day+time; [] if none
     { "weekday": 0-6, "open": "HH:MM"|null, "close": "HH:MM"|null, "closed": boolean }
   ],
+  "hoursNote":         string|null,   // hours phrasing that is NOT weekday+time rows, VERBATIM
+                                      // (e.g. "weekends by appointment", "24/7 emergency", "call anytime").
+                                      // null if the hours are fully expressed as rows above, or none given.
+                                      // NEVER turn this into invented times — copy the words as written.
   "services": [                       // every service/package/product the message NAMES as something they sell; [] if none
     {
       "name":        string,          // the offering's name exactly as written, e.g. "Full Detail"
@@ -350,6 +361,10 @@ export async function extractRecordFacts(
       for (const h of hours) byDay.set(h.weekday, h);
       if (byDay.size) out.hours = [...byDay.values()].sort((a, b) => a.weekday - b.weekday);
     }
+
+    // Free-text hours phrasing, verbatim. No parsing, no normalization.
+    const hoursNote = cleanString(raw.hoursNote, 160);
+    if (hoursNote) out.hoursNote = hoursNote;
 
     if (Array.isArray(raw.services)) {
       const seen = new Set<string>();

@@ -3607,14 +3607,16 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         var g = r && r.data;
         if(g){
           // A SUGGESTION IS A PROMISE — only offer the ones whose action actually reaches the
-          // page. On a freeform page hours and contact have NO post-build placement path yet
-          // (CLAUDE.md anchor rule: contact only value-swaps a number ALREADY on the page,
-          // hours/logo/area no-op). Offering "Set your hours" / "Add a phone number" would
-          // write the record and leave the page unchanged — the prices-reached-the-record-but
-          // -not-the-page defect. Suppressed until that placement is built (the next task).
-          // Kept: the two whose placement is PROVEN — owner photos, and service descriptions.
+          // page. Hours and contact now HAVE a freeform placement path (the Contact & Hours
+          // block: stated by talking -> extracted -> placed by anchor, inserted when absent,
+          // countable, read back — verified 23/24 on pages built without hours, 2026-08-31).
+          // So "Set your hours" and "Add a phone number" are re-enabled. When the page already
+          // shows a schedule we can't safely anchor, the record still saves and Hubly says so
+          // honestly (the consent-to-replace offer is designed-but-unbuilt — OPEN_FINDINGS #9).
           var needs = [];
           if(!g.own_photos) needs.push({ text:'Add photos of your own work', why:'the site is showing stock photos right now, and your real work is the biggest upgrade', start:'I want to add photos of my own work.' });
+          if(!g.has_hours) needs.push({ text:'Set your hours', why:'so customers know when you’re open before they call', start:'I want to add my opening hours.' });
+          if(!g.has_phone) needs.push({ text:'Add a phone number', why:'it is the fastest way for a customer to reach you', start:'I want to add my phone number.' });
           if(g.services_no_desc > 0) needs.push({ text:'Write descriptions for your services', why:'', start:'Write short descriptions for my services.' });
           if(needs.length){
             hcAppendMessage('hubly', 'A few things would make your page stronger:');

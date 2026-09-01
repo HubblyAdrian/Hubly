@@ -353,6 +353,100 @@ as it falls, rather than assumed to be zero.
 
 ---
 
+## 9. The market corpus cannot verify hours/contact placement — records and pages are disjoint
+
+**Found 2026-08-31, Gate 0 of the hours+contact placement build.** Counts split by
+`account_kind` (the standing denominator rule). Market N=7, test N=133, internal N=3.
+
+**Record-level coverage (non-null):** market phone **3/7**, email **4/7**, hours **0/7**,
+address **0/7**. test phone 69/133, email 10, hours 20, address 1.
+
+**The blocker:** on the 7 market businesses the record and the page are **disjoint** — the
+4 with contact facts have **no freeform page at all**; the 3 with a freeform page have
+**empty records** (no phone/email/hours). There is not a single market business where
+"record has the fact, page is missing it" can be shown, so **the market corpus cannot
+verify this build.** Verification uses the **test** corpus instead: the **9** test pages
+that have hours in the record but not on the page (place-into-existing-page path across
+layouts we didn't author), plus **evergreen** (empty record → set-by-talking end to end).
+
+**Not a services-style extraction gap.** All four facts are already in extraction (phone/
+email as Tier-A patterns, hours/address as required Tier-B schema keys) and all four have
+working writers (`applyExtractedFacts`; test proves the pipeline fires: 69 phones, 20 hours
+on the record). The emptiness is **gathering**, not schema — hours/address are rarely
+volunteered and Hubly never asks. Decision (Adrian, 2026-08-31): the ask is the **post-claim
+Home suggestion**, not a new pre-claim generation question — build the page's acceptance and
+the suppressed "Set your hours" / "Add a phone number" suggestions turn back on.
+
+**Page-side today:** phone is essentially already placed at generation (test: page has the
+phone **57/58** times the record does, via `tel:`→`contact.phone` label). Email/address are
+recorded but the model rarely writes them (mailto 1/114) and there's no insert path. Hours
+have no anchor, no label (the `hours` token was removed 2026-08-22), and no page home at all.
+
+**Update: the "9 pages missing hours" premise was WRONG — all 9 actually show hours
+(2026-08-31).** The per-page scale run (`hubly_contact.ts` `placeContactHoursInFreeform`)
+exposed two things the console-only check had hidden:
+1. **The SQL that found the 9 undercounts.** It looked for `hours…(am|pm|:digit)` and so
+   missed every page whose schedule uses non-time values ("Closed", "Call for hours") or no
+   weekday names at all ("Open daily, 7am to 4pm"). Re-checked with two independent signals
+   (≥3 weekday names OR a short "Hours"/"Schedule" heading), **9 of 9 already display hours.**
+   The corpus genuinely missing hours-with-record is ~0. The build's real value is the insert
+   path for pages with NO hours at all (the common POST-build case, hours arriving via the
+   Home suggestion) plus the dedup that stops duplicates.
+2. **The retro-stamp+rewrite of a model-authored hours list was unsafe and is REMOVED.**
+   First cut retro-stamped an existing hours container and replaced it in place. It failed two
+   ways, both caught by rendering (not console): (a) it swapped the model's *styled* `<ul
+   class="hours">` for a bare `<dl>` outside the block's scoped CSS — an unstyled, misaligned
+   list mid-page, and it could contradict the rest of the page (card "Closed" vs hero "Open");
+   (b) the recognizer's guard let a **footer `<ul>` mixing address + phone + "open daily"**
+   through, and the whole-element replace **destroyed the address and phone** (Tidepool
+   Coffee). The only reliable hours anchor is the one stamped on our OWN inserted block;
+   a model-authored schedule is now left untouched, recorded as a countable `missed`, and
+   (pending) offered a consent-based rebuild. Never a silent rewrite.
+
+**The general pattern — a heuristic that matches ONE encoded form undercounts the fact in
+other forms.** Third instance now: (1) the freeform **anchor count** (services present as a
+heading one build, a `<li><span>` the next — finding #8's "verified on the 1 anchored page of
+116"); (2) the **price scan** (`11/42` "had prices" only counted a `$` in the HTML, missing
+priced services rendered without the symbol); (3) this **hours-schedule detector** (formatted
+times vs "Closed"/"Call for hours"/"open daily"). The rule: when a SQL/regex heuristic reports
+"N pages have/lack X", it is counting a *form*, not the *fact* — state which form, and expect
+the count to move once another form is included. A number about a fact needs the fact's forms
+enumerated, the same way a ratio needs its denominator.
+
+**Right-population verification (2026-08-31).** The insert path's real population is the
+INVERSE of the 9: pages generated with NO hours on record (the prompt forbids printing hours),
+where hours arrive later via the Home suggestion. Re-run on **24 such pages (3 market, 1
+internal, 20 test): 23 clean inserts, 0 leaks, 0 duplicate sections.** The one non-insert
+(market `c003cc48`) is a page where the model **invented a `mon–sun` schedule despite "none on
+record"** (the invented-hours scar) — correctly left alone as a countable miss. Rendered on
+three distinct layouts incl. a dark-theme market page; the block inherits palette/type
+correctly. One robustness fix came out of it: hours dashes are emitted as `&ndash;` entities,
+not raw U+2013, so a page WITHOUT a `<meta charset>` renders "Mon–Fri" instead of mojibake.
+
+### DESIGNED-BUT-UNBUILT: the "hours already shown" offer (do not silently decline)
+
+When the owner sets/changes hours and the page already shows a schedule we can't safely anchor,
+the current behaviour is an honest **`missed`** — we save the hours to the record and say the
+page already shows a schedule. **That decline is safe but not sufficient, and its real severity
+must be named: the page is now displaying hours that are WRONG.** The owner updated their hours,
+we stored them, the site keeps showing the old ones — a customer drives to a closed shop. That
+is worse than absent hours, not a cosmetic gap.
+
+The fix (deferred, not built — needs its own build):
+- **NOT a rebuild.** A full regenerate to change two lines is disproportionate and discards
+  accumulated edits (the destructive-rebuild we retired). 
+- **A confirmed target.** The offer quotes the page back and asks:
+  *"I've saved your hours. Your page currently shows Wed–Sun — Closed. Your hours are now
+  Mon–Fri 7 AM–6 PM. Want me to update that section?"* The owner's **yes** is what converts our
+  guess about which element to touch into a target a human confirmed — the exact guard the
+  recognizer lacked. On the Tidepool footer the quote-back would have read "Astoria, Oregon /
+  Open daily 7am–4pm / 503-555-7781" and been obviously wrong to the owner before anything moved.
+- **Carry the yes with the click-action primitive** (`hcAttachMessageAction`), NEVER natural-
+  language parsing across turns. Consent is the click; no click, no change, and we don't
+  re-offer.
+
+---
+
 ## Also noted 2026-08-28
 
 - **Rebuild read-back is vague.** The "yes, rebuild" reply ("a completely new page is

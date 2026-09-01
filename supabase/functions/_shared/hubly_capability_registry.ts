@@ -64,6 +64,11 @@ import { injectHublyRuntime } from "./hubly_page_runtime.ts";
 import { resolveImages, collapseEmptyImageSlots, pexelsFetcher, type PlacedImageRow } from "./hubly_image_resolver.ts";
 import { annotatePlaceholders } from "./hubly_placeholders.ts";
 import { applyFreeformEdit, humanFreeformSummary, labelInventory, labelsPresent, type LabelEntry } from "./hubly_freeform.ts";
+import {
+  formatPhoneHouse,
+  placeContactHoursInFreeform,
+  type HoursRow,
+} from "./hubly_contact.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
 // Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
 // "Invalid JWT". Both behaviours are load-bearing -- see supabase_admin.ts.
@@ -224,6 +229,7 @@ export type BusinessRecord = {
   photos: { url: string; kind: string; caption?: string | null }[];
   reviews: { customer_name: string | null; service_name: string | null; stars: number | null; quote: string | null }[];
   hours: { day: string | number | null; open: string | null; close: string | null; closed: boolean | null }[];
+  hoursNote: string | null;
   areaCities: string[];
   city: string | null;
   state: string | null;
@@ -231,6 +237,7 @@ export type BusinessRecord = {
   yearsInBusiness: number | null;
   phone: string | null;
   email: string | null;
+  address: string | null;
   logoUrl: string | null;
   businessType: string | null;
   about: string | null;
@@ -307,6 +314,7 @@ export function buildBusinessRecordBlock(rec: BusinessRecord): string {
   } else {
     L.push("OPENING HOURS: none on record. Do not print hours, \"open 7 days\", \"evenings and weekends\" or same-day availability.");
   }
+  if (rec.hoursNote) L.push(`HOURS NOTE (verbatim, state exactly): ${rec.hoursNote}`);
   L.push("");
 
   L.push("CONTACT:");
@@ -711,6 +719,7 @@ export async function applyExtractedFacts(
     address?: string; serviceAreaCities?: string[]; travelRadiusMiles?: number;
     yearsInBusiness?: number;
     hours?: { weekday: number; open: string | null; close: string | null; closed: boolean }[];
+    hoursNote?: string;
   },
   pricedServices?: { name: string; price?: number; description?: string }[],
 ): Promise<ExtractedFactWrite> {
@@ -728,7 +737,7 @@ export async function applyExtractedFacts(
     // field in this list. Verified against the live schema before shipping:
     // a 400 means a bad column, a 401 means the list is fine and RLS stopped
     // the read. See the standing rule in KNOWN_ISSUES.
-    "phone,email,city,state,address,service_area_cities,travel_radius_miles,years_in_business",
+    "phone,email,city,state,address,service_area_cities,travel_radius_miles,years_in_business,hours_note",
   );
 
   const patch: Record<string, unknown> = {};
@@ -743,7 +752,9 @@ export async function applyExtractedFacts(
     changes.add(change);
   };
 
-  fill("phone", "phone", facts.phone, "contact");
+  // Normalize on WRITE, not just on render: the record itself carries house
+  // format 888-888-8888, so nothing downstream has to reformat it.
+  fill("phone", "phone", facts.phone ? formatPhoneHouse(facts.phone) : undefined, "contact");
   fill("email", "email", facts.email, "contact");
   fill("city", "city", facts.city, "area");
   fill("state", "state", facts.state, "area");
@@ -757,6 +768,9 @@ export async function applyExtractedFacts(
   fill("service_area_cities", "serviceAreaCities", facts.serviceAreaCities, "area");
   fill("travel_radius_miles", "travelRadiusMiles", facts.travelRadiusMiles, "area");
   fill("years_in_business", "yearsInBusiness", facts.yearsInBusiness, "contact");
+  // Free-text hours phrasing, verbatim. A change to it is an "hours" change so it
+  // routes through the same freeform placement as the structured rows.
+  fill("hours_note", "hoursNote", facts.hoursNote, "hours");
 
   if (Object.keys(patch).length) {
     const r = await callBusinessRpc("patch_business_in_progress", {
@@ -854,7 +868,7 @@ async function loadBusinessRecord(businessId: string): Promise<BusinessRecord> {
   // useful negative constraint for the prompt, so reading them bought nothing
   // and cost two queries on every generation.
   const [biz, services, portfolio, reviews, hours] = await Promise.all([
-    selectOne("businesses", "id", businessId, "city,state,phone,email,logo_url,business_type,about,tagline,service_area_cities,travel_radius_miles,years_in_business"),
+    selectOne("businesses", "id", businessId, "city,state,phone,email,address,logo_url,business_type,about,tagline,service_area_cities,travel_radius_miles,years_in_business,hours_note"),
     selectMany("services", "business_id", businessId, "name,price,description,duration_hours,includes,is_popular", "sort_order.asc"),
     selectMany("portfolio_photos", "business_id", businessId, "url", "sort_order.asc"),
     selectMany("review_submissions", "business_id", businessId, "customer_name,service_name,stars,quote,status"),
@@ -874,6 +888,7 @@ async function loadBusinessRecord(businessId: string): Promise<BusinessRecord> {
     // that must never reach a public page.
     reviews: reviews.filter((r: any) => r?.status === "approved").map((r: any) => ({ customer_name: r.customer_name ?? null, service_name: r.service_name ?? null, stars: r.stars ?? null, quote: r.quote ?? null })),
     hours: Array.isArray(hours) ? hours : [],
+    hoursNote: biz?.hours_note ?? null,
     areaCities,
     city: biz?.city ?? null,
     state: biz?.state ?? null,
@@ -881,6 +896,7 @@ async function loadBusinessRecord(businessId: string): Promise<BusinessRecord> {
     yearsInBusiness: biz?.years_in_business ?? null,
     phone: biz?.phone ?? null,
     email: biz?.email ?? null,
+    address: biz?.address ?? null,
     logoUrl: biz?.logo_url ?? null,
     businessType: biz?.business_type ?? null,
     about: biz?.about ?? null,
@@ -1947,6 +1963,14 @@ export async function generateFreeformPage(
     .map((s: any) => String(s?.name || "").trim()).filter(Boolean);
   const svcMarked = markServiceAnchorsInFreeform(named, svcNames);
   if (svcMarked.marked > 0) console.log(`freeform [${businessId}] anchored ${svcMarked.marked} service name(s) for price patching`);
+  // NO hours-anchor pass here. Recognizing the model's hours by markup shape —
+  // at generation OR later — misfires (it stamped a footer list mixing address +
+  // phone + "open daily", then a rewrite destroyed the address) and, even when it
+  // hits, swaps the model's designed list for an unstyled default and can leave the
+  // page self-contradictory (card says Closed, hero says Open). The ONLY reliable
+  // hours anchor is the one we stamp on OUR OWN inserted block (placeContactHours-
+  // InFreeform). A model-authored schedule is handled by consent, never a silent
+  // rewrite. See the 2026-08-31 update-path finding in OPEN_FINDINGS.
   // THE svh-COMPANION PASS. The prompt asks full-height sections to pair vh with
   // svh so they don't jump with the mobile address bar; ~10% of pages ship a bare
   // vh anyway. This adds the missing companion deterministically. Runs BEFORE the
@@ -3047,6 +3071,105 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
     try { const plan = await planFreeformRegeneration(draftId); lostEdits = plan.lost.length; } catch { /* best-effort */ }
   }
   return { status: r.status, placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, lostEdits, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, leakedAttrText: r.leakedAttrText, changed: r.changed };
+}
+
+export type ContactHoursResult = {
+  status: "patched" | "not_applicable" | "not_freeform" | "failed";
+  inserted: string[];
+  updated: string[];
+  alreadyPresent: string[];
+  missed: string[];
+  leaked: number;
+  detail: string;
+};
+
+/** Place hours + contact on a freeform page, record-driven. Runs SYNCHRONOUSLY
+ *  (like applyServicesToFreeform) so the turn can read back exactly what landed.
+ *  Two passes, one save: (1) value-swap the contact facts already on the page to
+ *  their current record value — so a changed phone updates the hero, footer and
+ *  block together (applyFreeformEdit's whole-page value sweep); (2) place the
+ *  block / hours anchor for anything not yet on the page. Undoable like every
+ *  edit: it writes a new version through create_business_document (created_by
+ *  'patch'), so restore_prev_business_document reverses it. */
+export async function applyContactHoursToFreeform(draftId: string, draftToken: string): Promise<ContactHoursResult> {
+  const empty = (status: ContactHoursResult["status"], detail = ""): ContactHoursResult =>
+    ({ status, inserted: [], updated: [], alreadyPresent: [], missed: [], leaked: 0, detail });
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest) return empty("not_applicable", "no_document");
+  if (latest.format !== "html") return empty("not_freeform", latest.format);
+
+  const biz = await selectOne("businesses", "id", draftId, "phone,email,address,city,state,hours_note,brand_color");
+  if (!biz) return empty("failed", "no_business_row");
+  const hoursRowsRaw = await selectMany("settings_business_hours", "business_id", draftId, "weekday,open_time,close_time,closed");
+  const hoursRows: HoursRow[] = (Array.isArray(hoursRowsRaw) ? hoursRowsRaw : []).map((h: any) => ({
+    weekday: Number(h?.weekday),
+    open: h?.open_time ?? null,
+    close: h?.close_time ?? null,
+    closed: h?.closed === true,
+  }));
+  const address = [biz.address, [biz.city, biz.state].filter(Boolean).join(", ")].filter(Boolean).join(", ") || null;
+
+  let html = latest.renderedHtml;
+  // Pass 1: keep contact facts already on the page in sync with the record.
+  for (const [label, value] of [["contact.phone", biz.phone ? formatPhoneHouse(String(biz.phone)) : null], ["contact.email", biz.email || null], ["contact.address", address]] as const) {
+    if (!value) continue;
+    const r = applyFreeformEdit(html, { label, text: String(value) });
+    if (r.ok) html = r.html;
+  }
+  // Pass 2: insert the block / anchor for anything not yet present, update hours.
+  const p = placeContactHoursInFreeform(html, {
+    hoursRows, hoursNote: biz.hours_note || null,
+    phone: biz.phone || null, email: biz.email || null, address,
+    accent: (biz.brand_color as string) || null,
+  });
+  html = p.html;
+
+  const result: ContactHoursResult = {
+    status: "not_applicable",
+    inserted: p.inserted, updated: p.updated, alreadyPresent: p.alreadyPresent, missed: p.missed, leaked: p.leaked,
+    detail: [
+      `via=${p.via}`,
+      p.inserted.length ? `inserted=${p.inserted.join(",")}` : "",
+      p.updated.length ? `updated=${p.updated.join(",")}` : "",
+      p.alreadyPresent.length ? `present=${p.alreadyPresent.join(",")}` : "",
+      p.missed.length ? `missed=${p.missed.join(",")}` : "",
+      p.leaked ? `LEAKED_ATTR_TEXT=${p.leaked}` : "",
+    ].filter(Boolean).join("; "),
+  };
+
+  if (html !== latest.renderedHtml) {
+    const saved = await callBusinessRpc("create_business_document", {
+      p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
+      p_document: latest.brief, p_rendered_html: html, p_created_by: "patch", p_format: "html",
+    });
+    result.status = (saved && saved.ok === true) ? "patched" : "failed";
+    if (result.status === "failed") result.detail += "; save_failed";
+  }
+  if (p.leaked > 0) console.error(`contact/hours placement [${draftId}] LEAKED ${p.leaked} data-hubly- marker(s) into visible text`);
+  return result;
+}
+
+/** The owner-facing read-back — names what ACTUALLY happened per fact, never a
+ *  vague "contact info updated". "put your hours on the page" only if they landed;
+ *  "no phone on file" when there was nothing to place. */
+export function composeContactHoursTruth(r: ContactHoursResult): string {
+  if (r.status === "not_freeform" || r.status === "not_applicable") return "";
+  const human: Record<string, string> = {
+    hours: "your hours", "hours note": "your hours note", phone: "your phone number",
+    email: "your email", address: "your address",
+  };
+  const say = (keys: string[]) => keys.map((k) => human[k] || k).join(", ").replace(/, ([^,]*)$/, " and $1");
+  if (r.status === "failed") return "I saved your details, but I couldn't get them onto the page just now — they're on your record and I'll place them on the next change.";
+  const landed = [...r.inserted, ...r.updated];
+  // Hours we saved but didn't place because the page already shows a schedule.
+  // Honest, never a duplicate; say so plainly rather than a false "on your page".
+  const missedNote = r.missed.includes("hours")
+    ? "I've saved your hours; your page already shows a schedule, so I left it as is rather than add a second one."
+    : "";
+  if (!landed.length) return missedNote;
+  const verb = r.inserted.length && !r.updated.length ? "added" : "updated";
+  const main = `Done — I ${verb} ${say(landed)} on your page, in the Hours & Contact section at the foot of the page.`;
+  return missedNote ? `${main} ${missedNote}` : main;
 }
 
 export async function uploadDraftHeroImage(
