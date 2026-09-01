@@ -2839,6 +2839,22 @@ function countLeakedAttrText(html: string): number {
   while ((m = re.exec(body))) { if (/data-hubly-[a-z-]+\s*=/i.test(m[1])) n++; }
   return n;
 }
+/** EDITOR CHROME MUST NEVER REACH THE SAVED PAGE. The +, outlines and overlays the
+ *  editor injects into the live iframe carry data-hc-editor and are removed on
+ *  close; saves are server-side transforms of the stored HTML, so structurally
+ *  they can't be here. This is the belt to that structural guarantee (same class
+ *  as countLeakedAttrText): strip any data-hc-editor element from HTML about to be
+ *  saved, and shout if one was present — a customer must never see edit chrome. */
+function stripEditorChrome(html: string, where: string): string {
+  if (!/data-hc-editor\b/i.test(html)) return html;
+  console.error(`stripEditorChrome [${where}]: editor chrome reached a SAVE — stripped it (should be impossible; saves are server-side)`);
+  // Remove whole elements carrying data-hc-editor (self-closing or paired), then
+  // any stray bare attribute.
+  return html
+    .replace(/<([a-z0-9]+)\b[^>]*\bdata-hc-editor\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+    .replace(/<[a-z0-9]+\b[^>]*\bdata-hc-editor\b[^>]*\/?>/gi, "")
+    .replace(/\s+data-hc-editor(="[^"]*")?/gi, "");
+}
 /** Add display:none to the data-hubly-desc element (merging any existing style). */
 function hideDescElement(html: string): string {
   return html.replace(/<([a-z0-9]+)\b([^>]*\bdata-hubly-desc="[^"]*"[^>]*)>/i, (_m, tag, attrs) =>
@@ -3089,7 +3105,7 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
   if (r.changed && r.html) {
     const saved = await callBusinessRpc("create_business_document", {
       p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
-      p_document: latest.brief, p_rendered_html: r.html, p_created_by: "patch", p_format: "html",
+      p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "services"), p_created_by: "patch", p_format: "html",
       p_owner_id: ownerUid || null,
     });
     if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, leakedAttrText: r.leakedAttrText, detail: "save" };
@@ -3171,7 +3187,7 @@ export async function applyContactHoursToFreeform(draftId: string, draftToken: s
   if (html !== latest.renderedHtml) {
     const saved = await callBusinessRpc("create_business_document", {
       p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
-      p_document: latest.brief, p_rendered_html: html, p_created_by: "patch", p_format: "html",
+      p_document: latest.brief, p_rendered_html: stripEditorChrome(html, "contact-hours"), p_created_by: "patch", p_format: "html",
       p_owner_id: ownerUid || null,
     });
     result.status = (saved && saved.ok === true) ? "patched" : "failed";
@@ -3264,7 +3280,7 @@ async function removeServiceCard(draftId: string, draftToken: string, ownerUid: 
   const out = latest.renderedHtml.slice(0, bounds.start) + latest.renderedHtml.slice(bounds.end);
   const saved = await callBusinessRpc("create_business_document", {
     p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
-    p_document: latest.brief, p_rendered_html: out, p_created_by: "patch", p_format: "html",
+    p_document: latest.brief, p_rendered_html: stripEditorChrome(out, "remove-service"), p_created_by: "patch", p_format: "html",
     p_owner_id: ownerUid || null,
   });
   return !!(saved && saved.ok === true);
