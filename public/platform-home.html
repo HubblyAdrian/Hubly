@@ -1482,7 +1482,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
           '<button type="button" data-hc-device="desktop">Desktop</button>' +
           '<button type="button" data-hc-device="mobile">Mobile</button>' +
         '</div>' +
-        '<button type="button" id="hcManageBtn" onclick="hcOpenManage()" title="Add or edit services, hours and contact yourself">&#9998; Edit details</button>' +
+        '<button type="button" id="hcManageBtn" title="Add or edit services, hours and contact yourself">&#9998; Edit details</button>' +
       '</div>' +
       '<div class="hc-canvas-frame-wrap" id="hcCanvasFrameWrap">' +
         '<div class="hc-canvas-loading" id="hcCanvasLoading"><span class="hc-live-dot"></span>&nbsp;Loading your site…</div>' +
@@ -1524,6 +1524,11 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       hc.previewDevice = btn.getAttribute('data-hc-device');
       hcApplyPreviewFit();
     });
+    // Wired here, not via inline onclick — the whole app is an IIFE, so
+    // hcOpenManage isn't global and onclick="hcOpenManage()" throws
+    // "not defined" (it compiled and deployed clean and did nothing on click).
+    var mng = document.getElementById('hcManageBtn');
+    if(mng) mng.addEventListener('click', hcOpenManage);
   }
 
   // THE PREVIEW IS A REAL DEVICE, SCALED TO FIT.
