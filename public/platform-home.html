@@ -3606,10 +3606,15 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         var r = await c.rpc('get_my_site_gaps', { p_business_id: biz.id });
         var g = r && r.data;
         if(g){
+          // A SUGGESTION IS A PROMISE — only offer the ones whose action actually reaches the
+          // page. On a freeform page hours and contact have NO post-build placement path yet
+          // (CLAUDE.md anchor rule: contact only value-swaps a number ALREADY on the page,
+          // hours/logo/area no-op). Offering "Set your hours" / "Add a phone number" would
+          // write the record and leave the page unchanged — the prices-reached-the-record-but
+          // -not-the-page defect. Suppressed until that placement is built (the next task).
+          // Kept: the two whose placement is PROVEN — owner photos, and service descriptions.
           var needs = [];
           if(!g.own_photos) needs.push({ text:'Add photos of your own work', why:'the site is showing stock photos right now, and your real work is the biggest upgrade', start:'I want to add photos of my own work.' });
-          if(!g.has_hours) needs.push({ text:'Set your hours', why:'', start:'Let’s set my business hours.' });
-          if(!g.has_phone) needs.push({ text:'Add a phone number', why:'there’s no way for a customer to call you', start:'Add my phone number to the site.' });
           if(g.services_no_desc > 0) needs.push({ text:'Write descriptions for your services', why:'', start:'Write short descriptions for my services.' });
           if(needs.length){
             hcAppendMessage('hubly', 'A few things would make your page stronger:');
