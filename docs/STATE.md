@@ -20,14 +20,23 @@ if it disagrees with memory, this wins.
   are zero everywhere). Only proven-placement suggestions are offered (photos, descriptions).
 - **Services extraction + freeform placement**: model-pass extraction, anchor-stamp at build,
   retroactive patch-time stamp, insert-by-clone, labelling of card grids as items. Verified.
+- **Hours + contact freeform placement (the Contact & Hours block)**: hours, phone, email,
+  address placed post-build via an anchor on our OWN inserted block — inserted when absent,
+  updated in place after, deduped by one normalization key per fact, free-text `hours_note`
+  captured verbatim, countable, read back per fact. NO re-recognition of a model-authored
+  hours list (it clobbered a footer + stripped styling — removed). Verified 23/24 on the right
+  corpus (pages built without hours), light + dark layouts. `hubly_contact.ts`. The two Home
+  suggestions ("Set your hours", "Add a phone number") are re-enabled.
 - **Stripe Connect Express** (onboard/webhook/fee=0) exists with a door in Settings, but is
   **deprioritized** and **never proven end-to-end** (0 paid bookings ever; test cycle owed).
 
 ## Pending, in order
 
-1. **Hours + contact freeform placement (NEXT).** They have no post-build path today, so the
-   Home "Set your hours" / "Add a phone number" suggestions are suppressed. Build on the anchor
-   pattern (below), then re-enable those suggestions.
+1. **The "hours already shown" consent offer (designed-but-unbuilt).** When an owner sets hours
+   and the page already shows a schedule we can't safely anchor, we save + honestly decline
+   today — but the page is then displaying WRONG hours (a customer drives to a closed shop).
+   The fix is a confirmed-target offer (quote the page back, "want me to update that section?",
+   carry the yes with the click-action primitive), NOT a rebuild. Spec in OPEN_FINDINGS #9.
 2. **Mobile shell.** The rail/modes are desktop; the phone keeps the old Chat/Site toggle.
    Claude Code cannot verify mobile — needs a real phone.
 3. **Storefront** (the third mode; must reuse the generator/chat/claim/shell, not fork).
