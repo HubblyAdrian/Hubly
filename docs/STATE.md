@@ -90,15 +90,22 @@ person must be able to write themselves. Covers: services (add/edit/remove — n
 description); phone/email/address; hours (day grid + the free-text note).
 - **Reusable / already built:** the owner-authorised writers (proven tonight); `authGetClient`/
   `hcAccessToken`; the Settings popout (`hcOpenSettings`); `get_my_site_gaps`/`get_my_businesses`.
-- **Key decision — the write path.** The RPCs are now `service_role`-only (browser can't call
-  them). So a form should write via **direct authenticated PostgREST under the owner RLS
-  policies** (`businesses` UPDATE and `settings_business_hours` `for all` both EXIST;
-  **`services` needs an owner write policy — the one genuine gap**, same shape). A form field IS
-  the current input, so grounding does not apply (no history-lift risk). Alternatively route
-  through a small owner-verified edge endpoint reusing the RPCs — heavier.
-- **Genuinely new:** the form UI (inputs + a 7-row hours grid) and, for services, one RLS policy.
-- **Smallest version:** a Settings panel (or a Website-mode panel) with services + contact + hours,
-  writing via authenticated PostgREST. That alone makes the AI optional.
+- **Key decision — the write path (CONFIRMED on the live DB 2026-09-01).** The RPCs are
+  `service_role`-only (browser can't call them). The form writes via **direct authenticated
+  PostgREST under owner RLS** — and ALL THREE tables already have the policies (earlier
+  "services needs a policy" was WRONG): `businesses` "Owners can update their own business"
+  (`owner_id=auth.uid()`); `settings_business_hours` `settings_business_hours_owner_all`;
+  `services` "owner can manage services" (`owns_business(business_id)` = `exists(… owner_id=
+  auth.uid())`). RLS enabled on all three. **No migration needed.** A form field IS the current
+  input, so grounding does not apply. Because services has PER-ROW owner RLS, the form writes a
+  SINGLE service row (insert/update/delete) directly — never the replace-all RPC — so it can't
+  orphan other services' photos.
+- **Where it lives:** a panel in **Website mode** (the site-canvas context), NOT Settings — an
+  existing deliberate decision keeps business facts out of Settings (`platform-home.html:3683`),
+  it sits where you notice the problem, and it writes the same canonical record the chat does
+  (no "second source").
+- **Genuinely new:** the panel UI (inputs + a 7-row hours grid) and the per-row authenticated
+  writes. Nothing at the DB layer.
 
 **B. Real editing controls** ("elite, like the best website editors"). Today click-to-edit changes
 TEXT only (`applyDirectFreeformEdit` via `data-hc`), plus color/font swatches already in the editor
