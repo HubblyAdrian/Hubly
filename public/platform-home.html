@@ -3495,13 +3495,12 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     hc.mode = 'home';
     try{ hcReflectAuthState(); }catch(e){}
     hcRenderRail();
-    hcMaybeShowArrival(hc.draftBusiness);
-    // Restore the stored conversation. Only if there is none do we fall back to
-    // the generic welcome line — the real thread IS the welcome back.
-    // (The 900ms retry was reverted: it timed around a race we had not named. See the
-    // trace below, which names the cause on the next real claim instead of guessing.)
-    hcLoadConversation().then(function(restored){
-      if(!restored) hcAppendMessage('hubly', 'Welcome back — this is ' + (biz.name || 'your site') + '. Pick up wherever you like.');
+    // Load the model CONTEXT silently, then open Home CALM — a greeting and what's worth
+    // doing, not the tail of the last conversation dumped into their face. The first time
+    // on this device the arrival ("your site is live") IS home; after that, hcRenderHome.
+    hcLoadConversation(true).then(function(){
+      if(hcArrivalSeen(hc.draftBusiness && hc.draftBusiness.id)) hcRenderHome();
+      else hcMaybeShowArrival(hc.draftBusiness);
     });
   }
 
@@ -3579,6 +3578,62 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       try{ if(hc.draftClaimed && hcIsAuthed()) hcTellPreviewAuthed(); }catch(e){}
     }
     try{ hcThreadScrollToEnd(); }catch(e){}
+  }
+  // HOME, CALM. Not the tail of the old transcript — a short greeting, what's worth doing,
+  // and the input ready; the full thread is reachable, not dumped. Home is Hubly speaking.
+  // The "what your site needs" recap is real gaps from get_my_site_gaps (empty record
+  // fields), the lever that exists before any demand. Suggestions are EARNED by state (each
+  // shown only while its gap is open) and their action RUNS — clicking one starts the real
+  // conversational task. When there are no gaps, Home says nothing more: silence is a feature.
+  // (Deliberately NO activity recap — bookings/customers/revenue are zero for every business.)
+  async function hcRenderHome(){
+    var thread = hcThreadBody(); if(!thread) return;
+    thread.innerHTML = '';
+    var biz = hc.draftBusiness || {};
+    hcAppendMessage('hubly', 'Welcome back — this is ' + (biz.name || 'your site') + '. What would you like to do?');
+    // The old conversation stays REACHABLE, not in their face.
+    if(hc.messages && hc.messages.length){
+      var seeWrap = document.createElement('div'); seeWrap.className = 'hc-msg hubly hc-arrival-actions';
+      var seeBtn = document.createElement('button'); seeBtn.type = 'button'; seeBtn.className = 'hc-arrival-act';
+      seeBtn.textContent = 'See earlier conversation';
+      seeBtn.addEventListener('click', function(){ try{ seeWrap.remove(); }catch(_){} hcRenderTranscript(); });
+      seeWrap.appendChild(seeBtn); thread.appendChild(seeWrap);
+    }
+    // What the site still needs — real empty fields only. Never invents a line.
+    try{
+      if(biz.id && hc.draftClaimed){
+        var c = await authGetClient();
+        var r = await c.rpc('get_my_site_gaps', { p_business_id: biz.id });
+        var g = r && r.data;
+        if(g){
+          var needs = [];
+          if(!g.own_photos) needs.push({ text:'Add photos of your own work', why:'the site is showing stock photos right now, and your real work is the biggest upgrade', start:'I want to add photos of my own work.' });
+          if(!g.has_hours) needs.push({ text:'Set your hours', why:'', start:'Let’s set my business hours.' });
+          if(!g.has_phone) needs.push({ text:'Add a phone number', why:'there’s no way for a customer to call you', start:'Add my phone number to the site.' });
+          if(g.services_no_desc > 0) needs.push({ text:'Write descriptions for your services', why:'', start:'Write short descriptions for my services.' });
+          if(needs.length){
+            hcAppendMessage('hubly', 'A few things would make your page stronger:');
+            needs.forEach(function(n){
+              var m = hcAppendMessage('hubly', '• ' + n.text + (n.why ? (' — ' + n.why + '.') : ''));
+              hcAttachMessageAction(m, n.text, function(){ var inp = document.getElementById('hcInput'); if(inp){ inp.value = n.start; hcSend(inp); } });
+            });
+          }
+          // No gaps -> say nothing more. Silence is a feature.
+        }
+      }
+    }catch(e){}
+    hcThreadScrollToEnd();
+  }
+  // The full thread, on demand (from the silently-loaded context) — reachable, not dumped.
+  function hcRenderTranscript(){
+    var thread = hcThreadBody(); if(!thread || !hc.messages) return;
+    hc.messages.forEach(function(m){
+      var txt = (typeof hcMessageToText === 'function') ? hcMessageToText(m.content) : (typeof m.content === 'string' ? m.content : '');
+      if(!txt) return;
+      if(hc.draftClaimed && m.role !== 'user' && typeof hcIsPreAccountMsg === 'function' && hcIsPreAccountMsg(txt)) return;
+      hcAppendMessage(m.role === 'user' ? 'user' : 'hubly', txt);
+    });
+    hcThreadScrollToEnd();
   }
   // Settings: a POPOUT off the gear, never a tab. Reuses the account menu (sign out)
   // and names the account, so the gear is a real door, not decoration.
@@ -3731,7 +3786,9 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // Build narration was never persisted, so there is none to scroll past. Seeds
   // hc.messages so the next turn's model call carries the prior context. Returns
   // true if it rendered anything.
-  async function hcLoadConversation(){
+  // silent:true loads the model CONTEXT (hc.messages) without rendering the transcript to
+  // the DOM — Home opens calm (greeting + recap), the old scroll stays reachable, not dumped.
+  async function hcLoadConversation(silent){
     var d = hc.draftBusiness;
     if(!d || !d.id) return false;
     var rows = null;
@@ -3762,6 +3819,9 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     // Seed model context with the clean restored transcript (the edge slices it
     // to MAX_HISTORY next turn). Cleaner than the polluted in-memory history.
     hc.messages = rows.map(function(m){ return { role: m.role, content: m.content }; });
+    // Context loaded; Home wants it silent so it can open on a calm greeting instead of the
+    // tail of the last conversation. hcRenderHome exposes the full thread on demand.
+    if(silent) return true;
     for(var i = 0; i < rows.length; i++){
       var txt = hcMessageToText(rows[i].content);
       // TRANSCRIPT-SIDE SUPERSEDE: once the business is claimed, the pre-account
