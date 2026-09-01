@@ -73,6 +73,16 @@ claimed, owner `adriansmithee+evergreen@gmail.com`) is the claimed-owner test bu
    (`body`/`:root`/dominant heading) at insert time and writes them EXPLICITLY, instead of `inherit`.
 6. **Heading fix — CONFIRMED FIXED LIVE** (evergreen block reads "Hours & Contact").
 
+## First, once oriented — amend CLAUDE.md (Adrian, 2026-09-01)
+
+Before Build A, add the actual lesson of the claimed-owner run as a rule: **verify by using
+it, AS THE OWNER, ON THE REAL THING.** Every test that night was green on a *draft*; the bugs
+(a week of claimed owners unable to edit by talking; a value the system filled in that nobody
+gave it; a filter that would have deleted five live services) all lived on the other side of a
+door nobody had walked through. This sharpens the existing "verify by using it" agreement with
+the draft-vs-claimed blind spot that hid them. Build A (the manual form) is the same principle
+in another form: if the AI route fails, a person needs a way in.
+
 ## The two builds, in order (report done; Build A first)
 
 **A. Manual form — make the AI optional.** The rule: every fact the assistant can write, a
