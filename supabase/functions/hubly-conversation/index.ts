@@ -65,7 +65,7 @@ import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
 import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
 import { reportAllowlistDrops } from "../_shared/hubly_allowlist.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -1231,6 +1231,14 @@ Deno.serve(async (req) => {
           mediaType: String(body.directFreeformImageEdit.mediaType || "image/png"),
         }
       : null;
+  // The MANUAL FORM edit — a signed-in owner changing a fact through a form, not
+  // the assistant. Owner-verified, no model; runs the same placement + version as
+  // the chat path (see applyOwnerRecordEdit).
+  const directRecordEdit: OwnerRecordEdit | null =
+    body?.directRecordEdit && typeof body.directRecordEdit === "object" &&
+    typeof body.directRecordEdit.kind === "string"
+      ? (body.directRecordEdit as OwnerRecordEdit)
+      : null;
 
   // An authenticated owner editing a CLAIMED business is authorised by OWNERSHIP,
   // not by the draft token — which create_business_document no longer accepts once
@@ -1252,6 +1260,21 @@ Deno.serve(async (req) => {
     } catch {
       return null;
     }
+  }
+
+  if (directRecordEdit) {
+    if (!draftBusiness) return jsonRes({ ok: false, error: "no_business" }, 400);
+    const ownerUid = await getOwnerUid();
+    if (!ownerUid) return jsonRes({ ok: false, error: "not_signed_in", reply: "You need to be signed in to edit this." }, 401);
+    const result = await applyOwnerRecordEdit(draftBusiness.id, draftBusiness.draftToken, ownerUid, directRecordEdit);
+    return jsonRes({
+      ok: result.ok,
+      reply: result.summary || "",
+      messages: incoming,
+      actions: [{ capability: "business", capabilityAction: "recordEdit", args: {}, ok: !!result.ok, real: !!result.real }],
+      interimMessages: [],
+      ...(result.error ? { error: result.error } : {}),
+    });
   }
 
   if (directEdit || directImageEdit || directDocumentPatch || directDocumentImageEdit || directFreeformEdit || directFreeformImageEdit) {

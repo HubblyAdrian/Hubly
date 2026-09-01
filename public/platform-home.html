@@ -361,6 +361,34 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
 .hc-set-pill{font-size:11px;font-weight:800;letter-spacing:.03em;padding:3px 9px;border-radius:999px}
 .hc-set-pill.on{color:#0f7a4d;background:rgba(16,122,77,.12)}
 .hc-set-pill.off{color:#8a8f98;background:rgba(0,0,0,.06)}
+/* Manual-form panel — reuses .hc-set-* chrome; these are its inputs/rows/buttons. */
+.hc-mng-status{padding:6px 22px;font-size:12.5px;font-weight:700;min-height:18px}
+.hc-mng-l{display:block;font-size:12px;color:var(--ink-500,#6b7280);font-weight:700;margin:8px 0 2px}
+.hc-mng-in{display:block;width:100%;box-sizing:border-box;margin-top:3px;font:inherit;font-size:14px;color:var(--ink,#111);
+  background:var(--bg,#fff);border:1px solid var(--line,#e5e7eb);border-radius:9px;padding:8px 10px;min-height:38px}
+.hc-mng-in:focus{outline:0;border-color:var(--brand-600,#D9632D)}
+.hc-mng-in[disabled]{opacity:.5}
+.hc-mng-btn{border:1px solid var(--line,#e5e7eb);background:var(--bg,#fff);color:var(--brand-700,#8a3f1c);font:inherit;font-size:13px;font-weight:700;
+  padding:8px 14px;border-radius:10px;cursor:pointer;min-height:38px;margin-top:8px}
+.hc-mng-btn:hover{border-color:var(--brand-600,#D9632D)}
+.hc-mng-btn.danger{color:#b23b3b}
+.hc-mng-btn[disabled]{opacity:.55;cursor:default}
+.hc-mng-svc{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.hc-mng-svc .hc-mng-in{margin-top:0;flex:1 1 120px;min-width:0}
+.hc-mng-svc .hc-mng-btn{margin-top:0}
+.hc-mng-day{display:flex;gap:8px;align-items:center;margin-top:6px}
+.hc-mng-dn{width:34px;font-size:12px;font-weight:800;color:var(--ink-500,#6b7280)}
+.hc-mng-day .hc-mng-in{margin-top:0;flex:1 1 auto;min-width:0}
+.hc-mng-to{font-size:12px;color:var(--ink-500,#6b7280)}
+.hc-mng-cl{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--ink-500,#6b7280);white-space:nowrap}
+/* The trigger — visible only in Website mode, on the canvas, where you notice a problem. */
+#hcCanvasPane{position:relative}
+#hcManageBtn{display:none}
+.hc-app.hc-claimed[data-mode="website"] #hcManageBtn{display:inline-flex;position:absolute;z-index:40;top:14px;right:16px;align-items:center;gap:6px;
+  border:1px solid var(--line,#e5e7eb);background:var(--bg,#fff);color:var(--brand-700,#8a3f1c);font:inherit;font-size:13px;font-weight:700;
+  padding:7px 13px;border-radius:999px;cursor:pointer;box-shadow:0 6px 18px -8px rgba(0,0,0,.3)}
+#hcManageBtn:hover{border-color:var(--brand-600,#D9632D)}
+@media (max-width:520px){ .hc-mng-svc .hc-mng-in{flex-basis:100%} .hc-mng-day{flex-wrap:wrap} }
 /* THE GUTTER IS STRUCTURAL. The rail-clipping bug — every line losing its first
    character — is a whole-block leftward shift under a clip, and it survived every
    attempt to find the cause. So it's made IMPOSSIBLE by construction rather than
@@ -1013,6 +1041,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     <!-- Lives OUTSIDE #hcCanvas so it survives the innerHTML writes of all five
          view renderers. A back control inside the view it is meant to escape
          would be wiped by the next one. -->
+    <button type="button" id="hcManageBtn" onclick="hcOpenManage()" title="Edit services, hours and contact yourself">&#9998; Edit details</button>
     <div class="hc-canvas-bar" id="hcCanvasBar" hidden></div>
     <div class="hc-canvas-body" id="hcCanvas"></div>
   </div>
@@ -2444,6 +2473,9 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       .then(function(data){
         if(typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
         hc.busy = false;
+        // Condition 3: if the manual-form panel is open when an assistant action
+        // changes the record, re-read so it never shows stale data or overwrites.
+        try{ if(document.getElementById('hcMngOv') && data && data.ok){ hcReadRecord().then(function(){ hcRenderManageBody(); }).catch(function(){}); } }catch(e){}
         if(!data || data.ok !== true){
           // "Try again in a moment" is the wrong thing to say when trying again
           // cannot possibly work. A rejected key or an exhausted account is our
@@ -3752,6 +3784,151 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         cb.disabled = false; cb.textContent = 'Connect Stripe';
       });
     }
+  }
+  // ── MANUAL FORM — edit services / contact / hours WITHOUT the assistant ───────
+  // Every fact the assistant can write, a person can write here. Reads via
+  // authenticated PostgREST (owner RLS); a save goes to the SAME server placement
+  // path the chat uses (directRecordEdit -> applyOwnerRecordEdit), so it reaches
+  // the PAGE and is undoable — never just the record. Re-reads on open and after
+  // any assistant action so the panel and the chat never disagree.
+  var HC_DAYS = [['Mon',1],['Tue',2],['Wed',3],['Thu',4],['Fri',5],['Sat',6],['Sun',0]];
+  var hcManage = { services: [], contact: {}, hours: {}, note: '' };
+  function hcEscA(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  async function hcReadRecord(){
+    var id = hc.draftBusiness && hc.draftBusiness.id; if(!id) return;
+    var c = await authGetClient();
+    var svc = await c.from('services').select('id,name,price,description,sort_order').eq('business_id', id).order('sort_order',{ascending:true});
+    var biz = await c.from('businesses').select('phone,email,address,hours_note').eq('id', id).maybeSingle();
+    var hrs = await c.from('settings_business_hours').select('weekday,open_time,close_time,closed').eq('business_id', id);
+    hcManage.services = (svc && svc.data) || [];
+    hcManage.contact = (biz && biz.data) || {};
+    hcManage.note = (biz && biz.data && biz.data.hours_note) || '';
+    hcManage.hours = {}; ((hrs && hrs.data) || []).forEach(function(r){ hcManage.hours[r.weekday] = r; });
+  }
+  async function hcRecordEdit(edit){
+    var at = hcAccessToken();
+    if(!at) return { ok:false, reply:'You need to be signed in to edit this.' };
+    var res = await fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
+      method:'POST',
+      headers:{ 'content-type':'application/json', apikey: SUPA_ANON_KEY, authorization:'Bearer ' + at },
+      body: JSON.stringify({ messages: [], understanding: {}, draftBusiness: hc.draftBusiness, directRecordEdit: edit })
+    });
+    return await res.json().catch(function(){ return { ok:false, reply:'That didn’t go through — try again.' }; });
+  }
+  function hcManageStatus(msg, ok){
+    var s = document.getElementById('hcMngStatus'); if(!s) return;
+    s.textContent = msg || ''; s.style.color = ok ? '#1b7f3b' : '#b23';
+  }
+  // A save landed on the record + page: reflect it on the live canvas and re-read.
+  async function hcAfterRecordEdit(r){
+    hcManageStatus((r && r.reply) || (r && r.ok ? 'Saved.' : 'That didn’t save.'), !!(r && r.ok));
+    if(r && r.ok){ try{ hcRefreshCanvasFrame(); }catch(e){} try{ await hcReadRecord(); hcRenderManageBody(); }catch(e){} }
+  }
+  function hcTimeVal(t){ return t ? String(t).slice(0,5) : ''; }
+  function hcRenderManageBody(){
+    var body = document.getElementById('hcMngBody'); if(!body) return;
+    var ct = hcManage.contact || {};
+    var svcRows = (hcManage.services||[]).map(function(s){
+      return '<div class="hc-mng-svc" data-id="'+hcEscA(s.id)+'" data-prev="'+hcEscA(s.name)+'">'+
+        '<input class="hc-mng-in mng-sn" value="'+hcEscA(s.name)+'" placeholder="Service name">'+
+        '<input class="hc-mng-in mng-sp" value="'+hcEscA(s.price!=null?s.price:'')+'" placeholder="Price" inputmode="decimal" style="max-width:88px">'+
+        '<input class="hc-mng-in mng-sd" value="'+hcEscA(s.description||'')+'" placeholder="Short description">'+
+        '<button type="button" class="hc-mng-btn mng-ssave">Save</button>'+
+        '<button type="button" class="hc-mng-btn danger mng-srem">Remove</button>'+
+      '</div>';
+    }).join('');
+    var hrsRows = HC_DAYS.map(function(d){
+      var r = hcManage.hours[d[1]] || {};
+      var closed = !!r.closed;
+      return '<div class="hc-mng-day" data-wd="'+d[1]+'">'+
+        '<span class="hc-mng-dn">'+d[0]+'</span>'+
+        '<input class="hc-mng-in mng-open" type="time" value="'+hcEscA(hcTimeVal(r.open_time))+'"'+(closed?' disabled':'')+'>'+
+        '<span class="hc-mng-to">to</span>'+
+        '<input class="hc-mng-in mng-close" type="time" value="'+hcEscA(hcTimeVal(r.close_time))+'"'+(closed?' disabled':'')+'>'+
+        '<label class="hc-mng-cl"><input type="checkbox" class="mng-closed"'+(closed?' checked':'')+'> Closed</label>'+
+      '</div>';
+    }).join('');
+    body.innerHTML =
+      '<div class="hc-set-sec"><h3>Contact</h3>'+
+        '<label class="hc-mng-l">Phone <input id="hcMngPhone" class="hc-mng-in" value="'+hcEscA(ct.phone||'')+'" placeholder="888-888-8888"></label>'+
+        '<label class="hc-mng-l">Email <input id="hcMngEmail" class="hc-mng-in" value="'+hcEscA(ct.email||'')+'" placeholder="you@business.com"></label>'+
+        '<label class="hc-mng-l">Address <input id="hcMngAddr" class="hc-mng-in" value="'+hcEscA(ct.address||'')+'" placeholder="Street, city"></label>'+
+        '<button type="button" class="hc-mng-btn" id="hcMngContactSave">Save contact</button>'+
+      '</div>'+
+      '<div class="hc-set-sec"><h3>Hours</h3>'+ hrsRows +
+        '<label class="hc-mng-l" style="margin-top:8px">Note (e.g. “weekends by appointment”) <input id="hcMngNote" class="hc-mng-in" value="'+hcEscA(hcManage.note||'')+'"></label>'+
+        '<button type="button" class="hc-mng-btn" id="hcMngHoursSave">Save hours</button>'+
+      '</div>'+
+      '<div class="hc-set-sec"><h3>Services</h3>'+ svcRows +
+        '<div class="hc-mng-svc hc-mng-add">'+
+          '<input class="hc-mng-in mng-sn" placeholder="New service name">'+
+          '<input class="hc-mng-in mng-sp" placeholder="Price" inputmode="decimal" style="max-width:88px">'+
+          '<input class="hc-mng-in mng-sd" placeholder="Short description">'+
+          '<button type="button" class="hc-mng-btn" id="hcMngSvcAdd">Add</button>'+
+        '</div>'+
+      '</div>';
+    // wire contact
+    document.getElementById('hcMngContactSave').addEventListener('click', async function(){
+      var e = this; e.disabled = true; hcManageStatus('Saving…', true);
+      var r = await hcRecordEdit({ kind:'contact', phone: document.getElementById('hcMngPhone').value.trim(), email: document.getElementById('hcMngEmail').value.trim(), address: document.getElementById('hcMngAddr').value.trim() });
+      await hcAfterRecordEdit(r); e.disabled = false;
+    });
+    // wire hours
+    document.getElementById('hcMngHoursSave').addEventListener('click', async function(){
+      var e = this; e.disabled = true; hcManageStatus('Saving…', true);
+      var rows = HC_DAYS.map(function(d){
+        var el = body.querySelector('.hc-mng-day[data-wd="'+d[1]+'"]');
+        var closed = el.querySelector('.mng-closed').checked;
+        var o = el.querySelector('.mng-open').value, c = el.querySelector('.mng-close').value;
+        return { weekday: d[1], open: closed?null:(o||null), close: closed?null:(c||null), closed: closed };
+      }).filter(function(r){ return r.closed || (r.open && r.close); });
+      var r = await hcRecordEdit({ kind:'hours', rows: rows, note: document.getElementById('hcMngNote').value.trim() });
+      await hcAfterRecordEdit(r); e.disabled = false;
+    });
+    // wire services (add / save / remove)
+    document.getElementById('hcMngSvcAdd').addEventListener('click', async function(){
+      var wrap = this.closest('.hc-mng-svc');
+      var name = wrap.querySelector('.mng-sn').value.trim(); if(!name){ hcManageStatus('A service needs a name.', false); return; }
+      var priceRaw = wrap.querySelector('.mng-sp').value.trim();
+      this.disabled = true; hcManageStatus('Saving…', true);
+      var r = await hcRecordEdit({ kind:'service', op:'add', name: name, price: priceRaw?Number(priceRaw):null, description: wrap.querySelector('.mng-sd').value.trim() });
+      await hcAfterRecordEdit(r); this.disabled = false;
+    });
+    Array.prototype.forEach.call(body.querySelectorAll('.hc-mng-svc:not(.hc-mng-add)'), function(wrap){
+      wrap.querySelector('.mng-ssave').addEventListener('click', async function(){
+        var name = wrap.querySelector('.mng-sn').value.trim(); if(!name){ hcManageStatus('A service needs a name.', false); return; }
+        var priceRaw = wrap.querySelector('.mng-sp').value.trim();
+        this.disabled = true; hcManageStatus('Saving…', true);
+        var r = await hcRecordEdit({ kind:'service', op:'edit', id: wrap.getAttribute('data-id'), prevName: wrap.getAttribute('data-prev'), name: name, price: priceRaw?Number(priceRaw):null, description: wrap.querySelector('.mng-sd').value.trim() });
+        await hcAfterRecordEdit(r); this.disabled = false;
+      });
+      wrap.querySelector('.mng-srem').addEventListener('click', async function(){
+        this.disabled = true; hcManageStatus('Removing…', true);
+        var r = await hcRecordEdit({ kind:'service', op:'remove', id: wrap.getAttribute('data-id'), name: wrap.querySelector('.mng-sn').value.trim() });
+        await hcAfterRecordEdit(r); this.disabled = false;
+      });
+    });
+    // closed checkbox enables/disables the time inputs live
+    Array.prototype.forEach.call(body.querySelectorAll('.hc-mng-day'), function(el){
+      el.querySelector('.mng-closed').addEventListener('change', function(){
+        var dis = this.checked; el.querySelector('.mng-open').disabled = dis; el.querySelector('.mng-close').disabled = dis;
+      });
+    });
+  }
+  function hcCloseManage(){ var o = document.getElementById('hcMngOv'); if(o) o.remove(); }
+  async function hcOpenManage(){
+    if(document.getElementById('hcMngOv')){ hcCloseManage(); return; }
+    var ov = document.createElement('div'); ov.id = 'hcMngOv'; ov.className = 'hc-set-ov';
+    ov.innerHTML = '<div class="hc-set" role="dialog" aria-label="Edit your details">'+
+      '<div class="hc-set-hd"><h2>Edit your details</h2><button type="button" class="hc-set-x" aria-label="Close">&times;</button></div>'+
+      '<div class="hc-set-note">Add or change anything here — no need to ask. Changes save to your site straight away.</div>'+
+      '<div id="hcMngStatus" class="hc-mng-status" aria-live="polite"></div>'+
+      '<div id="hcMngBody">Loading…</div>'+
+    '</div>';
+    document.body.appendChild(ov);
+    ov.querySelector('.hc-set-x').addEventListener('click', hcCloseManage);
+    ov.addEventListener('click', function(e){ if(e.target === ov) hcCloseManage(); });
+    try{ await hcReadRecord(); hcRenderManageBody(); }catch(e){ var b=document.getElementById('hcMngBody'); if(b) b.textContent = 'Could not load your details — try again.'; }
   }
   // THE ARRIVAL. The first time an owner lands on their claimed site, Hubly speaks it
   // in the CHAT — the live address and the actions as message content — so the biggest

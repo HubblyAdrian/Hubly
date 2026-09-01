@@ -3204,6 +3204,135 @@ export function composeContactHoursTruth(r: ContactHoursResult): string {
   return missedNote ? `${main} ${missedNote}` : main;
 }
 
+// ── THE MANUAL FORM PATH ─────────────────────────────────────────────────────
+// A signed-in owner editing facts through a FORM, not the assistant. The rule:
+// every fact the assistant can write, a person must be able to write themselves.
+//
+// It does NOT write the record and stop — that is the "record updated, page
+// didn't" bug in a new costume. It runs the SAME placement the chat path runs
+// (applyContactHoursToFreeform / applyServicesToFreeform / removeServiceCard),
+// which persists a new document version through create_business_document — so the
+// page updates AND Undo works, by construction. Services are written PER-ROW
+// (insert/update/delete one row) so editing one never replace-alls the others
+// (no orphaned photos). Authorised by OWNERSHIP: the caller's verified uid must
+// equal owner_id. A form field IS the current input, so grounding does not apply.
+
+export type OwnerRecordEdit =
+  | { kind: "contact"; phone?: string | null; email?: string | null; address?: string | null }
+  | { kind: "hours"; rows?: { weekday: number; open: string | null; close: string | null; closed: boolean }[]; note?: string | null }
+  | { kind: "service"; op: "add" | "edit"; id?: string; name: string; price?: number | null; description?: string | null; prevName?: string }
+  | { kind: "service"; op: "remove"; id?: string; name: string };
+
+export type OwnerEditResult = { ok: boolean; real: boolean; summary: string; error?: string; raw?: unknown };
+
+/** One row write to a table, service-role, return=representation. */
+async function adminWrite(method: "POST" | "PATCH" | "DELETE", table: string, filter: string, body?: unknown): Promise<any> {
+  const url = (Deno.env.get("SUPABASE_URL") || "").trim();
+  if (!url) return null;
+  const res = await fetch(`${url}/rest/v1/${table}${filter}`, {
+    method,
+    headers: { ...adminHeaders(), "content-type": "application/json", prefer: "return=representation" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) return null;
+  return await res.json().catch(() => null);
+}
+
+/** Remove one service's card from a freeform page (find its anchor, cut the whole
+ *  entry) and persist a version. Mirrors applyServicesToFreeform's save. */
+async function removeServiceCard(draftId: string, draftToken: string, ownerUid: string | null, name: string): Promise<boolean> {
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest || latest.format !== "html") return false;
+  const anchor = findServiceAnchor(latest.renderedHtml, name);
+  if (!anchor) return true; // not on the page -> nothing to remove, not a failure
+  const tag = (/<([a-z0-9]+)/i.exec(latest.renderedHtml.slice(anchor.index)) || [])[1]?.toLowerCase() || "";
+  const bounds = findServiceEntryBounds(latest.renderedHtml, anchor.index, anchor.length, tag);
+  if (!bounds) return false;
+  const slice = latest.renderedHtml.slice(bounds.start, bounds.end);
+  // GUARD THE CUT. Bounds computed from markup then a chunk removed is the exact
+  // shape that once deleted a footer's address + phone. Before splicing, verify
+  // the slice is ONE service entry and nothing more; if any check fails, don't
+  // cut — the record delete stands, and an honest "couldn't remove it from the
+  // page" beats taking a neighbour with it (same rule as the hours recognizer).
+  const svcAnchors = slice.match(/data-hubly-service="[^"]*"/gi) || [];
+  const onlyThisService = svcAnchors.length === 1 && normServiceKey((svcAnchors[0].match(/"([^"]*)"/) || [])[1] || "") === normServiceKey(name);
+  const grabsTooMuch = /data-hubly-contact-block\b|data-hubly-hours(?![-a-z])|<footer\b|<\/footer>|<section\b|<\/section>/i.test(slice);
+  if (!onlyThisService || grabsTooMuch) {
+    console.error(`removeServiceCard [${draftId}] refused: anchors=${svcAnchors.length} tooMuch=${grabsTooMuch} — left the page alone`);
+    return false;
+  }
+  const out = latest.renderedHtml.slice(0, bounds.start) + latest.renderedHtml.slice(bounds.end);
+  const saved = await callBusinessRpc("create_business_document", {
+    p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
+    p_document: latest.brief, p_rendered_html: out, p_created_by: "patch", p_format: "html",
+    p_owner_id: ownerUid || null,
+  });
+  return !!(saved && saved.ok === true);
+}
+
+export async function applyOwnerRecordEdit(draftId: string, draftToken: string, ownerUid: string | null, edit: OwnerRecordEdit): Promise<OwnerEditResult> {
+  if (!draftId || !ownerUid) return { ok: false, real: false, error: "not_signed_in", summary: "You need to be signed in to edit this." };
+  // Authorise by ownership — the same gate the writers enforce, checked here too.
+  const biz = await selectOne("businesses", "id", draftId, "owner_id");
+  if (!biz || String(biz.owner_id || "") !== String(ownerUid)) {
+    return { ok: false, real: false, error: "not_owner", summary: "You don't have access to edit this business." };
+  }
+
+  if (edit.kind === "contact") {
+    const patch: Record<string, unknown> = {};
+    if (edit.phone !== undefined) patch.phone = edit.phone ? formatPhoneHouse(edit.phone) : "";
+    if (edit.email !== undefined) patch.email = edit.email || "";
+    if (edit.address !== undefined) patch.address = edit.address || "";
+    if (!Object.keys(patch).length) return { ok: false, real: false, error: "nothing", summary: "Nothing to change." };
+    const r = await callBusinessRpc("patch_business_in_progress", { p_id: draftId, p_draft_token: draftToken, p_patch: patch, p_owner_id: ownerUid });
+    if (!r || r.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "That didn't save — try again." };
+    const placement = await applyContactHoursToFreeform(draftId, draftToken, ownerUid);
+    return { ok: true, real: true, summary: composeContactHoursTruth(placement) || "Saved.", raw: { placement } };
+  }
+
+  if (edit.kind === "hours") {
+    if (Array.isArray(edit.rows) && edit.rows.length) {
+      const r = await callBusinessRpc("set_business_hours_in_progress", { p_id: draftId, p_draft_token: draftToken, p_hours: edit.rows, p_owner_id: ownerUid });
+      if (!r || r.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "Your hours didn't save — try again." };
+    }
+    if (edit.note !== undefined) {
+      const r = await callBusinessRpc("patch_business_in_progress", { p_id: draftId, p_draft_token: draftToken, p_patch: { hours_note: edit.note || "" }, p_owner_id: ownerUid });
+      if (!r || r.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "Your hours note didn't save — try again." };
+    }
+    const placement = await applyContactHoursToFreeform(draftId, draftToken, ownerUid);
+    return { ok: true, real: true, summary: composeContactHoursTruth(placement) || "Saved.", raw: { placement } };
+  }
+
+  // kind === "service"
+  const name = String(edit.name || "").trim();
+  if (!name) return { ok: false, real: false, error: "no_name", summary: "A service needs a name." };
+  if (edit.op === "remove") {
+    if (edit.id) await adminWrite("DELETE", "services", `?id=eq.${encodeURIComponent(edit.id)}&business_id=eq.${draftId}`);
+    else await adminWrite("DELETE", "services", `?business_id=eq.${draftId}&name=eq.${encodeURIComponent(name)}`);
+    const removed = await removeServiceCard(draftId, draftToken, ownerUid, name);
+    return { ok: true, real: true, summary: removed ? `Removed ${name} from your list and your page.` : `Removed ${name} from your list. It may still show on the page until the next rebuild.`, raw: { removed } };
+  }
+  // add | edit — PER ROW, never the replace-all RPC.
+  const row: Record<string, unknown> = { name, price: typeof edit.price === "number" ? edit.price : (edit.price != null ? Number(edit.price) : null), description: edit.description || null };
+  if (edit.op === "edit" && edit.id) {
+    await adminWrite("PATCH", "services", `?id=eq.${encodeURIComponent(edit.id)}&business_id=eq.${draftId}`, row);
+    // A name change moves the anchor — remove the old card, then place the new one.
+    if (edit.prevName && edit.prevName.trim() && edit.prevName.trim().toLowerCase() !== name.toLowerCase()) {
+      await removeServiceCard(draftId, draftToken, ownerUid, edit.prevName.trim());
+    }
+  } else {
+    row.business_id = draftId;
+    await adminWrite("POST", "services", "", row);
+  }
+  const placement = await applyServicesToFreeform(draftId, draftToken, [{ name, price: row.price as number | undefined, description: (row.description as string) || undefined }], ownerUid);
+  const landed = placement.status === "placed" || placement.status === "partial" || placement.status === "no_prices";
+  return {
+    ok: true, real: true,
+    summary: landed ? `${edit.op === "add" ? "Added" : "Updated"} ${name} on your page, in the services section.` : `Saved ${name} to your list. I couldn't place it on the page — it will appear on the next rebuild.`,
+    raw: { services: placement },
+  };
+}
+
 export async function uploadDraftHeroImage(
   draftId: string,
   draftToken: string,
