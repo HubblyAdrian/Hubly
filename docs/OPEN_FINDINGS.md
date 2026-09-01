@@ -1,5 +1,41 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## 10. Every generated page is ~6 phone-screens tall (public site) — SEPARATE BUILD
+
+**Severity: high — this is the PUBLIC site, what a customer sees when they tap the
+link.** It outranks the shell's mobile problem (that's the owner's view; this is the
+customer's). Found 2026-08-31.
+
+**Numbers, measured at a true 390px viewport (in a 390px iframe, images loaded):**
+
+| page | height | screens (÷844) |
+|---|---|---|
+| Mobile Auto Detailing (market) | 5154px | 6.1 |
+| b53382a2 (market) | 5267px | 6.2 |
+| 06541aeb (test) | 4959px | 5.9 |
+| 0e278d4c (test) | 5386px | 6.4 |
+| 11151dc5 (test) | 5334px | 6.3 |
+
+Consistently **~5,000–5,400px, about 6 full phone-screens**, across market and test.
+
+**Cause — NOT broken responsiveness.** Pages carry real breakpoints (1–2 `@media`,
+several `max-width`, `clamp()` type, collapsing grids), so the mobile layout is
+technically responsive. The length comes from **generously sized stacked sections** —
+near-full-height blocks, a big hero, roomy padding — roughly one full screen per
+section. And the **generation prompt says nothing about page length or density at
+phone width**: its only two mobile rules are `svh` for full-height sections and
+landscape hero photos (`hubly_capability_registry.ts` ~1770-1771). There is no
+guidance to bound section height, tighten vertical rhythm, or cap total scroll on a
+phone.
+
+**What a fix would examine (not now):** a mobile density pass (cap full-height blocks
+to content height on small screens, tighten section padding, shorten the hero) and/or
+explicit prompt guidance on phone-width length. Verify by re-measuring the table
+above and by a real-phone read.
+
+---
+
+
 Bugs Adrian hit on a real iPhone (Safari) that are **not yet fixed**. Each entry:
 what's known, what's been tried, what would close it. The rule that produced this
 list: everything here passed a mechanical check and failed a human one — so

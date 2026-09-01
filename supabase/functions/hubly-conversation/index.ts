@@ -837,6 +837,20 @@ Deno.serve(async (req) => {
         }
       : null;
 
+  // The verified owner of a CLAIMED business, from the caller's JWT — the authority
+  // that lets facts stated in chat reach the record after claim (the draft-token
+  // writers refuse a claimed row; the record RPCs authorise by owner_id = this uid
+  // instead, mirroring create_business_document). Resolved LAZILY and memoized:
+  // getOwnerUid() makes AT MOST one /auth/v1/user call, and only when a code path
+  // actually needs an owner — an anonymous visitor (the hot path) never triggers
+  // it, because every guard short-circuits on the draft token first. Latency in
+  // this flow is a product problem, so the anon path pays nothing.
+  let _ownerUidCache: string | null | undefined;
+  const getOwnerUid = async (): Promise<string | null> => {
+    if (_ownerUidCache === undefined) _ownerUidCache = await resolveOwnerUid();
+    return _ownerUidCache;
+  };
+
   // Entry Intent is Patch Zero — applied as the floor, before whatever the
   // client's own accumulated understanding merges on top. This ordering
   // matters: if a client mistakenly resent entryIntent on a later turn, real
@@ -951,25 +965,49 @@ Deno.serve(async (req) => {
   /** Applies whatever was extracted, once. Safe to call more than once. */
   let factsApplied = false;
   const flushExtractedFacts = async (id: string, token: string) => {
-    if (factsApplied || !id || !token) return;
+    if (factsApplied || !id) return;
+    // Check for facts FIRST — a turn with nothing to write never resolves the
+    // owner (no /auth/v1/user call on the empty hot path).
     if (!Object.keys(pendingFacts).length && !pendingPricedServices.length) return;
+    const ownerUid = await getOwnerUid();
+    if (!token && !ownerUid) return;   // no credential at all
     factsApplied = true;
-    const applied = await applyExtractedFacts(id, token, pendingFacts, pendingPricedServices);
-    if (!applied.written.length) return;
+    const applied = await applyExtractedFacts(id, token, pendingFacts, pendingPricedServices, ownerUid);
     for (const c of applied.recordChange) recordChanges.add(c);
-    // Told to the MODEL as a capability result, the same convention the logo
-    // upload uses — so the reply reflects what was saved rather than asking for
-    // something the person already gave.
-    actions.push({ capability: "business", capabilityAction: "recordFacts", args: {}, ok: true, real: true });
-    history.push({
-      role: "system",
-      content:
-        `CAPABILITY RESULT for business.recordFacts: saved from what they typed — ${applied.written.join(", ")}. ` +
-        `Do NOT ask for any of these again. Mention them only if it is natural to; never list them back.`,
-    });
+    // A FACT WRITE ALWAYS PRODUCES A TRUTH — success or failure. The old code
+    // returned silently when nothing was written, so a REFUSED write (e.g. a
+    // claimed business on the dead draft path) told the model nothing, and the
+    // model filled the void with "Done — it's on your site" — a success it never
+    // earned. Now every outcome is reported to the model, once, at this seam
+    // (covers phone/email/hours/services and anything added later).
+    if (applied.written.length) {
+      // Told to the MODEL as a capability result, the same convention the logo
+      // upload uses — so the reply reflects what was saved rather than asking for
+      // something the person already gave.
+      actions.push({ capability: "business", capabilityAction: "recordFacts", args: {}, ok: true, real: true });
+      history.push({
+        role: "system",
+        content:
+          `CAPABILITY RESULT for business.recordFacts: saved from what they typed — ${applied.written.join(", ")}. ` +
+          `Do NOT ask for any of these again. Mention them only if it is natural to; never list them back.`,
+      });
+    }
+    if (applied.failed.length) {
+      // Attempted and REFUSED. Say so plainly; never claim it was saved.
+      actions.push({ capability: "business", capabilityAction: "recordFacts", args: {}, ok: false, real: true });
+      history.push({
+        role: "system",
+        content:
+          `CAPABILITY RESULT for business.recordFacts: FAILED to save ${applied.failed.join(", ")} — the write was refused. ` +
+          `Do NOT tell them it is saved or on their site. Say plainly you could not save it just now and you're looking into it; ` +
+          `do not invent a reason or a workaround.`,
+      });
+    }
   };
 
-  if (draftBusiness?.id && draftBusiness?.draftToken) {
+  if (draftBusiness?.id) {
+    // flushExtractedFacts self-guards (no facts -> returns before resolving the
+    // owner; picks the token or the verified owner as the credential).
     await flushExtractedFacts(draftBusiness.id, draftBusiness.draftToken);
   }
 
@@ -1220,7 +1258,7 @@ Deno.serve(async (req) => {
     if (!draftBusiness) {
       return jsonRes({ ok: false, error: "no_draft_to_edit" }, 400);
     }
-    const ownerUid = await resolveOwnerUid();
+    const ownerUid = await getOwnerUid();   // memoized; one call per turn at most
     // Click-to-edit only ever operates on an already-generated document, so
     // this path can't structurally be reached while the feature is dark —
     // but checked explicitly anyway, same discipline as the other two
@@ -1619,9 +1657,9 @@ Deno.serve(async (req) => {
       // writes a 'patch' version so Undo reverses it. We then drop contact/hours
       // from recordChanges so the background rebuild doesn't re-place them.
       let contactHoursTruth = "";
-      if ((recordChanges.has("contact") || recordChanges.has("hours")) && draftBusiness?.id && draftBusiness?.draftToken) {
+      if ((recordChanges.has("contact") || recordChanges.has("hours")) && draftBusiness?.id) {
         try {
-          const ch = await applyContactHoursToFreeform(draftBusiness.id, draftBusiness.draftToken);
+          const ch = await applyContactHoursToFreeform(draftBusiness.id, draftBusiness.draftToken, await getOwnerUid());
           contactHoursTruth = composeContactHoursTruth(ch);
           const landed = ch.status === "patched";
           const line = `contact/hours placement [${draftBusiness.id}] -> ${ch.status} (${ch.detail})${landed ? "" : " [DID NOT LAND]"}`;

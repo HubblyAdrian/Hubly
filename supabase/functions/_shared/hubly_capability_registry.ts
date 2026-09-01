@@ -708,9 +708,18 @@ function chromeOverridesFrom(meta: unknown): ChromeOverrides | undefined {
 export type ExtractedFactWrite = {
   written: string[];
   skipped: string[];
+  // Facts we ATTEMPTED to write and the RPC REFUSED. Distinct from `skipped`
+  // (already-present, nothing to do). This is the signal that lets the caller
+  // never fall silent on a failed write — the false-"Done" defect (a write that
+  // failed but said nothing, so the model claimed success it hadn't earned).
+  failed: string[];
   recordChange: RecordChange[];
 };
 
+// A claimed business is authorised by OWNERSHIP, not the (now-inert) draft token:
+// the edge verifies the caller's JWT (resolveOwnerUid) and passes the verified uid
+// as p_owner_id. The record RPCs check owner_id = p_owner_id, exactly like
+// create_business_document. Null ownerUid keeps the pure draft-token path.
 export async function applyExtractedFacts(
   draftId: string,
   draftToken: string,
@@ -722,11 +731,15 @@ export async function applyExtractedFacts(
     hoursNote?: string;
   },
   pricedServices?: { name: string; price?: number; description?: string }[],
+  ownerUid?: string | null,
 ): Promise<ExtractedFactWrite> {
   const written: string[] = [];
   const skipped: string[] = [];
+  const failed: string[] = [];
   const changes = new Set<RecordChange>();
-  if (!draftId || !draftToken) return { written, skipped, recordChange: [] };
+  // Either a draft token OR a verified owner is required to write.
+  if (!draftId || (!draftToken && !ownerUid)) return { written, skipped, failed, recordChange: [] };
+  const p_owner_id = ownerUid || null;
 
   const row = await selectOne(
     "businesses",
@@ -741,6 +754,10 @@ export async function applyExtractedFacts(
   );
 
   const patch: Record<string, unknown> = {};
+  // fill() only STAGES a field — it does not count it as written until the patch
+  // RPC actually succeeds, so a refused patch can be reported as `failed` (not
+  // silently as written, and not swallowed).
+  const patchIntents: { key: string; change: RecordChange }[] = [];
   const fill = (col: string, key: string, value: unknown, change: RecordChange) => {
     if (value === undefined || value === null || value === "") return;
     const existing = (row as Record<string, unknown> | null)?.[col];
@@ -748,8 +765,7 @@ export async function applyExtractedFacts(
       (Array.isArray(existing) && existing.length === 0);
     if (!isBlank) { skipped.push(key); return; }
     patch[col] = value;
-    written.push(key);
-    changes.add(change);
+    patchIntents.push({ key, change });
   };
 
   // Normalize on WRITE, not just on render: the record itself carries house
@@ -778,10 +794,18 @@ export async function applyExtractedFacts(
       p_draft_token: draftToken,
       p_patch: patch,
       p_website_meta: null,
+      p_owner_id,
     });
-    if (!r || r.ok !== true) {
-      console.error("applyExtractedFacts: patch rejected", Object.keys(patch));
-      return { written: [], skipped, recordChange: [] };
+    if (r && r.ok === true) {
+      for (const it of patchIntents) { written.push(it.key); changes.add(it.change); }
+    } else {
+      // Attempted and refused — record it as failed and KEEP GOING. Hours and
+      // services are independent writes with their own outcomes; a fact never
+      // attempted because an unrelated write failed is not an honest result
+      // (that early-return was the silence-hole: hours vanished when the patch
+      // was refused). One turn, one complete picture.
+      console.error("applyExtractedFacts: patch rejected", Object.keys(patch), r?.error || "");
+      for (const it of patchIntents) failed.push(it.key);
     }
   }
 
@@ -794,9 +818,10 @@ export async function applyExtractedFacts(
         p_id: draftId,
         p_draft_token: draftToken,
         p_hours: facts.hours,
+        p_owner_id,
       });
       if (r?.ok === true) { written.push(`hours(${facts.hours.length})`); changes.add("hours"); }
-      else console.error("applyExtractedFacts: hours rejected", r);
+      else { console.error("applyExtractedFacts: hours rejected", r); failed.push("hours"); }
     } else {
       skipped.push("hours");
     }
@@ -813,16 +838,18 @@ export async function applyExtractedFacts(
         const res = await found.handler({
           draftId,
           draftToken,
+          ownerUid: p_owner_id,
           services: pricedServices.map((s) => ({ name: s.name, price: s.price, description: s.description })),
         });
         if (res.ok) { written.push(`services(${pricedServices.length})`); changes.add("services"); }
+        else failed.push("services");
       }
     } else {
       skipped.push("services");
     }
   }
 
-  return { written, skipped, recordChange: [...changes] };
+  return { written, skipped, failed, recordChange: [...changes] };
 }
 
 /** What to SAY after a header change — in terms of what moved, not the enum
@@ -3052,7 +3079,7 @@ export function markServiceAnchorsInFreeform(html: string, names: string[]): { h
 /** Run the placement and, on a change, persist a new version. Mirrors
  *  applyOwnerPhotoToFreeform: not_freeform on an AST page (the async rebuild
  *  handles those), otherwise a synchronous, targeted patch. */
-async function applyServicesToFreeform(draftId: string, draftToken: string, services: { name: string; price?: number; description?: string }[]): Promise<ServicesPlacement> {
+async function applyServicesToFreeform(draftId: string, draftToken: string, services: { name: string; price?: number; description?: string }[], ownerUid?: string | null): Promise<ServicesPlacement> {
   const latest = await selectLatestBusinessDocument(draftId, "website");
   if (!latest || latest.format !== "html") return { status: "not_freeform", placed: [], missing: services.map((s) => s.name) };
   const r = placeServicesInFreeform(latest.renderedHtml, services) as ServicesPlacement & { html: string };
@@ -3060,6 +3087,7 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
     const saved = await callBusinessRpc("create_business_document", {
       p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
       p_document: latest.brief, p_rendered_html: r.html, p_created_by: "patch", p_format: "html",
+      p_owner_id: ownerUid || null,
     });
     if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, leakedAttrText: r.leakedAttrText, detail: "save" };
   }
@@ -3091,7 +3119,7 @@ export type ContactHoursResult = {
  *  block / hours anchor for anything not yet on the page. Undoable like every
  *  edit: it writes a new version through create_business_document (created_by
  *  'patch'), so restore_prev_business_document reverses it. */
-export async function applyContactHoursToFreeform(draftId: string, draftToken: string): Promise<ContactHoursResult> {
+export async function applyContactHoursToFreeform(draftId: string, draftToken: string, ownerUid?: string | null): Promise<ContactHoursResult> {
   const empty = (status: ContactHoursResult["status"], detail = ""): ContactHoursResult =>
     ({ status, inserted: [], updated: [], alreadyPresent: [], missed: [], leaked: 0, detail });
   const latest = await selectLatestBusinessDocument(draftId, "website");
@@ -3141,6 +3169,7 @@ export async function applyContactHoursToFreeform(draftId: string, draftToken: s
     const saved = await callBusinessRpc("create_business_document", {
       p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
       p_document: latest.brief, p_rendered_html: html, p_created_by: "patch", p_format: "html",
+      p_owner_id: ownerUid || null,
     });
     result.status = (saved && saved.ok === true) ? "patched" : "failed";
     if (result.status === "failed") result.detail += "; save_failed";
@@ -4536,7 +4565,8 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         handler: async (args) => {
           const draftId = String(args?.draftId || "").trim();
           const draftToken = String((args as any)?.draftToken || "").trim();
-          if (!draftId || !draftToken) {
+          const ownerUid = String((args as any)?.ownerUid || "").trim() || null;
+          if (!draftId || (!draftToken && !ownerUid)) {
             return { ok: false, real: false, summary: "No draft business exists yet — call startDraft first.", error: "missing_draft" };
           }
           const list = Array.isArray(args?.services) ? args.services : [];
@@ -4551,6 +4581,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_id: draftId,
             p_draft_token: draftToken,
             p_services: services,
+            p_owner_id: ownerUid,
           });
           if (!r || r.ok !== true) {
             return { ok: false, real: false, summary: "The services list could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
@@ -4563,7 +4594,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           // one thing the price flow exists to deliver. On an AST/classic page this
           // is not_freeform and the async rebuild below handles it instead.
           let placement: ServicesPlacement = { status: "not_freeform", placed: [], missing: services.map((s) => s.name) };
-          try { placement = await applyServicesToFreeform(draftId, draftToken, services); }
+          try { placement = await applyServicesToFreeform(draftId, draftToken, services, ownerUid); }
           catch (e) { placement = { status: "failed", placed: [], missing: services.map((s) => s.name), detail: String((e as Error)?.message || e).slice(0, 120) }; }
           const isFreeform = placement.status !== "not_freeform";
           return {

@@ -1282,15 +1282,16 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // client holds it pending, and the same check runs regardless of which fact it was —
   // adding a new fact is one HC_CAPTURE entry, never a new detector.
   // Start LOOSE: over-asking costs a sentence, under-capturing costs the owner's prices.
+  // Each fact names the server capabilityActions that COUNT as it being handled.
+  // Phone includes recordFacts because extraction writes it that way (not only
+  // updateDraft). captured = one of those succeeded; attempted = one is present at
+  // all (ok OR failed). If the server ATTEMPTED (either way) it already told the
+  // truth this turn — the client must not add a second, contradictory line.
   var HC_CAPTURE = {
-    services: { answerLooksPresent: function(t){ return /\d/.test(t) || /,/.test(t); },
-                captured: function(a){ return a.some(function(x){ return x.capabilityAction==='setServices' && x.ok; }); } },
-    phone:    { answerLooksPresent: function(t){ return t.replace(/\D/g,'').length>=7; },
-                captured: function(a){ return a.some(function(x){ return x.capabilityAction==='updateDraft' && x.ok; }); } },
-    hours:    { answerLooksPresent: function(t){ return /\d/.test(t) || /(mon|tue|wed|thu|fri|sat|sun|weekday|weekend|open|clos)/i.test(t); },
-                captured: function(a){ return a.some(function(x){ return x.capabilityAction==='recordFacts' && x.ok; }); } },
-    area:     { answerLooksPresent: function(t){ return t.trim().length>1; },
-                captured: function(a){ return a.some(function(x){ return x.capabilityAction==='recordFacts' && x.ok; }); } }
+    services: { answerLooksPresent: function(t){ return /\d/.test(t) || /,/.test(t); }, actions: ['setServices'] },
+    phone:    { answerLooksPresent: function(t){ return t.replace(/\D/g,'').length>=7; }, actions: ['updateDraft','recordFacts'] },
+    hours:    { answerLooksPresent: function(t){ return /\d/.test(t) || /(mon|tue|wed|thu|fri|sat|sun|weekday|weekend|open|clos)/i.test(t); }, actions: ['recordFacts'] },
+    area:     { answerLooksPresent: function(t){ return t.trim().length>1; }, actions: ['recordFacts'] }
   };
   function hcLastUserMessage(){
     for(var i=hc.messages.length-1;i>=0;i--){ if(hc.messages[i] && hc.messages[i].role==='user') return String(hc.messages[i].content||''); }
@@ -1313,9 +1314,15 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     var cfg = HC_CAPTURE[pc.askedFor];
     if(!cfg) return false;
     var actions = Array.isArray(data.actions) ? data.actions : [];
+    var relevant = actions.filter(function(x){ return cfg.actions.indexOf(x.capabilityAction) >= 0; });
+    var captured = relevant.some(function(x){ return x.ok; });
+    // The server ATTEMPTED this write (ok or failed) -> it already reported the
+    // outcome, so the client stays silent rather than telling a second story. Only
+    // a genuine server SILENCE (never attempted -> extraction missed the fact) is
+    // the client's to catch. This is the "one turn, one truth" half of the fix.
+    var attempted = relevant.length > 0;
     var present = cfg.answerLooksPresent(hcLastUserMessage());
-    var captured = cfg.captured(actions);
-    if(present && !captured && pc.tries < 2){
+    if(present && !captured && !attempted && pc.tries < 2){
       hcRecordCaptureMiss(pc.askedFor);
       hcAppendMessage('hubly', "I didn't get those down — say them again?");
       hcPersist('assistant', "I didn't get those down — say them again?");
@@ -2190,7 +2197,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     }
     fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
       method: 'POST',
-      headers: { 'content-type':'application/json', 'apikey': SUPA_ANON_KEY, 'authorization': 'Bearer ' + SUPA_ANON_KEY },
+      headers: { 'content-type':'application/json', 'apikey': SUPA_ANON_KEY, 'authorization': 'Bearer ' + (hcAccessToken() || SUPA_ANON_KEY) },
       body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, event: 'post_build' }),
       signal: ctrl ? ctrl.signal : undefined
     }).then(function(r){ return r.json(); }).then(function(data){
@@ -2416,12 +2423,17 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     hc.pendingLogoUpload = null; // one-shot — never resent on a later, unrelated call
     var photoUploadForThisCall = hc.pendingPhotoUpload || null;
     hc.pendingPhotoUpload = null; // one-shot, same reason
+    // authorization carries the OWNER's JWT when signed in, so a fact stated by
+    // talking on a CLAIMED site authorises by ownership (the draft token is inert
+    // once claimed). Anon key otherwise (unclaimed drafts, token path). This is
+    // the same credential the direct-edit send already uses — without it, typed
+    // facts on a claimed site silently hit the dead draft path.
     fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
         'apikey': SUPA_ANON_KEY,
-        'authorization': 'Bearer ' + SUPA_ANON_KEY
+        'authorization': 'Bearer ' + (hcAccessToken() || SUPA_ANON_KEY)
       },
       body: JSON.stringify(Object.assign(
         { messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, logoUpload: logoUploadForThisCall, photoUpload: photoUploadForThisCall },
