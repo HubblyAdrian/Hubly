@@ -73,44 +73,57 @@ claimed, owner `adriansmithee+evergreen@gmail.com`) is the claimed-owner test bu
    (`body`/`:root`/dominant heading) at insert time and writes them EXPLICITLY, instead of `inherit`.
 6. **Heading fix — CONFIRMED FIXED LIVE** (evergreen block reads "Hours & Contact").
 
-## First, once oriented — amend CLAUDE.md (Adrian, 2026-09-01)
+## The recurring pattern — state it as a pattern, not anecdotes
 
-Before Build A, add the actual lesson of the claimed-owner run as a rule: **verify by using
-it, AS THE OWNER, ON THE REAL THING.** Every test that night was green on a *draft*; the bugs
-(a week of claimed owners unable to edit by talking; a value the system filled in that nobody
-gave it; a filter that would have deleted five live services) all lived on the other side of a
-door nobody had walked through. This sharpens the existing "verify by using it" agreement with
-the draft-vs-claimed blind spot that hid them. Build A (the manual form) is the same principle
-in another form: if the AI route fails, a person needs a way in.
+**Compiled clean, deployed clean, did nothing — three times now, always the same shape: the
+failure is in the WIRING between working parts, and only using it AS THE OWNER, ON THE REAL
+THING found it.** (1) The write path locked for every claimed owner for a week — draft-only
+tests were all green. (2) The "✎ Edit details" button did nothing — an inline `onclick` on a
+function inside the app's IIFE (not global). (3) Every manual save failed — a chat-turn guard
+(`messages_required`) rejected structured edits ~530 lines before the handler, AND the raw
+stored token expired (~1h) while the read path auto-refreshed, so the panel LOADED and every
+save died. CLAUDE.md now carries the rule (verify as the owner, on the real thing); this is the
+evidence for why. Reproduce in the real STATE (signed-in owner, claimed business), read the
+actual network response / console — never diagnose from source.
 
-## The two builds, in order (report done; Build A first)
+## Build A — the manual "Edit details" panel: BUILT + PROVEN LIVE (2026-09-01)
 
-**A. Manual form — make the AI optional.** The rule: every fact the assistant can write, a
-person must be able to write themselves. Covers: services (add/edit/remove — name, price,
-description); phone/email/address; hours (day grid + the free-text note).
-- **Reusable / already built:** the owner-authorised writers (proven tonight); `authGetClient`/
-  `hcAccessToken`; the Settings popout (`hcOpenSettings`); `get_my_site_gaps`/`get_my_businesses`.
-- **Key decision — the write path (CONFIRMED on the live DB 2026-09-01).** The RPCs are
-  `service_role`-only (browser can't call them). The form writes via **direct authenticated
-  PostgREST under owner RLS** — and ALL THREE tables already have the policies (earlier
-  "services needs a policy" was WRONG): `businesses` "Owners can update their own business"
-  (`owner_id=auth.uid()`); `settings_business_hours` `settings_business_hours_owner_all`;
-  `services` "owner can manage services" (`owns_business(business_id)` = `exists(… owner_id=
-  auth.uid())`). RLS enabled on all three. **No migration needed.** A form field IS the current
-  input, so grounding does not apply. Because services has PER-ROW owner RLS, the form writes a
-  SINGLE service row (insert/update/delete) directly — never the replace-all RPC — so it can't
-  orphan other services' photos.
-- **Where it lives:** a panel in **Website mode** (the site-canvas context), NOT Settings — an
-  existing deliberate decision keeps business facts out of Settings (`platform-home.html:3683`),
-  it sits where you notice the problem, and it writes the same canonical record the chat does
-  (no "second source").
-- **Genuinely new:** the panel UI (inputs + a 7-row hours grid) and the per-row authenticated
-  writes. Nothing at the DB layer.
+Every fact the assistant can write, a person can write here: services (add/edit/remove — name,
+price, description), phone/email/address, hours (7-row day grid + the free-text note). Lives in
+**Website mode** as **✎ Edit details** in the canvas toolbar (address · Desktop/Mobile · Edit
+details), claimed owners only. NOT in Settings (business facts stay out of Settings by decision).
+- **Write path (as SHIPPED, superseding the earlier client-PostgREST plan):** the panel does NOT
+  write PostgREST directly — that would update the record but not the PAGE and skip versioning.
+  It POSTs `directRecordEdit` to `hubly-conversation` (owner-verified via `resolveOwnerUid`, NO
+  model), which runs the SAME placement the chat runs (`applyOwnerRecordEdit` →
+  `applyContactHoursToFreeform` / `applyServicesToFreeform` / guarded `removeServiceCard`) and
+  `create_business_document`. So a save reaches the page AND is undoable. Services write PER-ROW
+  (no replace-all → no photo orphaning). Reads use authenticated PostgREST (owner RLS) on open
+  and re-read after any assistant action.
+- **PROVEN as the owner on evergreen:** add a service → `200 {ok:true,"Added … on your page, in
+  the services section."}`, DB row present; remove → `200`, page card gone (guard held), DB clean;
+  other services untouched. Honest read-back throughout — a failed save says so, never a green tick.
+- **Two upstream bugs fixed to get here** (see the pattern above): `messages_required` now exempts
+  any direct edit; the write path uses `hcFreshToken()` (SDK refresh) instead of the raw token —
+  applied at ALL authed write sends (typed send, post_build, click-to-edit, image/doc edits, the
+  panel), so talking/editing no longer dies ~1h into an open tab. A stale token can NOT silently
+  downgrade a claimed write to the draft path: the writer RPCs take the OWNER branch when
+  `owner_id` is set (requires the verified uid) and the draft-token branch is only reachable for
+  an unclaimed row — so it fails loudly (ok:false, reported), never falls through.
+- **Fallback role:** the panel is the guaranteed way in and the only route for a page with no
+  services/contact section to anchor to; in-place editing (Build B) is the primary route and runs
+  through this same proven pipe.
 
-**B. Real editing controls** ("elite, like the best website editors"). Today click-to-edit changes
-TEXT only (`applyDirectFreeformEdit` via `data-hc`), plus color/font swatches already in the editor
-overlay (`hubly.html` COLOR_SWATCHES/FONT_OPTIONS ~53384). Missing: font SIZE, image size/crop,
-formatting.
+**B. In-place editor — NEXT (runs through Build A's now-proven pipe).** First slice: double-click
+the hours block → a day-grid + note overlay ON the block (type-aware, keyed off the anchors:
+`data-hubly-hours` → grid, `data-hubly-hours-note` → text, `data-hubly-price` → number), saving via
+`directRecordEdit` (the proven path). Then the **+ buttons** (add a service at the section end via
+`data-hubly-service` anchors; add a missing phone/email on the contact block). Editor chrome carries
+`data-hc-editor` and never reaches a saved page — structural (client-only, saves are server-side
+transforms) plus the belt `stripEditorChrome` (already added). No-section pages fall back to the panel.
+Then the fuller "elite editor": today click-to-edit changes TEXT only (`applyDirectFreeformEdit` via
+`data-hc`) + color/font swatches (`hubly.html` COLOR_SWATCHES/FONT_OPTIONS ~53384); missing font SIZE
+(constrain to the page's type scale, not a number box), image size/crop, formatting.
 - **Same path?** A style change can ride the same seam as a text edit — an inline `style` on the
   labelled element, saved as a new document version, undoable — without breaking anchors
   (`data-hubly-*`/`data-hc` are separate attributes; adding `style` doesn't remove them). Worth a

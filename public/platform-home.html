@@ -2201,7 +2201,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // is SILENCE at the single biggest moment in the product (Rule 6). So the fallback is
   // mandatory and deterministic — one honest line, no menu, nothing invented — and it is
   // logged so we can see how often it fires.
-  function hcPostBuildTurn(){
+  async function hcPostBuildTurn(){
     if(hc.busy){                                   // another call is mid-flight; still guarantee a message
       var b = "That's your site. Tell me what you'd like to change.";
       hcAppendMessage('hubly', b); hcPersist('assistant', b);
@@ -2229,9 +2229,10 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       // offer is EARNED on the first real change (or a backstop of a couple of turns), in
       // the response handler, so it's concrete and never beside the first question.
     }
+    var at = await hcFreshToken();
     fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
       method: 'POST',
-      headers: { 'content-type':'application/json', 'apikey': SUPA_ANON_KEY, 'authorization': 'Bearer ' + (hcAccessToken() || SUPA_ANON_KEY) },
+      headers: { 'content-type':'application/json', 'apikey': SUPA_ANON_KEY, 'authorization': 'Bearer ' + (at || SUPA_ANON_KEY) },
       body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, event: 'post_build' }),
       signal: ctrl ? ctrl.signal : undefined
     }).then(function(r){ return r.json(); }).then(function(data){
@@ -2459,15 +2460,17 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     hc.pendingPhotoUpload = null; // one-shot, same reason
     // authorization carries the OWNER's JWT when signed in, so a fact stated by
     // talking on a CLAIMED site authorises by ownership (the draft token is inert
-    // once claimed). Anon key otherwise (unclaimed drafts, token path). This is
-    // the same credential the direct-edit send already uses — without it, typed
-    // facts on a claimed site silently hit the dead draft path.
+    // once claimed). Anon key otherwise (unclaimed drafts, token path). Use a
+    // FRESH token, not the raw stored one — it expires (~1h) and a stale token
+    // silently 401s every write, so an owner who leaves the tab open comes back
+    // and talking stops reaching the record (found 2026-09-01).
+    var at = await hcFreshToken();
     fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
         'apikey': SUPA_ANON_KEY,
-        'authorization': 'Bearer ' + (hcAccessToken() || SUPA_ANON_KEY)
+        'authorization': 'Bearer ' + (at || SUPA_ANON_KEY)
       },
       body: JSON.stringify(Object.assign(
         { messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, logoUpload: logoUploadForThisCall, photoUpload: photoUploadForThisCall },
@@ -3219,7 +3222,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // indicator and no LLM call, but it does answer: the server sends back a
   // humanNote, and dropping it on the floor here is what made a real edit
   // land in silence.
-  function hcSendDirectEdit(payload){
+  async function hcSendDirectEdit(payload){
     if(hc.busy || !hc.draftBusiness) return;
     hc.busy = true;
     // What kind of thing changed, for the Undo action's plain words ("Put the photo
@@ -3231,7 +3234,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     // apikey is the gateway credential (anon/publishable). authorization carries
     // the USER's JWT when signed in, so the server can authorise an owner's edit
     // off the session; otherwise the anon key (unclaimed drafts, token path).
-    var at = hcAccessToken();
+    var at = await hcFreshToken();
     fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'apikey': SUPA_ANON_KEY, 'authorization': 'Bearer ' + (at || SUPA_ANON_KEY) },
