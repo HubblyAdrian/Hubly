@@ -130,3 +130,29 @@ verify_jwt = false
 
 [functions.page-view]
 verify_jwt = false
+
+# THE MAIN CONVERSATION ENDPOINT — and the entry this file was missing.
+#
+# verify_jwt OFF, which is what production has been running; this records it so a
+# deploy stops depending on someone remembering --no-verify-jwt.
+#
+# WHY IT MUST BE OFF: a pre-claim visitor has no account, by design — the whole
+# funnel is "talk first, sign up later". Those calls present the PUBLISHABLE key
+# (`sb_publishable_…`), and a new-era publishable key is NOT a JWT, so an enforcing
+# gateway rejects it with "Missing authorization header" BEFORE this function's
+# handler runs. Turning verify_jwt on would kill every anonymous draft conversation
+# instantly and silently — the entire top of the funnel — while a signed-in owner
+# (who sends a real JWT via hcFreshToken) kept working, which is the worst possible
+# shape for a bug: invisible to whoever is testing while signed in.
+#
+# Same class as hubly-document-build and booking-notify above, and found the same
+# way rather than assumed: probing the deployed endpoint on 2026-09-02 with NO
+# Authorization header returned this function's own {"error":"messages_required"},
+# not a gateway 401 — proof the gateway is not enforcing today.
+#
+# The security property is unchanged, because it was never the gateway's: auth is
+# checked in-function per path — resolveOwnerUid verifies the JWT for owner writes,
+# the draft token authorises an unclaimed draft, and the writer RPCs take the owner
+# branch only with a verified uid.
+[functions.hubly-conversation]
+verify_jwt = false
