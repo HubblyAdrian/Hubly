@@ -60,6 +60,44 @@ weakest link is reaching the provider in time. This is the open risk, not a solv
 
 ## 3. Storefront is a third mode, above vertical
 
+> **CORRECTION (surveyed 2026-09-02) — this section is written as direction, and the storefront
+> is largely BUILT.** Not in the current spine: it lives in the legacy `public/hubly.html` /
+> `public/journey-os` stack, and it is **completely unreachable from the claimed shell**. This is
+> the missing-door pattern (`CLAUDE.md`: "look for the missing door before building the room") at
+> the largest scale it has appeared. What exists, verified by reading the code:
+>
+> - **18 `commerce_*` tables** — products, product_variants, product_images, collections,
+>   collection_products, bundles, bundle_products, carts, cart_items, orders, order_items,
+>   discounts, gift_cards, inventory_logs, shipping_profiles, store_settings, documents,
+>   merchandising_recs.
+> - **Server** — `commerce-api` (739 lines): products / collections / bundles / orders / cart /
+>   images / variants / settings / shipping-quote / inventory-apply-order, plus a public
+>   unauthenticated `GET public/storefront` that assembles the store payload with per-surface
+>   visibility filtering. Plus `create-store-checkout` (189), `commerce-merchandising` (101),
+>   `_shared/commerce_checkout.ts` (213), `hubly_commerce_inventory.ts` (153),
+>   `storefront_ast.ts` (212).
+> - **Public client** — `store-page.js` (429), `storefront-renderer.js` (229),
+>   `storefront-cart.js` (235), `storefront-ast.js` (125), `components.js`, `api.js`, `checkout/`.
+> - **Owner client** — `store-commerce.js` (1,027 lines) + CSS, mounted as the **Store** item in
+>   the legacy editor nav (`hubly.html:11654`).
+> - **Live public routes** — `{slug}.myhubly.app/store` (`isStoreRoutePath`), rendering from
+>   `businesses.meta.storefront` AST; and `capabilities.storefront===true &&
+>   capabilities.website!==true` renders the store at `/`, so a storefront-only business already
+>   has a front door. Onboarding already persists `'website' | 'store' | 'both'`
+>   (`BUILD_SURFACE_KEY`, `builderDefaultSurface()`, `isStorefrontOnlyBusiness()`). Checkout runs
+>   on Stripe Connect; the commerce README states "No fake payments."
+>
+> **NAMING TRAP — read this before touching either file.** In `hubly.html`, `#p-storefront` is
+> the *classic generated website* page (`showP('p-storefront')` → `renderWebsite()`). The actual
+> store is `#p-store` / `HublyStorePage`. Two meanings of "storefront" in one file.
+>
+> **What this changes about the constraint below.** "Storefront must not become a separate
+> codebase" is not a rule to uphold going forward — it has *already* been broken: the store is in
+> the legacy stack while the current product is `platform-home.html` + freeform generation. So the
+> open question is NOT build-or-not. It is **put a door on the legacy store, or re-implement it on
+> the new spine** — a decision with real cost either way, and Adrian's to make. Neither is started.
+> Row counts for actual usage are dated 2026-08-29 (see `STATE.md` "Numbers in this file").
+
 The **top-level distinction is what a business sells**: **time** (bookings) or **goods and
 digital products** (storefront). That choice **determines the backend and the record**,
 not just the page. **Vertical** — detailer, photographer, restaurant — sits *below* the

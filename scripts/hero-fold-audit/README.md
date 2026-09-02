@@ -5,6 +5,13 @@ layout across the stored corpus.
 
 ## RULE: re-export the corpus before EVERY run
 
+> **The `corpus.json` sitting in this folder right now is STALE — do not use it.** As of
+> 2026-09-02 it holds **114 rows** (market 3, internal 1, test 110; 107 `html` + 7 `ast`)
+> while the design-knob sweep that same week worked over **129**. It is untracked scratch
+> left over from the squeeze audit. **The file being present is not evidence that it is
+> fresh** — that is precisely the failure mode this section exists to prevent, and it has
+> now happened again. Re-export before every run, including this one.
+
 Re-pull `corpus.json` from the database at the start of every sweep. Never reuse an old
 export. **New pages are the most diagnostic ones** — they are the only pages produced by
 the *current* prompt, and they are exactly the ones a stale export omits. On 2026-08-23 a
@@ -85,8 +92,13 @@ real. Until then it's a script you run by hand.
 
 The design sweeps above run over ALL generated pages on purpose (new test pages are the
 most diagnostic — they're what the current prompt produces). But any CAPABILITY or MARKET
-ratio — claim rate, % with services, bookings, "empty booking page" — must filter to real
-businesses: `where account_kind = 'real'`. As of 2026-08-23 the corpus was ~125 businesses
-but only 9 real; measuring capability over the whole table measured our own testing. The
-`account_kind` column is now trustworthy (claim-time trigger + creation-flag RPC +
-backfill, migration `20260823140000`).
+ratio — claim rate, % with services, bookings, "empty booking page" — must filter to genuine
+outside businesses: **`where account_kind = 'market'`**, stating the denominator every time.
+
+**CORRECTED 2026-09-02: this section used to say `account_kind = 'real'`, which is wrong and
+contradicts the standing rule in `CLAUDE.md`.** `account_kind` has three values — **test** (our
+drafts), **internal** (founders, us, family), **market** (a genuine outside business). "Not a
+test draft" still includes us and our families, so reading `'real'` as "the market" is exactly
+how a week of priorities came to rest on a corpus that was ~93% test with a market N of 7. The
+column is trustworthy (claim-time trigger + creation-flag RPC + backfill, migration
+`20260823140000`); the filter was not.

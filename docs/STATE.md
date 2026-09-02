@@ -5,14 +5,46 @@ The current picture, no history. Pairs with `CLAUDE.md` (the rules), `PRODUCT_SH
 if it disagrees with memory, this wins. Evergreen-yard-care (`c969eb51-…`, account_kind=test,
 claimed, owner `adriansmithee+evergreen@gmail.com`) is the claimed-owner test business.
 
+## Numbers in this file are DATED — check the date before acting on one
+
+A count here was true when it was written and is not re-checked on read. Two specific ones,
+because they are the ones most likely to be quoted as current:
+
+- **`docs/SHELL_TERRAIN.md` §0 and §4 counts are 2026-08-29** (market N=7; services 9,
+  booking_requests 9, customers 4, jobs 2, `commerce_products` 0, `commerce_orders` 0,
+  `settings_business_hours` 0, `stripe_connect_accounts` 0). They were **not** re-verified on
+  2026-09-02 — that session had no database credentials (`.env.local` carries only a Vercel
+  OIDC token; the linked CLI's pooler URL has no password). Re-pull before quoting.
+- **`scripts/hero-fold-audit/corpus.json` on disk is a STALE export: 114 rows**, where the
+  design-knob sweep the same week used **129**. It is untracked scratch from the squeeze audit,
+  not a current corpus. The standing rule (that folder's README, and memory) is to re-export
+  before every sweep; the file being present is not evidence it is fresh.
+
 ## Built — do not rebuild (verify by using, don't re-implement)
 
 - **Claim → claimed shell.** Two modes on one switch (`hc.mode`→`data-mode`, `hcOpenWorkspace`):
   **Home** (chat is the screen) and **Website** (site = canvas, chat = assistant panel). Rail
   beneath a slim solid header. Settings is a popout (Account/Notifications/Website/Integrations).
 - **Click-to-edit** on a claimed page (the iframe runs the auth handshake itself). Direct edits
-  are optimistic; **Undo** = `restore_prev_business_document`. NOTE: click-to-edit changes TEXT
-  only, plus color/font swatches — no size/image/formatting yet (Build B below).
+  are optimistic; **Undo** = `restore_prev_business_document`. What it actually changes on a
+  claimed FREEFORM page — **text and the image `src`, and nothing else**:
+  - **Text** — real. Leaf-only (`hubly.html:53537` returns when `children.length > 0`), keyed on
+    `[data-hc]`, optimistic paint, `hcFreeformInlineEdit` → `applyDirectFreeformEdit`.
+  - **Image replace** — real. Click an `<img>` → file picker → optimistic blob paint →
+    `hcFreeformInlineImageEdit` → `uploadAndPatchFreeformImage`.
+  - **CORRECTION (surveyed 2026-09-02): colour and font are DEAD on a freeform page, and the
+    earlier note here — "changes TEXT only, plus color/font swatches" — read like a working
+    capability.** They are dead two ways, not one: the swatch row is hidden by CSS
+    (`hubly.html:53428`, `if(hc) styleRow.style.display='none'`) AND `applyDirectFreeformEdit`
+    accepts only `{label, text, src, prevText}` — there is no attribute/class/style op on the
+    freeform path at all, so the control is *structurally impossible*, not merely unwired. It
+    works on AST pages only. **Every market page is freeform**, so colour/font reach no real
+    business: in `scripts/hero-fold-audit/corpus.json` (114 pages) the split is market 3 html,
+    internal 1 html, test 103 html + **7 ast — all seven AST pages are `test`.** (That export is
+    stale — see the dating note under "Numbers in this file"; treat the ratio as directional and
+    "all AST are test" as true of that export only.)
+  - **Size / crop / formatting** — do not exist anywhere: no control, no client op, no server
+    support (Build B below).
 - **Home is an assistant**: calm greeting, transcript reachable, gaps recap from
   `get_my_site_gaps`, earned-by-state suggestions, silent when nothing's due.
 - **Owner-authorised fact writes on a CLAIMED site — PROVEN LIVE (2026-09-01).** The draft-token
@@ -121,8 +153,9 @@ the hours block → a day-grid + note overlay ON the block (type-aware, keyed of
 `data-hubly-service` anchors; add a missing phone/email on the contact block). Editor chrome carries
 `data-hc-editor` and never reaches a saved page — structural (client-only, saves are server-side
 transforms) plus the belt `stripEditorChrome` (already added). No-section pages fall back to the panel.
-Then the fuller "elite editor": today click-to-edit changes TEXT only (`applyDirectFreeformEdit` via
-`data-hc`) + color/font swatches (`hubly.html` COLOR_SWATCHES/FONT_OPTIONS ~53384); missing font SIZE
+Then the fuller "elite editor": today click-to-edit changes TEXT and the image `src` only
+(`applyDirectFreeformEdit` via `data-hc`) — the COLOR_SWATCHES/FONT_OPTIONS row (`hubly.html`
+~53333) is AST-only and never renders on a freeform page (see the correction above); missing font SIZE
 (constrain to the page's type scale, not a number box), image size/crop, formatting.
 - **Same path?** A style change can ride the same seam as a text edit — an inline `style` on the
   labelled element, saved as a new document version, undoable — without breaking anchors
@@ -167,6 +200,14 @@ restoring a backup. Steps only, never a raw pixel field.
 **Six knobs ship, offered only where they bind** (corpus of 129: test 123, market 5,
 internal 1). A control appears only when its count is > 0 — a knob that binds nothing is a
 checkmark we did not earn.
+
+**CORRECTION (surveyed 2026-09-02): the knobs have NO DOOR OF ANY KIND — not "no owner-facing
+control".** Two facts, both checked: (1) zero client callers — `designKnobs|designEdit|designKnob`
+across `public/` and `scripts/` returns nothing; (2) **the model cannot reach them either** —
+`designKnob` is not registered in `HUBLY_CAPABILITY_REGISTRY` (the only occurrences in that file
+are the import and the action-log label), so "make my headings bigger" in chat does nothing at
+all. The only way in was a hand-built POST. Saying "only the endpoint" implied talking still
+worked; it did not. (Both closed by the control build below.)
 
 | knob | pages | avg declarations |
 |---|---|---|
@@ -278,19 +319,62 @@ whose action can't reach the page; never write a fact not grounded in the curren
 - Home on a real return visit; the suggestion buttons; the optimistic edit + Undo toast.
 - Stripe test-mode cycle (I must not enter cards).
 
-## Still owed — the survey, which has not moved
+## The survey — DONE 2026-09-02 (read-only). What it found
 
-Named in full so it does not quietly shrink. None of this is started:
+Findings are folded into the sections above and into `OPEN_FINDINGS.md`; this is the index.
 
-- **Editor wiring** — what colour, font, size, images and add-service actually do today
-  versus what they appear to do, and where **memberships and events** belong.
-- **The Home redesign** — logo pinned top, Chats removed, no search bar, light and dark,
-  and whether the four action cards have real destinations (a card that goes nowhere is
-  the same unearned promise as a control that binds nothing).
-- **Storefront** — verify what exists rather than assuming; `PRODUCT_SHAPE.md` §3–4 is
-  direction, not an inventory.
-- **The URL scheme** and **the wordmark placement**.
+- **Editor wiring — answered.** See "Click-to-edit" above: text and image `src` are real;
+  colour and font are structurally impossible on freeform and reach no market business;
+  size/crop/formatting do not exist; add-service is panel-or-chat only, no `+` on the page.
+- **Memberships and events — answered, and the code agrees they are NOT editor work.**
+  `memberships` (`schema.sql:3997`) is keyed `customer_id NOT NULL` with a UNIQUE constraint
+  on it, so a row is one CUSTOMER'S ENROLMENT, not a plan the business offers — there is no
+  plan-catalogue table, and `customer_membership.ts` names the real source of truth: "a read
+  projection of the browser's `[RP]` notes-tag maintained by `upsertCustomer()`". No Stripe,
+  no charge scheduling (`recurring_schedules`' migration is emphatic that scheduling and
+  billing are "deliberately not connected"). **Events do not exist at all** — of 119 tables
+  none is a class, session, ticket or dated offering (`business_timeline_events` is an audit
+  log, `google_calendar_events` is calendar sync, `hubly_reasoning_events` is AI telemetry).
+  So memberships are billing objects hanging off a customer, and events are greenfield with a
+  date dimension AND inventory (seats). Both are transaction-layer work, not editor work.
+- **Home redesign — answered.** There is **no Chats tab to remove** (`hcWorkspaces()` returns
+  Website only) and **no search bar** (zero matches); both asks are no-ops. **Logo pinned top
+  is not built** and the comment that claimed it was has been corrected (`hcRenderRail`).
+  **Dark is new for this surface but the pattern is in the repo**: `platform-home.html` has one
+  `:root` (warm cream, no `prefers-color-scheme`, no `data-theme`, nothing switches), while
+  `hubly.html` has a complete working token-based night theme (`html[data-theme="night"]`, boot
+  script honouring `localStorage.hubly_theme` then `prefers-color-scheme`) — though its toggle
+  is force-hidden on the app/landing/storefront pages, and the `-on-dark` wordmark asset is
+  hardcoded per dark SECTION, never theme-switched. **The four action cards: no cards exist**;
+  what exists is the 3-button arrival row (`:3977`) and up to 4 gap suggestions in `hcRenderHome`
+  (photos / hours / phone / service descriptions). The four suggestions DO have real
+  destinations — each fills `#hcInput` and calls `hcSend`, and each is gated on
+  `get_my_site_gaps`, so the earned-only rule is already correct. The arrival row's "See what a
+  customer sees" is still the BROKEN #4 above (it opens `/?book=1`, the booking form).
+- **Storefront — answered, and it reframes the work.** It is not direction and not greenfield:
+  18 `commerce_*` tables, `commerce-api` (739 lines), a public store route already live, and a
+  1,027-line owner UI — all in the LEGACY stack, all unreachable from the claimed shell. Full
+  inventory and the naming trap (`#p-storefront` is the classic WEBSITE page) are in
+  `PRODUCT_SHAPE.md` §3. **The open question is door-vs-re-implement, not build-vs-not.**
+  Not started; Adrian's call.
+- **URL scheme — surveyed; NOT specified anywhere in the record.** What exists: apex
+  `myhubly.app/` serves `platform-home.html` and is BOTH the marketing landing and the entire
+  claimed owner shell; `{slug}.myhubly.app/` → `hubly.html`; `/?book=1` → booking;
+  `/store` → store (or `/` if storefront-only). **The gap: the owner's workspace has no URL** —
+  `hc.mode` is memory only (`:3547/:3598/:3618/:4707`), never written to URL, hash or storage,
+  so there is no deep link to Website mode, a refresh always lands on Home, and Back does not
+  move between modes. Sharper on a phone, where Back is the system gesture.
+- **Wordmark — surveyed; NOT specified anywhere in the record.** Two implementations exist and
+  the claimed shell uses the one that is not the asset: `platform-home.html` renders a CSS text
+  lockup (`:907` header, `:1059` footer), while `hubly.html` uses the real
+  `assets/hubly-wordmark*.{svg,png}` via `.hubly-mark` in 18 places.
+
+## Still owed
+
+- **The knob CONTROLS** — five knobs, not six; image shape held until its steps are
+  per-breakpoint (see "The image knob's mobile cost"). Touch-first from the first line: the
+  edit affordance today is `:hover` only (`#hubly-editable-style`), which is invisible on
+  touch, so the invitation may not depend on hover.
 - **Retiring the Edit-details button** once in-place editing covers it.
-- **Touch-first control design for the knobs** — the six that ship have no owner-facing
-  control yet; only the endpoint. Per the mobile rule above, those controls are designed
-  for touch from the first line, not retrofitted.
+- **A decision on storefront** — door on the legacy store, or re-implement on the new spine.
+- **A URL scheme and a wordmark placement** — both need SPECIFYING, not just surveying.

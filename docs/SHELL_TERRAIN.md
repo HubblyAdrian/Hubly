@@ -5,6 +5,23 @@ design.** Where something could not be determined it is marked `AMBIGUOUS`. Data
 are filtered to `account_kind = 'market'` (the 7 genuine outside businesses); that is a
 small denominator — every number below is out of **N = 7 market businesses**, all claimed.
 
+> **EVERY DATA COUNT IN THIS FILE IS DATED 2026-08-29 AND HAS NOT BEEN RE-VERIFIED.**
+> That includes the §0 per-business table and the whole §4 inventory (services 9,
+> booking_requests 9, customers 4, jobs 2, `commerce_products` 0, `commerce_orders` 0,
+> `settings_business_hours` 0, `portfolio_photos` 0, `stripe_connect_accounts` 0, …). A
+> re-check was attempted on 2026-09-02 and could not run: no database credentials in that
+> environment (`.env.local` holds only a Vercel OIDC token; the linked CLI's pooler URL has
+> no password). **Re-pull before quoting any of these as current** — most of all the zeros,
+> because a zero that has since become non-zero is exactly the kind of stale fact that gets
+> read as "nobody uses this" and used to justify deleting something.
+>
+> The §2/§3/§6 code references were re-read on 2026-09-02 and still hold, with one
+> correction: §2's "Text color / font swatches — **works on AST, hidden/dead on freeform**"
+> understates it. They are not merely hidden — `applyDirectFreeformEdit` has no
+> attribute/class/style op at all, so styling is structurally impossible on a freeform page.
+> Since every market page is freeform, colour and font reach no real business.
+> See `STATE.md` "Click-to-edit".
+
 Schema note: `docs/schema.sql` is a full introspected dump of the live tables (core
 operational tables live there, not in `supabase/migrations/`, which holds deltas).
 

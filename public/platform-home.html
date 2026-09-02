@@ -3590,8 +3590,16 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     var app = document.getElementById('hcApp');
     var claimed = !!hc.draftClaimed;
     if(app) app.classList.toggle('hc-claimed', claimed);
-    // Shell-level signal (outside #hcApp) so the header and app shift right of the
-    // full-height rail and the header drops its now-duplicate wordmark.
+    // Shell-level signal (outside #hcApp), so the header can respond to the claimed state
+    // from outside the app subtree. What it ACTUALLY drives today is one rule — `body.hc-
+    // shell-claimed .nav` goes solid with a hairline, so the rail sits under something
+    // rather than floating below a transparent nav.
+    // CORRECTED 2026-09-02: this comment used to also claim "the header drops its
+    // now-duplicate wordmark". It does not, and never did — there is no rule anywhere that
+    // hides `.hubly-lockup` when claimed, and the rail carries no mark of its own, so
+    // nothing is duplicated and nothing is dropped. A comment describing an unbuilt
+    // behaviour reads as a spec that shipped; wordmark placement in the claimed shell is
+    // still open (see docs/STATE.md "Still owed").
     try{ document.body.classList.toggle('hc-shell-claimed', claimed); }catch(e){}
     if(!claimed){ rail.hidden = true; return; }
     rail.hidden = false;

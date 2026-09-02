@@ -556,6 +556,55 @@ open under STATE "Still open" has the same replace-all root.
 
 ---
 
+## 13. On a phone, a claimed owner cannot reach SETTINGS AT ALL — RECORDED, NOT FIXED
+
+**Found 2026-09-02 by reading the code during the editor/Home survey. Needs Adrian's
+on-device confirmation** — Claude Code has no true 390px viewport (the standing rule in
+`CLAUDE.md`), so what follows is a code-level fact, not an observed one.
+
+**The two facts, and there are only two:**
+
+1. **`hcOpenSettings` has exactly one caller** — the rail gear, `platform-home.html:4746`:
+   `if(railGear) railGear.addEventListener('click', function(e){ e.stopPropagation(); hcOpenSettings(); });`
+   There is no other entry point: no menu item, no chat action, no URL, no keyboard path.
+2. **The rail is hidden at phone width** — `platform-home.html:318`:
+   `@media (max-width:760px){ .hc-app.hc-claimed .hc-rail{display:none} }`
+
+One caller, and that caller is inside the element the media query removes. So below 760px
+the Settings popout is unreachable.
+
+**What is behind that door, and therefore also unreachable on a phone:** Sign out (the
+`hcSignOut` button lives in the popout's Account section — the account menu on `navSignin`
+is the only other sign-out path), the Stripe Connect status pill and both its actions
+(Connect Stripe / Open Stripe), the account email, the notification setting, and the site
+address. Stripe is the sharpest one: it is already flagged as never proven E2E, and the
+only door to it is shut on the device most owners will be holding.
+
+**Why this is a finding and not a styling nit.** It is the same shape as the defects this
+codebase keeps paying for — a capability that exists, works, and has no reachable entry
+point (`CLAUDE.md`: "look for the missing door before building the room"). Nothing is
+broken; the room is fine and the door is painted onto a wall that is `display:none` on a
+phone. It also violates prohibition 4 in spirit: the interface changes shape between
+widths, and a control that silently vanishes at a breakpoint is exactly a control that
+"silently shows up, vanishes, or relocates between states".
+
+**What would close it:** give Settings a second entry point that survives phone width —
+the candidate is the canvas toolbar, which is the one claimed-owner surface confirmed to
+render at phone width (`#hcManageBtn` is `display:inline-flex` when claimed and lives in
+the bar; the mobile Chat/Site toggle drives that view). Whatever the entry, it must be the
+SAME `hcOpenSettings` popout, not a second settings surface that can disagree with the
+first. Verify on a real phone: claimed owner, 390px, reach Settings, sign out, and see the
+Stripe pill — Adrian's to run, per the standing rule.
+
+**Related, same root, do not fix blindly:** the rail also carries the Home/Website mode
+switch, so `hc.mode` is not reachable on a phone either; mobile falls back to the
+Chat/Site toggle instead, which is a deliberate choice (`platform-home.html:317`, "v1 keeps
+the phone on its Chat/Site toggle — a one-item bottom bar isn't earned yet") and is NOT
+part of this finding. Only Settings has no fallback at all. Note the earned-only bottom-bar
+rule (`CLAUDE.md` prohibition 5, max 4 places on mobile) constrains any fix here.
+
+---
+
 ## Also noted 2026-08-28
 
 - **Rebuild read-back is vague.** The "yes, rebuild" reply ("a completely new page is
