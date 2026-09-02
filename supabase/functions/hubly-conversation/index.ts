@@ -90,39 +90,62 @@ import {
 // Every turn after this one belongs entirely to the model — no scripted
 // flow beyond it.
 
+/** Owner-facing names for the record fields, for the change read-back (guard 2).
+ *  "phone is now …" not "phone: …" — the sentence is spoken to a person. */
+const OWNER_FACT_LABEL: Record<string, string> = {
+  phone: "your phone number",
+  email: "your email",
+  address: "your address",
+  city: "your city",
+  state: "your state",
+  serviceAreaCities: "your service area",
+  travelRadiusMiles: "your travel radius",
+  yearsInBusiness: "your years in business",
+  hoursNote: "your hours note",
+};
+
 /**
- * Is the schema'd extraction pass worth a model call?
+ * IS THIS MESSAGE WORTH AN EXTRACTION PASS?
  *
- * Decided from the record, not from a guess about the message. Once every field
- * the pass can supply is filled, it stops running -- so a long conversation
- * pays for extraction a handful of times, not on every turn.
+ * The old answer was `length >= 25 && gaps.missing`, and both halves were wrong.
  *
- * Fails OPEN: if the check itself errors we run the pass. Missing a fact
- * someone typed is the failure this whole path exists to prevent; one extra
- * cheap model call is not.
+ * `gaps.missing` asked WHICH FIELDS ARE EMPTY when the real question is DOES THIS
+ * MESSAGE CONTAIN A FACT. It also silently made facts uncapturable once six other
+ * fields filled — measured across the corpus, 0 of 149 businesses have ever closed
+ * it, so it protected nothing and would have started dropping hours, hours notes
+ * and prose-stated services the moment one did. Gone.
+ *
+ * The 25-character floor dropped every short fact: "Sat 9-1", "801-555-0134",
+ * "I do lawn care in provo".
+ *
+ * WHY THIS ENUMERATES THE HARMLESS SIDE. The obvious replacement — a list of things
+ * that look like a fact — was measured against 125 real messages and lost 52 of
+ * them, because the highest-value facts (a city, a service list) are prose with no
+ * money, no digits, no "@". A second attempt listing first-person assertion
+ * phrasings ("I run", "we do") lost 28, missing "Im looking to", "I give lessons in
+ * lehi utah", "I'm a nail tech". Both failed the same way and it is the same way
+ * the anchor count, the price scan and the hours detector failed before them: a
+ * list of forms undercounts the fact, because the fact wears a form nobody listed.
+ *
+ * So this enumerates the side where being wrong is cheap. An acknowledgement cannot
+ * carry a fact; everything else might. A missing entry in this list costs one
+ * wasted pass (~670 tokens, low effort); a missing entry in the other list costs a
+ * fact the owner stated and a page that ships without it. Measured cost of the
+ * inversion: 122 of 125 messages fire vs 93 today (+31%), and it drops nothing.
  */
-async function selectDraftFactGaps(businessId: string): Promise<{ missing: boolean }> {
-  try {
-    const url = (Deno.env.get("SUPABASE_URL") || "").trim();
-    if (!url) return { missing: true };
-    const res = await fetch(
-      `${url}/rest/v1/businesses?select=city,state,address,service_area_cities,travel_radius_miles,years_in_business&id=eq.${businessId}`,
-      { headers: adminHeaders() },
-    );
-    if (!res.ok) return { missing: true };
-    const rows = await res.json();
-    const row = Array.isArray(rows) ? rows[0] : null;
-    if (!row) return { missing: true };
-    const blank = (v: unknown) =>
-      v === null || v === undefined || v === "" || (Array.isArray(v) && v.length === 0);
-    return {
-      missing: blank(row.city) || blank(row.state) || blank(row.address) ||
-        blank(row.service_area_cities) || blank(row.travel_radius_miles) ||
-        blank(row.years_in_business),
-    };
-  } catch {
-    return { missing: true };
-  }
+const ACK_ONLY = new Set([
+  "y", "yes", "yep", "yeah", "ya", "ok", "okay", "k", "kk", "sure", "thanks", "thank you", "ty",
+  "no", "nope", "nah", "done", "perfect", "great", "nice", "cool", "looks good", "love it",
+  "like it", "do it", "go ahead", "sounds good", "please do", "that works", "correct", "right",
+  "yes please", "no thanks", "continue", "next", "stop", "wait", "hi", "hello", "hey",
+]);
+function worthExtracting(message: string): boolean {
+  const raw = String(message || "").trim();
+  if (!raw) return false;
+  // An acknowledgement is the one shape that cannot carry a fact — but only when it
+  // is the WHOLE message. "yes, and my number is 801-555-0134" is not an ack.
+  const norm = raw.toLowerCase().replace(/[^\p{L}\p{N}\s]+/gu, " ").replace(/\s+/g, " ").trim();
+  return !ACK_ONLY.has(norm);
 }
 
 /**
@@ -1016,10 +1039,9 @@ Deno.serve(async (req) => {
   if (latestUserMessage && latestUserMessage.trim()) {
     const pattern = extractByPattern(latestUserMessage);
     pendingPricedServices = extractPricedServices(latestUserMessage);
-    // Is the schema'd pass worth a model call? Decided from the record where
-    // there is one; a business that does not exist yet is missing everything.
-    const gaps = draftBusiness?.id ? await selectDraftFactGaps(draftBusiness.id) : { missing: true };
-    const worthAPass = latestUserMessage.trim().length >= 25 && gaps.missing;
+    // Is the schema'd pass worth a model call? Asked of the MESSAGE — see
+    // worthExtracting for why this no longer consults the record at all.
+    const worthAPass = worthExtracting(latestUserMessage);
     const passed = worthAPass ? await extractRecordFacts(latestUserMessage, draftBusiness?.id) : {};
     pendingFacts = mergeFacts(pattern, passed);
     // Services from the SAME model pass that read the rest of the record, unioned
@@ -1033,6 +1055,30 @@ Deno.serve(async (req) => {
 
   /** Applies whatever was extracted, once. Safe to call more than once. */
   let factsApplied = false;
+  // GUARD 2, same seam as photoTruth/servicesTruth: when extraction REPLACES a fact
+  // the owner already had (a corrected phone, a new email), the reply must name the
+  // change and the new value. Composed from what the write actually did, so it can
+  // neither claim a change that didn't happen nor forget one that did. Appended
+  // rather than substituted — a turn can both change the phone and place a service.
+  //
+  // DECLARED HERE, above flushExtractedFacts, and that placement is load-bearing:
+  // the flush ASSIGNS this and is called further up the handler than the other
+  // truth variables are declared. Sitting it beside them put it in the temporal
+  // dead zone at the moment of the call, so every turn that CHANGED a fact threw a
+  // ReferenceError and returned 500 — after the write had already landed. The
+  // record therefore updated correctly on every attempt while the caller got a
+  // dead connection, which is exactly the shape that reads as "working" from the
+  // database and as "failed" from the product. Verified by reading the RESPONSE,
+  // not the row (2026-09-02).
+  let recordChangeTruth = "";
+  // The new VALUES on their own. The suppression test below has to be "is the new
+  // value already visible", not "did the model use my exact wording" — the model
+  // said "your number is now 970-555-0177" while this line read "your phone number
+  // is now 970-555-0177", so a phrase match let both through and the owner was told
+  // the same thing twice in one breath. The value is what guard 2 exists to make
+  // visible; if it is already there, this stays quiet. One acknowledgement per action.
+  let recordChangeValues: string[] = [];
+
   const flushExtractedFacts = async (id: string, token: string) => {
     if (factsApplied || !id) return;
     // Check for facts FIRST — a turn with nothing to write never resolves the
@@ -1070,6 +1116,41 @@ Deno.serve(async (req) => {
           `CAPABILITY RESULT for business.recordFacts: FAILED to save ${applied.failed.join(", ")} — the write was refused. ` +
           `Do NOT tell them it is saved or on their site. Say plainly you could not save it just now and you're looking into it; ` +
           `do not invent a reason or a workaround.`,
+      });
+    }
+    // GUARD 3 — SKIPPED STOPS BEING SILENT.
+    //
+    // `skipped` has always existed and has never been told to anyone: a fact the
+    // owner stated that we deliberately did not write just vanished. That is the
+    // one place left where a fact write disappears without a trace, so it is now
+    // reported exactly the way `failed` is. Two shapes reach here: already set and
+    // unchanged (nothing to do, and the model must not re-ask), and an overwrite
+    // REFUSED because the new value isn't in this message (guard 1) — which the
+    // owner has to hear, because from their side they just corrected something.
+    if (applied.skipped.length) {
+      history.push({
+        role: "system",
+        content:
+          `CAPABILITY RESULT for business.recordFacts: NOT written — ${applied.skipped.join("; ")}. ` +
+          `Anything marked "already set, unchanged" is on record: do NOT ask for it again and do not announce it. ` +
+          `Anything marked "kept …" was NOT changed — if they were trying to change it, say plainly that you didn't ` +
+          `catch the new value and ask them for it; never claim the change was made.`,
+      });
+    }
+    // GUARD 2 — a REPLACEMENT is named, with the value, in the reply.
+    if (applied.changed.length) {
+      recordChangeTruth = applied.changed
+        .map((c) => `${OWNER_FACT_LABEL[c.key] || c.key} is now ${c.to}`)
+        .join(", ");
+      recordChangeValues = applied.changed.map((c) => c.to).filter(Boolean);
+      history.push({
+        role: "system",
+        content:
+          `CAPABILITY RESULT for business.recordFacts: CHANGED an existing fact — ${
+            applied.changed.map((c) => `${c.key}: "${c.from}" -> "${c.to}"`).join("; ")
+          }. This replaced something they already had, so SAY SO in your reply, naming the new value ` +
+          `(e.g. "your number is now 801-555-0134"). A change they can see is a change they can correct; ` +
+          `a silent one is not.`,
       });
     }
   };
@@ -1854,7 +1935,16 @@ Deno.serve(async (req) => {
       // truth (services/photo) already leads.
       const primaryReply = photoTruth || servicesTruth || contactHoursTruth || deduped.reply || "";
       const extraTruth = (contactHoursTruth && primaryReply !== contactHoursTruth) ? " " + contactHoursTruth : "";
-      const finalReply = primaryReply + extraTruth + rebuildSkippedNote;
+      // A REPLACED fact is named whatever else the turn did. Appended, never
+      // substituted: the model's reply may be answering something else entirely,
+      // and the change still has to be visible (guard 2). Only when the model
+      // hasn't already stated the new value itself.
+      const valuesAlreadyStated = recordChangeValues.length > 0 &&
+        recordChangeValues.every((v) => primaryReply.includes(v));
+      const changeTruth = (recordChangeTruth && !valuesAlreadyStated)
+        ? ` Noted — ${recordChangeTruth}.`
+        : "";
+      const finalReply = primaryReply + extraTruth + changeTruth + rebuildSkippedNote;
       // NOTE: the "offer the price-list photo ONCE per conversation" rule is enforced on the
       // CLIENT (hcOncePhotoOffer), not here: the first ask is a post_build turn whose reply is
       // never threaded back into `messages`, so this handler can't see it to know the offer was

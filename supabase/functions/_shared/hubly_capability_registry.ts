@@ -70,7 +70,7 @@ import {
   placeContactHoursInFreeform,
   type HoursRow,
 } from "./hubly_contact.ts";
-import { phoneGrounded, emailGrounded, reconcileServices } from "./hubly_grounding.ts";
+import { addressGrounded, emailGrounded, phoneGrounded, reconcileServices } from "./hubly_grounding.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
 // Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
 // "Invalid JWT". Both behaviours are load-bearing -- see supabase_admin.ts.
@@ -715,6 +715,13 @@ export type ExtractedFactWrite = {
   // never fall silent on a failed write — the false-"Done" defect (a write that
   // failed but said nothing, so the model claimed success it hadn't earned).
   failed: string[];
+  // GUARD 2 — facts that REPLACED a value the owner already had, with both sides.
+  // Filling a blank can be quiet; changing something they already had must be said,
+  // and said in terms of WHAT CHANGED ("your number is now 801-555-0134"), so a
+  // wrong extraction is visible in the reply and therefore undoable instead of a
+  // silent overwrite of a correct value. Carried as data, not left to the model to
+  // remember to mention — the same seam as servicesTruth and contactHoursTruth.
+  changed: { key: string; from: string; to: string }[];
   recordChange: RecordChange[];
 };
 
@@ -739,9 +746,10 @@ export async function applyExtractedFacts(
   const written: string[] = [];
   const skipped: string[] = [];
   const failed: string[] = [];
+  const changed: { key: string; from: string; to: string }[] = [];
   const changes = new Set<RecordChange>();
   // Either a draft token OR a verified owner is required to write.
-  if (!draftId || (!draftToken && !ownerUid)) return { written, skipped, failed, recordChange: [] };
+  if (!draftId || (!draftToken && !ownerUid)) return { written, skipped, failed, changed, recordChange: [] };
   const p_owner_id = ownerUid || null;
 
   const row = await selectOne(
@@ -760,15 +768,71 @@ export async function applyExtractedFacts(
   // fill() only STAGES a field — it does not count it as written until the patch
   // RPC actually succeeds, so a refused patch can be reported as `failed` (not
   // silently as written, and not swallowed).
-  const patchIntents: { key: string; col: string; change: RecordChange }[] = [];
+  const patchIntents: { key: string; col: string; change: RecordChange; from?: string }[] = [];
+
+  /** GUARD 1 — A VALUE MAY OVERWRITE ONLY WHAT THIS MESSAGE SAYS.
+   *
+   *  Extraction reads ONE message with no transcript (see extractRecordFacts), so
+   *  everything it returns is grounded in this turn — but that is a property of the
+   *  CALL SITE, not of this function, and a property that holds "by construction of
+   *  the caller" stops holding the day someone changes the caller. Thread history
+   *  into extraction, or assemble `facts` somewhere else, and this branch starts
+   *  publishing a value nobody typed ON TOP OF a correct one — strictly worse than
+   *  the blank-fill case that produced the 801-888-8888 scar, because there is a
+   *  right answer here and we would be destroying it.
+   *
+   *  So the overwrite re-verifies against the message itself and REFUSES what it
+   *  cannot ground. It does not trust its caller. Fields with no grounding check of
+   *  their own (city, state, area, radius, years) are free-text the model read out
+   *  of the same message; they are refused only when the message is empty, which is
+   *  the case where "grounded" is unanswerable. */
+  const groundedInMessage = (key: string, value: unknown): boolean => {
+    const msg = String(userMessage || "");
+    if (!msg.trim()) return false;                    // nothing to ground against
+    const v = String(value ?? "");
+    if (key === "phone") return phoneGrounded(v, msg);
+    if (key === "email") return emailGrounded(v, msg);
+    if (key === "address") return addressGrounded(v, msg);
+    // Everything else: the value's own words must appear in the message. Cheap,
+    // and it fails in the safe direction — an unusual phrasing costs one refused
+    // overwrite (reported), never a silent one.
+    const tokens = v.toLowerCase().match(/[a-z0-9]{2,}/g) || [];
+    if (!tokens.length) return false;
+    const hay = msg.toLowerCase();
+    return tokens.every((t) => hay.includes(t));
+  };
+  /** Same value, allowing for formatting drift, so a re-statement is not a "change". */
+  const sameValue = (a: unknown, b: unknown): boolean => {
+    const norm = (x: unknown) =>
+      Array.isArray(x)
+        ? x.map((i) => String(i).trim().toLowerCase()).sort().join("|")
+        : String(x ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+    return norm(a) === norm(b);
+  };
+
   const fill = (col: string, key: string, value: unknown, change: RecordChange) => {
     if (value === undefined || value === null || value === "") return;
     const existing = (row as Record<string, unknown> | null)?.[col];
     const isBlank = existing === null || existing === undefined || existing === "" ||
       (Array.isArray(existing) && existing.length === 0);
-    if (!isBlank) { skipped.push(key); return; }
+    if (isBlank) {                                    // CREATE — unchanged behaviour
+      patch[col] = value;
+      patchIntents.push({ key, col, change });
+      return;
+    }
+    // CHANGE. Until now this branch just dropped the value into `skipped` and said
+    // nothing, so an owner correcting their own phone number, email or address was
+    // silently ignored — extraction could create a fact but never fix one, and
+    // nobody heard about it.
+    if (sameValue(existing, value)) { skipped.push(`${key} (already set, unchanged)`); return; }
+    if (!groundedInMessage(key, value)) {
+      // Refused, LOUDLY. A value we cannot find in the message may not overwrite one
+      // the owner already has.
+      skipped.push(`${key} (kept "${String(existing).slice(0, 40)}" — the new value isn't in this message)`);
+      return;
+    }
     patch[col] = value;
-    patchIntents.push({ key, col, change });
+    patchIntents.push({ key, col, change, from: String(existing) });
   };
 
   // Normalize on WRITE, not just on render: the record itself carries house
@@ -819,6 +883,9 @@ export async function applyExtractedFacts(
         if (dropped.includes(it.col)) { failed.push(it.key); continue; }
         written.push(it.key);
         changes.add(it.change);
+        // Only a real REPLACEMENT is a change — `from` is set by fill() exactly
+        // when it overwrote a value that was already there.
+        if (it.from !== undefined) changed.push({ key: it.key, from: it.from, to: String(patch[it.col] ?? "") });
       }
     } else {
       // Attempted and refused — record it as failed and KEEP GOING. Hours and
@@ -872,7 +939,7 @@ export async function applyExtractedFacts(
     }
   }
 
-  return { written, skipped, failed, recordChange: [...changes] };
+  return { written, skipped, failed, changed, recordChange: [...changes] };
 }
 
 /** What to SAY after a header change — in terms of what moved, not the enum

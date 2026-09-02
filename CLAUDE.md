@@ -178,6 +178,27 @@ acts, or it says what will happen — it never gives directions to something it 
   never its value (e.g. `edgefunctions202608` / `sb_secret_NmJ3E…`). A key that has appeared in
   terminal output is compromised and must be rotated — treat the appearance itself as the breach,
   before asking whether anyone saw it.
+- **When you must guess, ENUMERATE THE HARMLESS SIDE — never the valuable one.** Every time
+  we have written a list of "things that look like a fact", the list has undercounted, because
+  the fact turns up wearing a form nobody listed. It is the same failure four times now: the
+  freeform **anchor** count (a service is a heading one build, a `<li><span>` the next); the
+  **price scan** (counted a `$`, missed every priced service rendered without the symbol); the
+  **hours detector** (matched formatted times, missed "Closed", "Call for hours", "open daily");
+  and, on 2026-09-02, the **extraction gate** twice in one sitting — a list of fact SHAPES
+  (money, `@`, phone digits, day/times, address) lost 52 of 125 real messages, and a second
+  list of first-person ASSERTION phrasings ("I run", "we do") lost 28, because the richest
+  messages say "Im looking to make a storefront to sell detailing chemicals", "I give lessons
+  in lehi utah", "I'm a nail tech". The two highest-value facts we capture — a city and a
+  service list — are prose, and prose has no closed set of forms.
+  So invert it: enumerate the small, closed set of inputs that CANNOT carry the thing, and
+  treat everything else as if it might. A message that is nothing but "yes" or "looks good"
+  cannot carry a fact; everything else can. The asymmetry is the whole argument — a missing
+  entry on the harmless list costs one wasted pass (~670 tokens, low effort), while a missing
+  entry on the valuable list costs a fact the owner actually stated and a page that ships
+  without it. Same reasoning as never discarding a draft: when the two errors cost different
+  amounts, the tie does not go to the expensive one. And when a heuristic reports "N things
+  have/lack X", it is still counting a FORM, not the fact — state which form, and expect the
+  number to move when another is included.
 - **A layout that cannot be read is a defect, not a style choice.** Text columns collapsing to
   min-content, content clipped off the page, elements overlapping — deterministically detectable,
   and must be caught by a pass rather than left to prompt guidance. The model's layout freedom
