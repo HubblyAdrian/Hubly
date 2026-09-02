@@ -605,6 +605,69 @@ rule (`CLAUDE.md` prohibition 5, max 4 places on mobile) constrains any fix here
 
 ---
 
+## 14. The storefront capability is invisible to the model in the claimed shell — and the
+## obvious one-line fix makes it WORSE. RECORDED, NOT FIXED
+
+**Found 2026-09-02.** The `storefront` capability is fully built and already registered with
+the model (`HUBLY_CAPABILITY_REGISTRY`, ~10 actions over the owner-gated `commerce-api`).
+It cannot be reached from the signed-in shell, because
+`CONTEXT_CAPABILITY_ALLOWLIST` grants it only in the `operate` context and
+`platform-home.html` sends **no `context` at all**, so every shell request defaults to
+`dashboard`.
+
+### The naive fix is a trap — do not ship it
+
+Adding `"storefront"` to the `dashboard` array looks like the whole fix. It is one line, and
+it would **advertise the capability to the model and guarantee that every call fails.** Three
+pieces are missing, none of them supplied by the shell:
+
+1. **`ownerToken`** — the write credential the storefront handlers present to `commerce-api`.
+   Declared at `hubly-conversation/index.ts:911` and assigned at **exactly one place, `:937`**,
+   inside `if (context === "operate")`. In `dashboard` it is `null`, always.
+2. **`businessId`** — read from `body.businessId` at **`:904`**. The claimed shell sends
+   `draftBusiness`, never `businessId` (`platform-home.html:2305`, `:3899`). It is `null`.
+3. **The injection block is itself guarded on it** — `if (capabilityName === "storefront" &&
+   businessId)` at **`:1659`**. With `businessId` null the block never runs, so even
+   `_ownerToken` is never attached.
+
+Net effect: the model is told it can operate the store, calls e.g. `listCatalog`,
+`sfOwnerCtx` returns `null`, and the owner is told **"The Store isn't available in this
+conversation yet."** — on every request, forever. That is the six-knobs-with-no-door defect
+wearing a louder coat: instead of failing silently it actively tells the owner their store is
+unavailable while the store sits there working.
+
+### Why `context: "operate"` from the shell is worse than the disease
+
+The tempting alternative — have `platform-home.html` send `context: "operate"` — is a
+regression, not a fix. `operate` allows **only** `["storefront"]`, so it would strip
+`website`, `business` and `online_presence` from the shell: every capability the claimed
+owner actually uses today (page edits, record writes, the new design knobs). It trades one
+dark capability for three working ones.
+
+### THE ACTUAL OPEN DECISION — and it is not a storefront decision
+
+**Would the `dashboard` context carry a raw owner write credential?**
+
+To call `commerce-api` *as that person*, `dashboard` must hold the owner's raw JWT and pass
+it onward. **It has never held one.** Today `dashboard` verifies an owner *uid*
+(`getOwnerUid` → `resolveOwnerUid`) and stops there: the uid is handed to writer RPCs that
+are locked to `service_role`, so the browser can never forge the owner branch. Holding and
+forwarding a raw bearer token to another service is a categorically different posture from
+verifying an identity.
+
+**That is a security decision and it needs deciding on its own terms — never as a rider on a
+"make the store reachable" task.** It is the kind of change that gets waved through because
+the ticket was about something else.
+
+### Size, and the honest caveat
+
+~10–25 lines across two files, plus that decision. **It may not need making at all**: if the
+storefront hour (see `PRODUCT_SHAPE.md` §3 and `STATE.md`) finds the legacy store rotted, or
+the answer is to re-implement on the new spine, this door is moot. Do not build it before
+that hour is spent.
+
+---
+
 ## Also noted 2026-08-28
 
 - **Rebuild read-back is vague.** The "yes, rebuild" reply ("a completely new page is

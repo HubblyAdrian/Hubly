@@ -180,7 +180,27 @@ Then the fuller "elite editor": today click-to-edit changes TEXT and the image `
   page already shows a schedule we can't anchor, we save + honestly decline, but the page then
   shows stale hours. Fix is a confirmed-target offer via the click-action primitive, not a rebuild.
 
-## Design knobs — BUILT + VERIFIED AS THE OWNER (2026-09-02)
+## Design knobs — DEPLOYED 2026-09-02, NOT YET PROVEN BY AN OWNER
+
+**READ THIS BEFORE TOUCHING THE KNOBS.** Status, precisely, because two different things
+here have two different levels of proof and conflating them is how a green checkmark gets
+earned by the wrong step:
+
+- **The MECHANISM** (stamping, multiply-don't-replace, the writer, Undo/Reset) was verified
+  as the owner on evergreen on 2026-09-02 — header 66→85px desktop / 43→56 phone, spacing
+  22→18, each change undone and reset to the generator's exact original. That happened.
+- **The CONTROLS** (the `Design` panel and the `website.setDesignKnob` chat action) were
+  built and deployed later the same day and **have never been touched by a signed-in
+  owner.** Built and deployed is not proven. Until someone opens the panel on a claimed
+  site and watches the page move, the correct description is "deployed, unproven".
+
+**FIVE knobs are offered:** `typeScale`, `heroScale`, `spaceScale`, `measureScale`,
+`radiusScale`. **Three are withheld, each with a stated reason** (`offered:false` +
+a `withheld` sentence the refusal speaks aloud): `mediaRatio` — it overrides the
+generator's per-breakpoint choice, so even "16/10" costs +156px on a phone and 1/1 costs
++1,090px, invisible from the desktop where the owner chooses; `background` and `ink` —
+no way to know WHICH text would land on a new background. **`mediaRatio` binds nothing on
+43 of 106 stored pages**, which is why the gate below matters.
 
 The anchor pattern applied to design instead of facts. A generated page carries its own
 model-written CSS, so "make the header bigger" used to mean finding an unpredictable value
@@ -260,7 +280,7 @@ calls the writer, so `setDesignKnob` refuses a withheld knob outright.
    check returned a true 5.1:1 for the body while the heading disappeared. The number was
    real; the thing it measured was not the thing that mattered.
 
-### The CONTROLS — built 2026-09-02. FIVE knobs, and a chat door
+### The CONTROLS — DEPLOYED 2026-09-02, UNPROVEN BY AN OWNER. Five knobs, and a chat door
 
 **Two doors where there were none.** Both reach the same owner-verified, versioned,
 undoable writer.
@@ -284,16 +304,57 @@ on a phone and 1/1 costs +1,090px. It returns when the ratio is per-breakpoint. 
 refusal now explains itself — `background` and `ink` carry the same treatment, so a
 withheld knob says why instead of "I can't change that one yet."
 
-**A defect found and fixed on the way in — the writer had no binding gate.**
-`setDesignKnob` stamps and writes the value into `:root` without checking that anything on
-the page reads it, and writing `:root` changes the HTML either way, so the no-change guard
-could not catch it: on a page where a knob bound nothing it returned `ok:true, real:true,
-"Changed the corner rounding"` over a page that sat still. That is defect #1 above, one
-level up. It was survivable only while the sole caller was the filtered read; **the model
-picks the knob from the owner's words, not from a filtered list**, so the gate had to move
-to the writer. `boundKnobsFor()` is now the single source both the read and the write use,
-so a control the reader offers and the writer refuses cannot happen. Measured: `mediaRatio`
-binds nothing on **43 of 106** stored freeform pages — a real population, not a theoretical one.
+### THE BINDING GATE — why it exists, and do not remove it
+
+`setDesignKnob` stamps the page and then writes the knob's value into `:root`. **It does
+not check that anything on the page actually reads that variable**, and writing `:root`
+changes the HTML either way — so the "did the HTML change?" no-change guard cannot catch
+it. On a page where a knob bound zero declarations, the writer returned:
+
+> `ok: true, real: true, "Changed the corner rounding."`
+
+**over a page that sat perfectly still.** That is the unearned checkmark, one level down
+from the UI — the same defect as "bound is not moved" below, wearing the writer's clothes.
+
+It was survivable only while the single caller was `readOwnerDesignKnobs`, which filters to
+knobs with `bound > 0`. **The model changed that**: it picks the knob from the owner's
+words, not from a filtered list, so the gate had to live at the WRITER, exactly as the
+withheld-knob refusal already does. `applyOwnerDesignEdit` now refuses `not_bound` before
+writing anything.
+
+**`boundKnobsFor()` is the ONE source the read and the write share.** They must never get
+two copies: a control the reader offers and the writer refuses looks broken, and a knob the
+writer accepts but the reader hides is a change nobody can undo from the UI. They drifted
+the moment there were two, so there is one.
+
+Measured: `mediaRatio` binds nothing on **43 of 106** stored freeform pages — a real
+population, not a theoretical one.
+
+### WHAT HAS AND HAS NOT BEEN VERIFIED — do not blur these
+
+**Verified (offline, 2026-09-02), over 106 real stored freeform pages from the corpus:**
+- all five offered knobs bind on **99–100%** of pages;
+- the three withheld knobs are refused **at the writer**, each with its own reason;
+- `stepKnob` walks the steps from the page's real current value and reports the end of the
+  range honestly instead of clamping;
+- **Reset is byte-identical** to the pre-change HTML;
+- the `, 1` fallback survives on **106/106** pages;
+- the capability is registered, present in `DRAFT_INJECTED_ACTIONS` and
+  `GATED_WEBSITE_ACTIONS`, and its three refusals (`not_signed_in`, `unknown_knob`,
+  `missing_direction`) fire with no database;
+- panel geometry at 1440 **and** 390: every touch target ≥44px, no clipped labels, no row
+  or page overflow.
+
+**NOT verified — nothing has been tested as a signed-in owner.** That session had **no
+database credentials** (`.env.local` carries only a Vercel OIDC token; the linked CLI's
+pooler URL has no password) and no way to hold a real session. So none of this is proven:
+opening the panel on a claimed site; a knob actually moving the live page; Undo; Reset;
+the same at 390px on a real phone; and the chat sentence "make my headings bigger" reaching
+`website.setDesignKnob`. **Deployed is not proven. This is the open item.**
+
+Also note what the panel screenshots from that session are and are not: an **isolated
+component render with a stubbed payload**, labelled as such in-frame. They prove geometry
+and nothing about a session, the writer, or the live page.
 
 **Touch-first, and measured rather than asserted.** The page's own edit affordance is a
 `:hover` outline, which does not exist on touch — so the invitation here never depends on
@@ -306,18 +367,11 @@ affected too, now fixed for all three) and `.hc-dsg-reset` at **42×32**. After 
 both 1440 and 390: **every target ≥44px, no clipped labels, no row overflow, no horizontal
 page overflow**, panel 520px wide on desktop and full-width 390 on the phone.
 
-**NOT YET VERIFIED AS THE OWNER ON THE REAL THING — this is the gap, stated plainly.**
-The standing rule is that a change is done when the running product was exercised as the
-owner, on a claimed business, and this session could not do that: **no database
-credentials** (`.env.local` has only a Vercel OIDC token; the linked CLI's pooler URL has
-no password) and no way to hold a real session. What WAS verified: the knob primitives over
-106 real stored pages (all five offered knobs bind on 99–100%; withheld knobs refused with a
-reason; stepping walks the steps and reports the end honestly; **reset is byte-identical**
-to the pre-change HTML; the `,1` fallback survives on 106/106), the registration and its
-three refusals, and the panel geometry above. What is NOT verified: a real claimed-owner
-round trip — set, see the live page move, Undo, Reset — at 1440 and 390, and the chat
-sentence "make my headings bigger". **That is Adrian's to run**, and until he does, the
-controls are built and unproven, not done.
+**Deployed 2026-09-02** — edge function via `supabase functions deploy hubly-conversation`,
+client via a git push to Vercel (the two-path rule: they are different deploys). Verified
+live after the push: the apex serves `hcDesignBtn`, and the knob read endpoint answers
+`401 not_signed_in` to an unauthenticated caller rather than 404/500. See the verification
+split below for what that does and does not prove.
 
 ### Open on knobs (designed, not built)
 
@@ -365,6 +419,55 @@ around hover is a rebuild; building it touch-first costs nothing today. This is 
 than the two items above precisely because it is a constraint on new work rather than a
 repair of old work.
 
+## STOREFRONT — the decision, sized (surveyed 2026-09-02; NOTHING started)
+
+Do not treat this as greenfield and do not start building. `PRODUCT_SHAPE.md` §3 reads as
+direction; the storefront is **largely built, in the legacy stack, and unreachable from the
+claimed shell**. What the survey established:
+
+- **The SERVER is common to both paths.** `commerce-api` (739 lines), `create-store-checkout`,
+  `commerce_checkout.ts`, `hubly_commerce_inventory.ts`, `storefront_ast.ts` — ~1,607 lines
+  of edge functions over HTTP. They do not know which client calls them. **Neither option
+  rebuilds them.**
+- **The customer-facing half already works** and is unaffected by the choice.
+  `{slug}.myhubly.app/store` renders from `businesses.meta.storefront` + the public
+  `commerce-api` endpoint, and a storefront-only business (`capabilities.storefront &&
+  !capabilities.website`) already serves the store at `/`.
+- **So the decision is only ~2,810 lines of OWNER-SIDE CLIENT** — `store-commerce.js`
+  (1,027, the ten-tab admin) plus `journey-os/commerce/*.js` (1,783) — plus 300 lines of
+  namespaced CSS (`jos-store-*`, `hub-commerce-*`, 147 selectors, no collision risk).
+- **Four globals to shim** — the whole coupling to the legacy app:
+  `window.HublySupabase` (`{url, session, anonKey}`), `window.S` (only `.businessId` and a
+  role that defaults to `'owner'`), `window.toast` (41 calls), and — both already optional
+  and guarded — `window.HublyEvents.publish` and `window.HublyJourneyOS`.
+  `store-commerce.js` reads the global through **one accessor** (`function S(){ return
+  global.S || {} }`, line 30) and its header states it no longer reads or writes the legacy
+  `S.storeOs` blob; `store-page.js` says "no `S.storeOs`. `commerce_products` is the SSOT."
+- **THE NAMING TRAP — read this before opening either file.** In `hubly.html`,
+  **`#p-storefront` is the CLASSIC WEBSITE page** (`showP('p-storefront')` →
+  `renderWebsite()`). **The actual store is `#p-store` / `HublyStorePage`.** Two meanings of
+  "storefront" in one file.
+- **The door has an open decision attached — `OPEN_FINDINGS.md` #14.** Making the store
+  reachable is ~10–25 lines across two files *plus* an unmade security decision: whether the
+  `dashboard` context carries a raw owner write credential, which it never has. **It may not
+  need making at all**, depending on what the storefront hour finds.
+
+**Everything above is code-reading, not exercising.** The legacy store has NOT been run as an
+owner. The cheapest next step by a wide margin is one hour: sign in, reach the Store tab,
+create a product, see it on `/store`. Both cost estimates hinge on that answer. Usage numbers
+(`commerce_products` 0 / `commerce_orders` 0) are dated 2026-08-29 — see "Numbers in this
+file are DATED".
+
+## The standing rules these builds keep paying for — verbatim, do not soften
+
+- **Bound is not moved.** A control that reports itself working over a page that sits still
+  is the unearned checkmark one level down.
+- **Desktop is not verified.** A change confirmed at 1440 is not confirmed; the width their
+  customers are on is the one that decides.
+- **A passing measurement of the wrong thing is not a passing measurement.** The contrast
+  check returned a true 5.1:1 for the body while the heading disappeared. The number was
+  real; the thing it measured was not the thing that mattered.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped with an
@@ -373,6 +476,14 @@ countable row and a read-back. Never re-recognize layout after the fact; never o
 whose action can't reach the page; never write a fact not grounded in the current message.
 
 ## Needs Adrian's eyes on the DEPLOYED site (I can't hold a real session)
+
+- **THE DESIGN KNOB CONTROLS — deployed 2026-09-02, never touched by an owner.** The one
+  outstanding proof: sign in on evergreen, open `Design` in the canvas toolbar, set each of
+  the five, watch the page actually move, then Undo and Reset — at 1440 **and** on a real
+  phone. Then type "make my headings bigger" in the chat and confirm it reaches
+  `website.setDesignKnob` rather than producing a helpful reply that changes nothing (which
+  is exactly what it did before the door existed). If a knob reports success and the page
+  sits still, that is the binding gate failing and it is the highest-severity thing here.
 
 - Every claimed-owner write flow after a deploy (services/hours/phone landing; grounding asking).
 - Home on a real return visit; the suggestion buttons; the optimistic edit + Undo toast.
@@ -435,4 +546,7 @@ Findings are folded into the sections above and into `OPEN_FINDINGS.md`; this is
   Undo, Reset; at 1440 and on a real phone. And type "make my headings bigger" in the chat.
 - **Retiring the Edit-details button** once in-place editing covers it.
 - **A decision on storefront** — door on the legacy store, or re-implement on the new spine.
+  **Buy the information before deciding**: one hour signing in and exercising the legacy
+  Store settles it, and both estimates hinge on the answer. See the STOREFRONT section
+  above and `OPEN_FINDINGS.md` #14. Do not start building either path.
 - **A URL scheme and a wordmark placement** — both need SPECIFYING, not just surveying.
