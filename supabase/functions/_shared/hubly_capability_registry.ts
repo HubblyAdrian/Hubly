@@ -63,6 +63,7 @@ import { stampFreeformHtml } from "./hubly_document_labels.ts";
 import { injectHublyRuntime } from "./hubly_page_runtime.ts";
 import { resolveImages, collapseEmptyImageSlots, pexelsFetcher, type PlacedImageRow } from "./hubly_image_resolver.ts";
 import { annotatePlaceholders } from "./hubly_placeholders.ts";
+import { reportAllowlistDrops } from "./hubly_allowlist.ts";
 import { applyFreeformEdit, humanFreeformSummary, labelInventory, labelsPresent, type LabelEntry } from "./hubly_freeform.ts";
 import {
   formatPhoneHouse,
@@ -759,7 +760,7 @@ export async function applyExtractedFacts(
   // fill() only STAGES a field — it does not count it as written until the patch
   // RPC actually succeeds, so a refused patch can be reported as `failed` (not
   // silently as written, and not swallowed).
-  const patchIntents: { key: string; change: RecordChange }[] = [];
+  const patchIntents: { key: string; col: string; change: RecordChange }[] = [];
   const fill = (col: string, key: string, value: unknown, change: RecordChange) => {
     if (value === undefined || value === null || value === "") return;
     const existing = (row as Record<string, unknown> | null)?.[col];
@@ -767,7 +768,7 @@ export async function applyExtractedFacts(
       (Array.isArray(existing) && existing.length === 0);
     if (!isBlank) { skipped.push(key); return; }
     patch[col] = value;
-    patchIntents.push({ key, change });
+    patchIntents.push({ key, col, change });
   };
 
   // Normalize on WRITE, not just on render: the record itself carries house
@@ -799,7 +800,26 @@ export async function applyExtractedFacts(
       p_owner_id,
     });
     if (r && r.ok === true) {
-      for (const it of patchIntents) { written.push(it.key); changes.add(it.change); }
+      // ok:true IS NOT PROOF THE FIELD WAS WRITTEN.
+      //
+      // patch_business_in_progress is an ALLOW-LIST: a key it does not know is
+      // discarded and the call still returns ok:true. It reports what it discarded
+      // in `dropped_keys` — and nothing read that, so for months `hours_note` was
+      // staged, dropped, and reported to the model as SAVED, with "Do NOT ask for
+      // any of these again" attached. Verified live 2026-09-02: the owner said
+      // "weekends are by appointment", the turn said it was saved, and
+      // businesses.hours_note was still null.
+      //
+      // This is the seam where "a fact write always produces a truth" was resting
+      // on a function that says yes while throwing fields away. A dropped key is a
+      // FAILED write and is reported as one — it is not the owner's problem to
+      // discover, and it is never silent.
+      const dropped = rpcDroppedKeys(r, patchIntents.map((it) => it.col));
+      for (const it of patchIntents) {
+        if (dropped.includes(it.col)) { failed.push(it.key); continue; }
+        written.push(it.key);
+        changes.add(it.change);
+      }
     } else {
       // Attempted and refused — record it as failed and KEEP GOING. Hours and
       // services are independent writes with their own outcomes; a fact never
@@ -2098,7 +2118,11 @@ export async function applyFreeformInstruction(
       ok: false,
       real: false,
       summary:
-        "Nothing on the page changed. The request could not be expressed as a change to the page's existing text, so tell the owner plainly that you cannot make this change yet rather than describing it as done.",
+        // The instruction not to claim success was here from the start; the one not to
+        // hand the work back was not, and the model filled that gap by inventing a
+        // place for the owner to go ("underneath the Saturday hours in the editor" —
+        // live on evergreen, 2026-09-02). A failure summary has to close BOTH exits.
+        "Nothing on the page changed. The request could not be expressed as a change to the page's existing text. Tell the owner plainly, in one sentence, that you cannot make this change yet — do NOT describe it as done, and do NOT tell them to do it themselves or name any screen, editor, panel, button or menu, because you cannot see their screen and would be sending them after something you invented.",
       error: "patch_no_effect",
       raw: { instruction, ms },
     };
@@ -3384,6 +3408,27 @@ async function removeServiceCard(draftId: string, draftToken: string, ownerUid: 
   return !!(saved && saved.ok === true);
 }
 
+/** Which of the columns we asked for did the write silently discard?
+ *
+ *  patch_business_in_progress is an allow-list that returns ok:true whatever it
+ *  ignored, and names what it ignored in `dropped_keys`. Every caller must read
+ *  it: "the RPC said ok" is not evidence the field landed (proven the expensive
+ *  way by hours_note — see applyExtractedFacts). Reports the drop once, loudly,
+ *  then hands the caller the list so it can tell the truth. */
+function rpcDroppedKeys(r: { dropped_keys?: unknown } | null, asked: string[]): string[] {
+  const dropped = Array.isArray(r?.dropped_keys) ? (r!.dropped_keys as unknown[]).map(String) : [];
+  const hit = asked.filter((c) => dropped.includes(c));
+  if (hit.length) {
+    reportAllowlistDrops({
+      list: "patch_business_in_progress.v_known",
+      dropped: hit,
+      fixAt: "supabase/migrations — v_known AND the UPDATE in patch_business_in_progress",
+      consequence: "the field was NOT written, the RPC still returned ok:true, and the owner was told it saved",
+    });
+  }
+  return hit;
+}
+
 export async function applyOwnerRecordEdit(draftId: string, draftToken: string, ownerUid: string | null, edit: OwnerRecordEdit): Promise<OwnerEditResult> {
   if (!draftId || !ownerUid) return { ok: false, real: false, error: "not_signed_in", summary: "You need to be signed in to edit this." };
   // Authorise by ownership — the same gate the writers enforce, checked here too.
@@ -3400,6 +3445,10 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
     if (!Object.keys(patch).length) return { ok: false, real: false, error: "nothing", summary: "Nothing to change." };
     const r = await callBusinessRpc("patch_business_in_progress", { p_id: draftId, p_draft_token: draftToken, p_patch: patch, p_owner_id: ownerUid });
     if (!r || r.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "That didn't save — try again." };
+    const droppedContact = rpcDroppedKeys(r, Object.keys(patch));
+    if (droppedContact.length) {
+      return { ok: false, real: false, error: "not_written", summary: `That didn't save — ${droppedContact.join(" and ")} could not be written. Nothing was changed.` };
+    }
     const placement = await applyContactHoursToFreeform(draftId, draftToken, ownerUid);
     return { ok: true, real: true, summary: composeContactHoursTruth(placement) || "Saved.", raw: { placement } };
   }
@@ -3412,6 +3461,12 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
     if (edit.note !== undefined) {
       const r = await callBusinessRpc("patch_business_in_progress", { p_id: draftId, p_draft_token: draftToken, p_patch: { hours_note: edit.note || "" }, p_owner_id: ownerUid });
       if (!r || r.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "Your hours note didn't save — try again." };
+      // The panel's Note field went through the SAME dropped column as the chat path,
+      // so this form has been reporting "Saved." over a write that never happened for
+      // as long as it has existed. ok:true is not proof; the drop report is.
+      if (rpcDroppedKeys(r, ["hours_note"]).length) {
+        return { ok: false, real: false, error: "not_written", summary: "Your hours note didn't save — the record wouldn't take it. Nothing was changed." };
+      }
     }
     const placement = await applyContactHoursToFreeform(draftId, draftToken, ownerUid);
     return { ok: true, real: true, summary: composeContactHoursTruth(placement) || "Saved.", raw: { placement } };

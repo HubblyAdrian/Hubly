@@ -126,6 +126,45 @@ async function selectDraftFactGaps(businessId: string): Promise<{ missing: boole
 }
 
 /**
+ * What the post-build ask must be BUILT FROM: the services actually on record.
+ *
+ * The ask-gate used to read NOTHING. `event === "post_build"` injected one fixed
+ * instruction — "name the services and ask what they charge for each" — whatever
+ * the record held, and the conversation model never sees the business record
+ * (buildBusinessRecordBlock is only ever assembled for document GENERATION). So
+ * an owner who opened with "Prices: Chimney Sweep $180, Cap Install $240, Level 2
+ * Inspection $320" had all three saved with their prices, watched them appear on
+ * the page, and was then asked what he charges. Measured live 2026-09-02 on two
+ * drafts: one got the flat re-ask, the other "are those prices still $180, $240
+ * and $320?" — same gate, same state, and which one an owner got was luck.
+ *
+ * Asking for what someone just gave is the worst version of not listening, so
+ * the ask is now composed from what is known (the standing rule: never ask for
+ * what you were told). Fails OPEN in the honest direction — if the read fails we
+ * cannot claim prices are on record, so we fall back to the unpriced ask.
+ */
+async function selectServicesForAsk(businessId: string): Promise<{ names: string[]; unpriced: string[]; known: boolean }> {
+  try {
+    const url = (Deno.env.get("SUPABASE_URL") || "").trim();
+    if (!url) return { names: [], unpriced: [], known: false };
+    const res = await fetch(`${url}/rest/v1/services?select=name,price&business_id=eq.${businessId}`, { headers: adminHeaders() });
+    if (!res.ok) return { names: [], unpriced: [], known: false };
+    const rows = await res.json();
+    if (!Array.isArray(rows)) return { names: [], unpriced: [], known: false };
+    const named = rows.map((r) => ({ name: String(r?.name || "").trim(), price: Number(r?.price) }))
+      .filter((r) => r.name);
+    return {
+      names: named.map((r) => r.name),
+      // A price of 0 is "not stated", not free — the same reading the extractor uses.
+      unpriced: named.filter((r) => !(isFinite(r.price) && r.price > 0)).map((r) => r.name),
+      known: true,
+    };
+  } catch {
+    return { names: [], unpriced: [], known: false };
+  }
+}
+
+/**
  * Persist ONE display turn — the person's message and Hubly's final reply — to
  * business_conversations, so the conversation survives a reload (Block 3).
  *
@@ -603,7 +642,9 @@ WHEN IN DOUBT, SHOW PROGRESS OVER ASKING. If you're weighing another question ag
 
 WHAT YOU JUST BUILT IS THEIR SITE — a real first draft, and you call it theirs ("that's your site"), not "a structure." It is early: no logo yet, no photographs yet, and the address is RESERVED, not live, until they make an account. Be confident and honest at once — it's yours, it's a draft, here's what we can do with it. Do NOT oversell it as finished, and do NOT lead by listing what it lacks: the useful move is to show how much they can change for free just by talking, and let an account be the thing that brings their own photos, their logo, and the live address. An owner who is told the truth — reserved address included — trusts the next thing you say, and the truth is the strongest reason to sign up.
 
-While you're building or refining, keep what you say almost silent — a few words, or nothing at all ("On it." / "Done — take a look." / no message at all is fine too). The change on screen is the explanation. Don't narrate what you're about to do or describe what changed in prose — they can see it.
+While you're building or refining, keep what you say almost silent — a few words, or nothing at all. NOTHING IS ANNOUNCED BEFORE IT HAPPENS, and nothing claims a result you cannot know yet. The line you write beside an action is spoken BEFORE that action has run, so it can only ever be a promise: "On it.", "Doing that now", "Adding it" all state as fact something that has not occurred, and when the action then fails the person has been told two opposite things in one turn. "Done — take a look." is the same error pointed the other way: it claims an outcome you have not seen. So the safe move, and the usual one, is SAY NOTHING there — the empty message is a real and good answer, and the change on screen is the explanation. If a word is genuinely wanted, it acknowledges only the request ("Right — leaf removal, $85."), never the outcome. What actually happened is reported AFTERWARDS, once, from the real result. Don't narrate what you're about to do or describe what changed in prose — they can see it.
+
+WHEN AN ACTION FAILS, THE ANSWER IS NEVER "DO IT YOURSELF SOMEWHERE ELSE." You cannot see their screen. You do not know what is on it, what it is called, or whether it exists — so you NEVER name or describe a control, a screen, a panel, a menu, a tab or "the editor", not as help, not as a workaround, not as an apology. This holds everywhere, not just for accounts: saying "add it underneath the Saturday hours in the editor" sends someone hunting for something you invented, which is worse than the failure itself. When you could not do it, say plainly that you could not do it yet, in one sentence, and stop. Either you act, or you say what you will do — never directions to a thing you cannot see.
 
 THE ONE EXCEPTION — the first website.generateDocument call. That page takes about a minute to appear and the screen is empty the whole time, so silence there is a dead minute a new customer stares at. On THAT turn ONLY, your "reply" field IS four or five sentences saying what you're about to build for THIS specific business and why — your design judgment, in plain language, in your own voice. Real example for a photographer: "Photographers live or die on the work itself, so I'm leading with your pictures rather than a headline. A warm, quiet palette so the images carry the colour. Packages people can scan in five seconds. Booking one tap away from anywhere on the page." A roofer, a baker, a plumber must each read completely differently — this is about their trade and what you know of them, never a paragraph that would fit any business. Hard rules: judgment only, NEVER a claim about the world you can't back up ("this is what photographers in your state are doing" is forbidden — you don't have that data, and it's the first thing they'd read). In your voice, not a spec sheet ("leading with your pictures," never "hero: full-bleed image"). Four or five sentences — a wall of text is worse than silence. This is your INTENT, written before the generator runs; it can differ from the exact page that lands, and that's fine — never claim it as finished fact.
 DURING THE BUILD, SPEAK ONLY ABOUT THEIR BUSINESS AND THE LOOK — NEVER ABOUT HUBLY'S MACHINERY. Forbidden, every time: "structure," "sections," "the layout," "services are now real on the page," "once it appears," or any description of how the page is assembled — those are internals that mean nothing to a photographer or a plumber. Forbidden: pre-announcing a flaw or a gap before they have seen anything ("the first visible gap will be your logo"). Forbidden: asking for ANYTHING — no file, no logo, no photo, no upload — while the build runs; there is nothing to add it to yet, and asking for work before delivering value is exactly backwards. Nothing transactional at all during the build. The ONLY thing you say is your design judgment about THEIR trade and the look you're giving it and why it suits them — like "Barbershops need to feel sharp before anyone reads a word, so I'm giving Ironside a bold, high-contrast look." If a sentence would still make sense on a different business's build, delete it.
@@ -746,9 +787,30 @@ Deno.serve(async (req) => {
   // so the model takes exactly this turn; the client never persists this line to the
   // visible transcript, so it only steers this one reply.
   if (body?.event === "post_build") {
+    // COMPOSED FROM THE RECORD, not fixed. See selectServicesForAsk for the
+    // failure this replaces: the gate read nothing and asked for prices the
+    // owner had already given, on the very turn after they were saved.
+    const postBuildId = body?.draftBusiness?.id ? String(body.draftBusiness.id) : "";
+    const svc = postBuildId ? await selectServicesForAsk(postBuildId) : { names: [], unpriced: [], known: false };
+    const list = (xs: string[]) => xs.length <= 1 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
+    let ask: string;
+    if (!svc.known || !svc.names.length) {
+      // Nothing on record (or we could not read it): the honest ask is the open one.
+      ask = "There are NO services on record, so ask what people mainly book them for and what they charge. Set askedFor:\"services\".";
+    } else if (svc.unpriced.length) {
+      // Some are priced and some are not — ask ONLY about the ones genuinely missing a
+      // price, by name. Asking about the priced ones is asking for what they gave.
+      const priced = svc.names.filter((n) => !svc.unpriced.includes(n));
+      ask = (priced.length ? `These services are on record WITH prices already, so never ask about them: ${list(priced)}. ` : "") +
+        `These have NO price yet: ${list(svc.unpriced)}. Ask about the UNPRICED ones only, by name. Do not restate or ask them to confirm a price that is already on record. Set askedFor:"services".`;
+    } else {
+      // Every service is priced. There is nothing to ask here, and asking anyway —
+      // even as "are those still right?" — is asking for what they just gave.
+      ask = `Every service is on record WITH its price (${list(svc.names)}) and they are on the page. Do NOT ask about services or prices at all, and do NOT read the prices back or ask them to confirm — they gave you these and they can see them. Instead say in one short sentence that the page is theirs, and ask about the next thing that is genuinely missing (their own work photos are usually it). Set askedFor to that thing, not "services".`;
+    }
     incoming.push({
       role: "user",
-      content: "[SYSTEM EVENT: the website just finished building and is now on screen. This is your first post-build turn — give your post-build first message NOW. Per your instructions that is the SERVICES question: name the specific services already on the page and ask what they charge for each; if there are none, ask what people mainly book them for. One plain question, NEVER a menu or bullet list, nothing about styling or accounts. Set askedFor:\"services\".]",
+      content: `[SYSTEM EVENT: the website just finished building and is now on screen. This is your first post-build turn — give your post-build first message NOW. ${ask} ONE plain question, NEVER a menu or bullet list, nothing about styling or accounts.]`,
     });
   }
 
@@ -1396,10 +1458,22 @@ Deno.serve(async (req) => {
       }
 
       if (decision?.action === "invoke" && decision.capability && decision.capabilityAction) {
+        // THE INTERIM LINE IS SPOKEN BEFORE THE CAPABILITY HAS RUN, so it is a
+        // PROMISE, not a result — and until now it was published whatever
+        // happened next. Live on evergreen (2026-09-02): the model said "Done."
+        // here, website.patchDocument then failed with patch_no_effect, and the
+        // owner got "Done." and "nothing on the page changed" in the same turn —
+        // two composers contradicting each other in one breath.
+        //
+        // So the line is HELD and only published if this invoke succeeded. On a
+        // failure the reply carries the honest account alone; there is nothing
+        // for the interim to add except a contradiction. The model's own history
+        // still records what it said, so its next turn knows.
         const said = String(decision.message || "").trim();
+        let heldInterimIndex = -1;
         if (said) {
           history.push({ role: "assistant", content: said });
-          interimMessages.push(said);
+          heldInterimIndex = interimMessages.push(said) - 1;
         }
 
         // Pure dispatch by name — no capability-specific logic here. If it
@@ -1516,6 +1590,19 @@ Deno.serve(async (req) => {
                 : "That capability is not available in this conversation.",
               error: allowedInContext ? "unknown_capability_action" : "capability_not_allowed_in_context",
             };
+        }
+
+        // THE OUTCOME IS NOW KNOWN — so the held promise is either earned or
+        // dropped. Never both spoken and contradicted (see the hold above).
+        // Removed outright rather than blanked: an empty slot is not a message, and
+        // the call site below is guarded to pass `interimMessages` literally (see
+        // tests/conversation-dedupe.test.mjs — the guard exists so nobody swaps
+        // `history` back in), so the array itself is what has to be right. Safe to
+        // splice: the held index is opened and resolved inside one loop pass, and
+        // later pushes only ever append.
+        if (heldInterimIndex >= 0 && !result?.ok) {
+          console.warn(`interim line dropped — ${capabilityName}.${actionName} failed (${result?.error || "no error given"}); the reply carries the honest account`);
+          interimMessages.splice(heldInterimIndex, 1);
         }
 
         // Capture the real draft identity the moment it exists — startDraft
