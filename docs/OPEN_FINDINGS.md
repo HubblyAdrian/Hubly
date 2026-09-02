@@ -668,6 +668,59 @@ that hour is spent.
 
 ---
 
+## 15. 28 edge functions have no `config.toml` entry; 3 browser-called ones are ALREADY
+## enforcing JWT — PARKED, partially measured, needs finishing
+
+**Found 2026-09-02**, immediately after the `hubly-conversation` near-miss (that one is fixed
+and recorded in `supabase/config.toml`). **Parked deliberately — real, not today.** Written
+down so it isn't lost.
+
+**Why this class matters:** `supabase functions deploy <fn>` applies the CLI default
+`verify_jwt = true` for any function with no `config.toml` entry. Hubly's browser clients
+present the **publishable key**, which is `sb_publishable_…` — **not a JWT** — so an
+enforcing gateway rejects those calls *before* the handler runs. A signed-in owner sends a
+real JWT and is unaffected, which makes this the worst-shaped bug there is: **it breaks the
+people you cannot see and works perfectly for the person looking.**
+
+**What was measured (2026-09-02):**
+- **28 of the functions** in `supabase/functions/` have **no `[functions.<name>]` entry** in
+  `config.toml`.
+- Of those 28, **4 are called from browser code** (`public/*.html`, `public/journey-os/*.js`):
+  `chatbot-message`, `google-calendar-oauth-start`, `hubly-build-business`, `import-offers`.
+- Probed production with **no Authorization header**:
+
+| function | gateway today | meaning |
+|---|---|---|
+| `chatbot-message` | **ENFORCING** (401 `UNAUTHORIZED_NO_AUTH_HEADER`) | already on |
+| `google-calendar-oauth-start` | **ENFORCING** | already on |
+| `import-offers` | **ENFORCING** | already on |
+| `hubly-build-business` | **not enforcing** (400, its own handler error) | **same trap armed as `hubly-conversation` had** |
+
+**The two open questions, NOT answered — do not guess them:**
+
+1. **Is something already broken in production?** Three browser-called functions are
+   enforcing JWT *right now*. If any of them is called with the **publishable key** (rather
+   than a signed-in owner's real JWT), that path is already dead and has been. `import-offers`
+   is the one to check first — it is the **price-list photo OCR** path, and if it is reachable
+   from an **unclaimed draft** (pre-claim, no account, publishable key) then photo price
+   import is broken for exactly the people the funnel depends on. **This was being checked
+   when the work was parked; the credential each client call site sends was NOT determined.**
+2. **`hubly-build-business` needs its entry**, matching whatever production actually runs, or
+   the next deploy of it flips enforcement on. Probe first, then record — never assume.
+
+**How to answer them, and the method matters more than the answer:** probe the deployed
+endpoint rather than reading the config, because `config.toml` describes what a *deploy*
+would set, not what production is *running*. That distinction is the whole finding — it is
+how the `hubly-conversation` near-miss was caught (no auth header → the function's own
+`{"error":"messages_required"}`, not a gateway 401 → proof enforcement was off).
+
+**What would close it:** determine the credential each of the 4 client call sites sends;
+fix any path already broken; give every browser-called function an explicit `config.toml`
+entry with a comment saying why, in the style the file already uses. Consider a check that
+every deployed function's entry matches production, so this stops needing a human to catch.
+
+---
+
 ## Also noted 2026-08-28
 
 - **Rebuild read-back is vague.** The "yes, rebuild" reply ("a completely new page is
