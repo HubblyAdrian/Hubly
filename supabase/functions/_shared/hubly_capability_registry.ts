@@ -2591,6 +2591,21 @@ function findServiceHeading(html: string, name: string): { index: number; length
   }
   return best;
 }
+/** Append the photo-slot fallback ONCE. A cloned card keeps its `<img>` element with
+ *  no photo in it (see blankClonedImages), so the page's OWN CSS is what renders the
+ *  empty slot — on evergreen that is `.card img{aspect-ratio:16/10;background:var(--green)}`,
+ *  i.e. the design already says what a picture-less card looks like, and it is the right
+ *  answer because the generator wrote it. This rule is only for a page whose CSS says
+ *  NOTHING about images, where the slot would otherwise be a transparent hole. `:where()`
+ *  gives it ZERO specificity, so any page rule beats it: the page's design first, this
+ *  only in a genuine void. The colour is mixed from the page's own text colour, never
+ *  one we picked; the plain rgba ahead of it is the fallback for engines without
+ *  color-mix. */
+function ensurePhotoSlotCss(html: string): string {
+  if (/data-hubly-photo-slot\]/.test(html)) return html;
+  const css = "<style>:where(img[data-hubly-photo-slot]){background-color:rgba(127,127,127,.10);background-color:color-mix(in srgb,currentColor 10%,transparent)}</style>";
+  return /<\/head>/i.test(html) ? html.replace(/<\/head>/i, css + "</head>") : html + css;
+}
 /** Append the price-marker style ONCE. Same discipline as fixCollapsibleGridColumns:
  *  a small deterministic CSS invariant, not a per-page guess. Block + light weight
  *  so an injected price reads as a price and can't collapse a column. */
@@ -2862,6 +2877,74 @@ function hideDescElement(html: string): string {
       ? `<${tag}${attrs.replace(/style="([^"]*)"/i, 'style="$1;display:none"')}>`
       : `<${tag}${attrs} style="display:none">`);
 }
+/** EVERY image a cloned entry would inherit, emptied.
+ *
+ *  A clone re-keyed the name, the price and the blurb and never touched the `<img>`, so
+ *  a new card shipped wearing its neighbour's photograph — Gutter Cleaning on evergreen
+ *  showed Basic Mow's picture, and Spring Aeration and Hedge Trimming still share the
+ *  stock photo Basic Mow had when they were cloned. A photo is a claim about the work;
+ *  borrowing one is the fabricated-content defect, not a cosmetic slip.
+ *
+ *  The element STAYS and only its picture goes. That matters twice over:
+ *   - the CUSTOMER sees the page's own empty-image treatment, because every rule the
+ *     generator wrote for that image (aspect ratio, object-fit, corner radius, the
+ *     background colour it chose) still applies to it. The card keeps its height and
+ *     the grid keeps its rhythm — no hole, no prompt, nothing addressed to the owner.
+ *   - the OWNER keeps a door. The click-to-edit surface resolves an image click by
+ *     `tagName === 'img'` + `data-hc`; delete the element and there is nothing to click
+ *     and no way to add a photo — this project's most expensive recurring mistake. The
+ *     slot IS the door; only the "+" painted on it is editor-only chrome.
+ *
+ *  Everything that could smuggle the picture back in goes with it: srcset/sizes, a
+ *  <picture>'s <source>, and an inline background-image url(). */
+function blankClonedImages(entryHtml: string): string {
+  const ATTR = (name: string) => new RegExp(`\\s+${name}=("[^"]*"|'[^']*'|[^\\s>]+)`, "gi");
+  let e = entryHtml;
+  e = e.replace(/<source\b[^>]*\/?>/gi, "");                 // <picture> would serve the sibling's photo regardless of the <img>
+  e = e.replace(/<img\b([^>]*)>/gi, (_m, rawAttrs: string) => {
+    let a = String(rawAttrs);
+    for (const n of ["src", "srcset", "sizes", "alt", "loading", "fetchpriority"]) a = a.replace(ATTR(n), "");
+    if (!/\bdata-hubly-photo-slot=/i.test(a)) a += ` data-hubly-photo-slot="card"`;
+    // No src ATTRIBUTE AT ALL — `src=""` re-requests the page itself. alt is empty
+    // because an empty slot depicts nothing, and inventing alt text for a photo that
+    // does not exist would be stating something no one said.
+    return `<img${a} alt="">`;
+  });
+  // A card whose photo rides an inline background-image would borrow it too. Only a
+  // url() goes — a gradient is decoration the layout depends on.
+  e = e.replace(/\sstyle="([^"]*)"/gi, (m, css: string) => {
+    if (!/url\(/i.test(css)) return m;
+    const kept = String(css).split(";").filter((d) => !/background(-image)?\s*:[^;]*url\(/i.test(d)).join(";").replace(/^;+|;+$/g, "");
+    return kept.trim() ? ` style="${kept}"` : "";
+  });
+  return e;
+}
+/** Blank the sibling's WORDS — and only the words that are the sibling's.
+ *
+ *  A card carries two kinds of text: per-service VALUES (its name, its price, its blurb)
+ *  and FIXED LABELS the layout supplies beside them ("per visit", "From", "each"). The
+ *  old sweep blanked every text node in the entry, labels included, so an added card
+ *  showed a bare "$150" next to neighbours reading "$40 per visit" — the asymmetry
+ *  flagged three times, and on evergreen it is visible right now on three cards.
+ *
+ *  The prose test is the one findDescElement already uses to tell a blurb from a unit
+ *  (>= 4 word-tokens), deliberately reused so the two passes cannot drift apart: four
+ *  words is prose the sibling wrote, fewer is furniture the layout provides. Anything
+ *  holding a DIGIT is cleared whatever its length — a leftover "$95" or "45 min" is the
+ *  sibling's data wearing a label's clothes, and a number nobody stated is exactly the
+ *  fact we may not publish. The three anchored elements are cleared unconditionally:
+ *  they are re-filled with the new service's own values immediately below. */
+function blankSiblingWords(entryHtml: string): string {
+  return entryHtml.replace(/>([^<]*)</g, (m, text: string, offset: number) => {
+    if (!text.trim()) return m;                                        // whitespace: leave the formatting alone
+    const tagStart = entryHtml.lastIndexOf("<", offset);
+    const openTag = tagStart === -1 ? "" : entryHtml.slice(tagStart, offset + 1);
+    if (/^<[a-z0-9]/i.test(openTag) && /data-hubly-(service|price|desc)=/i.test(openTag)) return "><";
+    if (descriptiveWordCount(text) >= 4) return "><";                  // the sibling's prose
+    if (/\d/.test(text)) return "><";                                  // a figure is data, never a label
+    return m;                                                          // a fixed unit/label — keep it
+  });
+}
 /** Clone a sibling entry's markup into a new one for {name, price, description}: keep
  *  the structure EXACTLY, blank the neighbour's words, then set the new name + price,
  *  re-key the anchor, and handle the description honestly — FILL it when the owner
@@ -2893,13 +2976,27 @@ function buildClonedServiceEntry(entryHtml: string, newName: string, priceStr: s
   // (c) give the new card a button its neighbours don't have. The new card uses the
   // page's existing booking path; it does not manufacture a fourth CTA.
   e = e.replace(/<a\b[^>]*\bbook=1[^>]*>[\s\S]*?<\/a>/gi, "");
-  e = e.replace(/>[^<]*</g, "><");                                             // blank ALL text (name, price, description)
+  e = blankClonedImages(e);                                                    // never the sibling's photograph
+  e = blankSiblingWords(e);                                                    // the sibling's VALUES, not the layout's labels
   e = e.replace(/(\bdata-hubly-service="[^"]*"[^>]*>)</i, (_m, p1) => p1 + escHtmlText(newName) + "<");  // set the new name text
   if (priceStr && /data-hubly-price=/i.test(e)) e = e.replace(/(\bdata-hubly-price="[^"]*"[^>]*>)</i, (_m, p1) => p1 + priceStr + "<"); // set the new price
   if (/data-hubly-desc=/i.test(e)) {                                           // handle the blurb: fill or hide
     e = descText && descText.trim()
       ? e.replace(/(\bdata-hubly-desc="[^"]*"[^>]*>)</i, (_m, p1) => p1 + escHtmlText(descText.trim()) + "<")
       : hideDescElement(e);
+  }
+  // POSTCONDITION — assert it, don't assume it (the standing rule). Not one image URL
+  // the sibling carried may survive on the clone, by any route: a src we missed, a
+  // srcset shape we didn't anticipate, a url() in an attribute we didn't think to read.
+  // If one does, say so loudly and strip it rather than ship a borrowed photograph.
+  // blankClonedImages removes every one of these, so a survivor is a shape it did not
+  // anticipate, not a legitimate picture: the clone has no image of its own to carry.
+  // (Scoped to image-bearing constructs — an <a href> is a link, not a photograph.)
+  const CARRIES_IMAGE = /<img\b[^>]*\bsrc\s*=|<img\b[^>]*\bsrcset\s*=|<source\b|background(-image)?\s*:[^;"']*url\(/i;
+  if (CARRIES_IMAGE.test(e)) {
+    console.error(`buildClonedServiceEntry: clone of "${newName}" still carried the sibling's image after blanking — stripping (this is a bug in blankClonedImages, not a page problem)`);
+    e = blankClonedImages(e);
+    if (CARRIES_IMAGE.test(e)) e = e.replace(/<img\b[^>]*>/gi, "").replace(/<source\b[^>]*\/?>/gi, "");
   }
   return e;
 }
@@ -2935,7 +3032,7 @@ function placeServiceDescription(html: string, name: string, descText: string): 
  *  offer's whole reason for existing was that we had no way to add one). Returns the
  *  new HTML on success, or a reason: `no_section` (no service entry to clone — the
  *  ONLY case a rebuild is genuinely the answer). */
-function insertServiceIntoFreeform(html: string, name: string, price?: number, description?: string): { ok: boolean; html?: string; kind?: string; single?: boolean; reason?: string; hadDesc?: boolean; labeled?: boolean } {
+export function insertServiceIntoFreeform(html: string, name: string, price?: number, description?: string): { ok: boolean; html?: string; kind?: string; single?: boolean; reason?: string; hadDesc?: boolean; labeled?: boolean } {
   const anchors = allServiceAnchors(html);
   if (!anchors.length) return { ok: false, reason: "no_section" };
   const first = anchors[0];
@@ -3052,6 +3149,7 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
     }
   }
   if (injectedAny || insertedAny) out = ensureServicePriceCss(out);
+  if (insertedAny) out = ensurePhotoSlotCss(out);   // only matters on a page that styles no images at all
   // A new entry can change an entry count that a grid was laid out around (a one-item
   // grid becoming two, a bare-fr column collapsing). Re-run the layout net so an
   // insert can't ship a broken section. Deterministic; a no-op on a page that already

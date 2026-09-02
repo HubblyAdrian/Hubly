@@ -53293,9 +53293,22 @@ function wireHcEditingSurface(doc, root){
   try{
     if(!doc.getElementById('hubly-editable-style')){
       var es = doc.createElement('style'); es.id = 'hubly-editable-style';
+      // EDITOR-ONLY CHROME. This block is injected into the live document at edit time
+      // and exists nowhere else: the customer's page has the empty slot, never the mark
+      // painted on it. data-hc-editor is the belt (stripEditorChrome on the server side
+      // removes anything carrying it from HTML about to be saved); the structural
+      // guarantee is that saves are server-side transforms of the STORED html and never
+      // read this DOM at all.
+      es.setAttribute('data-hc-editor', '1');
       es.textContent =
         '[data-hc-editable-marked]{cursor:pointer;}' +
-        '[data-hc-editable-marked]:hover{outline:2px dashed rgba(217,99,45,.7);outline-offset:3px;}';
+        '[data-hc-editable-marked]:hover{outline:2px dashed rgba(217,99,45,.7);outline-offset:3px;}' +
+        // An added service card carries a real <img> with no photo in it (the door the
+        // owner clicks to add one). Empty, it is silent by design — so to the OWNER,
+        // and only the owner, mark it as somewhere a photo goes. CSS rather than an
+        // injected element: an <img> cannot hold children, and a positioned overlay
+        // would need layout maths that break the moment the page reflows.
+        "img[data-hubly-photo-slot]{cursor:pointer;background-image:url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><circle cx='32' cy='32' r='29' fill='none' stroke='%23D9632D' stroke-opacity='.75' stroke-width='2' stroke-dasharray='6 5'/><path d='M32 20v24M20 32h24' stroke='%23D9632D' stroke-opacity='.85' stroke-width='2.5' stroke-linecap='round'/></svg>\");background-repeat:no-repeat;background-position:center;}";
       (doc.head || doc.body || root).appendChild(es);
     }
     var edEls = root.querySelectorAll('[data-node],[data-hc]');
@@ -53459,7 +53472,11 @@ function wireHcEditingSurface(doc, root){
     // text edit paints its new words. The real upload runs in the background; without this
     // the new photo only appears after the parent reloads the whole page (the ~2-minute
     // wait). A blob URL is enough for the display; the server swaps in the stored URL.
-    try{ if(pendingImageEl && window.URL && URL.createObjectURL){ pendingImageEl.src = URL.createObjectURL(file); pendingImageEl.removeAttribute('srcset'); } }catch(_){}
+    try{ if(pendingImageEl && window.URL && URL.createObjectURL){ pendingImageEl.src = URL.createObjectURL(file); pendingImageEl.removeAttribute('srcset');
+      // An empty photo slot that now has a photo in it is not a slot any more — drop the
+      // marker so the "add a photo" mark goes with it, at the same instant the picture
+      // appears. The server does the same to the stored markup (applyFreeformEdit).
+      pendingImageEl.removeAttribute('data-hubly-photo-slot'); } }catch(_){}
     var reader = new FileReader();
     reader.onload = function(){
       var result = String(reader.result || '');

@@ -186,6 +186,12 @@ export function applyFreeformEdit(html: string, edit: FreeformEdit): FreeformEdi
       // srcset would keep serving the old image alongside the new one.
       const ss = el.attrRanges["srcset"];
       if (ss) edits.push({ start: ss.start, end: ss.end, text: "" });
+      // An empty photo slot on an added service card (data-hubly-photo-slot, written by
+      // blankClonedImages) has just been filled, so it is no longer a slot. Leaving the
+      // marker on would be markup that says "nothing here" over a real photograph — and
+      // the editor would keep painting its "add a photo" mark on top of one.
+      const slot = el.attrRanges["data-hubly-photo-slot"];
+      if (slot) edits.push({ start: slot.start, end: slot.end, text: "" });
       changed++;
     } else {
       const nextText = String(edit.text);

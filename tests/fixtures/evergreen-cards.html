@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title data-hubly-name>Evergreen Yard Care</title>
+  <style>
+    :root {
+      --green: #2f5d45;
+      --green-dark: #173425;
+      --green-deep: #10271c;
+      --grass: #6f9f4a;
+      --soil: #3a2a1d;
+      --tan: #d8c7a3;
+      --paper: #f2ead8;
+      --mist: #e6eee4;
+      --white: #ffffff;
+      --shadow: 0 18px 45px rgba(16, 39, 28, .16);
+      --radius: 22px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--green-deep);
+      background:
+        radial-gradient(circle at top left, rgba(111, 159, 74, .20), transparent 34rem),
+        linear-gradient(180deg, #e1ebdc 0%, #f0eadb 46%, #d9e5d1 100%);
+      line-height: 1.45;
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .top-strip {
+      background: var(--green-deep);
+      color: var(--white);
+      border-bottom: 5px solid var(--grass);
+    }
+
+    .top-inner {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 18px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .brand {
+      min-width: 0;
+    }
+
+    .brand-name {
+      display: block;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      font-size: clamp(1.25rem, 3.2vw, 2rem);
+      line-height: 1.05;
+      overflow-wrap: anywhere;
+    }
+
+    .brand-line {
+      display: block;
+      margin-top: 4px;
+      color: #c7dabd;
+      font-size: .95rem;
+      font-weight: 700;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+    }
+
+    .top-action {
+      flex: 0 0 auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 13px 18px;
+      border-radius: 999px;
+      background: var(--tan);
+      color: var(--green-deep);
+      text-decoration: none;
+      font-weight: 800;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, .18);
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    section {
+      padding: 44px 0;
+    }
+
+    .plans {
+      padding-top: 34px;
+    }
+
+    .section-kicker {
+      margin: 0 0 10px;
+      color: var(--green);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-size: .78rem;
+    }
+
+    h1, h2, h3, p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 900px;
+      margin-bottom: 22px;
+      font-size: clamp(2rem, 5vw, 4.1rem);
+      line-height: .98;
+      letter-spacing: -.055em;
+      color: var(--green-deep);
+    }
+
+    .lead {
+      max-width: 720px;
+      margin-bottom: 28px;
+      font-size: clamp(1rem, 2vw, 1.22rem);
+      color: #2f4537;
+      font-weight: 600;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, .62);
+      border: 1px solid rgba(47, 93, 69, .20);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card img {
+      aspect-ratio: 16 / 10;
+      object-fit: cover;
+      background: var(--green);
+    }
+
+    .card-body {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .card h2 {
+      font-size: clamp(1.35rem, 2.3vw, 1.9rem);
+      letter-spacing: -.035em;
+      line-height: 1.05;
+      margin-bottom: 8px;
+      color: var(--green-deep);
+    }
+
+    .price {
+      display: flex;
+      align-items: baseline;
+      gap: 7px;
+      margin-bottom: 14px;
+      color: var(--green);
+      font-weight: 900;
+    }
+
+    .price strong {
+      font-size: 2.35rem;
+      letter-spacing: -.06em;
+      line-height: 1;
+    }
+
+    .price span {
+      font-size: .9rem;
+      font-weight: 800;
+      color: #486450;
+    }
+
+    .card p {
+      color: #31473a;
+      font-size: 1rem;
+      margin-bottom: 22px;
+      font-weight: 600;
+    }
+
+    .card a {
+      margin-top: auto;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 48px;
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: var(--green);
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 900;
+    }
+
+    .what {
+      display: grid;
+      grid-template-columns: minmax(0,1.05fr) minmax(0,.95fr);
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    .panel {
+      background: var(--green-deep);
+      color: var(--white);
+      border-radius: var(--radius);
+      padding: clamp(24px, 4vw, 38px);
+      box-shadow: var(--shadow);
+    }
+
+    .panel h2 {
+      font-size: clamp(1.7rem, 3vw, 2.7rem);
+      line-height: 1;
+      letter-spacing: -.045em;
+      margin-bottom: 18px;
+    }
+
+    .panel p {
+      color: #d7e4d1;
+      font-size: 1.05rem;
+      font-weight: 600;
+      max-width: 650px;
+      margin-bottom: 0;
+    }
+
+    .expect-list {
+      margin: 22px 0 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 12px;
+    }
+
+    .expect-list li {
+      padding-left: 28px;
+      position: relative;
+      color: #f0f5ed;
+      font-weight: 700;
+    }
+
+    .expect-list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: .45em;
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: var(--grass);
+      box-shadow: 0 0 0 4px rgba(111, 159, 74, .20);
+    }
+
+    .photo-panel {
+      border-radius: var(--radius);
+      overflow: hidden;
+      min-height: 320px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(47, 93, 69, .20);
+      background: var(--green);
+    }
+
+    .photo-panel img {
+      height: 100%;
+      min-height: 320px;
+      object-fit: cover;
+    }
+
+    .area {
+      padding-top: 18px;
+    }
+
+    .area-box {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) auto;
+      gap: 24px;
+      align-items: center;
+      padding: clamp(24px, 4vw, 38px);
+      border-radius: var(--radius);
+      background: rgba(216, 199, 163, .72);
+      border: 1px solid rgba(58, 42, 29, .16);
+      box-shadow: var(--shadow);
+    }
+
+    .area-box h2 {
+      font-size: clamp(1.65rem, 3vw, 2.6rem);
+      line-height: 1;
+      letter-spacing: -.045em;
+      margin-bottom: 10px;
+      color: var(--soil);
+    }
+
+    .area-box p {
+      margin-bottom: 0;
+      color: #4d3d2b;
+      font-weight: 700;
+      font-size: 1.05rem;
+    }
+
+    .book-large {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 54px;
+      padding: 15px 22px;
+      border-radius: 999px;
+      background: var(--green-deep);
+      color: var(--white);
+      text-decoration: none;
+      font-weight: 900;
+      white-space: normal;
+      text-align: center;
+    }
+
+    footer {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 38px;
+      color: #365142;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      border-top: 1px solid rgba(47, 93, 69, .22);
+      font-weight: 800;
+    }
+
+    .footer-name {
+      overflow-wrap: anywhere;
+    }
+
+    .footer-city {
+      color: #5e735f;
+    }
+
+    @media (max-width: 880px) {
+      .top-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .top-action {
+        width: 100%;
+      }
+
+      section {
+        padding: 30px 0;
+      }
+
+      .plans {
+        padding-top: 26px;
+      }
+
+      h1 {
+        font-size: clamp(2rem, 11vw, 3.25rem);
+        margin-bottom: 16px;
+      }
+
+      .lead {
+        margin-bottom: 20px;
+      }
+
+      .cards,
+      .what,
+      .area-box {
+        grid-template-columns: minmax(0,1fr);
+      }
+
+      .card img {
+        aspect-ratio: 16 / 9;
+      }
+
+      .photo-panel,
+      .photo-panel img {
+        min-height: 240px;
+      }
+
+      .area-box {
+        gap: 18px;
+      }
+
+      .book-large {
+        width: 100%;
+      }
+
+      footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
+<style>[data-hubly-name]{overflow-wrap:break-word!important;white-space:normal!important;text-overflow:clip!important;max-height:none!important;-webkit-line-clamp:none!important;}</style><style>[data-hubly-price]{display:block;margin-top:.35em;font-weight:600;opacity:.92}</style></head>
+<body><div class="cards">
+        <article class="card">
+          <img data-hc="hero.item.1.image" src="https://rtwxxkxpkqdrhclkozma.supabase.co/storage/v1/object/public/brand-assets/drafts/c969eb51-684d-4ba8-a58e-2625c90fceea/doc-image-1788218523620.png" width="1200" height="627" alt="A residential lawn being mowed">
+          <div class="card-body">
+            <h2 data-hc="hero.item.1.title" data-hubly-service="Basic Mow">Basic Mow</h2>
+            <div class="price"><strong data-hc="hero.item.1.body"><span data-hubly-price="Basic Mow">$40</span></strong><span data-hc="hero.item.1.body.2">per visit</span></div>
+            <p data-hc="hero.item.1.body.3">A weekly mow, edge, and blow.</p>
+            <a data-hc="hero.item.1.body.4" target="_top" href="https://evergreen-yard-care.myhubly.app/?book=1&amp;svc=Basic%20Mow">Book Basic Mow</a>
+          </div>
+        </article>
+
+        <article class="card">
+          <img data-hc="hero.item.2.image" src="https://images.pexels.com/photos/12916204/pexels-photo-12916204.jpeg?auto=compress&amp;cs=tinysrgb&amp;fit=crop&amp;h=627&amp;w=1200" width="1200" height="627" alt="Grass being trimmed along a sidewalk edge">
+          <div class="card-body">
+            <h2 data-hc="hero.item.2.title" data-hubly-service="Full Service">Full Service</h2>
+            <div class="price"><strong data-hc="hero.item.2.body"><span data-hubly-price="Full Service">$95</span></strong><span data-hc="hero.item.2.body.2">per visit</span></div>
+            <p data-hubly-desc="Full Service" data-hc="hero.item.2.body.3">Mowing plus trimming, fertilizing, and weed control.</p>
+            
+          </div>
+        </article>
+
+        <article class="card">
+          <img data-hc="hero.item.3.image" src="https://images.pexels.com/photos/8191789/pexels-photo-8191789.jpeg?auto=compress&amp;cs=tinysrgb&amp;fit=crop&amp;h=627&amp;w=1200" width="1200" height="627" alt="Leaves being cleared from a residential yard">
+          <div class="card-body">
+            <h2 data-hc="hero.item.3.title" data-hubly-service="Seasonal Cleanup">Seasonal Cleanup</h2>
+            <div class="price"><strong data-hc="hero.item.3.body"><span data-hubly-price="Seasonal Cleanup">$220</span></strong><span data-hc="hero.item.3.body.2">per cleanup</span></div>
+            <p data-hc="hero.item.3.body.3">Leaf removal and a full bed cleanup.</p>
+            
+          </div>
+        </article><article class="card"><img data-hc="hero.item.4.image" src="https://images.pexels.com/photos/5163432/pexels-photo-5163432.jpeg?auto=compress&amp;cs=tinysrgb&amp;fit=crop&amp;h=627&amp;w=1200" width="1200" height="627" alt="A residential lawn being mowed"><div class="card-body"><h2 data-hc="hero.item.4.title" data-hubly-service="Spring Aeration">Spring Aeration</h2><div class="price"><strong><span data-hubly-price="Spring Aeration">$130</span></strong><span></span></div><p data-hc="hero.item.4.body.2" data-hubly-desc="Spring Aeration">Core aeration and overseeding.</p></div></article><article class="card"><img data-hc="hero.item.5.image" src="https://images.pexels.com/photos/5163432/pexels-photo-5163432.jpeg?auto=compress&amp;cs=tinysrgb&amp;fit=crop&amp;h=627&amp;w=1200" width="1200" height="627" alt="A residential lawn being mowed"><div class="card-body"><h2 data-hc="hero.item.5.title" data-hubly-service="Hedge Trimming">Hedge Trimming</h2><div class="price"><strong data-hc="hero.item.5.body"><span data-hubly-price="Hedge Trimming">$75</span></strong><span data-hc="hero.item.5.body.2"></span></div><p data-hubly-desc="Hedge Trimming" data-hc="hero.item.5.body.3">Shaping and cleanup.</p></div></article><article class="card"><img data-hc="hero.item.6.image" src="https://rtwxxkxpkqdrhclkozma.supabase.co/storage/v1/object/public/brand-assets/drafts/c969eb51-684d-4ba8-a58e-2625c90fceea/doc-image-1788218523620.png" width="1200" height="627" alt="A residential lawn being mowed"><div class="card-body"><h2 data-hc="hero.item.6.title" data-hubly-service="Gutter Cleaning">Gutter Cleaning</h2><div class="price"><strong data-hc="hero.item.6.body"><span data-hubly-price="Gutter Cleaning">$150</span></strong><span data-hc="hero.item.6.body.2"></span></div><p data-hubly-desc="Gutter Cleaning" data-hc="hero.item.6.body.3" style="display:none"></p></div></article>
+      </div>
+    </section></body></html>
