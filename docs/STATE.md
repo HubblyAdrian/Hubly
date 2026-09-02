@@ -147,6 +147,98 @@ Then the fuller "elite editor": today click-to-edit changes TEXT only (`applyDir
   page already shows a schedule we can't anchor, we save + honestly decline, but the page then
   shows stale hours. Fix is a confirmed-target offer via the click-action primitive, not a rebuild.
 
+## Design knobs — BUILT + VERIFIED AS THE OWNER (2026-09-02)
+
+The anchor pattern applied to design instead of facts. A generated page carries its own
+model-written CSS, so "make the header bigger" used to mean finding an unpredictable value
+in an unpredictable stylesheet — layout re-recognition, the failure this codebase repeats.
+Now the page's design is named CSS variables and a control sets one.
+
+**The mechanism: MULTIPLY, DON'T REPLACE.** Twenty-four font-sizes are a designed scale;
+each becomes `calc(<what the model wrote> * var(--knob, 1))`. The scale survives, one knob
+moves all of it, and the `, 1` fallback means an unstamped page renders byte-identically —
+**129 of 129 stored pages keep a fallback on every substitution**. Scoping is free, because
+custom properties inherit: `[data-hc^="hero"]{--hubly-type-scale:var(--hubly-hero-scale,1)}`
+makes "bigger header" resolve differently in the hero, against labels already stamped at
+generation. The knob VALUE lives in the stored page's `:root`, so a change is a document
+version and Undo reverses it with no new machinery; Reset deletes an override rather than
+restoring a backup. Steps only, never a raw pixel field.
+
+**Six knobs ship, offered only where they bind** (corpus of 129: test 123, market 5,
+internal 1). A control appears only when its count is > 0 — a knob that binds nothing is a
+checkmark we did not earn.
+
+| knob | pages | avg declarations |
+|---|---|---|
+| text size | 128 (99%) | 33 |
+| header size | 128 (99%) | 11 |
+| spacing | 128 (99%) | 61 |
+| content width | 128 (99%) | 7 |
+| corner rounding | 127 (98%) | 12 |
+| image shape | 82 (64%) | 2 |
+
+Image shape is 64% because only 82 pages use `aspect-ratio` at all — the gate working.
+
+**Verified as the owner on evergreen, every change at 1440 AND 390, each undone and reset:**
+header 66→85px desktop / 43→56 phone; spacing 22→18 both; image ratio 1.60→1.00 desktop
+and 1.78→1.00 phone. No horizontal overflow at either width. Undo and Reset each returned
+every metric to the generator's original exactly (66/43, 22, 1.60/1.78, doc height
+2744/4418), including on a page that stays stamped.
+
+### BACKGROUND and INK are withheld — refused at the writer, not merely hidden
+
+The binding works and the contrast maths is right. What is missing is knowing WHICH text
+sits on the page background. A generated page paints text in many colours (**16 on
+evergreen**), scoped to sections: dark copy on the light body, white copy inside a dark
+band. Checking only the body's ink passed a dark background at a genuine, measured 5.1:1
+**while the h1 rendered invisible at 390px**. Checking all sixteen is correct and
+unsatisfiable — no single background clears both the dark copy and the white copy,
+including the page's CURRENT background.
+
+**Decision (Adrian, 2026-09-02): the LIGHTNESS BAND, not render-and-measure.** Rendering
+answers the question for one instant — insert a card or move the type scale and the answer
+changes, so it becomes a forever re-check in a runtime with no layout engine. The band
+holds by construction: stay inside the page's own lightness family and every existing
+text-on-background relationship survives untouched. Make the bad state impossible rather
+than detect it afterwards. It also matches the real want — "a warmer cream", "a deeper
+green" is nearly all of it. **"Turn my light page dark" is a redesign, and its honest home
+is asking Hubly to rebuild it dark, which is the generator's job. A knob may not perform a
+redesign.** Hidden-only was rejected: a hidden control is still reachable by anything that
+calls the writer, so `setDesignKnob` refuses a withheld knob outright.
+
+### The pattern the three defects share — all three passed the code and failed the page
+
+1. **Bound is not moved.** `border-radius: var(--radius)` has no literal to multiply (the
+   literal is in `:root`, where the pass must not go), so radius and width counted as BOUND
+   and moved nothing. A control that reports itself working over a page that sits still is
+   the unearned checkmark one level down.
+2. **Desktop is not verified.** `@media` bodies were skipped wholesale by an at-rule guard,
+   so the image knob worked on desktop and did nothing on a phone — the width their
+   customers are on. Only the 390px measurement caught it.
+3. **A passing measurement of the wrong thing is not a passing measurement.** The contrast
+   check returned a true 5.1:1 for the body while the heading disappeared. The number was
+   real; the thing it measured was not the thing that mattered.
+
+### Open on knobs (designed, not built)
+
+- **Re-stamp when the pass improves.** A page stamped by an older pass keeps the older
+  binding; evergreen was stamped and its binding fixed twice in one day. UNWRAPPING is
+  ruled out by measurement — a regex inverse round-tripped only 4 of 129 pages
+  byte-identically, because nested `clamp(calc(...))` defeats it. The shape instead is
+  **upgrade in place, never unwrap**: re-run the pass over the stamped page, relying on the
+  idempotence guard already there (a value containing `--hubly-` is skipped), so previously
+  wrapped declarations are untouched and previously MISSED ones get wrapped. Owner values
+  live in `:root` and are not rewritten. Gate it on a version marker on the knob style block
+  and run it lazily on the next knob read/write, never as a sweep, so each upgrade is one
+  owner's page and one undoable version.
+- **The image knob's mobile cost.** Measured at 390px on evergreen (7 cards, so it
+  compounds): 16/9 = 4,418px, 16/10 = 4,574, 3/2 = 4,677, 4/3 = 4,885, **1/1 = 5,508 —
+  6.5 phone screens, +1,090px**. Worse, the knob OVERRIDES the generator's per-breakpoint
+  choice: evergreen deliberately uses 16/9 on phones and 16/10 on desktop, so even picking
+  "16/10" costs +156px on a phone. Direction: drop the square step AND make the ratio
+  per-breakpoint so the page keeps its own phone choice — constrain the step set rather
+  than warn, since the owner choosing on desktop cannot see the phone consequence.
+
 ## MOBILE — a priority, not a polish pass (not being built now; binds everything new)
 
 Two distinct pieces. Neither is scheduled yet; both are named here so neither gets filed
@@ -185,3 +277,20 @@ whose action can't reach the page; never write a fact not grounded in the curren
 - Every claimed-owner write flow after a deploy (services/hours/phone landing; grounding asking).
 - Home on a real return visit; the suggestion buttons; the optimistic edit + Undo toast.
 - Stripe test-mode cycle (I must not enter cards).
+
+## Still owed — the survey, which has not moved
+
+Named in full so it does not quietly shrink. None of this is started:
+
+- **Editor wiring** — what colour, font, size, images and add-service actually do today
+  versus what they appear to do, and where **memberships and events** belong.
+- **The Home redesign** — logo pinned top, Chats removed, no search bar, light and dark,
+  and whether the four action cards have real destinations (a card that goes nowhere is
+  the same unearned promise as a control that binds nothing).
+- **Storefront** — verify what exists rather than assuming; `PRODUCT_SHAPE.md` §3–4 is
+  direction, not an inventory.
+- **The URL scheme** and **the wordmark placement**.
+- **Retiring the Edit-details button** once in-place editing covers it.
+- **Touch-first control design for the knobs** — the six that ship have no owner-facing
+  control yet; only the endpoint. Per the mobile rule above, those controls are designed
+  for touch from the first line, not retrofitted.
