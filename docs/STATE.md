@@ -143,9 +143,31 @@ Then the fuller "elite editor": today click-to-edit changes TEXT only (`applyDir
   *add* may orphan photo links on the existing services. Pre-existing (not introduced by the
   reconcile work). Verify before leaning harder on services.
 - **Google sign-in shows the raw Supabase domain** instead of Hubly on the consent screen.
-- **~6 phone-screens per generated page** (public site): ~5,000–5,400px at 390px across market +
-  test; cause = generously-sized stacked sections + a prompt silent on phone-width length, not
-  broken responsiveness (OPEN_FINDINGS #10).
+## MOBILE — a priority, not a polish pass (not being built now; binds everything new)
+
+Two distinct pieces. Neither is scheduled yet; both are named here so neither gets filed
+under "responsive tidy-up later", which is what they are not.
+
+1. **The PUBLIC site at phone width — this is the one that decides whether anyone books.**
+   ~5,000–5,400px at 390px, about six phone-screens, consistent across market AND test
+   (OPEN_FINDINGS #10). Cause is generously-sized stacked sections plus a generation prompt
+   that says nothing about phone-width length — not broken responsiveness. It outranks the
+   shell's mobile problem because it is what a CUSTOMER sees the moment they tap the link;
+   the shell is the owner's view, and an owner will find their way around a cramped screen
+   in a way a stranger deciding whether to book never will.
+2. **The Hubly SHELL at phone width.** The rail and the Home/Website mode switch are
+   desktop-shaped; on a phone an owner cannot reach Home, Website or Settings. **Cannot be
+   verified from here** — Claude Code has no true 390px viewport and no soft keyboard, so
+   this one is Adrian's to check on a real phone (the standing rule in CLAUDE.md).
+
+**What binds from here, whether or not either is scheduled:** anything NEW ships
+phone-aware. Every design knob is verified at 390px as well as desktop before it ships — a
+type scale that reads well wide can overflow on a phone, and the phone is where their
+customers are. Every editor control is designed for TOUCH from the first line, not
+mouse-and-hover with a mobile pass promised afterwards. Retrofitting an inspector built
+around hover is a rebuild; building it touch-first costs nothing today. This is cheaper
+than the two items above precisely because it is a constraint on new work rather than a
+repair of old work.
 - **The "hours already shown" consent offer** (designed-but-unbuilt; OPEN_FINDINGS #9): when a
   page already shows a schedule we can't anchor, we save + honestly decline, but the page then
   shows stale hours. Fix is a confirmed-target offer via the click-action primitive, not a rebuild.
