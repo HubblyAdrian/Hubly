@@ -732,7 +732,14 @@ Deno.serve(async (req) => {
   }
 
   const incoming: HublyMessage[] = Array.isArray(body?.messages) ? body.messages : [];
-  if (!incoming.length) return jsonRes({ ok: false, error: "messages_required" }, 400);
+  // A structured DIRECT EDIT (the manual form, click-to-edit, an image/doc patch)
+  // is not a chat turn and carries no messages — it must not be rejected by the
+  // chat-turn guard. Without this, the panel's messages:[] 400'd here, ~530 lines
+  // before the directRecordEdit handler ever ran, so EVERY manual save failed with
+  // "messages_required" and the owner saw "That didn't save" (found live 2026-09-01).
+  const anyDirectEdit = !!(body && (body.directRecordEdit || body.directEdit || body.directImageEdit ||
+    body.directDocumentPatch || body.directDocumentImageEdit || body.directFreeformEdit || body.directFreeformImageEdit));
+  if (!incoming.length && !anyDirectEdit) return jsonRes({ ok: false, error: "messages_required" }, 400);
 
   // POST-BUILD HAND-OFF. The client asks the MODEL for the first message after a build
   // (services-first) rather than composing a menu client-side. Inject a system-event turn

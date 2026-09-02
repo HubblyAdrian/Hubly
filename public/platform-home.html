@@ -3811,7 +3811,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     hcManage.hours = {}; ((hrs && hrs.data) || []).forEach(function(r){ hcManage.hours[r.weekday] = r; });
   }
   async function hcRecordEdit(edit){
-    var at = hcAccessToken();
+    var at = await hcFreshToken();
     if(!at) return { ok:false, reply:'You need to be signed in to edit this.' };
     var res = await fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
       method:'POST',
@@ -4482,6 +4482,26 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       var at = o && (o.access_token || (o.currentSession && o.currentSession.access_token));
       return at || null;
     }catch(e){ return null; }
+  }
+  // A FRESH access token for authed WRITES. hcAccessToken() returns the raw stored
+  // token, which expires (~1h) — a stale one 401s the server (resolveOwnerUid) and
+  // the write silently fails ("That didn't save"), which is exactly what a manual
+  // save hit after the session aged (found live 2026-09-01: stored token expired by
+  // ~6h). Refresh through the SDK when the stored token is expired or near it.
+  async function hcFreshToken(){
+    try{
+      var raw = JSON.parse(localStorage.getItem(hcSbKey()) || 'null');
+      var exp = raw && (raw.expires_at || (raw.currentSession && raw.currentSession.expires_at));
+      var c = await authGetClient();
+      if(exp && (exp * 1000) > (Date.now() + 15000)){
+        var s = await c.auth.getSession();
+        var t = s && s.data && s.data.session && s.data.session.access_token;
+        if(t) return t;
+      }
+      var r = await c.auth.refreshSession();               // expired / near / unknown -> refresh
+      var rt = r && r.data && r.data.session && r.data.session.access_token;
+      return rt || hcAccessToken();
+    }catch(e){ return hcAccessToken(); }
   }
   function hcIsAuthed(){
     try{
