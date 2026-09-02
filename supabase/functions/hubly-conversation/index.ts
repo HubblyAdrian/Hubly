@@ -65,7 +65,7 @@ import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
 import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
 import { reportAllowlistDrops } from "../_shared/hubly_allowlist.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, applyOwnerDesignEdit, readOwnerDesignKnobs, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -89,6 +89,22 @@ import {
 // opener with nothing specific to respond to (see isGenericOpener below).
 // Every turn after this one belongs entirely to the model — no scripted
 // flow beyond it.
+
+/** Ownership check for a read-only owner request (the design controls opening).
+ *  Reads through the service role and compares owner_id to the VERIFIED uid — the same
+ *  authorise-by-ownership rule the writers use, applied to a read, so the knob inventory
+ *  of someone else's page is never returned. */
+async function ownsBusiness(businessId: string, ownerUid: string): Promise<boolean> {
+  try {
+    const url = (Deno.env.get("SUPABASE_URL") || "").trim();
+    if (!url) return false;
+    const r = await fetch(`${url}/rest/v1/businesses?id=eq.${encodeURIComponent(businessId)}&select=owner_id&limit=1`, { headers: adminHeaders() });
+    if (!r.ok) return false;
+    const rows = await r.json().catch(() => null);
+    const row = Array.isArray(rows) ? rows[0] : null;
+    return !!row && String(row.owner_id || "") === String(ownerUid);
+  } catch { return false; }
+}
 
 /** Owner-facing names for the record fields, for the change read-back (guard 2).
  *  "phone is now …" not "phone: …" — the sentence is spoken to a person. */
@@ -801,8 +817,14 @@ Deno.serve(async (req) => {
   // chat-turn guard. Without this, the panel's messages:[] 400'd here, ~530 lines
   // before the directRecordEdit handler ever ran, so EVERY manual save failed with
   // "messages_required" and the owner saw "That didn't save" (found live 2026-09-01).
+  // designKnobs (the read the controls open from) and designEdit (turning one) are the
+  // same shape: structured owner actions with no chat turn. They belong on this list for
+  // the same reason the panel's edits do — this guard sits ~500 lines before their
+  // handler, so an omission here is invisible at the call site and reads to the owner as
+  // "that didn't save".
   const anyDirectEdit = !!(body && (body.directRecordEdit || body.directEdit || body.directImageEdit ||
-    body.directDocumentPatch || body.directDocumentImageEdit || body.directFreeformEdit || body.directFreeformImageEdit));
+    body.directDocumentPatch || body.directDocumentImageEdit || body.directFreeformEdit || body.directFreeformImageEdit ||
+    body.designKnobs === true || body.designEdit));
   if (!incoming.length && !anyDirectEdit) return jsonRes({ ok: false, error: "messages_required" }, 400);
 
   // POST-BUILD HAND-OFF. The client asks the MODEL for the first message after a build
@@ -1410,6 +1432,36 @@ Deno.serve(async (req) => {
     } catch {
       return null;
     }
+  }
+
+  // DESIGN KNOBS. A structured, model-free owner edit like directRecordEdit — the
+  // control sets one CSS variable in the stored page, which is a new document version,
+  // which Undo reverses. `designKnobs` with no op is the READ the controls open from:
+  // it returns only the knobs that actually bind on this page, so a control is never
+  // shown for something it cannot move.
+  if (body?.designKnobs === true || (body?.designEdit && typeof body.designEdit === "object")) {
+    if (!draftBusiness) return jsonRes({ ok: false, error: "no_business" }, 400);
+    const ownerUid = await getOwnerUid();
+    if (!ownerUid) return jsonRes({ ok: false, error: "not_signed_in", reply: "You need to be signed in to change this." }, 401);
+    if (body?.designKnobs === true) {
+      if (!(await ownsBusiness(draftBusiness.id, ownerUid))) return jsonRes({ ok: false, error: "not_owner" }, 403);
+      const r = await readOwnerDesignKnobs(draftBusiness.id);
+      return jsonRes({ ok: r.ok, ...(r.knobs ? { design: r.knobs } : {}), ...(r.error ? { error: r.error } : {}), messages: incoming, actions: [], interimMessages: [] });
+    }
+    const e = body.designEdit as { knob: string; value?: string; op?: "set" | "reset" };
+    const result = await applyOwnerDesignEdit(draftBusiness.id, draftBusiness.draftToken, ownerUid, {
+      knob: e.knob as Parameters<typeof applyOwnerDesignEdit>[3]["knob"],
+      value: e.value,
+      op: e.op === "reset" ? "reset" : "set",
+    });
+    return jsonRes({
+      ok: result.ok,
+      reply: result.summary || "",
+      messages: incoming,
+      actions: [{ capability: "website", capabilityAction: "designKnob", args: { knob: e.knob, op: e.op || "set" }, ok: !!result.ok, real: !!result.real }],
+      interimMessages: [],
+      ...(result.error ? { error: result.error } : {}),
+    });
   }
 
   if (directRecordEdit) {

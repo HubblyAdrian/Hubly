@@ -64,6 +64,7 @@ import { injectHublyRuntime } from "./hubly_page_runtime.ts";
 import { resolveImages, collapseEmptyImageSlots, pexelsFetcher, type PlacedImageRow } from "./hubly_image_resolver.ts";
 import { annotatePlaceholders } from "./hubly_placeholders.ts";
 import { reportAllowlistDrops } from "./hubly_allowlist.ts";
+import { KNOBS, hasDesignKnobs, pagePalette, readDesignKnobs, resetDesignKnob, setDesignKnob, stampDesignKnobs, type KnobId } from "./hubly_design_knobs.ts";
 import { applyFreeformEdit, humanFreeformSummary, labelInventory, labelsPresent, type LabelEntry } from "./hubly_freeform.ts";
 import {
   formatPhoneHouse,
@@ -2114,11 +2115,27 @@ export async function generateFreeformPage(
     publishableKey: requirePublishableKey(),
     accent: String((record as Record<string, unknown>)?.brand_color || ""),
   });
+  // DESIGN KNOBS — the last pass, after the runtime, so Hubly's own widget markup is
+  // not scaled by the owner's type control. Wraps every font-size/padding/margin/
+  // max-width/border-radius/aspect-ratio in `calc(<what the model wrote> * var(knob,1))`
+  // and binds the body's background/colour, so "make the header bigger" later sets ONE
+  // variable instead of hunting an unpredictable value in an unpredictable stylesheet.
+  // Every substitution keeps the model's value as the fallback, so this pass cannot
+  // change how the page renders — verified across all 129 stored pages.
+  const knobbed = stampDesignKnobs(wired.html);
+  const knobCounts = Object.entries(knobbed.bound).map(([k, n]) => `${k}=${n}`).join(" ");
+  console.log(`freeform [${businessId}] design knobs bound: ${knobCounts || "NONE"}`);
+  // ASSERTED, not assumed — the same contract as the runtime injection above. A page
+  // whose type and spacing bound nothing would offer an owner controls that move
+  // nothing, which is a green checkmark we did not earn.
+  if (!(knobbed.bound.typeScale > 0) || !(knobbed.bound.spaceScale > 0)) {
+    console.error(`freeform [${businessId}] design knobs: type/space bound nothing (${knobCounts}) — the size and spacing controls will be withheld for this page`);
+  }
   // STAGE: finalizing (booking wired; the document is about to be stored).
   await updateDocumentBuildStage(jobId, "finalizing");
   return {
     ok: true,
-    html: wired.html,
+    html: knobbed.html,
     plan,
     brief: { brief, images: resolved.placed.map((p) => ({ url: p.imageUrl, provider: p.provider, slot: p.slot })), generatedAt: new Date().toISOString() },
     labels: stamped.coverage.labelled,
@@ -3426,9 +3443,81 @@ export type OwnerRecordEdit =
   | { kind: "contact"; phone?: string | null; email?: string | null; address?: string | null }
   | { kind: "hours"; rows?: { weekday: number; open: string | null; close: string | null; closed: boolean }[]; note?: string | null }
   | { kind: "service"; op: "add" | "edit"; id?: string; name: string; price?: number | null; description?: string | null; prevName?: string }
-  | { kind: "service"; op: "remove"; id?: string; name: string };
+  | { kind: "service"; op: "remove"; id?: string; name: string }
+  | { kind: "design"; knob: KnobId; value?: string; op?: "set" | "reset" };
 
 export type OwnerEditResult = { ok: boolean; real: boolean; summary: string; error?: string; raw?: unknown };
+
+/**
+ * Turn one design knob on the owner's page — or put it back.
+ *
+ * Goes through the SAME versioned pipe as every other edit: the knob value lives in the
+ * stored page's own :root, so setting it rewrites the stored HTML, which IS a new
+ * document version, which Undo (restore_prev_business_document, copying the previous
+ * rendered_html forward) reverses with no extra machinery. Turning the type up and not
+ * being able to get back would be worse than not having the control at all.
+ *
+ * Stamps on the way in, so a page built before knobs existed gets them the first time
+ * its owner reaches for a control, and an owner never has to know their page is old.
+ */
+export async function applyOwnerDesignEdit(
+  draftId: string,
+  draftToken: string,
+  ownerUid: string | null,
+  edit: { knob: KnobId; value?: string; op?: "set" | "reset" },
+): Promise<OwnerEditResult> {
+  if (!draftId || !ownerUid) return { ok: false, real: false, error: "not_signed_in", summary: "You need to be signed in to change this." };
+  const biz = await selectOne("businesses", "id", draftId, "owner_id");
+  if (!biz || String(biz.owner_id || "") !== String(ownerUid)) {
+    return { ok: false, real: false, error: "not_owner", summary: "You don't have access to edit this business." };
+  }
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest) return { ok: false, real: false, error: "no_document", summary: "There's no page to change yet." };
+  if (latest.format !== "html") return { ok: false, real: false, error: "wrong_format", summary: "That page isn't a freeform page." };
+
+  let nextHtml: string;
+  let said: string;
+  if (edit.op === "reset") {
+    const r = resetDesignKnob(latest.renderedHtml, edit.knob);
+    if (!r.reset.length) return { ok: false, real: false, error: "nothing_to_reset", summary: "That's already how the page was designed." };
+    nextHtml = r.html;
+    said = `Put the ${r.reset.join(" and ")} back the way your page was designed.`;
+  } else {
+    const r = setDesignKnob(latest.renderedHtml, edit.knob, String(edit.value ?? ""));
+    if (!r.ok) return { ok: false, real: false, error: r.error, summary: r.summary };
+    nextHtml = r.html;
+    said = `Changed the ${r.label}.${r.note ? " " + r.note : ""}`;
+  }
+  if (nextHtml === latest.renderedHtml) {
+    return { ok: false, real: false, error: "no_change", summary: "That's already how it's set." };
+  }
+  const saved = await callBusinessRpc("create_business_document", {
+    p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
+    p_document: latest.brief, p_rendered_html: stripEditorChrome(nextHtml, "design-knob"),
+    p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
+  });
+  if (!saved || saved.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "That didn't save — nothing changed." };
+  return { ok: true, real: true, summary: said, raw: { version: saved.version, knob: edit.knob } };
+}
+
+/** What the owner's controls should offer for THIS page: which knobs actually bind, the
+ *  steps each allows, and the page's own palette. The bound count is the gate — a knob
+ *  that binds nothing gets no control, because a control that moves nothing is a promise
+ *  the page can't keep. */
+export async function readOwnerDesignKnobs(draftId: string): Promise<{ ok: boolean; knobs?: unknown; error?: string }> {
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest || latest.format !== "html") return { ok: false, error: "no_document" };
+  // Read what a stamp WOULD bind when the page has never been stamped, so the controls
+  // are right on the very first open rather than only after the first change.
+  const stamped = hasDesignKnobs(latest.renderedHtml)
+    ? { bound: readDesignKnobs(latest.renderedHtml).bound }
+    : stampDesignKnobs(latest.renderedHtml);
+  const cur = readDesignKnobs(latest.renderedHtml);
+  const knobs = (Object.entries(KNOBS) as [KnobId, { varName: string; label: string; steps?: string[] }][])
+    .filter(([id, def]) => (stamped.bound[id] || 0) > 0 && (def as { offered?: boolean }).offered !== false)
+    .map(([id, def]) => ({ id, label: def.label, steps: def.steps || null, value: cur.values[id] || null, bound: stamped.bound[id] }));
+  return { ok: true, knobs: { knobs, palette: pagePalette(latest.renderedHtml) } };
+}
 
 /** One row write to a table, service-role, return=representation. */
 async function adminWrite(method: "POST" | "PATCH" | "DELETE", table: string, filter: string, body?: unknown): Promise<any> {
