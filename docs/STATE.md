@@ -260,6 +260,65 @@ calls the writer, so `setDesignKnob` refuses a withheld knob outright.
    check returned a true 5.1:1 for the body while the heading disappeared. The number was
    real; the thing it measured was not the thing that mattered.
 
+### The CONTROLS — built 2026-09-02. FIVE knobs, and a chat door
+
+**Two doors where there were none.** Both reach the same owner-verified, versioned,
+undoable writer.
+
+1. **`Design` in the canvas toolbar** (`platform-home.html`, `#hcDesignBtn` beside
+   `Edit details`). That position is deliberate: the canvas bar is the one claimed-owner
+   surface that survives phone width — the rail is `display:none` at ≤760px
+   (OPEN_FINDINGS #13), so a control living there would vanish on a phone.
+2. **`website.setDesignKnob` in the capability registry** — so "make my headings bigger"
+   now works in chat. It takes a **`direction` (up/down), not a value**, and the server
+   steps from the page's CURRENT setting (`stepKnob`): a model cannot see the stored value,
+   so a guessed value is often a change that does nothing and still reports success. At the
+   end of the steps it says so ("already as large as I can set it") rather than clamping
+   silently. Registered in `DRAFT_INJECTED_ACTIONS` (needs draftId+draftToken+ownerUid) and
+   `GATED_WEBSITE_ACTIONS`; the boot audit reports no action missing from either.
+
+**FIVE, not six — image shape is withheld,** at the writer (`offered:false` + a `withheld`
+sentence), not merely left out of the UI. Its cost is invisible from where the owner
+chooses: it overrides the generator's per-breakpoint choice, so even "16/10" costs +156px
+on a phone and 1/1 costs +1,090px. It returns when the ratio is per-breakpoint. The
+refusal now explains itself — `background` and `ink` carry the same treatment, so a
+withheld knob says why instead of "I can't change that one yet."
+
+**A defect found and fixed on the way in — the writer had no binding gate.**
+`setDesignKnob` stamps and writes the value into `:root` without checking that anything on
+the page reads it, and writing `:root` changes the HTML either way, so the no-change guard
+could not catch it: on a page where a knob bound nothing it returned `ok:true, real:true,
+"Changed the corner rounding"` over a page that sat still. That is defect #1 above, one
+level up. It was survivable only while the sole caller was the filtered read; **the model
+picks the knob from the owner's words, not from a filtered list**, so the gate had to move
+to the writer. `boundKnobsFor()` is now the single source both the read and the write use,
+so a control the reader offers and the writer refuses cannot happen. Measured: `mediaRatio`
+binds nothing on **43 of 106** stored freeform pages — a real population, not a theoretical one.
+
+**Touch-first, and measured rather than asserted.** The page's own edit affordance is a
+`:hover` outline, which does not exist on touch — so the invitation here never depends on
+hover: every control is a permanently visible button, steps are a segmented row (never a
+slider — wrong for a thumb, and it implies a continuum the mechanism does not have), the
+current value is a marked chip plus `aria-pressed`, and the panel becomes a full-width
+bottom sheet under 560px. Measuring caught two targets under 44px that assertion would
+have missed: `.hc-set-x` at **25×26** (shared chrome — so Settings and Edit details were
+affected too, now fixed for all three) and `.hc-dsg-reset` at **42×32**. After the fix, at
+both 1440 and 390: **every target ≥44px, no clipped labels, no row overflow, no horizontal
+page overflow**, panel 520px wide on desktop and full-width 390 on the phone.
+
+**NOT YET VERIFIED AS THE OWNER ON THE REAL THING — this is the gap, stated plainly.**
+The standing rule is that a change is done when the running product was exercised as the
+owner, on a claimed business, and this session could not do that: **no database
+credentials** (`.env.local` has only a Vercel OIDC token; the linked CLI's pooler URL has
+no password) and no way to hold a real session. What WAS verified: the knob primitives over
+106 real stored pages (all five offered knobs bind on 99–100%; withheld knobs refused with a
+reason; stepping walks the steps and reports the end honestly; **reset is byte-identical**
+to the pre-change HTML; the `,1` fallback survives on 106/106), the registration and its
+three refusals, and the panel geometry above. What is NOT verified: a real claimed-owner
+round trip — set, see the live page move, Undo, Reset — at 1440 and 390, and the chat
+sentence "make my headings bigger". **That is Adrian's to run**, and until he does, the
+controls are built and unproven, not done.
+
 ### Open on knobs (designed, not built)
 
 - **Re-stamp when the pass improves.** A page stamped by an older pass keeps the older
@@ -371,10 +430,9 @@ Findings are folded into the sections above and into `OPEN_FINDINGS.md`; this is
 
 ## Still owed
 
-- **The knob CONTROLS** — five knobs, not six; image shape held until its steps are
-  per-breakpoint (see "The image knob's mobile cost"). Touch-first from the first line: the
-  edit affordance today is `:hover` only (`#hubly-editable-style`), which is invisible on
-  touch, so the invitation may not depend on hover.
+- **Adrian: prove the knob controls as the owner** — the one thing above that is built and
+  unproven. Sign in on evergreen, open `Design`, set each of the five, watch the page move,
+  Undo, Reset; at 1440 and on a real phone. And type "make my headings bigger" in the chat.
 - **Retiring the Edit-details button** once in-place editing covers it.
 - **A decision on storefront** — door on the legacy store, or re-implement on the new spine.
 - **A URL scheme and a wordmark placement** — both need SPECIFYING, not just surveying.

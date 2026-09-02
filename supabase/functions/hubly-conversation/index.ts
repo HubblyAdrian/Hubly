@@ -339,7 +339,12 @@ const DOCUMENT_GENERATION_ENABLED = (Deno.env.get("HUBLY_DOCUMENT_GENERATION_ENA
 // ADDING A WEBSITE ACTION? It is NOT gated unless its name is in this set, and
 // nothing used to say so — newPage was advertised, dispatchable and reachable
 // with the flag off. The audit below now names anything that falls through.
-const GATED_WEBSITE_ACTIONS = new Set(["generateDocument", "patchDocument", "setChrome", "newPage"]);
+// setDesignKnob is gated for the same reason setChrome is: it rewrites a STORED page and
+// is meaningless without one. It is much cheaper and fully reversible, so the argument for
+// leaving it live is real — but "the deployment has page generation switched off" and "the
+// owner can still restyle the page" should not both be true, and an ungated action would
+// be advertised to the model in a deployment that has no pages to change.
+const GATED_WEBSITE_ACTIONS = new Set(["generateDocument", "patchDocument", "setChrome", "newPage", "setDesignKnob"]);
 
 /**
  * Actions the engine injects the real draftId/draftToken into. The model never
@@ -362,6 +367,12 @@ const DRAFT_INJECTED_ACTIONS = new Set([
   // Its handler reads args.draftId but its argsSchema does not declare one,
   // which is why a schema-only check reported it as fine.
   "website.setChrome",
+  // Design knobs (2026-09-02). Needs draftId + draftToken + the verified ownerUid: a
+  // knob writes into the STORED page, so it takes the claimed-owner branch of
+  // create_business_document and is meaningless — and correctly refused — without a
+  // verified owner. Same shape as setChrome: the handler reads draftId, the schema
+  // doesn't declare it, so only the source-based audit below would have caught a miss.
+  "website.setDesignKnob",
 ]);
 
 /**

@@ -64,7 +64,7 @@ import { injectHublyRuntime } from "./hubly_page_runtime.ts";
 import { resolveImages, collapseEmptyImageSlots, pexelsFetcher, type PlacedImageRow } from "./hubly_image_resolver.ts";
 import { annotatePlaceholders } from "./hubly_placeholders.ts";
 import { reportAllowlistDrops } from "./hubly_allowlist.ts";
-import { KNOBS, hasDesignKnobs, pagePalette, readDesignKnobs, resetDesignKnob, setDesignKnob, stampDesignKnobs, type KnobId } from "./hubly_design_knobs.ts";
+import { KNOBS, boundKnobsFor, hasDesignKnobs, pagePalette, readDesignKnobs, resetDesignKnob, setDesignKnob, stampDesignKnobs, stepKnob, type KnobId } from "./hubly_design_knobs.ts";
 import { applyFreeformEdit, humanFreeformSummary, labelInventory, labelsPresent, type LabelEntry } from "./hubly_freeform.ts";
 import {
   formatPhoneHouse,
@@ -3444,7 +3444,7 @@ export type OwnerRecordEdit =
   | { kind: "hours"; rows?: { weekday: number; open: string | null; close: string | null; closed: boolean }[]; note?: string | null }
   | { kind: "service"; op: "add" | "edit"; id?: string; name: string; price?: number | null; description?: string | null; prevName?: string }
   | { kind: "service"; op: "remove"; id?: string; name: string }
-  | { kind: "design"; knob: KnobId; value?: string; op?: "set" | "reset" };
+  | { kind: "design"; knob: KnobId; value?: string; direction?: "up" | "down"; op?: "set" | "reset" };
 
 export type OwnerEditResult = { ok: boolean; real: boolean; summary: string; error?: string; raw?: unknown };
 
@@ -3464,7 +3464,7 @@ export async function applyOwnerDesignEdit(
   draftId: string,
   draftToken: string,
   ownerUid: string | null,
-  edit: { knob: KnobId; value?: string; op?: "set" | "reset" },
+  edit: { knob: KnobId; value?: string; direction?: "up" | "down"; op?: "set" | "reset" },
 ): Promise<OwnerEditResult> {
   if (!draftId || !ownerUid) return { ok: false, real: false, error: "not_signed_in", summary: "You need to be signed in to change this." };
   const biz = await selectOne("businesses", "id", draftId, "owner_id");
@@ -3475,6 +3475,31 @@ export async function applyOwnerDesignEdit(
   if (!latest) return { ok: false, real: false, error: "no_document", summary: "There's no page to change yet." };
   if (latest.format !== "html") return { ok: false, real: false, error: "wrong_format", summary: "That page isn't a freeform page." };
 
+  // BOUND IS NOT MOVED — the gate belongs HERE, not in the UI.
+  //
+  // setDesignKnob stamps and then writes the value into :root. It does NOT check that
+  // anything on the page reads that variable, and writing :root changes the HTML either
+  // way — so the no-change guard below cannot catch it. On a page where a knob binds zero
+  // declarations, the whole thing would return ok:true, real:true, "Changed the corner
+  // rounding", over a page that sat perfectly still. That is defect #1 from the knob build
+  // (STATE.md: "A control that reports itself working over a page that sits still is the
+  // unearned checkmark one level down"), and it was survivable only while the sole caller
+  // was readOwnerDesignKnobs' filtered list. The model can call this now, and the model
+  // picks the knob from the owner's words, not from a filtered list — so the writer has to
+  // hold the line itself, exactly as it already does for a withheld knob.
+  //
+  // Same helper as the read (boundKnobsFor), so the control and the writer cannot disagree.
+  if (edit.op !== "reset") {
+    const bound = boundKnobsFor(latest.renderedHtml)[edit.knob] || 0;
+    if (bound === 0) {
+      const label = KNOBS[edit.knob]?.label || "that";
+      return {
+        ok: false, real: false, error: "not_bound",
+        summary: `There's nothing on your page that ${label} would change — the way it's built, that isn't set anywhere I can move.`,
+      };
+    }
+  }
+
   let nextHtml: string;
   let said: string;
   if (edit.op === "reset") {
@@ -3483,7 +3508,24 @@ export async function applyOwnerDesignEdit(
     nextHtml = r.html;
     said = `Put the ${r.reset.join(" and ")} back the way your page was designed.`;
   } else {
-    const r = setDesignKnob(latest.renderedHtml, edit.knob, String(edit.value ?? ""));
+    // A DIRECTION is resolved against the page as it is now, never guessed. "Bigger" from
+    // a model that cannot see the current value is how a no-op gets reported as a change.
+    let value = String(edit.value ?? "");
+    if (edit.direction) {
+      const stepped = stepKnob(latest.renderedHtml, edit.knob, edit.direction);
+      if ("error" in stepped) {
+        return { ok: false, real: false, error: stepped.error, summary: "I can't step that one." };
+      }
+      if ("atEnd" in stepped) {
+        const label = KNOBS[edit.knob]?.label || "that";
+        return {
+          ok: false, real: false, error: "at_end",
+          summary: `Your ${label} is already as ${edit.direction === "up" ? "large" : "small"} as I can set it — I left it alone.`,
+        };
+      }
+      value = stepped.value;
+    }
+    const r = setDesignKnob(latest.renderedHtml, edit.knob, value);
     if (!r.ok) return { ok: false, real: false, error: r.error, summary: r.summary };
     nextHtml = r.html;
     said = `Changed the ${r.label}.${r.note ? " " + r.note : ""}`;
@@ -3507,15 +3549,16 @@ export async function applyOwnerDesignEdit(
 export async function readOwnerDesignKnobs(draftId: string): Promise<{ ok: boolean; knobs?: unknown; error?: string }> {
   const latest = await selectLatestBusinessDocument(draftId, "website");
   if (!latest || latest.format !== "html") return { ok: false, error: "no_document" };
-  // Read what a stamp WOULD bind when the page has never been stamped, so the controls
-  // are right on the very first open rather than only after the first change.
-  const stamped = hasDesignKnobs(latest.renderedHtml)
-    ? { bound: readDesignKnobs(latest.renderedHtml).bound }
-    : stampDesignKnobs(latest.renderedHtml);
+  // ONE binding source, shared with the writer (applyOwnerDesignEdit) — a control the
+  // reader offers and the writer refuses looks broken, so they read the same function.
+  // It also answers correctly for a never-stamped page by asking what a stamp WOULD
+  // bind, so the controls are right on the very first open rather than after the first
+  // change.
+  const bound = boundKnobsFor(latest.renderedHtml);
   const cur = readDesignKnobs(latest.renderedHtml);
   const knobs = (Object.entries(KNOBS) as [KnobId, { varName: string; label: string; steps?: string[] }][])
-    .filter(([id, def]) => (stamped.bound[id] || 0) > 0 && (def as { offered?: boolean }).offered !== false)
-    .map(([id, def]) => ({ id, label: def.label, steps: def.steps || null, value: cur.values[id] || null, bound: stamped.bound[id] }));
+    .filter(([id, def]) => (bound[id] || 0) > 0 && (def as { offered?: boolean }).offered !== false)
+    .map(([id, def]) => ({ id, label: def.label, steps: def.steps || null, value: cur.values[id] || null, bound: bound[id] }));
   return { ok: true, knobs: { knobs, palette: pagePalette(latest.renderedHtml) } };
 }
 
@@ -4534,6 +4577,101 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             summary: `Header layout changed (${said}) and the page re-rendered. Tell the owner specifically what moved.`,
             humanNote: chromeChangeNote(chrome),
             raw: { chrome: merged, rerender: rerendered, recordChange: ["cosmetic"] },
+          };
+        },
+      },
+      {
+        // THE DOOR FOR THE DESIGN KNOBS, added 2026-09-02.
+        //
+        // The mechanism, the writer, the contrast gate, the Undo path and the owner
+        // controls all existed and NOTHING could reach them by talking: designKnob was
+        // never registered here, so "make my headings bigger" produced a confident,
+        // helpful reply and moved nothing. That is the missing-door failure this codebase
+        // keeps repeating, and it was invisible precisely because the capability worked.
+        //
+        // Adjusts an existing page. It does NOT regenerate — that is why it is safe to
+        // offer for a small ask that would otherwise tempt the model toward newPage, the
+        // most destructive thing it can do.
+        name: "setDesignKnob",
+        description:
+          "Adjust ONE aspect of how the owner's existing page LOOKS — text size, header size, spacing, content width, or corner rounding — without rebuilding it. " +
+          "Use this for any small look-and-feel ask: \"make my headings bigger\", \"this text is too small\", \"it feels cramped\", \"make the corners less round\", \"put the spacing back\". " +
+          "STRONGLY PREFER `direction` over `value`: say bigger/smaller and the system steps from wherever the page actually is, because you cannot see the current setting and a guessed value is often a change that does nothing. " +
+          "Sizes move in fixed steps inside the page's own design — there is no free numeric size, by design, so an owner cannot wreck their own layout in one click. " +
+          "This never regenerates the page and never touches their words, prices or photos: it is fully reversible, and \"undo that\" puts it back. " +
+          "NOT for colour — background and text colour are deliberately unavailable and the tool will tell you so in words you can pass on; a colour change means rebuilding the page. " +
+          "NOT for image shape, which is on hold. If the ask is a real redesign (\"make it look modern\", \"turn it dark\"), this is the wrong tool — that is a rebuild.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            knob: {
+              type: "string",
+              description:
+                "Which aspect: \"typeScale\" (body/general text size), \"heroScale\" (the big headline at the top — use this for \"headings\"/\"header\"/\"title\"), " +
+                "\"spaceScale\" (padding and gaps — for \"cramped\"/\"too much white space\"), \"measureScale\" (how wide the content runs), \"radiusScale\" (corner rounding).",
+            },
+            direction: {
+              type: "string",
+              description:
+                "\"up\" or \"down\" — the normal way to use this. \"up\" = bigger / roomier / wider / rounder; \"down\" = smaller / tighter / narrower / squarer. Steps one notch from the page's current setting.",
+            },
+            value: {
+              type: "string",
+              description:
+                "Only when the owner names an exact step and you are certain of it. Prefer `direction`. Anything not on the step list is refused.",
+            },
+            op: {
+              type: "string",
+              description: "\"reset\" puts this aspect back to what the page was originally designed with. Otherwise omit.",
+            },
+          },
+          required: ["knob"],
+        },
+        handler: async (args) => {
+          const draftId = String((args as any)?.draftId || "").trim();
+          const draftToken = String((args as any)?.draftToken || "").trim();
+          const ownerUid = String((args as any)?.ownerUid || "").trim() || null;
+          // Design changes are OWNER-ONLY, and this is the real gate, not a UI one: the
+          // knob value is written into the stored page, so an unauthenticated caller must
+          // not reach it. applyOwnerDesignEdit re-checks owner_id itself; this is the
+          // early, honest message rather than a generic failure.
+          if (!draftId || !ownerUid) {
+            return {
+              ok: false, real: false, error: "not_signed_in",
+              summary: "Changing how the page looks needs the owner signed in — say so, and don't claim anything changed.",
+            };
+          }
+          const knob = String((args as any)?.knob || "").trim() as KnobId;
+          if (!knob || !(knob in KNOBS)) {
+            return {
+              ok: false, real: false, error: "unknown_knob",
+              summary: "That isn't something I can adjust on the page. Tell the owner plainly rather than guessing at a different one.",
+            };
+          }
+          const rawDir = String((args as any)?.direction || "").trim().toLowerCase();
+          const direction = rawDir === "up" || rawDir === "down" ? (rawDir as "up" | "down") : undefined;
+          const op = String((args as any)?.op || "").trim() === "reset" ? "reset" as const : "set" as const;
+          const value = typeof (args as any)?.value === "string" ? String((args as any).value).trim() : "";
+          if (op === "set" && !direction && !value) {
+            return {
+              ok: false, real: false, error: "missing_direction",
+              summary: "No direction or step was given — ask whether they want it bigger or smaller rather than picking one.",
+            };
+          }
+          const r = await applyOwnerDesignEdit(draftId, draftToken, ownerUid, { knob, value, direction, op });
+          // The summary IS what happened — a refusal (withheld knob, nothing bound, already
+          // at the end of the steps) carries its own honest sentence, and the model is told
+          // to pass it on rather than paper over it. humanNote is what the person hears when
+          // no model turn narrates this.
+          return {
+            ok: r.ok,
+            real: r.real,
+            summary: r.ok
+              ? `${r.summary} Say what changed, in the owner's own terms. It is reversible — "undo that" puts it back.`
+              : `${r.summary} Tell the owner exactly this, in your own words. Do NOT claim anything changed, and do not retry with a different knob.`,
+            humanNote: r.summary,
+            error: r.error,
+            raw: r.raw,
           };
         },
       },

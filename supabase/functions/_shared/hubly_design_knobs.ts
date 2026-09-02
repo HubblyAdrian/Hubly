@@ -63,6 +63,10 @@ type KnobDef = {
   def: string;
   /** Withheld from the owner's controls even though it binds — see `background`. */
   offered?: boolean;
+  /** WHY it is withheld, said to the person. A refusal that explains itself is the
+   *  difference between a control we chose not to ship and one that looks broken.
+   *  Read by setDesignKnob's `not_offered` branch and by the model's action result. */
+  withheld?: string;
   /** Steps an owner may choose. NEVER a raw field: every step stays inside the page's
    *  own scale, because a scale step is a multiple of what the generator chose rather
    *  than an absolute size. This is what makes "full autonomy, guarded mechanism"
@@ -78,7 +82,33 @@ export const KNOBS: Record<KnobId, KnobDef> = {
   spaceScale: { varName: "--hubly-space-scale", label: "spacing", kind: "scale", props: ["padding", "margin", "gap", "row-gap", "column-gap"], def: "1", steps: ["0.8", "0.9", "1", "1.15"] },
   measureScale: { varName: "--hubly-measure-scale", label: "content width", kind: "scale", props: ["max-width"], def: "1", steps: ["0.9", "1", "1.15", "1.3"] },
   radiusScale: { varName: "--hubly-radius-scale", label: "corner rounding", kind: "scale", props: ["border-radius"], def: "1", steps: ["0", "0.5", "1", "1.6"] },
-  mediaRatio: { varName: "--hubly-media-ratio", label: "image shape", kind: "value", props: ["aspect-ratio"], def: "", steps: ["16/9", "16/10", "4/3", "1/1"] },
+  // WITHHELD 2026-09-02 — held back from the first owner control, deliberately, and
+  // held at the WRITER rather than merely left out of the UI (same reasoning as
+  // background/ink below: a control that is only hidden is still reachable by anything
+  // that calls this, and as of today that includes the model).
+  //
+  // It binds and it works. The problem is that its cost is invisible from where the
+  // owner chooses. Measured at 390px on evergreen (7 cards, so it compounds):
+  // 16/9 = 4,418px, 16/10 = 4,574, 3/2 = 4,677, 4/3 = 4,885, 1/1 = 5,508 — six and a
+  // half phone screens, +1,090px. Worse, the knob OVERRIDES the generator's
+  // per-breakpoint choice: evergreen deliberately uses 16/9 on phones and 16/10 on
+  // desktop, so even picking "16/10" costs +156px on a phone. An owner setting this on
+  // a 1440px screen cannot see what it does to the width their customers are actually
+  // on, and the public page at phone width is the thing that decides whether anyone
+  // books (OPEN_FINDINGS #10).
+  //
+  // The fix is not a warning — it is to make the ratio PER-BREAKPOINT so the page keeps
+  // its own phone choice, and to drop the square step. Until that exists this stays
+  // withheld: the first control an owner ever touches must not be the one that silently
+  // adds a phone-screen of scroll. (STATE.md "The image knob's mobile cost".)
+  mediaRatio: {
+    varName: "--hubly-media-ratio", label: "image shape", kind: "value", props: ["aspect-ratio"],
+    def: "", steps: ["16/9", "16/10", "4/3", "1/1"], offered: false,
+    withheld:
+      "I'm holding image shape back for now. It works, but it replaces the shape your page picks " +
+      "for phones as well as desktop, and on a phone the taller shapes add about a screen and a half " +
+      "of scrolling that you can't see from here. I'd rather fix that than let you set it blind.",
+  },
   // NOT OFFERED YET — and this is a deliberate hold, not an oversight.
   //
   // The binding works and the contrast maths is right; what is missing is knowing WHICH
@@ -93,9 +123,72 @@ export const KNOBS: Record<KnobId, KnobDef> = {
   // So the control stays withheld until it can be answered, rather than shipping a knob
   // that can make a customer's site unreadable. See the 390px evidence in the session
   // report — the defect was invisible at desktop and in every unit test.
-  background: { varName: "--hubly-bg", label: "background", kind: "value", props: [], def: "", offered: false },
-  ink: { varName: "--hubly-ink", label: "text colour", kind: "value", props: [], def: "", offered: false },
+  background: {
+    varName: "--hubly-bg", label: "background", kind: "value", props: [], def: "", offered: false,
+    withheld:
+      "I can't change the background yet. Your page paints text in a lot of different colours — " +
+      "dark copy on the light areas, white copy inside the dark bands — and I can't yet tell which " +
+      "of them would end up sitting on a new background, so I'd risk making some of your text " +
+      "invisible. Ask me to rebuild the page in a different colour and I can do that properly.",
+  },
+  ink: {
+    varName: "--hubly-ink", label: "text colour", kind: "value", props: [], def: "", offered: false,
+    withheld:
+      "I can't set the text colour on its own yet — it moves with the background, and the background " +
+      "is on hold until I can tell which text would land on it.",
+  },
 };
+
+/** Which knobs actually bind ON THIS PAGE — the single source of truth for the gate.
+ *
+ *  ONE function on purpose. The read (what controls to show) and the write (what may be
+ *  set) have to agree exactly: a control the reader offers and the writer refuses looks
+ *  broken, and a knob the writer accepts but the reader hides is a change nobody can undo
+ *  from the UI. They drifted apart the moment there were two copies of this, so there is
+ *  one.
+ *
+ *  An unstamped page is measured by asking what a stamp WOULD bind, so the answer is right
+ *  on the very first read rather than only after the first change. */
+export function boundKnobsFor(html: string): Record<string, number> {
+  return hasDesignKnobs(html)
+    ? readDesignKnobs(html).bound
+    : stampDesignKnobs(html).bound;
+}
+
+/** Resolve "bigger" / "smaller" into an actual step, from where the page is NOW.
+ *
+ *  This exists because of how people ask. Nobody says "set the header scale to 1.15";
+ *  they say "make my headings bigger", and a model answering that has to know the
+ *  current value or it guesses — and a guess here is a silent no-op ("set it to 1" when
+ *  it is already 1) that reports success. Reading the page and stepping from it is the
+ *  only version that cannot lie.
+ *
+ *  Returns `atEnd` rather than clamping silently: "that's already as large as I can make
+ *  it" is a true answer, and pretending a change happened is the failure this whole
+ *  mechanism exists to avoid. */
+export function stepKnob(
+  html: string,
+  knob: KnobId,
+  direction: "up" | "down",
+): { value: string } | { atEnd: true; current: string } | { error: string } {
+  const def = KNOBS[knob];
+  if (!def || !def.steps || !def.steps.length) return { error: "no_steps" };
+  const current = readDesignKnobs(html).values[knob] || def.def;
+  // Match on normalised text: a stored "1" and a step "1" must meet, and a value knob's
+  // "16/9" has no numeric ordering to fall back on.
+  const norm = (s: string) => String(s).trim().replace(/\s+/g, "");
+  let i = def.steps.findIndex((s) => norm(s) === norm(current));
+  // Not sitting on a step (an owner-set page from an older step list, or a value knob
+  // still on the generator's own value): start from the default so a direction still
+  // means something, rather than refusing.
+  if (i === -1) {
+    const d = def.steps.findIndex((s) => norm(s) === norm(def.def));
+    i = d === -1 ? 0 : d;
+  }
+  const next = direction === "up" ? i + 1 : i - 1;
+  if (next < 0 || next >= def.steps.length) return { atEnd: true, current };
+  return { value: def.steps[next] };
+}
 
 export type StampResult = {
   html: string;
@@ -443,7 +536,9 @@ export function setDesignKnob(html: string, knob: KnobId, value: string): KnobSe
   if (!def) return { ok: false, error: "unknown_knob", summary: "That isn't something I can change." };
   // A withheld knob is refused at the WRITE, not just hidden in the UI: a control that
   // is only hidden is still reachable by anything that calls this.
-  if (def.offered === false) return { ok: false, error: "not_offered", summary: "I can't change that one yet." };
+  if (def.offered === false) {
+    return { ok: false, error: "not_offered", summary: def.withheld || "I can't change that one yet." };
+  }
   let out = String(html || "");
   if (!hasDesignKnobs(out)) out = stampDesignKnobs(out).html;
 

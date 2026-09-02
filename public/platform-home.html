@@ -345,7 +345,12 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   box-shadow:0 30px 80px -20px rgba(0,0,0,.5);border:1px solid var(--line,#e5e7eb)}
 .hc-set-hd{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line,#e5e7eb);position:sticky;top:0;background:var(--bg,#fff)}
 .hc-set-hd h2{margin:0;font-size:18px;font-weight:800}
-.hc-set-x{border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:var(--ink-400,#8a8f98);padding:2px 6px}
+/* 44px MINIMUM TOUCH TARGET. Measured at 25x26 on 2026-09-02 — too small to hit reliably
+   with a thumb, and this is the close control for EVERY panel that uses this chrome
+   (Settings, Edit details, Design), all of which have to work on a phone. The glyph stays
+   the same size; only the hit area grows, so nothing looks different on desktop. */
+.hc-set-x{border:0;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:var(--ink-400,#8a8f98);
+  min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;margin:-8px -10px -8px 0}
 .hc-set-sec{padding:16px 22px;border-bottom:1px solid var(--line,#eef0f3)}
 .hc-set-sec:last-child{border-bottom:0}
 .hc-set-sec h3{margin:0 0 4px;font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-500,#6b7280)}
@@ -389,6 +394,63 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
 #hcManageBtn:hover{border-color:var(--brand-600,#D9632D)}
 .hc-app.hc-claimed #hcManageBtn{display:inline-flex}
 @media (max-width:520px){ .hc-mng-svc .hc-mng-in{flex-basis:100%} .hc-mng-day{flex-wrap:wrap} }
+
+/* ── DESIGN KNOBS — the owner's controls ─────────────────────────────────────
+   TOUCH-FIRST FROM THE FIRST LINE, which here is a constraint with teeth rather
+   than a note. The page's own edit affordance is a :hover outline, and hover does
+   not exist on a phone — so on touch the page never says it can be edited at all.
+   That mistake is not repeated here: every control below is a REAL, permanently
+   visible button with a >=44px target, nothing appears only on hover, and the
+   value is shown as a marked step rather than a tooltip. Hover styling exists,
+   but only ever as an enhancement on top of something already visible. */
+#hcDesignBtn{display:none;align-items:center;gap:5px;border:1px solid var(--line,#e5e7eb);
+  background:var(--bg,#fff);color:var(--brand-700,#8a3f1c);font:inherit;font-size:12.5px;font-weight:700;
+  padding:6px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
+#hcDesignBtn:hover{border-color:var(--brand-600,#D9632D)}
+.hc-app.hc-claimed #hcDesignBtn{display:inline-flex}
+/* #hcManageBtn already carries margin-left:auto, so Edit details pushes the pair right
+   and Design sits beside it — no second auto margin, which would split them apart. */
+
+.hc-dsg-row{padding:14px 22px;border-bottom:1px solid var(--line,#eef0f3)}
+.hc-dsg-row:last-child{border-bottom:0}
+.hc-dsg-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:9px}
+.hc-dsg-name{font-size:14px;font-weight:700;color:var(--ink,#111)}
+/* Reset is a real button, not a hover-revealed one, and it is disabled (not hidden)
+   when there is nothing to put back — a control that vanishes is prohibition 4. */
+/* Also a 44px target — measured at 42x32 first time round. The negative right margin
+   keeps it optically flush with the row edge while the hit area extends past it. */
+.hc-dsg-reset{border:0;background:none;font:inherit;font-size:12px;font-weight:700;
+  color:var(--ink-500,#6b7280);cursor:pointer;padding:6px 10px;min-height:44px;min-width:44px;margin-right:-10px}
+.hc-dsg-reset:hover{color:var(--brand-700,#8a3f1c)}
+.hc-dsg-reset[disabled]{opacity:.4;cursor:default}
+/* THE STEPS. A segmented row of real buttons, never a slider: a slider implies a
+   continuum the mechanism does not have (every step is a multiple of what the
+   generator chose), and it is the single worst control to operate with a thumb. */
+.hc-dsg-steps{display:flex;gap:8px}
+.hc-dsg-step{flex:1 1 0;min-width:0;min-height:44px;border:1px solid var(--line,#e5e7eb);
+  background:var(--bg,#fff);color:var(--ink-700,#374151);font:inherit;font-size:13px;font-weight:700;
+  border-radius:11px;cursor:pointer;padding:6px 4px;-webkit-appearance:none;
+  transition:border-color .12s ease,background .12s ease,color .12s ease}
+.hc-dsg-step:hover{border-color:var(--brand-600,#D9632D)}
+.hc-dsg-step:active{transform:translateY(1px)}
+/* The current value is stated on the control itself — aria-pressed for a screen
+   reader, a filled chip for everyone else. Never a tooltip: there is no hover to
+   show one on the device this most matters on. */
+.hc-dsg-step[aria-pressed="true"]{background:rgba(217,99,45,.12);border-color:var(--brand-600,#D9632D);color:var(--brand-700,#8a3f1c)}
+.hc-dsg-step[disabled]{opacity:.5;cursor:default}
+.hc-dsg-note{font-size:12px;color:var(--ink-500,#6b7280);line-height:1.5;padding:0 22px 16px}
+.hc-dsg-empty{padding:18px 22px;font-size:13.5px;color:var(--ink-500,#6b7280);line-height:1.6}
+/* Phone: the panel is a bottom sheet at full width — a centred 520px card with 24px
+   of overlay padding wastes a third of a 390px screen, and the thumb is at the
+   BOTTOM of the phone, not the middle. */
+@media (max-width:560px){
+  .hc-set-ov{padding:0;align-items:flex-end}
+  .hc-set{width:100%;max-height:86vh;border-radius:18px 18px 0 0}
+  .hc-dsg-steps{gap:6px}
+  .hc-dsg-step{font-size:12.5px}
+  .hc-dsg-row{padding:14px 16px}
+  .hc-dsg-note,.hc-dsg-empty{padding-left:16px;padding-right:16px}
+}
 /* THE GUTTER IS STRUCTURAL. The rail-clipping bug — every line losing its first
    character — is a whole-block leftward shift under a clip, and it survived every
    attempt to find the cause. So it's made IMPOSSIBLE by construction rather than
@@ -1483,6 +1545,11 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
           '<button type="button" data-hc-device="mobile">Mobile</button>' +
         '</div>' +
         '<button type="button" id="hcManageBtn" title="Add or edit services, hours and contact yourself">&#9998; Edit details</button>' +
+        // THE DOOR FOR THE DESIGN KNOBS. It lives here, beside Edit details, because the
+        // canvas bar is the one claimed-owner surface that survives phone width — the rail
+        // is display:none at <=760px (see OPEN_FINDINGS #13). A control whose only entry
+        // point disappears on a phone is the failure we just finished writing up.
+        '<button type="button" id="hcDesignBtn" title="Change how your page looks — text size, spacing, corners">&#9670; Design</button>' +
       '</div>' +
       '<div class="hc-canvas-frame-wrap" id="hcCanvasFrameWrap">' +
         '<div class="hc-canvas-loading" id="hcCanvasLoading"><span class="hc-live-dot"></span>&nbsp;Loading your site…</div>' +
@@ -1529,6 +1596,8 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     // "not defined" (it compiled and deployed clean and did nothing on click).
     var mng = document.getElementById('hcManageBtn');
     if(mng) mng.addEventListener('click', hcOpenManage);
+    var dsg = document.getElementById('hcDesignBtn');
+    if(dsg) dsg.addEventListener('click', hcOpenDesign);
   }
 
   // THE PREVIEW IS A REAL DEVICE, SCALED TO FIT.
@@ -3945,6 +4014,192 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     ov.querySelector('.hc-set-x').addEventListener('click', hcCloseManage);
     ov.addEventListener('click', function(e){ if(e.target === ov) hcCloseManage(); });
     try{ await hcReadRecord(); hcRenderManageBody(); }catch(e){ var b=document.getElementById('hcMngBody'); if(b) b.textContent = 'Could not load your details — try again.'; }
+  }
+
+  // ── DESIGN — the owner's controls for the design knobs ───────────────────────
+  //
+  // The knobs, the writer, the contrast gate and the Undo path all shipped and NOTHING
+  // could reach them: no control, and the model couldn't call them either. This is the
+  // door. It is deliberately thin — it renders exactly what the server says binds on
+  // THIS page and nothing else.
+  //
+  // THE GATE IS THE SERVER'S, NOT THIS FILE'S. readOwnerDesignKnobs returns only knobs
+  // whose bound count is > 0 and that aren't withheld, so a control appears only where it
+  // does something. This code must never add a knob the server didn't send — that is how
+  // a control that moves nothing gets shipped, which is the unearned checkmark one level
+  // down. If the list comes back empty we say so plainly instead of drawing an empty panel.
+  var hcDesign = { knobs: [], busy: false };
+  function hcCloseDesign(){ var o = document.getElementById('hcDsgOv'); if(o) o.remove(); }
+  async function hcDesignApi(body){
+    var at = await hcFreshToken();
+    if(!at) return { ok:false, error:'not_signed_in', reply:'You need to be signed in to change this.' };
+    var res = await fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
+      method:'POST',
+      headers:{ 'content-type':'application/json', apikey: SUPA_ANON_KEY, authorization:'Bearer ' + at },
+      body: JSON.stringify(Object.assign({ messages: [], understanding: {}, draftBusiness: hc.draftBusiness }, body))
+    });
+    return await res.json().catch(function(){ return { ok:false, reply:'That didn’t go through — try again.' }; });
+  }
+  function hcDesignStatus(msg, ok){
+    var s = document.getElementById('hcDsgStatus'); if(!s) return;
+    s.textContent = msg || '';
+    // NO GREEN BY DEFAULT (prohibition 2): the colour is decided by what the server
+    // reported, never by the fact that a request completed.
+    s.style.color = msg ? (ok ? '#1b7f3b' : '#b23') : '';
+  }
+  // A step's label in the owner's words, not the multiplier. "1.15" means nothing to
+  // anyone; the scale is an implementation detail of the mechanism, not a unit.
+  var HC_DSG_WORDS = {
+    typeScale:    { '0.9':'Smaller', '1':'Default', '1.1':'Bigger', '1.25':'Biggest' },
+    heroScale:    { '0.9':'Smaller', '1':'Default', '1.15':'Bigger', '1.3':'Biggest' },
+    spaceScale:   { '0.8':'Tightest', '0.9':'Tighter', '1':'Default', '1.15':'Roomier' },
+    measureScale: { '0.9':'Narrower', '1':'Default', '1.15':'Wider', '1.3':'Widest' },
+    radiusScale:  { '0':'Square', '0.5':'Slight', '1':'Default', '1.6':'Round' }
+  };
+  function hcDsgWord(knobId, step){
+    var m = HC_DSG_WORDS[knobId];
+    return (m && m[String(step)]) || String(step);
+  }
+  // Which step is current. The server sends the stored :root value; a knob the owner has
+  // never touched has no stored value, which means the generator's own design — i.e. the
+  // default step. Falling back to '1' rather than "nothing selected" matters: a row with
+  // no current value looks broken and invites a pointless click.
+  function hcDsgCurrent(k){
+    var v = k.value == null ? '' : String(k.value).trim();
+    if(!v) return k.id === 'mediaRatio' ? '' : '1';
+    return v;
+  }
+  function hcRenderDesignBody(){
+    var body = document.getElementById('hcDsgBody'); if(!body) return;
+    var list = hcDesign.knobs || [];
+    if(!list.length){
+      // HONEST EMPTY STATE. Not a bug and not a blank panel — the page genuinely has
+      // nothing these controls can move.
+      body.innerHTML = '<div class="hc-dsg-empty">There’s nothing here I can adjust on this page yet. ' +
+        'These controls only appear for things your page actually sets, so you never get a slider that does nothing. ' +
+        'Ask me in the chat and I can rebuild the page instead.</div>';
+      return;
+    }
+    body.innerHTML = list.map(function(k){
+      var cur = hcDsgCurrent(k);
+      var steps = (k.steps || []).map(function(s){
+        var on = String(s) === String(cur);
+        return '<button type="button" class="hc-dsg-step" data-knob="'+hcEscA(k.id)+'" data-step="'+hcEscA(s)+'" ' +
+               'aria-pressed="'+(on?'true':'false')+'">'+hcEscA(hcDsgWord(k.id, s))+'</button>';
+      }).join('');
+      // Reset is disabled, not hidden, when the knob is already at the generator's value.
+      var atDefault = String(cur) === '1';
+      return '<div class="hc-dsg-row" data-row="'+hcEscA(k.id)+'">' +
+        '<div class="hc-dsg-hd"><span class="hc-dsg-name">'+hcEscA(hcDsgLabel(k.label))+'</span>' +
+        '<button type="button" class="hc-dsg-reset" data-reset="'+hcEscA(k.id)+'"'+(atDefault?' disabled':'')+'>Reset</button></div>' +
+        '<div class="hc-dsg-steps">'+steps+'</div>' +
+      '</div>';
+    }).join('');
+    Array.prototype.forEach.call(body.querySelectorAll('.hc-dsg-step'), function(b){
+      b.addEventListener('click', function(){ hcDesignSet(b.getAttribute('data-knob'), b.getAttribute('data-step')); });
+    });
+    Array.prototype.forEach.call(body.querySelectorAll('.hc-dsg-reset'), function(b){
+      b.addEventListener('click', function(){ hcDesignSet(b.getAttribute('data-reset'), null, 'reset'); });
+    });
+  }
+  // Sentence-case the server's label for a heading position ("text size" -> "Text size").
+  function hcDsgLabel(s){ s = String(s||''); return s.charAt(0).toUpperCase() + s.slice(1); }
+  function hcDesignDisable(on){
+    var body = document.getElementById('hcDsgBody'); if(!body) return;
+    Array.prototype.forEach.call(body.querySelectorAll('button'), function(b){ b.disabled = !!on; });
+  }
+  async function hcDesignSet(knobId, step, op){
+    if(!knobId || hcDesign.busy) return;
+    hcDesign.busy = true; hcDesignDisable(true);
+    hcDesignStatus(op === 'reset' ? 'Putting it back…' : 'Changing…', true);
+    var edit = { knob: knobId };
+    if(op === 'reset') edit.op = 'reset'; else edit.value = String(step);
+    var r = await hcDesignApi({ designEdit: edit });
+    hcDesign.busy = false;
+    // SAY WHAT HAPPENED, either way. A refusal (nothing bound, withheld, already at the
+    // end) carries its own sentence from the server and it is shown verbatim — never
+    // replaced with a generic "couldn't do that", and never silently swallowed.
+    var said = (r && r.reply) || (r && r.ok ? 'Changed.' : 'That didn’t change — nothing was saved.');
+    hcDesignStatus(said, !!(r && r.ok));
+    if(r && r.ok){
+      // The canvas is the proof. Repaint it, then re-read the knobs so the marked step
+      // and the Reset state reflect what the SERVER now holds, not what we just clicked.
+      try{ hcRefreshCanvasFrame(); }catch(e){}
+      // Undo works on this exactly as on any other edit — it is a document version, so
+      // restore_prev_business_document reverses it with no new machinery. Arm _lastEdit so
+      // typing "undo that" in the chat works too.
+      //
+      // NOT the usual toast: hcShowEditUndoToast paints into the canvas pane at z-index 60
+      // and this panel is an overlay at 1000, so the toast would be armed and INVISIBLE
+      // underneath it. An affordance nobody can see is worse than none, so the way back
+      // lives in the panel, next to the sentence saying what changed.
+      try{ hc._lastEdit = { noun: 'the ' + hcDsgKnobLabel(knobId) }; }catch(e){}
+      hcDesignArmUndo();
+      try{ await hcLoadDesign(); }catch(e){}
+    }
+    hcRenderDesignBody();
+    hcDesignDisable(false);
+  }
+  function hcDsgKnobLabel(knobId){
+    var k = (hcDesign.knobs || []).filter(function(x){ return x.id === knobId; })[0];
+    return (k && k.label) || 'that change';
+  }
+  // A real, visible Undo beside the status line — same reversibility as everywhere else,
+  // reachable by thumb, and it says what it put back rather than a bare "done".
+  function hcDesignArmUndo(){
+    var s = document.getElementById('hcDsgStatus'); if(!s) return;
+    var old = document.getElementById('hcDsgUndo'); if(old) old.remove();
+    var b = document.createElement('button');
+    b.type = 'button'; b.id = 'hcDsgUndo'; b.className = 'hc-dsg-reset';
+    b.textContent = 'Undo';
+    b.style.cssText = 'margin-left:10px;color:var(--brand-700,#8a3f1c);text-decoration:underline';
+    b.addEventListener('click', async function(){
+      b.disabled = true;
+      await hcUndoLastEdit();          // says what it restored, in the chat, as it always has
+      try{ b.remove(); }catch(_){}
+      hcDesignStatus('Put it back the way it was.', true);
+      try{ await hcLoadDesign(); hcRenderDesignBody(); }catch(e){}
+    });
+    s.appendChild(b);
+  }
+  async function hcLoadDesign(){
+    var r = await hcDesignApi({ designKnobs: true });
+    hcDesign.knobs = (r && r.design && r.design.knobs) || [];
+    return r;
+  }
+  async function hcOpenDesign(){
+    if(document.getElementById('hcDsgOv')){ hcCloseDesign(); return; }
+    var ov = document.createElement('div'); ov.id = 'hcDsgOv'; ov.className = 'hc-set-ov';
+    ov.innerHTML = '<div class="hc-set" role="dialog" aria-label="Design">'+
+      '<div class="hc-set-hd"><h2>Design</h2><button type="button" class="hc-set-x" aria-label="Close">&times;</button></div>'+
+      '<div class="hc-set-note">Adjust how your page looks. Every change goes straight to your live site and can be undone.</div>'+
+      '<div id="hcDsgStatus" class="hc-mng-status" aria-live="polite"></div>'+
+      '<div id="hcDsgBody">Loading…</div>'+
+      // Said once, here, rather than as a dead colour control the owner clicks and nothing
+      // happens. Naming the honest route (a rebuild, by talking) is the whole point — a
+      // missing control that explains itself is not a broken one.
+      '<div class="hc-dsg-note">Sizes move in steps that fit the design your page was built with, so nothing can end up broken. ' +
+      'Colours aren’t here yet — changing those properly means rebuilding the page, which you can ask me to do in the chat.</div>'+
+    '</div>';
+    document.body.appendChild(ov);
+    ov.querySelector('.hc-set-x').addEventListener('click', hcCloseDesign);
+    ov.addEventListener('click', function(e){ if(e.target === ov) hcCloseDesign(); });
+    try{
+      var r = await hcLoadDesign();
+      if(r && r.ok === false && r.error){
+        var b0 = document.getElementById('hcDsgBody');
+        if(b0) b0.innerHTML = '<div class="hc-dsg-empty">' +
+          (r.error === 'no_document' ? 'There’s no page to change yet.' :
+           r.error === 'not_signed_in' ? 'You need to be signed in to change this.' :
+           r.error === 'not_owner' ? 'You don’t have access to change this page.' :
+           'Your design controls couldn’t be loaded just now — nothing has changed. Try again in a moment.') + '</div>';
+        return;
+      }
+      hcRenderDesignBody();
+    }catch(e){
+      var b = document.getElementById('hcDsgBody');
+      if(b) b.innerHTML = '<div class="hc-dsg-empty">Your design controls couldn’t be loaded just now — nothing has changed. Try again in a moment.</div>';
+    }
   }
   // THE ARRIVAL. The first time an owner lands on their claimed site, Hubly speaks it
   // in the CHAT — the live address and the actions as message content — so the biggest
