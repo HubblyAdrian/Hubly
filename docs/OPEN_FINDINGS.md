@@ -483,6 +483,79 @@ The fix (deferred, not built — needs its own build):
 
 ---
 
+## 11. The anchor pass stamped a service anchor on ANOTHER card's description — RECORDED, NOT FIXED
+
+**Found 2026-09-02, live on evergreen, while adding "Leaf Removal" through the Edit-details
+panel.** This is the anchor system failing in the exact way it exists to prevent, so it is
+written down in full rather than patched in passing.
+
+**What is on the live page (document v16), verbatim:**
+
+```html
+<h2 data-hc="hero.item.3.title" data-hubly-service="Seasonal Cleanup">Seasonal Cleanup</h2>
+...
+<p data-hubly-service="Leaf removal and a full bed cleanup." data-hc="hero.item.3.body.3">Leaf
+   removal and a full bed cleanup.</p>
+```
+
+Seasonal Cleanup's **description paragraph** now carries a `data-hubly-service` anchor. It was
+stamped by the retroactive pass (`markServiceAnchorsInFreeform`, run from
+`placeServicesInFreeform`) when the new service **"Leaf Removal"** arrived: the paragraph's own
+text *begins with* "Leaf removal", and the finder accepted it.
+
+**Why it matters more than its current blast radius.** Today it is inert — the anchor is keyed
+off the ELEMENT's text, so its key is the whole sentence, and no service is named "Leaf removal
+and a full bed cleanup.", so no lookup resolves to it. But:
+- `allServiceAnchors` now returns a paragraph as if it were a service entry. `insertService
+  IntoFreeform` uses `anchors[0]` as the clone TEMPLATE and `anchors[last]` as the append point;
+  on a page where a stray anchor lands first or last, a future insert clones a paragraph or
+  appends in the wrong place.
+- The whole point of the anchor (finding #8) is that layout is reasoned about **once**, at
+  stamp time. A prefix/contains match at stamp time puts the guessing back in, one level up —
+  and a wrong anchor is worse than no anchor, because placement trusts it absolutely.
+- It fires precisely when a new service's name echoes wording already on the page, which is
+  common ("Leaf Removal" on a page that mentions leaf removal; "Detailing" on a detailer).
+
+**What would close it:** the stamp must match a service-NAME element, not any leaf whose text
+begins with the name — an exact match on `normServiceKey`, with a prefix accepted only when the
+remainder is price/dash-shaped (the rule `findServiceHeading` already applies for scoring), and
+never onto an element already carrying `data-hubly-desc` or sitting inside another service's
+entry bounds. Verify by re-running the add on a page with a description that starts with the
+new service's name and confirming zero new anchors on non-name elements. The stray anchor on
+evergreen v16 is still there — it is the reproduction.
+
+---
+
+## 12. Evergreen: 5 services on the record, 6 on the page — RECORDED, NOT FIXED
+
+**Found 2026-09-02, as the owner, in the Edit-details panel (which reads the record over
+authenticated PostgREST) against the live page.**
+
+- **Record (panel):** Basic Mow 40, Full Service 95, Seasonal Cleanup 220, Spring Aeration 130,
+  Gutter Cleaning 150 — **five**.
+- **Page (document v15/v16):** Basic Mow, Full Service, Seasonal Cleanup, Spring Aeration,
+  **Hedge Trimming $75**, Gutter Cleaning — **six**.
+
+**Hedge Trimming is on the page and not in the record.** Its card is a clone (minified markup,
+`data-hubly-service="Hedge Trimming"`, `data-hubly-price="Hedge Trimming"` = $75), so it was
+inserted by the placement path at some point and the record no longer holds it.
+
+**Why this is not cosmetic.** `set_business_draft_services` is **replace-all**: every services
+write deletes and re-inserts the whole set from whatever list is passed. So the record is the
+authority and the page is downstream — except here the page carries a service the record has
+never heard of, which means (a) the panel cannot edit or remove Hedge Trimming (it isn't in the
+list), (b) the booking landing reads the `services` TABLE, so a customer can see Hedge Trimming
+on the site and **not be able to book it**, and (c) the next replace-all write leaves the
+orphan card standing. Untested which write dropped it — a candidate is a `setServices` call
+that passed a partial list, replace-all deleting the rest, while the cards stayed on the page.
+
+**What would close it:** first establish which direction diverged (does any code path write
+services without the full set?), then decide the reconciliation rule — the page is not allowed
+to advertise a service the record cannot book. Related: the `service_photos` orphaning already
+open under STATE "Still open" has the same replace-all root.
+
+---
+
 ## Also noted 2026-08-28
 
 - **Rebuild read-back is vague.** The "yes, rebuild" reply ("a completely new page is
