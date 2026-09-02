@@ -143,6 +143,10 @@ Then the fuller "elite editor": today click-to-edit changes TEXT only (`applyDir
   *add* may orphan photo links on the existing services. Pre-existing (not introduced by the
   reconcile work). Verify before leaning harder on services.
 - **Google sign-in shows the raw Supabase domain** instead of Hubly on the consent screen.
+- **The "hours already shown" consent offer** (designed-but-unbuilt; OPEN_FINDINGS #9): when a
+  page already shows a schedule we can't anchor, we save + honestly decline, but the page then
+  shows stale hours. Fix is a confirmed-target offer via the click-action primitive, not a rebuild.
+
 ## MOBILE — a priority, not a polish pass (not being built now; binds everything new)
 
 Two distinct pieces. Neither is scheduled yet; both are named here so neither gets filed
@@ -168,9 +172,6 @@ mouse-and-hover with a mobile pass promised afterwards. Retrofitting an inspecto
 around hover is a rebuild; building it touch-first costs nothing today. This is cheaper
 than the two items above precisely because it is a constraint on new work rather than a
 repair of old work.
-- **The "hours already shown" consent offer** (designed-but-unbuilt; OPEN_FINDINGS #9): when a
-  page already shows a schedule we can't anchor, we save + honestly decline, but the page then
-  shows stale hours. Fix is a confirmed-target offer via the click-action primitive, not a rebuild.
 
 ## The anchor-pattern discipline (the through-line)
 
