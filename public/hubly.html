@@ -17586,7 +17586,21 @@ function hcFirePageView(businessId){
     }).catch(function(){});
   }catch(e){}
 }
-async function loadPublicProfile(slug){
+// BOOK NOW GOES TO BOOKING. NOT TO THE SITE, AND THEN TO BOOKING.
+//
+// `?book=1` used to render the entire website first — fetch the stored document,
+// mount it, paint it — and only then, 400ms later on a timer, open the booking
+// wizard over the top. The right destination by an ugly route: the customer who
+// tapped "Book Basic Mow" watched a whole page they did not ask for build itself,
+// then get replaced. On a phone, on a six-screen page, that is the difference
+// between booking and leaving.
+//
+// bookingOnly resolves the business (identity, palette, services all come from the
+// record, not from the page) and returns BEFORE anything renders the site. Nothing
+// about which document is stored matters to a booking, so the biggest fetch on the
+// path is skipped entirely rather than thrown away after it lands.
+async function loadPublicProfile(slug,opts){
+  const bookingOnly=!!(opts&&opts.bookingOnly);
   const dbClient=await waitForDb();
   // Reads through get_public_business(slug), not the table. businesses carried
   // a USING (true) row policy, so the anon key could list all 64 businesses with
@@ -17636,6 +17650,32 @@ async function loadPublicProfile(slug){
         container:document.getElementById('hub-store-page-root')
       });
     }
+    return;
+  }
+  // The booking landing reads the RECORD (name, palette, logo, and the services
+  // table), never the page — so this is everything it needs, and the site render
+  // below is skipped rather than done and discarded.
+  if(bookingOnly){
+    S.biz=data.name||'';S.tag=data.tagline||'';S.phone=data.phone||'';
+    S.email=data.email||'';S.city=data.city||'';S.about=data.about||'';
+    S.color=data.brand_color||'#1a3a6e';S.bgColor=data.bg_color||'#f0f0ee';
+    S.slug=data.slug||slug;S.logoUrl=data.logo_url||null;S.bannerUrl=data.banner_url||null;
+    S.timezone=data.timezone||'';
+    S.paymentSetting=data.payment_setting||'later';
+    S.depositMessage=data.deposit_message||'';
+    S.serviceAreaCities=Array.isArray(data.service_area_cities)?data.service_area_cities:[];
+    S.tier=data.tier||'starter';
+    try{applyBizMeta(parseBizMeta(data.meta));}catch(e){}
+    S.logoUrl=data.logo_url||S.logoUrl||null;
+    S.bannerUrl=data.banner_url||S.bannerUrl||null;
+    try{syncBookingBrandFromSiteMedia();}catch(e){}
+    if(data.name)document.title=data.name;
+    try{
+      document.documentElement.classList.remove('hubly-public-boot');
+      document.documentElement.classList.add('hubly-public-site');
+      document.documentElement.setAttribute('data-theme','day');
+    }catch(e){}
+    if(!data.owner_id) hcNoIndex();
     return;
   }
   try{
@@ -17993,8 +18033,16 @@ async function initApp(){
     const slug=getSlugFromHost();
     hublyBootLog('initApp host slug',slug||'(none)');
     if(slug){
+      // Decide the destination BEFORE loading, not after painting. A `?book=1`
+      // arrival is a booking, so the site is never built for it.
+      let wantsBooking=false, wantsSvc='';
       try{
-        await loadPublicProfile(slug);
+        const q0=new URL(location.href).searchParams;
+        wantsBooking=q0.get('book')==='1';
+        wantsSvc=(q0.get('svc')||'').trim();
+      }catch(e){}
+      try{
+        await loadPublicProfile(slug,{ bookingOnly: wantsBooking });
         hublyBootLog('initApp public profile loaded',currentBusiness?.id||'(none)');
         // BOOKING AS A REAL URL.
         //
@@ -18011,9 +18059,8 @@ async function initApp(){
         // rather than a postMessage bridge, because a bridge only works from
         // inside our own iframe and a URL works from everywhere.
         try{
-          const q=new URL(location.href).searchParams;
-          if(q.get('book')==='1'){
-            const svc=(q.get('svc')||'').trim();
+          if(wantsBooking){
+            const svc=wantsSvc;
             // HYDRATE THE SERVICES FIRST, or booking opens empty.
             //
             // S.services is populated from meta.services by the CLASSIC
@@ -18024,12 +18071,24 @@ async function initApp(){
             // and already existed — but its only caller is the owner/editor
             // load path, so it never runs for a public visitor.
             try{ await loadServicesFromDb(); }catch(e){ console.warn('booking services load failed',e); }
+            // OPEN IT NOW. The 400ms timer here existed to let the website finish
+            // painting before the wizard replaced it — with nothing painted, waiting
+            // is just a delay in front of the thing they asked for.
             // forceBooking so it opens the wizard instead of bouncing the
             // visitor to the packages list — arriving here IS the choice.
+            try{ openBookingPage(svc||null,{forceBooking:true}); }
+            catch(e){ console.warn('deep-link booking failed',e); }
+            // Postcondition, not hope: if the wizard did not come up, the customer is
+            // looking at nothing. Say so and give them the site, rather than a blank
+            // page that reads as a broken business.
             setTimeout(function(){
-              try{ openBookingPage(svc||null,{forceBooking:true}); }
-              catch(e){ console.warn('deep-link booking failed',e); }
-            },400);
+              try{
+                var bk=document.getElementById('p-booking'), bl=document.getElementById('p-booking-landing');
+                var open=(bk&&bk.classList.contains('active'))||(bl&&bl.classList.contains('active'));
+                if(!open){ hublyBootLog('deep-link booking did not open — falling back to the site'); location.replace(location.pathname); }
+              }catch(e){}
+            },1200);
+            return;
           }
         }catch(e){}
       }catch(e){
@@ -53994,6 +54053,29 @@ function wireHcEditingSurface(doc, root){
   };
 
   root.addEventListener('click', function(e){
+    // IN THE EDITOR, A LINK IS NOT A LINK — INCLUDING THE ONES WE INSERTED.
+    //
+    // This rule already existed, but it was applied only to anchors that are
+    // themselves editable, further down. Every service card now carries a booking
+    // CTA that Hubly inserts (`data-hubly-runtime="card-book"`, target="_top") and
+    // those carry NO data-hc — so `closest(EDITABLE_SEL)` returned null and the
+    // handler gave up before the guard, and the anchor navigated the WHOLE builder
+    // tab to the booking page. The owner clicked a button on their own page and lost
+    // their editing session. Found by clicking one, twice, on evergreen.
+    //
+    // So the guard moves to the top and covers every anchor in the document. A
+    // click still does something visible — it selects the section the button sits
+    // in — because a control that swallows the click and says nothing is its own
+    // small defect.
+    var link = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if(link && root.contains(link)){
+      e.preventDefault(); e.stopPropagation();
+      if(!link.closest(EDITABLE_SEL)){
+        var band = link.closest('[data-hc-section]');
+        if(band){ hcSelect(band); }
+        return;
+      }
+    }
     var target = e.target && e.target.closest ? e.target.closest(EDITABLE_SEL) : null;
     if(!target || !root.contains(target)) return;
     if(target.closest('[data-hubly-element]')) return; // reserved elements aren't AI/user-editable text
