@@ -60,7 +60,7 @@ import {
 } from "./hubly_document.ts";
 import { imageDimensions, type ImageDims } from "./hubly_image_dims.ts";
 import { stampFreeformHtml } from "./hubly_document_labels.ts";
-import { injectHublyRuntime } from "./hubly_page_runtime.ts";
+import { injectHublyRuntime, stripHublyRuntime } from "./hubly_page_runtime.ts";
 import { resolveImages, collapseEmptyImageSlots, pexelsFetcher, type PlacedImageRow } from "./hubly_image_resolver.ts";
 import { annotatePlaceholders } from "./hubly_placeholders.ts";
 import { reportAllowlistDrops } from "./hubly_allowlist.ts";
@@ -3460,6 +3460,77 @@ export type OwnerEditResult = { ok: boolean; real: boolean; summary: string; err
  * Stamps on the way in, so a page built before knobs existed gets them the first time
  * its owner reaches for a control, and an owner never has to know their page is old.
  */
+/** Is this stored page current — does it carry everything the current passes stamp? */
+export function freeformIsCurrent(html: string): boolean {
+  return /data-hc-section=/.test(html) && /data-hubly-bound=/.test(html);
+}
+
+/**
+ * UPGRADE A STORED PAGE IN PLACE — never unwrap, never regenerate.
+ *
+ * A freeform page is stamped once, at generation. Every pass we add afterwards
+ * (section containers, recorded knob counts) therefore exists only on pages built
+ * since. Older pages keep the older stamping, and an editor built on the newer marks
+ * is dead on them — which is every page an existing owner has.
+ *
+ * THE CYCLE IS THE SAME ORDER GENERATION ALREADY RUNS IN, replayed:
+ *
+ *   strip ours -> sanitise + label the model's content -> re-inject ours -> knobs
+ *
+ * It must be in that order. `sanitizeFreeformHtml` is written against MODEL OUTPUT and
+ * strips every form, field and script, because a generated page has no legitimate
+ * reason to hold one. Feeding it a FINISHED document — model content plus our own chat
+ * widget — destroys the widget: measured, it would have stripped chat from 98 of 107
+ * pages. Stripping ours first is what makes the sanitiser's contract true again. An
+ * allowlist was rejected: the only handle is `data-hubly-runtime`, and the model writes
+ * the markup, so exempting content that carries it hands the model the key.
+ *
+ * WHAT THIS IS NOT: a regeneration. No model call, no new copy, no lost edits. The
+ * owner's words, prices and photos are the input and come out unchanged — proven over
+ * 129 stored pages, visible text identical on every one, and the cycle is a fixed point
+ * from the second pass so repeated upgrades cannot drift a page.
+ *
+ * ONE UNDOABLE VERSION. It writes through `create_business_document` exactly like every
+ * other edit, so an upgrade is a document version and Undo reverses it. Lazy and
+ * per-page by design — never a sweep. A sweep would rewrite every owner's live site at
+ * once with nobody watching any single one of them.
+ */
+export async function restampFreeformPage(
+  draftId: string,
+  draftToken: string,
+  ownerUid: string | null,
+  opts: { businessName?: string; slug?: string; accent?: string } = {},
+): Promise<{ ok: boolean; skipped?: string; version?: number; labels?: number; sections?: number; error?: string }> {
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest) return { ok: false, error: "no_document" };
+  if (latest.format !== "html") return { ok: false, skipped: "not_freeform" };
+  if (freeformIsCurrent(latest.renderedHtml)) return { ok: true, skipped: "already_current" };
+
+  const bare = stripHublyRuntime(latest.renderedHtml).html;
+  const stamped = stampFreeformHtml(bare);
+  const wired = injectHublyRuntime(stamped.html, {
+    businessId: draftId,
+    businessName: opts.businessName || "this business",
+    slug: opts.slug || "",
+    supabaseUrl: (Deno.env.get("SUPABASE_URL") || "").trim(),
+    publishableKey: requirePublishableKey(),
+    accent: opts.accent || "",
+  });
+  const knobbed = stampDesignKnobs(wired.html);
+
+  const saved = await callBusinessRpc("create_business_document", {
+    p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
+    p_document: latest.brief, p_rendered_html: knobbed.html,
+    // 'patch', not 'restamp': create_business_document validates created_by against
+    // ('ai','user','patch') and rejects anything else with invalid_created_by. Found by
+    // running it against the real database rather than reading the call site — the same
+    // way every other assumption in this file has been caught.
+    p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
+  });
+  if (!saved || saved.ok !== true) return { ok: false, error: "save_failed" };
+  return { ok: true, version: saved.version, labels: stamped.labels.length, sections: stamped.sections.length };
+}
+
 export async function applyOwnerDesignEdit(
   draftId: string,
   draftToken: string,

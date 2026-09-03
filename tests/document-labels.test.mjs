@@ -21,6 +21,9 @@
  *   3. NOTHING ELSE IN THE HTML CHANGES. The pass splices attributes into the
  *      original string rather than parsing to a DOM and serialising back, so
  *      removing the attributes must return the source byte-for-byte.
+ *      TWO attributes now: data-hc on editable leaves, and data-hc-section on the
+ *      band containers (added 2026-09-02 so a section can be selected, not merely
+ *      identified). The invariant is unchanged — the pass only ever ADDS attributes.
  *
  *   4. THE MODEL IS NEVER TRUSTED. Labels it emits are stripped and replaced.
  *
@@ -107,7 +110,7 @@ describe('data-hc stamping', () => {
 
   it('changes nothing in the HTML except the attributes it adds', () => {
     const r = stamp(REAL_PAGE);
-    const back = r.html.replace(/ data-hc="[^"]*"/g, '');
+    const back = r.html.replace(/ data-hc="[^"]*"/g, '').replace(/ data-hc-section="[^"]*"/g, '');
     assert.equal(back, REAL_PAGE, 'removing data-hc must return the source byte-for-byte');
   });
 
@@ -146,7 +149,7 @@ describe('data-hc stamping', () => {
       const r = stamp(html);
       assert.equal(r.coverage.missed.length, 0, `${name}: nothing unlabelled`);
       assert.equal(r.coverage.labelled, r.coverage.editable, `${name}: coverage total`);
-      const back = r.html.replace(/ data-hc="[^"]*"/g, '');
+      const back = r.html.replace(/ data-hc="[^"]*"/g, '').replace(/ data-hc-section="[^"]*"/g, '');
       assert.equal(back, html, `${name}: source preserved byte-for-byte`);
     }
     // The <h1> inside the <style> string is text, not an element, and must not
@@ -359,7 +362,7 @@ describe('freeform content safety', () => {
     const r = stamp(clean);
     assert.equal(r.removed.length, 0);
     // removing data-hc must return the sanitizer's (unchanged) output
-    assert.equal(r.html.replace(/ data-hc="[^"]*"/g, ''), clean);
+    assert.equal(r.html.replace(/ data-hc="[^"]*"/g, '').replace(/ data-hc-section="[^"]*"/g, ''), clean);
   });
 
   it('handles nested forms and scripts', () => {

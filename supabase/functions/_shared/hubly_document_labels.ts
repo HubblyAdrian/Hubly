@@ -481,11 +481,18 @@ export function stampFreeformHtml(html: string): StampResult {
   //    so an inherited label could only introduce a duplicate or a lie.
   const pre = scanHtml(source);
   const strips: Splice[] = [];
+  let strippedLabelAttrs = 0;
   for (const el of pre.all) {
     const r = el.attrRanges["data-hc"];
-    if (r) strips.push({ start: r.start, end: r.end, text: "" });
+    if (r) { strips.push({ start: r.start, end: r.end, text: "" }); strippedLabelAttrs++; }
+    // AND data-hc-section, for the same reason and one more: this pass is re-run over
+    // already-stamped pages by the upgrade path, and an attribute it emits but does not
+    // clear accumulates. Caught by tests/document-labels.test.mjs the first time this
+    // ran twice — the output carried data-hc-section="header" data-hc-section="header".
+    const rs = el.attrRanges["data-hc-section"];
+    if (rs) strips.push({ start: rs.start, end: rs.end, text: "" });
   }
-  const strippedModelLabels = strips.length;
+  const strippedModelLabels = strippedLabelAttrs;
   const clean = strips.length ? spliceAll(source, strips) : source;
 
   const scan = scanHtml(clean);
