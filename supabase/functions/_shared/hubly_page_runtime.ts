@@ -79,7 +79,6 @@ function chatWidgetHtml(opts: { businessId: string; businessName: string; supaba
     .replace(/\u2028/g, "\\u2028")
     .replace(/\u2029/g, "\\u2029");
   return `
-<!-- Hubly chat — injected by hubly_page_runtime.ts, not written by the model. -->
 <div id="hubly-chat" data-hubly-runtime="chat" style="position:fixed;right:20px;bottom:20px;z-index:2147483000;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
   <button id="hubly-chat-fab" type="button" aria-label="Chat with ${escapeAttr(businessName)}"
     style="width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;background:${escapeAttr(accent)};color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;padding:0;">
@@ -102,7 +101,7 @@ function chatWidgetHtml(opts: { businessId: string; businessName: string; supaba
     </form>
   </div>
 </div>
-<script>
+<script data-hubly-runtime="chat-script">
 (function(){
   var CFG = ${cfg};
   var root = document.getElementById('hubly-chat');
@@ -196,8 +195,7 @@ function chatWidgetHtml(opts: { businessId: string; businessName: string; supaba
  */
 export function contrastRescueHtml(): string {
   return `
-<!-- Hubly CTA-text-contrast rescue: recolours unreadable button text only. -->
-<script>
+<script data-hubly-runtime="contrast">
 (function(){
   function run(){
     try{
@@ -242,12 +240,88 @@ export function contrastRescueHtml(): string {
 </script>`;
 }
 
+/** Does this page already give a visitor a way to book?
+ *
+ *  ONE predicate, shared by the decision to inject a fallback CTA and by the assertion
+ *  that the page has a way to book. They were separate expressions that happened to
+ *  agree on a freshly generated page and disagreed on a stored one — the decision asked
+ *  "did I rewrite a sentinel just now", which is a fact about this pass, not about the
+ *  page. Counts both our own injected entry and a real `?book=1` link the pass rewrote
+ *  on some earlier run. */
+function countBookingEntries(els: ScannedEl[]): number {
+  return els.filter((e) =>
+    e.attrs["data-hubly-runtime"] === "book" ||
+    (e.name === "a" && (e.attrs.href || "").includes("book=1"))
+  ).length;
+}
+
 /** A booking button, for pages where the model placed none. */
 function fallbackBookingHtml(bookUrl: string, accent: string): string {
   return `
-<!-- Hubly booking entry — injected because the page had none. -->
 <a data-hubly-runtime="book" href="${escapeAttr(bookUrl)}" target="_top"
    style="position:fixed;left:20px;bottom:20px;z-index:2147483000;background:${escapeAttr(accent)};color:#fff;text-decoration:none;padding:13px 20px;border-radius:999px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;font-weight:700;box-shadow:0 10px 30px rgba(0,0,0,.28);">Book online</a>`;
+}
+
+// PROVENANCE LIVES ON THE ELEMENT, NOT IN A COMMENT.
+// These blocks used to be introduced by an HTML comment ("<!-- Hubly chat — injected
+// by ... -->"). A comment cannot carry an attribute, so stripHublyRuntime could not
+// remove it, and every strip/re-inject cycle left another orphaned comment behind —
+// the page grew 166 bytes per re-stamp and the cycle was not a fixed point. The rule
+// that falls out is simple and general: IF WE CANNOT MARK IT, WE DO NOT INJECT IT.
+// data-hubly-runtime says whose it is, and unlike a comment it is machine-checkable.
+/**
+ * THE PRECISE INVERSE OF THE INJECTION — remove every piece of Hubly's own furniture,
+ * leaving the model's page as the sanitiser and the labeller expect to see it.
+ *
+ * WHY THIS EXISTS. `sanitizeFreeformHtml` runs on MODEL OUTPUT and strips every form,
+ * field and script, because a generated page has no legitimate reason to contain one.
+ * That contract is correct and must not be weakened. But it means a STORED page — which
+ * is model output *plus* our injected chat widget and contrast script — cannot be fed
+ * back through the labeller without our own furniture being destroyed. Measured
+ * 2026-09-02: doing exactly that would have stripped the chat widget from 98 of 107
+ * pages.
+ *
+ * WHY NOT AN ALLOWLIST IN THE SANITISER. The only handle available is this attribute,
+ * and THE MODEL AUTHORS THE MARKUP. A rule saying "content carrying data-hubly-runtime
+ * is exempt" hands the model the key: emit `<div data-hubly-runtime="chat"><form>…`
+ * and the credential-harvesting pass waves it through. You cannot allowlist by a marker
+ * that untrusted content can write. So the order is: strip ours, sanitise + stamp what
+ * remains, re-inject ours — the same order generation already runs in, replayed.
+ *
+ * WHY EVERY PIECE IS MARKED. This function used to be impossible to write correctly:
+ * the chat <div> carried the attribute but neither <script> did, so identifying them
+ * meant grepping their source for `MIN_READABLE` — content-sniffing, which is banned
+ * here for the same reason it is banned everywhere else. Both scripts now carry the
+ * marker, so this is an attribute query rather than a guess.
+ *
+ * EACH PIECE GETS A DISTINCT VALUE — "chat" (the widget div), "chat-script",
+ * "contrast", "book". The strip wants "everything we injected"; the injection assertion
+ * wants "exactly one chat WIDGET". Marking the script "chat" too made that assertion
+ * count two and fail on all 129 stored pages — the assertion catching a bug introduced
+ * one function away, which is what it is for. One attribute, distinct values, both
+ * questions answerable.
+ */
+export function stripHublyRuntime(html: string): { html: string; removed: number } {
+  const src = String(html || "");
+  const scan = scanHtml(src);
+  // Outermost-first, so a marked node inside another marked node is not double-cut.
+  const marked = scan.all.filter((e) => typeof e.attrs["data-hubly-runtime"] === "string");
+  const tops = marked.filter((e) => {
+    for (let p = e.parent; p; p = p.parent) if (marked.includes(p)) return false;
+    return true;
+  });
+  if (!tops.length) return { html: src, removed: 0 };
+  // SWALLOW THE WHITESPACE WE BROUGHT WITH US. Each injected block begins with a
+  // newline, so cutting the element alone leaves that newline behind and the next
+  // injection adds another: measured at +3 bytes per strip/re-inject cycle, growing
+  // without bound over repeated re-stamps and — more to the point — making the cycle
+  // not a fixed point, which is the property the whole re-stamp path rests on.
+  const cuts: Splice[] = tops.map((e) => {
+    let start = e.openStart;
+    while (start > 0 && /\s/.test(src[start - 1])) start--;
+    return { start, end: e.closeEnd, text: "" };
+  });
+  return { html: spliceAll(src, cuts), removed: tops.length };
 }
 
 export interface RuntimeContext {
@@ -330,7 +404,21 @@ export function injectHublyRuntime(html: string, ctx: RuntimeContext): RuntimeIn
 
   // 2. THE RUNTIME ITSELF, appended just before </body> (or at the end if the
   //    model wrote no body tag — it is not required to).
-  const injectedFallbackCta = rewrittenCtas === 0;
+  //
+  // THE FALLBACK IS FOR "NO WAY TO BOOK", NOT "NO SENTINEL REWRITTEN THIS PASS".
+  //
+  // This used to be `rewrittenCtas === 0`, which is the same thing ONLY on a fresh
+  // generation. Rewriting is a MUTATION of the model's own markup: `#hubly-book`
+  // becomes a real `?book=1` URL. Run this pass a second time over a stored page and
+  // there are no sentinels left to rewrite — so the old test concluded "no booking
+  // entry" about a page covered in working booking links, and appended a second,
+  // fixed-position CTA. Every re-stamp would have added one more.
+  //
+  // The honest question is whether the page HAS a way to book, which is exactly what
+  // the assertion below already asks. One predicate, used by both, so the thing that
+  // decides and the thing that verifies cannot drift apart.
+  const existingBookingEntries = countBookingEntries(scan.all);
+  const injectedFallbackCta = rewrittenCtas === 0 && existingBookingEntries === 0;
   const payload =
     chatWidgetHtml({ businessId: ctx.businessId, businessName: ctx.businessName, supabaseUrl: ctx.supabaseUrl, publishableKey: ctx.publishableKey, accent }) +
     (injectedFallbackCta ? fallbackBookingHtml(bookBase, accent) : "") +
@@ -344,9 +432,7 @@ export function injectHublyRuntime(html: string, ctx: RuntimeContext): RuntimeIn
   // 3. ASSERT. Same contract as the stamping pass.
   const after = scanHtml(out);
   const chatWidgets = after.all.filter((e) => e.attrs["data-hubly-runtime"] === "chat").length;
-  const bookingEntries = after.all.filter((e) =>
-    e.attrs["data-hubly-runtime"] === "book" || (e.name === "a" && (e.attrs.href || "").includes("book=1"))
-  ).length;
+  const bookingEntries = countBookingEntries(after.all);
   if (chatWidgets !== 1) {
     throw new Error(`hubly_page_runtime: expected exactly 1 chat widget, found ${chatWidgets}. This is a bug in the injection pass.`);
   }
