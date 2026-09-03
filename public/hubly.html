@@ -17574,14 +17574,18 @@ window.addEventListener('message', function(ev){
 // success by existing. hcWireScrollReporting is called with the real editable
 // document, whichever one that is (srcdoc for freeform, this one for AST/classic).
 var hcScrollRestored = false, hcUserScrolled = false, hcScrollTick = 0;
-var hcPendingScrollY = null, hcScrollProgrammaticUntil = 0;
+var hcPendingScrollY = null, hcRestoreTarget = null;
 function hcWireScrollReporting(w){
   if(!w || w.__hcScrollWired) return;
   w.__hcScrollWired = true;
   w.addEventListener('scroll', function(){
     // A scroll that is not one of ours means the owner has taken over, and we never
-    // move the page under their hand after that.
-    if(Date.now() > hcScrollProgrammaticUntil) hcUserScrolled = true;
+    // move the page under their hand after that. "Ours" is decided by WHERE the page
+    // landed, not by a time window — the first version used a 600ms window and the
+    // scroll event for our own restore can arrive later than that in a frame the
+    // browser is not painting, which made the restore disarm itself.
+    var _y = w.pageYOffset || 0;
+    if(!(hcRestoreTarget != null && Math.abs(_y - hcRestoreTarget) <= 2)) hcUserScrolled = true;
     var now = Date.now();
     if(now - hcScrollTick < 250) return;                 // it is a scroll handler on a live site
     hcScrollTick = now;
@@ -17600,21 +17604,31 @@ function hcApplyPendingScroll(){
   var y = hcPendingScrollY;
   hcScrollRestored = true;
   if(!(y > 0)) return;
-  hcScrollProgrammaticUntil = Date.now() + 600;
+  hcRestoreTarget = y;
   // INSTANT, EXPLICITLY. Generated pages carry `html{scroll-behavior:smooth}`, and
   // the two-argument scrollTo honours it — so this would ANIMATE a restore that
   // should just be where the page already was, and measured on evergreen the
   // animation does not run at all in a background/offscreen frame (0px after a
   // second). Restoring a position is not a scroll the owner asked to watch.
-  try{ w.scrollTo({ top: y, behavior: 'instant' }); }catch(e){ try{ w.scrollTo(0, y); }catch(_){} }
-  // A page still laying out (images, fonts) can be shorter than it will be, so one
-  // late re-apply — still only if the owner has not taken over in the meantime.
-  setTimeout(function(){
-    try{
-      if(hcUserScrolled) return;
-      if(Math.abs((w.pageYOffset || 0) - y) > 4){ hcScrollProgrammaticUntil = Date.now() + 400; w.scrollTo({ top: y, behavior: 'instant' }); }
-    }catch(e){}
-  }, 500);
+  var put = function(){
+    try{ w.scrollTo({ top: y, behavior: 'instant' }); }catch(e){ try{ w.scrollTo(0, y); }catch(_){} }
+  };
+  // KEEP ASKING WHILE THE PAGE IS STILL GROWING. The document is mounted before its
+  // images have laid out, so at the moment the position arrives the page can be far
+  // shorter than it will be and the browser clamps the scroll to the page it has so
+  // far — landing near the top, which looks exactly like a restore that never ran.
+  // Re-applied while the answer is still wrong, and abandoned the moment the owner
+  // scrolls themselves.
+  var tries = 0;
+  var settle = function(){
+    if(hcUserScrolled || tries++ > 6) return;
+    var now = w.pageYOffset || 0;
+    if(Math.abs(now - y) <= 2) return;           // landed
+    put();
+    setTimeout(settle, 250);
+  };
+  put();
+  setTimeout(settle, 120);
 }
 
 // FIRE-AND-FORGET visitor beacon. One call, on a public site mount, NEVER awaited and never in
