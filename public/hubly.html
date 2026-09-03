@@ -53875,6 +53875,20 @@ function wireHcEditingSurface(doc, root){
   /* SELECT — the one entry point. Click, or tap; never hover. */
   function hcSelect(el, pt){
     if(!el) return;
+    // ALREADY SELECTED? LEAVE THE SELECTION ALONE.
+    //
+    // Re-entering the whole teardown on every click inside the element I am already
+    // editing destroyed the browser's own selection: hcClearSel strips
+    // contenteditable, and the caret is then re-placed from the click point — which
+    // COLLAPSES a selection to a caret. The visible cost is that double-click (a
+    // word) and triple-click (the line) do nothing, so the most ordinary editing
+    // action there is — select the wrong words and type over them — was impossible.
+    // Found by trying to put a sentence back the way it was, as the owner, on
+    // evergreen: three clicks, no highlight, and the new text inserted itself into
+    // the middle of the old ("B9asiZBasic MowQc Mow").
+    // Once the element is editable and focused, the browser already does caret
+    // placement and word/line selection correctly. Get out of its way.
+    if(hcSel === el){ hcPlaceBar(el); return; }
     hcClearSel();
     hcSel = el;
     var kind = hcKindOf(el);
