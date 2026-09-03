@@ -3466,6 +3466,17 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       hcHandleEditAuthNeeded((typeof data.label === 'string' && data.label) ? data.label : null);
       return;
     }
+    // WHERE THE OWNER IS LOOKING. The canvas is a different origin, so its scroll
+    // position can only be known because it tells us. Kept per business, in session
+    // storage — it is a "where was I" for this tab, not a preference to remember
+    // forever — and handed back on the next mount (hcTellPreviewAuthed).
+    if(data.type === 'hcCanvasScroll'){
+      try{
+        var bid = hc.draftBusiness && hc.draftBusiness.id;
+        if(bid) sessionStorage.setItem('hcScroll:' + bid, String(Math.max(0, Number(data.y) || 0)));
+      }catch(e){}
+      return;
+    }
     // FIT-TO-PANE (A1): the preview reports its real content height (it is
     // cross-origin, so we cannot read it) and we rescale to keep the whole page
     // visible. Width is always the fixed desktop width we lay it out at.
@@ -3705,6 +3716,14 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     hc.mode = 'home';
     try{ hcReflectAuthState(); }catch(e){}
     hcRenderRail();
+    // ...unless the URL says otherwise. A reload from the Website editor carries
+    // '#website', and coming back to Home instead is losing the owner's place. The
+    // rail is rendered first so hcWorkspaces() can refuse a hash for a room this
+    // account has not earned.
+    try{
+      var wantMode = hcModeFromUrl();
+      if(wantMode !== 'home') hcOpenWorkspace(wantMode, null, true);
+    }catch(e){}
     // Load the model CONTEXT silently, then open Home CALM — a greeting and what's worth
     // doing, not the tail of the last conversation dumped into their face. The first time
     // on this device the arrival ("your site is live") IS home; after that, hcRenderHome.
@@ -3779,9 +3798,44 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // THE MODE SWITCH — generic. Every workspace is entered the same way; a new one is a
   // new case here, nothing else. `filter` is carried so a chat action can open a
   // workspace already scoped (e.g. "View all jobs" -> jobs filtered) the day those exist.
-  function hcOpenWorkspace(id, filter){
+  // THE MODE IS IN THE URL, so a reload comes back to the room the owner was in.
+  //
+  // hc.mode lived only in memory: every refresh dropped a working owner back on Home,
+  // there was no link to the editor, and browser Back did not move between the two
+  // modes — sharpest on a phone, where Back is the system gesture. The hash is the
+  // right place for it: the apex serves one document, so no routing changes, and Back
+  // works for free.
+  //
+  // Written with replaceState, not by assigning location.hash: assigning fires
+  // hashchange, which would re-enter the switch that just ran. A rail click is a
+  // pushState so Back returns to the previous mode.
+  function hcSyncModeToUrl(id, push){
+    try{
+      var want = (id && id !== 'home') ? ('#' + id) : '';
+      var url = location.pathname + location.search + want;
+      if(push && location.hash !== want) history.pushState({ hcMode: id }, '', url);
+      else history.replaceState({ hcMode: id }, '', url);
+    }catch(e){}
+  }
+  function hcModeFromUrl(){
+    var h = '';
+    try{ h = (location.hash || '').replace(/^#/, ''); }catch(e){}
+    if(!h) return 'home';
+    if(h === 'home') return 'home';
+    var ws = hcWorkspaces();
+    for(var i = 0; i < ws.length; i++){ if(ws[i].id === h) return h; }
+    return 'home';   // a hash naming a room this account has not earned is not a room
+  }
+  window.addEventListener('popstate', function(){
+    if(!hc.draftClaimed) return;
+    var want = hcModeFromUrl();
+    if(want !== hc.mode) hcOpenWorkspace(want, null, true);
+  });
+  function hcOpenWorkspace(id, filter, fromUrl){
     if(!id) id = 'home';
+    var changed = (hc.mode !== id);
     hc.mode = id;
+    if(!fromUrl) hcSyncModeToUrl(id, changed);
     hc._workspaceFilter = filter || null;
     var app = document.getElementById('hcApp');
     if(app) app.setAttribute('data-mode', id);
@@ -5014,7 +5068,14 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     (function send(){
       if(acked) return;
       var frame = document.querySelector('#hcCanvasFrameWrap iframe.is-live') || document.getElementById('hcCanvasFrameA');
-      if(frame && frame.contentWindow){ frameSeen = true; try{ frame.contentWindow.postMessage({ type:'hcAuthState', authed:true, openEditLabel: label || null }, origin); }catch(e){} }
+      if(frame && frame.contentWindow){
+        frameSeen = true;
+        // Ride the handshake we already retry: the canvas takes the scroll position
+        // once and ignores it after the owner touches the page.
+        var sy = null;
+        try{ var b = hc.draftBusiness && hc.draftBusiness.id; if(b) sy = Number(sessionStorage.getItem('hcScroll:' + b)) || null; }catch(e){}
+        try{ frame.contentWindow.postMessage({ type:'hcAuthState', authed:true, openEditLabel: label || null, restoreScrollY: sy }, origin); }catch(e){}
+      }
       if(++tries < MAX){ setTimeout(send, 500); return; }
       // Exhausted retries. If a frame was there but never acked, the editor didn't
       // come up — report it instead of leaving them tapping a dead page.
@@ -5137,6 +5198,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       try{ hcReflectAuthState(); }catch(e){}
       // Land in Home — the conversation is the screen, and the build thread continues here.
       hc.mode = 'home';
+      try{ hcSyncModeToUrl('home', false); }catch(e){}   // the URL says which room we are in
       try{ hcRenderRail(); hcMaybeShowArrival(hc.draftBusiness); }catch(e){}
       // Rule 6: confirm the success in words, superseding the stale pre-account
       // message. Both claimed AND alreadyYours are successes and both must confirm

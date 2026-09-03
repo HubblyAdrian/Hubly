@@ -17532,11 +17532,44 @@ window.addEventListener('message', function(ev){
     hcReopenedLabel = d.openEditLabel;
     try{ hcOpenEditByLabel(d.openEditLabel); }catch(e){}
   }
+  // PUT THEM BACK WHERE THEY WERE LOOKING. A reload that lands on the right tab but at
+  // the top of the page has still lost the owner's place — on a site that is six phone
+  // screens long, "scroll back down to the bit you were editing" is the whole cost of
+  // the reload. The builder cannot read our scroll (we are a different origin), so it
+  // hands back the position we reported to it, once.
+  //
+  // Once, and only if untouched: hcTellPreviewAuthed re-sends this message up to eight
+  // times, and re-applying a scroll under someone's hand is the "page jumps while you
+  // work" defect this editor has already paid for.
+  if(d.restoreScrollY != null && !hcScrollRestored){
+    hcScrollRestored = true;
+    var _y = Number(d.restoreScrollY) || 0;
+    if(_y > 0 && !hcUserScrolled){
+      try{ window.scrollTo(0, _y); }catch(e){}
+      // A page still laying out (images, fonts) can be shorter than it will be, so one
+      // late re-apply — still only if the owner has not taken over.
+      setTimeout(function(){ try{ if(!hcUserScrolled && Math.abs((window.pageYOffset||0) - _y) > 4) window.scrollTo(0, _y); }catch(e){} }, 400);
+    }
+  }
   // ACK back to the builder so it knows the preview received this and editing is
   // live — Rule 3: confirm receipt instead of leaving the builder to fire blind
   // retries with no idea whether any landed.
   try{ (ev.source || window.parent).postMessage({ type:'hcAuthStateAck', authed: hcAuthedFlag }, (ev.origin && ev.origin !== 'null') ? ev.origin : '*'); }catch(e){}
 });
+// Report where the owner is looking, so a reload can put them back. Cross-origin, so
+// this is the only way the builder can know it. Throttled to one message per ~250ms:
+// it is a scroll handler on someone's live site.
+var hcScrollRestored = false, hcUserScrolled = false, hcScrollTick = 0;
+(function hcReportScroll(){
+  if(!hcBuilderPreview || !hcBuilderPreview()) return;   // only inside the builder canvas
+  window.addEventListener('scroll', function(){
+    if(hcScrollRestored) hcUserScrolled = true;          // they have taken over; never move them again
+    var now = Date.now();
+    if(now - hcScrollTick < 250) return;
+    hcScrollTick = now;
+    try{ window.parent.postMessage({ type:'hcCanvasScroll', y: window.pageYOffset || 0 }, hcBuilderOrigin()); }catch(e){}
+  }, { passive: true });
+})();
 
 // FIRE-AND-FORGET visitor beacon. One call, on a public site mount, NEVER awaited and never in
 // the render path. Owner-ness is decided SERVER-side: functions.invoke automatically forwards the
