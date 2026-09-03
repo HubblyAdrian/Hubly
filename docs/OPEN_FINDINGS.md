@@ -721,6 +721,120 @@ every deployed function's entry matches production, so this stops needing a huma
 
 ---
 
+## 16. Every Hubly site opens in the same shape — the prompt forbids it by name and loses.
+## RECORDED 2026-09-02, NOT FIXED. Do not fix by randomising.
+
+**Measured by RENDERING 128 stored freeform pages at 1440×900** — not by reading markup.
+Where a logo sits is a layout fact, and DOM order is not screen position.
+
+### The numbers
+
+| | share |
+|---|---|
+| **hero headline `text-align: start`** | **128 / 128 — 100%** |
+| **headline positioned left in the hero** | **127 / 128 — 99%** |
+| brand mark left in the header | 106 / 128 — 83% |
+| …right | 12 — 9% · …centre | 5 — 4% · …no mark | 4 — 3% |
+| hero split, text-left/image-right | 58% |
+| …text-only 25% · bg-image 9% · split-text-right 6% · stacked 2% | |
+| nav with exactly 4 items | 53% · sticky header 59% · header CTA 86% |
+| pages with 4–6 sections | 82% |
+
+**THE HEADLINE IS MORE UNIFORM THAN THE LOGO, and it is the first thing anyone sees.
+Not one page in 128 centres it.** The logo at least varies (83/9/4).
+
+**15 distinct shape signatures** (`mark | hero | headline | nav`) across 128 pages; **the top
+one covers 71 pages — 55%**; only 6 signatures occur once.
+
+### SPLIT BY account_kind — the pattern holds where it counts
+
+Test n=122, market n=5, internal n=1. **With n=5 the market RATES cannot be compared
+meaningfully; the absolute facts can, and none of them contradicts the test set.**
+
+| | test | market |
+|---|---|---|
+| headline `text-align: start` | 122/122 (100%) | **5/5 (100%)** |
+| headline zone left | 121/122 (99%) | 5/5 (100%) |
+| mark left | 101/122 (83%) | 4/5 (80%) |
+| hero split-text-left | 70/122 (57%) | 3/5 (60%) |
+| the dominant signature | 67/122 (55%) | 3/5 (60%) |
+
+One market page breaks the header pattern (`lugnuts-regulators`, motorcycle_rebuilds —
+centred mark, text-only hero). **Zero break the headline alignment.**
+
+**AND IT IS NOT SEEDING.** The obvious objection — that the test corpus came from similar
+prompts — was checked: **124 distinct briefs across 124 test pages, no two sharing even
+their first 200 characters.** Remaining honest limit: distinct brief TEXT is not the same as
+diverse brief INTENT; they were all written by one person and may share a voice.
+
+### WHAT IS NOT THE PROBLEM — do not "fix" variety that already exists
+
+- **Colour.** Accent spans **9 hue families** (near-black 23%, orange 18%, red 14%, green
+  12%, blue 9%, teal 9%…). Backgrounds: near-white 55%, **near-black 32%**, blue 10%. A
+  third of pages are dark. H1 ink spans 7 families. 6 distinct body fonts, 6 heading fonts.
+- **Text.** **121 distinct section-heading sequences across 122 pages.**
+
+**The sites say different things in identical shapes.** The sameness is structural only.
+
+### Where it comes from — not the prompt, not a template, the MODEL'S DEFAULT
+
+**The prompt already forbids exactly this, by name:**
+
+> "Do NOT default to 'top nav + hero-with-image-on-the-right + three service cards' unless
+> it is genuinely right for THIS trade." — `hubly_capability_registry.ts:1915`
+
+> "How the brand mark and navigation appear is entirely yours to decide: a top nav bar is
+> ONE option, not a requirement… Two different trades should not open with the same
+> shape." — `hubly_capability_registry.ts:1885`
+
+**55% of pages are the precise pattern the prompt names and prohibits. The instruction
+exists and loses.** There is no template on the freeform path to blame — it is a single
+generation with no fallback.
+
+**PROSE DOES NOT BEAT A MODEL'S DEFAULT, and this codebase already knew it** —
+`hubly_capability_registry.ts:89`, explaining why the capability schema supports `enum`:
+
+> "some arguments genuinely have a closed set of values (header placement, CTA mode) and
+> **prose alone does not stop a model** inventing a sixth one."
+
+**The mechanism exists, on the wrong renderer.** `CHROME_ENUMS.logoPlacement =
+["left","centre","stack"]` (`:681`) is real and validated — but only reachable through
+`setChrome`, which is guarded `latest.format !== "ast"` and returns `wrong_format` for
+freeform. **Every AST page can have its logo placement chosen as a structured value; every
+freeform page — which is every real business — gets prose and hope. It reaches zero market
+businesses.**
+
+### The root cause is the one fixed three times already today
+
+**The commitment pre-pass decides the page's shape in prose and throws the decision away.**
+Identical shape to:
+- `expandBands` computing the page's sections and discarding them (fixed: `data-hc-section`);
+- the knob pass computing bind counts and discarding them (fixed: `data-hubly-bound`);
+- the generator inferring the vertical and discarding it (`PRODUCT_SHAPE.md` §5, still open).
+
+**A decision that is not recorded cannot be honoured, inspected, corrected or measured.**
+
+### The fix, when we do it — chosen, not randomised
+
+Left-aligned is right most of the time and it is the convention for a reason. The goal is
+the generator **choosing**, per trade, and being accountable for the choice:
+
+- the commitment emits **structured** values — **mark position, hero shape, headline
+  alignment, nav mode** — validated against enums, exactly as `CHROME_ENUMS` already does;
+- **stored as facts on the business**, so they can be inspected, corrected by the owner, and
+  measured against trade;
+- honoured by the builder.
+
+**Include headline alignment specifically — it is the most uniform thing we have (128/128)
+and it is NOT in `CHROME_ENUMS` today.**
+
+There is already weak trade signal to build on: roofing goes bg-image 57%, bakery text-only
+67%, barbershop puts the mark right 50% of the time. The instinct fires; it just loses to
+the default. **This is the next GENERATOR job — after the contextual toolbar, not instead
+of it.**
+
+---
+
 ## Also noted 2026-08-28
 
 - **Rebuild read-back is vague.** The "yes, rebuild" reply ("a completely new page is
