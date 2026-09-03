@@ -361,11 +361,39 @@ export function injectHublyRuntime(html: string, ctx: RuntimeContext): RuntimeIn
   // rule in KNOWN_ISSUES): the model is also asked for three, but the pass is
   // what makes it true. Secondary links ("view services") carry no sentinel and
   // are untouched.
-  const bookEls = scan.all.filter((el) =>
+  const allBookEls = scan.all.filter((el) =>
     el.name === "a" && ((el.attrs.href || "").trim() === BOOK_SENTINEL || (el.attrs.href || "").trim().startsWith(BOOK_SENTINEL + "?"))
   );
+
+  // THE CAP IS FOR LOOSE CTAs, NOT FOR A GRID OF SERVICE CARDS.
+  //
+  // A card that shows a service and a price and has no button cannot sell anything.
+  // On evergreen the cap left ONE card with a "Book Basic Mow" button and six cards
+  // without — a price a customer can read and no way to act on it. That is the
+  // opposite of what the cap is for: it exists because early builds sprayed 6-7
+  // standalone CTAs down a brochure page and it read as spam.
+  //
+  // A card CTA is identifiable from data already on the page at this point, so this
+  // is not layout re-recognition: markServiceAnchorsInFreeform runs BEFORE this pass,
+  // so a service card is an element containing a data-hubly-service anchor. A sentinel
+  // carrying its own svc= parameter is the same signal from the other direction — the
+  // model naming which service this button books.
+  const isCardCta = (el: ScannedEl): boolean => {
+    if ((el.attrs.href || "").includes("svc=")) return true;
+    for (let p = el.parent; p; p = p.parent) {
+      if (typeof p.attrs["data-hubly-service"] === "string") return true;
+      // Stop at the band: past it we are looking at the page, not a card.
+      if (typeof p.attrs["data-hc-section"] === "string") break;
+      const kids = p.children || [];
+      if (kids.some((k) => typeof k.attrs["data-hubly-service"] === "string")) return true;
+    }
+    return false;
+  };
+  const cardCtas = allBookEls.filter(isCardCta);
+  const bookEls = allBookEls.filter((el) => !isCardCta(el));
+
   const MAX_CTAS = 3;
-  const keep = new Set<ScannedEl>();
+  const keep = new Set<ScannedEl>(cardCtas);   // every card keeps its own button
   if (bookEls.length <= MAX_CTAS) {
     for (const el of bookEls) keep.add(el);
   } else {
@@ -374,7 +402,11 @@ export function injectHublyRuntime(html: string, ctx: RuntimeContext): RuntimeIn
     keep.add(bookEls[bookEls.length - 1]);   // end
   }
 
-  for (const el of bookEls) {
+  // Iterate EVERY sentinel, not just the capped ones: a card CTA is in `keep` but
+  // not in `bookEls`, so looping the capped list left card buttons pointing at the
+  // dead `#hubly-book` sentinel — kept on the page and inert. Caught by counting
+  // rewritten links rather than surviving ones.
+  for (const el of allBookEls) {
     if (!keep.has(el)) {
       // Surplus CTA: remove the whole <a>…</a>. Booking stays reachable from the
       // kept ones, so nothing is orphaned.

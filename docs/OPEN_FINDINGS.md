@@ -835,6 +835,50 @@ of it.**
 
 ---
 
+## 17. THE MODEL INVENTED A SERVICE AND ITS PRICE, AND IT SHIPPED — resolved on the one
+## affected page; the mechanism it exposes is recorded
+
+**Found 2026-09-03 by Adrian reading his own live page.** "Hedge Trimming $75" was on
+evergreen and NOT in the `services` record — a price a customer could read and not buy.
+
+**IT WAS INVENTED. The evidence, before anything was deleted:**
+- **36 conversation turns for evergreen. ZERO contain "hedge". ZERO contain "75".**
+- The generation brief names exactly three services: Basic Mow $40, Full Service $95,
+  Seasonal Cleanup $220. No hedge.
+- `rebuild_outcome_events`, the countable trail: `2026-08-30 06:08:59 services-placement
+  placed landed=true paths anchor=0 legacy=0 inserted=1; inserted=Hedge Trimming`.
+- **On that date neither guard existed.** Grounding (`hubly_grounding.ts`) shipped
+  2026-09-01; the Edit-details panel — the only non-chat way to add a service — shipped
+  2026-09-01. On 2026-08-30 the only path was the model's own `setServices`.
+
+So the model produced a service and a price nobody stated, `setServices` wrote it to the
+record AND placed a card, and a later replace-all services write dropped it from the
+record while the card stayed. That second half is finding #12's mechanism; the first half
+is **the grounding rule failing on a live page**, which is the thing `CLAUDE.md` opens with.
+
+**Resolved on the page (2026-09-03):** the card was excised and evergreen is now v86 —
+6 priced services on the page, the same 6 in the record, **zero unbookable**. One document
+version, so Undo reverses it.
+
+**SIZE, measured corpus-wide:** of pages carrying any price anchor (**4**), exactly **1**
+had a service the record could not book — evergreen, `account_kind=test`. **Zero market
+pages affected.** Small only because the price-anchor work is recent; the mechanism was
+capable of doing this to any of them.
+
+**A correction that matters more than the bug.** The initial report described the price as
+"£75 on a Denver business", which read as a strong fabrication tell. **The page says `$75`
+— character code 36, and all 7 currency symbols on it are `$`.** The £ was a typo in
+Claude's own summary, and it nearly sent the investigation after a phantom
+currency-hallucination. A misquoted piece of evidence is worse than none: it is evidence
+pointing somewhere real, at nothing.
+
+**What is NOT closed:** whether the grounding guard shipped on 2026-09-01 would refuse this
+today. The invention predates it, so this is not proof the guard is working — only that the
+failure is older than the fix. Worth a live test: ask for a service with no price given and
+confirm it asks rather than inventing one.
+
+---
+
 ## Also noted 2026-08-28
 
 - **Rebuild read-back is vague.** The "yes, rebuild" reply ("a completely new page is

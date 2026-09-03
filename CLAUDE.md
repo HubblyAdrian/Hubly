@@ -110,6 +110,23 @@ acts, or it says what will happen — it never gives directions to something it 
   not from the suite. So: reproduce the real state (sign in as the owner, on the claimed
   business), do the thing the person would do, and read the RECORD and the PAGE back. A test
   on the wrong state is not evidence.
+- **Don't test the code — test the EXPERIENCE. Drive it at real size, as the owner, and
+  complete the task end to end before saying it works.** A harness that asks "is it inside
+  the frame" is not asking "can a person finish the action", and the gap between those two
+  questions is where every editor bug of 2026-09-02 lived. All four Adrian found had passed
+  a harness written that same day: the toolbar was measured "fully visible" against the
+  iframe's own 1440×900 viewport while being clipped in the pane a human was looking at; a
+  size change was measured as saved while a second tap was silently dropped; and two of the
+  four — prices whose digits overlapped into a strikethrough, and the page scrolling itself
+  under the owner's hand — were **invisible in every number collected and obvious in one
+  screenshot**. So: open it at the real canvas size, in the real state, and try to finish
+  the job. Change the thing, reload, confirm it stuck. LOOK at the result, because some
+  defects have no number — legibility, jumping, overlap and "this feels broken" are all
+  real failures that no assertion catches. A harness is for the cases a person cannot
+  repeat a hundred times; it is not evidence that the product works, and it must never be
+  the last word before shipping. This is the same rule as "verify by using it, AS THE
+  OWNER, ON THE REAL THING" — extended, because it turns out you can obey that rule against
+  a surface only you can see, and still ship something nobody else can use.
 - **Claude Code cannot verify mobile.** There is no true 390px viewport and no soft
   keyboard in this environment. Anything mobile must be checked on a real phone before
   it is called done.
