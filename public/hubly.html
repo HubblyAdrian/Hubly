@@ -53489,6 +53489,290 @@ function wireHcEditingSurface(doc, root){
     reader.readAsDataURL(file);
   });
 
+
+  /* ══ CONTEXTUAL TOOLBAR ═════════════════════════════════════════════════════
+   * Controls live ON the thing they change. Nothing global, nothing in a drawer.
+   *
+   * WHAT THE REFERENCES ACTUALLY TAUGHT (2026-09-02):
+   *  - Canva: one bar that "adapts based on the element you select". Same bar,
+   *    different contents — not a bar per element type.
+   *  - Canva mobile: TAP selects, the bar is a horizontally SWIPEABLE strip with
+   *    an overflow "More". There is no hover on a phone, so the bar cannot be
+   *    something hover REVEALS — the bar IS the affordance. Hover is decoration
+   *    layered on top, never the way in. This is the rule that shapes everything
+   *    below, because mobile is how most customers will see it.
+   *  - Gutenberg / Oracle: getting from a child to its parent is a BREADCRUMB,
+   *    not a mode. Click selects the innermost thing; a chip steps up to the
+   *    section. So there is no "section mode" to enter or leave.
+   *  - Floating UI's flip-then-shift is the standard edge behaviour: prefer
+   *    below, flip above when it would clip, then slide along the axis. A
+   *    toolbar that leaves the viewport is a control that does not exist.
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  // doc/root are this function's parameters; the window is the frame's own.
+  var win = doc.defaultView || window;
+  var hcSel = null, hcBar = null, hcBarKind = null;
+
+  function hcStyleTag(){
+    if(doc.getElementById('hubly-ctx-style')) return;
+    var st = doc.createElement('style');
+    st.id = 'hubly-ctx-style'; st.setAttribute('data-hc-editor','1');
+    st.textContent =
+      /* THREE STATES, VISUALLY DISTINCT. hover = hairline (a hint), selected =
+         solid ring + label chip (a fact), editing = the toolbar open (a mode).
+         Only the last one is a mode, and it is the only one that is loud. */
+      '[data-hc-editable-marked]:hover{outline:1px solid rgba(217,99,45,.45);outline-offset:2px}' +
+      '[data-hc-sel]{outline:2px solid #D9632D !important;outline-offset:2px}' +
+      '[data-hc-sel-section]{outline:2px dashed rgba(217,99,45,.85) !important;outline-offset:-2px}' +
+      '.hc-ctx{position:absolute;z-index:2147483600;display:flex;align-items:center;gap:2px;' +
+        'background:#14171f;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:4px;' +
+        'box-shadow:0 14px 40px -10px rgba(0,0,0,.6);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;' +
+        /* SWIPEABLE, because on a phone the bar is wider than the screen. */
+        'max-width:min(94vw,520px);overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none}' +
+      '.hc-ctx::-webkit-scrollbar{display:none}' +
+      /* 44px targets, always visible. Never revealed on hover. */
+      '.hc-ctx button{flex:0 0 auto;min-height:36px;min-width:36px;border:0;background:none;color:#e8eaee;' +
+        'font:inherit;font-size:12.5px;font-weight:650;padding:6px 10px;border-radius:8px;cursor:pointer;white-space:nowrap}' +
+      '.hc-ctx button:hover{background:rgba(255,255,255,.12)}' +
+      '.hc-ctx button[aria-pressed="true"]{background:rgba(217,99,45,.30);color:#fff}' +
+      '.hc-ctx .hc-ctx-sep{flex:0 0 auto;width:1px;height:20px;background:rgba(255,255,255,.14);margin:0 3px}' +
+      '.hc-ctx .hc-ctx-crumb{color:#a9adb8;font-size:11.5px;font-weight:700}' +
+      /* THE BUTTON IS THE TARGET, THE DOT IS THE PICTURE. Measured at 20x20 first
+         time round, which is unhittable with a thumb — and colour is exactly the
+         control someone reaches for on a phone. The dot stays small; the tap area
+         does not. */
+      '.hc-ctx .hc-ctx-sw{display:inline-flex;align-items:center;justify-content:center;padding:0;background:none}' +
+      '.hc-ctx .hc-ctx-sw i{display:block;width:20px;height:20px;border-radius:50%;border:1px solid rgba(255,255,255,.3)}' +
+      '@media (max-width:560px){.hc-ctx{max-width:96vw}.hc-ctx button{min-height:44px;padding:8px 12px}}';
+    (doc.head || doc.body).appendChild(st);
+  }
+
+  function hcCloseBar(){
+    if(hcBar && hcBar.parentNode) hcBar.parentNode.removeChild(hcBar);
+    hcBar = null; hcBarKind = null;
+  }
+  function hcClearSel(){
+    hcCloseBar();
+    try{
+      var a = root.querySelectorAll('[data-hc-sel],[data-hc-sel-section]');
+      for(var i=0;i<a.length;i++){ a[i].removeAttribute('data-hc-sel'); a[i].removeAttribute('data-hc-sel-section'); a[i].removeAttribute('contenteditable'); }
+    }catch(e){}
+    hcSel = null;
+  }
+
+  /* What kind of thing is this, for the purpose of "which controls apply". */
+  function hcKindOf(el){
+    if(!el) return null;
+    if(el.hasAttribute && el.hasAttribute('data-hc-section')) return 'section';
+    var t = (el.tagName || '').toLowerCase();
+    if(t === 'img') return 'image';
+    if(t === 'a' || t === 'button') return 'button';
+    return 'text';
+  }
+
+  /* FLIP THEN SHIFT. Prefer above the element; flip below when that would clip
+     the top; then slide horizontally so the bar never leaves the viewport. */
+  function hcPlaceBar(el){
+    if(!hcBar || !el) return;
+    var r = el.getBoundingClientRect();
+    var bw = hcBar.offsetWidth, bh = hcBar.offsetHeight;
+    var vw = (doc.documentElement.clientWidth || 0), sx = win.pageXOffset || 0, sy = win.pageYOffset || 0;
+    var GAP = 8;
+    var top = r.top + sy - bh - GAP;
+    if(r.top - bh - GAP < 4) top = r.bottom + sy + GAP;          // flip
+    var left = r.left + sx;
+    if(left + bw > sx + vw - 8) left = sx + vw - bw - 8;          // shift
+    if(left < sx + 8) left = sx + 8;
+    hcBar.style.top = Math.max(sy + 4, top) + 'px';
+    hcBar.style.left = left + 'px';
+  }
+
+  function hcSendStyle(label, on, style){
+    post({ type:'hcFreeformStyleEdit', label: label, on: on, style: style });
+  }
+
+  function hcBuildBar(el, kind){
+    hcStyleTag(); hcCloseBar();
+    var bar = doc.createElement('div');
+    bar.className = 'hc-ctx'; bar.setAttribute('data-hc-editor','1');
+    var label = (kind === 'section') ? el.getAttribute('data-hc-section') : el.getAttribute('data-hc');
+    var on = (kind === 'section') ? 'section' : 'element';
+
+    var mk = function(text, title, fn, pressed){
+      var b = doc.createElement('button');
+      b.type = 'button'; b.textContent = text; if(title) b.title = title;
+      if(pressed !== undefined) b.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+      b.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); fn(b); });
+      bar.appendChild(b); return b;
+    };
+    var sep = function(){ var d = doc.createElement('span'); d.className='hc-ctx-sep'; bar.appendChild(d); };
+    var swatch = function(hex, prop){
+      var b = doc.createElement('button');
+      b.type='button'; b.className='hc-ctx-sw'; b.title = hex;
+      var dot = doc.createElement('i'); dot.style.background = hex; b.appendChild(dot);
+      b.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation();
+        var st = {}; st[prop] = hex;
+        el.style[prop === 'color' ? 'color' : 'backgroundColor'] = hex;   // optimistic
+        hcSendStyle(label, on, st);
+      });
+      bar.appendChild(b); return b;
+    };
+
+    /* THE BREADCRUMB — how you get from an element to its section without a mode.
+       Always first, so ascending is one predictable tap. */
+    var band = el.closest ? el.closest('[data-hc-section]') : null;
+    if(kind !== 'section' && band){
+      var crumbName = String(band.getAttribute('data-hc-section')||'').split(/\s+/)[0];
+      var c = mk('↑ ' + hcSectionName(crumbName), 'Select the whole section', function(){ hcSelect(band); });
+      c.className = 'hc-ctx-crumb';
+      sep();
+    }
+
+    if(kind === 'text' || kind === 'button'){
+      mk('A-', 'Smaller', function(){ hcStepScale(el, label, on, -1); });
+      mk('A+', 'Bigger',  function(){ hcStepScale(el, label, on, +1); });
+      sep();
+      mk('B', 'Bold', function(b){
+        var now = (el.style.fontWeight === '700');
+        el.style.fontWeight = now ? '400' : '700';
+        b.setAttribute('aria-pressed', now ? 'false' : 'true');
+        hcSendStyle(label, on, { 'font-weight': now ? '400' : '700' });
+      }, el.style.fontWeight === '700');
+      mk('Aa', 'Font', function(){ hcCycleFont(el, label, on); });
+      sep();
+      ['left','center','right'].forEach(function(a){
+        mk(a === 'left' ? '≡‹' : a === 'center' ? '≡' : '≡›', 'Align ' + a, function(b){
+          el.style.textAlign = a;
+          try{ bar.querySelectorAll('button[title^="Align"]').forEach(function(x){ x.setAttribute('aria-pressed','false'); }); }catch(e){}
+          b.setAttribute('aria-pressed','true');
+          hcSendStyle(label, on, { 'text-align': a });
+        }, (win.getComputedStyle(el).textAlign||'').indexOf(a) === 0);
+      });
+      sep();
+      ['#1B1712','#6b7280','#ffffff','#D9632D'].forEach(function(h){ swatch(h, 'color'); });
+      if(kind === 'button'){ sep(); mk('Link', 'Change where this goes', function(){ hcEditLink(el); }); }
+    }
+
+    if(kind === 'image'){
+      mk('Replace', 'Choose a different picture', function(){
+        pendingImageNodeId = el.getAttribute('data-node'); pendingImageLabel = el.getAttribute('data-hc');
+        pendingImageEl = el; imgFileInput.click();
+      });
+      sep();
+      mk('Fill', 'Crop to fill the space', function(b){ el.style.objectFit='cover'; hcSendStyle(label,on,{'object-fit':'cover'}); }, win.getComputedStyle(el).objectFit === 'cover');
+      mk('Fit',  'Show the whole picture', function(b){ el.style.objectFit='contain'; hcSendStyle(label,on,{'object-fit':'contain'}); }, win.getComputedStyle(el).objectFit === 'contain');
+      sep();
+      ['16/9','4/3','1/1'].forEach(function(r){
+        mk(r, 'Shape ' + r, function(){ el.style.aspectRatio = r.replace('/',' / '); hcSendStyle(label,on,{'aspect-ratio':r}); });
+      });
+    }
+
+    if(kind === 'section'){
+      mk('Roomier', 'More space inside this section', function(){ hcStepSpace(el, label, on, +1); });
+      mk('Tighter', 'Less space inside this section', function(){ hcStepSpace(el, label, on, -1); });
+      sep();
+      ['#FAF4EC','#ffffff','#1B1712','transparent'].forEach(function(h){
+        var b = doc.createElement('button');
+        b.type='button'; b.className='hc-ctx-sw'; b.title = h === 'transparent' ? 'No background' : h;
+        var dot = doc.createElement('i');
+        dot.style.background = h === 'transparent' ? 'repeating-conic-gradient(#888 0% 25%,#fff 0% 50%) 50%/8px 8px' : h;
+        b.appendChild(dot);
+        b.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation();
+          el.style.backgroundColor = h === 'transparent' ? 'transparent' : h;
+          hcSendStyle(label, on, { 'background-color': h });
+        });
+        bar.appendChild(b);
+      });
+    }
+
+    doc.body.appendChild(bar);
+    hcBar = bar; hcBarKind = kind;
+    hcPlaceBar(el);
+    return bar;
+  }
+
+  function hcSectionName(prefix){
+    if(!prefix) return 'Section';
+    if(prefix === 'header') return 'Header';
+    if(prefix === 'hero') return 'Hero';
+    if(prefix === 'footer') return 'Footer';
+    return 'Section';
+  }
+
+  /* SIZE GOES THROUGH THE KNOB ENGINE, on the element. Custom properties inherit,
+     so setting --hubly-type-scale here moves this element and its descendants and
+     nothing else on the page — the same mechanism heroScale already uses. Steps
+     only: the generator designed a type scale and a free number box destroys it. */
+  var HC_SCALE_STEPS = ['0.8','0.9','1','1.1','1.25','1.5'];
+  function hcStepScale(el, label, on, dir){
+    var cur = (el.style.getPropertyValue('--hubly-type-scale') || '1').trim();
+    var i = HC_SCALE_STEPS.indexOf(cur); if(i === -1) i = 2;
+    var next = i + dir;
+    if(next < 0 || next >= HC_SCALE_STEPS.length){ hcFlash(el, dir < 0 ? 'Smallest' : 'Biggest'); return; }
+    var v = HC_SCALE_STEPS[next];
+    el.style.setProperty('--hubly-type-scale', v);
+    hcSendStyle(label, on, { '--hubly-type-scale': v });
+  }
+  var HC_SPACE_STEPS = ['0.8','0.9','1','1.15','1.3'];
+  function hcStepSpace(el, label, on, dir){
+    var cur = (el.style.getPropertyValue('--hubly-space-scale') || '1').trim();
+    var i = HC_SPACE_STEPS.indexOf(cur); if(i === -1) i = 2;
+    var next = i + dir;
+    if(next < 0 || next >= HC_SPACE_STEPS.length){ hcFlash(el, dir < 0 ? 'Tightest' : 'Roomiest'); return; }
+    var v = HC_SPACE_STEPS[next];
+    el.style.setProperty('--hubly-space-scale', v);
+    hcSendStyle(label, on, { '--hubly-space-scale': v });
+  }
+  var HC_FONTS = ['sans','serif','mono'];
+  function hcCycleFont(el, label, on){
+    var cur = el.getAttribute('data-hc-font') || 'sans';
+    var v = HC_FONTS[(HC_FONTS.indexOf(cur) + 1) % HC_FONTS.length];
+    el.setAttribute('data-hc-font', v);
+    hcSendStyle(label, on, { 'font-family': v });
+  }
+  /* AT THE END OF THE RANGE, SAY SO. A control that silently does nothing when
+     you press it is the defect this whole editor exists to stop repeating. */
+  function hcFlash(el, msg){
+    if(!hcBar) return;
+    var n = doc.createElement('span');
+    n.textContent = msg; n.setAttribute('data-hc-editor','1');
+    n.style.cssText = 'flex:0 0 auto;color:#ffd9c2;font-size:11.5px;font-weight:700;padding:0 8px';
+    hcBar.appendChild(n);
+    setTimeout(function(){ try{ n.remove(); }catch(e){} }, 1400);
+  }
+  function hcEditLink(el){
+    var cur = el.getAttribute('href') || '';
+    var next = win.prompt ? win.prompt('Where should this go?', cur) : null;
+    if(next === null) return;
+    post({ type:'hcFreeformLinkEdit', label: el.getAttribute('data-hc'), href: String(next) });
+  }
+
+  /* SELECT — the one entry point. Click, or tap; never hover. */
+  function hcSelect(el){
+    if(!el) return;
+    hcClearSel();
+    hcSel = el;
+    var kind = hcKindOf(el);
+    el.setAttribute(kind === 'section' ? 'data-hc-sel-section' : 'data-hc-sel', '1');
+    hcBuildBar(el, kind);
+    /* TEXT EDITS IN PLACE — no modal. The toolbar stays open beside it while
+       they type, which is the WYSIWYG feel; the existing, proven text path does
+       the saving on blur. */
+    if(kind === 'text' || kind === 'button'){
+      var before = el.textContent || '';
+      el.setAttribute('contenteditable','true');
+      el.addEventListener('blur', function onBlur(){
+        el.removeEventListener('blur', onBlur);
+        var now = el.textContent || '';
+        if(now.trim() && now !== before){
+          post({ type:'hcFreeformInlineEdit', op:'update_text', label: el.getAttribute('data-hc'), text: now.trim(), prevText: before });
+        }
+      });
+    }
+  }
+  win.addEventListener('scroll', function(){ if(hcSel) hcPlaceBar(hcSel); }, true);
+  win.addEventListener('resize', function(){ if(hcSel) hcPlaceBar(hcSel); });
+  doc.addEventListener('keydown', function(e){ if(e.key === 'Escape') hcClearSel(); });
+
   // [data-node] is the AST handle, [data-hc] the freeform one. Both are
   // clickable; the gesture, the overlay and the leaf-only rule below are
   // unchanged from what shipped for AST pages.
@@ -53527,16 +53811,20 @@ function wireHcEditingSurface(doc, root){
       e.preventDefault(); e.stopPropagation();
       return;
     }
-    if(target.tagName && target.tagName.toLowerCase() === 'img'){
-      pendingImageNodeId = target.getAttribute('data-node');
-      pendingImageLabel = target.getAttribute('data-hc');
-      pendingImageEl = target;   // paint the chosen photo onto THIS element instantly on pick
-      imgFileInput.click();
-      return;
-    }
+    // IN THE EDITOR, A LINK IS NOT A LINK. The booking CTA carries target="_top",
+    // so selecting it navigated the WHOLE builder tab to the live booking page and
+    // the owner lost their editing session. Found by clicking one. Every editable
+    // click is now prevented before selection: inside the editor the owner is
+    // editing the page, not browsing it.
+    if(target.tagName && target.tagName.toLowerCase() === 'a'){ e.preventDefault(); e.stopPropagation(); }
+    // A CLICK SELECTS. It does not open a modal, and it does not immediately
+    // fire a file picker: selection is the one entry point, and the contextual
+    // toolbar beside the element carries what applies to it. That is what makes
+    // this work on touch, where nothing can be revealed by hovering.
+    if(target.tagName && target.tagName.toLowerCase() === 'img'){ hcSelect(target); return; }
     if(target.children.length > 0) return; // only leaf nodes for this pass
     if(!target.textContent || !target.textContent.trim()) return;
-    openTextEditor(target);
+    hcSelect(target);
   }, true);
 
   // Affordance is CSS now (see markEditable + #hubly-editable-style, injected on wiring
@@ -53547,6 +53835,18 @@ function wireHcEditingSurface(doc, root){
     var target = e.target && e.target.closest ? e.target.closest(EDITABLE_SEL) : null;
     if(target && root.contains(target)) markEditable(target);
   }, true);
+
+  // Clicking away deselects. Guarded so a tap ON the toolbar never dismisses the
+  // thing the toolbar is editing — the commonest way a floating bar becomes
+  // unusable on a phone, where the bar sits over the page.
+  doc.addEventListener('click', function(e){
+    if(!hcSel) return;
+    var t = e.target;
+    if(t && t.closest && (t.closest('.hc-ctx') || t.closest('[data-hc-editor]'))) return;
+    if(t && t.closest && t.closest(EDITABLE_SEL)) return;
+    if(t && hcSel.contains && hcSel.contains(t)) return;
+    hcClearSel();
+  }, false);
 
   // G: REVIEWS container REMOVED. It was Hubly furniture standing on the owner's
   // page — a visitor would never see an empty "reviews will live here" block, so

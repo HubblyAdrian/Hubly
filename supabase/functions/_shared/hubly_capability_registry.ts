@@ -65,7 +65,7 @@ import { resolveImages, collapseEmptyImageSlots, pexelsFetcher, type PlacedImage
 import { annotatePlaceholders } from "./hubly_placeholders.ts";
 import { reportAllowlistDrops } from "./hubly_allowlist.ts";
 import { KNOBS, hasDesignKnobs, knobBinding, pagePalette, readDesignKnobs, resetDesignKnob, setDesignKnob, stampDesignKnobs, stepKnob, type KnobId } from "./hubly_design_knobs.ts";
-import { applyFreeformEdit, humanFreeformSummary, labelInventory, labelsPresent, type LabelEntry } from "./hubly_freeform.ts";
+import { applyFreeformEdit, applyFreeformStyle, humanFreeformSummary, labelInventory, labelsPresent, type FreeformStyleEdit, type LabelEntry } from "./hubly_freeform.ts";
 import {
   formatPhoneHouse,
   placeContactHoursInFreeform,
@@ -1550,6 +1550,56 @@ async function uploadImageToStorage(
  * describes what the page was generated from, not what it currently says, and
  * an owner edit does not retroactively change the brief.
  */
+/**
+ * STYLE ONE ELEMENT — what the contextual toolbar saves through.
+ *
+ * Same owner-verified, versioned, undoable pipe as every other edit: the style
+ * lands as a new document version, so Undo reverses it with no new machinery and
+ * the page a visitor sees is the page the owner just changed.
+ *
+ * The vocabulary is closed and validated server-side (applyFreeformStyle). The
+ * toolbar is HTML we serve, but the request is a POST like any other, and the
+ * writers here are built on the assumption that anything reachable will one day
+ * be called by something we did not write.
+ */
+export async function applyOwnerStyleEdit(
+  draftId: string,
+  draftToken: string,
+  ownerUid: string | null,
+  edit: FreeformStyleEdit,
+): Promise<OwnerEditResult> {
+  if (!draftId || !ownerUid) return { ok: false, real: false, error: "not_signed_in", summary: "You need to be signed in to change this." };
+  const biz = await selectOne("businesses", "id", draftId, "owner_id");
+  if (!biz || String(biz.owner_id || "") !== String(ownerUid)) {
+    return { ok: false, real: false, error: "not_owner", summary: "You don't have access to edit this business." };
+  }
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest) return { ok: false, real: false, error: "no_document", summary: "There's no page to change yet." };
+  if (latest.format !== "html") return { ok: false, real: false, error: "wrong_format", summary: "That page isn't a freeform page." };
+
+  const r = applyFreeformStyle(latest.renderedHtml, edit);
+  if (!r.ok) {
+    // EVERY FAILURE GETS ITS OWN SENTENCE. "Something went wrong" is banned here,
+    // and a toolbar that silently does nothing is the defect this whole session
+    // has been about.
+    const said: Record<string, string> = {
+      no_match: "I couldn't find that part of the page any more — it may have been rebuilt since you opened this.",
+      no_change: "That's already how it's set.",
+      all_rejected: "I can't set that one.",
+      empty_style: "Nothing to change.",
+      invalid_label: "I couldn't tell which part of the page that was.",
+    };
+    return { ok: false, real: false, error: r.error, summary: said[r.error || ""] || "That didn't change — nothing was saved." };
+  }
+  const saved = await callBusinessRpc("create_business_document", {
+    p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
+    p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "style-edit"),
+    p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
+  });
+  if (!saved || saved.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "That didn't save — nothing changed." };
+  return { ok: true, real: true, summary: "Updated.", raw: { version: saved.version, applied: r.applied, rejected: r.rejected } };
+}
+
 export async function applyDirectFreeformEdit(
   draftId: string,
   draftToken: string,

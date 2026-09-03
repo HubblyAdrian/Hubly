@@ -65,7 +65,7 @@ import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
 import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
 import { reportAllowlistDrops } from "../_shared/hubly_allowlist.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, applyOwnerDesignEdit, readOwnerDesignKnobs, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, applyOwnerDesignEdit, applyOwnerStyleEdit, readOwnerDesignKnobs, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -835,7 +835,7 @@ Deno.serve(async (req) => {
   // "that didn't save".
   const anyDirectEdit = !!(body && (body.directRecordEdit || body.directEdit || body.directImageEdit ||
     body.directDocumentPatch || body.directDocumentImageEdit || body.directFreeformEdit || body.directFreeformImageEdit ||
-    body.designKnobs === true || body.designEdit));
+    body.designKnobs === true || body.designEdit || body.styleEdit));
   if (!incoming.length && !anyDirectEdit) return jsonRes({ ok: false, error: "messages_required" }, 400);
 
   // POST-BUILD HAND-OFF. The client asks the MODEL for the first message after a build
@@ -1470,6 +1470,29 @@ Deno.serve(async (req) => {
       reply: result.summary || "",
       messages: incoming,
       actions: [{ capability: "website", capabilityAction: "designKnob", args: { knob: e.knob, op: e.op || "set" }, ok: !!result.ok, real: !!result.real }],
+      interimMessages: [],
+      ...(result.error ? { error: result.error } : {}),
+    });
+  }
+
+  // STYLE ONE ELEMENT — the contextual toolbar's save. Structured and model-free,
+  // exactly like directRecordEdit and designEdit: the owner clicked a control on a
+  // specific element, so there is nothing for a model to interpret.
+  if (body?.styleEdit && typeof body.styleEdit === "object") {
+    if (!draftBusiness) return jsonRes({ ok: false, error: "no_business" }, 400);
+    const ownerUid = await getOwnerUid();
+    if (!ownerUid) return jsonRes({ ok: false, error: "not_signed_in", reply: "You need to be signed in to change this." }, 401);
+    const e = body.styleEdit as { label: string; on?: "element" | "section"; style: Record<string, string> };
+    const result = await applyOwnerStyleEdit(draftBusiness.id, draftBusiness.draftToken, ownerUid, {
+      label: String(e.label || ""),
+      on: e.on === "section" ? "section" : "element",
+      style: (e.style && typeof e.style === "object") ? e.style : {},
+    });
+    return jsonRes({
+      ok: result.ok,
+      reply: result.summary || "",
+      messages: incoming,
+      actions: [{ capability: "website", capabilityAction: "styleElement", args: { label: e.label, on: e.on || "element" }, ok: !!result.ok, real: !!result.real }],
       interimMessages: [],
       ...(result.error ? { error: result.error } : {}),
     });

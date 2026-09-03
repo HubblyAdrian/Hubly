@@ -347,3 +347,155 @@ export function labelInventory(html: string): LabelEntry[] {
   }
   return [...seen.values()].sort((a, b) => a.label.localeCompare(b.label, "en", { numeric: true }));
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * ELEMENT STYLE — the op the contextual toolbar writes through.
+ *
+ * WHY A NEW OP. applyFreeformEdit takes {label, text, src}: words and an image
+ * URL, nothing else. That is why click-to-edit could change what an element SAYS
+ * and never how it LOOKS, and why the colour and font swatches were dead on every
+ * freeform page — not merely hidden, but with no server path to be wired to. A
+ * toolbar attached to an element needs to write style to that element.
+ *
+ * A CLOSED VOCABULARY, NOT A STYLE ATTRIBUTE PASSTHROUGH. Everything here is
+ * validated against an allowlist of properties AND of values. The client is not
+ * trusted: the panel is HTML we serve, but the request is just a POST, and the
+ * writers in this codebase are locked down on the assumption that anything
+ * reachable will eventually be called by something we did not write. An arbitrary
+ * `style` string would let a caller inject `position:fixed;z-index:99999` over the
+ * whole page, or a `url()` that phones out.
+ *
+ * SCALES GO THROUGH THE KNOB ENGINE, NOT THROUGH A LITERAL. Size is set as
+ * --hubly-type-scale ON THE ELEMENT, because custom properties inherit: the
+ * element and its descendants resolve the new value and nothing else on the page
+ * moves. That is the same mechanism heroScale already uses via
+ * [data-hc^="hero"]{--hubly-type-scale:var(--hubly-hero-scale,1)}, so the engine
+ * needs no change — only a different place to write the variable. A raw px size
+ * is deliberately NOT offered: the generator designs a per-page type scale and a
+ * free number box lets an owner wreck it in one click.
+ */
+
+/** Property -> how a value is validated. Nothing reaches the page unvalidated. */
+const STYLE_VOCAB: Record<string, (v: string) => string | null> = {
+  // Colour: a hex we parsed, or one of the page's own palette entries. Never a
+  // url(), never a gradient, never `inherit` games.
+  "color":            (v) => /^#[0-9a-f]{3,8}$/i.test(v.trim()) ? v.trim() : null,
+  "background-color": (v) => /^#[0-9a-f]{3,8}$/i.test(v.trim()) || v.trim() === "transparent" ? v.trim() : null,
+  "text-align":       (v) => ["left", "center", "right"].includes(v.trim()) ? v.trim() : null,
+  "font-weight":      (v) => ["400", "500", "600", "700", "800"].includes(v.trim()) ? v.trim() : null,
+  "font-style":       (v) => ["normal", "italic"].includes(v.trim()) ? v.trim() : null,
+  "font-family":      (v) => FONT_STACKS[v.trim()] || null,
+  // The knob variable, on the element. Steps only — same list the panel offered.
+  "--hubly-type-scale":  (v) => ["0.8", "0.9", "1", "1.1", "1.25", "1.5"].includes(v.trim()) ? v.trim() : null,
+  "--hubly-space-scale": (v) => ["0.8", "0.9", "1", "1.15", "1.3"].includes(v.trim()) ? v.trim() : null,
+  "--hubly-radius-scale":(v) => ["0", "0.5", "1", "1.6"].includes(v.trim()) ? v.trim() : null,
+  // Image fit, for the image toolbar.
+  "object-fit":       (v) => ["cover", "contain"].includes(v.trim()) ? v.trim() : null,
+  "aspect-ratio":     (v) => ["16/9", "16/10", "4/3", "1/1", "auto"].includes(v.trim().replace(/\s/g, "")) ? v.trim().replace(/\s/g, "") : null,
+};
+
+/** A closed set of font stacks, keyed by the name the toolbar shows. The owner
+ *  picks a face, not a CSS string — so a stack can be corrected centrally and no
+ *  caller can name a font that does not load. */
+const FONT_STACKS: Record<string, string> = {
+  "sans":  "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  "serif": "Georgia, 'Times New Roman', serif",
+  "mono":  "ui-monospace, 'SF Mono', Menlo, monospace",
+};
+
+export interface FreeformStyleEdit {
+  /** data-hc on a leaf, or data-hc-section on a band. */
+  label: string;
+  /** Which attribute carries the label — leaves and sections are addressed differently. */
+  on?: "element" | "section";
+  /** property -> value, both validated against STYLE_VOCAB. */
+  style: Record<string, string>;
+}
+
+export interface FreeformStyleResult {
+  ok: boolean;
+  html: string;
+  changed: number;
+  applied: Record<string, string>;
+  rejected: string[];
+  error?: "invalid_label" | "no_match" | "no_change" | "empty_style" | "all_rejected";
+}
+
+/**
+ * Write validated inline style onto the labelled element.
+ *
+ * INLINE, deliberately. The page's own stylesheet is the model's, and this pass
+ * does not edit it — the anchor discipline says we touch the thing we stamped,
+ * not the layout around it. An inline style also wins the cascade without a
+ * specificity fight, and it is trivially reversible: a new document version, and
+ * Undo puts it back like any other edit.
+ */
+export function applyFreeformStyle(html: string, edit: FreeformStyleEdit): FreeformStyleResult {
+  const src = String(html || "");
+  const fail = (error: FreeformStyleResult["error"]): FreeformStyleResult =>
+    ({ ok: false, html: src, changed: 0, applied: {}, rejected: [], error });
+
+  const onSection = edit.on === "section";
+  if (!edit.label) return fail("invalid_label");
+  if (!onSection && !isValidHcLabel(edit.label)) return fail("invalid_label");
+  if (!edit.style || !Object.keys(edit.style).length) return fail("empty_style");
+
+  const applied: Record<string, string> = {};
+  const rejected: string[] = [];
+  for (const [prop, raw] of Object.entries(edit.style)) {
+    const check = STYLE_VOCAB[prop];
+    if (!check) { rejected.push(prop); continue; }
+    const val = check(String(raw));
+    if (val === null) { rejected.push(prop + "=" + String(raw)); continue; }
+    applied[prop] = val;
+  }
+  if (!Object.keys(applied).length) return fail("all_rejected");
+
+  const scan = scanHtml(src);
+  const attr = onSection ? "data-hc-section" : "data-hc";
+  const matches = scan.all.filter((e) => {
+    const v = e.attrs[attr];
+    if (typeof v !== "string") return false;
+    // A section stamp may carry several prefixes ("header hero"); match a token.
+    return onSection ? v.split(/\s+/).includes(edit.label) : v === edit.label;
+  });
+  if (!matches.length) return fail("no_match");
+
+  // One element only when a leaf label repeats (a value role like contact.phone
+  // legitimately appears three times). Styling is a LOOK, not a fact: restyling
+  // every phone number on the page because the owner recoloured one of them is
+  // the opposite of what they asked for.
+  const targets = onSection ? matches : [matches[0]];
+
+  const edits: Splice[] = [];
+  for (const el of targets) {
+    const existing = el.attrs["style"] || "";
+    const merged = mergeInlineStyle(existing, applied);
+    if (merged === existing) continue;
+    const r = el.attrRanges["style"];
+    if (r) edits.push({ start: r.start, end: r.end, text: ` style="${escAttr(merged)}"` });
+    else edits.push({ start: el.attrInsertAt, end: el.attrInsertAt, text: ` style="${escAttr(merged)}"` });
+  }
+  if (!edits.length) return fail("no_change");
+  return { ok: true, html: spliceAll(src, edits), changed: edits.length, applied, rejected };
+}
+
+/** Merge new declarations over an existing inline style, replacing same-property
+ *  ones rather than appending a second copy — a style attribute that grows a
+ *  duplicate every click is the accumulating-residue bug in another costume. */
+function mergeInlineStyle(existing: string, next: Record<string, string>): string {
+  const out: [string, string][] = [];
+  for (const decl of String(existing).split(";")) {
+    const i = decl.indexOf(":");
+    if (i < 1) continue;
+    const p = decl.slice(0, i).trim();
+    if (!p || p in next) continue;            // dropped: about to be replaced
+    out.push([p, decl.slice(i + 1).trim()]);
+  }
+  for (const [p, v] of Object.entries(next)) out.push([p, v]);
+  return out.map(([p, v]) => `${p}:${v}`).join(";");
+}
+
+function escAttr(s: string): string {
+  return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
