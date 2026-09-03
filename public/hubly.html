@@ -17593,6 +17593,9 @@ function hcApplyPendingScroll(){
   if(hcPendingScrollY == null || hcScrollRestored || hcUserScrolled) return;
   var w = null;
   try{ var f = hcFreeformFrame(); w = (f && f.contentWindow) ? f.contentWindow : window; }catch(e){ w = window; }
+  // Say what happened. A restore that silently does not happen is indistinguishable
+  // from one that was never asked for.
+  try{ console.log('[hc-scroll] restore', hcPendingScrollY, 'wired=' + !!(w && w.__hcScrollWired)); }catch(e){}
   if(!w || !w.__hcScrollWired) return;   // wait for the surface we are going to move
   var y = hcPendingScrollY;
   hcScrollRestored = true;
