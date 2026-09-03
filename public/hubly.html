@@ -37961,7 +37961,22 @@ function closePublicBooking(){
   document.body.classList.remove('ws-booking-open');
   document.getElementById('p-booking-landing')?.classList.remove('active');
   document.getElementById('p-booking')?.classList.remove('active');
-  document.getElementById('p-storefront')?.classList.add('active');
+  // SAME DEFECT AS bookingBack: this unconditionally revealed the CLASSIC archetype
+  // page, so leaving booking on a freeform site (Save & exit, or the ws-booking-open
+  // branch of bookingBack) showed a different website with owner-facing scaffolding.
+  // Two exits, one wrong destination — fixed in both rather than only where it was
+  // reported, because the next report would just have come from the other one.
+  const hcDocRoot=document.getElementById('hc-doc-root');
+  if(hcDocRoot&&hcDocRoot.children.length){
+    try{
+      const u=new URL(location.href);
+      if(u.searchParams.has('book')){ u.searchParams.delete('book'); u.searchParams.delete('svc');
+        history.replaceState(null,'',u.pathname+(u.search||'')+u.hash); }
+    }catch(e){}
+    document.getElementById('p-hubly-document')?.classList.add('active');
+  } else {
+    document.getElementById('p-storefront')?.classList.add('active');
+  }
   window.scrollTo(0,0);
 }
 function toggleWsSvcCard(btn){
@@ -42030,6 +42045,30 @@ function bookingBack(){
     // Leave booking. don't dump people on the old Our Services picker
     if(document.body.classList.contains('ws-booking-open')||S.ownerPreview){
       closePublicBooking();
+      return;
+    }
+    // RETURN TO THE SITE THEY CAME FROM.
+    //
+    // This sent every customer to #p-storefront — the CLASSIC ARCHETYPE renderer,
+    // which belongs to businesses that have no stored document. That element is
+    // static markup in this file, so the check was always true, so Back from booking
+    // showed a DIFFERENT WEBSITE for every freeform site — i.e. every real business —
+    // complete with owner-facing scaffolding like "Add what you do and we'll lay it
+    // out". Reported live, and reached in one tap: arriving from a service card sets
+    // _bkPackageLocked, so the FIRST Back press on step 2 takes this branch.
+    //
+    // A freeform business has its page mounted in #hc-doc-root and shows
+    // p-hubly-document. Prefer that; fall back to the classic page only when there is
+    // genuinely no document, which is the only case it was ever right for.
+    var hcDocRoot = document.getElementById('hc-doc-root');
+    if(hcDocRoot && hcDocRoot.children.length){
+      // Drop ?book=1 so a refresh does not bounce them straight back into booking.
+      try{
+        var u = new URL(location.href);
+        if(u.searchParams.has('book')){ u.searchParams.delete('book'); u.searchParams.delete('svc');
+          history.replaceState(null, '', u.pathname + (u.search || '') + u.hash); }
+      }catch(e){}
+      showP('p-hubly-document');
       return;
     }
     if(document.getElementById('p-storefront')){showP('p-storefront');return;}
