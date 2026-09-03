@@ -3319,8 +3319,63 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // indicator and no LLM call, but it does answer: the server sends back a
   // humanNote, and dropping it on the floor here is what made a real edit
   // land in silence.
-  async function hcSendDirectEdit(payload){
-    if(hc.busy || !hc.draftBusiness) return;
+  // NEVER DROP AN EDIT THE OWNER HAS ALREADY MADE.
+  //
+  // This function used to open with `if (hc.busy || !hc.draftBusiness) return;`. A
+  // second edit made while the first save was still in flight therefore vanished:
+  // no request, no message, and the optimistic paint left the change sitting on the
+  // screen. The owner saw their edit, came back later, and it was gone. That is the
+  // "I edit it once and the second time it won't take" report, and it has nothing to
+  // do with the caret — reproduced as the owner on evergreen 2026-09-03, two edits
+  // about two seconds apart: ONE document version written, the other change on screen,
+  // in no version, and not a word said. It is the same silent drop the STYLE path
+  // already fixed with a queue (hcStyleEdit); the text/image path never got one.
+  //
+  // Edits are QUEUED and sent one at a time. Serial is not tidiness — the server
+  // patches the stored HTML by label + prevText, so two writes in flight would each
+  // patch the same base document and one would be overwritten.
+  var hcEditQueue = [];
+  var hcEditSending = false;
+  var hcEditWaitSince = 0;
+
+  function hcSendDirectEdit(payload){
+    hcEditQueue.push(payload);
+    hcPumpEditQueue();
+  }
+
+  // One honest sentence covering the edit that failed AND anything still queued
+  // behind it — those are patched against a document state that no longer exists,
+  // so they cannot be sent after a failure, and going quiet about them would be the
+  // original bug wearing a different coat.
+  function hcEditQueueFailed(msg){
+    var lost = hcEditQueue.length;
+    hcEditQueue = [];
+    hcEditWaitSince = 0;
+    hcAppendMessage('hubly', msg + (lost ? ' ' + (lost === 1 ? 'One later change didn\'t save either.' : lost + ' later changes didn\'t save either.') : ''));
+    try{ hcRefreshCanvasFrame(); }catch(e){}
+  }
+
+  async function hcPumpEditQueue(){
+    if(hcEditSending || !hcEditQueue.length) return;
+    if(!hc.draftBusiness){
+      hcEditQueueFailed("That change didn't save — I've lost track of which site I'm editing. Reload the page and try again.");
+      return;
+    }
+    // Something ELSE is mid-flight (a chat turn, a photo upload, a style save). Wait
+    // for it instead of discarding what the owner just typed. The wait is bounded:
+    // if whatever is in front never finishes, we say so rather than sit in silence.
+    if(hc.busy || hcStyleBusy){
+      if(!hcEditWaitSince) hcEditWaitSince = Date.now();
+      if(Date.now() - hcEditWaitSince > 30000){
+        hcEditQueueFailed("That change didn't save — the last thing I was working on never finished, so I've put the page back to how it was.");
+        return;
+      }
+      setTimeout(hcPumpEditQueue, 120);
+      return;
+    }
+    hcEditWaitSince = 0;
+    var payload = hcEditQueue.shift();
+    hcEditSending = true;
     hc.busy = true;
     // What kind of thing changed, for the Undo action's plain words ("Put the photo
     // back"). Deriving the specific card name (e.g. "Basic Mow photo") needs a label->name
@@ -3339,7 +3394,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     })
       .then(function(r){ return r.json(); })
       .then(function(data){
-        hc.busy = false;
+        hc.busy = false; hcEditSending = false;
         if(data && data.draftGrant) hcExchangeDraftGrant(data.draftGrant, hc.draftBusiness && hc.draftBusiness.id);
         if(data && data.ok !== false){
           if(data.draftBusiness) hc.draftBusiness = data.draftBusiness;
@@ -3354,18 +3409,19 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
           hc._lastEdit = { noun: _editNoun };
           hcShowEditUndoToast(_editNoun);
           hcMaybeShowClaimCard();
+          // Whatever the owner did while this was in flight goes next, in the order
+          // they did it.
+          hcPumpEditQueue(); hcFlushStyleQueue();
         } else {
           // The save FAILED, so the optimistic paint is now a lie on the page. Reconcile to
           // the real server state (reload) and say so plainly — never silently leave a change
           // that didn't persist, and never silently revert without a word.
-          hcRefreshCanvasFrame();
-          hcAppendMessage('hubly', "That change didn't save — I've put the page back to how it was. Try it again?");
+          hcEditQueueFailed("That change didn't save — I've put the page back to how it was. Try it again?");
         }
       })
       .catch(function(){
-        hc.busy = false;
-        hcRefreshCanvasFrame();
-        hcAppendMessage('hubly', "That change didn't save — I've put the page back. Try again in a moment.");
+        hc.busy = false; hcEditSending = false;
+        hcEditQueueFailed("That change didn't save — I've put the page back. Try again in a moment.");
       });
   }
   // A quiet, transient control near the change — the direct-edit undo, off the chat. Fades
@@ -4225,8 +4281,16 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // save returns. Last-write-wins is correct here: the controls are steps, the DOM
   // already shows where the owner stopped, and that is what must end up stored.
   var hcStyleBusy = false, hcStyleQueue = null;
+  // Both lanes write the SAME document, by read-modify-write. Deferring a style save
+  // while a text save is in flight (and vice-versa, in hcPumpEditQueue) is what stops
+  // one of the two silently overwriting the other.
+  function hcFlushStyleQueue(){
+    if(hcStyleQueue && !hcStyleBusy && !hcEditSending){
+      var q = hcStyleQueue; hcStyleQueue = null; hcStyleEdit(q);
+    }
+  }
   async function hcStyleEdit(edit){
-    if(hcStyleBusy){
+    if(hcStyleBusy || hcEditSending){
       if(!hcStyleQueue) hcStyleQueue = { label: edit.label, on: edit.on, style: {} };
       if(hcStyleQueue.label === edit.label && hcStyleQueue.on === edit.on){
         Object.assign(hcStyleQueue.style, edit.style);
@@ -4264,7 +4328,8 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       try{ hcRefreshCanvasFrame(); }catch(e){}
     }
     // Flush whatever arrived while this was in flight.
-    if(hcStyleQueue){ var q = hcStyleQueue; hcStyleQueue = null; hcStyleEdit(q); }
+    hcFlushStyleQueue();
+    hcPumpEditQueue();
   }
   async function hcLoadDesign(){
     var r = await hcDesignApi({ designKnobs: true });
