@@ -17416,14 +17416,27 @@ function hcMountDocumentHtml(root,html){
   // bottom (cause never pinned down — not autofocus, not a runtime focus-on-load).
   // Rather than keep hunting, force it: the srcdoc is same-origin, so reset its
   // scroll to 0 on load and again on the next frame in case something scrolls just
-  // after. Instant (the 2-arg scrollTo ignores scroll-behavior:smooth), so it's a
-  // reset, not a visible scroll-up.
+  // after.
+  //
+  // CORRECTED 2026-09-03: the comment here used to say "Instant (the 2-arg scrollTo
+  // ignores scroll-behavior:smooth)". That is false — the two-argument form uses the
+  // `auto` behaviour, which HONOURS `scroll-behavior`, and generated pages carry
+  // `html{scroll-behavior:smooth}` (evergreen does). So these resets were animating,
+  // which is exactly the visible scroll they were written to avoid; measured, the
+  // animation may not run at all in a background frame, which would leave the page
+  // wherever it was. Asked for instant, explicitly.
+  var _toTop = function(w){
+    // Do not fight the restore. If the builder has told us where the owner was
+    // looking, that position IS where this page should arrive.
+    if(hcPendingScrollY != null && !hcUserScrolled) return;
+    try{ w.scrollTo({ top: 0, behavior: 'instant' }); }catch(e){ try{ w.scrollTo(0, 0); }catch(_){} }
+  };
   frame.addEventListener('load', function(){
     try{
       var w = frame.contentWindow; if(!w) return;
-      w.scrollTo(0, 0);
-      requestAnimationFrame(function(){ try{ w.scrollTo(0, 0); }catch(e){} });
-      setTimeout(function(){ try{ w.scrollTo(0, 0); }catch(e){} }, 120);
+      _toTop(w);
+      requestAnimationFrame(function(){ try{ _toTop(w); }catch(e){} });
+      setTimeout(function(){ try{ _toTop(w); }catch(e){} }, 120);
     }catch(e){}
   });
   return frame;
@@ -17585,13 +17598,18 @@ function hcApplyPendingScroll(){
   hcScrollRestored = true;
   if(!(y > 0)) return;
   hcScrollProgrammaticUntil = Date.now() + 600;
-  try{ w.scrollTo(0, y); }catch(e){}
+  // INSTANT, EXPLICITLY. Generated pages carry `html{scroll-behavior:smooth}`, and
+  // the two-argument scrollTo honours it — so this would ANIMATE a restore that
+  // should just be where the page already was, and measured on evergreen the
+  // animation does not run at all in a background/offscreen frame (0px after a
+  // second). Restoring a position is not a scroll the owner asked to watch.
+  try{ w.scrollTo({ top: y, behavior: 'instant' }); }catch(e){ try{ w.scrollTo(0, y); }catch(_){} }
   // A page still laying out (images, fonts) can be shorter than it will be, so one
   // late re-apply — still only if the owner has not taken over in the meantime.
   setTimeout(function(){
     try{
       if(hcUserScrolled) return;
-      if(Math.abs((w.pageYOffset || 0) - y) > 4){ hcScrollProgrammaticUntil = Date.now() + 400; w.scrollTo(0, y); }
+      if(Math.abs((w.pageYOffset || 0) - y) > 4){ hcScrollProgrammaticUntil = Date.now() + 400; w.scrollTo({ top: y, behavior: 'instant' }); }
     }catch(e){}
   }, 500);
 }
