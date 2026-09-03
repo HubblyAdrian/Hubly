@@ -65,7 +65,7 @@ import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
 import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
 import { reportAllowlistDrops } from "../_shared/hubly_allowlist.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, applyOwnerDesignEdit, applyOwnerStyleEdit, readOwnerDesignKnobs, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, applyOwnerDesignEdit, applyOwnerStyleEdit, applyOwnerSectionMove, readOwnerDesignKnobs, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -835,7 +835,7 @@ Deno.serve(async (req) => {
   // "that didn't save".
   const anyDirectEdit = !!(body && (body.directRecordEdit || body.directEdit || body.directImageEdit ||
     body.directDocumentPatch || body.directDocumentImageEdit || body.directFreeformEdit || body.directFreeformImageEdit ||
-    body.designKnobs === true || body.designEdit || body.styleEdit));
+    body.designKnobs === true || body.designEdit || body.styleEdit || body.sectionMove));
   if (!incoming.length && !anyDirectEdit) return jsonRes({ ok: false, error: "messages_required" }, 400);
 
   // POST-BUILD HAND-OFF. The client asks the MODEL for the first message after a build
@@ -1494,6 +1494,30 @@ Deno.serve(async (req) => {
       messages: incoming,
       actions: [{ capability: "website", capabilityAction: "styleElement", args: { label: e.label, on: e.on || "element" }, ok: !!result.ok, real: !!result.real }],
       interimMessages: [],
+      ...(result.error ? { error: result.error } : {}),
+    });
+  }
+
+  // MOVE A SECTION — the up/down arrows on the section toolbar. Structured and
+  // model-free for the same reason as styleEdit: the owner pointed at a specific
+  // band and pressed a direction, and there is nothing to interpret.
+  if (body?.sectionMove && typeof body.sectionMove === "object") {
+    if (!draftBusiness) return jsonRes({ ok: false, error: "no_business" }, 400);
+    const ownerUid = await getOwnerUid();
+    if (!ownerUid) return jsonRes({ ok: false, error: "not_signed_in", reply: "You need to be signed in to move a section." }, 401);
+    const m = body.sectionMove as { label?: string; dir?: string };
+    const dir = m.dir === "up" ? "up" : m.dir === "down" ? "down" : null;
+    if (!dir) return jsonRes({ ok: false, error: "invalid_direction", reply: "I couldn't tell which way to move that section." }, 400);
+    const result = await applyOwnerSectionMove(draftBusiness.id, draftBusiness.draftToken, ownerUid, {
+      label: String(m.label || ""), dir,
+    });
+    return jsonRes({
+      ok: result.ok,
+      reply: result.summary || "",
+      messages: incoming,
+      actions: [{ capability: "website", capabilityAction: "moveSection", args: { label: m.label, dir }, ok: !!result.ok, real: !!result.real }],
+      interimMessages: [],
+      ...(result.raw ? { moveResult: result.raw } : {}),
       ...(result.error ? { error: result.error } : {}),
     });
   }

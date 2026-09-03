@@ -499,3 +499,123 @@ function mergeInlineStyle(existing: string, next: Record<string, string>): strin
 function escAttr(s: string): string {
   return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
+
+/* ── MOVING A SECTION ──────────────────────────────────────────────────────── */
+
+export interface FreeformSectionMove {
+  /** A token from data-hc-section on the band to move. */
+  label: string;
+  dir: "up" | "down";
+}
+
+export interface FreeformSectionMoveResult {
+  ok: boolean;
+  html: string;
+  /** The section that moved, and the one it changed places with. */
+  moved?: string;
+  swappedWith?: string;
+  /** How many in-page nav links were reordered to match. */
+  navLinksMoved: number;
+  error?: "invalid_label" | "no_match" | "at_edge" | "not_siblings";
+}
+
+/**
+ * Move a stamped section up or down — a SWAP with its neighbour, never a rebuild.
+ *
+ * This is the payoff for stamping section containers at generation. There is no
+ * layout re-recognition here and no guessing at where a band starts: the scanner
+ * hands back the exact byte range of the element we stamped, and the move is two
+ * slices trading places. Every other byte of the model's HTML is untouched,
+ * which is the same promise the scanner exists to keep.
+ *
+ * Measured safe before it was built: 0 of 129 stored pages carry section-level
+ * order-dependent CSS (no `section:nth-of-type`, no `body > *:nth-child`, no
+ * scroll-snap), so document order is the only thing that decides section order.
+ *
+ * NAV MOVES WITH IT, IN THE SAME OPERATION. A page whose nav links to its own
+ * sections would otherwise be left listing them in an order the page no longer
+ * uses — a second, silent step that could fail on its own and leave the record
+ * of "what happened" split in two. One transform, one version, one Undo.
+ */
+export function moveFreeformSection(html: string, edit: FreeformSectionMove): FreeformSectionMoveResult {
+  const src = String(html || "");
+  const fail = (error: FreeformSectionMoveResult["error"]): FreeformSectionMoveResult =>
+    ({ ok: false, html: src, navLinksMoved: 0, error });
+
+  const label = String(edit?.label || "").trim();
+  if (!label) return fail("invalid_label");
+  if (edit?.dir !== "up" && edit?.dir !== "down") return fail("invalid_label");
+
+  const scan = scanHtml(src);
+  const isSection = (e: ScannedEl) => typeof e.attrs["data-hc-section"] === "string";
+  // OUTERMOST BANDS ONLY. A stamped band can contain another stamped element;
+  // moving an inner one among its outer siblings would tear the page apart.
+  const sections = scan.all
+    .filter((e) => {
+      if (!isSection(e)) return false;
+      for (let p = e.parent; p; p = p.parent) if (isSection(p)) return false;
+      return true;
+    })
+    .sort((a, b) => a.openStart - b.openStart);
+  if (!sections.length) return fail("no_match");
+
+  const tokens = (e: ScannedEl) => String(e.attrs["data-hc-section"] || "").split(/\s+/).filter(Boolean);
+  const idx = sections.findIndex((e) => tokens(e).includes(label));
+  if (idx < 0) return fail("no_match");
+
+  const j = edit.dir === "up" ? idx - 1 : idx + 1;
+  if (j < 0 || j >= sections.length) return fail("at_edge");
+
+  const a = sections[Math.min(idx, j)];
+  const b = sections[Math.max(idx, j)];
+  // Only trade places with a true sibling. Anything else is a structural move we
+  // have not proven safe, and the honest answer is to decline it.
+  if (a.parent !== b.parent) return fail("not_siblings");
+
+  const aHtml = src.slice(a.openStart, a.closeEnd);
+  const bHtml = src.slice(b.openStart, b.closeEnd);
+  const edits: Splice[] = [
+    { start: a.openStart, end: a.closeEnd, text: bHtml },
+    { start: b.openStart, end: b.closeEnd, text: aHtml },
+  ];
+
+  // ── Nav sync, in this same transform ─────────────────────────────────────
+  //
+  // Only links that sit OUTSIDE both bands are touched: a nav inside one of the
+  // moved sections travels with it and its own order is still correct.
+  let navLinksMoved = 0;
+  const aId = String(a.attrs["id"] || "").trim();
+  const bId = String(b.attrs["id"] || "").trim();
+  if (aId && bId) {
+    const outside = (e: ScannedEl) =>
+      !(e.openStart >= a.openStart && e.closeEnd <= a.closeEnd) &&
+      !(e.openStart >= b.openStart && e.closeEnd <= b.closeEnd);
+    const linksTo = (id: string) =>
+      scan.all.filter((e) =>
+        e.name === "a" &&
+        String(e.attrs["href"] || "").trim() === "#" + id &&
+        outside(e));
+    const aLinks = linksTo(aId);
+    const bLinks = linksTo(bId);
+    // Pair them up by their common parent — the nav they both live in. A link to
+    // one section and a link to the other in DIFFERENT containers are not a list
+    // to reorder, they are two separate mentions.
+    for (const la of aLinks) {
+      const lb = bLinks.find((x) => x.parent === la.parent);
+      if (!lb) continue;
+      const first = la.openStart < lb.openStart ? la : lb;
+      const second = first === la ? lb : la;
+      edits.push({ start: first.openStart, end: first.closeEnd, text: src.slice(second.openStart, second.closeEnd) });
+      edits.push({ start: second.openStart, end: second.closeEnd, text: src.slice(first.openStart, first.closeEnd) });
+      navLinksMoved += 2;
+    }
+  }
+
+  return {
+    ok: true,
+    html: spliceAll(src, edits),
+    moved: label,
+    swappedWith: tokens(sections[j])[0] || "",
+    navLinksMoved,
+  };
+}

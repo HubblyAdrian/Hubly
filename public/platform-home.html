@@ -1808,6 +1808,12 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       wrap.classList.remove('hc-just-updated');
       void wrap.offsetWidth; // restart the pulse animation even if it's already mid-run
       wrap.classList.add('hc-just-updated');
+      // The frame that just loaded is a NEW document: tell it the owner is signed in
+      // (so click-to-edit is live from the first click rather than bootstrapping
+      // through the auth-needed round trip) and hand back where they were looking.
+      // A reload that drops the owner at the top of a six-screen page has taken their
+      // place away as surely as losing the edit would.
+      try{ if(hc.draftClaimed && hcIsAuthed()) hcTellPreviewAuthed(); }catch(e){}
       // An edit just landed on the page — on a phone, show it (unless mid-sentence).
       hcMobileAutoSite();
     }, { once: true });
@@ -3507,6 +3513,8 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         prevText: typeof data.prevText === 'string' ? data.prevText : undefined } });
     } else if(data.type === 'hcFreeformInlineImageEdit' && typeof data.label === 'string' && data.label && typeof data.imageBase64 === 'string'){
       hcSendDirectEdit({ directFreeformImageEdit: { label: data.label, imageBase64: data.imageBase64, mediaType: data.mediaType || 'image/png' } });
+    } else if(data.type === 'hcFreeformSectionMove' && typeof data.label === 'string' && data.label && (data.dir === 'up' || data.dir === 'down')){
+      hcSectionMove(data.label, data.dir);
     } else if(data.type === 'hcFreeformStyleEdit' && typeof data.label === 'string' && data.label && data.style && typeof data.style === 'object'){
       // THE CONTEXTUAL TOOLBAR'S SAVE. A closed vocabulary, validated again on the
       // server — this message arrives from an iframe, and the origin check above is
@@ -4335,6 +4343,41 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // save returns. Last-write-wins is correct here: the controls are steps, the DOM
   // already shows where the owner stopped, and that is what must end up stored.
   var hcStyleBusy = false, hcStyleQueue = null;
+  // MOVE A SECTION. The one edit that is NOT painted optimistically: the same move
+  // has to happen to the page's own nav, and implementing that transform twice —
+  // here and on the server — is how a page and its record come to disagree. The
+  // server does it in one document version; the canvas then reloads onto the saved
+  // page, and hcRefreshCanvasFrame hands back the scroll position so the owner is
+  // still looking at the section they just moved.
+  var hcMoveBusy = false;
+  async function hcSectionMove(label, dir){
+    if(hcMoveBusy) return;                       // one move at a time; each is a version
+    if(!hc.draftBusiness){ hcAppendMessage('hubly', "I've lost track of which site I'm editing — reload the page and try again."); return; }
+    hcMoveBusy = true;
+    var r = null;
+    try{
+      var at = await hcFreshToken();
+      if(!at){ hcMoveBusy = false; hcAppendMessage('hubly', 'You need to be signed in to move a section.'); return; }
+      var res = await fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + at },
+        body: JSON.stringify({ messages: [], understanding: {}, draftBusiness: hc.draftBusiness, sectionMove: { label: label, dir: dir } })
+      });
+      r = await res.json().catch(function(){ return null; });
+    }catch(e){ r = null; }
+    hcMoveBusy = false;
+    if(r && r.ok){
+      // Say it happened, and give the way back — the same reversibility as every
+      // other edit, because this one rearranges the page more than any of them.
+      hcRefreshCanvasFrame();
+      hc._lastEdit = { noun: 'that section' };
+      hcShowEditUndoToast('that section');
+    } else {
+      // Includes the honest non-error: "that's already the first section on the page".
+      hcAppendMessage('hubly', (r && r.reply) || "That section didn't move — nothing on your page has changed.");
+    }
+  }
+
   // Both lanes write the SAME document, by read-modify-write. Deferring a style save
   // while a text save is in flight (and vice-versa, in hcPumpEditQueue) is what stops
   // one of the two silently overwriting the other.

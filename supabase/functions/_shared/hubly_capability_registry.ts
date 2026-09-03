@@ -65,7 +65,7 @@ import { resolveImages, collapseEmptyImageSlots, pexelsFetcher, type PlacedImage
 import { annotatePlaceholders } from "./hubly_placeholders.ts";
 import { reportAllowlistDrops } from "./hubly_allowlist.ts";
 import { KNOBS, hasDesignKnobs, knobBinding, pagePalette, readDesignKnobs, resetDesignKnob, setDesignKnob, stampDesignKnobs, stepKnob, type KnobId } from "./hubly_design_knobs.ts";
-import { applyFreeformEdit, applyFreeformStyle, humanFreeformSummary, labelInventory, labelsPresent, type FreeformStyleEdit, type LabelEntry } from "./hubly_freeform.ts";
+import { applyFreeformEdit, applyFreeformStyle, moveFreeformSection, humanFreeformSummary, labelInventory, labelsPresent, type FreeformStyleEdit, type LabelEntry } from "./hubly_freeform.ts";
 import {
   formatPhoneHouse,
   placeContactHoursInFreeform,
@@ -1598,6 +1598,60 @@ export async function applyOwnerStyleEdit(
   });
   if (!saved || saved.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "That didn't save — nothing changed." };
   return { ok: true, real: true, summary: "Updated.", raw: { version: saved.version, applied: r.applied, rejected: r.rejected } };
+}
+
+/**
+ * MOVE A SECTION — the same owner-verified, versioned, undoable pipe.
+ *
+ * Nothing new about the plumbing: the reorder is one transform over the stored
+ * HTML and one new document version, so Undo reverses it like any other edit.
+ * The nav reorder happens INSIDE that transform (see moveFreeformSection), so
+ * there is no window in which the page and its own navigation disagree, and no
+ * second step that can fail on its own.
+ */
+export async function applyOwnerSectionMove(
+  draftId: string,
+  draftToken: string,
+  ownerUid: string | null,
+  move: { label: string; dir: "up" | "down" },
+): Promise<OwnerEditResult> {
+  if (!draftId || !ownerUid) return { ok: false, real: false, error: "not_signed_in", summary: "You need to be signed in to move a section." };
+  const biz = await selectOne("businesses", "id", draftId, "owner_id");
+  if (!biz || String(biz.owner_id || "") !== String(ownerUid)) {
+    return { ok: false, real: false, error: "not_owner", summary: "You don't have access to edit this business." };
+  }
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest) return { ok: false, real: false, error: "no_document", summary: "There's no page to change yet." };
+  if (latest.format !== "html") return { ok: false, real: false, error: "wrong_format", summary: "That page isn't a freeform page." };
+
+  const r = moveFreeformSection(latest.renderedHtml, move);
+  if (!r.ok) {
+    // A distinct sentence per failure. "At the edge" is the one an owner will
+    // actually meet, and it is not an error — it is an answer.
+    const said: Record<string, string> = {
+      at_edge: move.dir === "up"
+        ? "That's already the first section on the page."
+        : "That's already the last section on the page.",
+      no_match: "I couldn't find that section on the page any more — it may have been rebuilt since you opened this.",
+      not_siblings: "I can't move that one — it isn't sitting alongside the other sections, and moving it could break the layout.",
+      invalid_label: "I couldn't tell which section that was.",
+    };
+    return { ok: false, real: false, error: r.error, summary: said[r.error || ""] || "That section didn't move — nothing was saved." };
+  }
+  const saved = await callBusinessRpc("create_business_document", {
+    p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
+    p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "section-move"),
+    p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
+  });
+  if (!saved || saved.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "That didn't save — the section is where it was." };
+  // Composed from what ACTUALLY happened, including the nav — never a bare "done",
+  // and never a claim about the nav on a page that has none.
+  const navPart = r.navLinksMoved ? " Your menu order matches the page." : "";
+  return {
+    ok: true, real: true,
+    summary: (move.dir === "up" ? "Moved that section up." : "Moved that section down.") + navPart,
+    raw: { version: saved.version, moved: r.moved, swappedWith: r.swappedWith, navLinksMoved: r.navLinksMoved },
+  };
 }
 
 export async function applyDirectFreeformEdit(

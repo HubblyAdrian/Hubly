@@ -53870,6 +53870,16 @@ function wireHcEditingSurface(doc, root){
   function hcSendStyle(label, on, style){
     post({ type:'hcFreeformStyleEdit', label: label, on: on, style: style });
   }
+  /* MOVE, WITHOUT PAINTING IT OURSELVES FIRST.
+     Every other edit here paints optimistically, because the owner is typing into
+     the thing they can see. A reorder is different: the same move has to happen to
+     the NAV as well, and writing that transform twice — once here, once on the
+     server — is two implementations of one rule, which is how a page and its own
+     record come to disagree. So the server does it, and the canvas reloads onto the
+     saved document. Slower by one round trip, and it cannot drift. */
+  function hcMoveSection(label, dir){
+    post({ type:'hcFreeformSectionMove', label: label, dir: dir });
+  }
 
   function hcBuildBar(el, kind){
     hcStyleTag(); hcCloseBar();
@@ -53948,6 +53958,14 @@ function wireHcEditingSurface(doc, root){
     }
 
     if(kind === 'section'){
+      // ORDER FIRST, because "this section should be further down the page" is the
+      // thing Adrian has reported as a bug more than any styling of it. A section is
+      // a stamped container, so moving one is a move of a known element — not layout
+      // re-recognition. The server swaps it with its neighbour AND reorders any nav
+      // links to the two in the same document version.
+      mk('↑', 'Move this section up the page', function(){ hcMoveSection(label, 'up'); });
+      mk('↓', 'Move this section down the page', function(){ hcMoveSection(label, 'down'); });
+      sep();
       mk('Roomier', 'More space inside this section', function(){ hcStepSpace(el, label, on, +1); });
       mk('Tighter', 'Less space inside this section', function(){ hcStepSpace(el, label, on, -1); });
       sep();
