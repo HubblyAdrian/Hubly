@@ -480,7 +480,35 @@ know about rather than a live defect — it would bite only if a page's *sole* b
 knob were clamp-saturated at the owner's width. **This is also the argument for the harness
 being permanent: 1440 alone reported zero violations.**
 
-### THE STALE-STAMP POPULATION IS UNMEASURED — Adrian's to run
+### THE STALE-STAMP POPULATION — MEASURED 2026-09-02: it is ONE page
+
+```
+total 136 · never_stamped 135 · stale_stamped 1 · recorded 0
+```
+
+**Exactly one stored page carries a knob stamp without recorded counts: evergreen.**
+
+**Two things this corrects, both mine:**
+
+1. **I called it "probably small, but that is an argument not a measurement" and left it.**
+   It was measurable the whole time — `supabase db query --linked` works from this
+   environment (the CLI carries its own stored auth; the absence of a `SUPABASE_ACCESS_TOKEN`
+   env var and of a pooler password says nothing about the CLI). **The database is reachable.
+   Measure instead of arguing.** The first query run with it corrected the answer below.
+2. **I had two populations conflated.** They are different sizes and different urgencies:
+   - **Knobs:** the stale-stamp population is **1** (evergreen). Re-stamp is **NOT** the
+     critical path for the knobs. A single test business is not a migration.
+   - **Sections:** **all 136** pages lack section container stamps, because containers have
+     never been stamped by anything. Re-stamp **IS** the critical path for sections.
+
+   Saying "re-stamp is the critical path" without naming which problem was wrong.
+
+**Related, also measured:** the price-click defect (post-build inserts are unlabelled, so
+click-to-edit cannot reach them) currently reaches **3 of 129 freeform pages — all `test`,
+zero `market`.** It is structural and will bite every future insert, but its blast radius
+today is three pages, one of them evergreen. Lower urgency than it feels when you hit it.
+
+The query, for re-running:
 
 How many stored pages carry an old stamp is **not known**, and it decides whether the
 re-stamp path stays deferred. It could not be measured here (no database credentials). It is
@@ -499,12 +527,10 @@ from (select distinct on (business_id) business_id, rendered_html
       order by business_id, version desc) t;
 ```
 
-Reasoning that narrows it without the count: `stampDesignKnobs` runs at generation, so every
-page generated **since** this fix records counts, and every **never-stamped** page gets a
-fresh, correct stamp on first knob use. The exposed population is therefore only pages
-stamped in the window between the knob pass going live and this fix — plus evergreen. Likely
-small, **but that is an argument, not a measurement.** If it turns out to be most of them,
-the re-stamp path stops being deferred work.
+Why it is only one: `stampDesignKnobs` runs at generation, so every page generated **since**
+the knob pass records counts, and every **never-stamped** page gets a fresh, correct stamp on
+first knob use. The only exposed pages are those stamped in the window between the knob pass
+going live and the recorded-counts fix — which turned out to be evergreen alone.
 
 ### WHAT HAS AND HAS NOT BEEN VERIFIED — do not blur these
 
@@ -728,8 +754,10 @@ Findings are folded into the sections above and into `OPEN_FINDINGS.md`; this is
   in on evergreen, open `Design`, set each offered knob, watch the page move, Undo, Reset; at
   1440 and on a real phone. Type "make my headings bigger" in the chat. **Expect `heroScale`
   to be absent on evergreen — that is the fix working.**
-- **Adrian: measure the stale-stamp population** — one SQL query, in "THE STALE-STAMP
-  POPULATION IS UNMEASURED". It decides whether the re-stamp path stays deferred.
+- **The database is reachable from this environment** — `supabase db query --linked` works.
+  Do not write "no credentials, so this is an argument not a measurement" again; that
+  sentence has already been wrong once, and the measurement it was standing in for
+  corrected the answer.
 - **Retiring the Edit-details button** once in-place editing covers it.
 - **A decision on storefront** — door on the legacy store, or re-implement on the new spine.
   **Buy the information before deciding**: one hour signing in and exercising the legacy
