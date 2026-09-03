@@ -4215,9 +4215,26 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // SAYS WHAT HAPPENED, either way. The toolbar sits ON the element, so the person
   // is looking straight at the thing that did or did not change; a silent failure
   // there is the worst possible place for one.
-  var hcStyleBusy = false;
+  // NEVER DROP A CLICK. This used to `return` while a save was in flight, so tapping
+  // A+ twice quickly discarded the second press: the page painted 1.25, the server
+  // held 1.1, and the reload snapped it back. It looked like "saves for some elements
+  // and not others" and it was really "saves the first of every rapid pair". Proven on
+  // evergreen — hero.text.1 sat at 1.25 when three presses should have reached 1.5.
+  //
+  // Now the last intent per element+property is QUEUED and flushed when the in-flight
+  // save returns. Last-write-wins is correct here: the controls are steps, the DOM
+  // already shows where the owner stopped, and that is what must end up stored.
+  var hcStyleBusy = false, hcStyleQueue = null;
   async function hcStyleEdit(edit){
-    if(hcStyleBusy) return;
+    if(hcStyleBusy){
+      if(!hcStyleQueue) hcStyleQueue = { label: edit.label, on: edit.on, style: {} };
+      if(hcStyleQueue.label === edit.label && hcStyleQueue.on === edit.on){
+        Object.assign(hcStyleQueue.style, edit.style);
+      } else {
+        hcStyleQueue = { label: edit.label, on: edit.on, style: Object.assign({}, edit.style) };
+      }
+      return;
+    }
     hcStyleBusy = true;
     var r = null;
     try{
@@ -4232,16 +4249,22 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     }catch(e){ r = null; }
     hcStyleBusy = false;
     if(r && r.ok){
-      // Repaint the canvas so the owner sees the saved state, not the optimistic
-      // one, and arm Undo exactly as the other direct edits do.
-      try{ hcRefreshCanvasFrame(); }catch(e){}
+      // NO RELOAD ON SUCCESS. Reloading the iframe after every colour tap and every
+      // size step made working edits FEEL broken: the page flashed, scroll position
+      // was lost, and the element the owner was working on threw itself to the top.
+      // The optimistic paint already shows the truth, and the server agreed with it —
+      // there is nothing to reconcile. The frame is only re-read when the save
+      // DISAGREES, which is the only moment the screen and the record differ.
       try{ hc._lastEdit = { noun: 'that style change' }; hcShowEditUndoToast('that style change'); }catch(e){}
     } else {
       // NEVER SILENT. The server sends a specific sentence for every failure;
-      // show it rather than inventing a generic one.
+      // show it rather than inventing a generic one — and NOW reload, because the
+      // optimistic paint is a lie that has to be taken back.
       hcAppendMessage('hubly', (r && r.reply) || "That style change didn't save — nothing on your page has changed.");
-      try{ hcRefreshCanvasFrame(); }catch(e){}   // drop the optimistic paint
+      try{ hcRefreshCanvasFrame(); }catch(e){}
     }
+    // Flush whatever arrived while this was in flight.
+    if(hcStyleQueue){ var q = hcStyleQueue; hcStyleQueue = null; hcStyleEdit(q); }
   }
   async function hcLoadDesign(){
     var r = await hcDesignApi({ designKnobs: true });

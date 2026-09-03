@@ -53575,15 +53575,49 @@ function wireHcEditingSurface(doc, root){
     if(!hcBar || !el) return;
     var r = el.getBoundingClientRect();
     var bw = hcBar.offsetWidth, bh = hcBar.offsetHeight;
-    var vw = (doc.documentElement.clientWidth || 0), sx = win.pageXOffset || 0, sy = win.pageYOffset || 0;
-    var GAP = 8;
-    var top = r.top + sy - bh - GAP;
-    if(r.top - bh - GAP < 4) top = r.bottom + sy + GAP;          // flip
-    var left = r.left + sx;
-    if(left + bw > sx + vw - 8) left = sx + vw - bw - 8;          // shift
-    if(left < sx + 8) left = sx + 8;
-    hcBar.style.top = Math.max(sy + 4, top) + 'px';
-    hcBar.style.left = left + 'px';
+    var vw = (doc.documentElement.clientWidth || 0), vh = (doc.documentElement.clientHeight || 0);
+    var sx = win.pageXOffset || 0, sy = win.pageYOffset || 0;
+    var GAP = 8, EDGE = 8;
+
+    // FLIP, THEN CLAMP TO WHAT IS ACTUALLY VISIBLE.
+    //
+    // The first version only clamped the TOP. An element low in the viewport flipped
+    // the bar BELOW itself and straight off the bottom of the visible area, where the
+    // owner could see it but not finish the action — a control that is on screen by
+    // arithmetic and unreachable in fact. Reported from a real browser; every harness
+    // I wrote had passed it, because they all asked "is it inside the frame" and the
+    // frame is 1440x900 whatever size the pane showing it happens to be.
+    //
+    // Both edges are now hard limits. Preference is above; below only if above clips;
+    // and whatever is chosen is finally clamped inside the viewport, because a bar that
+    // must be scrolled to is a bar that is not there.
+    var above = r.top - bh - GAP;
+    var below = r.bottom + GAP;
+    var top;
+    if(above >= EDGE) top = above;                       // preferred
+    else if(below + bh <= vh - EDGE) top = below;        // flip
+    else top = Math.max(EDGE, Math.min(above, vh - bh - EDGE));   // neither fits cleanly
+    top = Math.max(EDGE, Math.min(top, vh - bh - EDGE));  // hard clamp, viewport coords
+
+    var left = r.left;
+    if(left + bw > vw - EDGE) left = vw - bw - EDGE;
+    if(left < EDGE) left = EDGE;
+
+    // KEEP CLEAR OF THE CHAT WIDGET. hubly_page_runtime pins a 56px FAB at
+    // right:20px/bottom:20px, position:fixed — so the bottom-right corner of every
+    // generated page is occupied by our own furniture. A toolbar landing there is
+    // partly behind it. Shift left rather than fight it with z-index: the owner needs
+    // to see both.
+    var fab = doc.querySelector('[data-hubly-runtime="chat"]');
+    if(fab){
+      var f = fab.getBoundingClientRect();
+      var overlaps = !(left + bw < f.left - 8 || left > f.right + 8 || top + bh < f.top - 8 || top > f.bottom + 8);
+      if(overlaps) left = Math.max(EDGE, f.left - bw - 12);
+    }
+
+    // Document coordinates last: the bar is position:absolute on the body.
+    hcBar.style.top = (top + sy) + 'px';
+    hcBar.style.left = (left + sx) + 'px';
   }
 
   function hcSendStyle(label, on, style){
@@ -53759,7 +53793,17 @@ function wireHcEditingSurface(doc, root){
        the saving on blur. */
     if(kind === 'text' || kind === 'button'){
       var before = el.textContent || '';
+      // DO NOT LET THE PAGE JUMP. Making an element contenteditable and clicking it
+      // gives it focus, and the browser scrolls focused editable content into view —
+      // so selecting a heading threw the page to a different scroll position under
+      // the owner's hand. Reported as "SERVICE PLANS throws itself to the top", and
+      // measured: whatever the scroll was, the element ended up at the same y every
+      // time. The scroll position is restored on the next frame; the owner stays
+      // exactly where they were looking.
+      var keepX = win.pageXOffset || 0, keepY = win.pageYOffset || 0;
       el.setAttribute('contenteditable','true');
+      var restore = function(){ if(win.pageXOffset !== keepX || win.pageYOffset !== keepY) win.scrollTo(keepX, keepY); };
+      restore(); win.requestAnimationFrame ? win.requestAnimationFrame(function(){ restore(); hcPlaceBar(el); }) : setTimeout(restore, 0);
       el.addEventListener('blur', function onBlur(){
         el.removeEventListener('blur', onBlur);
         var now = el.textContent || '';

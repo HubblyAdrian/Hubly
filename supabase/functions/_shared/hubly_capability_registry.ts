@@ -2769,7 +2769,15 @@ function ensurePhotoSlotCss(html: string): string {
  *  so an injected price reads as a price and can't collapse a column. */
 function ensureServicePriceCss(html: string): string {
   if (/\[data-hubly-price\]\s*\{/.test(html)) return html;
-  const css = "<style>[data-hubly-price]{display:block;margin-top:.35em;font-weight:600;opacity:.92}</style>";
+  // letter-spacing:normal is NOT cosmetic here. The generator sets display tracking
+  // as tight as -.06em on headings, and a price span inherits it from whatever it
+  // sits inside: measured on evergreen at -2.82px on ~16px type, squeezing "$220"
+  // by 35% until the digits overlap and it reads as struck through. A price is DATA,
+  // not display type — a customer has to read the number. "A layout that cannot be
+  // read is a defect, not a style choice", and it is deterministically fixable here
+  // rather than left to prompt guidance.
+  // font-variant-numeric:tabular-nums for the same reason: digits should not jostle.
+  const css = "<style>[data-hubly-price]{display:block;margin-top:.35em;font-weight:600;opacity:.92;letter-spacing:normal;font-variant-numeric:tabular-nums}</style>";
   return /<\/head>/i.test(html) ? html.replace(/<\/head>/i, css + "</head>") : html + css;
 }
 /** Extract the plain text of a heading element `<tag ...>inner</tag>`. */
