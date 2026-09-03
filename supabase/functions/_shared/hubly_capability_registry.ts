@@ -64,7 +64,7 @@ import { injectHublyRuntime } from "./hubly_page_runtime.ts";
 import { resolveImages, collapseEmptyImageSlots, pexelsFetcher, type PlacedImageRow } from "./hubly_image_resolver.ts";
 import { annotatePlaceholders } from "./hubly_placeholders.ts";
 import { reportAllowlistDrops } from "./hubly_allowlist.ts";
-import { KNOBS, boundKnobsFor, hasDesignKnobs, pagePalette, readDesignKnobs, resetDesignKnob, setDesignKnob, stampDesignKnobs, stepKnob, type KnobId } from "./hubly_design_knobs.ts";
+import { KNOBS, hasDesignKnobs, knobBinding, pagePalette, readDesignKnobs, resetDesignKnob, setDesignKnob, stampDesignKnobs, stepKnob, type KnobId } from "./hubly_design_knobs.ts";
 import { applyFreeformEdit, humanFreeformSummary, labelInventory, labelsPresent, type LabelEntry } from "./hubly_freeform.ts";
 import {
   formatPhoneHouse,
@@ -3490,9 +3490,19 @@ export async function applyOwnerDesignEdit(
   //
   // Same helper as the read (boundKnobsFor), so the control and the writer cannot disagree.
   if (edit.op !== "reset") {
-    const bound = boundKnobsFor(latest.renderedHtml)[edit.knob] || 0;
-    if (bound === 0) {
-      const label = KNOBS[edit.knob]?.label || "that";
+    const binding = knobBinding(latest.renderedHtml);
+    const label = KNOBS[edit.knob]?.label || "that";
+    // UNKNOWN is not zero. This page was stamped before the counts were recorded, so we
+    // cannot tell whether this knob binds anything — and "nothing would change" would be
+    // a claim we can't support, exactly as "Changed the header size" was. Say so, change
+    // nothing. (Re-stamping such a page is the repair; it is its own job.)
+    if (binding.unknown.includes(edit.knob)) {
+      return {
+        ok: false, real: false, error: "unknown_binding",
+        summary: `I can't tell what ${label} would change on your page — it was built before I could check that properly, so I've left it alone rather than move something and hope.`,
+      };
+    }
+    if ((binding.bound[edit.knob] || 0) === 0) {
       return {
         ok: false, real: false, error: "not_bound",
         summary: `There's nothing on your page that ${label} would change — the way it's built, that isn't set anywhere I can move.`,
@@ -3554,11 +3564,20 @@ export async function readOwnerDesignKnobs(draftId: string): Promise<{ ok: boole
   // It also answers correctly for a never-stamped page by asking what a stamp WOULD
   // bind, so the controls are right on the very first open rather than after the first
   // change.
-  const bound = boundKnobsFor(latest.renderedHtml);
+  const binding = knobBinding(latest.renderedHtml);
   const cur = readDesignKnobs(latest.renderedHtml);
   const knobs = (Object.entries(KNOBS) as [KnobId, { varName: string; label: string; steps?: string[] }][])
-    .filter(([id, def]) => (bound[id] || 0) > 0 && (def as { offered?: boolean }).offered !== false)
-    .map(([id, def]) => ({ id, label: def.label, steps: def.steps || null, value: cur.values[id] || null, bound: bound[id] }));
+    // An UNKNOWN knob is not offered. Showing a control we cannot promise will move
+    // anything is the unearned checkmark; the owner would press it and get a refusal.
+    // This is why the read and the write share knobBinding() — but note what that
+    // buys and what it does not: it guarantees they cannot DISAGREE, and guarantees
+    // nothing about whether they are RIGHT. Both agreed perfectly on a wrong answer
+    // for heroScale until the predicate itself was fixed.
+    .filter(([id, def]) =>
+      !binding.unknown.includes(id) &&
+      (binding.bound[id] || 0) > 0 &&
+      (def as { offered?: boolean }).offered !== false)
+    .map(([id, def]) => ({ id, label: def.label, steps: def.steps || null, value: cur.values[id] || null, bound: binding.bound[id] }));
   return { ok: true, knobs: { knobs, palette: pagePalette(latest.renderedHtml) } };
 }
 

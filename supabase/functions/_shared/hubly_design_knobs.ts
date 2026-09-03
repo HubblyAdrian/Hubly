@@ -150,9 +150,47 @@ export const KNOBS: Record<KnobId, KnobDef> = {
  *  An unstamped page is measured by asking what a stamp WOULD bind, so the answer is right
  *  on the very first read rather than only after the first change. */
 export function boundKnobsFor(html: string): Record<string, number> {
-  return hasDesignKnobs(html)
-    ? readDesignKnobs(html).bound
-    : stampDesignKnobs(html).bound;
+  return knobBinding(html).bound;
+}
+
+/** What we know about this page's bindings, INCLUDING what we don't know.
+ *
+ *  Three cases, and the third is the one that matters:
+ *
+ *  1. NOT STAMPED — ask what a stamp would bind. Authoritative: we are about to do it.
+ *  2. STAMPED WITH RECORDED COUNTS — read them. Authoritative: they were computed with
+ *     the stylesheet in hand.
+ *  3. STAMPED BY AN OLDER PASS, no recorded counts — this is evergreen, and every page
+ *     stamped before this change. Here the honest answer differs PER KNOB, and the
+ *     difference was measured rather than assumed (2026-09-02, stale-stamp repro):
+ *
+ *       - the four declaration-anchored knobs (type/space/measure/radius) can still be
+ *         counted truthfully, because their predicate counts `var(--hubly-x-scale)` in
+ *         declarations THE GENERATOR wrote. On the repro they refused correctly: type 0
+ *         moved 0, space 0 moved 0, measure 5 moved 8, radius 4 moved 8.
+ *       - heroScale CANNOT. Its only evidence is the `[data-hc^="hero"]` rule we inject
+ *         ourselves, so on the same repro it said "bound: 1" and moved ZERO elements.
+ *         That is the lie, verbatim.
+ *
+ *  So heroScale on an unrecorded page is UNKNOWN — never 0 and never bound. It must not
+ *  fall back to the old predicate (that changes nothing for the pages that have the bug),
+ *  and it must not report 0 either, because "there is nothing on your page this would
+ *  change" is a claim we cannot support here. The caller says "I can't tell" and does
+ *  nothing. Verifying it properly needs a layout engine — flip the variable, diff the
+ *  computed styles — and the edge runtime has no DOM. That is precisely why the count is
+ *  recorded at stamp time now.
+ *
+ *  Re-stamping an old page is the real repair (STATE: "upgrade in place, never unwrap").
+ *  It is deliberately NOT done here. */
+export type KnobBinding = { bound: Record<string, number>; unknown: KnobId[] };
+
+export function knobBinding(html: string): KnobBinding {
+  if (!hasDesignKnobs(html)) return { bound: stampDesignKnobs(html).bound, unknown: [] };
+  const recorded = readRecordedBound(html);
+  if (recorded) return { bound: recorded, unknown: [] };
+  const derived = readDesignKnobs(html).bound;
+  delete derived.heroScale;
+  return { bound: derived, unknown: ["heroScale"] };
 }
 
 /** Resolve "bigger" / "smaller" into an actual step, from where the page is NOW.
@@ -353,22 +391,53 @@ export function stampDesignKnobs(html: string): StampResult {
     .filter(([, d]) => d.kind === "scale")
     .map(([, d]) => `${d.varName}:${d.def}`)
     .join(";");
-  const css =
-    `<style data-hubly-knobs>:root{${defaults}}` +
-    // Inherited override: anything inside the hero reads the hero scale instead of the
-    // page scale. No new selectors on the page's own elements, no layout recognition.
-    `[data-hc^="hero"]{--hubly-type-scale:var(--hubly-hero-scale,1)}</style>`;
-  out = /<\/head>/i.test(out) ? out.replace(/<\/head>/i, css + "</head>") : out + css;
-
   // heroScale binds through the inherited scope rule rather than declarations of its
   // own, so it has to be counted here — and counted HONESTLY: the scope only reaches
   // elements labelled hero.*, so on a page whose generator labelled no hero the control
   // must not appear. The gate is the same either way (a control only where it does
   // something); this is just the one knob whose binding isn't a declaration count.
+  //
+  // COUNTED BEFORE THE BLOCK IS WRITTEN, because the block now RECORDS the counts.
   const heroLabels = (out.match(/data-hc="hero[.\"]/g) || []).length;
   if (heroLabels > 0 && (bound.typeScale || 0) > 0) bound.heroScale = heroLabels;
 
+  // RECORD THE COUNTS. This is the anchor pattern applied to the gate itself.
+  //
+  // Everything needed to answer "does this knob bind anything" is in hand RIGHT HERE,
+  // while the stylesheet is being rewritten and the hero labels counted. Throwing it
+  // away and re-deriving it later by regex is re-recognition after the fact — the exact
+  // thing this codebase forbids for page facts, and it produced a real lie: heroScale's
+  // read-time predicate matched the `[data-hc^="hero"]` rule on the next line, which is
+  // OURS, so it reported "bound" on every page we had ever stamped whether or not a
+  // single hero-scoped font-size existed. Measured 2026-09-02: strip this block and
+  // heroScale's count went 106 -> 0 across the corpus, while the other four knobs held
+  // at 106 because they are anchored to the generator's own declarations.
+  const css =
+    `<style data-hubly-knobs data-hubly-bound="${serializeBound(bound)}">:root{${defaults}}` +
+    // Inherited override: anything inside the hero reads the hero scale instead of the
+    // page scale. No new selectors on the page's own elements, no layout recognition.
+    `[data-hc^="hero"]{--hubly-type-scale:var(--hubly-hero-scale,1)}</style>`;
+  out = /<\/head>/i.test(out) ? out.replace(/<\/head>/i, css + "</head>") : out + css;
+
   return { html: out, bound };
+}
+
+/** Counts, serialised onto the knob style block. Every knob id appears, zeros included,
+ *  so a missing id means "this page predates recording" and never "we checked, it's 0". */
+function serializeBound(bound: Record<string, number>): string {
+  return (Object.keys(KNOBS) as KnobId[]).map((k) => `${k}:${bound[k] || 0}`).join(";");
+}
+
+/** The counts stamping wrote, or null if this page was stamped before we recorded them. */
+export function readRecordedBound(html: string): Record<string, number> | null {
+  const m = /<style\s+data-hubly-knobs[^>]*\sdata-hubly-bound="([^"]*)"/i.exec(String(html || ""));
+  if (!m) return null;
+  const out: Record<string, number> = {};
+  for (const part of m[1].split(";")) {
+    const [k, v] = part.split(":");
+    if (k && v != null && (k in KNOBS)) out[k] = Number(v) || 0;
+  }
+  return Object.keys(out).length ? out : null;
 }
 
 /** Read the knob values currently stored in the page's :root, plus which knobs are
@@ -598,7 +667,10 @@ export function setDesignKnob(html: string, knob: KnobId, value: string): KnobSe
     if (re.test(h)) return h.replace(re, (_m, p1) => p1 + val);
     // Not present yet (a value knob has no default until first set) — add it to our
     // own :root block, never the model's.
-    return h.replace(/(<style data-hubly-knobs>:root\{)/, (_m, p1) => `${p1}${varName}:${val};`);
+    // `[^>]*` because the block now carries data-hubly-bound. An exact-tag match here
+    // would silently stop finding our own :root and a first-time value knob would never
+    // get written — the same shape of bug as the one this whole change is fixing.
+    return h.replace(/(<style\s+data-hubly-knobs[^>]*>:root\{)/, (_m, p1) => `${p1}${varName}:${val};`);
   };
 
   out = write(out, def.varName, v);

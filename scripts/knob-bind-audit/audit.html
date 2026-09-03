@@ -1,0 +1,77 @@
+<!doctype html><meta charset="utf-8"><title>knob bind audit</title>
+<style>body{font:13px ui-monospace,monospace;padding:16px;max-width:900px}
+pre{background:#f6f6f4;padding:12px;border-radius:8px;overflow:auto}</style>
+<body>
+<h1>knob-bind-audit</h1>
+<p>Open the console and run <code>await RUN(1440)</code>, then <code>await RUN(390)</code>.
+Read <code>README.md</code> first — especially the two populations.</p>
+<pre id="out">ready</pre>
+<script>
+// P3, THE ONLY PREDICATE THAT HAS TOLD THE TRUTH: set the knob's variable to a different
+// value and diff COMPUTED styles. Not "is there a declaration" (P1) and not "does a
+// selector match" (P2) — both of those passed while the gate was lying to an owner.
+const PROPS = {
+  typeScale:['font-size'], heroScale:['font-size'],
+  spaceScale:['padding-top','padding-left','margin-top','margin-left','gap','row-gap','column-gap'],
+  measureScale:['max-width'], radiusScale:['border-top-left-radius','border-bottom-right-radius'],
+};
+const VARS = { typeScale:'--hubly-type-scale', heroScale:'--hubly-hero-scale',
+  spaceScale:'--hubly-space-scale', measureScale:'--hubly-measure-scale', radiusScale:'--hubly-radius-scale' };
+const FLIP = { typeScale:'1.25', heroScale:'1.3', spaceScale:'0.8', measureScale:'1.3', radiusScale:'0' };
+
+// The gate's predicates, mirrored so the harness can compare CLAIM against TRUTH.
+function recordedBound(src){
+  const m = /<style\s+data-hubly-knobs[^>]*\sdata-hubly-bound="([^"]*)"/i.exec(src);
+  if(!m) return null;
+  const o={}; for(const p of m[1].split(';')){const [k,v]=p.split(':'); if(k) o[k]=Number(v)||0;}
+  return Object.keys(o).length?o:null;
+}
+function gateSays(src, knob){
+  const rec = recordedBound(src);
+  if (rec) return { n: rec[knob]||0, unknown:false };
+  if (knob === 'heroScale') return { n:0, unknown:true };   // the fallback rule under test
+  return { n: (src.match(new RegExp('var\\(\\s*'+VARS[knob],'g'))||[]).length, unknown:false };
+}
+
+async function moved(html, knob, width){
+  const f=document.createElement('iframe');
+  f.style.cssText='position:absolute;left:-99999px;top:0;border:0'; f.width=width; f.height=900;
+  document.body.appendChild(f);
+  await new Promise(d=>{f.onload=d; f.srcdoc=html;});
+  const doc=f.contentDocument, win=f.contentWindow, els=[...doc.querySelectorAll('*')], props=PROPS[knob];
+  const read=()=>els.map(e=>{const cs=win.getComputedStyle(e);return props.map(p=>cs.getPropertyValue(p)).join('|');});
+  const before=read();
+  doc.documentElement.style.setProperty(VARS[knob], FLIP[knob]);
+  const after=read();
+  f.remove();
+  let n=0; for(let i=0;i<before.length;i++) if(before[i]!==after[i]) n++;
+  return n;
+}
+
+window.RUN = async function(width){
+  width = width || 1440;
+  const data = await fetch('audit_input.json').then(r=>r.json());
+  const knobs = Object.keys(PROPS);
+  const report = { width, pages: data.length, fresh:{}, stale:{}, violations: [] };
+  for (const pop of ['fresh','stale']) {
+    for (const k of knobs) report[pop][k] = { claimedBound:0, claimedUnknown:0, movedWhenClaimed:0, movedWhenNotClaimed:0 };
+  }
+  for (const p of data) {
+    for (const [pop, html] of [['fresh', p.html], ['stale', p.stale]]) {
+      for (const k of knobs) {
+        const g = gateSays(html, k);
+        const m = await moved(html, k, width);
+        const r = report[pop][k];
+        if (g.unknown) { r.claimedUnknown++; continue; }
+        if (g.n > 0) { r.claimedBound++; if (m > 0) r.movedWhenClaimed++;
+          else report.violations.push(`${pop} ${p.slug} ${k}: gate says bound(${g.n}) but MOVED 0  <-- LIE`); }
+        else if (m > 0) { r.movedWhenNotClaimed++;
+          report.violations.push(`${pop} ${p.slug} ${k}: gate says unbound but moved ${m}  <-- hidden control`); }
+      }
+    }
+  }
+  window.RESULTS = report;
+  document.getElementById('out').textContent = JSON.stringify(report, null, 1);
+  return report;
+};
+</script></body>

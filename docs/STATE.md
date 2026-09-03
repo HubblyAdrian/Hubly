@@ -322,13 +322,136 @@ words, not from a filtered list, so the gate had to live at the WRITER, exactly 
 withheld-knob refusal already does. `applyOwnerDesignEdit` now refuses `not_bound` before
 writing anything.
 
-**`boundKnobsFor()` is the ONE source the read and the write share.** They must never get
-two copies: a control the reader offers and the writer refuses looks broken, and a knob the
-writer accepts but the reader hides is a change nobody can undo from the UI. They drifted
-the moment there were two, so there is one.
+**One shared source — and be precise about what that buys.** The read and the write both go
+through `knobBinding()` (was `boundKnobsFor()`). That guarantees they cannot **disagree**. It
+guarantees **nothing** about whether they are **right** — and on 2026-09-02 they agreed
+perfectly on a wrong answer for `heroScale` for as long as the predicate was wrong. Sharing
+a mistake is still better than keeping two copies of it, but a shared source is not a
+correctness argument and must never be read as one.
 
 Measured: `mediaRatio` binds nothing on **43 of 106** stored freeform pages — a real
 population, not a theoretical one.
+
+### THE GATE ITSELF WAS CAUGHT LYING — 2026-09-02, on a real owner's page
+
+**Symptom:** `heroScale` on evergreen returned `ok:true, real:true, "Changed the header
+size."` The preview reloaded. The page was identical. **The check built to enforce "bound is
+not moved" was itself measuring the wrong thing.**
+
+**Cause.** `heroScale` is the only knob that binds through a *scope rule* rather than
+declarations of its own — and that rule, `[data-hc^="hero"]{--hubly-type-scale:var(--hubly-hero-scale,1)}`,
+**is one WE inject at stamp time.** The read-time predicate matched our own footprint, so it
+reported "bound" on every page we had ever stamped, whether or not one hero-scoped
+`font-size` existed. Attribution, measured: strip our injected block and heroScale's count
+goes **106 → 0** across the corpus, while the other four hold at **106 → 106** because they
+are anchored to declarations **the generator wrote**.
+
+**Four predicates were tried. Three were wrong.** Recording them because the pattern is the
+lesson, not the bug:
+
+| | predicate | said | why it was wrong |
+|---|---|---|---|
+| P1 | does `var(--hubly-hero-scale)` appear? | 106/106 bound | matched our own injected rule |
+| P2 | does an element match `[data-hc^="hero"]`? | 106/106 | matching the scope ≠ anything inside it carries a wrapped font-size |
+| P4 | P3, but under jsdom | "nothing moves", every knob | jsdom returns `calc(16px * var(--s,1))` verbatim and never resolves it — it cannot tell a working knob from a dead one |
+| **P3** | **flip the variable, diff COMPUTED styles** | **the truth** | it asks what the owner asks |
+
+**And a fourth trap that nearly hid it:** the first P3 run over the corpus said all five
+knobs move on 106/106 — because it **stamped every page in memory with the current code**.
+Evergreen is stamped **on disk by an older pass**, and `hasDesignKnobs()` short-circuits so
+it is never re-stamped. A run over freshly-stamped pages **structurally cannot** see a
+stale-stamp bug. Always measure both populations.
+
+**THE FIX — the anchor pattern applied to the gate itself.** Everything needed to answer
+"does this bind" is in hand at stamp time, while the stylesheet is being rewritten and the
+hero labels counted. It was being thrown away and re-derived later by regex — re-recognition
+after the fact, the thing this codebase forbids everywhere else. Now `stampDesignKnobs`
+**records the counts** onto the block (`data-hubly-bound="typeScale:33;heroScale:11;…"`,
+zeros included so "missing" unambiguously means "older pass") and `knobBinding()` reads them.
+
+**THE FALLBACK RULE — decide this before changing the gate, it is where the value is.**
+A page with **no recorded counts** (evergreen; every page stamped before this change) must
+**never silently fall back to the old predicate** — that would change nothing for exactly the
+pages that have the bug. What it does instead differs **per knob**, and the difference was
+measured, not assumed:
+
+- **The four declaration-anchored knobs keep their count.** Their predicate counts
+  `var(--hubly-x-scale)` in declarations the *generator* wrote, and on the stale repro they
+  were truthful: type 0/moved 0, space 0/moved 0, measure 5/moved 8, radius 4/moved 8.
+  Blanket-refusing all five would have broken four working controls for every existing owner.
+- **`heroScale` becomes UNKNOWN — never bound, and never a confident zero.** Reporting 0
+  would let the writer say "there's nothing on your page that header size would change",
+  which is *also* a claim we cannot support. The owner is told **"I can't tell what header
+  size would change on your page — it was built before I could check that properly, so I've
+  left it alone rather than move something and hope."** An unknown knob is not offered in the
+  panel either.
+
+Verifying it properly needs a layout engine; the edge runtime has no DOM. That is exactly
+why the count is recorded at stamp time now.
+
+**Re-stamping an old page is the real repair** ("upgrade in place, never unwrap", below) and
+is deliberately NOT built yet.
+
+**P3 IS NOW PERMANENT: `scripts/knob-bind-audit/`.** A browser harness, for the same reason
+`hero-fold-audit` is one. **If you change the gate, you have to beat it.**
+`tests/design-knobs-bound-means-moved.test.mjs` covers the *contract* in `npm test` and
+deliberately does **not** attempt the movement check, because jsdom cannot do it (P4).
+
+**Re-verified against the fix, both populations, both widths — 0 violations at 1440:**
+
+| | fresh-stamped (claimed → moved) | stale-stamped (claimed → moved) |
+|---|---|---|
+| typeScale | 106 → 106 | 0 → 0 |
+| heroScale | 106 → 106 | **106 UNKNOWN, refuses** |
+| spaceScale | 106 → 106 | 2 → 2 |
+| measureScale | 106 → 106 | 43 → 43 |
+| radiusScale | 105 → 105 | 75 → 75 |
+
+Nothing moved that was reported unbound, at either width — so no hidden controls either.
+
+### A LIMIT OF ANY STATIC GATE — found by the 390 run, recorded not fixed
+
+At **390** the same audit found **2 stale-stamped pages** (`redhill-roofing`,
+`pike-sons-tree-service`) where `spaceScale` was correctly *bound* and still moved nothing.
+Not the heroScale class — the declaration is real. It is
+`padding: … max(20px, calc((100vw - calc(var(--max) * var(--hubly-space-scale,1))) / 2))`,
+which **saturates against the 20px floor at phone width**, so the scale cannot move it there
+though it moves it at 1440.
+
+**The general shape: a knob can bind a real declaration and still be inert at a given width**
+— via `max()`/`min()`/`clamp()` saturation, or a rule that only applies inside a media query.
+The gate answers "does this bind *anywhere*", which is not "does this move at the width
+you're looking at", and no server-side check can close that gap without a layout engine. Not
+observed on any freshly-stamped page (all five move at 390 on 106/106), so it is a limit to
+know about rather than a live defect — it would bite only if a page's *sole* binding for a
+knob were clamp-saturated at the owner's width. **This is also the argument for the harness
+being permanent: 1440 alone reported zero violations.**
+
+### THE STALE-STAMP POPULATION IS UNMEASURED — Adrian's to run
+
+How many stored pages carry an old stamp is **not known**, and it decides whether the
+re-stamp path stays deferred. It could not be measured here (no database credentials). It is
+one query — a stale-stamped page is one with `data-hubly-knobs` but **no** `data-hubly-bound`:
+
+```sql
+select
+  count(*) filter (where rendered_html like '%data-hubly-knobs%'
+                     and rendered_html not like '%data-hubly-bound%') as stale_stamped,
+  count(*) filter (where rendered_html like '%data-hubly-bound%')     as recorded,
+  count(*) filter (where rendered_html not like '%data-hubly-knobs%') as never_stamped,
+  count(*) as total
+from (select distinct on (business_id) business_id, rendered_html
+      from business_documents
+      where rendered_html is not null and length(rendered_html) > 0
+      order by business_id, version desc) t;
+```
+
+Reasoning that narrows it without the count: `stampDesignKnobs` runs at generation, so every
+page generated **since** this fix records counts, and every **never-stamped** page gets a
+fresh, correct stamp on first knob use. The exposed population is therefore only pages
+stamped in the window between the knob pass going live and this fix — plus evergreen. Likely
+small, **but that is an argument, not a measurement.** If it turns out to be most of them,
+the re-stamp path stops being deferred work.
 
 ### WHAT HAS AND HAS NOT BEEN VERIFIED — do not blur these
 
@@ -477,13 +600,19 @@ whose action can't reach the page; never write a fact not grounded in the curren
 
 ## Needs Adrian's eyes on the DEPLOYED site (I can't hold a real session)
 
-- **THE DESIGN KNOB CONTROLS — deployed 2026-09-02, never touched by an owner.** The one
-  outstanding proof: sign in on evergreen, open `Design` in the canvas toolbar, set each of
-  the five, watch the page actually move, then Undo and Reset — at 1440 **and** on a real
-  phone. Then type "make my headings bigger" in the chat and confirm it reaches
-  `website.setDesignKnob` rather than producing a helpful reply that changes nothing (which
-  is exactly what it did before the door existed). If a knob reports success and the page
-  sits still, that is the binding gate failing and it is the highest-severity thing here.
+- **THE DESIGN KNOB CONTROLS — deployed, and the gate FIXED after failing this exact test
+  once (2026-09-02).** First attempt: `heroScale` said "Changed the header size." over a
+  still page. Diagnosed, fixed, re-verified offline. **Re-test on evergreen — same knob,
+  same page:** sign in, open `Design`, set each offered knob, watch the page actually move,
+  then Undo and Reset — at 1440 **and** on a real phone. Then type "make my headings bigger"
+  in the chat.
+  - **Expect `heroScale` to be MISSING from the panel on evergreen**, because evergreen
+    carries an old stamp with no recorded counts, so the gate now honestly says it cannot
+    tell. That absence is the fix working, not a regression. If you reach it another way it
+    must say *"I can't tell what header size would change on your page…"* — never "Changed
+    the header size."
+  - If any knob reports success and the page sits still, that is the gate failing again and
+    it is the highest-severity thing here.
 
 - Every claimed-owner write flow after a deploy (services/hours/phone landing; grounding asking).
 - Home on a real return visit; the suggestion buttons; the optimistic edit + Undo toast.
