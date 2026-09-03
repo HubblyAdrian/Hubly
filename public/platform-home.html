@@ -408,6 +408,16 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   padding:6px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
 #hcDesignBtn:hover{border-color:var(--brand-600,#D9632D)}
 .hc-app.hc-claimed #hcDesignBtn{display:inline-flex}
+/* Ambient links — quieter than the two editing controls beside them, because they leave
+   the editor rather than doing something in it. Still real buttons, still always there. */
+#hcVisitBtn,#hcBookPreviewBtn{display:none;align-items:center;border:0;background:none;
+  color:var(--ink-3);font:inherit;font-size:12.5px;font-weight:650;padding:6px 10px;
+  border-radius:999px;cursor:pointer;white-space:nowrap;min-height:32px}
+#hcVisitBtn:hover,#hcBookPreviewBtn:hover{color:var(--ink);background:var(--panel-2,rgba(28,22,16,.05))}
+.hc-app.hc-claimed #hcVisitBtn,.hc-app.hc-claimed #hcBookPreviewBtn{display:inline-flex}
+/* Phone: the toolbar is tight, so the two ambient links step aside for the controls that
+   actually edit. Announced by being absent at a breakpoint, not by vanishing mid-session. */
+@media (max-width:560px){ #hcVisitBtn,#hcBookPreviewBtn{display:none!important} }
 /* #hcManageBtn already carries margin-left:auto, so Edit details pushes the pair right
    and Design sits beside it — no second auto margin, which would split them apart. */
 
@@ -1544,6 +1554,18 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
           '<button type="button" data-hc-device="desktop">Desktop</button>' +
           '<button type="button" data-hc-device="mobile">Mobile</button>' +
         '</div>' +
+        // AMBIENT, NOT A GATE. These two were buttons on the first-visit arrival card,
+        // which meant they existed for one session and then vanished, and the card they
+        // sat on stood between the owner and their own editor. They belong here: present
+        // every time, blocking nothing.
+        //
+        // "Preview booking", not "See what a customer sees". It opens `?book=1` — the
+        // BOOKING FORM, not the site — and the old label described the site, which
+        // "Visit your site" beside it actually does. Two buttons whose labels both
+        // promised the same thing, one of which went somewhere else (STATE, BROKEN #4).
+        // A control says where it goes.
+        '<button type="button" id="hcVisitBtn" title="Open your live site in a new tab">Visit site</button>' +
+        '<button type="button" id="hcBookPreviewBtn" title="Open your booking form the way a customer gets it">Preview booking</button>' +
         '<button type="button" id="hcManageBtn" title="Add or edit services, hours and contact yourself">&#9998; Edit details</button>' +
         // THE DOOR FOR THE DESIGN KNOBS. It lives here, beside Edit details, because the
         // canvas bar is the one claimed-owner surface that survives phone width — the rail
@@ -1598,6 +1620,12 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     if(mng) mng.addEventListener('click', hcOpenManage);
     var dsg = document.getElementById('hcDesignBtn');
     if(dsg) dsg.addEventListener('click', hcOpenDesign);
+    var liveUrl = String((hc.draftBusiness && hc.draftBusiness.url) || '');
+    if(liveUrl && !/^https?:\/\//i.test(liveUrl)) liveUrl = 'https://' + liveUrl;
+    var vst = document.getElementById('hcVisitBtn');
+    if(vst) vst.addEventListener('click', function(){ try{ window.open(liveUrl, '_blank', 'noopener'); }catch(e){} });
+    var bkp = document.getElementById('hcBookPreviewBtn');
+    if(bkp) bkp.addEventListener('click', function(){ try{ window.open(liveUrl.replace(/\/$/, '') + '/?book=1', '_blank', 'noopener'); }catch(e){} });
   }
 
   // THE PREVIEW IS A REAL DEVICE, SCALED TO FIT.
@@ -3705,6 +3733,19 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       // from the first click (hcAuthedFlag inside the iframe). Without this the first tap
       // has to bootstrap auth through hcEditAuthNeeded; with it, editing just works.
       try{ if(hc.draftClaimed && hcIsAuthed()) hcTellPreviewAuthed(); }catch(e){}
+      // WEBSITE OPENS THE EDITOR. Nothing may stand between the rail tab and a live,
+      // editable canvas — no card, no confirmation, no "Start editing".
+      //
+      // The first-visit arrival is a MOMENT written into the thread, and nothing cleared
+      // it: this function only swaps data-mode and mounts the canvas, so the card stayed
+      // in the assistant panel for the rest of the session and read as the Website tab's
+      // permanent state. Its actions are now ambient in the canvas toolbar, so retiring
+      // the row here loses nothing — and the two lines of text stay, in the transcript,
+      // where a thing that was said once belongs.
+      try{
+        var stale = document.querySelectorAll('.hc-arrival-actions');
+        for(var i = 0; i < stale.length; i++) stale[i].remove();
+      }catch(e){}
     }
     try{ hcThreadScrollToEnd(); }catch(e){}
   }
@@ -4227,22 +4268,22 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     // Not persisted: a welcome shown once, never replayed on reload.
     hcAppendMessage('hubly', name + ' is live. ' + host + ' is a real address. Anyone can visit it.');
     hcAppendMessage('hubly', 'Your booking works too. Customers can pick a plan and book it, at the prices you set.');
-    // The actions, inline, as buttons under the welcome.
-    var row = document.createElement('div');
-    row.className = 'hc-msg hubly hc-arrival-actions';
-    var mk = function(label, fn){
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'hc-arrival-act'; b.textContent = label;
-      b.addEventListener('click', fn);
-      row.appendChild(b);
-    };
-    // A chat message carries ACTIONS; an action opens a workspace (the primitive every
-    // later workspace inherits — "View all jobs ->" is this same call). "Start editing"
-    // opens the Website workspace; the site becomes the canvas and this chat the panel.
-    mk('Visit your site', function(){ try{ window.open(url, '_blank', 'noopener'); }catch(e){} });
-    mk('See what a customer sees', function(){ try{ window.open(url + '/?book=1', '_blank', 'noopener'); }catch(e){} });
-    mk('Start editing', function(){ hcOpenWorkspace('website'); });
-    thread.appendChild(row);
+    // NO ACTION BUTTONS HERE. This is a MOMENT — "your site is live" is worth saying
+    // once — and a moment must not become a gate.
+    //
+    // It used to carry three buttons, and the third was "Start editing", which called
+    // hcOpenWorkspace('website') — the same thing the Website rail tab already does. So
+    // Website did not open the editor: it opened this card, and the owner had to click
+    // through it to reach their own site. Every time, because although the card RENDERS
+    // once per business per device (hcArrivalSeen, set before the render, so it cannot
+    // repeat), nothing ever CLEARS it: hcOpenWorkspace only swaps data-mode and renders
+    // the canvas, so once appended the card sat in the thread for the whole session, in
+    // every mode. Rendered once; in the way for hours.
+    //
+    // If Website IS the editor there is nothing to start, so the button is gone. The two
+    // links that were genuinely useful now live permanently in the canvas toolbar
+    // (hcRenderCanvas), which is ambient rather than blocking and is there every time
+    // rather than only on the first visit.
     hcThreadScrollToEnd();
   }
   // Restore the builder conversation for the business now in hc.draftBusiness
