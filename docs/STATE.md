@@ -5,6 +5,50 @@ The current picture, no history. Pairs with `CLAUDE.md` (the rules), `PRODUCT_SH
 if it disagrees with memory, this wins. Evergreen-yard-care (`c969eb51-…`, account_kind=test,
 claimed, owner `adriansmithee+evergreen@gmail.com`) is the claimed-owner test business.
 
+## START HERE — orientation for a session with no context
+
+This file is long because it is the record. Read this block, then jump.
+
+**What Hubly is right now:** a person talks to it, it generates a real website at
+`{slug}.myhubly.app`, they claim it with an email code, and then they keep talking to it to
+change the site. The claimed shell is `public/platform-home.html` (Home = the conversation;
+Website = the site as canvas). The generated page is a single freeform HTML document with no
+async update path — which is why almost every hard problem here is "how does a later change
+find the thing it needs to touch", and why the answer is always **stamp an anchor at
+generation, never re-recognize the layout afterward**.
+
+**The single most instructive thing in this file** is *"THE GATE ITSELF WAS CAUGHT LYING"*.
+A check built to enforce "a control must actually move something" was itself caught
+measuring the wrong thing, on a real owner's page. Four predicates were tried; three were
+wrong. If you read one section, read that one — it is this codebase's failure mode in
+miniature.
+
+**Live as of 2026-09-02** (two deploy paths, and they are separate — edge functions via
+`supabase functions deploy`, everything in `public/` ONLY via a git push to Vercel):
+- Design knob controls: the `Design` panel in the canvas toolbar + `website.setDesignKnob`
+  so "make my headings bigger" works in chat. **Deployed; failed once as the owner; fixed;
+  not re-tested as the owner.**
+- The Edit-details panel, owner-authorised fact writes, grounding, click-to-edit (text and
+  image `src` only — colour/font are AST-only and reach no market page).
+
+**The one outstanding proof:** sign in on evergreen and re-test the knobs. Everything else
+in the knob work is verified offline only. See *"Needs Adrian's eyes on the DEPLOYED site"*.
+
+**The likely next direction — storefront.** It is NOT greenfield and NOT a build decision.
+It is largely built in the legacy `hubly.html`/`journey-os` stack and unreachable from the
+claimed shell. The choice is **put a door on it, or re-implement it on the new spine** — and
+the honest recommendation is to spend one hour exercising the legacy store as an owner
+*before* deciding, because both cost estimates hinge on whether it still runs. See
+**STOREFRONT — the decision, sized**, and `OPEN_FINDINGS.md` #14 for the security decision
+riding along with it.
+
+**Where the rest lives:** `CLAUDE.md` (the standing prohibitions — read them, each was paid
+for), `OPEN_FINDINGS.md` (numbered live defects; #13 mobile Settings, #14 the storefront
+door, #15 the parked `verify_jwt` sweep), `PRODUCT_SHAPE.md` (direction, decided in
+conversation, authorizes nothing), `SHELL_TERRAIN.md` (a dated read-only survey).
+
+---
+
 ## Numbers in this file are DATED — check the date before acting on one
 
 A count here was true when it was written and is not re-checked on read. Two specific ones,
@@ -180,27 +224,36 @@ Then the fuller "elite editor": today click-to-edit changes TEXT and the image `
   page already shows a schedule we can't anchor, we save + honestly decline, but the page then
   shows stale hours. Fix is a confirmed-target offer via the click-action primitive, not a rebuild.
 
-## Design knobs — DEPLOYED 2026-09-02, NOT YET PROVEN BY AN OWNER
+## Design knobs — DEPLOYED 2026-09-02. TESTED BY THE OWNER ONCE; IT FAILED; FIXED; NOT RE-TESTED
 
-**READ THIS BEFORE TOUCHING THE KNOBS.** Status, precisely, because two different things
-here have two different levels of proof and conflating them is how a green checkmark gets
-earned by the wrong step:
+**READ THIS BEFORE TOUCHING THE KNOBS.** Three different things here have three different
+levels of proof, and conflating them is how a checkmark gets earned by the wrong step:
 
 - **The MECHANISM** (stamping, multiply-don't-replace, the writer, Undo/Reset) was verified
-  as the owner on evergreen on 2026-09-02 — header 66→85px desktop / 43→56 phone, spacing
-  22→18, each change undone and reset to the generator's exact original. That happened.
-- **The CONTROLS** (the `Design` panel and the `website.setDesignKnob` chat action) were
-  built and deployed later the same day and **have never been touched by a signed-in
-  owner.** Built and deployed is not proven. Until someone opens the panel on a claimed
-  site and watches the page move, the correct description is "deployed, unproven".
+  as the owner on evergreen — header 66→85px desktop / 43→56 phone, spacing 22→18, each
+  change undone and reset to the generator's exact original. That happened.
+- **The CONTROLS** (the `Design` panel; the `website.setDesignKnob` chat action) were built
+  and deployed the same day.
+- **The owner then tested them, and `heroScale` FAILED** — "Changed the header size." over a
+  page that did not move. The gate was diagnosed, fixed and re-deployed the same evening.
+  **The re-test has NOT happened.** So the honest status is: *fixed, re-verified offline
+  against 106 stored pages in both populations and at both widths, and still unproven by a
+  signed-in owner.* See "THE GATE ITSELF WAS CAUGHT LYING" below — it is the most
+  instructive thing in this file.
 
-**FIVE knobs are offered:** `typeScale`, `heroScale`, `spaceScale`, `measureScale`,
-`radiusScale`. **Three are withheld, each with a stated reason** (`offered:false` +
-a `withheld` sentence the refusal speaks aloud): `mediaRatio` — it overrides the
-generator's per-breakpoint choice, so even "16/10" costs +156px on a phone and 1/1 costs
-+1,090px, invisible from the desktop where the owner chooses; `background` and `ink` —
-no way to know WHICH text would land on a new background. **`mediaRatio` binds nothing on
-43 of 106 stored pages**, which is why the gate below matters.
+**FIVE knobs are offered** where they bind: `typeScale`, `heroScale`, `spaceScale`,
+`measureScale`, `radiusScale`. **Three are withheld, each with a stated reason**
+(`offered:false` + a `withheld` sentence the refusal speaks aloud): `mediaRatio` — it
+overrides the generator's per-breakpoint choice, so even "16/10" costs +156px on a phone and
+1/1 costs +1,090px, invisible from the desktop where the owner chooses; `background` and
+`ink` — no way to know WHICH text would land on a new background. **`mediaRatio` binds
+nothing on 43 of 106 stored pages**, which is why the gate below matters.
+
+**A SIXTH state you will meet on real pages: UNKNOWN.** On a page stamped before the counts
+were recorded (evergreen, and anything stamped in the window between the knob pass shipping
+and the fix), `heroScale` is neither offered nor refused-as-zero — the gate says it cannot
+tell, and nothing moves. **On evergreen, `heroScale` being absent from the panel is the fix
+working, not a regression.**
 
 The anchor pattern applied to design instead of facts. A generated page carries its own
 model-written CSS, so "make the header bigger" used to mean finding an unpredictable value
@@ -670,9 +723,13 @@ Findings are folded into the sections above and into `OPEN_FINDINGS.md`; this is
 
 ## Still owed
 
-- **Adrian: prove the knob controls as the owner** — the one thing above that is built and
-  unproven. Sign in on evergreen, open `Design`, set each of the five, watch the page move,
-  Undo, Reset; at 1440 and on a real phone. And type "make my headings bigger" in the chat.
+- **Adrian: RE-test the knob controls as the owner.** They were tested once and `heroScale`
+  failed; the gate is fixed and re-verified offline, but the re-test has not happened. Sign
+  in on evergreen, open `Design`, set each offered knob, watch the page move, Undo, Reset; at
+  1440 and on a real phone. Type "make my headings bigger" in the chat. **Expect `heroScale`
+  to be absent on evergreen — that is the fix working.**
+- **Adrian: measure the stale-stamp population** — one SQL query, in "THE STALE-STAMP
+  POPULATION IS UNMEASURED". It decides whether the re-stamp path stays deferred.
 - **Retiring the Edit-details button** once in-place editing covers it.
 - **A decision on storefront** — door on the legacy store, or re-implement on the new spine.
   **Buy the information before deciding**: one hour signing in and exercising the legacy
