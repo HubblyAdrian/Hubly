@@ -17542,34 +17542,59 @@ window.addEventListener('message', function(ev){
   // times, and re-applying a scroll under someone's hand is the "page jumps while you
   // work" defect this editor has already paid for.
   if(d.restoreScrollY != null && !hcScrollRestored){
-    hcScrollRestored = true;
-    var _y = Number(d.restoreScrollY) || 0;
-    if(_y > 0 && !hcUserScrolled){
-      try{ window.scrollTo(0, _y); }catch(e){}
-      // A page still laying out (images, fonts) can be shorter than it will be, so one
-      // late re-apply — still only if the owner has not taken over.
-      setTimeout(function(){ try{ if(!hcUserScrolled && Math.abs((window.pageYOffset||0) - _y) > 4) window.scrollTo(0, _y); }catch(e){} }, 400);
-    }
+    hcPendingScrollY = Number(d.restoreScrollY) || 0;
+    hcApplyPendingScroll();
   }
   // ACK back to the builder so it knows the preview received this and editing is
   // live — Rule 3: confirm receipt instead of leaving the builder to fire blind
   // retries with no idea whether any landed.
   try{ (ev.source || window.parent).postMessage({ type:'hcAuthStateAck', authed: hcAuthedFlag }, (ev.origin && ev.origin !== 'null') ? ev.origin : '*'); }catch(e){}
 });
-// Report where the owner is looking, so a reload can put them back. Cross-origin, so
-// this is the only way the builder can know it. Throttled to one message per ~250ms:
-// it is a scroll handler on someone's live site.
+// Report where the owner is looking, so a reload can put them back. The builder is a
+// different origin and cannot read it, so telling it is the only way it can know.
+//
+// LISTEN ON THE DOCUMENT THAT ACTUALLY SCROLLS. The first cut of this attached to
+// THIS window — and measured, a freeform page never scrolls it: the page lives in a
+// srcdoc iframe, this shell is a fixed full-height frame (scrollHeight 848 ===
+// clientHeight 848 while the inner document is 2712). It would have been a scroll
+// listener that never fires and a scrollTo that moves nothing: a feature that reports
+// success by existing. hcWireScrollReporting is called with the real editable
+// document, whichever one that is (srcdoc for freeform, this one for AST/classic).
 var hcScrollRestored = false, hcUserScrolled = false, hcScrollTick = 0;
-(function hcReportScroll(){
-  if(!hcBuilderPreview || !hcBuilderPreview()) return;   // only inside the builder canvas
-  window.addEventListener('scroll', function(){
-    if(hcScrollRestored) hcUserScrolled = true;          // they have taken over; never move them again
+var hcPendingScrollY = null, hcScrollProgrammaticUntil = 0;
+function hcWireScrollReporting(w){
+  if(!w || w.__hcScrollWired) return;
+  w.__hcScrollWired = true;
+  w.addEventListener('scroll', function(){
+    // A scroll that is not one of ours means the owner has taken over, and we never
+    // move the page under their hand after that.
+    if(Date.now() > hcScrollProgrammaticUntil) hcUserScrolled = true;
     var now = Date.now();
-    if(now - hcScrollTick < 250) return;
+    if(now - hcScrollTick < 250) return;                 // it is a scroll handler on a live site
     hcScrollTick = now;
-    try{ window.parent.postMessage({ type:'hcCanvasScroll', y: window.pageYOffset || 0 }, hcBuilderOrigin()); }catch(e){}
+    try{ window.parent.postMessage({ type:'hcCanvasScroll', y: w.pageYOffset || 0 }, hcBuilderOrigin()); }catch(e){}
   }, { passive: true });
-})();
+  hcApplyPendingScroll();   // the position may have arrived before the frame was ready
+}
+function hcApplyPendingScroll(){
+  if(hcPendingScrollY == null || hcScrollRestored || hcUserScrolled) return;
+  var w = null;
+  try{ var f = hcFreeformFrame(); w = (f && f.contentWindow) ? f.contentWindow : window; }catch(e){ w = window; }
+  if(!w || !w.__hcScrollWired) return;   // wait for the surface we are going to move
+  var y = hcPendingScrollY;
+  hcScrollRestored = true;
+  if(!(y > 0)) return;
+  hcScrollProgrammaticUntil = Date.now() + 600;
+  try{ w.scrollTo(0, y); }catch(e){}
+  // A page still laying out (images, fonts) can be shorter than it will be, so one
+  // late re-apply — still only if the owner has not taken over in the meantime.
+  setTimeout(function(){
+    try{
+      if(hcUserScrolled) return;
+      if(Math.abs((w.pageYOffset || 0) - y) > 4){ hcScrollProgrammaticUntil = Date.now() + 400; w.scrollTo(0, y); }
+    }catch(e){}
+  }, 500);
+}
 
 // FIRE-AND-FORGET visitor beacon. One call, on a public site mount, NEVER awaited and never in
 // the render path. Owner-ness is decided SERVER-side: functions.invoke automatically forwards the
@@ -53417,6 +53442,9 @@ function wireHublyDocumentClickToEdit(){
 function wireHcEditingSurface(doc, root){
   if(!root || root.getAttribute('data-hc-wired') === '1') return;
   root.setAttribute('data-hc-wired', '1');
+  // This is the document the owner actually scrolls, so this is where "put me back
+  // where I was looking" has to be wired.
+  try{ hcWireScrollReporting(doc.defaultView || doc.parentWindow); }catch(e){}
 
   // PLACEHOLDER MARKS — visible to the OWNER, in the editor only.
   //
