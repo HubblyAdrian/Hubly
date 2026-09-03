@@ -2172,7 +2172,12 @@ export async function generateFreeformPage(
   // variable instead of hunting an unpredictable value in an unpredictable stylesheet.
   // Every substitution keeps the model's value as the fallback, so this pass cannot
   // change how the page renders — verified across all 129 stored pages.
-  const knobbed = stampDesignKnobs(wired.html);
+  // Refresh Hubly's own injected CSS too. ensureServicePriceCss now UPGRADES an old
+  // rule instead of skipping it, so a re-stamp is what carries a typography fix onto
+  // pages that already exist — otherwise the fix only ever reaches pages built after
+  // it, which is how "shipped" and "on the owner's page" drifted apart.
+  const priced = ensureServicePriceCss(wired.html);
+  const knobbed = stampDesignKnobs(priced);
   const knobCounts = Object.entries(knobbed.bound).map(([k, n]) => `${k}=${n}`).join(" ");
   console.log(`freeform [${businessId}] design knobs bound: ${knobCounts || "NONE"}`);
   // ASSERTED, not assumed — the same contract as the runtime injection above. A page
@@ -2768,7 +2773,18 @@ function ensurePhotoSlotCss(html: string): string {
  *  a small deterministic CSS invariant, not a per-page guess. Block + light weight
  *  so an injected price reads as a price and can't collapse a column. */
 function ensureServicePriceCss(html: string): string {
-  if (/\[data-hubly-price\]\s*\{/.test(html)) return html;
+  // UPGRADE, DON'T SKIP. This used to `return html` whenever any [data-hubly-price]
+  // rule was present, so a page that already had the OLD rule kept it forever — the
+  // letter-spacing fix shipped and never reached a single existing page. Same stale-
+  // stamp shape as the knob counts: a guard that means "already done" when it should
+  // mean "already this version". Replace the rule instead.
+  const existing = /<style>\[data-hubly-price\]\{[^}]*\}<\/style>/.exec(html);
+  if (existing) {
+    if (existing[0].includes("letter-spacing:normal")) return html;   // already current
+    html = html.replace(existing[0], "");                              // drop the old one, re-add below
+  } else if (/\[data-hubly-price\]\s*\{/.test(html)) {
+    return html;   // a rule we did not write (the model's own) — leave it alone
+  }
   // letter-spacing:normal is NOT cosmetic here. The generator sets display tracking
   // as tight as -.06em on headings, and a price span inherits it from whatever it
   // sits inside: measured on evergreen at -2.82px on ~16px type, squeezing "$220"
