@@ -123,6 +123,24 @@ export interface StampResult {
   strippedModelLabels: number;
   /** What the content-safety pass removed, and why. Empty on a clean page. */
   removed: SanitizerRemoval[];
+  /**
+   * THE PAGE'S SECTIONS, as stamped — the container element for each region, in
+   * document order, keyed by the same prefix its leaves carry.
+   *
+   * RECORDED, NOT RE-DERIVED. `expandBands` computes the page's regions here, with
+   * the whole document in hand, and until now threw them away — leaving section
+   * MEMBERSHIP stamped (a leaf knows it is in `section.3`) and the section BOUNDARY
+   * nowhere. Measured across 129 stored pages: zero band containers carried any
+   * marker, so an editor could tell which section a paragraph belonged to and could
+   * not select the section.
+   *
+   * Recovering it afterwards would mean resolving the common ancestor of everything
+   * labelled `section.3.*` — which is re-recognising layout, and would over-reach to
+   * a wrapper whenever one section's labels are the only ones inside a bigger box.
+   * "Mostly works" is not a basis for delete and move. So it is stamped while it is
+   * known, exactly as the knob bind counts now are.
+   */
+  sections: { prefix: string; tag: string }[];
 }
 
 export interface SanitizerRemoval {
@@ -497,8 +515,29 @@ export function stampFreeformHtml(html: string): StampResult {
   const h1 = firstMatching(searchRoot, (e) => e.name === "h1" && !isOpaque(e));
   const heroBand = h1 ? (bands.find((b) => b === h1 || descendants(b).includes(h1)) || null) : null;
 
+  // THE SECTION CONTAINERS. Collected as each band is given its role below, in
+  // document order, and stamped with the SAME prefix its leaves carry — so
+  // `data-hc-section="section.3"` is the element whose children are `section.3.*`.
+  // One vocabulary, not two that have to be kept in agreement.
+  const bandStamps: { el: ScannedEl; prefixes: string[] }[] = [];
+  const stampBand = (el: ScannedEl | null, prefix: string) => {
+    // Never stamp the synthetic root, and never stamp <body>: expandBands falls back
+    // to the container when a page has no band-level structure at all, and calling the
+    // whole document one section would make "delete this section" delete the page.
+    if (!el || el.name === "#root" || el.name === "body" || el.name === "html") return;
+    // ONE BAND CAN BE TWO THINGS, and on real pages it often is: measured across 129
+    // stored pages, 19 put the <h1> inside <header>, so the header band IS the hero
+    // band. Skipping the second prefix left those pages with `hero.*` leaves and no
+    // hero container — "select the hero" could not work on one page in seven. Record
+    // both, space-separated, because both are true; a consumer matches tokens.
+    const existing = bandStamps.find((b) => b.el === el);
+    if (existing) { if (!existing.prefixes.includes(prefix)) existing.prefixes.push(prefix); return; }
+    bandStamps.push({ el, prefixes: [prefix] });
+  };
+
   // 5. Header: logo, business name, nav items.
   if (headerBand) {
+    stampBand(headerBand, "header");
     const logo = firstMatching(headerBand, (e) => e.name === "img");
     if (logo) L.put(logo, "business.logo", "image");
     const nameEl = firstMatching(headerBand, (e) => isEditableLeaf(e, src) === "text" && !L.has(e));
@@ -513,6 +552,7 @@ export function stampFreeformHtml(html: string): StampResult {
 
   // 6. Hero.
   if (heroBand && h1) {
+    stampBand(heroBand, "hero");
     L.put(h1, "hero.headline", "text");
     // A card grid can share the hero band with the headline (a "pick a plan" section
     // whose <h1> sits above the cards). Claim it as repeatable ITEMS first, so the
@@ -548,6 +588,7 @@ export function stampFreeformHtml(html: string): StampResult {
     if (band === headerBand || band === footerBand || band === heroBand) continue;
     sectionN++;
     const p = `section.${sectionN}`;
+    stampBand(band, p);
     const inner = descendants(band);
 
     // Repeated cards FIRST — before the heading/subheading finders below. A pure
@@ -575,6 +616,7 @@ export function stampFreeformHtml(html: string): StampResult {
 
   // 8. Footer.
   if (footerBand) {
+    stampBand(footerBand, "footer");
     let k = 1, ik = 1;
     for (const e of descendants(footerBand)) {
       if (L.has(e)) continue;
@@ -612,11 +654,22 @@ export function stampFreeformHtml(html: string): StampResult {
     edits.push(insertAttr(el, ` data-hc="${info.label}"`));
     labels.push(info);
   }
+  // THE SECTION CONTAINERS. A separate attribute from data-hc on purpose: data-hc
+  // means "an editable leaf with this label", and the whole click-to-edit path is
+  // built on that promise (leaf-only, text or image). A band is neither. Giving it a
+  // data-hc would send a container id into a path that expects a leaf — the same
+  // mistake data-node vs data-hc exists to avoid, one level up.
+  const sections: { prefix: string; tag: string }[] = [];
+  for (const b of bandStamps) {
+    edits.push(insertAttr(b.el, ` data-hc-section="${b.prefixes.join(" ")}"`));
+    for (const prefix of b.prefixes) sections.push({ prefix, tag: b.el.name });
+  }
   labels.sort((a, b) => a.label.localeCompare(b.label, "en", { numeric: true }));
 
   return {
     html: spliceAll(src, edits),
     labels,
+    sections,
     coverage: { editable: editable.length, labelled: L.assigned.size, missed: [] },
     strippedModelLabels,
     removed: sanitized.removed,
