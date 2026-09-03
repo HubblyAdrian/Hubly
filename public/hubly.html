@@ -13455,8 +13455,33 @@ function showP(id,opts){
   else if(id==='p-landing')mktClearUrlHash();
   setTimeout(applyTranslations,50);
 }
+// BACK ON A BUSINESS SUBDOMAIN. This handler returns immediately for a customer-facing
+// site, which meant Back from booking re-resolved NOTHING: the URL went from ?book=1 to
+// the bare address and whatever the SPA happened to be showing stayed on screen. Reported
+// live as "Back from booking lands on a different website".
+//
+// A customer's history on a business site is only ever two states — the site, or the
+// booking flow — so resolving it is reading one query parameter, not routing.
+// Back can also restore from the bfcache without running any script at all, in which
+// case popstate never fires. pageshow with persisted=true is the one signal for that.
+window.addEventListener('pageshow',(ev)=>{
+  try{ if(ev&&ev.persisted&&typeof getSlugFromHost==='function'&&getSlugFromHost()) hcResolvePublicRoute(); }catch(e){}
+});
+function hcResolvePublicRoute(){
+  let booking=false;
+  try{ booking=new URLSearchParams(location.search).get('book')==='1'; }catch(e){}
+  if(booking){ if(typeof openBookingPage==='function'){ try{ openBookingPage(); return true; }catch(e){} }
+               try{ showP('p-booking-landing'); return true; }catch(e){} return false; }
+  // Back to the site itself: show the document we already mounted rather than letting
+  // a stale page stand. Never re-render the classic archetype here.
+  try{
+    const root=document.getElementById('hc-doc-root');
+    if(root&&root.children.length){ showP('p-hubly-document'); return true; }
+  }catch(e){}
+  return false;
+}
 window.addEventListener('popstate',()=>{
-  if(typeof getSlugFromHost==='function'&&getSlugFromHost())return;
+  if(typeof getSlugFromHost==='function'&&getSlugFromHost()){ hcResolvePublicRoute(); return; }
   const dest=pageForHublyPath(hublyPath())||'p-landing';
   if(S._ceoDemo||isCeoDemoAuthorized()){
     startCeoDemoMode();
@@ -17316,6 +17341,12 @@ async function loadLatestBusinessDocumentHtml(slug,tag){
     const {data,error}=await dbClient
       .rpc('get_public_business_document',{ p_slug: slug, p_tag: tag||'website' });
     if(!error && Array.isArray(data) && data.length && data[0].rendered_html) return data[0].rendered_html;
+    // AN ERROR IS NOT AN ABSENCE. These used to collapse to the same null, so a
+    // network hiccup was indistinguishable from "this business has no site" — and
+    // the caller answers the second by rendering the CLASSIC ARCHETYPE, which
+    // carries owner-facing scaffolding. A customer pressing Back got a different
+    // company's template with unfinished copy on it. undefined = could not load.
+    if(error) return undefined;
     // Public read empty. In the builder preview of an unclaimed draft the public
     // RPC is gated on owner_id; read the draft document with the token instead
     // (hcDraftToken is set by hcRequestDraftToken during loadPublicProfile).
@@ -17324,10 +17355,10 @@ async function loadLatestBusinessDocumentHtml(slug,tag){
         .rpc('get_draft_business_document',{ p_slug: slug, p_tag: tag||'website', p_draft_token: hcDraftToken });
       if(!draft.error && Array.isArray(draft.data) && draft.data.length && draft.data[0].rendered_html) return draft.data[0].rendered_html;
     }
-    return null;
+    return null;                       // genuinely no document for this business
   }catch(e){
     console.warn('loadLatestBusinessDocumentHtml failed',e);
-    return null;
+    return undefined;                  // threw: could not load, NOT "has no site"
   }
 }
 // Same test as hcEditEnabled() in the click-to-edit script, duplicated
@@ -17575,7 +17606,29 @@ async function loadPublicProfile(slug){
     return;
   }
   try{
-    const rendered=await loadLatestBusinessDocumentHtml(slug,'website');
+    let rendered=await loadLatestBusinessDocumentHtml(slug,'website');
+    // COULD NOT LOAD IS NOT THE SAME AS HAS NO SITE. Falling through to the classic
+    // archetype on a failed read means a customer sees a DIFFERENT WEBSITE under this
+    // business — different nav, a language toggle, and owner-facing scaffolding like
+    // "Add what you do and we'll lay it out". Reported live, reached by pressing Back
+    // from booking. One retry, then stop: better a plain "couldn't load" than someone
+    // else's template wearing this business's name.
+    if(rendered===undefined){
+      await new Promise(r=>setTimeout(r,400));
+      rendered=await loadLatestBusinessDocumentHtml(slug,'website');
+    }
+    if(rendered===undefined){
+      try{document.documentElement.classList.remove('hubly-public-boot');}catch(e){}
+      const root=document.getElementById('hc-doc-root');
+      if(root) root.innerHTML='<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;'+
+        'font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;color:#444;text-align:center;padding:24px">'+
+        '<div><p style="font-size:17px;margin:0 0 10px">This page didn\u2019t load.</p>'+
+        '<p style="font-size:14px;color:#777;margin:0 0 18px">The connection dropped on the way. Nothing is wrong with the site.</p>'+
+        '<button type="button" onclick="location.reload()" style="font:inherit;font-size:14px;font-weight:700;padding:10px 18px;'+
+        'border-radius:10px;border:1px solid #ddd;background:#fff;cursor:pointer">Try again</button></div></div>';
+      showP('p-hubly-document');
+      return;
+    }
     if(rendered){
       const root=document.getElementById('hc-doc-root');
       if(root)hcMountDocumentHtml(root,rendered);
@@ -53781,7 +53834,7 @@ function wireHcEditingSurface(doc, root){
   }
 
   /* SELECT — the one entry point. Click, or tap; never hover. */
-  function hcSelect(el){
+  function hcSelect(el, pt){
     if(!el) return;
     hcClearSel();
     hcSel = el;
@@ -53800,10 +53853,30 @@ function wireHcEditingSurface(doc, root){
       // measured: whatever the scroll was, the element ended up at the same y every
       // time. The scroll position is restored on the next frame; the owner stays
       // exactly where they were looking.
-      var keepX = win.pageXOffset || 0, keepY = win.pageYOffset || 0;
       el.setAttribute('contenteditable','true');
-      var restore = function(){ if(win.pageXOffset !== keepX || win.pageYOffset !== keepY) win.scrollTo(keepX, keepY); };
-      restore(); win.requestAnimationFrame ? win.requestAnimationFrame(function(){ restore(); hcPlaceBar(el); }) : setTimeout(restore, 0);
+      // FOCUS IT. The click that selected this element happened while it was still
+      // NOT editable, so the browser never put a caret in it — the attribute was set
+      // and nothing could be typed. A harness reported contenteditable="true" and I
+      // called that working; having the attribute is not having a caret.
+      //
+      // preventScroll does natively what a scrollTo dance was doing badly: focusing
+      // editable content normally scrolls it into view, which threw the page under
+      // the owner's hand. One option replaces the whole workaround.
+      try{ el.focus({ preventScroll: true }); }catch(e){ try{ el.focus(); }catch(_){} }
+      // Put the caret where they actually clicked, not at the start of the element —
+      // otherwise typing inserts in front of the first word, which is never what
+      // someone pointing at the middle of a sentence meant.
+      try{
+        if(pt && doc.caretRangeFromPoint){
+          var rng = doc.caretRangeFromPoint(pt.x, pt.y);
+          if(rng){ var sel = win.getSelection(); sel.removeAllRanges(); sel.addRange(rng); }
+        } else if(pt && doc.caretPositionFromPoint){
+          var cp = doc.caretPositionFromPoint(pt.x, pt.y);
+          if(cp){ var r2 = doc.createRange(); r2.setStart(cp.offsetNode, cp.offset); r2.collapse(true);
+                  var s2 = win.getSelection(); s2.removeAllRanges(); s2.addRange(r2); }
+        }
+      }catch(e){}
+      if(win.requestAnimationFrame) win.requestAnimationFrame(function(){ hcPlaceBar(el); });
       el.addEventListener('blur', function onBlur(){
         el.removeEventListener('blur', onBlur);
         var now = el.textContent || '';
@@ -53865,10 +53938,10 @@ function wireHcEditingSurface(doc, root){
     // fire a file picker: selection is the one entry point, and the contextual
     // toolbar beside the element carries what applies to it. That is what makes
     // this work on touch, where nothing can be revealed by hovering.
-    if(target.tagName && target.tagName.toLowerCase() === 'img'){ hcSelect(target); return; }
+    if(target.tagName && target.tagName.toLowerCase() === 'img'){ hcSelect(target, { x: e.clientX, y: e.clientY }); return; }
     if(target.children.length > 0) return; // only leaf nodes for this pass
     if(!target.textContent || !target.textContent.trim()) return;
-    hcSelect(target);
+    hcSelect(target, { x: e.clientX, y: e.clientY });
   }, true);
 
   // Affordance is CSS now (see markEditable + #hubly-editable-style, injected on wiring

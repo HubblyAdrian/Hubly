@@ -879,6 +879,47 @@ confirm it asks rather than inventing one.
 
 ---
 
+## 18. A FAILED DOCUMENT READ RENDERED A DIFFERENT WEBSITE, with owner-facing
+## placeholder copy, on a public customer route — FIXED 2026-09-03; #1 now explained
+
+**Reported live:** pressing **Back from the booking page** landed on a page that was not
+the owner's site — different nav (Services / Reviews / About), a BOOK NOW pill, an ES
+language toggle, a "What can Evergreen Yard Care help you with?" search box, and four
+empty grey cards under "What we offer" reading **"Add what you do and we will lay it out."**
+
+**What that page is.** `#p-storefront` — the CLASSIC ARCHETYPE RENDERER in `hubly.html`,
+which builds a site from the `businesses` columns for businesses that have no stored
+document. (Note the naming trap recorded in `PRODUCT_SHAPE.md` §3: `#p-storefront` is the
+classic WEBSITE page; the commerce store is `#p-store`.) Its empty states are written for
+the OWNER, in the editor — which is why a customer saw build-me copy.
+
+**Why it rendered.** `loadLatestBusinessDocumentHtml` returned **`null` for BOTH "this
+business has no document" AND "the read failed"**, and `loadPublicProfile` answers the
+first by rendering the classic archetype. So any transient failure — a dropped RPC, a
+bfcache restore, a race on Back — silently swapped the owner's real site for a different
+template carrying unfinished copy. **This is the mechanism finding #1 was missing**, and
+Back-from-booking is the reproduction it asked for.
+
+**Fixed (2026-09-03):**
+- The loader now returns `undefined` for a FAILURE and `null` only for a genuine absence.
+  *An error is not an absence* — collapsing them is what made a hiccup look like "this
+  business has no site".
+- `loadPublicProfile` retries once on failure, then shows a plain, honest "This page
+  didn't load / Try again" — **never another template**. A business with genuinely no
+  document still gets the classic renderer, which is its real site.
+- `popstate` on a business subdomain returned immediately, so Back re-resolved nothing.
+  It now resolves the only two states a customer can be in — the site, or `?book=1` — and
+  a `pageshow` handler covers the bfcache restore, where popstate never fires at all.
+
+**STILL OPEN — the placeholder copy itself.** The classic renderer's empty states
+("Add what you do and we will lay it out", "Add contact info in the editor", "Add your
+location to show the map") are owner-facing strings on a route any customer can reach,
+for any business that legitimately has no stored document. The freeform path already
+strips scaffolding for non-owners (`hcStripPlaceholders`, gated on `hcBuilderPreview()`);
+**the classic path has no equivalent.** That is a separate fix and it is not done.
+
+---
+
 ## Also noted 2026-08-28
 
 - **Rebuild read-back is vague.** The "yes, rebuild" reply ("a completely new page is
