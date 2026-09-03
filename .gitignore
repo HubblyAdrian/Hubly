@@ -3,3 +3,11 @@ node_modules/
 .vercel
 .env*
 backups/
+
+# Audit corpora are RE-EXPORTED before every run, never read from disk as current.
+# A committed corpus is the exact trap scripts/hero-fold-audit/README.md warns about:
+# it looks authoritative and is stale. Committed by accident (git add -A) on
+# 2026-09-02 and untracked the same day — it had already gone stale by 22 pages.
+scripts/*/corpus.json
+scripts/*/audit_input.json
+scripts/*/squeeze_results.json
