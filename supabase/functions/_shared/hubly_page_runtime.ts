@@ -240,6 +240,73 @@ export function contrastRescueHtml(): string {
 </script>`;
 }
 
+
+/**
+ * EVERY SERVICE CARD GETS ITS OWN BOOKING BUTTON.
+ *
+ * The cap deletes surplus CTAs, so on a card grid the model's per-card buttons were
+ * REMOVED at generation and the information is gone from the document — a later cap
+ * that spares them cannot bring back what an earlier one deleted. Measured on
+ * evergreen: 0 `#hubly-book` sentinels left, 6 service cards, 1 button. So the fix
+ * for an existing page is to INSERT, not to spare.
+ *
+ * DRIVEN ENTIRELY BY STAMPED ANCHORS, never by markup shape. A "card" here is defined
+ * as the smallest ancestor that contains BOTH this service's name anchor
+ * (data-hubly-service) and its price anchor (data-hubly-price). That is a fact we
+ * stamped, not a class name we recognised, so it holds across the layouts the model
+ * invents — which is the whole reason the anchors exist.
+ *
+ * REQUIRING A PRICE ANCHOR ALSO EXCLUDES A KNOWN BAD ANCHOR. OPEN_FINDINGS #11: the
+ * retroactive stamp once put data-hubly-service on a DESCRIPTION paragraph whose text
+ * began with a new service's name. It has no price anchor, so it is not a card and
+ * gets no button — the filter falls out of the definition rather than being a special
+ * case bolted on.
+ */
+function ensureServiceCardCtas(html: string, bookBase: string): { html: string; added: number } {
+  const src = String(html || "");
+  const scan = scanHtml(src);
+  const svcEls = scan.all.filter((e) => typeof e.attrs["data-hubly-service"] === "string");
+  if (!svcEls.length) return { html: src, added: 0 };
+
+  const priceKeys = new Set(
+    scan.all.map((e) => e.attrs["data-hubly-price"]).filter((v): v is string => typeof v === "string"),
+  );
+  // A template, so the inserted button inherits whatever the page's own CTA looks like.
+  const tmpl = scan.all.find((e) =>
+    e.name === "a" && (e.attrs.href || "").includes("book=1") && (e.attrs.href || "").includes("svc="));
+  const tmplClass = tmpl ? (tmpl.attrs["class"] || "") : "";
+
+  const ancestors = (el: ScannedEl): ScannedEl[] => { const out: ScannedEl[] = []; for (let p = el.parent; p; p = p.parent) out.push(p); return out; };
+  const edits: Splice[] = [];
+  let added = 0;
+
+  for (const nameEl of svcEls) {
+    const svc = String(nameEl.attrs["data-hubly-service"] || "");
+    if (!svc || !priceKeys.has(svc)) continue;                 // not a real card
+    const priceEl = scan.all.find((e) => e.attrs["data-hubly-price"] === svc);
+    if (!priceEl) continue;
+
+    // The card: smallest ancestor holding both anchors.
+    const up = ancestors(nameEl);
+    const card = up.find((a) => a.openStart <= priceEl.openStart && a.closeEnd >= priceEl.closeEnd);
+    if (!card) continue;
+    // Already bookable? Leave it entirely alone.
+    if (/[?&]book=1/.test(src.slice(card.openStart, card.closeEnd))) continue;
+
+    const href = `${bookBase}&svc=${encodeURIComponent(svc)}`;
+    const cls = tmplClass ? ` class="${escapeAttr(tmplClass)}"` : "";
+    const cta = `<a data-hubly-runtime="card-book"${cls} target="_top" href="${escapeAttr(href)}">Book ${escapeText(svc)}</a>`;
+    edits.push({ start: card.closeStart, end: card.closeStart, text: cta });
+    added++;
+  }
+  if (!edits.length) return { html: src, added: 0 };
+  return { html: spliceAll(src, edits), added };
+}
+
+function escapeText(s: string): string {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 /** Does this page already give a visitor a way to book?
  *
  *  ONE predicate, shared by the decision to inject a fallback CTA and by the assertion
@@ -433,6 +500,12 @@ export function injectHublyRuntime(html: string, ctx: RuntimeContext): RuntimeIn
   }
 
   let out = edits.length ? spliceAll(src, edits) : src;
+
+  // A CARD WITH A PRICE AND NO BUTTON CANNOT SELL ANYTHING. The cap above governs
+  // loose CTAs; this makes sure every stamped service card has its own way to book,
+  // including on pages built before the cap knew the difference.
+  const carded = ensureServiceCardCtas(out, bookBase);
+  if (carded.added > 0) out = carded.html;
 
   // 2. THE RUNTIME ITSELF, appended just before </body> (or at the end if the
   //    model wrote no body tag — it is not required to).
