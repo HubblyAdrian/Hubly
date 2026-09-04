@@ -108,6 +108,14 @@ Deno.serve(async (req) => {
   const draftToken = String(body?.draftToken || "").trim();
   const brief = String(body?.brief || "").trim();
   const jobId = body?.jobId ? String(body.jobId) : null;
+  // THE VERIFIED OWNER, resolved by hubly-conversation and carried here because the
+  // SAVE at the end of the build needs it: create_business_document authorises a
+  // claimed business by owner, not by draft token, so a build that finishes after
+  // the owner has signed up is refused without it (OPEN_FINDINGS #20). Trusting the
+  // caller is sound HERE and nowhere else: the credential check above compares the
+  // presented key against our own secret key on both headers, so anyone able to set
+  // this field could already write as service_role.
+  const ownerUid = body?.ownerUid ? String(body.ownerUid).trim() || null : null;
 
   if (!draftId || !draftToken || !brief) {
     await finishDocumentBuildJob(jobId, "failed", "missing_input");
@@ -119,7 +127,7 @@ Deno.serve(async (req) => {
   // runtime has no reason to recycle the isolate underneath it.
   try {
     const preamble = Math.round(performance.now() - fnStart);
-    const result = await runDocumentGeneration(draftId, draftToken, brief, undefined, jobId);
+    const result = await runDocumentGeneration(draftId, draftToken, brief, undefined, jobId, ownerUid);
     const inFunction = Math.round(performance.now() - fnStart);
     // dispatchedAt is stamped by hubly-conversation immediately before the HTTP
     // call, so (arrival - dispatchedAt) is the round trip plus cold boot -- the

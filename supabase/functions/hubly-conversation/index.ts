@@ -1322,6 +1322,12 @@ Deno.serve(async (req) => {
         draftToken: draftBusiness.draftToken,
         brief: job.brief,
         jobId: restarted?.jobId || job.id,
+        // Carried ACROSS the service boundary because the save at the far end needs
+        // it (OPEN_FINDINGS #20). Safe to pass: hubly-document-build compares the
+        // presented credential against our secret key on both headers before its
+        // handler runs, so only we can reach it — the same trust level
+        // create_business_document itself requires, being service_role-only.
+        ownerUid: await getOwnerUid(),
       });
       buildResumed = { jobId: restarted?.jobId || job.id, expectedBy: restarted?.expectedBy || null };
       actions.push({ capability: "website", capabilityAction: "resumeDocumentBuild", args: {}, ok: true, real: true });
@@ -1364,6 +1370,10 @@ Deno.serve(async (req) => {
       draftBusiness?.draftToken || "",
       logoUpload.imageBase64,
       logoUpload.mediaType,
+      // The claimed owner. Without it the logo saved and the page re-render was
+      // REFUSED, so a signed-in owner was told every time that their page "may
+      // still show the initials". OPEN_FINDINGS #20.
+      await getOwnerUid(),
     );
     actions.push({ capability: "business", capabilityAction: "setLogo", args: {}, ok: !!logoResult.ok, real: !!logoResult.real });
     history.push({
@@ -1397,6 +1407,7 @@ Deno.serve(async (req) => {
       draftBusiness.draftToken,
       photoUpload.imageBase64,
       photoUpload.mediaType,
+      await getOwnerUid(),
     );
     actions.push({ capability: "business", capabilityAction: "addPhoto", args: {}, ok: !!photoResult.ok, real: !!photoResult.real, summary: photoResult.summary });
     try {
@@ -1955,6 +1966,7 @@ Deno.serve(async (req) => {
             draftToken: draftBusiness!.draftToken,
             brief: buildBrief,
             jobId: job?.jobId,
+            ownerUid: await getOwnerUid(),
           });
           result = {
             ok: true,
@@ -2200,7 +2212,7 @@ Deno.serve(async (req) => {
           rebuildSkippedNote =
             " Your page has manual edits, so I have not rebuilt it — the new details are saved on your record. Want me to rebuild the page around them?";
         } else {
-          const rebuild = rebuildDocumentFromRecord(draftBusiness.id, draftBusiness.draftToken, changes)
+          const rebuild = rebuildDocumentFromRecord(draftBusiness.id, draftBusiness.draftToken, changes, await getOwnerUid())
             .then(async (r) => {
               // Did a NEW version actually result? Only these three states produce one.
               const landed = ["rebuilt", "rerendered", "patched"].includes(r.status);

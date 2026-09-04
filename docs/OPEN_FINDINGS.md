@@ -973,8 +973,8 @@ and seeing it in someone else's shipped product is not permission.
 
 ---
 
-## 20. EVERY PAGE EDIT MADE BY TALKING WAS DEAD ON A CLAIMED SITE — the one on the chip's
-## path is FIXED 2026-09-04; FIVE SIBLINGS ARE STILL LIVE, named below with line numbers
+## 20. EVERY PAGE EDIT MADE BY TALKING WAS DEAD ON A CLAIMED SITE — CLOSED 2026-09-04.
+## All 8 call sites fixed, and the class is now impossible to write again
 
 **Found 2026-09-04 while wiring the selection chip, by reading both sides of the write —
 not by a test, because no test exercises a claimed site.**
@@ -991,34 +991,73 @@ claimed business — and the claimed business is the only kind a real owner has.
   passed
 - `business_documents` count **162 before and 162 after** — neither probe wrote a row
 
-**FIXED here:** `applyFreeformInstruction` (`hubly_capability_registry.ts`) — the freeform
-branch of `website.patchDocument`, which is *every page edit an owner makes by talking*.
-It now takes and passes `ownerUid`, and its failure sentence names the cause: "could not
-be saved" fitting every cause equally is precisely how this stayed invisible.
+**THE COUNT WAS WRONG WHEN FIRST WRITTEN, and that is worth recording.** This entry
+originally said "five siblings", because the generation call sites were grouped by
+function rather than counted. A brace-matched scan of every
+`callBusinessRpc("create_business_document", {…})` payload — parsing the object, not
+reading a fixed window of lines — found **8 call sites** missing it, not 5. A count
+produced by grouping is a count nobody can check; the scanner is in the verification
+below and prints 20/20 today.
 
-**STILL LIVE — the siblings, all in `hubly_capability_registry.ts`, all the same one-line
-shape (`p_owner_id` absent from the `create_business_document` payload):**
+**ALL 8 FIXED (2026-09-04):**
 
-| fn | what breaks on a claimed site |
+| call site | what was broken on a claimed site |
 |---|---|
-| `syncFreeformFacts` (~`:428`) | record-change → page fact sync |
-| `rebuildDocumentFromRecord` (~`:607`) | the background rebuild after a record change |
-| `rerenderLatestDocument` (~`:2586`) | re-render after `setChrome` **and after a logo upload** |
-| `applyOwnerPhotoToFreeform` (~`:2726`) | owner photo placement (the name says Owner; it has no ownerUid) |
-| `runFreeformGeneration` / `runDocumentGeneration` (~`:4399`, `:4555`, `:4702`, `:4794`) | generation, incl. **`website.newPage` — "start over" on a claimed site** |
+| `applyFreeformInstruction` | **every page edit made by talking** (`website.patchDocument`, freeform) |
+| `syncFreeformFacts` | record-change → page fact sync |
+| `rebuildDocumentFromRecord` (AST rebuild) | the background rebuild after a record change |
+| `rerenderLatestDocument` | re-render after `setChrome` **and after a logo upload** |
+| `applyOwnerPhotoToFreeform` | owner photo placement (the name said Owner; it had no owner) |
+| `runFreeformGeneration` | a build that finishes after the owner has signed up |
+| `runDocumentGeneration` (AST) | same, AST |
+| `website.newPage` | **"start over" on a claimed site** |
+| `website.patchDocument` (AST) | AST page edits |
 
-Generation mostly runs pre-claim so its exposure is smaller, but `newPage` and the logo
-re-render are reachable by a claimed owner today. **Not fixed here deliberately** — they
-are outside the chip's path and the chip was to ship on its own (the standing rule allows
-leaving siblings *written down with line numbers*, not left unnamed).
+The owner is threaded from `getOwnerUid()` in `hubly-conversation` through every chain,
+including **across the service boundary** into `hubly-document-build` — a build dispatched
+before claim can finish after it. That hop is safe because the receiving function compares
+the presented credential against our secret key on both headers before its handler runs,
+so anyone able to set the field could already write as `service_role`.
 
-**Why this class keeps recurring, and what would end it:** the owner-authorised writers
-(`applyOwnerStyleEdit`, `applyOwnerNodeMove`, `applyDirectFreeformEdit`, …) all pass
-`p_owner_id`; the *model-invoked* writers do not, because they were written against the
-draft-token era and nothing failed loudly when claim arrived. A boot-time audit in the
-shape of `auditConversationAllowlists` — "every call site of `create_business_document`
-either passes `p_owner_id` or is on a named pre-claim-only list" — would have caught all
-six at once and would catch the seventh.
+### THE CLASS IS NOW IMPOSSIBLE TO WRITE AGAIN — the invariant, not a bigger list
+
+`callBusinessRpc` **throws** when `create_business_document` is called without a
+`p_owner_id` key. The distinction is the whole design: **absent is a bug** (it throws, on
+the first call, in front of whoever wrote it), while an explicit **`p_owner_id: null` is a
+decision** — "this path only runs before claim" — that a reader can see and disagree with.
+
+This is deliberately not another hardcoded allow-list. Every list in this codebase has
+silently dropped an entry (`DRAFT_INJECTED_ACTIONS`, `GATED_WEBSITE_ACTIONS`,
+`CONTEXT_CAPABILITY_ALLOWLIST`), which is why they each have an audit. A rule that lives
+at the single point every writer already goes through cannot be forgotten by the next
+writer, who will not have read migration `20260822030000`.
+
+### VERIFIED — what was executed, and what was not
+
+**Executed, against a stub PostgREST recording every payload, driving the REAL writers:**
+- `syncFreeformFacts`, `applyOwnerPhotoToFreeform` (through `uploadDraftPhoto`, on a page
+  carrying a real photo slot) and `rerenderLatestDocument` (through `uploadDraftLogo`,
+  against a **real stored AST document** pulled from the corpus — a hand-made one was
+  rejected by the renderer, which is the point) each **received the owner uid at the
+  save**. Two already-correct writers ran as controls, and every path sends an explicit
+  `null` when there is no owner, so the unclaimed branch is unchanged.
+- The **service-boundary hop**: `dispatchDocumentBuild`'s real body was captured off the
+  wire and fed to `hubly-document-build`'s own parsing line — `ownerUid` survives intact.
+  A field-name mismatch across an HTTP hop is silent in both directions.
+- **Live regression after deploy** (the throw is a new failure mode): a fresh draft built
+  end to end and the document saved on the first poll — `runFreeformGeneration`'s save
+  works with the new argument, no guard trip, no 502. A record-change turn returned 200.
+  Both gateways probed and unchanged.
+- **Static:** a brace-matched scan reports **20 of 20** call sites carrying `p_owner_id`,
+  and `deno check` shows an identical error profile before and after on both functions.
+
+**NOT executed — say so rather than imply otherwise:** the **claimed** branch of any of
+it. Claude Code cannot sign in as an owner, so every live run above exercised the
+unclaimed path, which is the one that already worked. What the fix does on a claimed site
+is proven at the RPC (the write-free probe above) and by the owner uid arriving at each
+save, not by a signed-in owner watching their page change. `newPage`, the AST branches and
+the `setChrome` re-render were not run at all — each is a one-line read of an already-
+injected `args.ownerUid`, typechecked, and AST reaches zero real businesses.
 
 ---
 

@@ -194,12 +194,15 @@ read as answering the real one.**
    for someone slower than the guess. Persist until something else is actually chosen —
    model the intent, not the delay.
 7. **A CREDENTIAL THAT USED TO WORK IS NOT A CREDENTIAL THAT WORKS.** *(2026-09-04,
-   `OPEN_FINDINGS` #20)* Six writers passed the draft token to
+   `OPEN_FINDINGS` #20 — now CLOSED)* Eight call sites passed the draft token to
    `create_business_document` — correct when they were written, and silently dead for
    every claimed owner from the day claim started authorising by ownership instead. The
    owner-authorised writers were all fixed; the model-invoked ones were not, because
    nothing failed loudly and no test runs against a claimed site. The tell was a failure
-   sentence that fit every cause equally: "could not be saved".
+   sentence that fit every cause equally: "could not be saved". **Closed by an invariant
+   rather than a list** — `callBusinessRpc` throws on an absent `p_owner_id`, so absent is
+   a bug and an explicit `null` is a visible decision. And the first count of it was
+   WRONG (five, by grouping); the real number came from parsing every payload.
 8. **THE REPLY IS COMPOSED FROM THE BEST NEWS.** *(2026-09-04, `OPEN_FINDINGS` #21)*
    `photoTruth || servicesTruth || contactHoursTruth || model's reply` — a truth-composer
    for one sub-action SUBSTITUTES the model's account of the turn. Observed: the model
@@ -354,12 +357,6 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
 
 ## Still owed, untouched
 
-- **`OPEN_FINDINGS` #20 — FIVE model-invoked writers still omit `p_owner_id`**, so they are
-  dead on a claimed site exactly as `patchDocument` was. Named with line numbers there.
-  Reachable by a claimed owner today: **`website.newPage`** ("start over") and the
-  **re-render after a logo upload**. A boot-time audit of every
-  `create_business_document` call site — the shape `auditConversationAllowlists` already
-  uses — would have caught all six at once and would catch the seventh.
 - **Multi-instruction prompts** — SIZED 2026-09-04 (`OPEN_FINDINGS` #21): ~2–3 days, and
   two live defects block it.
 - **The design-knob re-test as the owner.** They failed once, were fixed, and have not been
@@ -405,7 +402,13 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
 - **An error is not an absence, and "already done" is not "already this version."**
 - **A control that retires is making a claim**, and **a timer is the wrong mechanism for
   interest.**
-- **A bug is a class, not a line** — grep for its siblings before closing it.
+- **A bug is a class, not a line** — grep for its siblings before closing it. **And COUNT
+  the class by parsing, not by grouping**: "five siblings" became eight the moment every
+  `create_business_document` payload was brace-matched instead of eyeballed (2026-09-04).
+- **Close a class with an invariant at the choke point, not another allow-list.** Every
+  hardcoded list here has silently dropped an entry, which is why each one now needs its
+  own audit. A rule that fires where every caller already passes cannot be forgotten by
+  the next writer.
 
 ## The anchor-pattern discipline (the through-line)
 

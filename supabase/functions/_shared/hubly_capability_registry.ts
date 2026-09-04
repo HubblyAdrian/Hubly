@@ -164,6 +164,30 @@ async function callMarketplace(action: string, payload: Record<string, unknown>)
 // functions (20260803120000_business_in_progress.sql) directly over
 // PostgREST's /rpc/ endpoint — no business-record logic lives here.
 async function callBusinessRpc(fn: string, payload: Record<string, unknown>): Promise<any> {
+  // ── THE CLAIMED-OWNER INVARIANT ────────────────────────────────────────────
+  //
+  // `create_business_document` authorises an UNCLAIMED draft by its token and a
+  // CLAIMED business by `p_owner_id` (migration 20260822030000). A payload that
+  // omits `p_owner_id` therefore works perfectly until the day the owner signs up
+  // and then returns `not_owner` forever — silently, because the callers all said
+  // "could not be saved", a sentence that fits every cause equally. Six writers
+  // shipped in exactly that state and nothing failed loudly, because no test in
+  // this repo exercises a claimed site.
+  //
+  // So the key is MANDATORY, and the distinction is deliberate: ABSENT is a bug
+  // (this throws, on the first call, in front of whoever wrote it), while an
+  // explicit `p_owner_id: null` is a DECISION — "this path only ever runs before
+  // claim" — that a reader can see and disagree with. A rule that lives in one
+  // place and fires at the call site is the only version of this that survives
+  // the next writer, who will not have read the migration.
+  if (fn === "create_business_document" && !("p_owner_id" in payload)) {
+    throw new Error(
+      "create_business_document called without p_owner_id. A claimed business authorises by owner, " +
+      "not by draft token, so this write would fail with not_owner for every owner who has signed up. " +
+      "Pass the verified owner uid, or pass p_owner_id: null explicitly if this path genuinely only " +
+      "runs before claim (and say why). See docs/OPEN_FINDINGS.md #20.",
+    );
+  }
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
   // A missing key now throws rather than returning empty-handed: an absent
   // key and an absent row used to be the same value here.
@@ -399,6 +423,7 @@ async function syncFreeformFacts(
   draftToken: string,
   changes: RecordChange[],
   latest: Extract<LatestBusinessDocument, { format: "html" }>,
+  ownerUid?: string | null,
 ): Promise<{ status: "patched" | "not_applicable" | "failed"; detail?: string }> {
   try {
     if (!changes.includes("contact")) {
@@ -433,6 +458,10 @@ async function syncFreeformFacts(
       p_rendered_html: html,
       p_created_by: "patch",
       p_format: "html",
+      // The claimed owner. Without it this whole pass — the one that keeps the
+      // phone number ON the page in step with the record — was a no-op for every
+      // owner who had signed up. See OPEN_FINDINGS #20.
+      p_owner_id: ownerUid || null,
     });
     return saved && saved.ok === true
       ? { status: "patched", detail: applied.join(", ") }
@@ -556,6 +585,9 @@ export async function rebuildDocumentFromRecord(
   draftId: string,
   draftToken: string,
   changes: RecordChange[],
+  /** The verified owner, when there is one. Every save below it is refused on a
+   *  claimed business without it — see the invariant in callBusinessRpc. */
+  ownerUid?: string | null,
   opts?: { force?: boolean },
 ): Promise<{ status: "rebuilt" | "rerendered" | "patched" | "skipped_owner_edited" | "no_document" | "not_applicable" | "failed"; detail?: string }> {
   try {
@@ -576,12 +608,12 @@ export async function rebuildDocumentFromRecord(
       // the owner explicitly asks for a different page (planFreeformRegeneration).
       // What a record change gets is a targeted update: change the facts the
       // page states, leave everything else exactly as it is.
-      return await syncFreeformFacts(draftId, draftToken, changes, latest);
+      return await syncFreeformFacts(draftId, draftToken, changes, latest, ownerUid);
     }
 
     const wantsContent = changes.some((c) => CONTENT_CHANGES.has(c));
     if (!wantsContent) {
-      const r = await rerenderLatestDocument(draftId, draftToken, "website");
+      const r = await rerenderLatestDocument(draftId, draftToken, "website", ownerUid);
       if (r === "not_applicable") return { status: "not_applicable" };
       return { status: r === "updated" ? "rerendered" : "failed" };
     }
@@ -612,6 +644,7 @@ export async function rebuildDocumentFromRecord(
       p_rendered_html: html,
       p_created_by: "ai",
       p_design_rationale: gen.rationale || null,
+      p_owner_id: ownerUid || null,
     });
     return saved && saved.ok === true ? { status: "rebuilt" } : { status: "failed", detail: "save" };
   } catch (e) {
@@ -2628,6 +2661,7 @@ export async function uploadDraftLogo(
   draftToken: string,
   imageBase64: string,
   mediaType: string,
+  ownerUid?: string | null,
 ): Promise<CapabilityActionResult> {
   if (!draftId || !draftToken) {
     return { ok: false, real: false, summary: "No draft business exists yet to attach a logo to.", error: "missing_draft" };
@@ -2661,7 +2695,7 @@ export async function uploadDraftLogo(
   // businessLogoUrl. No model call, no change to the document itself: the same
   // operation scripts/rerender-business-document.ts performs, and the reason
   // that script exists.
-  const rerendered = await rerenderLatestDocument(draftId, draftToken, "website");
+  const rerendered = await rerenderLatestDocument(draftId, draftToken, "website", ownerUid);
 
   return {
     ok: true,
@@ -2696,6 +2730,7 @@ async function rerenderLatestDocument(
   businessId: string,
   draftToken: string,
   tag: string,
+  ownerUid?: string | null,
 ): Promise<"updated" | "no_document" | "not_applicable" | "failed"> {
   try {
     const latest = await selectLatestBusinessDocument(businessId, tag);
@@ -2722,6 +2757,10 @@ async function rerenderLatestDocument(
       p_document: latest.document,
       p_rendered_html: html,
       p_created_by: "patch",
+      // Without this, a CLAIMED owner uploading a logo was told the page "could
+      // not be re-rendered, so it may still show the initials" — every time,
+      // forever. The re-render was fine; the save was refused. OPEN_FINDINGS #20.
+      p_owner_id: ownerUid || null,
     });
     return saved && saved.ok === true ? "updated" : "failed";
   } catch (e) {
@@ -2850,7 +2889,7 @@ async function placeOwnerPhotoInFreeform(
 }
 
 /** Run the placement and, on a hit, persist a new version + record provenance. */
-async function applyOwnerPhotoToFreeform(draftId: string, draftToken: string, imageUrl: string): Promise<FreeformPlacement> {
+async function applyOwnerPhotoToFreeform(draftId: string, draftToken: string, imageUrl: string, ownerUid?: string | null): Promise<FreeformPlacement> {
   const latest = await selectLatestBusinessDocument(draftId, "website");
   if (!latest || latest.format !== "html") return { status: "no_slot", detail: "not_freeform" };
   const r = await placeOwnerPhotoInFreeform(draftId, imageUrl, latest);
@@ -2858,6 +2897,10 @@ async function applyOwnerPhotoToFreeform(draftId: string, draftToken: string, im
     const saved = await callBusinessRpc("create_business_document", {
       p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
       p_document: latest.brief, p_rendered_html: r.html, p_created_by: "patch", p_format: "html",
+      // The function is called applyOWNERPhotoToFreeform and had no owner in it: a
+      // claimed owner's work photo stored, never reached the page, and the reply
+      // said so honestly without anyone asking why. OPEN_FINDINGS #20.
+      p_owner_id: ownerUid || null,
     });
     if (!saved || saved.ok !== true) return { status: "failed", detail: "save" };
     // Provenance: record the customer placement (best-effort).
@@ -2877,6 +2920,7 @@ export async function uploadDraftPhoto(
   draftToken: string,
   imageBase64: string,
   mediaType: string,
+  ownerUid?: string | null,
 ): Promise<CapabilityActionResult> {
   if (!draftId || !draftToken) {
     return { ok: false, real: false, summary: "No draft business exists yet to attach a photo to.", error: "missing_draft" };
@@ -2901,7 +2945,7 @@ export async function uploadDraftPhoto(
   // about what actually happened (FIX 4). A freeform page has no automatic update
   // path, so without this the photo stores and never appears.
   let placement: FreeformPlacement = { status: "no_slot" };
-  try { placement = await applyOwnerPhotoToFreeform(draftId, draftToken, uploaded.url); }
+  try { placement = await applyOwnerPhotoToFreeform(draftId, draftToken, uploaded.url, ownerUid); }
   catch (e) { placement = { status: "failed", detail: String((e as Error)?.message || e).slice(0, 120) }; }
   const landed = placement.status === "placed" || placement.status === "swapped";
 
@@ -4428,6 +4472,12 @@ export function dispatchDocumentBuild(input: {
   brief: string;
   tag?: string;
   jobId?: string | null;
+  /** The verified owner, carried across the hop because the SAVE at the far end
+   *  needs it: a build that finishes after the owner has claimed is refused
+   *  without it (OPEN_FINDINGS #20). The receiving function checks the presented
+   *  credential against our secret key before its handler runs, so this cannot be
+   *  supplied by anyone who could not already write as service_role. */
+  ownerUid?: string | null;
 }): void {
   const url = (Deno.env.get("SUPABASE_URL") || "").trim();
   // requireSecretKey() throws on a missing key, and SUPABASE_SECRET_KEYS is a
@@ -4511,6 +4561,7 @@ async function runFreeformGeneration(
   brief: string,
   sw: ReturnType<typeof stopwatch>,
   jobId?: string | null,
+  ownerUid?: string | null,
 ): Promise<CapabilityActionResult> {
   const bizRow = await selectOne("businesses", "id", draftId, "name,phone,email,address,slug,brand_color,logo_url,city,state,service_area_cities,business_type,years_in_business,meta");
   sw.mark("selectBusinessRow");
@@ -4537,6 +4588,11 @@ async function runFreeformGeneration(
     p_created_by: "ai",
     p_format: "html",
     p_design_rationale: (gen as { plan?: string }).plan || null,
+    // Usually null and correctly so — a first build happens before anyone has
+    // claimed anything. It is NOT always: website.newPage regenerates a claimed
+    // owner's page on "start over", and a build resumed after the owner signed
+    // up finishes here too. OPEN_FINDINGS #20.
+    p_owner_id: ownerUid || null,
   });
   sw.mark("persistDocument");
   if (!r || r.ok !== true) {
@@ -4561,6 +4617,7 @@ export async function runDocumentGeneration(
   brief: string,
   benchmarkModel?: string,
   jobId?: string | null,
+  ownerUid?: string | null,
 ): Promise<CapabilityActionResult> {
   const sw = stopwatch();
           if (!draftId || !draftToken) {
@@ -4591,7 +4648,7 @@ export async function runDocumentGeneration(
           const existing = await selectLatestBusinessDocument(draftId, "website");
           sw.mark("readExistingDocument");
           if (!existing || existing.format === "html") {
-            return await runFreeformGeneration(draftId, draftToken, brief, sw, jobId);
+            return await runFreeformGeneration(draftId, draftToken, brief, sw, jobId, ownerUid);
           }
           const bizRow = await selectOne("businesses", "id", draftId, "name,phone,slug,brand_color,logo_url,section_order,city,state,service_area_cities,business_type,meta");
           sw.mark("selectBusinessRow");
@@ -4692,6 +4749,7 @@ export async function runDocumentGeneration(
             p_rendered_html: html,
             p_created_by: "ai",
             p_design_rationale: genResult.rationale || null,
+            p_owner_id: ownerUid || null,
           });
           sw.mark("persistDocument");
           if (!r || r.ok !== true) {
@@ -4768,6 +4826,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             String((args as any)?.draftToken || "").trim(),
             String(args?.brief || "").trim(),
             String((args as any)?.__benchmarkModel || "").trim() || undefined,
+            // No jobId: this in-line path is the fallback. hubly-conversation
+            // normally intercepts generateDocument and dispatches the background
+            // build instead, which is where the job row lives.
+            null,
+            String((args as any)?.ownerUid || "").trim() || null,
           ),
       },
       {
@@ -4839,6 +4902,9 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_rendered_html: html,
             p_created_by: "ai",
             p_format: "html",
+            // "Start over" is reachable AFTER claim, so this is the one generation
+            // path a real owner hits routinely. Without this it failed every time.
+            p_owner_id: String((args as any)?.ownerUid || "").trim() || null,
           });
           if (!saved || saved.ok !== true) {
             return { ok: false, real: false, summary: "The new page was built but could not be saved.", error: "rpc_failed" };
@@ -4943,6 +5009,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_document: patchResult.document,
             p_rendered_html: html,
             p_created_by: "patch",
+            p_owner_id: String((args as any)?.ownerUid || "").trim() || null,
           });
           if (!r || r.ok !== true) {
             return { ok: false, real: false, summary: "The edit was computed but could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
@@ -5017,7 +5084,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           }
           // A Document stores its RENDERED html, so saving the preference alone
           // changes nothing anyone can see. Same re-render the logo upload does.
-          const rerendered = await rerenderLatestDocument(draftId, draftToken, "website");
+          const rerendered = await rerenderLatestDocument(draftId, draftToken, "website", String((args as any)?.ownerUid || "").trim() || null);
           const said = Object.entries(chrome).map(([k, v]) => `${k}=${v}`).join(", ");
           if (rerendered !== "updated") {
             return {
