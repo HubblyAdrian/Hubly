@@ -53819,6 +53819,7 @@ function wireHcEditingSurface(doc, root){
   function hcCloseBar(){
     if(hcBar && hcBar.parentNode) hcBar.parentNode.removeChild(hcBar);
     hcBar = null; hcBarKind = null;
+    try{ hcClosePanel(); }catch(e){}
   }
   function hcClearSel(){
     hcCloseBar();
@@ -53893,6 +53894,296 @@ function wireHcEditingSurface(doc, root){
   function hcSendStyle(label, on, style){
     post({ type:'hcFreeformStyleEdit', label: label, on: on, style: style });
   }
+  /* ── A REAL COLOUR PICKER ───────────────────────────────────────────────────
+     Four swatches is not a palette, reported three times. This opens a panel with
+     TWO things: the colours already on this page — read from the rendered document,
+     so they are what the owner can actually see, not a guess — and a proper spread
+     of hues with a light and a dark of each. */
+  var HC_HUES = [
+    ['Red','#b3261e','#e5484d','#f8b9b7'], ['Orange','#8a4b12','#d9632d','#f5c8a8'],
+    ['Amber','#7a5c00','#c99a06','#f3dc9a'], ['Green','#1e5631','#3f9142','#b7dfb9'],
+    ['Teal','#0f5257','#149ca3','#a8e0e2'], ['Blue','#123a6b','#2f6fd0','#b9d3f5'],
+    ['Indigo','#2a2a6b','#5654c7','#c3c2ef'], ['Purple','#4a2060','#8b4bb0','#ddc4ea'],
+    ['Pink','#7a1f47','#c94f82','#f3c2d7'], ['Neutral','#16181d','#6b7280','#e6e8ec']
+  ];
+  function hcPageColours(){
+    var seen = {}, out = [];
+    try{
+      var els = root.querySelectorAll('*');
+      for(var i=0;i<els.length && out.length < 40;i++){
+        var cs = win.getComputedStyle(els[i]);
+        [cs.color, cs.backgroundColor].forEach(function(v){
+          if(!v) return;
+          var m = /^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/.exec(v);
+          if(!m) return;
+          if(m[4] !== undefined && parseFloat(m[4]) < 0.5) return;      // effectively transparent
+          var hex = '#' + [m[1],m[2],m[3]].map(function(n){ var h = (+n).toString(16); return h.length<2?'0'+h:h; }).join('');
+          if(seen[hex]) { seen[hex]++; return; }
+          seen[hex] = 1; out.push(hex);
+        });
+      }
+    }catch(e){}
+    // Most-used first: the page's real palette, not the first thing we happened to meet.
+    out.sort(function(a,b){ return (seen[b]||0) - (seen[a]||0); });
+    return out.slice(0, 10);
+  }
+  function hcRgbToHex(v){
+    var m = /^rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(String(v||''));
+    if(!m) return null;
+    return '#' + [m[1],m[2],m[3]].map(function(n){ var h=(+n).toString(16); return h.length<2?'0'+h:h; }).join('');
+  }
+  function hcLum(hex){
+    var c = String(hex).replace('#',''); if(c.length !== 6) return 0.5;
+    var r = parseInt(c.slice(0,2),16)/255, g = parseInt(c.slice(2,4),16)/255, b = parseInt(c.slice(4,6),16)/255;
+    var f = function(x){ return x <= 0.03928 ? x/12.92 : Math.pow((x+0.055)/1.055, 2.4); };
+    return 0.2126*f(r) + 0.7152*f(g) + 0.0722*f(b);
+  }
+  var hcPanel = null;
+  function hcClosePanel(){ if(hcPanel && hcPanel.parentNode) hcPanel.parentNode.removeChild(hcPanel); hcPanel = null; }
+  function hcOpenColourPanel(near, opts){
+    hcClosePanel();
+    var panel = doc.createElement('div');
+    panel.setAttribute('data-hc-editor','1');
+    panel.style.cssText = 'position:absolute;z-index:2147483647;background:#12151f;border:1px solid rgba(255,255,255,.16);' +
+      'border-radius:12px;padding:10px;box-shadow:0 18px 50px rgba(0,0,0,.5);max-width:min(92vw,320px);' +
+      'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+    var title = function(t){
+      var h = doc.createElement('div'); h.textContent = t;
+      h.style.cssText = 'color:#a9adb8;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin:2px 0 6px';
+      panel.appendChild(h); return h;
+    };
+    var grid = function(){
+      var g = doc.createElement('div');
+      g.style.cssText = 'display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin-bottom:10px';
+      panel.appendChild(g); return g;
+    };
+    var chip = function(g, hex, name){
+      var b = doc.createElement('button');
+      b.type = 'button'; b.title = name || hex;
+      b.style.cssText = 'width:24px;height:24px;min-width:24px;border-radius:6px;border:1px solid rgba(255,255,255,.28);' +
+        'padding:0;cursor:pointer;background:' + hex;
+      b.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); opts.onPick(hex); hcClosePanel(); });
+      g.appendChild(b);
+    };
+    var mine = hcPageColours().filter(opts.filter || function(){ return true; });
+    if(mine.length){
+      title('On this page');
+      var g1 = grid(); mine.forEach(function(h){ chip(g1, h); });
+    }
+    title(opts.spreadTitle || 'Colours');
+    var g2 = grid();
+    HC_HUES.forEach(function(h){
+      [h[3], h[2], h[1]].forEach(function(v){ if(!opts.filter || opts.filter(v)) chip(g2, v, h[0]); });
+    });
+    doc.body.appendChild(panel);
+    var r = near.getBoundingClientRect();
+    var sx = win.pageXOffset || 0, sy = win.pageYOffset || 0;
+    var top = r.bottom + 8 + sy, left = Math.max(8, Math.min(r.left + sx, (doc.documentElement.clientWidth || 800) - panel.offsetWidth - 8 + sx));
+    panel.style.top = top + 'px'; panel.style.left = left + 'px';
+    hcPanel = panel;
+  }
+
+  /* ONE SET OF MOVE CONTROLS, AT EITHER GRAIN.
+     The drag handle and the arrows are the same operation — the arrows exist as the
+     keyboard and touch fallback, not as a second system. Each appears only where the
+     move is genuinely possible, which is the earned-control rule: a control that
+     cannot do its job is not offered and never has to explain itself. */
+  function hcMoveControls(el, mk, sep, grain){
+    var sibs = hcPlaceableSiblings(el);
+    if(!sibs.length) return false;
+    var kids = [], all = el.parentNode ? el.parentNode.children : [];
+    for(var i=0;i<all.length;i++) if(all[i] === el || sibs.indexOf(all[i]) > -1) kids.push(all[i]);
+    var at = kids.indexOf(el);
+    var what = grain === 'section' ? 'section' : 'block';
+    var h = mk('⠿', 'Drag to move this ' + what, function(){});
+    try{
+      h.style.cursor = 'grab';
+      h.addEventListener('pointerdown', function(ev){
+        ev.preventDefault(); ev.stopPropagation();
+        hcBeginDrag(ev, el);
+      });
+    }catch(e){}
+    if(at > 0) mk('↑', 'Move this ' + what + ' up', function(b){ hcArmMove(b); hcSendNodeMove(el, kids[at-1], 'before'); });
+    if(at > -1 && at < kids.length - 1) mk('↓', 'Move this ' + what + ' down', function(b){ hcArmMove(b); hcSendNodeMove(el, kids[at+1], 'after'); });
+    sep();
+    return true;
+  }
+
+  /* ── ADDRESSING, DRAG, AND THE ONE MOVE OPERATION ──────────────────────────
+     Elements and sections are the same move at different grain, so there is one
+     address scheme and one server op. The address is the nearest stamped
+     ancestor-or-self plus element-child indices down to the node, with a
+     fingerprint the server re-checks — the path is only trusted as far as the
+     document it was computed against. */
+  function hcFirstStampIn(el){
+    try{
+      var d = el.querySelector('[data-hc],[data-hc-section]');
+      if(!d) return '';
+      return d.getAttribute('data-hc') || d.getAttribute('data-hc-section') || '';
+    }catch(e){ return ''; }
+  }
+  function hcFingerprint(el){
+    return [String(el.tagName||'').toLowerCase(), String(el.children.length),
+            String(el.getAttribute('class')||'').trim().replace(/\s+/g,' '),
+            hcFirstStampIn(el)].join('|');
+  }
+  function hcAddressOf(el){
+    if(!el) return null;
+    var steps = [], a = el;
+    while(a && !(a.hasAttribute && (a.hasAttribute('data-hc-section') || a.hasAttribute('data-hc')))){
+      var p = a.parentNode;
+      if(!p || !p.children || a === doc.body) break;
+      steps.unshift(Array.prototype.indexOf.call(p.children, a));
+      a = p;
+    }
+    var kind, anchor;
+    if(a && a.hasAttribute && (a.hasAttribute('data-hc-section') || a.hasAttribute('data-hc'))){
+      kind = a.hasAttribute('data-hc-section') ? 'section' : 'label';
+      anchor = kind === 'section'
+        ? String(a.getAttribute('data-hc-section')).split(/\s+/)[0]
+        : a.getAttribute('data-hc');
+    } else {
+      // No stamped ancestor — address from the document root instead of giving up.
+      kind = 'label'; anchor = '@root'; steps = [];
+      var cur = el;
+      while(cur && cur.parentNode && cur !== doc.body && cur.parentNode.children){
+        steps.unshift(Array.prototype.indexOf.call(cur.parentNode.children, cur));
+        cur = cur.parentNode;
+      }
+    }
+    return { anchor: anchor, anchorKind: kind, steps: steps, fp: hcFingerprint(el) };
+  }
+
+  /* Where this node could legally land: its own siblings, minus our editor chrome,
+     minus page chrome when the node is a band. Empty means "nowhere" — which the
+     drag SHOWS by lifting the block and never drawing a drop line. */
+  function hcPlaceableSiblings(el){
+    if(!el || !el.parentNode || !el.parentNode.children) return [];
+    var isBand = el.hasAttribute && el.hasAttribute('data-hc-section');
+    var chrome = function(n){
+      if(!n.hasAttribute || !n.hasAttribute('data-hc-section')) return false;
+      var toks = String(n.getAttribute('data-hc-section')||'').split(/\s+/);
+      return toks.indexOf('header') > -1 || toks.indexOf('footer') > -1;
+    };
+    if(isBand && chrome(el)) return [];
+    var out = [];
+    var kids = el.parentNode.children;
+    for(var i=0;i<kids.length;i++){
+      var n = kids[i];
+      if(n === el) continue;
+      var tag = (n.tagName||'').toLowerCase();
+      if(tag === 'script' || tag === 'style' || tag === 'link' || tag === 'br') continue;
+      if(n.hasAttribute && n.hasAttribute('data-hc-editor')) continue;
+      if(n.hasAttribute && n.hasAttribute('data-hubly-runtime')) continue;
+      if(isBand && chrome(n)) continue;
+      var r = n.getBoundingClientRect();
+      if(!r || (r.width === 0 && r.height === 0)) continue;
+      out.push(n);
+    }
+    return out;
+  }
+
+  function hcSendNodeMove(node, ref, place){
+    post({ type:'hcFreeformNodeMove', node: hcAddressOf(node), ref: hcAddressOf(ref), place: place });
+  }
+
+  /* THE DRAG. Pointer events, not HTML5 drag-and-drop: the latter is unreliable
+     inside an iframe and does not exist on touch. Everything here happens INSIDE
+     this document, so the parent's scaling of the iframe never enters into it —
+     no coordinate translation, at any zoom. */
+  var hcDragLine = null, hcDragging = null;
+  function hcDropLine(){
+    if(hcDragLine) return hcDragLine;
+    var l = doc.createElement('div');
+    l.setAttribute('data-hc-editor','1');
+    l.style.cssText = 'position:absolute;z-index:2147483646;background:#d9632d;border-radius:2px;' +
+      'box-shadow:0 0 0 1px rgba(255,255,255,.6);pointer-events:none;display:none';
+    doc.body.appendChild(l);
+    hcDragLine = l;
+    return l;
+  }
+  function hcHideLine(){ if(hcDragLine) hcDragLine.style.display = 'none'; }
+
+  function hcBeginDrag(ev, el){
+    var sibs = hcPlaceableSiblings(el);
+    var startY = ev.clientY, startX = ev.clientX;
+    var moved = false;
+    // Lift it, so the gesture is visible even when there is nowhere to put it.
+    var prevTransition = el.style.transition, prevOpacity = el.style.opacity, prevOutline = el.style.outline;
+    var target = null, targetPlace = 'before';
+    var scrollTimer = null;
+
+    // Row or column? Decided from the siblings' own geometry, not a CSS guess.
+    var horizontal = false;
+    if(sibs.length >= 2){
+      var r0 = sibs[0].getBoundingClientRect(), r1 = sibs[1].getBoundingClientRect();
+      horizontal = (r0.right <= r1.left + 1 || r1.right <= r0.left + 1);
+    }
+
+    function paint(){
+      if(!target){ hcHideLine(); return; }
+      var r = target.getBoundingClientRect();
+      var line = hcDropLine();
+      var sx = win.pageXOffset || 0, sy = win.pageYOffset || 0;
+      line.style.display = 'block';
+      if(horizontal){
+        var x = (targetPlace === 'before' ? r.left : r.right) + sx;
+        line.style.left = (x - 2) + 'px'; line.style.top = (r.top + sy) + 'px';
+        line.style.width = '4px'; line.style.height = r.height + 'px';
+      } else {
+        var y = (targetPlace === 'before' ? r.top : r.bottom) + sy;
+        line.style.left = (r.left + sx) + 'px'; line.style.top = (y - 2) + 'px';
+        line.style.width = r.width + 'px'; line.style.height = '4px';
+      }
+    }
+    function pick(cx, cy){
+      target = null;
+      if(!sibs.length) return;                    // nowhere valid — no line, ever
+      var best = null, bestD = Infinity;
+      for(var i=0;i<sibs.length;i++){
+        var r = sibs[i].getBoundingClientRect();
+        var mid = horizontal ? (r.left + r.width/2) : (r.top + r.height/2);
+        var v = horizontal ? cx : cy;
+        var d = Math.abs(v - mid);
+        if(d < bestD){ bestD = d; best = sibs[i]; targetPlace = (v < mid) ? 'before' : 'after'; }
+      }
+      target = best;
+    }
+    function onMove(e){
+      if(!moved && Math.abs(e.clientY - startY) < 5 && Math.abs(e.clientX - startX) < 5) return;
+      if(!moved){
+        moved = true;
+        el.style.transition = 'none'; el.style.opacity = '.55';
+        el.style.outline = '2px solid #d9632d';
+      }
+      pick(e.clientX, e.clientY);
+      paint();
+      // Auto-scroll near the edges: the page is several screens tall inside a
+      // one-screen frame, so a drag that cannot scroll cannot reach most of it.
+      var vh = doc.documentElement.clientHeight || 0;
+      var dy = e.clientY < 70 ? -14 : (e.clientY > vh - 70 ? 14 : 0);
+      if(dy && !scrollTimer){
+        scrollTimer = setInterval(function(){
+          try{ win.scrollBy(0, dy); paint(); }catch(_){}
+        }, 16);
+      } else if(!dy && scrollTimer){ clearInterval(scrollTimer); scrollTimer = null; }
+    }
+    function onUp(){
+      try{ doc.removeEventListener('pointermove', onMove, true); }catch(e){}
+      try{ doc.removeEventListener('pointerup', onUp, true); }catch(e){}
+      if(scrollTimer){ clearInterval(scrollTimer); scrollTimer = null; }
+      el.style.transition = prevTransition; el.style.opacity = prevOpacity; el.style.outline = prevOutline;
+      hcHideLine();
+      hcDragging = null;
+      // No target means it returns to where it was and nothing is sent. That IS the
+      // answer for a block with nowhere to go, and it needs no words.
+      if(moved && target) hcSendNodeMove(el, target, targetPlace);
+    }
+    hcDragging = el;
+    doc.addEventListener('pointermove', onMove, true);
+    doc.addEventListener('pointerup', onUp, true);
+  }
+
   /* The bands this one can actually trade places with: outermost stamped sections
      that share its parent, in document order. Same rule the server applies, run
      here so the interface only offers what will work. */
@@ -53980,6 +54271,14 @@ function wireHcEditingSurface(doc, root){
       sep();
     }
 
+    // THE MOVE CONTROLS COME FIRST, AND THEY ARE HERE FOR ELEMENTS TOO.
+    //
+    // This is the grain that was actually asked for: "SERVICE PLANS" is a line inside
+    // the hero, not a band, and the first cut of reordering could only move whole
+    // bands — so the one thing reported repeatedly was the one thing impossible. An
+    // element and a section are the same move; only the grain differs.
+    if(kind !== 'section') hcMoveControls(el, mk, sep, 'block');
+
     if(kind === 'text' || kind === 'button'){
       mk('A-', 'Smaller', function(){ hcStepScale(el, label, on, -1); });
       mk('A+', 'Bigger',  function(){ hcStepScale(el, label, on, +1); });
@@ -53990,7 +54289,50 @@ function wireHcEditingSurface(doc, root){
         b.setAttribute('aria-pressed', now ? 'false' : 'true');
         hcSendStyle(label, on, { 'font-weight': now ? '400' : '700' });
       }, el.style.fontWeight === '700');
-      mk('Aa', 'Font', function(){ hcCycleFont(el, label, on); });
+      // A NAMED DROPDOWN, not a cycle. The 'Aa' button rotated sans->serif->mono per
+      // press, which is honest but is not a choice: you could not see what was on
+      // offer or go straight to one. Every entry is a system stack that resolves on
+      // every platform we serve — a picker that offers a face the page then fails to
+      // load is a control that lies.
+      (function(){
+        var sel = doc.createElement('select');
+        sel.setAttribute('data-hc-editor','1');
+        sel.title = 'Font';
+        sel.style.cssText = 'font:inherit;font-size:12.5px;font-weight:650;color:#e8eaee;background:#20242e;' +
+          'border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:6px 8px;min-height:36px;cursor:pointer';
+        [['','Font'],['sans','System'],['serif','Serif'],['mono','Mono'],
+         ['rounded','Rounded'],['condensed','Condensed'],['humanist','Humanist'],['slab','Slab']].forEach(function(o){
+          var op = doc.createElement('option'); op.value = o[0]; op.textContent = o[1]; sel.appendChild(op);
+        });
+        sel.addEventListener('click', function(ev){ ev.stopPropagation(); });
+        sel.addEventListener('change', function(ev){
+          ev.stopPropagation();
+          var v = sel.value; if(!v) return;
+          hcSendStyle(label, on, { 'font-family': v });
+        });
+        bar.appendChild(sel);
+      })();
+      // SIZE AS A NUMBER, with a floor and a ceiling. The steps stay beside it because
+      // they keep the page's designed scale; this is here because typing a size is what
+      // people expect, and its absence reads as a toy.
+      (function(){
+        var inp = doc.createElement('input');
+        inp.setAttribute('data-hc-editor','1');
+        inp.type = 'number'; inp.min = '8'; inp.max = '96'; inp.title = 'Size in pixels';
+        try{ inp.value = String(Math.round(parseFloat(win.getComputedStyle(el).fontSize) || 16)); }catch(e){ inp.value = '16'; }
+        inp.style.cssText = 'width:56px;font:inherit;font-size:12.5px;font-weight:650;color:#e8eaee;background:#20242e;' +
+          'border:1px solid rgba(255,255,255,.16);border-radius:8px;padding:6px 8px;min-height:36px';
+        inp.addEventListener('click', function(ev){ ev.stopPropagation(); });
+        var apply = function(){
+          var n = parseFloat(inp.value);
+          if(!(n >= 8 && n <= 96)) return;          // the control refuses, silently and locally
+          el.style.fontSize = n + 'px';
+          hcSendStyle(label, on, { 'font-size': n + 'px' });
+        };
+        inp.addEventListener('change', function(ev){ ev.stopPropagation(); apply(); });
+        inp.addEventListener('keydown', function(ev){ ev.stopPropagation(); if(ev.key === 'Enter'){ ev.preventDefault(); apply(); } });
+        bar.appendChild(inp);
+      })();
       sep();
       ['left','center','right'].forEach(function(a){
         mk(a === 'left' ? '≡‹' : a === 'center' ? '≡' : '≡›', 'Align ' + a, function(b){
@@ -54001,8 +54343,20 @@ function wireHcEditingSurface(doc, root){
         }, (win.getComputedStyle(el).textAlign||'').indexOf(a) === 0);
       });
       sep();
-      ['#1B1712','#6b7280','#ffffff','#D9632D'].forEach(function(h){ swatch(h, 'color'); });
+      // THE PICKER, not four swatches — reported three times. Opens the page's own
+      // colours plus a real spread of hues, each with a light and a dark.
+      (function(){
+        var b = mk('◑ Colour', 'Text colour', function(btn){
+          hcOpenColourPanel(btn, { spreadTitle: 'Text colour', onPick: function(hex){
+            el.style.color = hex; hcSendStyle(label, on, { 'color': hex });
+          }});
+        });
+        b.className = 'hc-ctx-colour';
+      })();
       if(kind === 'button'){ sep(); mk('Link', 'Change where this goes', function(){ hcEditLink(el); }); }
+      // DELETE — the same addressing and the same undoable pipe as a move.
+      sep();
+      mk('✕', 'Remove this block', function(){ post({ type:'hcFreeformNodeDelete', node: hcAddressOf(el) }); });
     }
 
     if(kind === 'image'){
@@ -54030,25 +54384,48 @@ function wireHcEditingSurface(doc, root){
       // here where the DOM is: outermost stamped bands sharing this one's parent.
       // at_edge and not_siblings are now unreachable through the interface; they stay
       // on the server because a POST is a POST.
-      var sibs = hcSectionSiblings(el);
-      var at = sibs.indexOf(el);
-      if(at > 0) mk('↑', 'Move this section up the page', function(b){ hcArmMove(b); hcMoveSection(label, 'up'); });
-      if(at > -1 && at < sibs.length - 1) mk('↓', 'Move this section down the page', function(b){ hcArmMove(b); hcMoveSection(label, 'down'); });
-      if(at > 0 || (at > -1 && at < sibs.length - 1)) sep();
+      hcMoveControls(el, mk, sep, 'section');
       mk('Roomier', 'More space inside this section', function(){ hcStepSpace(el, label, on, +1); });
       mk('Tighter', 'Less space inside this section', function(){ hcStepSpace(el, label, on, -1); });
       sep();
-      ['#FAF4EC','#ffffff','#1B1712','transparent'].forEach(function(h){
+      mk('◑ Background', 'This section\'s background', function(btn){
+        hcOpenColourPanel(btn, { spreadTitle: 'Section background', onPick: function(hex){
+          el.style.backgroundColor = hex; hcSendStyle(label, on, { 'background-color': hex });
+        }});
+      });
+      (function(){
         var b = doc.createElement('button');
-        b.type='button'; b.className='hc-ctx-sw'; b.title = h === 'transparent' ? 'No background' : h;
+        b.type='button'; b.className='hc-ctx-sw'; b.title = 'No background';
         var dot = doc.createElement('i');
-        dot.style.background = h === 'transparent' ? 'repeating-conic-gradient(#888 0% 25%,#fff 0% 50%) 50%/8px 8px' : h;
+        dot.style.background = 'repeating-conic-gradient(#888 0% 25%,#fff 0% 50%) 50%/8px 8px';
         b.appendChild(dot);
         b.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation();
-          el.style.backgroundColor = h === 'transparent' ? 'transparent' : h;
-          hcSendStyle(label, on, { 'background-color': h });
+          el.style.backgroundColor = 'transparent';
+          hcSendStyle(label, on, { 'background-color': 'transparent' });
         });
         bar.appendChild(b);
+      })();
+      sep();
+      // PAGE BACKGROUND — offered, but only inside the page's OWN lightness band.
+      //
+      // This knob was withheld for a real reason (STATE: "no way to know WHICH text
+      // would land on a new background" — a page paints text in many colours, scoped to
+      // sections, and no single background clears them all). The recorded decision was
+      // the lightness band rather than render-and-measure: stay inside the page's own
+      // family and every existing text-on-background relationship survives by
+      // construction. So the choices here are filtered to that band; "turn my light page
+      // dark" is a redesign and still belongs to the generator, not a swatch.
+      mk('◑ Page', 'The page background', function(btn){
+        var cur = 0.9;
+        try{ cur = hcLum(hcRgbToHex(win.getComputedStyle(doc.body).backgroundColor) || '#ffffff'); }catch(e){}
+        hcOpenColourPanel(btn, {
+          spreadTitle: 'Page background',
+          filter: function(hex){ return Math.abs(hcLum(hex) - cur) <= 0.22; },
+          onPick: function(hex){
+            doc.body.style.backgroundColor = hex;
+            post({ type:'hcFreeformStyleEdit', label: '@page', on: 'page', style: { 'background-color': hex } });
+          }
+        });
       });
     }
 

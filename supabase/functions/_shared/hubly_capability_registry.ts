@@ -65,7 +65,7 @@ import { resolveImages, collapseEmptyImageSlots, pexelsFetcher, type PlacedImage
 import { annotatePlaceholders } from "./hubly_placeholders.ts";
 import { reportAllowlistDrops } from "./hubly_allowlist.ts";
 import { KNOBS, hasDesignKnobs, knobBinding, pagePalette, readDesignKnobs, resetDesignKnob, setDesignKnob, stampDesignKnobs, stepKnob, type KnobId } from "./hubly_design_knobs.ts";
-import { applyFreeformEdit, applyFreeformStyle, moveFreeformSection, humanFreeformSummary, labelInventory, labelsPresent, type FreeformStyleEdit, type LabelEntry } from "./hubly_freeform.ts";
+import { applyFreeformEdit, applyFreeformStyle, moveFreeformSection, moveFreeformNode, deleteFreeformNode, type NodeAddress, humanFreeformSummary, labelInventory, labelsPresent, type FreeformStyleEdit, type LabelEntry } from "./hubly_freeform.ts";
 import {
   formatPhoneHouse,
   placeContactHoursInFreeform,
@@ -1661,6 +1661,76 @@ export async function applyOwnerSectionMove(
     summary: (move.dir === "up" ? "Moved that section up." : "Moved that section down.") + navPart,
     raw: { version: saved.version, moved: r.moved, swappedWith: r.swappedWith, navLinksMoved: r.navLinksMoved },
   };
+}
+
+/**
+ * MOVE ANY NODE — one writer for elements and sections alike.
+ *
+ * Same owner-verified, versioned, undoable pipe as every other edit, and the nav is
+ * re-ordered inside the same transform, so there is never a moment where the page and
+ * its own navigation disagree.
+ */
+export async function applyOwnerNodeMove(
+  draftId: string,
+  draftToken: string,
+  ownerUid: string | null,
+  move: { node: NodeAddress; ref: NodeAddress; place: "before" | "after" },
+): Promise<OwnerEditResult> {
+  if (!draftId || !ownerUid) return { ok: false, real: false, error: "not_signed_in", summary: "Sign in to move this." };
+  const biz = await selectOne("businesses", "id", draftId, "owner_id");
+  if (!biz || String(biz.owner_id || "") !== String(ownerUid)) {
+    return { ok: false, real: false, error: "not_owner", summary: "You don't have access to edit this business." };
+  }
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest) return { ok: false, real: false, error: "no_document", summary: "There's no page to change yet." };
+  if (latest.format !== "html") return { ok: false, real: false, error: "wrong_format", summary: "That page isn't a freeform page." };
+
+  const r = moveFreeformNode(latest.renderedHtml, move);
+  if (!r.ok) {
+    // Short, because these are said ON THE CONTROL, not in the conversation.
+    const said: Record<string, string> = {
+      no_change: "Already there",
+      changed: "Page changed — try again",
+      not_siblings: "Can't go there",
+      not_movable: "Can't move that",
+      no_match: "Can't find that any more",
+      invalid_address: "Can't move that",
+    };
+    return { ok: false, real: false, error: r.error, summary: said[r.error || ""] || "Didn't move" };
+  }
+  const saved = await callBusinessRpc("create_business_document", {
+    p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
+    p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "node-move"),
+    p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
+  });
+  if (!saved || saved.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "Didn't save" };
+  return { ok: true, real: true, summary: "Moved.", raw: { version: saved.version, navLinksMoved: r.navLinksMoved, movedSection: r.movedSection } };
+}
+
+/** DELETE A NODE — same addressing, same pipe, same reversibility (Undo is a version). */
+export async function applyOwnerNodeDelete(
+  draftId: string,
+  draftToken: string,
+  ownerUid: string | null,
+  addr: NodeAddress,
+): Promise<OwnerEditResult> {
+  if (!draftId || !ownerUid) return { ok: false, real: false, error: "not_signed_in", summary: "Sign in to change this." };
+  const biz = await selectOne("businesses", "id", draftId, "owner_id");
+  if (!biz || String(biz.owner_id || "") !== String(ownerUid)) {
+    return { ok: false, real: false, error: "not_owner", summary: "You don't have access to edit this business." };
+  }
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest) return { ok: false, real: false, error: "no_document", summary: "There's no page to change yet." };
+  if (latest.format !== "html") return { ok: false, real: false, error: "wrong_format", summary: "That page isn't a freeform page." };
+  const r = deleteFreeformNode(latest.renderedHtml, addr);
+  if (!r.ok) return { ok: false, real: false, error: r.error, summary: r.error === "not_movable" ? "Can't remove that" : "Didn't remove" };
+  const saved = await callBusinessRpc("create_business_document", {
+    p_business_id: draftId, p_draft_token: draftToken, p_tag: "website",
+    p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "node-delete"),
+    p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
+  });
+  if (!saved || saved.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "Didn't save" };
+  return { ok: true, real: true, summary: "Removed.", raw: { version: saved.version } };
 }
 
 export async function applyDirectFreeformEdit(

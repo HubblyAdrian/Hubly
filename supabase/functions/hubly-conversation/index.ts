@@ -65,7 +65,7 @@ import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
 import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
 import { reportAllowlistDrops } from "../_shared/hubly_allowlist.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, applyOwnerDesignEdit, applyOwnerStyleEdit, applyOwnerSectionMove, restampFreeformPage, readOwnerDesignKnobs, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, applyOwnerDesignEdit, applyOwnerStyleEdit, applyOwnerSectionMove, applyOwnerNodeMove, applyOwnerNodeDelete, restampFreeformPage, readOwnerDesignKnobs, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -835,7 +835,7 @@ Deno.serve(async (req) => {
   // "that didn't save".
   const anyDirectEdit = !!(body && (body.directRecordEdit || body.directEdit || body.directImageEdit ||
     body.directDocumentPatch || body.directDocumentImageEdit || body.directFreeformEdit || body.directFreeformImageEdit ||
-    body.designKnobs === true || body.designEdit || body.styleEdit || body.sectionMove ||
+    body.designKnobs === true || body.designEdit || body.styleEdit || body.sectionMove || body.nodeMove || body.nodeDelete ||
     body.restampPage === true));
   if (!incoming.length && !anyDirectEdit) return jsonRes({ ok: false, error: "messages_required" }, 400);
 
@@ -1483,10 +1483,10 @@ Deno.serve(async (req) => {
     if (!draftBusiness) return jsonRes({ ok: false, error: "no_business" }, 400);
     const ownerUid = await getOwnerUid();
     if (!ownerUid) return jsonRes({ ok: false, error: "not_signed_in", reply: "You need to be signed in to change this." }, 401);
-    const e = body.styleEdit as { label: string; on?: "element" | "section"; style: Record<string, string> };
+    const e = body.styleEdit as { label: string; on?: "element" | "section" | "page"; style: Record<string, string> };
     const result = await applyOwnerStyleEdit(draftBusiness.id, draftBusiness.draftToken, ownerUid, {
       label: String(e.label || ""),
-      on: e.on === "section" ? "section" : "element",
+      on: e.on === "section" ? "section" : e.on === "page" ? "page" : "element",
       style: (e.style && typeof e.style === "object") ? e.style : {},
     });
     return jsonRes({
@@ -1551,6 +1551,46 @@ Deno.serve(async (req) => {
       sections: r.sections ?? null,
       ...(r.error ? { error: r.error } : {}),
     }, r.ok ? 200 : 200);
+  }
+
+  // MOVE ANY NODE — the drag, and the arrows, which are now the same operation at
+  // different grain. Structured and model-free: the owner dragged a specific block to
+  // a specific place and there is nothing to interpret.
+  if (body?.nodeMove && typeof body.nodeMove === "object") {
+    if (!draftBusiness) return jsonRes({ ok: false, error: "no_business" }, 400);
+    const ownerUid = await getOwnerUid();
+    if (!ownerUid) return jsonRes({ ok: false, error: "not_signed_in", reply: "Sign in to move this." }, 401);
+    const m = body.nodeMove as { node?: unknown; ref?: unknown; place?: string };
+    const place = m.place === "before" ? "before" : m.place === "after" ? "after" : null;
+    if (!place || !m.node || !m.ref) return jsonRes({ ok: false, error: "invalid_address", reply: "Can't move that" }, 400);
+    const result = await applyOwnerNodeMove(draftBusiness.id, draftBusiness.draftToken, ownerUid, {
+      node: m.node as never, ref: m.ref as never, place,
+    });
+    return jsonRes({
+      ok: result.ok,
+      reply: result.summary || "",
+      messages: incoming,
+      actions: [{ capability: "website", capabilityAction: "moveNode", args: { place }, ok: !!result.ok, real: !!result.real }],
+      interimMessages: [],
+      ...(result.raw ? { moveResult: result.raw } : {}),
+      ...(result.error ? { error: result.error } : {}),
+    });
+  }
+
+  // REMOVE A NODE.
+  if (body?.nodeDelete && typeof body.nodeDelete === "object") {
+    if (!draftBusiness) return jsonRes({ ok: false, error: "no_business" }, 400);
+    const ownerUid = await getOwnerUid();
+    if (!ownerUid) return jsonRes({ ok: false, error: "not_signed_in", reply: "Sign in to change this." }, 401);
+    const result = await applyOwnerNodeDelete(draftBusiness.id, draftBusiness.draftToken, ownerUid, body.nodeDelete as never);
+    return jsonRes({
+      ok: result.ok,
+      reply: result.summary || "",
+      messages: incoming,
+      actions: [{ capability: "website", capabilityAction: "deleteNode", args: {}, ok: !!result.ok, real: !!result.real }],
+      interimMessages: [],
+      ...(result.error ? { error: result.error } : {}),
+    });
   }
 
   // MOVE A SECTION — the up/down arrows on the section toolbar. Structured and

@@ -385,6 +385,12 @@ const STYLE_VOCAB: Record<string, (v: string) => string | null> = {
   "font-weight":      (v) => ["400", "500", "600", "700", "800"].includes(v.trim()) ? v.trim() : null,
   "font-style":       (v) => ["normal", "italic"].includes(v.trim()) ? v.trim() : null,
   "font-family":      (v) => FONT_STACKS[v.trim()] || null,
+  // A NUMBER FIELD, WITH A FLOOR AND A CEILING. The steps stay (A+/A-) because they
+  // keep the page's designed scale; this exists because "type a size" is what people
+  // expect and the absence of it reads as a toy. Clamped 8-96px: a free number box is
+  // how an owner wrecks a layout in one keystroke, and unbounded is not a feature.
+  "font-size":        (v) => { const m = /^(\d+(?:\.\d+)?)px$/.exec(v.trim()); if (!m) return null;
+                               const n = parseFloat(m[1]); return (n >= 8 && n <= 96) ? `${n}px` : null; },
   // The knob variable, on the element. Steps only — same list the panel offered.
   "--hubly-type-scale":  (v) => ["0.8", "0.9", "1", "1.1", "1.25", "1.5"].includes(v.trim()) ? v.trim() : null,
   "--hubly-space-scale": (v) => ["0.8", "0.9", "1", "1.15", "1.3"].includes(v.trim()) ? v.trim() : null,
@@ -398,16 +404,23 @@ const STYLE_VOCAB: Record<string, (v: string) => string | null> = {
  *  picks a face, not a CSS string — so a stack can be corrected centrally and no
  *  caller can name a font that does not load. */
 const FONT_STACKS: Record<string, string> = {
-  "sans":  "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-  "serif": "Georgia, 'Times New Roman', serif",
-  "mono":  "ui-monospace, 'SF Mono', Menlo, monospace",
+  "sans":      "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  "serif":     "Georgia, 'Times New Roman', serif",
+  "mono":      "ui-monospace, 'SF Mono', Menlo, monospace",
+  // Added for the named dropdown. SYSTEM STACKS ONLY: a picker that offers a face the
+  // page then fails to load is a control that lies, and every one of these resolves to
+  // something real on every platform we serve.
+  "rounded":   "ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Quicksand, system-ui, sans-serif",
+  "condensed": "'Arial Narrow', 'Roboto Condensed', 'Liberation Sans Narrow', system-ui, sans-serif",
+  "humanist":  "Optima, Candara, 'Gill Sans', 'Gill Sans MT', system-ui, sans-serif",
+  "slab":      "Rockwell, 'Roboto Slab', 'Courier Bold', Georgia, serif",
 };
 
 export interface FreeformStyleEdit {
   /** data-hc on a leaf, or data-hc-section on a band. */
   label: string;
   /** Which attribute carries the label — leaves and sections are addressed differently. */
-  on?: "element" | "section";
+  on?: "element" | "section" | "page";
   /** property -> value, both validated against STYLE_VOCAB. */
   style: Record<string, string>;
 }
@@ -436,8 +449,13 @@ export function applyFreeformStyle(html: string, edit: FreeformStyleEdit): Freef
     ({ ok: false, html: src, changed: 0, applied: {}, rejected: [], error });
 
   const onSection = edit.on === "section";
-  if (!edit.label) return fail("invalid_label");
-  if (!onSection && !isValidHcLabel(edit.label)) return fail("invalid_label");
+  const onPage = edit.on === "page";
+  // THE PAGE BACKGROUND has no stamp to address — it is the body. Rather than invent an
+  // anchor for it, the target is named directly and resolved here.
+  if (!onPage) {
+    if (!edit.label) return fail("invalid_label");
+    if (!onSection && !isValidHcLabel(edit.label)) return fail("invalid_label");
+  }
   if (!edit.style || !Object.keys(edit.style).length) return fail("empty_style");
 
   const applied: Record<string, string> = {};
@@ -452,6 +470,18 @@ export function applyFreeformStyle(html: string, edit: FreeformStyleEdit): Freef
   if (!Object.keys(applied).length) return fail("all_rejected");
 
   const scan = scanHtml(src);
+  if (onPage) {
+    const body = scan.all.find((e) => e.name === "body");
+    if (!body) return fail("no_match");
+    const existing = body.attrs["style"] || "";
+    const merged = mergeInlineStyle(existing, applied);
+    if (merged === existing) return fail("no_change");
+    const r = body.attrRanges["style"];
+    const edit1: Splice = r
+      ? { start: r.start, end: r.end, text: ` style="${escAttr(merged)}"` }
+      : { start: body.attrInsertAt, end: body.attrInsertAt, text: ` style="${escAttr(merged)}"` };
+    return { ok: true, html: spliceAll(src, [edit1]), changed: 1, applied, rejected };
+  }
   const attr = onSection ? "data-hc-section" : "data-hc";
   const matches = scan.all.filter((e) => {
     const v = e.attrs[attr];
@@ -698,4 +728,246 @@ export function moveFreeformSection(html: string, edit: FreeformSectionMove): Fr
     swappedWith: tokens(sections[j])[0] || "",
     navLinksMoved,
   };
+}
+
+/* ── MOVING ANY NODE, AT ANY GRAIN ─────────────────────────────────────────── */
+
+/**
+ * ONE MOVE, NOT TWO SYSTEMS.
+ *
+ * The first cut of reordering could only swap whole stamped bands, which meant the
+ * thing actually asked for — "put SERVICE PLANS below the headline" — was impossible:
+ * that line is a leaf inside the hero, not a band. Elements and sections are the same
+ * move at different grain, so there is one operation and one address scheme.
+ *
+ * ADDRESSING. A node is named by the nearest ancestor-or-self that carries a stamp
+ * (`data-hc-section` or `data-hc`) plus element-child indices down to it. That covers
+ * the three cases without inventing a new anchor pass:
+ *   - a stamped band        -> anchor=<band>, steps=[]
+ *   - a labelled leaf       -> anchor=<label>, steps=[]
+ *   - an UNLABELLED wrapper -> anchor=<nearest stamped ancestor>, steps=[2,0]
+ * The wrapper case is the one that matters in practice: a whole service card is a
+ * <div> with no stamp of its own, and "move that card" is what people actually want.
+ *
+ * IT IS NOT RE-RECOGNITION. The client sends a FINGERPRINT with the address — tag,
+ * child count, class, and the first stamped descendant — and the server refuses the
+ * move unless the resolved node still matches. The path is only trusted as far as the
+ * document it was computed against; if the page changed underneath, nothing moves.
+ */
+export interface NodeAddress {
+  anchor: string;
+  anchorKind: "section" | "label";
+  steps: number[];
+  fp?: string;
+}
+
+export interface FreeformNodeMove {
+  node: NodeAddress;
+  ref: NodeAddress;
+  /** Where the node lands relative to ref. */
+  place: "before" | "after";
+}
+
+export interface FreeformNodeMoveResult {
+  ok: boolean;
+  html: string;
+  navLinksMoved: number;
+  movedSection?: string;
+  error?: "invalid_address" | "no_match" | "changed" | "not_siblings" | "not_movable" | "no_change";
+}
+
+const MOVE_CHROME = new Set(["header", "footer"]);
+
+function sectionTokens(e: ScannedEl): string[] {
+  return String(e.attrs["data-hc-section"] || "").split(/\s+/).filter(Boolean);
+}
+function isBand(e: ScannedEl): boolean {
+  return typeof e.attrs["data-hc-section"] === "string";
+}
+function isChromeBand(e: ScannedEl): boolean {
+  return sectionTokens(e).some((t) => MOVE_CHROME.has(t));
+}
+
+/** The fingerprint both sides compute the same way — no entity decoding, no text
+ *  normalisation, nothing that can drift between a DOM and a byte scanner. */
+export function nodeFingerprint(tag: string, childCount: number, cls: string, firstStamp: string): string {
+  return [tag.toLowerCase(), String(childCount), (cls || "").trim().replace(/\s+/g, " "), firstStamp || ""].join("|");
+}
+function fingerprintOf(e: ScannedEl): string {
+  let firstStamp = "";
+  const walk = (n: ScannedEl): boolean => {
+    for (const c of n.children) {
+      const s = c.attrs["data-hc"] || c.attrs["data-hc-section"];
+      if (typeof s === "string" && s) { firstStamp = s; return true; }
+      if (walk(c)) return true;
+    }
+    return false;
+  };
+  walk(e);
+  return nodeFingerprint(e.name, e.children.length, e.attrs["class"] || "", firstStamp);
+}
+
+function resolveAddress(scan: { all: ScannedEl[]; roots: ScannedEl[] }, addr: NodeAddress): ScannedEl | null {
+  if (!addr || typeof addr.anchor !== "string" || !addr.anchor) return null;
+  // A node with no stamped ancestor — a wrapper sitting directly under <body> between
+  // two bands — still has to be addressable, or "move that block" fails on exactly the
+  // parts of the page nobody stamped. Measured: 2 of 12 real pages had one.
+  const anchors = addr.anchor === "@root"
+    ? (() => { const b = scan.all.find((e) => e.name === "body"); return b ? [b] : scan.roots.slice(0, 1); })()
+    : scan.all.filter((e) =>
+        addr.anchorKind === "section"
+          ? sectionTokens(e).includes(addr.anchor)
+          : e.attrs["data-hc"] === addr.anchor
+      );
+  if (!anchors.length) return null;
+  let el: ScannedEl | null = anchors[0];
+  for (const i of (addr.steps || [])) {
+    if (!el || !Array.isArray(el.children) || i < 0 || i >= el.children.length) return null;
+    el = el.children[i];
+  }
+  return el;
+}
+
+/**
+ * NAV FOLLOWS THE PAGE, as a reorder rather than a swap.
+ *
+ * A drag can move a section anywhere among its siblings, not just one place, so the
+ * swap the arrows used is not general enough. This re-orders every nav container that
+ * lists two or more of the page's sections so its items sit in the page's order —
+ * computed AFTER the move, from the document itself.
+ */
+export function syncNavOrder(html: string): { html: string; moved: number } {
+  const src = String(html || "");
+  const scan = scanHtml(src);
+  const bands = scan.all
+    .filter((e) => { if (!isBand(e)) return false; for (let p = e.parent; p; p = p.parent) if (isBand(p)) return false; return true; })
+    .sort((a, b) => a.openStart - b.openStart);
+  const order = new Map<string, number>();
+  bands.forEach((b, i) => { const id = String(b.attrs["id"] || "").trim(); if (id) order.set(id, i); });
+  if (order.size < 2) return { html: src, moved: 0 };
+
+  const inAnyBand = (e: ScannedEl) => bands.some((b) => e.openStart >= b.openStart && e.closeEnd <= b.closeEnd && e !== b);
+  const links = scan.all.filter((e) => {
+    if (e.name !== "a") return false;
+    const href = String(e.attrs["href"] || "").trim();
+    return href.startsWith("#") && order.has(href.slice(1));
+  });
+
+  // Climb each link to the element that is the nav ITEM (the <li>, or the <a> itself),
+  // grouped by the container they share.
+  type Item = { item: ScannedEl; id: string };
+  const groups = new Map<ScannedEl, Item[]>();
+  for (const a of links) {
+    const id = String(a.attrs["href"]).slice(1);
+    // walk up while the parent still holds another section link — that parent is the list
+    let item: ScannedEl = a;
+    while (item.parent && !links.some((o) => o !== a && o.parent === item.parent)) {
+      if (!item.parent.parent) break;
+      item = item.parent;
+    }
+    if (!item.parent) continue;
+    if (inAnyBand(item)) continue;                 // a nav inside a band travels with it
+    if (bands.some((b) => item.openStart <= b.openStart && item.closeEnd >= b.closeEnd)) continue;
+    const g = groups.get(item.parent) || [];
+    if (g.some((x) => x.item === item)) continue;
+    g.push({ item, id });
+    groups.set(item.parent, g);
+  }
+
+  const edits: Splice[] = [];
+  let moved = 0;
+  for (const [, items] of groups) {
+    if (items.length < 2) continue;
+    const slots = items.slice().sort((a, b) => a.item.openStart - b.item.openStart);
+    const wanted = items.slice().sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+    if (slots.every((s, i) => s.item === wanted[i].item)) continue;   // already in page order
+    for (let i = 0; i < slots.length; i++) {
+      const from = wanted[i].item, to = slots[i].item;
+      if (from === to) continue;
+      edits.push({ start: to.openStart, end: to.closeEnd, text: src.slice(from.openStart, from.closeEnd) });
+      moved++;
+    }
+  }
+  if (!edits.length) return { html: src, moved: 0 };
+  try {
+    return { html: spliceAll(src, edits), moved };
+  } catch {
+    return { html: src, moved: 0 };                // never take the move down with it
+  }
+}
+
+export function moveFreeformNode(html: string, edit: FreeformNodeMove): FreeformNodeMoveResult {
+  const src = String(html || "");
+  const fail = (error: FreeformNodeMoveResult["error"]): FreeformNodeMoveResult =>
+    ({ ok: false, html: src, navLinksMoved: 0, error });
+
+  if (!edit || !edit.node || !edit.ref) return fail("invalid_address");
+  if (edit.place !== "before" && edit.place !== "after") return fail("invalid_address");
+
+  const scan = scanHtml(src);
+  const node = resolveAddress(scan, edit.node);
+  const ref = resolveAddress(scan, edit.ref);
+  if (!node || !ref) return fail("no_match");
+  if (node === ref) return fail("no_change");
+
+  // The address is only as good as the document it was computed against.
+  if (edit.node.fp && fingerprintOf(node) !== edit.node.fp) return fail("changed");
+  if (edit.ref.fp && fingerprintOf(ref) !== edit.ref.fp) return fail("changed");
+
+  // WITHIN ONE PARENT ONLY. Moving a node into a different container relocates it into
+  // a different styling context, and the page can visibly break — so it is refused
+  // rather than attempted. The interface does not offer it either: a drag with nowhere
+  // valid to land shows no drop line and the block returns.
+  if (node.parent !== ref.parent) return fail("not_siblings");
+  if (isBand(node) && isChromeBand(node)) return fail("not_movable");
+  if (isBand(ref) && isChromeBand(ref)) return fail("not_movable");
+
+  // Already there? Say so rather than writing a version that changes nothing.
+  const sibs = (node.parent ? node.parent.children : []).slice();
+  const ni = sibs.indexOf(node), ri = sibs.indexOf(ref);
+  if (ni < 0 || ri < 0) return fail("no_match");
+  if ((edit.place === "before" && ni === ri - 1) || (edit.place === "after" && ni === ri + 1)) return fail("no_change");
+
+  // Take the node with the whitespace in front of it, and put it back the same way, so
+  // repeated moves do not shed or accumulate indentation.
+  let cutStart = node.openStart;
+  while (cutStart > 0 && /[ \t]/.test(src[cutStart - 1])) cutStart--;
+  if (cutStart > 0 && src[cutStart - 1] === "\n") cutStart--;
+  const moving = src.slice(cutStart, node.closeEnd);
+  const insertAt = edit.place === "before" ? ref.openStart : ref.closeEnd;
+  if (insertAt > cutStart && insertAt < node.closeEnd) return fail("not_siblings");   // overlapping, never
+
+  const edits: Splice[] = [
+    { start: cutStart, end: node.closeEnd, text: "" },
+    { start: insertAt, end: insertAt, text: moving },
+  ].sort((a, b) => a.start - b.start);
+
+  let out: string;
+  try { out = spliceAll(src, edits); } catch { return fail("not_siblings"); }
+
+  // Sections carry navigation; leaves do not. Run it either way — it is a no-op on a
+  // page whose nav lists fewer than two sections.
+  const nav = syncNavOrder(out);
+  return {
+    ok: true,
+    html: nav.html,
+    navLinksMoved: nav.moved,
+    movedSection: isBand(node) ? (sectionTokens(node)[0] || "") : undefined,
+  };
+}
+
+/** Remove a node — the same addressing, the same guards, the same versioned pipe. */
+export function deleteFreeformNode(html: string, addr: NodeAddress): { ok: boolean; html: string; error?: string } {
+  const src = String(html || "");
+  const scan = scanHtml(src);
+  const node = resolveAddress(scan, addr);
+  if (!node) return { ok: false, html: src, error: "no_match" };
+  if (addr.fp && fingerprintOf(node) !== addr.fp) return { ok: false, html: src, error: "changed" };
+  if (isBand(node) && isChromeBand(node)) return { ok: false, html: src, error: "not_movable" };
+  let cutStart = node.openStart;
+  while (cutStart > 0 && /[ \t]/.test(src[cutStart - 1])) cutStart--;
+  if (cutStart > 0 && src[cutStart - 1] === "\n") cutStart--;
+  try {
+    return { ok: true, html: spliceAll(src, [{ start: cutStart, end: node.closeEnd, text: "" }]) };
+  } catch { return { ok: false, html: src, error: "splice_failed" }; }
 }
