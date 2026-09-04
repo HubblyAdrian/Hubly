@@ -681,6 +681,57 @@ prefer above, flip below when it clips, slide along the axis, never leave the vi
   nothing else does. Steps only — the generator designs a per-page type scale and a free
   number box destroys it.
 
+### REORDERING: ONE OPERATION, ANY GRAIN (built 2026-09-03/04)
+
+**The first cut was the wrong feature and it is worth recording why.** It could swap
+whole stamped BANDS only — so "put SERVICE PLANS below the headline", the thing Adrian
+has reported most often, was impossible: that line is a leaf inside the hero, not a
+band. A control that moves something is not the same as a control that moves the thing
+being asked about.
+
+**One address scheme.** A node is named by its nearest stamped ancestor-or-self plus
+element-child indices down to it, with a fingerprint (tag, child count, class, first
+stamped descendant) the server re-checks before moving anything — so the path is only
+trusted as far as the document it was computed against. That covers a band, a labelled
+leaf, and an UNLABELLED WRAPPER, which is what a whole service card is. A `@root`
+anchor covers nodes with no stamped ancestor (2 of 12 real pages had one).
+
+**Measured over 12 real stored pages** (stamped by the real pass): leaf moves 12/12,
+wrapper moves 11/12 (the 12th correctly refused — it resolved to chrome), band moves
+10/10, cross-parent refused 10/10, every result text-preserving.
+
+**Drag, and the arrows, are the same operation.** Pointer events, not HTML5 DnD (which
+is unreliable in an iframe and absent on touch). The whole gesture happens inside the
+canvas document, so the parent's scaling never enters into it — no coordinate
+translation at any zoom. The gesture starts from a handle in the toolbar because the
+block itself is contenteditable and dragging inside it would fight text selection.
+
+**The rules that hold it honest:**
+- **An ARROW appears only where that specific move exists.** The HANDLE appears
+  wherever picking the block up is meaningful — so a block with nowhere to go can SHOW
+  that: it lifts, no drop line ever appears, it returns. Hiding the handle instead was
+  the silence that made section.3 read as broken.
+- **Chrome is not a section.** header/footer are the page's frame; they are not offered
+  arrows and the writer refuses them. Without this, "shares a parent" was enough to
+  offer the site header a swap with whatever band sat beside it in `<body>` — a move
+  that would have succeeded and put the header in the middle of the page.
+- **Cross-container is a NO.** Moving a node into a different parent relocates it into
+  a different styling context and the page can visibly break. Refused at the writer,
+  and the drag shows it by never drawing a line.
+- **Nothing is said in chat.** Direct manipulation does not produce conversation: the
+  feedback is the page moving plus the Undo toast, and a genuine failure is said ON the
+  toolbar ("Didn't save"), never in the thread.
+- **A wrapper is its own KIND** — it gets move, background and delete, never a caret.
+- **The breadcrumb climbs ONE level** and names it ("Card", "Block", the section), so
+  every wrapper between a leaf and its band is selectable. Before this the card could be
+  addressed by the server and reached by nothing in the interface.
+
+**Verified live as the owner on evergreen:** SERVICE PLANS dragged below the headline
+(real pointer drag, one version, chat untouched); a whole service card moved between
+its siblings with image, price, description and button intact; arrows at both grains;
+drop line and lift observed; an only-child block lifts, shows no line and returns; Undo
+put a move back; the page restored to its original order afterwards.
+
 ### THE DEFINITION OF DONE — parity with Base44, so it stops being a moving target
 
 Recorded 2026-09-03 (Adrian). Twelve rows, eight gaps. This is the LIST; the ORDER
@@ -689,17 +740,17 @@ below it matters more, and the first line of the order is the whole point.
 | | Base44 | Hubly |
 |---|---|---|
 | Click element → toolbar beside it | yes | yes, roughly |
-| Font — named dropdown | yes | **no** — a cycle button |
-| Size — number field | yes | **no** — A+ / A− |
-| Colour — real picker | yes | **no** — 4 swatches |
+| Font — named dropdown | yes | **yes** (2026-09-04, system stacks only) |
+| Size — number field | yes | **yes** (2026-09-04, clamped 8–96px, steps kept) |
+| Colour — real picker | yes | **yes** (2026-09-04, page's own colours + 30 hues) |
 | Bold / italic / align | yes | yes |
 | Link editing | yes | yes |
-| Delete element | yes | **no** |
+| Delete element | yes | **yes** (2026-09-04) |
 | Selected element → chat context | yes | **no** |
 | Per-turn Revert in chat | yes | **no** (the machinery exists) |
 | Multi-instruction prompts | yes | **no** |
-| Move blocks | yes | **yes, as of 2026-09-03** (↑ ↓ section reorder) |
-| Page background | yes | **no** |
+| Move blocks | yes | **yes** — drag + arrows, any grain (2026-09-04) |
+| Page background | yes | **yes** (2026-09-04, inside the page's lightness band) |
 
 **CLEAN COMES BEFORE PARITY, AND THEY ARE DIFFERENT JOBS.** Clean means nothing
 broken, nothing that lies, no flashing, no losing your place. Parity means having the
