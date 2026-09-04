@@ -54016,30 +54016,23 @@ function wireHcEditingSurface(doc, root){
     try{
       var anchors = root.querySelectorAll('[data-hubly-service]');
       if(!anchors.length) return null;
-      // The card is the ancestor that sits directly inside the grid every anchor shares.
-      var cards = [];
+      var holds = function(el){ return !!(el.querySelector && el.querySelector('[data-hubly-service]')); };
+      // THE CARD IS THE LOWEST ANCESTOR WHOSE SIBLINGS ALSO HOLD A SERVICE.
+      //
+      // Not "the outermost element with several siblings" — that climbed straight past
+      // the card to the section and found nothing, which is why this mounted on no
+      // page at all. Structure decides it: walk up from an anchor until the level where
+      // the neighbours are other services. That level is the card; its parent is the grid.
       for(var i=0;i<anchors.length;i++){
-        var c = anchors[i];
-        while(c && c.parentNode && c.parentNode !== root){
-          if(c.parentNode && c.parentNode.children.length >= 2) break;
-          c = c.parentNode;
+        for(var n = anchors[i]; n && n.parentNode && n !== root; n = n.parentNode){
+          var p = n.parentNode;
+          if(!p.children || p.children.length < 2) continue;
+          var withService = 0;
+          for(var k=0;k<p.children.length;k++) if(p.children[k] !== n && holds(p.children[k])) withService++;
+          if(withService >= 1) return p;
         }
-        // climb to the outermost element whose parent holds several siblings
-        var best = c;
-        for(var n = c; n && n !== root; n = n.parentNode){
-          if(n.parentNode && n.parentNode.children.length >= 2) best = n;
-        }
-        if(best && cards.indexOf(best) === -1) cards.push(best);
       }
-      if(cards.length < 2) return null;
-      // The grid is the parent shared by most of them.
-      var counts = [], parents = [];
-      cards.forEach(function(c){
-        var p = c.parentNode; var i = parents.indexOf(p);
-        if(i === -1){ parents.push(p); counts.push(1); } else counts[i]++;
-      });
-      var bi = 0; for(var k=1;k<counts.length;k++) if(counts[k] > counts[bi]) bi = k;
-      return counts[bi] >= 2 ? parents[bi] : null;
+      return null;
     }catch(e){ return null; }
   }
   function hcMountAddService(){
