@@ -53837,6 +53837,10 @@ function wireHcEditingSurface(doc, root){
     var t = (el.tagName || '').toLowerCase();
     if(t === 'img') return 'image';
     if(t === 'a' || t === 'button') return 'button';
+    // A WRAPPER IS ITS OWN KIND. A service card is a <div> with children; treating it
+    // as text would make it contenteditable and let someone type into the middle of a
+    // card. It gets move, colour and delete — not a caret.
+    if(el.children && el.children.length > 0) return 'block';
     return 'text';
   }
 
@@ -54264,9 +54268,25 @@ function wireHcEditingSurface(doc, root){
     /* THE BREADCRUMB — how you get from an element to its section without a mode.
        Always first, so ascending is one predictable tap. */
     var band = el.closest ? el.closest('[data-hc-section]') : null;
-    if(kind !== 'section' && band){
-      var crumbName = String(band.getAttribute('data-hc-section')||'').split(/\s+/)[0];
-      var c = mk('↑ ' + hcSectionName(crumbName), 'Select the whole section', function(){ hcSelect(band); });
+    // ONE STEP UP AT A TIME, not a jump to the section.
+    //
+    // The breadcrumb used to go straight from a leaf to its band, which meant every
+    // wrapper in between — including the whole service CARD, the thing people most
+    // want to move — could not be selected at all. The server could address it; the
+    // interface could not reach it. Now the crumb climbs one level, and its label says
+    // what that level IS.
+    var upEl = (kind !== 'section' && el.parentNode && el.parentNode.nodeType === 1 && el.parentNode !== doc.body) ? el.parentNode : null;
+    if(upEl && upEl.hasAttribute && upEl.hasAttribute('data-hc-editor')) upEl = null;
+    if(upEl){
+      var upName;
+      if(upEl.hasAttribute && upEl.hasAttribute('data-hc-section')){
+        upName = hcSectionName(String(upEl.getAttribute('data-hc-section')||'').split(/\s+/)[0]);
+      } else if(upEl.querySelector && upEl.querySelector('[data-hubly-service],[data-hubly-price]')){
+        upName = 'Card';
+      } else {
+        upName = 'Block';
+      }
+      var c = mk('↑ ' + upName, 'Select the ' + upName.toLowerCase() + ' around this', function(){ hcSelect(upEl); });
       c.className = 'hc-ctx-crumb';
       sep();
     }
@@ -54278,6 +54298,21 @@ function wireHcEditingSurface(doc, root){
     // bands — so the one thing reported repeatedly was the one thing impossible. An
     // element and a section are the same move; only the grain differs.
     if(kind !== 'section') hcMoveControls(el, mk, sep, 'block');
+
+    if(kind === 'block'){
+      // A wrapper has no data-hc, so there is nothing for the style writer to address.
+      // Rather than send an edit that cannot land, the background control is offered
+      // only where it can actually apply — the earned-control rule again.
+      if(label){
+        mk('◑ Background', 'This block\'s background', function(btn){
+          hcOpenColourPanel(btn, { spreadTitle: 'Block background', onPick: function(hex){
+            el.style.backgroundColor = hex; hcSendStyle(label, on, { 'background-color': hex });
+          }});
+        });
+        sep();
+      }
+      mk('✕', 'Remove this block', function(){ post({ type:'hcFreeformNodeDelete', node: hcAddressOf(el) }); });
+    }
 
     if(kind === 'text' || kind === 'button'){
       mk('A-', 'Smaller', function(){ hcStepScale(el, label, on, -1); });
