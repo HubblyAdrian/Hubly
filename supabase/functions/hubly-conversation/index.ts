@@ -65,7 +65,8 @@ import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
 import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
 import { reportAllowlistDrops } from "../_shared/hubly_allowlist.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, applyOwnerDesignEdit, applyOwnerStyleEdit, applyOwnerSectionMove, applyOwnerNodeMove, applyOwnerNodeDelete, restampFreeformPage, readOwnerDesignKnobs, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, applyOwnerDesignEdit, applyOwnerStyleEdit, applyOwnerSectionMove, applyOwnerNodeMove, applyOwnerNodeDelete, restampFreeformPage, readOwnerDesignKnobs, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration, resolveOwnerSelection, type OwnerSelectionContext } from "../_shared/hubly_capability_registry.ts";
+import { type NodeAddress } from "../_shared/hubly_freeform.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -344,7 +345,23 @@ const DOCUMENT_GENERATION_ENABLED = (Deno.env.get("HUBLY_DOCUMENT_GENERATION_ENA
 // leaving it live is real — but "the deployment has page generation switched off" and "the
 // owner can still restyle the page" should not both be true, and an ungated action would
 // be advertised to the model in a deployment that has no pages to change.
-const GATED_WEBSITE_ACTIONS = new Set(["generateDocument", "patchDocument", "setChrome", "newPage", "setDesignKnob"]);
+const GATED_WEBSITE_ACTIONS = new Set(["generateDocument", "patchDocument", "setChrome", "newPage", "setDesignKnob", "restyleElement"]);
+
+/**
+ * Actions the engine injects the RESOLVED SELECTION into — the chip in the composer,
+ * checked against the stored page (see resolveOwnerSelection) before it gets here.
+ *
+ * Its own list rather than a rider on DRAFT_INJECTED_ACTIONS, because the two answer
+ * different questions: that one is "does this need the draft's credentials", this one
+ * is "does this act on the thing the owner has selected". restyleElement REFUSES
+ * without it (there is no element to change and it will not pick one); patchDocument
+ * narrows to it when present and edits the whole page when it is not, which is the
+ * behaviour that existed before the chip.
+ */
+const SELECTION_INJECTED_ACTIONS = new Set([
+  "website.restyleElement",
+  "website.patchDocument",
+]);
 
 /**
  * Actions the engine injects the real draftId/draftToken into. The model never
@@ -373,6 +390,11 @@ const DRAFT_INJECTED_ACTIONS = new Set([
   // verified owner. Same shape as setChrome: the handler reads draftId, the schema
   // doesn't declare it, so only the source-based audit below would have caught a miss.
   "website.setDesignKnob",
+  // Restyle-the-selected-element (2026-09-04). Same shape as setDesignKnob: the
+  // handler reads draftId/draftToken/ownerUid, the schema declares none of them, so
+  // only the source-based audit below would catch a miss. It writes a new document
+  // version, so it is meaningless — and correctly refused — without a verified owner.
+  "website.restyleElement",
 ]);
 
 /**
@@ -600,11 +622,36 @@ function extractJson(rawText: string): string {
 const MAX_CAPABILITY_ROUNDS = 4;
 const MAX_HISTORY = 40;
 
+/**
+ * WHAT THE OWNER HAS SELECTED, IN WORDS THE MODEL CAN USE.
+ *
+ * Present only when a selection actually RESOLVED against the stored page, so the
+ * model is never told about a target its writers cannot reach. It states the one rule
+ * that is easy to get backwards: a target changes the SCOPE of an instruction, never
+ * the grounding rule. "Make this more premium" is a look and it proceeds; "add a
+ * testimonial here" is still a question about who said it, target or no target.
+ */
+function buildSelectionBlock(sel: OwnerSelectionContext | null): string {
+  if (!sel) return "";
+  return `
+
+THE SELECTED ELEMENT — the owner has one part of their page selected right now
+They clicked it, and the composer is showing a chip that says: **${sel.name}**${sel.text ? `\nIt currently reads: ${JSON.stringify(sel.text)}` : ""}
+
+- THIS TURN'S INSTRUCTION IS ABOUT THAT ELEMENT unless they plainly say otherwise. "Make this bigger", "make this feel more premium", "shorten this" all mean ${sel.name} — not the page.
+- HOW IT LOOKS -> website.restyleElement. HOW IT READS -> website.patchDocument (already narrowed to this element; you do not need to say which part).
+- Pass the name back EXACTLY as written above in restyleElement's \`element\` argument. It is checked, and a mismatch changes nothing and asks instead. Never invent or reword it.
+- A TARGET CHANGES THE SCOPE, NOT THE RULES. You still never invent content: "make this more premium" is a look and you just do it, but "add a testimonial here" is someone's words you were not given — ask who said it and write nothing. Same for a price, a guarantee, a rating, a claim about their work.
+- WHEN THE WORDS AND THE SELECTION DISAGREE, ASK — do not guess. "Make all the headings bigger" while one heading is selected is genuinely ambiguous: ask, in one short question, whether they mean ${sel.name} or every heading, and change nothing until they answer. Restyling the wrong thing is worse than one extra question.
+- Refer to it by that name when you speak, so they can see you meant the thing they clicked. Never describe where it is on screen or name a control — you cannot see their screen.`;
+}
+
 function buildSystemPrompt(
   context: ConversationContextName,
   currentUnderstanding: BusinessUnderstandingPatch | CustomerUnderstandingPatch,
   latestUserMessage: string | null,
   draftBusiness: { id: string; slug: string; url: string } | null,
+  selection: OwnerSelectionContext | null,
 ): string {
   const adapter = getUnderstandingAdapter(context);
   const knownSoFar = adapter.isEmpty(currentUnderstanding as any)
@@ -779,6 +826,7 @@ ${capabilityKnowledgeBlock}
 HUBLY CAPABILITIES YOU CAN ACTUALLY INVOKE RIGHT NOW
 This is the only list of things you can actually DO. Never claim, promise, or imply you can do something from the list above unless it also appears here:
 ${capabilitiesBlock}
+${buildSelectionBlock(selection)}
 
 Photos or screenshots someone attaches are visible to you directly in the conversation — look at them and describe honestly what you can actually see. That doesn't require a capability call. If a file arrives and you were NOT waiting on anything specific (you hadn't just asked for services, a logo, or photos), ask ONE open question — "what would you like me to do with this?" — never a menu of options, and then act on whatever they say ("these are my prices" → set services; "make it look like this" → use it as a reference; "that's my logo" → treat it as the logo).
 
@@ -1007,6 +1055,46 @@ Deno.serve(async (req) => {
   // message, not new input, so the relevance signal shouldn't shift mid-turn.
   const lastIncomingUser = [...incoming].reverse().find((m) => m.role === "user");
   const latestUserMessage = typeof lastIncomingUser?.content === "string" ? lastIncomingUser.content : null;
+
+  // ── THE SELECTED ELEMENT ───────────────────────────────────────────────────
+  //
+  // The owner clicked something on their own page and the composer shows a chip for
+  // it; this turn's instruction is about THAT element. What arrives is a claim made by
+  // a frame — label, node address, and the name the chip is showing — and it is checked
+  // against the STORED page before the model is told anything (resolveOwnerSelection),
+  // because the canvas holds the page as it was when that frame mounted.
+  //
+  // RESOLVED HERE, ONCE, rather than inside each handler: the prompt block and both
+  // capabilities need the same answer, and computing it twice is how a model comes to
+  // be told about a target its writer cannot reach. One document read, and only on a
+  // turn that actually carries a selection.
+  const rawSelection = body?.selection && typeof body.selection === "object" ? body.selection as Record<string, unknown> : null;
+  let selection: OwnerSelectionContext | null = null;
+  if (rawSelection && draftBusiness) {
+    const r = await resolveOwnerSelection(draftBusiness.id, await getOwnerUid(), {
+      label: typeof rawSelection.label === "string" ? rawSelection.label : null,
+      on: rawSelection.on === "section" ? "section" : "element",
+      node: (rawSelection.node && typeof rawSelection.node === "object" ? rawSelection.node : null) as NodeAddress | null,
+      name: typeof rawSelection.name === "string" ? rawSelection.name : "",
+    });
+    // A SELECTION THAT DID NOT RESOLVE IS NOT A SELECTION. Rather than fall through to
+    // a page-wide edit — the one thing having a target is supposed to prevent — the
+    // turn carries none, and when the cause is that the page moved underneath, the
+    // model is told to SAY so. Falling through silently would restyle the wrong thing,
+    // which is exactly the failure this feature was asked to avoid.
+    selection = r.ok ? r : null;
+    if (!r.ok) {
+      console.warn(`selection did not resolve (${r.error}) — this turn runs with no target`);
+      if (r.error === "no_match" || r.error === "changed") {
+        history.push({
+          role: "system",
+          content:
+            "CAPABILITY RESULT for website.selection: the part of the page the owner had selected is NO LONGER THERE — the page has changed since they selected it — so this turn has NO target. " +
+            "Tell them plainly that their selection is out of date and ask them to select it again. Do NOT apply their request to the page as a whole, and do not name or describe any control.",
+        });
+      }
+    }
+  }
   const actions: Array<{ capability: string; capabilityAction: string; args: unknown; ok: boolean; real: boolean }> = [];
   // Patches emitted across internal capability rounds within this one request
   // accumulate into a single consolidated patch for the response — the client
@@ -1707,7 +1795,7 @@ Deno.serve(async (req) => {
     for (let round = 0; round < MAX_CAPABILITY_ROUNDS; round++) {
       const ai = await HublyAI.chat({
         feature: "hubly-conversation",
-        system: buildSystemPrompt(context, adapter.merge(currentUnderstanding, turnPatch), latestUserMessage, draftBusiness),
+        system: buildSystemPrompt(context, adapter.merge(currentUnderstanding, turnPatch), latestUserMessage, draftBusiness, selection),
         messages: history,
         jsonMode: true,
         // 900 was survivable while this decision was "pick a capability and
@@ -1826,6 +1914,15 @@ Deno.serve(async (req) => {
           // written). Both structural; redacted from the logged args below.
           dispatchArgs.ownerUid = await getOwnerUid();
           dispatchArgs._userMessage = latestUserMessage || "";
+        }
+        // THE SELECTED ELEMENT, INJECTED — never transcribed. The model is told the
+        // element's NAME (so it can talk about it and say it back as a checksum) and
+        // nothing else: the label, the node address and the fingerprint are structural,
+        // exactly like draftId, and for the same reason — a model asked to reproduce an
+        // address will eventually reproduce a different one, and the cost of that here
+        // is a live page restyled in the wrong place. Redacted from the actions log below.
+        if (SELECTION_INJECTED_ACTIONS.has(`${capabilityName}.${actionName}`) && selection) {
+          dispatchArgs._selection = selection;
         }
         // Real page generation can run well past what a single request
         // should block on (confirmed live: 100-150+s, right at/over
@@ -1980,13 +2077,18 @@ Deno.serve(async (req) => {
           // has it (draftBusiness below is the one legitimate place it travels).
           args: (() => {
             if (!dispatchArgs.draftToken && !dispatchArgs._ownerToken && dispatchArgs._storefrontAst === undefined
-                && dispatchArgs.ownerUid === undefined && dispatchArgs._userMessage === undefined) return dispatchArgs;
+                && dispatchArgs.ownerUid === undefined && dispatchArgs._userMessage === undefined
+                && dispatchArgs._selection === undefined) return dispatchArgs;
             const a: Record<string, unknown> = { ...dispatchArgs };
             if (a.draftToken) a.draftToken = "[redacted]";
             if (a._ownerToken) a._ownerToken = "[redacted]";
             if (a._storefrontAst !== undefined) a._storefrontAst = "[omitted]";
             if (a.ownerUid !== undefined) a.ownerUid = "[redacted]";       // verified identity, not display data
             if (a._userMessage !== undefined) a._userMessage = "[omitted]"; // structural (grounding), not display data
+            // The selection is a label, a node path and a fingerprint — structural, and
+            // long. Keep the NAME, because that is the one part worth reading back in a
+            // log ("which element did this turn act on"), and drop the rest.
+            if (a._selection !== undefined) a._selection = (a._selection as { name?: string })?.name || "[omitted]";
             return a;
           })(),
           ok: !!result.ok,

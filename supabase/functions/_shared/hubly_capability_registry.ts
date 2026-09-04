@@ -65,7 +65,7 @@ import { resolveImages, collapseEmptyImageSlots, pexelsFetcher, type PlacedImage
 import { annotatePlaceholders } from "./hubly_placeholders.ts";
 import { reportAllowlistDrops } from "./hubly_allowlist.ts";
 import { KNOBS, hasDesignKnobs, knobBinding, pagePalette, readDesignKnobs, resetDesignKnob, setDesignKnob, stampDesignKnobs, stepKnob, type KnobId } from "./hubly_design_knobs.ts";
-import { applyFreeformEdit, applyFreeformStyle, moveFreeformSection, moveFreeformNode, deleteFreeformNode, type NodeAddress, humanFreeformSummary, labelInventory, labelsPresent, type FreeformStyleEdit, type LabelEntry } from "./hubly_freeform.ts";
+import { applyFreeformEdit, applyFreeformStyle, moveFreeformSection, moveFreeformNode, deleteFreeformNode, type NodeAddress, humanFreeformSummary, labelInventory, labelsPresent, resolveFreeformSelection, inlineStyleValue, type FreeformStyleEdit, type LabelEntry } from "./hubly_freeform.ts";
 import {
   formatPhoneHouse,
   placeContactHoursInFreeform,
@@ -1588,6 +1588,10 @@ export async function applyOwnerStyleEdit(
       all_rejected: "I can't set that one.",
       empty_style: "Nothing to change.",
       invalid_label: "I couldn't tell which part of the page that was.",
+      // The addressed node is no longer the node that was addressed — the page changed
+      // under the selection. Refused rather than written to whatever is there now, the
+      // same rule a drag follows, and it needs its own sentence like every other failure.
+      changed: "That part of the page has changed since you selected it, so I didn't touch it — select it again and I'll make the change.",
     };
     return { ok: false, real: false, error: r.error, summary: said[r.error || ""] || "That didn't change — nothing was saved." };
   }
@@ -1598,6 +1602,73 @@ export async function applyOwnerStyleEdit(
   });
   if (!saved || saved.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "That didn't save — nothing changed." };
   return { ok: true, real: true, summary: "Updated.", raw: { version: saved.version, applied: r.applied, rejected: r.rejected } };
+}
+
+/**
+ * THE SELECTED ELEMENT, RESOLVED ONCE PER TURN.
+ *
+ * The chip in the composer is a claim by the CLIENT about what is selected. This is
+ * where that claim is checked against the stored page and turned into the two things
+ * the turn actually needs: the label scope a text edit may touch, and the address a
+ * style edit writes through. One document read, one ownership check, shared by the
+ * prompt block and both capability handlers — so the model is never told about a
+ * selection the writers could not act on, which is the six-knobs-with-no-door defect
+ * in miniature.
+ *
+ * OWNER-ONLY, and not as a courtesy: a selection exists only inside the claimed
+ * editor, and everything it feeds writes a new document version.
+ */
+export interface OwnerSelectionContext {
+  ok: boolean;
+  /** The owner-facing name, as the canvas computed it — echoed back, never invented here. */
+  name: string;
+  text: string;
+  labels: string[];
+  styleLabel: string | null;
+  styleOn: "element" | "section" | null;
+  styleAddress: NodeAddress | null;
+  currentTypeScale: string;
+  currentSpaceScale: string;
+  error?: "not_signed_in" | "not_owner" | "no_document" | "wrong_format" | "invalid_selection" | "no_match" | "changed";
+}
+
+export async function resolveOwnerSelection(
+  draftId: string,
+  ownerUid: string | null,
+  sel: { label?: string | null; on?: "element" | "section"; node?: NodeAddress | null; name?: string },
+): Promise<OwnerSelectionContext> {
+  const empty = (error: OwnerSelectionContext["error"]): OwnerSelectionContext =>
+    ({ ok: false, name: "", text: "", labels: [], styleLabel: null, styleOn: null, styleAddress: null, currentTypeScale: "1", currentSpaceScale: "1", error });
+
+  if (!draftId || !ownerUid) return empty("not_signed_in");
+  const biz = await selectOne("businesses", "id", draftId, "owner_id");
+  if (!biz || String(biz.owner_id || "") !== String(ownerUid)) return empty("not_owner");
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest) return empty("no_document");
+  if (latest.format !== "html") return empty("wrong_format");
+
+  const r = resolveFreeformSelection(latest.renderedHtml, { label: sel.label, on: sel.on, node: sel.node });
+  if (!r.ok) return empty(r.error || "no_match");
+
+  // THE NAME IS THE CANVAS'S, NOT OURS. It is what the owner is looking at in the chip,
+  // and computing a second one here is two vocabularies for one thing — the way a page
+  // and its own editor come to disagree. Bounded and stripped, because it arrives from
+  // a frame like any other input; blank falls back to the tag rather than to nothing,
+  // so the model is never handed an unnamed target.
+  const name = String(sel.name || "").replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 60) ||
+    (r.styleOn === "section" ? "the selected section" : "the selected element");
+
+  return {
+    ok: true,
+    name,
+    text: r.text,
+    labels: r.labels,
+    styleLabel: r.styleLabel,
+    styleOn: r.styleOn,
+    styleAddress: r.styleAddress,
+    currentTypeScale: inlineStyleValue(r.inlineStyle, "--hubly-type-scale") || "1",
+    currentSpaceScale: inlineStyleValue(r.inlineStyle, "--hubly-space-scale") || "1",
+  };
 }
 
 /**
@@ -2355,18 +2426,49 @@ export async function applyFreeformInstruction(
   draftToken: string,
   instruction: string,
   latest: Extract<LatestBusinessDocument, { format: "html" }>,
+  ownerUid?: string | null,
+  /**
+   * THE CHIP, ARRIVING AS A SCOPE. When the owner has an element selected, the edit
+   * is bounded to that element's own labels — not offered as a hint the sub-model may
+   * ignore, but by never showing it anything else. Scope is enforced by what is in the
+   * inventory, because a list the model is merely ASKED to respect is the prose-loses
+   * failure this codebase has already paid for twice (OPEN_FINDINGS #16).
+   */
+  scope?: { labels: string[]; name: string } | null,
 ): Promise<CapabilityActionResult> {
-  const inventory = labelInventory(latest.renderedHtml).filter((e: LabelEntry) => e.kind === "text");
+  let inventory = labelInventory(latest.renderedHtml).filter((e: LabelEntry) => e.kind === "text");
   if (!inventory.length) {
     return { ok: false, real: false, summary: "That page has no editable text yet.", error: "no_labels" };
+  }
+  if (scope) {
+    const allow = new Set(scope.labels);
+    inventory = inventory.filter((e: LabelEntry) => allow.has(e.label));
+    if (!inventory.length) {
+      // The selection is real (it resolved) but holds no editable TEXT — an image, a
+      // spacer, a wrapper of wrappers. Say which, rather than silently widening to the
+      // whole page, which is the one thing a target is supposed to prevent.
+      return {
+        ok: false,
+        real: false,
+        summary:
+          `Nothing changed. The owner has ${scope.name} selected and there is no editable text inside it, so this request cannot be carried out on that element. ` +
+          `Say so plainly and ask what they want changed — do NOT apply it to the rest of the page instead, and do not name any control.`,
+        error: "selection_has_no_text",
+        raw: { instruction, scope: scope.name },
+      };
+    }
   }
   const system =
     "You are editing one specific local business web page. You are shown its editable parts, each with a stable label and its current text. " +
     "Return ONLY the parts that must change to satisfy the request, as JSON {\"edits\":[{\"label\":\"...\",\"text\":\"...\"}]}. " +
     "Change as FEW parts as possible. Never invent a price, name, review, rating or guarantee that is not already present. " +
+    (scope
+      ? "The owner has SELECTED one part of the page and the parts listed below are that selection and nothing else. Every edit must be to one of them. " +
+        "You are not seeing the rest of the page and must not ask for it. "
+      : "") +
     "If the request cannot be satisfied by changing text on this page, return {\"edits\":[]} and nothing else.";
   const brief =
-    `REQUEST: ${instruction}\n\nEDITABLE PARTS OF THE PAGE:\n` +
+    `REQUEST: ${instruction}\n\n${scope ? `THE OWNER HAS SELECTED: ${scope.name}\nITS EDITABLE PARTS:\n` : "EDITABLE PARTS OF THE PAGE:\n"}` +
     inventory.map((e: LabelEntry) => `${e.label}: ${JSON.stringify(e.value)}`).join("\n");
 
   const started = Date.now();
@@ -2402,13 +2504,22 @@ export async function applyFreeformInstruction(
 
   let html = latest.renderedHtml;
   const applied: string[] = [];
+  const outOfScope: string[] = [];
+  const allowed = scope ? new Set(scope.labels) : null;
   for (const e of edits) {
     if (!e?.label || typeof e.text !== "string") continue;
+    // THE SCOPE IS A GATE, NOT A HINT. The model was shown only the selection, but
+    // "shown only X" and "can only write X" are different facts and this codebase has
+    // been burned by treating the first as the second. A label outside the selection
+    // is dropped here, and counted, so a scope that leaks is visible rather than
+    // silently honoured.
+    if (allowed && !allowed.has(e.label)) { outOfScope.push(e.label); continue; }
     const r = applyFreeformEdit(html, { label: e.label, text: e.text });
     if (r.ok) { html = r.html; applied.push(`${e.label} → "${e.text.slice(0, 60)}"`); }
   }
+  if (outOfScope.length) console.warn(`freeform-edit: dropped ${outOfScope.length} edit(s) outside the selected element — ${outOfScope.join(", ")}`);
   if (!applied.length) {
-    return { ok: false, real: false, summary: "That edit produced no change to the page.", error: "patch_no_effect", raw: { instruction, ms, proposed: edits.length } };
+    return { ok: false, real: false, summary: "That edit produced no change to the page.", error: "patch_no_effect", raw: { instruction, ms, proposed: edits.length, outOfScope } };
   }
 
   const r = await callBusinessRpc("create_business_document", {
@@ -2419,17 +2530,38 @@ export async function applyFreeformInstruction(
     p_rendered_html: html,
     p_created_by: "patch",
     p_format: "html",
+    // THE CLAIMED OWNER. create_business_document stopped accepting the draft token the
+    // moment a business is claimed (migration 20260822030000: unclaimed -> token,
+    // claimed -> p_owner_id must equal owner_id), and this writer never sent one — so
+    // every page edit made by TALKING on a claimed site failed at the save with
+    // "not_owner" and reported "could not be saved". Proven against the live claimed
+    // business, write-free: no p_owner_id -> not_owner; with it -> past the authorise
+    // block. Every other owner writer in this file already passes it; this one was the
+    // hole, and it is the second time the same shape has cost a claimed-owner path.
+    p_owner_id: ownerUid || null,
   });
   if (!r || r.ok !== true) {
-    return { ok: false, real: false, summary: "The edit was computed but could not be saved.", error: "rpc_failed" };
+    // NAME THE FAILURE. "Could not be saved" over a not_owner is how the bug above
+    // stayed invisible: the sentence fits every cause equally, so nothing about it
+    // pointed at authorisation.
+    const why = String((r as { error?: string } | null)?.error || "unknown");
+    return {
+      ok: false,
+      real: false,
+      summary: why === "not_owner"
+        ? "The edit was computed but the save was REFUSED because this conversation is not authorised to write to this business. Say plainly that the change did not save, and do not describe it as done."
+        : `The edit was computed but could not be saved (${why}).`,
+      error: "rpc_failed",
+      raw: { instruction, rpcError: why },
+    };
   }
   const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
   return {
     ok: true,
     real: true,
-    summary: `Real edit applied — ${applied.join("; ")}. ${url} now reflects it (version ${r.version}).`,
+    summary: `Real edit applied — ${applied.join("; ")}${scope ? `, all inside ${scope.name}` : ""}. ${url} now reflects it (version ${r.version}).`,
     humanNote: sentence(applied.length === 1 ? `changed ${applied[0]}` : `changed ${applied.length} parts of the page`),
-    raw: { id: r.id, version: r.version, url, applied, ms },
+    raw: { id: r.id, version: r.version, url, applied, ms, ...(scope ? { scope: scope.name } : {}) },
   };
 }
 
@@ -4760,7 +4892,20 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             // never the markup, so it cannot rewrite the page as a side effect
             // of being asked for one sentence. This is the operation that must
             // keep working forever and must never threaten an owner's edits.
-            return await applyFreeformInstruction(draftId, draftToken, instruction, latest);
+            //
+            // A CHIP NARROWS IT FURTHER. When the owner has an element selected, the
+            // engine injects the resolved selection (never the model — it is not shown
+            // the label and could not transcribe it) and the inventory shrinks to that
+            // element. Same operation, smaller target.
+            const sel = (args as any)?._selection as { labels: string[]; name: string } | undefined;
+            return await applyFreeformInstruction(
+              draftId,
+              draftToken,
+              instruction,
+              latest,
+              String((args as any)?.ownerUid || "").trim() || null,
+              sel && Array.isArray(sel.labels) ? sel : null,
+            );
           }
           const patchStarted = Date.now();
           const patchResult = await generateAndApplyPatch(latest.document, instruction);
@@ -4996,6 +5141,175 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             humanNote: r.summary,
             error: r.error,
             raw: r.raw,
+          };
+        },
+      },
+      {
+        // ═══ THE SELECTED ELEMENT, RESTYLED BY TALKING ═══════════════════════════
+        //
+        // setDesignKnob moves the whole PAGE. This moves the ONE element the owner has
+        // selected in the canvas — the other half of the chip in the composer. The
+        // target is never named by the model: the engine injects the resolved selection
+        // (`_selection`), the same treatment draftId and businessId already get, for the
+        // same reason — a model asked to transcribe a label will one day transcribe a
+        // different one, and the cost here is restyling the wrong thing on a live page.
+        //
+        // ENUMS, NOT PROSE. Every field is a closed set validated twice: here against
+        // the enum, and again in applyFreeformStyle against STYLE_VOCAB. This file
+        // already records why (`:89`) — "prose alone does not stop a model inventing a
+        // sixth one" — and OPEN_FINDINGS #16 is the standing measurement of what happens
+        // when a look decision is left to prose.
+        //
+        // NO COLOUR, deliberately, and it is the same withholding setDesignKnob makes:
+        // a colour is a contrast decision against a page we cannot see rendered, and a
+        // model picking a hex is inventing a value. The toolbar's picker offers the
+        // page's OWN palette and is the honest path; this action says so rather than
+        // guessing, and never names the control.
+        name: "restyleElement",
+        description:
+          "Change how the ONE element the owner has SELECTED on their page looks — its size, weight, font, alignment, spacing or corners. " +
+          "Only usable when the owner has something selected; the system tells you what that is. Use it for any look-and-feel ask that is clearly about the selected thing: " +
+          "\"make this bigger\", \"make this feel more premium\", \"bold that\", \"centre it\", \"give this more room\". " +
+          "The selection sets the SCOPE, not the rules: if the owner is plainly talking about the whole page (\"make ALL the headings bigger\", \"the page feels cramped\"), that is website.setDesignKnob instead — and if you cannot tell which they mean, ASK in one short question rather than restyling the wrong thing. " +
+          "This changes only how it LOOKS. It never changes words — that is website.patchDocument, which is also scoped to the selection — and it can never add content, so \"add a testimonial here\" is still a question about who said it, never something this can do. " +
+          "COLOUR IS NOT AVAILABLE here and the tool will say so in words you can pass on; do not attempt it and do not tell them where to find a control, because you cannot see their screen. " +
+          "Fully reversible: \"undo that\" puts it back.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            element: {
+              type: "string",
+              description:
+                "The owner-facing name of what you are about to restyle, copied from THE SELECTED ELEMENT block you were given (e.g. \"Hero heading\", \"Basic Mow card\"). This is checked against what is actually selected: if it does not match, nothing is changed and you are told to ask which they meant. Never guess it.",
+            },
+            size: { type: "string", enum: ["smaller", "bigger", "much smaller", "much bigger"], description: "Steps the element's text size within the page's own type scale, from wherever it currently is. There is no free number here on purpose." },
+            font: { type: "string", enum: ["system", "serif", "mono", "rounded", "condensed", "humanist", "slab"], description: "The typeface. \"serif\" or \"humanist\" is usually what \"more premium\"/\"more classic\" means; \"rounded\" is friendlier; \"condensed\" is tighter." },
+            weight: { type: "string", enum: ["normal", "medium", "semibold", "bold", "heavy"], description: "How heavy the text is." },
+            italic: { type: "boolean", description: "Italic on or off." },
+            align: { type: "string", enum: ["left", "center", "right"], description: "How the text sits in its own space." },
+            spacing: { type: "string", enum: ["tighter", "roomier"], description: "Steps the padding and gaps INSIDE this element. Use for \"this card feels cramped\"." },
+            corners: { type: "string", enum: ["square", "soft", "round"], description: "Corner rounding on this element. Only means anything on something with a background or a border." },
+          },
+          required: ["element"],
+        },
+        handler: async (args) => {
+          const draftId = String((args as any)?.draftId || "").trim();
+          const draftToken = String((args as any)?.draftToken || "").trim();
+          const ownerUid = String((args as any)?.ownerUid || "").trim() || null;
+          const sel = (args as any)?._selection as
+            | { name: string; styleLabel: string | null; styleOn: "element" | "section" | null; styleAddress: NodeAddress | null; currentTypeScale?: string; currentSpaceScale?: string }
+            | undefined;
+
+          if (!draftId || !ownerUid) {
+            return {
+              ok: false, real: false, error: "not_signed_in",
+              summary: "Changing how the page looks needs the owner signed in — say so, and don't claim anything changed.",
+            };
+          }
+          // NO SELECTION, NO GUESS. The whole point of this action is a target the owner
+          // chose; picking one for them is the wrong-element restyle it exists to avoid.
+          if (!sel || !sel.name) {
+            return {
+              ok: false, real: false, error: "no_selection",
+              summary:
+                "Nothing is selected, so there is no element to change and nothing was changed. Ask the owner which part of the page they mean — in one short question. " +
+                "Do NOT name or describe any control, button or panel: you cannot see their screen. Do not guess an element.",
+            };
+          }
+          // THE CHECKSUM. The model is told what is selected and must say it back before
+          // anything is written — the same discipline as the drag's fingerprint, one level
+          // up: a target the caller could not name is a target the caller did not
+          // understand, and the honest move then is to ask, not to write.
+          const norm = (s: string) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+          const claimed = String((args as any)?.element || "");
+          if (norm(claimed) !== norm(sel.name)) {
+            return {
+              ok: false, real: false, error: "element_mismatch",
+              summary:
+                `Nothing changed. You named "${claimed}" but the owner has "${sel.name}" selected, so it is not clear which one you mean. ` +
+                `Ask them, naming both, in one short question — do not restyle either of them until they answer.`,
+              raw: { claimed, selected: sel.name },
+            };
+          }
+
+          const style: Record<string, string> = {};
+          const said: string[] = [];
+          const SIZE: Record<string, number> = { "much smaller": -2, "smaller": -1, "bigger": 1, "much bigger": 2 };
+          const TYPE_STEPS = ["0.8", "0.9", "1", "1.1", "1.25", "1.5"];
+          const SPACE_STEPS = ["0.8", "0.9", "1", "1.15", "1.3"];
+          const FONTS: Record<string, string> = { system: "sans", serif: "serif", mono: "mono", rounded: "rounded", condensed: "condensed", humanist: "humanist", slab: "slab" };
+          const WEIGHTS: Record<string, string> = { normal: "400", medium: "500", semibold: "600", bold: "700", heavy: "800" };
+
+          // SIZE AND SPACING STEP FROM WHERE THE ELEMENT ACTUALLY IS — read off the
+          // stored page and handed in, not assumed to be 1. Guessing the current value
+          // is how "make it bigger" twice produces one change.
+          const sizeArg = String((args as any)?.size || "").trim().toLowerCase();
+          if (sizeArg in SIZE) {
+            const cur = TYPE_STEPS.indexOf(String(sel.currentTypeScale || "1"));
+            const from = cur === -1 ? 2 : cur;
+            const to = from + SIZE[sizeArg];
+            if (to < 0 || to >= TYPE_STEPS.length) {
+              return {
+                ok: false, real: false, error: "at_limit",
+                summary: `Nothing changed — ${sel.name} is already as ${SIZE[sizeArg] < 0 ? "small" : "big"} as this page's type scale goes. Say that plainly; do not try a different property instead.`,
+              };
+            }
+            style["--hubly-type-scale"] = TYPE_STEPS[to];
+            said.push(SIZE[sizeArg] < 0 ? "smaller" : "bigger");
+          }
+          const spaceArg = String((args as any)?.spacing || "").trim().toLowerCase();
+          if (spaceArg === "tighter" || spaceArg === "roomier") {
+            const cur = SPACE_STEPS.indexOf(String(sel.currentSpaceScale || "1"));
+            const from = cur === -1 ? 2 : cur;
+            const to = from + (spaceArg === "tighter" ? -1 : 1);
+            if (to < 0 || to >= SPACE_STEPS.length) {
+              return {
+                ok: false, real: false, error: "at_limit",
+                summary: `Nothing changed — ${sel.name} is already as ${spaceArg === "tighter" ? "tight" : "roomy"} as this page's spacing goes. Say that plainly.`,
+              };
+            }
+            style["--hubly-space-scale"] = SPACE_STEPS[to];
+            said.push(spaceArg);
+          }
+          const fontArg = String((args as any)?.font || "").trim().toLowerCase();
+          if (fontArg in FONTS) { style["font-family"] = FONTS[fontArg]; said.push(`the ${fontArg === "system" ? "system" : fontArg} face`); }
+          const weightArg = String((args as any)?.weight || "").trim().toLowerCase();
+          if (weightArg in WEIGHTS) { style["font-weight"] = WEIGHTS[weightArg]; said.push(weightArg); }
+          if (typeof (args as any)?.italic === "boolean") { style["font-style"] = (args as any).italic ? "italic" : "normal"; said.push((args as any).italic ? "italic" : "upright"); }
+          const alignArg = String((args as any)?.align || "").trim().toLowerCase();
+          if (alignArg === "left" || alignArg === "center" || alignArg === "right") { style["text-align"] = alignArg; said.push(`${alignArg}-aligned`); }
+          const cornerArg = String((args as any)?.corners || "").trim().toLowerCase();
+          const CORNERS: Record<string, string> = { square: "0", soft: "0.5", round: "1.6" };
+          if (cornerArg in CORNERS) { style["--hubly-radius-scale"] = CORNERS[cornerArg]; said.push(`${cornerArg} corners`); }
+
+          if (!Object.keys(style).length) {
+            return {
+              ok: false, real: false, error: "no_valid_fields",
+              summary:
+                "Nothing changed, because nothing recognisable was asked for. This action does size, weight, font, italics, alignment, spacing and corners on the selected element — and NOT colour. " +
+                "If they asked for a colour, say plainly that changing colour by talking isn't something you can do yet; do NOT point them at any control, and do not substitute a different change you were not asked for.",
+            };
+          }
+
+          const r = await applyOwnerStyleEdit(draftId, draftToken, ownerUid, {
+            label: sel.styleLabel || "",
+            on: sel.styleOn || "element",
+            style,
+            address: sel.styleAddress || null,
+          });
+          if (!r.ok) {
+            return {
+              ok: false, real: false, error: r.error,
+              summary: `Nothing changed on the page. ${r.summary} Tell the owner exactly that, in your own words, and do not describe the change as done.`,
+              humanNote: r.summary,
+            };
+          }
+          const what = said.length === 1 ? said[0] : said.slice(0, -1).join(", ") + " and " + said[said.length - 1];
+          return {
+            ok: true, real: true,
+            summary: `Real change applied to ${sel.name} only — now ${what}. Nothing else on the page moved. Tell the owner specifically what changed and name the element the way it is named here. It is reversible — "undo that" puts it back.`,
+            humanNote: `${sel.name} is ${what} now.`,
+            raw: { element: sel.name, applied: (r.raw as any)?.applied, version: (r.raw as any)?.version, recordChange: ["cosmetic"] },
           };
         },
       },

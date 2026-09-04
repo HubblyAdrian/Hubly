@@ -581,6 +581,35 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
 .hc-input-bar .ask-icon-left{bottom:auto;top:50%;transform:translateY(-50%);left:16px}
 .hc-input-bar .ask-submit{bottom:auto;top:50%;transform:translateY(-50%);right:10px;width:36px;height:36px}
 
+/* THE SELECTED-ELEMENT CHIP.
+   Reads as attached to the composer, not floating above it — it is what the next
+   thing typed will apply to, so it has to look like part of the same object. Brand
+   tint because it is a live constraint on the box below it, not a passive label. */
+.hc-sel-chip-row{display:flex;align-items:center;gap:8px;padding:0 2px 8px;min-width:0}
+.hc-sel-chip{
+  display:inline-flex;align-items:center;gap:8px;max-width:100%;min-width:0;
+  background:rgba(217,99,45,.10);border:1px solid rgba(217,99,45,.34);
+  border-radius:9px;padding:5px 6px 5px 10px;
+}
+.hc-sel-chip-txt{
+  font-size:12.5px;font-weight:650;color:var(--brand-dark,#8a3f1c);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+}
+/* 28px, not 16: this is the control that gets tapped by mistake or not at all. It is
+   the only way back out of a scoped instruction, so it is a real target on a phone. */
+.hc-sel-chip-x{
+  flex:0 0 auto;width:22px;height:22px;min-width:22px;border:0;padding:0;cursor:pointer;
+  border-radius:6px;background:transparent;color:var(--brand-dark,#8a3f1c);
+  display:flex;align-items:center;justify-content:center;line-height:1;font-size:15px;
+  transition:background .15s ease;
+}
+.hc-sel-chip-x:hover{background:rgba(217,99,45,.20)}
+.hc-sel-chip-x:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+@media (max-width:760px){
+  .hc-sel-chip{padding:7px 6px 7px 11px}
+  .hc-sel-chip-x{width:30px;height:30px;min-width:30px;font-size:17px}
+}
+
 /* Persistent attach affordance — reachable the whole conversation, not a
    one-time offer, so the AI is never claiming a capability the input bar
    doesn't actually have (see hcInspirationAct — same handler either way). */
@@ -1099,6 +1128,12 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   <div class="hc-app-left">
     <div class="hc-thread" id="hcThread"><div class="hc-thread-inner" id="hcThreadBody"></div></div>
     <div class="hc-input-bar">
+      <!-- THE SELECTED ELEMENT, ATTACHED TO WHAT YOU TYPE. Appears only when the owner
+           has clicked something on their page, names it in words they'd recognise, and
+           carries an x that clears the selection on the page as well as the chip here —
+           one state, two surfaces. Above the box rather than inside it: the box centres
+           its controls on its own height, and a second row in there moves them. -->
+      <div class="hc-sel-chip-row" id="hcSelChipRow" hidden></div>
       <div class="ask-wrap">
         <div class="ask-glow" aria-hidden="true"></div>
         <div class="ask-box">
@@ -1218,7 +1253,10 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // created (business.startDraft) — { id, slug, draftToken, url }. Threaded
   // back to the server every turn exactly like `messages`; the server never
   // persists it either. This is what makes the canvas real instead of a mockup.
-  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null, pendingCapture: null, accountOfferShown: false, accountOfferHeld: false, photoOfferShown: false, postBuildTurns: 0 };
+  // selection: what the owner has clicked on their page, mirrored from the canvas — the
+  // chip in the composer, and the scope of whatever they type next. null when nothing
+  // is selected, which is the normal state.
+  var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null, pendingCapture: null, accountOfferShown: false, accountOfferHeld: false, photoOfferShown: false, postBuildTurns: 0, selection: null };
 
   // ONE price-list photo offer per conversation. The model reliably repeats the canned
   // "send a photo of your price list" tail on every price ask — a form, not a person
@@ -1542,6 +1580,11 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   function hcRenderCanvas(){
     hc.canvasView = 'site';
     try{ hcMountViewBar(); }catch(e){}
+    // A FULL REMOUNT DESTROYS THE FRAME, so whatever was selected in it is gone. The
+    // chip goes with it — not told to the canvas, because the canvas being replaced is
+    // the reason. (A REFRESH is different: hcRefreshCanvasFrame restores a labelled
+    // selection into the new document rather than dropping it.)
+    try{ hcClearSelection(false); }catch(e){}
     var root = document.getElementById('hcCanvas');
     if(!root) return;
     if(!hc.draftBusiness || !hc.draftBusiness.url){
@@ -1831,11 +1874,72 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       // through the auth-needed round trip) and hand back where they were looking.
       // A reload that drops the owner at the top of a six-screen page has taken their
       // place away as surely as losing the edit would.
+      // A SELECTION THAT CANNOT COME BACK MUST NOT KEEP ITS CHIP. hcTellPreviewAuthed
+      // restores a LABELLED selection into the fresh document; an unlabelled wrapper is
+      // addressed by a path through the document that was just replaced, so it cannot
+      // be, and a chip left naming it would be pointing at nothing. Cleared before the
+      // handshake goes out, so there is no window where it is stale.
+      if(hc.selection && !hc.selection.label) hcClearSelection(false);
       try{ if(hc.draftClaimed && hcIsAuthed()) hcTellPreviewAuthed(); }catch(e){}
       // An edit just landed on the page — on a phone, show it (unless mid-sentence).
       hcMobileAutoSite();
     }, { once: true });
     standby.src = hcBust(hc.draftBusiness.url);
+  }
+
+  /* ═══ THE SELECTED ELEMENT → THE COMPOSER ══════════════════════════════════
+   *
+   * The canvas has always known which element is selected; the chat box never did, so
+   * "make this feel more premium" had no "this". This is the wire: the canvas posts a
+   * selection, the chip names it, and the next message carries it to the server, which
+   * scopes the instruction to that element.
+   *
+   * ONE STATE, TWO SURFACES. hc.selection is a MIRROR of what the canvas has selected
+   * — never set from here except by clearing, and clearing always tells the canvas too.
+   * The chip and the toolbar are the same fact seen twice, and if they could disagree
+   * the owner would have no way to know which one an instruction meant.
+   *
+   * NOTHING HERE IS TRUSTED DOWNSTREAM. The label, the node address and the name are a
+   * claim made by a frame; the server re-resolves all of it against the STORED page
+   * before it writes anything, and refuses if the page has moved underneath.
+   */
+  function hcRenderSelChip(){
+    var row = document.getElementById('hcSelChipRow');
+    if(!row) return;
+    var sel = hc.selection;
+    if(!sel || !sel.name){ row.hidden = true; row.innerHTML = ''; return; }
+    row.hidden = false;
+    row.innerHTML =
+      '<span class="hc-sel-chip">' +
+        '<span class="hc-sel-chip-txt" id="hcSelChipTxt"></span>' +
+        '<button type="button" class="hc-sel-chip-x" id="hcSelChipX" ' +
+          'aria-label="Stop applying changes to this" title="Clear the selection">&times;</button>' +
+      '</span>';
+    var txt = document.getElementById('hcSelChipTxt');
+    if(txt){
+      // textContent, not innerHTML: the name is derived from the owner's own page
+      // content (a heading's words, a service name) and arrives across a frame.
+      txt.textContent = sel.name;
+      // The chip shows the NAME; the tooltip carries what it says, so a page with three
+      // "Services text" blocks is still resolvable without making the chip a paragraph.
+      txt.title = sel.text ? (sel.name + ' — “' + sel.text + '”') : sel.name;
+    }
+    var x = document.getElementById('hcSelChipX');
+    if(x) x.addEventListener('click', function(){ hcClearSelection(true); });
+  }
+  /* Clearing the chip clears the selection on the page, because they are one thing.
+     tellCanvas is false only when the canvas is the one that told US (it deselected,
+     or it reloaded and the element is gone) — echoing back would be a loop. */
+  function hcClearSelection(tellCanvas){
+    if(!hc.selection && !tellCanvas) return;
+    hc.selection = null;
+    hcRenderSelChip();
+    if(!tellCanvas) return;
+    try{
+      var origin = new URL(hc.draftBusiness.url).origin;
+      var frame = document.querySelector('#hcCanvasFrameWrap iframe.is-live') || document.getElementById('hcCanvasFrameA');
+      if(frame && frame.contentWindow) frame.contentWindow.postMessage({ type:'hcClearSelection' }, origin);
+    }catch(e){}
   }
 
   // Honest sketch styling per real layout id — a mood swatch, not a claim
@@ -2620,7 +2724,16 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         'authorization': 'Bearer ' + (at || SUPA_ANON_KEY)
       },
       body: JSON.stringify(Object.assign(
-        { messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, logoUpload: logoUploadForThisCall, photoUpload: photoUploadForThisCall },
+        { messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, logoUpload: logoUploadForThisCall, photoUpload: photoUploadForThisCall,
+          // THE CHIP RIDES THE TURN. Sent only when the owner actually has something
+          // selected AND the site is theirs — a selection is only meaningful inside
+          // the claimed editor, and the server re-checks ownership anyway rather than
+          // taking this flag's word for it. NOT one-shot, unlike the uploads above:
+          // the selection persists as long as it is selected, so two sentences about
+          // the same heading both reach it.
+          selection: (hc.draftClaimed && hc.selection)
+            ? { label: hc.selection.label, on: hc.selection.on, name: hc.selection.name, node: hc.selection.node }
+            : null },
         extra || {}
       ))
     })
@@ -3548,6 +3661,27 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     // position can only be known because it tells us. Kept per business, in session
     // storage — it is a "where was I" for this tab, not a preference to remember
     // forever — and handed back on the next mount (hcTellPreviewAuthed).
+    // THE CANVAS'S SELECTION, MIRRORED INTO THE COMPOSER. Sent on every select and
+    // every clear, so the chip cannot drift from the toolbar. A selection with no
+    // label AND no node address cannot be addressed by any writer, so it is treated as
+    // no selection rather than shown as a chip whose instruction could not land.
+    if(data.type === 'hcSelection'){
+      var hasTarget = (typeof data.label === 'string' && data.label) || (data.node && typeof data.node === 'object');
+      if(!hasTarget || typeof data.name !== 'string' || !data.name){
+        hcClearSelection(false);
+      } else {
+        hc.selection = {
+          label: (typeof data.label === 'string' && data.label) ? data.label : null,
+          on: data.on === 'section' ? 'section' : 'element',
+          kind: typeof data.kind === 'string' ? data.kind : '',
+          name: String(data.name).slice(0, 60),
+          text: typeof data.text === 'string' ? data.text.slice(0, 160) : '',
+          node: (data.node && typeof data.node === 'object') ? data.node : null
+        };
+        hcRenderSelChip();
+      }
+      return;
+    }
     if(data.type === 'hcCanvasScroll'){
       try{
         var bid = hc.draftBusiness && hc.draftBusiness.id;
@@ -5345,7 +5479,16 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         // once and ignores it after the owner touches the page.
         var sy = null;
         try{ var b = hc.draftBusiness && hc.draftBusiness.id; if(b) sy = Number(sessionStorage.getItem('hcScroll:' + b)) || null; }catch(e){}
-        try{ frame.contentWindow.postMessage({ type:'hcAuthState', authed:true, openEditLabel: label || null, restoreScrollY: sy }, origin); }catch(e){}
+        // AND PUT THE SELECTION BACK, on the same handshake, for the same reason as the
+        // scroll: a reload that loses where the owner was is a reload that took their
+        // place away. Only a LABELLED selection can be restored — a wrapper's address is
+        // a path through a document this reload just replaced, and re-selecting by a
+        // stale path is precisely the re-recognition this codebase refuses. When it
+        // cannot be restored the canvas says so and the chip clears, rather than sitting
+        // there naming something no longer selected.
+        var rs = (hc.draftClaimed && hc.selection && hc.selection.label) ? hc.selection : null;
+        try{ frame.contentWindow.postMessage({ type:'hcAuthState', authed:true, openEditLabel: label || null, restoreScrollY: sy,
+             reselectLabel: rs ? rs.label : null, reselectOn: rs ? rs.on : null }, origin); }catch(e){}
       }
       if(++tries < MAX){ setTimeout(send, 500); return; }
       // Exhausted retries. If a frame was there but never acked, the editor didn't

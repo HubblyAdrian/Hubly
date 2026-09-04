@@ -417,12 +417,19 @@ const FONT_STACKS: Record<string, string> = {
 };
 
 export interface FreeformStyleEdit {
-  /** data-hc on a leaf, or data-hc-section on a band. */
+  /** data-hc on a leaf, or data-hc-section on a band. Empty for an unlabelled wrapper. */
   label: string;
   /** Which attribute carries the label — leaves and sections are addressed differently. */
   on?: "element" | "section" | "page";
   /** property -> value, both validated against STYLE_VOCAB. */
   style: Record<string, string>;
+  /**
+   * THE WRAPPER'S ONLY ADDRESS. A service card is a <div> with no stamp of its own —
+   * exactly the case the drag's addressing was built for — so styling one cannot go
+   * through a label. Used only when `label` is empty, and fingerprint-checked against
+   * the stored page before anything is written, the same as a move.
+   */
+  address?: NodeAddress | null;
 }
 
 export interface FreeformStyleResult {
@@ -431,7 +438,23 @@ export interface FreeformStyleResult {
   changed: number;
   applied: Record<string, string>;
   rejected: string[];
-  error?: "invalid_label" | "no_match" | "no_change" | "empty_style" | "all_rejected";
+  error?: "invalid_label" | "no_match" | "no_change" | "empty_style" | "all_rejected" | "changed";
+}
+
+/** The closed-vocabulary gate, in one place because two entry points now share it
+ *  (by label, and by address). A property not in STYLE_VOCAB, or a value its own
+ *  check rejects, is DROPPED and named in `rejected` — never passed through. */
+function validateStyleDecls(style: Record<string, string> | undefined): { applied: Record<string, string>; rejected: string[] } {
+  const applied: Record<string, string> = {};
+  const rejected: string[] = [];
+  for (const [prop, raw] of Object.entries(style || {})) {
+    const check = STYLE_VOCAB[prop];
+    if (!check) { rejected.push(prop); continue; }
+    const val = check(String(raw));
+    if (val === null) { rejected.push(prop + "=" + String(raw)); continue; }
+    applied[prop] = val;
+  }
+  return { applied, rejected };
 }
 
 /**
@@ -453,21 +476,33 @@ export function applyFreeformStyle(html: string, edit: FreeformStyleEdit): Freef
   // THE PAGE BACKGROUND has no stamp to address — it is the body. Rather than invent an
   // anchor for it, the target is named directly and resolved here.
   if (!onPage) {
-    if (!edit.label) return fail("invalid_label");
-    if (!onSection && !isValidHcLabel(edit.label)) return fail("invalid_label");
+    // An unlabelled wrapper is addressed by NODE ADDRESS instead (see FreeformStyleEdit
+    // .address). Only when neither is present is there genuinely no target.
+    if (!edit.label && !edit.address) return fail("invalid_label");
+    if (edit.label && !onSection && !isValidHcLabel(edit.label)) return fail("invalid_label");
   }
   if (!edit.style || !Object.keys(edit.style).length) return fail("empty_style");
 
-  const applied: Record<string, string> = {};
-  const rejected: string[] = [];
-  for (const [prop, raw] of Object.entries(edit.style)) {
-    const check = STYLE_VOCAB[prop];
-    if (!check) { rejected.push(prop); continue; }
-    const val = check(String(raw));
-    if (val === null) { rejected.push(prop + "=" + String(raw)); continue; }
-    applied[prop] = val;
-  }
+  const { applied, rejected } = validateStyleDecls(edit.style);
   if (!Object.keys(applied).length) return fail("all_rejected");
+
+  // BY ADDRESS — the wrapper case. Same writer, same merge, same versioned pipe; the
+  // only difference is how the element is found, and it is found the way a drag finds
+  // it, fingerprint and all.
+  if (!onPage && !edit.label && edit.address) {
+    const scanA = scanHtml(src);
+    const node = resolveAddress(scanA, edit.address);
+    if (!node) return fail("no_match");
+    if (edit.address.fp && fingerprintOf(node) !== edit.address.fp) return fail("changed");
+    const existingA = node.attrs["style"] || "";
+    const mergedA = mergeInlineStyle(existingA, applied);
+    if (mergedA === existingA) return fail("no_change");
+    const ra = node.attrRanges["style"];
+    const spliceA: Splice = ra
+      ? { start: ra.start, end: ra.end, text: ` style="${escAttr(mergedA)}"` }
+      : { start: node.attrInsertAt, end: node.attrInsertAt, text: ` style="${escAttr(mergedA)}"` };
+    return { ok: true, html: spliceAll(src, [spliceA]), changed: 1, applied, rejected };
+  }
 
   const scan = scanHtml(src);
   if (onPage) {
@@ -970,4 +1005,118 @@ export function deleteFreeformNode(html: string, addr: NodeAddress): { ok: boole
   try {
     return { ok: true, html: spliceAll(src, [{ start: cutStart, end: node.closeEnd, text: "" }]) };
   } catch { return { ok: false, html: src, error: "splice_failed" }; }
+}
+
+/* ── THE SELECTED ELEMENT ──────────────────────────────────────────────────── */
+
+/**
+ * WHAT THE OWNER HAS SELECTED, RE-RESOLVED AGAINST THE PAGE AS IT IS NOW.
+ *
+ * The composer's chip carries a target computed in the CANVAS, and the canvas holds
+ * the page as it was when that frame mounted. Believing it is precisely the mistake
+ * the anchor discipline exists to prevent, so nothing here trusts it: the label is
+ * looked up in the STORED html, the address is re-resolved, and the fingerprint is
+ * re-checked exactly as a drag's is. If the page moved underneath, the selection is
+ * REFUSED — never quietly applied to whatever now occupies that position.
+ *
+ * Two things come back, because a selection means two different things to the two
+ * lanes an instruction can take:
+ *   - `labels`  — every data-hc inside the selection. What a TEXT edit may touch, and
+ *                 nothing else; this is what makes "make this shorter" change one
+ *                 heading instead of the model's pick of forty.
+ *   - `style*`  — how a LOOK edit addresses it: by label where the element carries
+ *                 one, by node address where it does not. A service card is the second
+ *                 case, and it is the one people select most.
+ */
+export interface FreeformSelection {
+  /** data-hc on a leaf, or a data-hc-section token on a band. Absent for a wrapper. */
+  label?: string | null;
+  on?: "element" | "section";
+  /** Always sent by the canvas. The only address an unlabelled wrapper has. */
+  node?: NodeAddress | null;
+}
+
+export interface ResolvedSelection {
+  ok: boolean;
+  /** Every data-hc label inside the selection, its own included. */
+  labels: string[];
+  styleLabel: string | null;
+  styleOn: "element" | "section" | null;
+  styleAddress: NodeAddress | null;
+  /** The resolved element's tag, so a caller can refuse a nonsense edit (styling <body>). */
+  tag: string;
+  /** Its inline style AS STORED. A stepping control ("bigger") has to start from where
+   *  the element actually is; assuming 1 is how two presses produce one change. */
+  inlineStyle: string;
+  /** What it currently says — read from the page, never from the client's copy. */
+  text: string;
+  error?: "invalid_selection" | "no_match" | "changed";
+}
+
+/** One inline declaration's value, or "" — used to step a scale from its real start. */
+export function inlineStyleValue(style: string, prop: string): string {
+  for (const decl of String(style || "").split(";")) {
+    const i = decl.indexOf(":");
+    if (i < 1) continue;
+    if (decl.slice(0, i).trim() === prop) return decl.slice(i + 1).trim();
+  }
+  return "";
+}
+
+export function resolveFreeformSelection(html: string, sel: FreeformSelection): ResolvedSelection {
+  const empty = (error: ResolvedSelection["error"]): ResolvedSelection =>
+    ({ ok: false, labels: [], styleLabel: null, styleOn: null, styleAddress: null, tag: "", inlineStyle: "", text: "", error });
+
+  if (!sel || typeof sel !== "object") return empty("invalid_selection");
+  const onSection = sel.on === "section";
+  const label = typeof sel.label === "string" ? sel.label.trim() : "";
+  if (!label && !sel.node) return empty("invalid_selection");
+  if (label && !onSection && !isValidHcLabel(label)) return empty("invalid_selection");
+
+  const scan = scanHtml(String(html || ""));
+  let el: ScannedEl | null = null;
+  let byLabel = false;
+
+  // PREFER THE LABEL. It is the page's own stamp and it survives a re-render that
+  // would shift a child index; the address is the fallback for the one thing that
+  // carries no stamp.
+  if (label) {
+    const matches = scan.all.filter((e) =>
+      onSection
+        ? String(e.attrs["data-hc-section"] || "").split(/\s+/).includes(label)
+        : e.attrs["data-hc"] === label
+    );
+    // A value role legitimately repeats (contact.phone in the header, the contact
+    // block and the footer). The toolbar styles the FIRST; so does this, because two
+    // rules for one thing is how a page and its own editor come to disagree.
+    if (matches.length) { el = matches[0]; byLabel = true; }
+  }
+  if (!el && sel.node) {
+    el = resolveAddress(scan, sel.node);
+    if (el && sel.node.fp && fingerprintOf(el) !== sel.node.fp) return empty("changed");
+  }
+  if (!el) return empty("no_match");
+
+  const labels: string[] = [];
+  const texts: string[] = [];
+  const walk = (n: ScannedEl) => {
+    const l = n.attrs["data-hc"];
+    if (typeof l === "string" && l && !labels.includes(l)) labels.push(l);
+    const t = ownText(n, String(html || "")).trim();
+    if (t) texts.push(t);
+    for (const c of n.children) walk(c);
+  };
+  walk(el);
+
+  const text = texts.join(" ").replace(/\s+/g, " ").trim().slice(0, 160);
+  return {
+    ok: true,
+    labels,
+    styleLabel: byLabel ? label : null,
+    styleOn: byLabel ? (onSection ? "section" : "element") : null,
+    styleAddress: byLabel ? null : (sel.node || null),
+    tag: el.name,
+    inlineStyle: el.attrs["style"] || "",
+    text,
+  };
 }

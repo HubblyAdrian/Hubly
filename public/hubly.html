@@ -17495,6 +17495,11 @@ var hcAuthedFlag = false;
 // Set by wireHcEditingSurface so hcAuthState can open the element they clicked
 // before signing in, once auth resolves.
 var hcOpenEditByLabel = null;
+// Set by the same wiring: put the SELECTION back after a reload, so a chat-driven
+// edit does not silently take the owner's chip away mid-sentence. Distinct from
+// hcOpenEditByLabel, which opens the legacy text overlay -- this restores the
+// contextual selection (toolbar + grip + chip), which is a different thing.
+var hcReselectByLabel = null;
 // A DIRECT EDIT ANSWERS AT THE CONTROL, NOT IN THE CONVERSATION. The owner clicked a
 // button on their own page, so the feedback belongs where they clicked — and only a
 // FAILURE needs words at all, because success is the page moving plus the Undo toast.
@@ -17503,6 +17508,10 @@ var hcFlashMessage = null;
 // Which label the post-auth reopen has already fired for, so the ~6 retry
 // messages from hcTellPreviewAuthed open the editor once, not six times.
 var hcReopenedLabel = null;
+// Same one-shot guard for the selection restore — hcTellPreviewAuthed re-sends the
+// handshake up to eight times, and re-selecting on each one would fight the owner for
+// their own caret.
+var hcReselectedLabel = null;
 // The builder that embeds this preview is the apex of our own registrable domain
 // (a business site is <slug>.myhubly.app / <slug>.hubly.app; the builder is
 // myhubly.app / hubly.app). Used to pin postMessage instead of '*'.
@@ -17550,6 +17559,19 @@ window.addEventListener('message', function(ev){
     hcReopenedLabel = d.openEditLabel;
     try{ hcOpenEditByLabel(d.openEditLabel); }catch(e){}
   }
+  // PUT THE SELECTION BACK. Same shape as openEditLabel above and for the same reason,
+  // one situation later: a chat-driven edit reloads this frame, and without this the
+  // owner's selection — and the chip in their composer naming it — would vanish under
+  // them between "make this bigger" and "and bolder". Once per label, like the reopen,
+  // because this handshake is re-sent up to eight times. If the element is genuinely
+  // gone (the edit removed it), the reselect fails and the builder clears the chip
+  // rather than leaving one that points at nothing.
+  if(d.authed && d.reselectLabel && d.reselectLabel !== hcReselectedLabel && typeof hcReselectByLabel === 'function'){
+    hcReselectedLabel = d.reselectLabel;
+    var back = false;
+    try{ back = hcReselectByLabel(d.reselectLabel, d.reselectOn); }catch(e){}
+    if(!back){ try{ window.parent.postMessage({ type:'hcSelection', label: null, node: null }, hcBuilderOrigin()); }catch(e){} }
+  }
   // PUT THEM BACK WHERE THEY WERE LOOKING. A reload that lands on the right tab but at
   // the top of the page has still lost the owner's place — on a site that is six phone
   // screens long, "scroll back down to the bit you were editing" is the whole cost of
@@ -17574,6 +17596,17 @@ window.addEventListener('message', function(ev){
   if(!d || d.type !== 'hcEditorFlash' || typeof d.text !== 'string' || !d.text) return;
   try{ if(typeof hcFlashMessage === 'function' && hcFlashMessage) hcFlashMessage(d.text); }catch(e){}
 });
+// THE X ON THE CHIP CLEARS BOTH. The chip in the composer and the selection on the
+// page are one state, so dismissing it there deselects here — otherwise the toolbar
+// would still be open on an element nothing is scoped to any more.
+window.addEventListener('message', function(ev){
+  if(ev.source !== window.parent) return;
+  var d = ev.data;
+  if(!d || d.type !== 'hcClearSelection') return;
+  try{ if(typeof hcClearSelectionFromBuilder === 'function' && hcClearSelectionFromBuilder) hcClearSelectionFromBuilder(); }catch(e){}
+});
+// Set by wireHcEditingSurface — the only scope that owns the selection.
+var hcClearSelectionFromBuilder = null;
 
 // Report where the owner is looking, so a reload can put them back. The builder is a
 // different origin and cannot read it, so telling it is the only way it can know.
@@ -53813,6 +53846,10 @@ function wireHcEditingSurface(doc, root){
       for(var i=0;i<a.length;i++){ a[i].removeAttribute('data-hc-sel'); a[i].removeAttribute('data-hc-sel-section'); a[i].removeAttribute('contenteditable'); }
     }catch(e){}
     hcSel = null;
+    // CLEARING THE SELECTION CLEARS THE CHIP. Escape, a click on the background, and
+    // the x on the chip itself all land here, so there is exactly one way for the two
+    // to get out of step: none.
+    try{ hcPostSelectionCleared(); }catch(e){}
   }
 
   /* What kind of thing is this, for the purpose of "which controls apply". */
@@ -54682,6 +54719,215 @@ function wireHcEditingSurface(doc, root){
     return 'Section';
   }
 
+  /* ═══ NAMING THE SELECTION, IN WORDS THE OWNER WOULD USE ═══════════════════
+   *
+   * "Hero heading", "Basic Mow card" — never `hero.headline`. This is the same
+   * vocabulary the breadcrumb already speaks, extended from "the thing ABOVE this"
+   * to "this", because the chip in the composer has to name what was clicked.
+   *
+   * IT READS THE PAGE'S OWN STAMPS, NEVER ITS LAYOUT. A section is named by the text
+   * of the heading IT labelled (`section.2.heading`), and a card by the title label of
+   * the item its own label sits inside (`section.2.item.1.title`) — so a card whose
+   * markup is an <h3> one build and a <li><span> the next names itself the same way
+   * both times. That is the anchor discipline applied to a NAME: match on what was
+   * stamped, never re-recognise the shape.
+   */
+  function hcTrimName(s){
+    var t = String(s || '').replace(/\s+/g, ' ').trim().replace(/[.,:;!?—–-]+$/, '');
+    if(t.length > 32) t = t.slice(0, 31).replace(/\s\S*$/, '') + '…';
+    return t;
+  }
+  /* The name of the band a thing lives in. hero/header/footer say themselves; any
+     other band is named by the text it actually carries — what an owner calls it, not
+     "section 2".
+     THE SHORTER LINE WINS, and that is not a tidying preference. Measured on the real
+     page: section 1's heading is "Straightforward yard care, priced before you book."
+     and its subheading is "What to expect" — the model writes the eyebrow as the
+     subheading and the sentence as the heading about as often as the reverse. A NAME is
+     short by nature, so the shorter of the two is the one that reads like a name, and
+     the alternative ("Straightforward yard care,… heading") is a chip nobody can scan. */
+  function hcBandTitle(band){
+    if(!band || !band.getAttribute) return '';
+    var toks = String(band.getAttribute('data-hc-section') || '').split(/\s+/).filter(Boolean);
+    if(toks.indexOf('hero') >= 0) return 'Hero';
+    if(toks.indexOf('header') >= 0) return 'Header';
+    if(toks.indexOf('footer') >= 0) return 'Footer';
+    var best = '';
+    for(var i = 0; i < toks.length; i++){
+      var cands = [];
+      try{ cands = [band.querySelector('[data-hc="' + toks[i] + '.subheading"]'),
+                    band.querySelector('[data-hc="' + toks[i] + '.heading"]')]; }catch(e){}
+      for(var j = 0; j < cands.length; j++){
+        if(!cands[j]) continue;
+        var t = hcTrimName(cands[j].textContent);
+        if(!t) continue;
+        if(!best || t.length < best.length) best = t;
+      }
+    }
+    return best || 'Section';
+  }
+  /* The card a thing is, or is inside. Two cases, and the label answers the second
+     one exactly — no climbing, no guessing which <div> is "the card". */
+  function hcCardTitle(el, label){
+    if(!label){
+      // The element IS a card — but ONLY if it holds exactly one. The six-card grid
+      // holds six, and naming it after whichever happens to be first in the document
+      // ("Full Service block", for a container holding all six) is a chip that names
+      // the wrong thing with total confidence. One service inside, or no name from
+      // here: the band name is the honest fallback for a container.
+      var svcs = null, ttls = null;
+      try{ svcs = el.querySelectorAll('[data-hubly-service]'); }catch(e){}
+      if(svcs && svcs.length === 1) return hcTrimName(svcs[0].getAttribute('data-hubly-service') || svcs[0].textContent);
+      if(svcs && svcs.length > 1) return '';
+      try{ ttls = el.querySelectorAll('[data-hc$=".title"]'); }catch(e){}
+      if(ttls && ttls.length === 1) return hcTrimName(ttls[0].textContent);
+      return '';
+    }
+    var m = /^((?:hero|section\.\d+)\.item\.\d+)\./.exec(label);
+    if(!m) return '';
+    var t = null;
+    try{ t = root.querySelector('[data-hc="' + m[1] + '.title"]'); }catch(e){}
+    return t ? hcTrimName(t.textContent) : '';
+  }
+  /* What KIND of thing it is, said plainly. Driven by the label where there is one
+     (the stamp knows a headline from a body paragraph) and the tag where there isn't. */
+  function hcRoleName(el, label){
+    var t = (el.tagName || '').toLowerCase();
+    if(t === 'img') return 'image';
+    var l = String(label || '');
+    if(l === 'business.name') return 'business name';
+    if(l === 'business.logo') return 'logo';
+    if(l === 'contact.phone') return 'phone number';
+    if(l === 'contact.email') return 'email address';
+    if(l === 'contact.address') return 'address';
+    if(/^nav\.item\./.test(l)) return 'menu link';
+    if(/(^|\.)(headline|heading|title)$/.test(l)) return 'heading';
+    if(/(^|\.)subhead(ing)?$/.test(l)) return 'intro line';
+    if(/(^|\.)cta$/.test(l)) return 'button';
+    if(t === 'a' || t === 'button') return 'button';
+    if(/^h[1-6]$/.test(t)) return 'heading';
+    if(t === 'li') return 'list item';
+    return 'text';
+  }
+  /* Is this the OUTERMOST wrapper still holding just this one service? If the parent
+     holds the same single service, the parent is the card and this is a block within
+     it. Counted rather than matched on class names, because "card" as a class is the
+     model's word this build and something else the next. */
+  function hcServiceCount(el){
+    try{ return el.querySelectorAll('[data-hubly-service]').length; }catch(e){ return 0; }
+  }
+  function hcIsOutermostCard(el){
+    try{
+      if(hcServiceCount(el) !== 1) return false;
+      var p = el.parentNode;
+      if(!p || p.nodeType !== 1 || p === root) return true;
+      if(p.hasAttribute && p.hasAttribute('data-hc-section')) return true;
+      return hcServiceCount(p) !== 1;
+    }catch(e){ return true; }
+  }
+  // Roles that name themselves. "Footer phone number" is worse than "Phone number":
+  // one phone number is one fact wherever it appears, which is exactly why the writer
+  // updates every copy of it at once.
+  var HC_SELF_NAMING = { 'business name':1, 'logo':1, 'phone number':1, 'email address':1, 'address':1, 'menu link':1 };
+  function hcHumanName(el, kind){
+    try{
+      if(kind === 'section'){
+        var sn = hcBandTitle(el);
+        return (sn === 'Header' || sn === 'Footer') ? sn : (sn + ' section');
+      }
+      var label = (el.getAttribute && el.getAttribute('data-hc')) || '';
+      var band = el.closest ? el.closest('[data-hc-section]') : null;
+      if(kind === 'block'){
+        var card = hcCardTitle(el, '');
+        // ONLY THE OUTERMOST WRAPPER IS "THE CARD". A card is usually two nested
+        // wrappers — <article class="card"> holding <div class="card-body"> — and both
+        // contain exactly one service, so both were being called "Basic Mow card".
+        // Two different elements with one name is a chip that cannot be trusted to say
+        // which one an instruction will reach. The inner one is a block INSIDE that
+        // card, and says so. (Found by climbing the breadcrumb twice on the real page.)
+        if(card) return card + (hcIsOutermostCard(el) ? ' card' : ' block');
+        var bt = hcBandTitle(band);
+        return (bt && bt !== 'Section') ? (bt + ' block') : 'Block';
+      }
+      var role = hcRoleName(el, label);
+      if(HC_SELF_NAMING[role]) return role.charAt(0).toUpperCase() + role.slice(1);
+      var scope = hcCardTitle(el, label) || hcBandTitle(band);
+      if(!scope || scope === 'Section') return role.charAt(0).toUpperCase() + role.slice(1);
+      return scope + ' ' + role;
+    }catch(e){ return 'The selected part'; }
+  }
+
+  /* ═══ THE CHIP'S HALF OF THE WIRE ══════════════════════════════════════════
+   *
+   * The toolbar has always known the selection; the composer never did. This says
+   * it — the label, the node address (the only address a wrapper like a service card
+   * has), and the NAME, so the chip shows words rather than a stamp.
+   *
+   * The builder is a different origin and cannot read this document, so telling it is
+   * the only way it can know — the same reason the scroll position is reported.
+   * Nothing here is trusted downstream: the server re-resolves all of it against the
+   * stored page before a single byte is written.
+   */
+  // NO FLICKER ON A SWAP. Selecting B while A is selected runs hcClearSel first, which
+  // would post "nothing selected" and then "B selected" — and the chip would blink out
+  // and back on every click. One selection replacing another is not a moment of having
+  // none, so the clear is suppressed for exactly that beat.
+  var hcSelSent = null, hcSelSwapping = false;
+  function hcPostSelection(el, kind){
+    try{
+      var on = (kind === 'section') ? 'section' : 'element';
+      var label = (kind === 'section')
+        ? String(el.getAttribute('data-hc-section') || '').split(/\s+/)[0]
+        : ((el.getAttribute && el.getAttribute('data-hc')) || '');
+      var addr = hcAddressOf(el);
+      // THE ADDRESS IS PART OF THE IDENTITY, and leaving it out was a real bug: an
+      // unlabelled wrapper has no label, so <article class="card"> and the
+      // <div class="card-body"> inside it produced the IDENTICAL key ("|element|block")
+      // and the second selection was suppressed as a duplicate. The chip then kept the
+      // FIRST wrapper's address while the owner had the second one selected — a chip
+      // silently pointing at a different element than the toolbar, which is exactly the
+      // wrong-element restyle this whole feature exists to prevent. Found by climbing
+      // the breadcrumb twice on the real page, not by reading this.
+      var key = (label || '') + '|' + on + '|' + kind + '|' +
+                (addr ? (addr.anchorKind + ':' + addr.anchor + ':' + (addr.steps || []).join(',')) : '');
+      if(hcSelSent === key) return;                 // the same element, already said
+      hcSelSent = key;
+      post({ type:'hcSelection', label: label || null, on: on, kind: kind,
+             name: hcHumanName(el, kind),
+             text: hcTrimName(el.textContent || ''),
+             node: addr });
+    }catch(e){}
+  }
+  function hcPostSelectionCleared(){
+    if(hcSelSwapping) return;
+    if(!hcSelSent) return;
+    hcSelSent = null;
+    try{ post({ type:'hcSelection', label: null, node: null }); }catch(e){}
+  }
+  /* SELECT SOMETHING BY ITS LABEL — how the selection survives a reload.
+     A chat-driven edit reloads the canvas, which would otherwise drop the owner's
+     selection (and their chip) on the floor mid-sentence: they say "make this bigger",
+     the page reloads, and "and bolder" has nothing to act on. The builder hands the
+     label back on the handshake it already retries, and the selection comes back with
+     the toolbar exactly as it was. A control that disappears on its own is making a
+     claim, and "you are no longer editing that" is not one we want to make silently. */
+  /* The builder's x, arriving. hcClearSel already posts the clear back up, and the
+     builder has already cleared its own chip by then — the echo is idempotent, so the
+     two cannot ping-pong. */
+  hcClearSelectionFromBuilder = function(){ try{ hcClearSel(); }catch(e){} };
+  hcReselectByLabel = function(label, on){
+    if(!label) return false;
+    var el = null;
+    try{
+      el = (on === 'section')
+        ? root.querySelector('[data-hc-section~="' + label + '"]')
+        : root.querySelector('[data-hc="' + label + '"]');
+    }catch(e){}
+    if(!el || !root.contains(el)) return false;
+    try{ hcSelect(el); }catch(e){ return false; }
+    return true;
+  };
+
   /* SIZE GOES THROUGH THE KNOB ENGINE, on the element. Custom properties inherit,
      so setting --hubly-type-scale here moves this element and its descendants and
      nothing else on the page — the same mechanism heroScale already uses. Steps
@@ -54747,12 +54993,18 @@ function wireHcEditingSurface(doc, root){
     // Once the element is editable and focused, the browser already does caret
     // placement and word/line selection correctly. Get out of its way.
     if(hcSel === el){ hcPlaceBar(el); return; }
-    hcClearSel();
+    hcSelSwapping = true;
+    try{ hcClearSel(); }finally{ hcSelSwapping = false; }
     hcSel = el;
     try{ hcShowGripFor(el); }catch(e){}
     var kind = hcKindOf(el);
     el.setAttribute(kind === 'section' ? 'data-hc-sel-section' : 'data-hc-sel', '1');
     hcBuildBar(el, kind);
+    // TELL THE COMPOSER. One selection, two surfaces: the toolbar beside the element
+    // and the chip in the chat box. They are the same fact, so they are set in the
+    // same place — a chip that can disagree with the toolbar is two states for one
+    // thing, and the owner would have no way to tell which one an instruction meant.
+    hcPostSelection(el, kind);
     /* TEXT EDITS IN PLACE — no modal. The toolbar stays open beside it while
        they type, which is the WYSIWYG feel; the existing, proven text path does
        the saving on blur. */
