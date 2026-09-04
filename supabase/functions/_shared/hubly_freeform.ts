@@ -597,23 +597,91 @@ export function moveFreeformSection(html: string, edit: FreeformSectionMove): Fr
         outside(e));
     const aLinks = linksTo(aId);
     const bLinks = linksTo(bId);
-    // Pair them up by their common parent — the nav they both live in. A link to
-    // one section and a link to the other in DIFFERENT containers are not a list
-    // to reorder, they are two separate mentions.
+    // SWAP AT THE LEVEL WHERE THEY DIVERGE, not at the anchors.
+    //
+    // The first cut paired links by `la.parent === lb.parent`, which assumed the two
+    // anchors are siblings. Measured over 12 real stored pages: they usually are not —
+    // a nav is `<ul><li><a>…</a></li><li><a>…</a></li></ul>`, so each anchor's parent
+    // is its own <li> and the pairing found nothing at all. It failed silently, which
+    // is the worst way for it to fail: the sections move and the menu quietly does not.
+    // So climb from each link until the two are siblings, and swap THOSE elements —
+    // the list items, with whatever else they carry (an icon, a label, a count).
+    const climbToSiblings = (x: ScannedEl, y: ScannedEl): [ScannedEl, ScannedEl] | null => {
+      const chain = (n: ScannedEl) => { const out: ScannedEl[] = []; for (let c: ScannedEl | null = n; c; c = c.parent) out.push(c); return out; };
+      const ax = chain(x), by = chain(y);
+      for (const p of ax) {
+        for (const q of by) {
+          if (p.parent && p.parent === q.parent && p !== q) return [p, q];
+        }
+      }
+      return null;
+    };
+    const claimed: ScannedEl[] = [];
     for (const la of aLinks) {
-      const lb = bLinks.find((x) => x.parent === la.parent);
-      if (!lb) continue;
-      const first = la.openStart < lb.openStart ? la : lb;
-      const second = first === la ? lb : la;
-      edits.push({ start: first.openStart, end: first.closeEnd, text: src.slice(second.openStart, second.closeEnd) });
-      edits.push({ start: second.openStart, end: second.closeEnd, text: src.slice(first.openStart, first.closeEnd) });
-      navLinksMoved += 2;
+      for (const lb of bLinks) {
+        const pair = climbToSiblings(la, lb);
+        if (!pair) continue;
+        const [pa, pb] = pair;
+        // BOUND THE CLIMB. Measured on 12 real stored pages: a page often links to
+        // the same section twice — once in the nav, once from a sentence in the body
+        // — and pairing the BODY link with the nav link climbs all the way to <main>
+        // and <header>. Swapping those is not a menu reorder, it is rearranging the
+        // document; it collided with the section swap and threw, and the whole nav
+        // sync then silently fell back to nothing.
+        //
+        // A nav item is small by construction: it never contains a section band and
+        // never contains the other link. Anything bigger is not a menu entry, and the
+        // honest response is to move the sections and not claim the menu followed.
+        if (!outside(pa) || !outside(pb)) continue;
+        const wraps = (p: ScannedEl, q: ScannedEl) => q.openStart >= p.openStart && q.closeEnd <= p.closeEnd;
+        const holdsABand = (p: ScannedEl) => scan.all.some((x) => x !== p && isSection(x) && wraps(p, x));
+        if (holdsABand(pa) || holdsABand(pb)) continue;
+        if (wraps(pa, lb) || wraps(pb, la)) continue;
+        // NOTHING MAY OVERLAP AN EDIT ALREADY SCHEDULED.
+        //
+        // Measured: after the header nav's two items are paired, a SECOND link to the
+        // same section (in the footer, or in body copy) pairs its ancestors up to
+        // <header> and <footer> — neither of which holds a band, so every other guard
+        // lets it through, and swapping them moves the whole header to the bottom of
+        // the page. It also overlaps the swap just scheduled, so spliceAll threw and
+        // the entire nav sync was silently dropped. This is the guard that makes the
+        // rule what it should have been all along: a menu entry is a small element
+        // that overlaps nothing else we are touching.
+        const clash = edits.some((e) => !(pa.closeEnd <= e.start || pa.openStart >= e.end) ||
+                                        !(pb.closeEnd <= e.start || pb.openStart >= e.end));
+        if (clash) continue;
+        // One swap per element: a nav listing the same section twice must not have
+        // the same node spliced twice, which would duplicate it.
+        if (claimed.includes(pa) || claimed.includes(pb)) continue;
+        claimed.push(pa, pb);
+        const first = pa.openStart < pb.openStart ? pa : pb;
+        const second = first === pa ? pb : pa;
+        edits.push({ start: first.openStart, end: first.closeEnd, text: src.slice(second.openStart, second.closeEnd) });
+        edits.push({ start: second.openStart, end: second.closeEnd, text: src.slice(first.openStart, first.closeEnd) });
+        navLinksMoved += 2;
+        break;
+      }
     }
+  }
+
+  // ASSERT BEFORE WRITING. spliceAll throws on overlapping ranges, and a throw here
+  // would surface to the owner as a 500 with no sentence. If the nav splices cannot
+  // be applied safely for any reason, drop them and move the sections alone — a
+  // partial result we can describe beats an exception we cannot.
+  let outHtml: string;
+  try {
+    outHtml = spliceAll(src, edits);
+  } catch (_e) {
+    navLinksMoved = 0;
+    outHtml = spliceAll(src, [
+      { start: a.openStart, end: a.closeEnd, text: bHtml },
+      { start: b.openStart, end: b.closeEnd, text: aHtml },
+    ]);
   }
 
   return {
     ok: true,
-    html: spliceAll(src, edits),
+    html: outHtml,
     moved: label,
     swappedWith: tokens(sections[j])[0] || "",
     navLinksMoved,

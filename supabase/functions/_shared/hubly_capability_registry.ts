@@ -1646,7 +1646,15 @@ export async function applyOwnerSectionMove(
   if (!saved || saved.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "That didn't save — the section is where it was." };
   // Composed from what ACTUALLY happened, including the nav — never a bare "done",
   // and never a claim about the nav on a page that has none.
-  const navPart = r.navLinksMoved ? " Your menu order matches the page." : "";
+  //
+  // "Moved with it", not "matches the page". Measured on 12 real stored pages: one
+  // page's nav already listed those two sections in the opposite order from the page
+  // itself, so swapping the two entries — the correct, minimal thing to do — leaves
+  // it still not matching. Saying "your menu order matches the page" would have been
+  // a claim about a state we did not check, on the one page where it was false.
+  const navPart = r.navLinksMoved
+    ? (r.navLinksMoved > 2 ? " Your menu links moved with it." : " Your menu link moved with it.")
+    : "";
   return {
     ok: true, real: true,
     summary: (move.dir === "up" ? "Moved that section up." : "Moved that section down.") + navPart,
