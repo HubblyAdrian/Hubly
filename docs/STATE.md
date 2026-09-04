@@ -44,14 +44,37 @@ environment — **measure instead of speculating.**
 - **Price typography** — prices no longer inherit display tracking and overlap into an
   apparent strikethrough.
 - **Back from booking returns to the owner's site**, not to a different template.
+- **Direct edits are queued, not dropped.** A second edit made while the first save is
+  in flight used to vanish silently; they are now serialised, and a failure takes the
+  queue behind it down in one honest sentence.
+- **Select-and-replace works.** Double-click a word, triple-click a line, type over it.
+  Every click used to re-enter `hcSelect`, whose teardown collapsed the selection.
+- **The editor keeps your place.** The mode is in the URL (`#website`), so a reload —
+  and browser Back — return to the Website editor, and the canvas is put back at the
+  scroll position the owner was at.
+- **Book Now goes straight to booking**, without rendering the site first; and inside
+  the editor a Book button no longer navigates the whole builder tab away.
+- **↑ ↓ section reorder**, with the page's own nav reordered in the same transform and
+  the same undoable version. Reach today: 1 stored page in 138 carries the section
+  stamps it needs.
 - Earlier and still live: the Edit-details panel, owner-authorised fact writes, grounding,
   the design knobs (panel + `website.setDesignKnob` in chat).
 
 ### What is BROKEN right now
 
-**THE SECOND-EDIT BUG. A text element can be edited once, then will not accept typing
-again.** First click and type works; click the same element a second time and nothing lands.
-Reported live 2026-09-03. **Diagnosed only — NOT fixed. Do not describe the editor as working.**
+**THE SECOND-EDIT BUG — FIXED 2026-09-03, and the diagnosis below was wrong.**
+It was never the caret. Reproduced as the owner on evergreen by editing two things a
+couple of seconds apart: ONE document version written, the second change sitting on
+screen, in no version, and not a word said. `hcSendDirectEdit` opened with
+`if (hc.busy) return;`, so any edit whose save fired while a previous save was in
+flight was discarded silently — no request, no message, and the optimistic paint left
+it visible until the next reload. Direct edits are now QUEUED and sent one at a time
+(serial is required: the server patches stored HTML by label + prevText, so two writes
+in flight would each patch the same base and one would be lost). The style path had a
+queue already; the text/image path never got one.
+
+Three edits in a row on ONE element all persist when made slowly — which is why a
+test that edits once, or edits twice slowly, passed this bug for a week.
 
 - What is known: the first edit works because `hcSelect` now calls
   `el.focus({preventScroll:true})` after setting `contenteditable` (that was a real
@@ -658,19 +681,62 @@ prefer above, flip below when it clips, slide along the axis, never leave the vi
   nothing else does. Steps only — the generator designs a per-page type scale and a free
   number box destroys it.
 
+### THE DEFINITION OF DONE — parity with Base44, so it stops being a moving target
+
+Recorded 2026-09-03 (Adrian). Twelve rows, eight gaps. This is the LIST; the ORDER
+below it matters more, and the first line of the order is the whole point.
+
+| | Base44 | Hubly |
+|---|---|---|
+| Click element → toolbar beside it | yes | yes, roughly |
+| Font — named dropdown | yes | **no** — a cycle button |
+| Size — number field | yes | **no** — A+ / A− |
+| Colour — real picker | yes | **no** — 4 swatches |
+| Bold / italic / align | yes | yes |
+| Link editing | yes | yes |
+| Delete element | yes | **no** |
+| Selected element → chat context | yes | **no** |
+| Per-turn Revert in chat | yes | **no** (the machinery exists) |
+| Multi-instruction prompts | yes | **no** |
+| Move blocks | yes | **yes, as of 2026-09-03** (↑ ↓ section reorder) |
+| Page background | yes | **no** |
+
+**CLEAN COMES BEFORE PARITY, AND THEY ARE DIFFERENT JOBS.** Clean means nothing
+broken, nothing that lies, no flashing, no losing your place. Parity means having the
+controls. Shipping controls onto a surface that loses your work is how you get a
+longer list of things that do not work.
+
+1. **CLEAN — all three DONE and verified live as the owner, 2026-09-03:** the
+   second-edit bug (it was a silent save drop, not the caret), reload keeping your
+   place (mode in the URL + canvas scroll restored), and Book Now going straight to
+   booking. Details in the sections above.
+2. **The cheap parity wins, all small — closes five of eight:** font dropdown, size
+   field, real colour picker, page background, delete element.
+3. **The two that matter:**
+   - **Selected element → chat context** — the `{}` span × chip. Click a heading, type
+     "make this feel more premium." This one feature replaces the whole Design-panel
+     argument, and it is what makes our AI feel like theirs.
+   - **Section move (↑ ↓)** — **BUILT 2026-09-03**, see below.
+4. **The only one that is not cheap: multi-instruction prompts.** Their user said six
+   things in one message and got all six; ours does one capability action per turn.
+   **SIZE IT BEFORE SCHEDULING IT — Adrian wants a real number, not a guess.**
+
 ### STILL OWED on the editor, in the order Adrian asked for
 
-1. **The second-edit bug** (above). Broken, not missing. Everything else waits on it.
-2. **Reload returns you to the Website editor, not Home.** `hc.mode` is memory-only — never
-   written to the URL, hash or storage — so a refresh always lands on Home and Back does not
-   move between modes.
-3. **Book Now should go straight to booking.** Today it renders the whole website first and
-   then jumps, which is the right destination by an ugly route.
-4. **↑ ↓ section reorder.** Measured safe: **0 of 129 pages have section-level
-   order-dependent CSS** (no `section:nth-of-type`, no `body > *:nth-child`, no scroll-snap).
-   A section is now a stamped container, so moving one is a DOM move on a known element.
-   Adrian has asked for this repeatedly — it is how he stops reporting "SERVICE PLANS is
-   above the headline and should be below" as a bug.
+1. ~~**The second-edit bug**~~ — **FIXED AND VERIFIED LIVE 2026-09-03.** It was never
+   the caret: `hcSendDirectEdit` opened with `if (hc.busy) return;`, so a second edit
+   made while the first save was in flight was discarded silently. Edits are queued now.
+2. ~~**Reload returns you to the Website editor**~~ — **DONE 2026-09-03.** The mode is
+   in the hash (`#website`), and the canvas reports its scroll so a reload puts the
+   owner back on the part of the page they were looking at.
+3. ~~**Book Now should go straight to booking**~~ — **DONE 2026-09-03.** `bookingOnly`
+   resolves the business and opens the wizard without building the site first.
+4. ~~**↑ ↓ section reorder**~~ — **BUILT AND VERIFIED LIVE 2026-09-03** on evergreen,
+   both directions, one undoable version each; the nav reorders inside the same
+   transform. **Reach today is 1 page in 138: only evergreen carries `data-hc-section`
+   stamps** (containers have only been stamped since the generation pass that added
+   them). Every other stored page needs a re-stamp before the arrows can appear —
+   that is now the gating fact for this feature, not the transform.
 5. **A real colour palette.** Four swatches is not a palette. Wanted: a proper spread of hues
    with a light and dark of each, PLUS the page's own colours pulled from the site so an
    owner can match what is already there (`pagePalette()` already extracts them).
@@ -867,8 +933,11 @@ Findings are folded into the sections above and into `OPEN_FINDINGS.md`; this is
 ## Still owed
 
 **BROKEN — fix first:**
-- **The second-edit bug** — a text element edits once, then refuses typing. Diagnosed, NOT
-  fixed. See START HERE for what is known and the test that would close it.
+- ~~The second-edit bug~~ — **FIXED AND VERIFIED LIVE 2026-09-03.** Not the caret: a
+  second edit made while the first save was still in flight was dropped silently by
+  `if (hc.busy) return;`. Reproduced as the owner (two edits ~2s apart: one document
+  version written, the other change on screen and in no version, nothing said), fixed
+  with a serial queue, re-verified (both edits land, both survive a reload).
 
 **The editor, in order:** reload returning to the Website editor; Book Now going straight to
 booking; **^ v section reorder** (measured safe: 0 of 129 pages have section-level

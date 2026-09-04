@@ -929,6 +929,50 @@ strips scaffolding for non-owners (`hcStripPlaceholders`, gated on `hcBuilderPre
 
 ---
 
+## 19. VIDEO LINKS ON THE STOREFRONT — RECORDED 2026-09-03, NOT BUILT, AND
+## DELIBERATELY BEHIND THE STOREFRONT HOUR
+
+**The want, from real use.** An owner pastes a YouTube link and it shows as a playable
+video. The cases are concrete: a detailer whose every product ships with a how-to
+video, and a course made of lessons. Home-service and trade owners already have this
+content sitting on YouTube and Instagram doing nothing — this is not asking them to
+make something, it is asking them to point at what exists.
+
+**SEQUENCING FIRST, because it decides whether any of the rest is worth writing.**
+This is storefront work, and the storefront is still behind a door nobody has opened
+(`STATE.md` STOREFRONT, `OPEN_FINDINGS` #14). Building a video field onto products an
+owner cannot reach is the six-knobs-with-no-door defect at product scale. **The
+storefront hour comes first** — one hour signing in and exercising the legacy Store —
+and it may answer this for free: the product record may already have somewhere to put
+a video, in which case this is a renderer and a validator, not a schema change.
+
+**Design constraints, each one paid for by something already in this file:**
+
+- **ALLOWLIST THE SOURCES — YouTube, Vimeo, direct MP4, nothing else.** An arbitrary
+  URL in an iframe is a caller pointing our page anywhere. Same reasoning as the closed
+  style vocabulary in `applyFreeformStyle`: the toolbar is HTML we serve, but the
+  request is a POST like any other, and every writer here is built on the assumption
+  that anything reachable will one day be called by something we did not write.
+- **PLAYER *AND* LINK, never either.** Embed inline, and always keep a visible link
+  out. When an embed fails — blocked, deleted, region-locked — a thumbnail plus a link
+  is a working fallback; a black rectangle is a dead control, which we already know is
+  worse than no control (the mic, the language float, the theme toggle).
+- **TWO PLACEMENTS, both in the real brief:** a per-product video (a field on the
+  product) and a page-level video block (a section).
+- **THE AI NEVER INVENTS A LINK.** "Add a video" with no URL in the current message
+  ASKS for the URL and writes nothing — the standing rule at the top of `CLAUDE.md`,
+  and this is its sharpest case yet. **A fabricated price is wrong; a fabricated video
+  ID points somewhere real that is not ours.** That is Hedge Trimming (#17) with a
+  worse blast radius, and it must be refused at the writer, not discouraged in a prompt.
+- **Privacy-preserving embeds by default** — `youtube-nocookie`.
+
+**One observation worth keeping.** Base44's own placeholder video, on a live customer
+page, is Rick Astley. That is the same class as our "Add what you do and we will lay it
+out" (#18): scaffolding left on a public route. Everyone does it. It is still wrong,
+and seeing it in someone else's shipped product is not permission.
+
+---
+
 ## Related, already-tracked
 
 - **Freeform pages have no update path** — the structural finding under #3/#5/#7. See
