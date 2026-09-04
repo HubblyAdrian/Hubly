@@ -53519,30 +53519,13 @@ function wireHcEditingSurface(doc, root){
   // never red, never a warning icon. Every marked element is already a data-hc
   // leaf, so the existing click-to-edit replaces it and (server-side) drops the
   // mark.
-  // HOVER ONLY. Nothing is painted at rest — no dotted underlines sitting on the
-  // page. A visitor never hunts for what's editable, so at rest the page is a
-  // finished page. The "Hubly's suggestion" underline and pill appear ONLY while
-  // the OWNER's cursor is over that one element, and vanish when it leaves. No
-  // engagement gate, no standing marks, no cap needed (nothing is visible at
-  // rest, so there is no rash to cap). Every element stays editable via the
-  // per-element hover outline and click-to-edit below, which are always live.
-  try{
-    var guessEls = root.querySelectorAll('[data-hubly-guess]');
-    for(var gi = 0; gi < guessEls.length; gi++){ guessEls[gi].setAttribute('data-hc-mark', '1'); }
-    if(!doc.getElementById('hubly-guess-style')){
-      var gs = doc.createElement('style');
-      gs.id = 'hubly-guess-style';
-      gs.textContent =
-        '[data-hubly-guess][data-hc-mark]{cursor:pointer;position:relative;}' +
-        '[data-hubly-guess][data-hc-mark]:hover{text-decoration:underline dotted rgba(80,80,90,.55);text-underline-offset:4px;background:rgba(120,120,140,.08);}' +
-        '[data-hubly-guess][data-hc-mark]:hover::after{content:"✎ Hubly’s suggestion — click to make it yours";' +
-        'position:absolute;left:0;top:100%;margin-top:6px;z-index:50;white-space:nowrap;' +
-        'background:#12151f;color:#f5f6f8;font-size:11px;font-weight:600;letter-spacing:.01em;' +
-        'padding:5px 9px;border-radius:7px;box-shadow:0 8px 22px rgba(0,0,0,.28);' +
-        'font-family:-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;text-decoration:none;text-transform:none;}';
-      (doc.head || doc.body || root).appendChild(gs);
-    }
-  }catch(e){}
+  // THE SUGGESTION PILL IS GONE (2026-09-04).
+  //
+  // It said "✎ Hubly's suggestion — click to make it yours" on every marked block and
+  // told the owner nothing they could act on: they already know they can click their
+  // own page, and the label appeared often enough to be noise. Removed on request.
+  // The elements keep data-hubly-guess — the SERVER still uses it to know which words
+  // are Hubly's rather than the owner's — this only stops painting a label about it.
 
   // EVERY labelled leaf is an entry point, not only Hubly's guesses. The guess pill
   // is a HINT — "these are Hubly's words, click to make them yours" — never the gate.
@@ -54111,44 +54094,75 @@ function wireHcEditingSurface(doc, root){
      WHICH block: the SELECTED one when there is a selection (so the breadcrumb still
      chooses the grain — a card, a section), otherwise the innermost movable thing
      under the pointer. Hover to grab quickly; select to grab something bigger. */
-  var hcGrip = null, hcGripFor = null;
+  var hcGrip = null, hcGripFor = null, hcGripHideTimer = null, hcGripOver = false;
   function hcGripEl(){
     if(hcGrip) return hcGrip;
-    var g = doc.createElement('button');
-    g.type = 'button';
-    g.setAttribute('data-hc-editor','1');
-    g.title = 'Drag to move';
-    g.textContent = '⠿';
-    g.style.cssText = 'position:absolute;z-index:2147483645;display:none;align-items:center;justify-content:center;' +
-      'width:26px;height:26px;padding:0;border-radius:8px;border:1px solid rgba(255,255,255,.28);' +
-      'background:#12151f;color:#e8eaee;font-size:13px;line-height:1;cursor:grab;' +
-      'box-shadow:0 6px 18px rgba(0,0,0,.35);font-family:-apple-system,BlinkMacSystemFont,sans-serif';
-    g.addEventListener('pointerdown', function(ev){
+    // A HIT AREA WITH A CHIP INSIDE IT, not a floating button.
+    //
+    // The first version was a 26px button sitting 32px to the LEFT of the block, and
+    // that gap was fatal: moving the pointer toward the grip left the block, which
+    // switched the grip to the parent — you could see it and never touch it. The
+    // element is now a hit area that BRIDGES the gap (it reaches the block's edge), so
+    // there is no dead zone to cross, and it keeps itself alive on hover.
+    var hit = doc.createElement('div');
+    hit.setAttribute('data-hc-editor','1');
+    hit.style.cssText = 'position:absolute;z-index:2147483645;display:none;align-items:center;' +
+      'padding-right:16px;cursor:grab;background:transparent';
+    var chip = doc.createElement('button');
+    chip.type = 'button';
+    chip.setAttribute('data-hc-editor','1');
+    chip.title = 'Drag to move';
+    chip.textContent = '⠿';
+    chip.style.cssText = 'width:26px;height:26px;padding:0;border-radius:8px;' +
+      'border:1px solid rgba(255,255,255,.28);background:#12151f;color:#e8eaee;font-size:13px;' +
+      'line-height:1;cursor:grab;box-shadow:0 6px 18px rgba(0,0,0,.35);' +
+      'font-family:-apple-system,BlinkMacSystemFont,sans-serif';
+    hit.appendChild(chip);
+    var down = function(ev){
       ev.preventDefault(); ev.stopPropagation();
       if(hcGripFor) hcBeginDrag(ev, hcGripFor);
-    });
-    g.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); });
-    doc.body.appendChild(g);
-    hcGrip = g;
-    return g;
+    };
+    hit.addEventListener('pointerdown', down);
+    chip.addEventListener('pointerdown', down);
+    hit.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); });
+    // Hovering the grip IS hovering the block, as far as staying visible goes.
+    hit.addEventListener('mouseenter', function(){ hcGripOver = true; hcCancelGripHide(); });
+    hit.addEventListener('mouseleave', function(){ hcGripOver = false; hcScheduleGripHide(); });
+    doc.body.appendChild(hit);
+    hcGrip = hit;
+    return hit;
   }
-  function hcHideGrip(){ if(hcGrip) hcGrip.style.display = 'none'; hcGripFor = null; }
+  function hcCancelGripHide(){ if(hcGripHideTimer){ clearTimeout(hcGripHideTimer); hcGripHideTimer = null; } }
+  /* A short grace period, so crossing the gap — or clipping a corner on the way — does
+     not kill the thing you are reaching for. */
+  function hcScheduleGripHide(){
+    hcCancelGripHide();
+    hcGripHideTimer = setTimeout(function(){
+      if(hcGripOver || hcSel || hcDragging) return;
+      hcHideGrip();
+    }, 420);
+  }
+  function hcHideGrip(){ hcCancelGripHide(); if(hcGrip) hcGrip.style.display = 'none'; hcGripFor = null; hcGripOver = false; }
   function hcShowGripFor(el){
     if(!el || el === doc.body) return hcHideGrip();
     if(el.hasAttribute && el.hasAttribute('data-hc-editor')) return hcHideGrip();
+    hcCancelGripHide();
     var g = hcGripEl();
     hcGripFor = el;
     var r = el.getBoundingClientRect();
     if(!r.width && !r.height) return hcHideGrip();
     var sx = win.pageXOffset || 0, sy = win.pageYOffset || 0;
-    // Outside the left edge when there is room, tucked just inside when there is not,
-    // so it never covers the first words of the block.
-    var left = r.left + sx - 32;
-    if(left < sx + 4) left = r.left + sx + 4;
+    // Outside the left edge when there is room, tucked just inside when there is not.
+    // Either way the hit area's right edge meets the block, so there is no gap.
+    var outside = (r.left - 34) >= 4;
+    var left = outside ? (r.left + sx - 34) : (r.left + sx + 2);
     g.style.left = left + 'px';
-    g.style.top = (r.top + sy + 4) + 'px';
+    g.style.top = (r.top + sy + 2) + 'px';
+    g.style.height = Math.max(30, Math.min(r.height, 44)) + 'px';
+    g.style.paddingRight = outside ? '16px' : '0px';
     g.style.display = 'inline-flex';
   }
+
   /* The innermost thing under the pointer that could actually be picked up. */
   function hcMovableAt(node){
     for(var n = node; n && n !== doc.body; n = n.parentNode){
@@ -54879,11 +54893,19 @@ function wireHcEditingSurface(doc, root){
     try{
       if(hcSel) return;
       if(hcDragging) return;
+      if(hcGripOver) return;                      // the pointer is ON the grip — leave it alone
       var m = hcMovableAt(e.target);
-      if(m) hcShowGripFor(m); else hcHideGrip();
+      // Never switch away from the block whose grip is showing while the pointer is
+      // still inside it: moving toward the grip crosses the block's own children, and
+      // an instant switch is what made the grip unreachable.
+      if(m && hcGripFor && (m === hcGripFor || (hcGripFor.contains && hcGripFor.contains(m)))){
+        hcCancelGripHide();
+        return;
+      }
+      if(m) hcShowGripFor(m); else hcScheduleGripHide();
     }catch(err){}
   }, true);
-  root.addEventListener('mouseleave', function(){ if(!hcSel && !hcDragging) hcHideGrip(); }, true);
+  root.addEventListener('mouseleave', function(){ if(!hcSel && !hcDragging) hcScheduleGripHide(); }, true);
 
   // Clicking away deselects. Guarded so a tap ON the toolbar never dismisses the
   // thing the toolbar is editing — the commonest way a floating bar becomes
