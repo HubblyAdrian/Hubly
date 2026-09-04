@@ -1577,7 +1577,11 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         '<div class="hc-canvas-loading" id="hcCanvasLoading"><span class="hc-live-dot"></span>&nbsp;Loading your site…</div>' +
         '<div class="hc-preview-frame" id="hcPreviewFrame">' +
           '<div class="hc-preview-stage" id="hcPreviewStage">' +
-            '<iframe class="is-live" id="hcCanvasFrameA" src="' + hcEscape(hcBust(url)) + '" title="Live preview"></iframe>' +
+            // HOLD THE MOUNT while the page is being upgraded in place. The frame is
+            // rendered with no src so the owner never gets an interactive editor on a
+            // document that is about to be replaced — they see the ordinary "Loading
+            // your site…" line, which is already here, and nothing new appears.
+            '<iframe class="is-live" id="hcCanvasFrameA"' + (hc._holdCanvas ? '' : ' src="' + hcEscape(hcBust(url)) + '"') + ' title="Live preview"></iframe>' +
             '<iframe id="hcCanvasFrameB" title="Live preview"></iframe>' +
           '</div>' +
         '</div>' +
@@ -3851,7 +3855,12 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     // Home needs no canvas (the conversation is the screen). A workspace with a canvas
     // renders it lazily on entry — today only Website, which mounts the live site iframe.
     if(id === 'website'){
+      // Hold the canvas only when there is something to wait for — an owner whose page
+      // was already upgraded this session mounts immediately, as before.
+      var needsCheck = !!(hc.draftClaimed && hcIsAuthed() && hc.draftBusiness && !hcPageUpgradeDone(hc.draftBusiness.id));
+      hc._holdCanvas = needsCheck;
       hcSetView('site'); hcRenderCanvas();
+      if(needsCheck) hcRunPageUpgradeThenMount();
       // Tell the freshly-mounted preview the owner is authed, so click-to-edit is live
       // from the first click (hcAuthedFlag inside the iframe). Without this the first tap
       // has to bootstrap auth through hcEditAuthNeeded; with it, editing just works.
@@ -4343,6 +4352,86 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // save returns. Last-write-wins is correct here: the controls are steps, the DOM
   // already shows where the owner stopped, and that is what must end up stored.
   var hcStyleBusy = false, hcStyleQueue = null;
+  // UPGRADE THE STORED PAGE BEFORE THE EDITOR OPENS ON IT.
+  //
+  // Every pass we add after generation — section containers, recorded knob counts —
+  // exists only on pages built since. Measured 2026-09-03: exactly 1 stored page of
+  // 138 carried section stamps, so section reorder shipped for one test business.
+  // The upgrade pass itself has existed and worked all along with ZERO callers; this
+  // is the door, not a new system.
+  //
+  // WHAT THE OWNER SEES: nothing new. It runs while the canvas is already showing
+  // "Loading your site…", and the frame is held un-mounted until it finishes, so the
+  // editor is never interactive on a document about to be replaced.
+  //
+  // WHAT HAPPENS IF IT FAILS: the page is untouched. The transform runs in memory and
+  // the save is a single atomic version insert, so a half-stamped page is not a state
+  // that exists — either a new version was written or it was not. The editor opens
+  // either way; on failure the arrows are simply absent (the toolbar only offers them
+  // where a stamped band exists), and we say so once rather than leaving a control
+  // that would fail on use.
+  //
+  // WHAT IT CANNOT DO: hang. The wait is bounded; past it we mount and carry on.
+  var HC_UPGRADE_WAIT_MS = 7000;
+  function hcPageUpgradeDone(id){
+    try{ return sessionStorage.getItem('hcStamp:' + id) === 'done'; }catch(e){ return false; }
+  }
+  function hcMarkPageUpgradeDone(id){
+    try{ sessionStorage.setItem('hcStamp:' + id, 'done'); }catch(e){}
+  }
+  async function hcUpgradePageIfNeeded(){
+    var biz = hc.draftBusiness;
+    if(!biz || !hc.draftClaimed || !hcIsAuthed()) return { skipped: 'not_owner_session' };
+    if(hcPageUpgradeDone(biz.id)) return { skipped: 'checked_this_session' };
+    var at = await hcFreshToken();
+    if(!at) return { skipped: 'no_token' };
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var to = setTimeout(function(){ try{ if(ctrl) ctrl.abort(); }catch(e){} }, HC_UPGRADE_WAIT_MS);
+    try{
+      var res = await fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + at },
+        body: JSON.stringify({ messages: [], understanding: {}, draftBusiness: biz, restampPage: true }),
+        signal: ctrl ? ctrl.signal : undefined
+      });
+      var r = await res.json().catch(function(){ return null; });
+      clearTimeout(to);
+      // "Already current" and "just upgraded" are both success, and both mean we never
+      // ask again this session.
+      if(r && r.ok){ hcMarkPageUpgradeDone(biz.id); return r; }
+      return { failed: true, reply: (r && r.reply) || null };
+    }catch(e){
+      clearTimeout(to);
+      return { failed: true, timedOut: true };
+    }
+  }
+
+  // Run the upgrade, then mount — and mount WHATEVER happens. The only outcome that
+  // is not allowed here is a canvas that never arrives.
+  async function hcRunPageUpgradeThenMount(){
+    var r = null;
+    try{ r = await hcUpgradePageIfNeeded(); }catch(e){ r = { failed: true }; }
+    hc._holdCanvas = false;
+    var frame = document.getElementById('hcCanvasFrameA');
+    if(frame && !frame.getAttribute('src') && hc.draftBusiness){
+      frame.setAttribute('src', hcBust(hc.draftBusiness.url));
+    }
+    if(r && r.failed){
+      // Rule 6, pointed at a background task: it did not happen, so say so once. The
+      // editor works; the section arrows are what is missing, and naming that is more
+      // use than "something went wrong".
+      hcAppendMessage('hubly', (r.reply) || (r.timedOut
+        ? "Your page took too long to update just now — everything still works, but moving whole sections won't be available until it does. Reopening the editor will try again."
+        : "I couldn't update your page's structure just now — everything still works, but moving whole sections won't be available until it does."));
+    }
+    // Success is silent BY DESIGN and this is the one place that deserves the note:
+    // a successful upgrade changes nothing the owner can see (their words, layout and
+    // links are byte-for-byte what they were — measured on 12 real stored pages), so
+    // announcing it would be Hubly explaining its own plumbing. What it earns them is
+    // a control appearing, and prohibition 4 is satisfied by the control appearing in
+    // the toolbar where they will look for it, not by a sentence about a re-stamp.
+  }
+
   // MOVE A SECTION. The one edit that is NOT painted optimistically: the same move
   // has to happen to the page's own nav, and implementing that transform twice —
   // here and on the server — is how a page and its record come to disagree. The

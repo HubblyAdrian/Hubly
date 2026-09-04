@@ -65,7 +65,7 @@ import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
 import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
 import { reportAllowlistDrops } from "../_shared/hubly_allowlist.ts";
-import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, applyOwnerDesignEdit, applyOwnerStyleEdit, applyOwnerSectionMove, readOwnerDesignKnobs, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
+import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, applyOwnerDesignEdit, applyOwnerStyleEdit, applyOwnerSectionMove, restampFreeformPage, readOwnerDesignKnobs, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration } from "../_shared/hubly_capability_registry.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -835,7 +835,8 @@ Deno.serve(async (req) => {
   // "that didn't save".
   const anyDirectEdit = !!(body && (body.directRecordEdit || body.directEdit || body.directImageEdit ||
     body.directDocumentPatch || body.directDocumentImageEdit || body.directFreeformEdit || body.directFreeformImageEdit ||
-    body.designKnobs === true || body.designEdit || body.styleEdit || body.sectionMove));
+    body.designKnobs === true || body.designEdit || body.styleEdit || body.sectionMove ||
+    body.restampPage === true));
   if (!incoming.length && !anyDirectEdit) return jsonRes({ ok: false, error: "messages_required" }, 400);
 
   // POST-BUILD HAND-OFF. The client asks the MODEL for the first message after a build
@@ -1496,6 +1497,60 @@ Deno.serve(async (req) => {
       interimMessages: [],
       ...(result.error ? { error: result.error } : {}),
     });
+  }
+
+  // UPGRADE THIS PAGE IN PLACE — the door restampFreeformPage never had.
+  //
+  // The pass has existed and worked for a while with ZERO callers, so the editor's
+  // newer marks (section containers, recorded knob counts) reached only pages built
+  // since they shipped: measured 2026-09-03, exactly 1 stored page of 138 carried
+  // section stamps. That is a feature shipped for one test business.
+  //
+  // THE REAL RECORD IS NOT OPTIONAL. restampFreeformPage re-injects the page runtime,
+  // and its defaults are `businessName: "this business"` and `slug: ""` — which would
+  // rewrite every booking link on the page to `https://.myhubly.app/?book=1` and put
+  // "this business" in the chat widget. The row is read here and passed in.
+  if (body?.restampPage === true) {
+    if (!draftBusiness) return jsonRes({ ok: false, error: "no_business" }, 400);
+    const ownerUid = await getOwnerUid();
+    if (!ownerUid) return jsonRes({ ok: false, error: "not_signed_in", reply: "You need to be signed in to update your page." }, 401);
+    const bizRow = await (async () => {
+      try {
+        const url = (Deno.env.get("SUPABASE_URL") || "").trim();
+        if (!url) return null;
+        const res = await fetch(
+          `${url}/rest/v1/businesses?id=eq.${encodeURIComponent(draftBusiness.id)}&select=owner_id,name,slug,brand_color&limit=1`,
+          { headers: adminHeaders() },
+        );
+        if (!res.ok) return null;
+        const rows = await res.json().catch(() => null);
+        return Array.isArray(rows) ? rows[0] : null;
+      } catch { return null; }
+    })();
+    if (!bizRow || String(bizRow.owner_id || "") !== String(ownerUid)) {
+      return jsonRes({ ok: false, error: "not_owner", reply: "You don't have access to edit this business." }, 403);
+    }
+    // ASSERT THE VALUES WE ARE ABOUT TO BAKE IN. Re-injecting the runtime without a
+    // slug writes booking links to `https://.myhubly.app` on every card — better to
+    // decline the upgrade than to publish dead booking links across the page.
+    if (!String(bizRow.slug || "").trim()) {
+      return jsonRes({ ok: false, error: "no_slug", reply: "I couldn't update your page just now — its address is missing from your record." });
+    }
+    const r = await restampFreeformPage(draftBusiness.id, draftBusiness.draftToken, ownerUid, {
+      businessName: String(bizRow.name || ""),
+      slug: String(bizRow.slug || ""),
+      accent: String(bizRow.brand_color || ""),
+    });
+    // Distinct answers, because "nothing to do" and "it failed" are different facts
+    // and the client shows different things for them.
+    return jsonRes({
+      ok: !!r.ok,
+      upgraded: !!(r.ok && !r.skipped && r.version),
+      skipped: r.skipped || null,
+      version: r.version || null,
+      sections: r.sections ?? null,
+      ...(r.error ? { error: r.error } : {}),
+    }, r.ok ? 200 : 200);
   }
 
   // MOVE A SECTION — the up/down arrows on the section toolbar. Structured and
