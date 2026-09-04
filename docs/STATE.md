@@ -1,947 +1,330 @@
-# STATE — where the build is (2026-09-01)
+# STATE — where the build is (2026-09-04)
 
 The current picture, no history. Pairs with `CLAUDE.md` (the rules), `PRODUCT_SHAPE.md`
-(decisions), `OPEN_FINDINGS.md` and `SHELL_TERRAIN.md`. This file is the durable record;
-if it disagrees with memory, this wins. Evergreen-yard-care (`c969eb51-…`, account_kind=test,
+(decisions), `OPEN_FINDINGS.md` and `SHELL_TERRAIN.md`. **This file is the durable
+record; if it disagrees with memory, this wins.**
+
+`evergreen-yard-care` (`c969eb51-684d-4ba8-a58e-2625c90fceea`, `account_kind=test`,
 claimed, owner `adriansmithee+evergreen@gmail.com`) is the claimed-owner test business.
+It is the only claimed business reachable from here, so it is where everything is proven.
+
+---
 
 ## START HERE — orientation for a session with no context
 
-This file is long because it is the record. Read this block, then jump. **Last updated
-2026-09-03.**
-
 **What Hubly is right now:** a person talks to it, it generates a real website at
-`{slug}.myhubly.app`, they claim it with an email code, and then they keep editing — by
-talking, and now by clicking things on the page. The claimed shell is
-`public/platform-home.html` (Home = the conversation; Website = the live site as canvas with
-chat beside it). The generated page is a single freeform HTML document with **no async update
-path**, which is why almost every hard problem here is "how does a later change find the thing
-it needs to touch", and why the answer is always **stamp an anchor at generation, never
-re-recognise the layout afterward**.
+`{slug}.myhubly.app`, they claim it with an email code, then they keep editing — by
+talking, and by working directly on the page. The claimed shell is
+`public/platform-home.html` (**Home** = the conversation; **Website** = the live site as
+canvas with chat beside it). The generated page is a single freeform HTML document with
+**no async update path**, which is why almost every hard problem here is "how does a
+later change find the thing it needs to touch", and why the answer is always **stamp an
+anchor at generation, never re-recognise the layout afterward**.
 
-**TWO DEPLOY PATHS, AND THEY ARE SEPARATE.** Edge functions go live via `supabase functions
-deploy <fn>`; everything in `public/` goes live ONLY via a git push to Vercel. Never call a
-client change live until it is pushed. `supabase db query --linked` works from this
-environment — **measure instead of speculating.**
+**TWO DEPLOY PATHS, AND THEY ARE SEPARATE.** Edge functions go live via
+`supabase functions deploy <fn>`; everything in `public/` goes live ONLY via a git push
+to Vercel. Never call a client change live until it is pushed, and say which path each
+change took when reporting.
 
-### What is LIVE as of 2026-09-03
+**The database is reachable.** `supabase db query --linked` works from this environment
+(use `-f file.sql` for anything containing quotes or comments). **Measure instead of
+speculating.** `supabase db push` is NOT safe here — it replays old migrations and one of
+them fails; apply a single new function with `supabase db query --linked -f <migration>`.
 
-- **The contextual toolbar.** Click any element on the canvas and a small bar appears beside
-  it with only the controls for that element: text/button → size, bold, font, alignment,
-  colour; image → replace, fill/fit, shape; section → spacing, background. Its first control
-  is a **breadcrumb** (`↑ Hero`) that selects the containing section and swaps the bar — so
-  moving between element and section is a control, not a mode. Touch-first: the bar is a
-  horizontally swipeable strip, every target ≥44px, and **nothing is revealed by hover**,
-  because hover does not exist on a phone.
+**The canvas is two frames deep.** builder (`myhubly.app`) → cross-origin iframe
+(`{slug}.myhubly.app`, `hubly.html`) → same-origin **srcdoc** iframe holding the generated
+page. The editing surface is wired onto that innermost document. Consequences that bite:
+the builder cannot read the canvas (different origin — it must be *told*), and in THIS
+harness synthetic wheel/hover/keys do not reach two frames down, though clicks and drags
+do. One frame down — open `{slug}.myhubly.app/?hcEdit=1&hcEditable=1` and post
+`{type:'hcAuthState',authed:true}` — everything is drivable. That is the honest place to
+verify interaction work.
+
+---
+
+## What is LIVE as of 2026-09-04
+
+### The editor
+- **Drag-to-reorder — one operation at two grains.** Elements and sections are the same
+  move; only the grain differs. **The grip lives ON the block** (its left edge), not in
+  the toolbar. A drop line shows where it will land, the move is painted optimistically,
+  and it saves as one versioned, undoable document. **Arrows (↑ ↓) remain** as the
+  keyboard and touch fallback, on the same operation — there is no second system.
+- **Addressing covers unlabelled wrappers.** A node is named by its nearest stamped
+  ancestor-or-self plus element-child indices, with a fingerprint (tag, child count,
+  class, first stamped descendant) that the server re-checks before moving anything. That
+  reaches a band, a labelled leaf, AND a whole service card — which carries no stamp of
+  its own. `@root` covers nodes with no stamped ancestor.
+- **The breadcrumb climbs ONE level** and names it ("Card", "Block", the section name), so
+  every wrapper between a leaf and its band is selectable. A wrapper is its own KIND —
+  move, background, delete; never a caret.
+- **Delete element**, **font as a named dropdown** (system stacks only), **size as a
+  number field** (clamped 8–96px, with the scale steps kept beside it), **page
+  background** (offered only inside the page's own lightness band), and a **real colour
+  picker** — 40 chips: 10 read off the page itself plus 10 hues with a light, base and
+  dark of each.
+- **No frame re-render on a successful save.** The canvas paints the change and the save
+  follows; the frame is re-read only when the server DISAGREES, or when a section move
+  reordered the nav server-side (the one thing an optimistic paint cannot know).
+- **No chat receipts for direct edits.** Direct manipulation does not produce
+  conversation — the page moving is the feedback, and a genuine failure is said ON the
+  toolbar ("Didn't save"), never in the thread.
+- **Undo walks back.** `restore_business_document_version(business, version)` takes an
+  explicit version, so the client holds a cursor and steps back one real change per press
+  (the old RPC always restored the second-latest, which made a second press a redo). It
+  **refuses any step that would publish a document identical to the live one** rather than
+  writing a version and reporting success over a page that does not move. The Undo control
+  lives in the canvas bar and stays while there is an earlier version to reach.
+- **`+ Add service`** tile at the end of the services grid — name, price, description,
+  typed into the page. Writes through the proven `directRecordEdit → applyOwnerRecordEdit`
+  route, so it lands in the RECORD and on the PAGE in one undoable version. There is
+  deliberately no page-only shortcut: a card a customer can read and cannot book is the
+  Hedge Trimming scar (`OPEN_FINDINGS` #17).
+- **Select-and-replace works** — double-click a word, triple-click a line, type over it.
+- **Direct edits are queued, not dropped.** A second edit made while the first save was in
+  flight used to vanish silently; they are serialised now, and a failure takes the queue
+  behind it down in one honest sentence.
+- **Chrome is not a section** — header/footer are never offered move controls, and the
+  writer refuses them.
+- **In the editor, a link is not a link** — no anchor navigates the builder away,
+  including the inserted `data-hubly-runtime="card-book"` CTAs.
+- **The editor keeps your place** — the mode is in the URL (`#website`), so reload and
+  browser Back return to the Website editor, and the canvas is restored to the scroll
+  position the owner was at.
+
+### The page and the pipeline
+- **The lazy page upgrade.** The first time an owner opens the Website editor on a page
+  without section stamps, the page is re-stamped in place as one undoable version while
+  the canvas is held un-mounted (the owner sees only the ordinary "Loading your site…").
+  **This fixed a reach of 1 stored page in 138** — before it, only evergreen carried
+  section stamps, so section reorder had shipped for one test business. The endpoint reads
+  the business row and passes the real name/slug/accent, and **refuses the upgrade if the
+  slug is missing** rather than publishing `https://.myhubly.app/?book=1` across the page.
+  Bounded at 7s; on failure the page is untouched (the transform runs in memory and the
+  save is one atomic insert, so "half-stamped" is not a state that exists).
+- **Book Now goes straight to booking** — `bookingOnly` resolves the business and opens
+  the wizard without building the site first.
+- **Contextual toolbar** — click an element, get only the controls that apply, with a
+  breadcrumb to its container. Touch-first: swipeable strip, ≥44px targets, nothing
+  revealed by hover.
 - **Section containers stamped at generation** (`data-hc-section`), from the bands
-  `expandBands()` already computed and used to discard. Section *membership* was always
-  stamped in the leaf labels; the *boundary* was not.
-- **The re-stamp path** — `restampFreeformPage`: strip our runtime → sanitise + label the
-  model's content → re-inject ours → knobs. One undoable document version, lazy and per-page,
-  never a sweep. It is what carries a later fix onto pages that already exist.
-- **Grid-aware booking buttons.** The page-wide cap of three applies to loose CTAs; every
-  stamped service card keeps (or is given) its own button with its own `svc=`.
-- **Price typography** — prices no longer inherit display tracking and overlap into an
-  apparent strikethrough.
-- **Back from booking returns to the owner's site**, not to a different template.
-- **Direct edits are queued, not dropped.** A second edit made while the first save is
-  in flight used to vanish silently; they are now serialised, and a failure takes the
-  queue behind it down in one honest sentence.
-- **Select-and-replace works.** Double-click a word, triple-click a line, type over it.
-  Every click used to re-enter `hcSelect`, whose teardown collapsed the selection.
-- **The editor keeps your place.** The mode is in the URL (`#website`), so a reload —
-  and browser Back — return to the Website editor, and the canvas is put back at the
-  scroll position the owner was at.
-- **Book Now goes straight to booking**, without rendering the site first; and inside
-  the editor a Book button no longer navigates the whole builder tab away.
-- **↑ ↓ section reorder**, with the page's own nav reordered in the same transform and
-  the same undoable version. Reach today: 1 stored page in 138 carries the section
-  stamps it needs.
+  `expandBands()` already computed.
+- **The re-stamp path** (`restampFreeformPage`) — strip runtime → sanitise + label →
+  re-inject → knobs. Lazy and per-page, never a sweep.
+- **Grid-aware booking buttons**, **price typography**, **Back from booking returns to
+  the owner's site**.
 - Earlier and still live: the Edit-details panel, owner-authorised fact writes, grounding,
   the design knobs (panel + `website.setDesignKnob` in chat).
 
-### What is BROKEN right now
+---
 
-**THE SECOND-EDIT BUG — FIXED 2026-09-03, and the diagnosis below was wrong.**
-It was never the caret. Reproduced as the owner on evergreen by editing two things a
-couple of seconds apart: ONE document version written, the second change sitting on
-screen, in no version, and not a word said. `hcSendDirectEdit` opened with
-`if (hc.busy) return;`, so any edit whose save fired while a previous save was in
-flight was discarded silently — no request, no message, and the optimistic paint left
-it visible until the next reload. Direct edits are now QUEUED and sent one at a time
-(serial is required: the server patches stored HTML by label + prevText, so two writes
-in flight would each patch the same base and one would be lost). The style path had a
-queue already; the text/image path never got one.
+## NOT VERIFIED — say so plainly; do not report these as done
 
-Three edits in a row on ONE element all persist when made slowly — which is why a
-test that edits once, or edits twice slowly, passed this bug for a week.
+- **Touch.** The drag uses Pointer Events, so touch runs the same code path, but there is
+  **no real device here** and no true 390px viewport. **Adrian's phone is the test.** The
+  arrows stay as the touch fallback until he has run it.
+- **Hover-then-grab in the builder.** The grip's hide timer was removed in favour of
+  "persist until the pointer enters a different movable block". That change **could not be
+  driven through two nested frames** in this harness; hover was verified one frame deep
+  with a real mouse. **Adrian is testing it now.** If it still fails in the builder
+  specifically, that is a different cause — get his report rather than assert it works.
 
-- What is known: the first edit works because `hcSelect` now calls
-  `el.focus({preventScroll:true})` after setting `contenteditable` (that was a real
-  regression, fixed — setting the attribute without focusing means no caret, so nothing can
-  be typed).
-- The likely cause, NOT confirmed: `hcSelect` begins with `hcClearSel()`, which removes
-  `contenteditable` from everything; and the blur/save handler runs on the way out. Something
-  in that teardown leaves the element in a state the second selection does not reset.
-- **What would close it:** extend the test to click → type → click away to save → click the
-  SAME element → type again, asserting characters land BOTH times. A test that edits once
-  passes this bug, which is exactly why the existing one does.
+---
 
-## THE FAMILY OF TRAPS — four times now, so learn the pattern, not the anecdotes
+## THE FAMILY OF TRAPS — six now, so learn the pattern, not the anecdotes
 
-Every one of these was written, reviewed, merged, and believed to be working. Each is the
+Every one of these was written, reviewed, merged and believed to be working. Each is the
 same mistake wearing different clothes: **a check that answers an adjacent question and is
 read as answering the real one.**
 
-1. **BOUND IS NOT MOVED.** A control reported itself working over a page that sat still. The
-   knob gate counted a CSS variable's presence, and the variable it counted was one *we*
-   injected — it was measuring its own footprint.
+1. **BOUND IS NOT MOVED.** A control reported itself working over a page that sat still.
+   The knob gate counted a CSS variable's presence, and the variable it counted was one
+   *we* injected — it was measuring its own footprint.
 2. **`ok:true` IS NOT PROOF.** The writer returned `ok:true, real:true, "Changed the header
    size."` over an unchanged page, because writing `:root` changes the HTML whether or not
-   anything reads it, so the no-change guard could not fire.
-3. **AN ERROR IS NOT AN ABSENCE.** `loadLatestBusinessDocumentHtml` returned `null` for both
-   "this business has no site" and "the read failed" — and the caller answers the first by
-   rendering the classic archetype. A dropped request showed a customer a different company's
-   template with owner-facing placeholder copy on it.
+   anything reads it.
+3. **AN ERROR IS NOT AN ABSENCE.** `loadLatestBusinessDocumentHtml` returned `null` for
+   both "this business has no site" and "the read failed" — and the caller answers the
+   first by rendering the classic archetype. A dropped request showed a customer a
+   different company's page.
 4. **"ALREADY DONE" IS NOT "ALREADY THIS VERSION".** `ensureServicePriceCss` returned early
-   whenever any price rule existed, so the letter-spacing fix was written, merged, deployed —
-   and **reached zero pages.** It was reported as shipped and was not on a single one.
+   whenever any price rule existed, so a fix was written, merged, deployed — and **reached
+   zero pages.** Its mirror bit again on 2026-09-04: `freeformIsCurrent` demanded a marker
+   the cycle could never produce for the very population it served, so the upgrade would
+   have re-run and written a new version on **every** editor open, forever.
+5. **A CONTROL THAT RETIRES IS MAKING A CLAIM.** *(2026-09-04)* The Undo button
+   disappeared after one press on a page that still carried an earlier change, asserting
+   "nothing left to undo" when that was false. **Undo did work; the button lied about it.**
+   A control vanishing, greying out or going quiet is a statement about the world and needs
+   the same proof as a green checkmark.
+6. **A TIMER IS THE WRONG MECHANISM FOR INTEREST.** *(2026-09-04)* The drag grip aged out
+   after 420ms while an owner was still reaching for it. Any number would have been wrong
+   for someone slower than the guess. Persist until something else is actually chosen —
+   model the intent, not the delay.
 
-**The test that catches all four is the same:** ask whether the thing a person wants actually
-happened, on the real artefact, and look at it. Not whether the function returned, not
-whether the attribute is present, not whether it is inside the frame.
+**The test that catches all six is the same:** ask whether the thing a person wants
+actually happened, on the real artefact, and look at it.
 
-## Numbers in this file are DATED — check the date before acting on one
+---
 
-A count here was true when it was written and is not re-checked on read. Two specific ones,
-because they are the ones most likely to be quoted as current:
+## THE HABITS THAT EARNED THEIR KEEP (2026-09-04)
+
+- **Grep for the siblings of every fix.** Hubly has two of almost everything — two edit
+  lanes, two booking exits, two deploy paths, two renderers — so a defect written once is
+  usually present twice, and fixing the copy that was reported leaves the other live. The
+  edit queue (the style path had one, the text path did not — *that* was the second-edit
+  bug) and the booking exit (`bookingBack` fixed, `closePublicBooking` not) were both found
+  by Adrian hitting the second copy. Applying the rule the same day turned up four more
+  silent drops, two of which threw away a file the owner had just chosen. Now in
+  `CLAUDE.md`.
+- **Test the GESTURE, not the operation.** A service card "moved between its siblings" in a
+  harness and **could not be picked up by hand** — the handle was in a floating toolbar two
+  breadcrumb climbs away. The operation worked; the thing a person does did not. If the
+  verification does not perform the action the way a person performs it, it has not
+  verified the feature.
+
+---
+
+## Numbers in this file are DATED — check the date before quoting one
+
+A count here was true when written and is not re-checked on read.
 
 - **`docs/SHELL_TERRAIN.md` §0 and §4 counts are 2026-08-29** (market N=7; services 9,
   booking_requests 9, customers 4, jobs 2, `commerce_products` 0, `commerce_orders` 0,
-  `settings_business_hours` 0, `stripe_connect_accounts` 0). They were **not** re-verified on
-  2026-09-02 — that session had no database credentials (`.env.local` carries only a Vercel
-  OIDC token; the linked CLI's pooler URL has no password). Re-pull before quoting.
-- **`scripts/hero-fold-audit/corpus.json` on disk is a STALE export: 114 rows**, where the
-  design-knob sweep the same week used **129**. It is untracked scratch from the squeeze audit,
-  not a current corpus. The standing rule (that folder's README, and memory) is to re-export
-  before every sweep; the file being present is not evidence it is fresh.
+  `settings_business_hours` 0, `stripe_connect_accounts` 0). **Re-pull before quoting** —
+  most of all the zeros, because a zero that has since become non-zero is exactly the stale
+  fact that gets read as "nobody uses this".
+- **Section stamps, 2026-09-04: 1 stored page of 138** carried them before the lazy upgrade
+  shipped. That number should climb as owners open their editors; it is the measure of that
+  feature's reach.
+- **`scripts/hero-fold-audit/corpus.json` on disk is a STALE export.** Re-export before
+  every sweep; the file being present is not evidence it is fresh.
+- **Design-knob corpus figures are 2026-09-02** (106 stored freeform pages; the five
+  offered knobs bind on 99–100%).
+- **Move/nav-sync figures are 2026-09-04**, measured over 12 real stored pages: leaf moves
+  12/12, unlabelled-wrapper moves 11/12 (the 12th correctly refused as chrome), band moves
+  10/10, cross-parent refused 10/10, all text-preserving; nav follows on 7 of the 8 pages
+  with two adjacent nav-linked sections.
+
+---
 
 ## Built — do not rebuild (verify by using, don't re-implement)
 
-- **Claim → claimed shell.** Two modes on one switch (`hc.mode`→`data-mode`, `hcOpenWorkspace`):
-  **Home** (chat is the screen) and **Website** (site = canvas, chat = assistant panel). Rail
-  beneath a slim solid header. Settings is a popout (Account/Notifications/Website/Integrations).
-- **Click-to-edit** on a claimed page (the iframe runs the auth handshake itself). Direct edits
-  are optimistic; **Undo** = `restore_prev_business_document`. What it actually changes on a
-  claimed FREEFORM page — **text and the image `src`, and nothing else**:
-  - **Text** — real. Leaf-only (`hubly.html:53537` returns when `children.length > 0`), keyed on
-    `[data-hc]`, optimistic paint, `hcFreeformInlineEdit` → `applyDirectFreeformEdit`.
-  - **Image replace** — real. Click an `<img>` → file picker → optimistic blob paint →
-    `hcFreeformInlineImageEdit` → `uploadAndPatchFreeformImage`.
-  - **CORRECTION (surveyed 2026-09-02): colour and font are DEAD on a freeform page, and the
-    earlier note here — "changes TEXT only, plus color/font swatches" — read like a working
-    capability.** They are dead two ways, not one: the swatch row is hidden by CSS
-    (`hubly.html:53428`, `if(hc) styleRow.style.display='none'`) AND `applyDirectFreeformEdit`
-    accepts only `{label, text, src, prevText}` — there is no attribute/class/style op on the
-    freeform path at all, so the control is *structurally impossible*, not merely unwired. It
-    works on AST pages only. **Every market page is freeform**, so colour/font reach no real
-    business: in `scripts/hero-fold-audit/corpus.json` (114 pages) the split is market 3 html,
-    internal 1 html, test 103 html + **7 ast — all seven AST pages are `test`.** (That export is
-    stale — see the dating note under "Numbers in this file"; treat the ratio as directional and
-    "all AST are test" as true of that export only.)
-  - **Size / crop / formatting** — do not exist anywhere: no control, no client op, no server
-    support (Build B below).
-- **Home is an assistant**: calm greeting, transcript reachable, gaps recap from
-  `get_my_site_gaps`, earned-by-state suggestions, silent when nothing's due.
-- **Owner-authorised fact writes on a CLAIMED site — PROVEN LIVE (2026-09-01).** The draft-token
-  writers refuse a claimed row; the fix mirrors `create_business_document`: `patch_business_in_progress`,
-  `set_business_hours_in_progress`, `set_business_draft_services` each take `p_owner_id`
-  (unclaimed→token, claimed→`owner_id=p_owner_id`), and are **locked to `service_role` only** so
-  the browser can't forge it. Edge verifies the JWT (`resolveOwnerUid`, lazy+memoized) and passes
-  the uid; the client sends the owner token on typed/post_build/direct sends. Threaded through
-  BOTH extraction AND the model-invoked dispatch (`dispatchArgs.ownerUid`). Proven: phone + hours
-  + a service saved on the claimed site.
-- **Grounding — never publish a fact the owner didn't state THIS turn (PROVEN LIVE).** A value is
-  grounded only if it appears in the current message (`hubly_grounding.ts`: phone by 10-digit key
-  over a digit-normalised message incl. spelled-out; price as a standalone figure; email/address
-  verbatim). `updateDraft` grounds phone/email. `setServices` is **replace-all**, so it
-  RECONCILES instead of filtering: keep an entry grounded OR already-on-record-unchanged, drop only
-  a genuinely new/changed lift; a hallucinated price change preserves the RECORD's value; if
-  nothing real changed and a lift was dropped, write NOTHING and ask. Proven live: "add my phone
-  number" (no number) → asked instead of lifting `801-888-8888`; "gutter cleaning $150" saved and
-  the existing five survived.
-- **Contact & Hours block** (`hubly_contact.ts`): post-build home for hours/phone/email/address,
-  inserted when absent / updated in place / deduped by one key per fact, free-text `hours_note`,
-  `&ndash;` entities, countable, per-fact read-back. NO re-recognition of a model-authored hours
-  list (it clobbered a footer — removed). Heading **re-derives** from contents (a contact-first
-  block that gains hours reads "Hours & Contact" — CONFIRMED LIVE on evergreen).
-- **Services extraction + freeform placement**: model-pass extraction, build + retroactive anchor
-  stamp, insert-by-clone, card-grid labelling.
-- **Stripe Connect Express** exists behind a Settings door, deprioritized, never proven E2E.
-
-## BROKEN — found on the 2026-09-01 claimed-owner run (report done, fixes pending)
-
-1. **Cloned service card copies the sibling's image.** `buildClonedServiceEntry`
-   (`hubly_capability_registry.ts:2856`) re-keys name/price/desc, blanks text, strips the `book=1`
-   CTA — but **never touches the `<img>`**, so a new card inherits the neighbour's photo (Gutter
-   Cleaning shipped with Basic Mow's logo; same root as Spring Aeration/Hedge Trimming sharing a
-   stock photo). Fix: strip the image like the CTA — but DECIDE FIRST what a new card shows
-   (empty slot / neutral placeholder / no-image layout); an empty box on a live site is its own bug.
-2. **Cloned cards don't match originals** (flagged 3×). Diff on evergreen: original Basic Mow has
-   `<span>per visit</span>` (unit), a `<p>` description, and an inner `<a>` Book CTA; the Gutter
-   clone has an **empty unit span** (line 2880 `>[^<]*<` blanks ALL text, including the fixed
-   "per visit" LABEL — not per-service data), a hidden empty desc, and **no CTA** (line 2879
-   strips it by design — capped page-level CTAs). Root cause: blank-all-text is too aggressive
-   (kills fixed labels) and the CTA-strip makes clones visually asymmetric with originals.
-3. **Free-text hours note never lands + read-back announces before doing.** "Weekends are by
-   appointment" (evergreen seq 24) → reply "On it." and `hours_note` is still `null`. Extraction
-   DID run (`worthAPass` true — evergreen has state/address/radius/years null → `gaps.missing`),
-   so the model-pass extraction did not classify it as `hoursNote` despite the schema example
-   being nearly identical (`hubly_extract.ts` EXTRACTION_SCHEMA). Two defects: (a) extraction
-   unreliably captures the note; (b) "On it." is announce-before-doing — nothing announced before
-   it happens. Needs a live extraction trace to pin (a).
-4. **"See what a customer sees" opens the booking form, not the site.** The three Home buttons
-   (`platform-home.html:3794-3796`): "Visit your site"→`url`, **"See what a customer sees"→
-   `url/?book=1` (the booking flow)**, "Start editing"→`hcOpenWorkspace('website')`. Both first
-   labels describe a customer's view; nothing says one is the booking form. A button must say
-   where it goes — relabel (e.g. "Preview the booking form") and/or fix the destination.
-5. **Contact & Hours block type doesn't match the page** (flagged 2×; same root as the service
-   cards). The scoped CSS uses `font: inherit`, so the block takes type from whatever it's nested
-   inside, not the page's real typography. Fix likely reads the page's own font declarations
-   (`body`/`:root`/dominant heading) at insert time and writes them EXPLICITLY, instead of `inherit`.
-6. **Heading fix — CONFIRMED FIXED LIVE** (evergreen block reads "Hours & Contact").
-
-## The recurring pattern — state it as a pattern, not anecdotes
-
-**Compiled clean, deployed clean, did nothing — three times now, always the same shape: the
-failure is in the WIRING between working parts, and only using it AS THE OWNER, ON THE REAL
-THING found it.** (1) The write path locked for every claimed owner for a week — draft-only
-tests were all green. (2) The "✎ Edit details" button did nothing — an inline `onclick` on a
-function inside the app's IIFE (not global). (3) Every manual save failed — a chat-turn guard
-(`messages_required`) rejected structured edits ~530 lines before the handler, AND the raw
-stored token expired (~1h) while the read path auto-refreshed, so the panel LOADED and every
-save died. CLAUDE.md now carries the rule (verify as the owner, on the real thing); this is the
-evidence for why. Reproduce in the real STATE (signed-in owner, claimed business), read the
-actual network response / console — never diagnose from source.
-
-## Build A — the manual "Edit details" panel: BUILT + PROVEN LIVE (2026-09-01)
-
-Every fact the assistant can write, a person can write here: services (add/edit/remove — name,
-price, description), phone/email/address, hours (7-row day grid + the free-text note). Lives in
-**Website mode** as **✎ Edit details** in the canvas toolbar (address · Desktop/Mobile · Edit
-details), claimed owners only. NOT in Settings (business facts stay out of Settings by decision).
-- **Write path (as SHIPPED, superseding the earlier client-PostgREST plan):** the panel does NOT
-  write PostgREST directly — that would update the record but not the PAGE and skip versioning.
-  It POSTs `directRecordEdit` to `hubly-conversation` (owner-verified via `resolveOwnerUid`, NO
-  model), which runs the SAME placement the chat runs (`applyOwnerRecordEdit` →
-  `applyContactHoursToFreeform` / `applyServicesToFreeform` / guarded `removeServiceCard`) and
-  `create_business_document`. So a save reaches the page AND is undoable. Services write PER-ROW
-  (no replace-all → no photo orphaning). Reads use authenticated PostgREST (owner RLS) on open
-  and re-read after any assistant action.
-- **PROVEN as the owner on evergreen:** add a service → `200 {ok:true,"Added … on your page, in
-  the services section."}`, DB row present; remove → `200`, page card gone (guard held), DB clean;
-  other services untouched. Honest read-back throughout — a failed save says so, never a green tick.
-- **Two upstream bugs fixed to get here** (see the pattern above): `messages_required` now exempts
-  any direct edit; the write path uses `hcFreshToken()` (SDK refresh) instead of the raw token —
-  applied at ALL authed write sends (typed send, post_build, click-to-edit, image/doc edits, the
-  panel), so talking/editing no longer dies ~1h into an open tab. A stale token can NOT silently
-  downgrade a claimed write to the draft path: the writer RPCs take the OWNER branch when
-  `owner_id` is set (requires the verified uid) and the draft-token branch is only reachable for
-  an unclaimed row — so it fails loudly (ok:false, reported), never falls through.
-- **Fallback role:** the panel is the guaranteed way in and the only route for a page with no
-  services/contact section to anchor to; in-place editing (Build B) is the primary route and runs
-  through this same proven pipe.
-
-**B. In-place editor — NEXT (runs through Build A's now-proven pipe).** First slice: double-click
-the hours block → a day-grid + note overlay ON the block (type-aware, keyed off the anchors:
-`data-hubly-hours` → grid, `data-hubly-hours-note` → text, `data-hubly-price` → number), saving via
-`directRecordEdit` (the proven path). Then the **+ buttons** (add a service at the section end via
-`data-hubly-service` anchors; add a missing phone/email on the contact block). Editor chrome carries
-`data-hc-editor` and never reaches a saved page — structural (client-only, saves are server-side
-transforms) plus the belt `stripEditorChrome` (already added). No-section pages fall back to the panel.
-Then the fuller "elite editor": today click-to-edit changes TEXT and the image `src` only
-(`applyDirectFreeformEdit` via `data-hc`) — the COLOR_SWATCHES/FONT_OPTIONS row (`hubly.html`
-~53333) is AST-only and never renders on a freeform page (see the correction above); missing font SIZE
-(constrain to the page's type scale, not a number box), image size/crop, formatting.
-- **Same path?** A style change can ride the same seam as a text edit — an inline `style` on the
-  labelled element, saved as a new document version, undoable — without breaking anchors
-  (`data-hubly-*`/`data-hc` are separate attributes; adding `style` doesn't remove them). Worth a
-  focused check that `applyFreeformEdit` can carry a style op.
-- **Constraint (from the start):** the generator designs a per-page type scale. A free numeric
-  font-size box lets an owner wreck the layout in one click. Constrain to a FEW STEPS inside the
-  page's own scale, not a number. Same for image size.
-- **Smallest real-editor set:** size (scale steps), image size/crop (steps), basic formatting, in
-  the contextual inspector on the selected element.
-- **Order:** A before B — facts not reaching the page was a correctness failure; editing controls
-  are a capability gap.
-
-## Still open (not forgotten)
-
-- **`service_photos` orphaning:** `set_business_draft_services` is replace-all (delete + re-insert
-  service rows); `service_photos.service_id` references `services.id`, so a legitimate service
-  *add* may orphan photo links on the existing services. Pre-existing (not introduced by the
-  reconcile work). Verify before leaning harder on services.
-- **Google sign-in shows the raw Supabase domain** instead of Hubly on the consent screen.
-- **The "hours already shown" consent offer** (designed-but-unbuilt; OPEN_FINDINGS #9): when a
-  page already shows a schedule we can't anchor, we save + honestly decline, but the page then
-  shows stale hours. Fix is a confirmed-target offer via the click-action primitive, not a rebuild.
-
-## Design knobs — DEPLOYED 2026-09-02. TESTED BY THE OWNER ONCE; IT FAILED; FIXED; NOT RE-TESTED
-
-**READ THIS BEFORE TOUCHING THE KNOBS.** Three different things here have three different
-levels of proof, and conflating them is how a checkmark gets earned by the wrong step:
-
-- **The MECHANISM** (stamping, multiply-don't-replace, the writer, Undo/Reset) was verified
-  as the owner on evergreen — header 66→85px desktop / 43→56 phone, spacing 22→18, each
-  change undone and reset to the generator's exact original. That happened.
-- **The CONTROLS** (the `Design` panel; the `website.setDesignKnob` chat action) were built
-  and deployed the same day.
-- **The owner then tested them, and `heroScale` FAILED** — "Changed the header size." over a
-  page that did not move. The gate was diagnosed, fixed and re-deployed the same evening.
-  **The re-test has NOT happened.** So the honest status is: *fixed, re-verified offline
-  against 106 stored pages in both populations and at both widths, and still unproven by a
-  signed-in owner.* See "THE GATE ITSELF WAS CAUGHT LYING" below — it is the most
-  instructive thing in this file.
-
-**FIVE knobs are offered** where they bind: `typeScale`, `heroScale`, `spaceScale`,
-`measureScale`, `radiusScale`. **Three are withheld, each with a stated reason**
-(`offered:false` + a `withheld` sentence the refusal speaks aloud): `mediaRatio` — it
-overrides the generator's per-breakpoint choice, so even "16/10" costs +156px on a phone and
-1/1 costs +1,090px, invisible from the desktop where the owner chooses; `background` and
-`ink` — no way to know WHICH text would land on a new background. **`mediaRatio` binds
-nothing on 43 of 106 stored pages**, which is why the gate below matters.
-
-**A SIXTH state you will meet on real pages: UNKNOWN.** On a page stamped before the counts
-were recorded (evergreen, and anything stamped in the window between the knob pass shipping
-and the fix), `heroScale` is neither offered nor refused-as-zero — the gate says it cannot
-tell, and nothing moves. **On evergreen, `heroScale` being absent from the panel is the fix
-working, not a regression.**
-
-The anchor pattern applied to design instead of facts. A generated page carries its own
-model-written CSS, so "make the header bigger" used to mean finding an unpredictable value
-in an unpredictable stylesheet — layout re-recognition, the failure this codebase repeats.
-Now the page's design is named CSS variables and a control sets one.
-
-**The mechanism: MULTIPLY, DON'T REPLACE.** Twenty-four font-sizes are a designed scale;
-each becomes `calc(<what the model wrote> * var(--knob, 1))`. The scale survives, one knob
-moves all of it, and the `, 1` fallback means an unstamped page renders byte-identically —
-**129 of 129 stored pages keep a fallback on every substitution**. Scoping is free, because
-custom properties inherit: `[data-hc^="hero"]{--hubly-type-scale:var(--hubly-hero-scale,1)}`
-makes "bigger header" resolve differently in the hero, against labels already stamped at
-generation. The knob VALUE lives in the stored page's `:root`, so a change is a document
-version and Undo reverses it with no new machinery; Reset deletes an override rather than
-restoring a backup. Steps only, never a raw pixel field.
-
-**Six knobs ship, offered only where they bind** (corpus of 129: test 123, market 5,
-internal 1). A control appears only when its count is > 0 — a knob that binds nothing is a
-checkmark we did not earn.
-
-**CORRECTION (surveyed 2026-09-02): the knobs have NO DOOR OF ANY KIND — not "no owner-facing
-control".** Two facts, both checked: (1) zero client callers — `designKnobs|designEdit|designKnob`
-across `public/` and `scripts/` returns nothing; (2) **the model cannot reach them either** —
-`designKnob` is not registered in `HUBLY_CAPABILITY_REGISTRY` (the only occurrences in that file
-are the import and the action-log label), so "make my headings bigger" in chat does nothing at
-all. The only way in was a hand-built POST. Saying "only the endpoint" implied talking still
-worked; it did not. (Both closed by the control build below.)
-
-| knob | pages | avg declarations |
-|---|---|---|
-| text size | 128 (99%) | 33 |
-| header size | 128 (99%) | 11 |
-| spacing | 128 (99%) | 61 |
-| content width | 128 (99%) | 7 |
-| corner rounding | 127 (98%) | 12 |
-| image shape | 82 (64%) | 2 |
-
-Image shape is 64% because only 82 pages use `aspect-ratio` at all — the gate working.
-
-**Verified as the owner on evergreen, every change at 1440 AND 390, each undone and reset:**
-header 66→85px desktop / 43→56 phone; spacing 22→18 both; image ratio 1.60→1.00 desktop
-and 1.78→1.00 phone. No horizontal overflow at either width. Undo and Reset each returned
-every metric to the generator's original exactly (66/43, 22, 1.60/1.78, doc height
-2744/4418), including on a page that stays stamped.
-
-### BACKGROUND and INK are withheld — refused at the writer, not merely hidden
-
-The binding works and the contrast maths is right. What is missing is knowing WHICH text
-sits on the page background. A generated page paints text in many colours (**16 on
-evergreen**), scoped to sections: dark copy on the light body, white copy inside a dark
-band. Checking only the body's ink passed a dark background at a genuine, measured 5.1:1
-**while the h1 rendered invisible at 390px**. Checking all sixteen is correct and
-unsatisfiable — no single background clears both the dark copy and the white copy,
-including the page's CURRENT background.
-
-**Decision (Adrian, 2026-09-02): the LIGHTNESS BAND, not render-and-measure.** Rendering
-answers the question for one instant — insert a card or move the type scale and the answer
-changes, so it becomes a forever re-check in a runtime with no layout engine. The band
-holds by construction: stay inside the page's own lightness family and every existing
-text-on-background relationship survives untouched. Make the bad state impossible rather
-than detect it afterwards. It also matches the real want — "a warmer cream", "a deeper
-green" is nearly all of it. **"Turn my light page dark" is a redesign, and its honest home
-is asking Hubly to rebuild it dark, which is the generator's job. A knob may not perform a
-redesign.** Hidden-only was rejected: a hidden control is still reachable by anything that
-calls the writer, so `setDesignKnob` refuses a withheld knob outright.
-
-### The pattern the three defects share — all three passed the code and failed the page
-
-1. **Bound is not moved.** `border-radius: var(--radius)` has no literal to multiply (the
-   literal is in `:root`, where the pass must not go), so radius and width counted as BOUND
-   and moved nothing. A control that reports itself working over a page that sits still is
-   the unearned checkmark one level down.
-2. **Desktop is not verified.** `@media` bodies were skipped wholesale by an at-rule guard,
-   so the image knob worked on desktop and did nothing on a phone — the width their
-   customers are on. Only the 390px measurement caught it.
-3. **A passing measurement of the wrong thing is not a passing measurement.** The contrast
-   check returned a true 5.1:1 for the body while the heading disappeared. The number was
-   real; the thing it measured was not the thing that mattered.
-
-### The CONTROLS — DEPLOYED 2026-09-02, UNPROVEN BY AN OWNER. Five knobs, and a chat door
-
-**Two doors where there were none.** Both reach the same owner-verified, versioned,
-undoable writer.
-
-1. **`Design` in the canvas toolbar** (`platform-home.html`, `#hcDesignBtn` beside
-   `Edit details`). That position is deliberate: the canvas bar is the one claimed-owner
-   surface that survives phone width — the rail is `display:none` at ≤760px
-   (OPEN_FINDINGS #13), so a control living there would vanish on a phone.
-2. **`website.setDesignKnob` in the capability registry** — so "make my headings bigger"
-   now works in chat. It takes a **`direction` (up/down), not a value**, and the server
-   steps from the page's CURRENT setting (`stepKnob`): a model cannot see the stored value,
-   so a guessed value is often a change that does nothing and still reports success. At the
-   end of the steps it says so ("already as large as I can set it") rather than clamping
-   silently. Registered in `DRAFT_INJECTED_ACTIONS` (needs draftId+draftToken+ownerUid) and
-   `GATED_WEBSITE_ACTIONS`; the boot audit reports no action missing from either.
-
-**FIVE, not six — image shape is withheld,** at the writer (`offered:false` + a `withheld`
-sentence), not merely left out of the UI. Its cost is invisible from where the owner
-chooses: it overrides the generator's per-breakpoint choice, so even "16/10" costs +156px
-on a phone and 1/1 costs +1,090px. It returns when the ratio is per-breakpoint. The
-refusal now explains itself — `background` and `ink` carry the same treatment, so a
-withheld knob says why instead of "I can't change that one yet."
-
-### THE BINDING GATE — why it exists, and do not remove it
-
-`setDesignKnob` stamps the page and then writes the knob's value into `:root`. **It does
-not check that anything on the page actually reads that variable**, and writing `:root`
-changes the HTML either way — so the "did the HTML change?" no-change guard cannot catch
-it. On a page where a knob bound zero declarations, the writer returned:
-
-> `ok: true, real: true, "Changed the corner rounding."`
-
-**over a page that sat perfectly still.** That is the unearned checkmark, one level down
-from the UI — the same defect as "bound is not moved" below, wearing the writer's clothes.
-
-It was survivable only while the single caller was `readOwnerDesignKnobs`, which filters to
-knobs with `bound > 0`. **The model changed that**: it picks the knob from the owner's
-words, not from a filtered list, so the gate had to live at the WRITER, exactly as the
-withheld-knob refusal already does. `applyOwnerDesignEdit` now refuses `not_bound` before
-writing anything.
-
-**One shared source — and be precise about what that buys.** The read and the write both go
-through `knobBinding()` (was `boundKnobsFor()`). That guarantees they cannot **disagree**. It
-guarantees **nothing** about whether they are **right** — and on 2026-09-02 they agreed
-perfectly on a wrong answer for `heroScale` for as long as the predicate was wrong. Sharing
-a mistake is still better than keeping two copies of it, but a shared source is not a
-correctness argument and must never be read as one.
-
-Measured: `mediaRatio` binds nothing on **43 of 106** stored freeform pages — a real
-population, not a theoretical one.
-
-### THE GATE ITSELF WAS CAUGHT LYING — 2026-09-02, on a real owner's page
-
-**Symptom:** `heroScale` on evergreen returned `ok:true, real:true, "Changed the header
-size."` The preview reloaded. The page was identical. **The check built to enforce "bound is
-not moved" was itself measuring the wrong thing.**
-
-**Cause.** `heroScale` is the only knob that binds through a *scope rule* rather than
-declarations of its own — and that rule, `[data-hc^="hero"]{--hubly-type-scale:var(--hubly-hero-scale,1)}`,
-**is one WE inject at stamp time.** The read-time predicate matched our own footprint, so it
-reported "bound" on every page we had ever stamped, whether or not one hero-scoped
-`font-size` existed. Attribution, measured: strip our injected block and heroScale's count
-goes **106 → 0** across the corpus, while the other four hold at **106 → 106** because they
-are anchored to declarations **the generator wrote**.
-
-**Four predicates were tried. Three were wrong.** Recording them because the pattern is the
-lesson, not the bug:
-
-| | predicate | said | why it was wrong |
-|---|---|---|---|
-| P1 | does `var(--hubly-hero-scale)` appear? | 106/106 bound | matched our own injected rule |
-| P2 | does an element match `[data-hc^="hero"]`? | 106/106 | matching the scope ≠ anything inside it carries a wrapped font-size |
-| P4 | P3, but under jsdom | "nothing moves", every knob | jsdom returns `calc(16px * var(--s,1))` verbatim and never resolves it — it cannot tell a working knob from a dead one |
-| **P3** | **flip the variable, diff COMPUTED styles** | **the truth** | it asks what the owner asks |
-
-**And a fourth trap that nearly hid it:** the first P3 run over the corpus said all five
-knobs move on 106/106 — because it **stamped every page in memory with the current code**.
-Evergreen is stamped **on disk by an older pass**, and `hasDesignKnobs()` short-circuits so
-it is never re-stamped. A run over freshly-stamped pages **structurally cannot** see a
-stale-stamp bug. Always measure both populations.
-
-**THE FIX — the anchor pattern applied to the gate itself.** Everything needed to answer
-"does this bind" is in hand at stamp time, while the stylesheet is being rewritten and the
-hero labels counted. It was being thrown away and re-derived later by regex — re-recognition
-after the fact, the thing this codebase forbids everywhere else. Now `stampDesignKnobs`
-**records the counts** onto the block (`data-hubly-bound="typeScale:33;heroScale:11;…"`,
-zeros included so "missing" unambiguously means "older pass") and `knobBinding()` reads them.
-
-**THE FALLBACK RULE — decide this before changing the gate, it is where the value is.**
-A page with **no recorded counts** (evergreen; every page stamped before this change) must
-**never silently fall back to the old predicate** — that would change nothing for exactly the
-pages that have the bug. What it does instead differs **per knob**, and the difference was
-measured, not assumed:
-
-- **The four declaration-anchored knobs keep their count.** Their predicate counts
-  `var(--hubly-x-scale)` in declarations the *generator* wrote, and on the stale repro they
-  were truthful: type 0/moved 0, space 0/moved 0, measure 5/moved 8, radius 4/moved 8.
-  Blanket-refusing all five would have broken four working controls for every existing owner.
-- **`heroScale` becomes UNKNOWN — never bound, and never a confident zero.** Reporting 0
-  would let the writer say "there's nothing on your page that header size would change",
-  which is *also* a claim we cannot support. The owner is told **"I can't tell what header
-  size would change on your page — it was built before I could check that properly, so I've
-  left it alone rather than move something and hope."** An unknown knob is not offered in the
-  panel either.
-
-Verifying it properly needs a layout engine; the edge runtime has no DOM. That is exactly
-why the count is recorded at stamp time now.
-
-**Re-stamping an old page is the real repair** ("upgrade in place, never unwrap", below) and
-is deliberately NOT built yet.
-
-**P3 IS NOW PERMANENT: `scripts/knob-bind-audit/`.** A browser harness, for the same reason
-`hero-fold-audit` is one. **If you change the gate, you have to beat it.**
-`tests/design-knobs-bound-means-moved.test.mjs` covers the *contract* in `npm test` and
-deliberately does **not** attempt the movement check, because jsdom cannot do it (P4).
-
-**Re-verified against the fix, both populations, both widths — 0 violations at 1440:**
-
-| | fresh-stamped (claimed → moved) | stale-stamped (claimed → moved) |
-|---|---|---|
-| typeScale | 106 → 106 | 0 → 0 |
-| heroScale | 106 → 106 | **106 UNKNOWN, refuses** |
-| spaceScale | 106 → 106 | 2 → 2 |
-| measureScale | 106 → 106 | 43 → 43 |
-| radiusScale | 105 → 105 | 75 → 75 |
-
-Nothing moved that was reported unbound, at either width — so no hidden controls either.
-
-### A LIMIT OF ANY STATIC GATE — found by the 390 run, recorded not fixed
-
-At **390** the same audit found **2 stale-stamped pages** (`redhill-roofing`,
-`pike-sons-tree-service`) where `spaceScale` was correctly *bound* and still moved nothing.
-Not the heroScale class — the declaration is real. It is
-`padding: … max(20px, calc((100vw - calc(var(--max) * var(--hubly-space-scale,1))) / 2))`,
-which **saturates against the 20px floor at phone width**, so the scale cannot move it there
-though it moves it at 1440.
-
-**The general shape: a knob can bind a real declaration and still be inert at a given width**
-— via `max()`/`min()`/`clamp()` saturation, or a rule that only applies inside a media query.
-The gate answers "does this bind *anywhere*", which is not "does this move at the width
-you're looking at", and no server-side check can close that gap without a layout engine. Not
-observed on any freshly-stamped page (all five move at 390 on 106/106), so it is a limit to
-know about rather than a live defect — it would bite only if a page's *sole* binding for a
-knob were clamp-saturated at the owner's width. **This is also the argument for the harness
-being permanent: 1440 alone reported zero violations.**
-
-### THE STALE-STAMP POPULATION — MEASURED 2026-09-02: it is ONE page
-
-```
-total 136 · never_stamped 135 · stale_stamped 1 · recorded 0
-```
-
-**Exactly one stored page carries a knob stamp without recorded counts: evergreen.**
-
-**Two things this corrects, both mine:**
-
-1. **I called it "probably small, but that is an argument not a measurement" and left it.**
-   It was measurable the whole time — `supabase db query --linked` works from this
-   environment (the CLI carries its own stored auth; the absence of a `SUPABASE_ACCESS_TOKEN`
-   env var and of a pooler password says nothing about the CLI). **The database is reachable.
-   Measure instead of arguing.** The first query run with it corrected the answer below.
-2. **I had two populations conflated.** They are different sizes and different urgencies:
-   - **Knobs:** the stale-stamp population is **1** (evergreen). Re-stamp is **NOT** the
-     critical path for the knobs. A single test business is not a migration.
-   - **Sections:** **all 136** pages lack section container stamps, because containers have
-     never been stamped by anything. Re-stamp **IS** the critical path for sections.
-
-   Saying "re-stamp is the critical path" without naming which problem was wrong.
-
-**Related, also measured:** the price-click defect (post-build inserts are unlabelled, so
-click-to-edit cannot reach them) currently reaches **3 of 129 freeform pages — all `test`,
-zero `market`.** It is structural and will bite every future insert, but its blast radius
-today is three pages, one of them evergreen. Lower urgency than it feels when you hit it.
-
-The query, for re-running:
-
-How many stored pages carry an old stamp is **not known**, and it decides whether the
-re-stamp path stays deferred. It could not be measured here (no database credentials). It is
-one query — a stale-stamped page is one with `data-hubly-knobs` but **no** `data-hubly-bound`:
-
-```sql
-select
-  count(*) filter (where rendered_html like '%data-hubly-knobs%'
-                     and rendered_html not like '%data-hubly-bound%') as stale_stamped,
-  count(*) filter (where rendered_html like '%data-hubly-bound%')     as recorded,
-  count(*) filter (where rendered_html not like '%data-hubly-knobs%') as never_stamped,
-  count(*) as total
-from (select distinct on (business_id) business_id, rendered_html
-      from business_documents
-      where rendered_html is not null and length(rendered_html) > 0
-      order by business_id, version desc) t;
-```
-
-Why it is only one: `stampDesignKnobs` runs at generation, so every page generated **since**
-the knob pass records counts, and every **never-stamped** page gets a fresh, correct stamp on
-first knob use. The only exposed pages are those stamped in the window between the knob pass
-going live and the recorded-counts fix — which turned out to be evergreen alone.
-
-### WHAT HAS AND HAS NOT BEEN VERIFIED — do not blur these
-
-**Verified (offline, 2026-09-02), over 106 real stored freeform pages from the corpus:**
-- all five offered knobs bind on **99–100%** of pages;
-- the three withheld knobs are refused **at the writer**, each with its own reason;
-- `stepKnob` walks the steps from the page's real current value and reports the end of the
-  range honestly instead of clamping;
-- **Reset is byte-identical** to the pre-change HTML;
-- the `, 1` fallback survives on **106/106** pages;
-- the capability is registered, present in `DRAFT_INJECTED_ACTIONS` and
-  `GATED_WEBSITE_ACTIONS`, and its three refusals (`not_signed_in`, `unknown_knob`,
-  `missing_direction`) fire with no database;
-- panel geometry at 1440 **and** 390: every touch target ≥44px, no clipped labels, no row
-  or page overflow.
-
-**NOT verified — nothing has been tested as a signed-in owner.** That session had **no
-database credentials** (`.env.local` carries only a Vercel OIDC token; the linked CLI's
-pooler URL has no password) and no way to hold a real session. So none of this is proven:
-opening the panel on a claimed site; a knob actually moving the live page; Undo; Reset;
-the same at 390px on a real phone; and the chat sentence "make my headings bigger" reaching
-`website.setDesignKnob`. **Deployed is not proven. This is the open item.**
-
-Also note what the panel screenshots from that session are and are not: an **isolated
-component render with a stubbed payload**, labelled as such in-frame. They prove geometry
-and nothing about a session, the writer, or the live page.
-
-**Touch-first, and measured rather than asserted.** The page's own edit affordance is a
-`:hover` outline, which does not exist on touch — so the invitation here never depends on
-hover: every control is a permanently visible button, steps are a segmented row (never a
-slider — wrong for a thumb, and it implies a continuum the mechanism does not have), the
-current value is a marked chip plus `aria-pressed`, and the panel becomes a full-width
-bottom sheet under 560px. Measuring caught two targets under 44px that assertion would
-have missed: `.hc-set-x` at **25×26** (shared chrome — so Settings and Edit details were
-affected too, now fixed for all three) and `.hc-dsg-reset` at **42×32**. After the fix, at
-both 1440 and 390: **every target ≥44px, no clipped labels, no row overflow, no horizontal
-page overflow**, panel 520px wide on desktop and full-width 390 on the phone.
-
-**Deployed 2026-09-02** — edge function via `supabase functions deploy hubly-conversation`,
-client via a git push to Vercel (the two-path rule: they are different deploys). Verified
-live after the push: the apex serves `hcDesignBtn`, and the knob read endpoint answers
-`401 not_signed_in` to an unauthenticated caller rather than 404/500. See the verification
-split below for what that does and does not prove.
-
-### Open on knobs (designed, not built)
-
-- **Re-stamp when the pass improves.** A page stamped by an older pass keeps the older
-  binding; evergreen was stamped and its binding fixed twice in one day. UNWRAPPING is
-  ruled out by measurement — a regex inverse round-tripped only 4 of 129 pages
-  byte-identically, because nested `clamp(calc(...))` defeats it. The shape instead is
-  **upgrade in place, never unwrap**: re-run the pass over the stamped page, relying on the
-  idempotence guard already there (a value containing `--hubly-` is skipped), so previously
-  wrapped declarations are untouched and previously MISSED ones get wrapped. Owner values
-  live in `:root` and are not rewritten. Gate it on a version marker on the knob style block
-  and run it lazily on the next knob read/write, never as a sweep, so each upgrade is one
-  owner's page and one undoable version.
-- **The image knob's mobile cost.** Measured at 390px on evergreen (7 cards, so it
-  compounds): 16/9 = 4,418px, 16/10 = 4,574, 3/2 = 4,677, 4/3 = 4,885, **1/1 = 5,508 —
-  6.5 phone screens, +1,090px**. Worse, the knob OVERRIDES the generator's per-breakpoint
-  choice: evergreen deliberately uses 16/9 on phones and 16/10 on desktop, so even picking
-  "16/10" costs +156px on a phone. Direction: drop the square step AND make the ratio
-  per-breakpoint so the page keeps its own phone choice — constrain the step set rather
-  than warn, since the owner choosing on desktop cannot see the phone consequence.
-
-## THE EDITOR — built 2026-09-02/03. The model, and what is left
-
-**The model, in one line:** the website is the interface, AI is the intelligence layer,
-sections are the structure. Controls live ON the thing they change — nothing global, nothing
-in a permanent drawer.
-
-**Where the design came from** (read before changing the interaction): Canva runs ONE bar that
-adapts to the selection, and on mobile it is a swipeable strip — there is no hover on a phone,
-so the bar cannot be something hover reveals; **the bar IS the affordance.** Gutenberg and
-Oracle both make child→parent a **breadcrumb**, not a mode. Edge handling is flip-then-shift:
-prefer above, flip below when it clips, slide along the axis, never leave the viewport.
-
-**Server pieces this rests on:**
-- `applyFreeformStyle` (`hubly_freeform.ts`) — writes validated inline style onto a labelled
-  element through a **closed vocabulary of properties AND values**. Not a style passthrough:
-  the request is a POST like any other, and an arbitrary style string would let a caller put
-  `position:fixed` over the page.
-- `applyOwnerStyleEdit` → the same owner-verified, versioned, undoable pipe as every other
-  edit. `styleEdit` on `hubly-conversation`.
-- **Size reuses the knob engine, relocated.** `--hubly-type-scale` is written ON the element
-  rather than `:root`; custom properties inherit, so the element and its descendants move and
-  nothing else does. Steps only — the generator designs a per-page type scale and a free
-  number box destroys it.
-
-### REORDERING: ONE OPERATION, ANY GRAIN (built 2026-09-03/04)
-
-**The first cut was the wrong feature and it is worth recording why.** It could swap
-whole stamped BANDS only — so "put SERVICE PLANS below the headline", the thing Adrian
-has reported most often, was impossible: that line is a leaf inside the hero, not a
-band. A control that moves something is not the same as a control that moves the thing
-being asked about.
-
-**One address scheme.** A node is named by its nearest stamped ancestor-or-self plus
-element-child indices down to it, with a fingerprint (tag, child count, class, first
-stamped descendant) the server re-checks before moving anything — so the path is only
-trusted as far as the document it was computed against. That covers a band, a labelled
-leaf, and an UNLABELLED WRAPPER, which is what a whole service card is. A `@root`
-anchor covers nodes with no stamped ancestor (2 of 12 real pages had one).
-
-**Measured over 12 real stored pages** (stamped by the real pass): leaf moves 12/12,
-wrapper moves 11/12 (the 12th correctly refused — it resolved to chrome), band moves
-10/10, cross-parent refused 10/10, every result text-preserving.
-
-**Drag, and the arrows, are the same operation.** Pointer events, not HTML5 DnD (which
-is unreliable in an iframe and absent on touch). The whole gesture happens inside the
-canvas document, so the parent's scaling never enters into it — no coordinate
-translation at any zoom. The gesture starts from a handle in the toolbar because the
-block itself is contenteditable and dragging inside it would fight text selection.
-
-**The rules that hold it honest:**
-- **An ARROW appears only where that specific move exists.** The HANDLE appears
-  wherever picking the block up is meaningful — so a block with nowhere to go can SHOW
-  that: it lifts, no drop line ever appears, it returns. Hiding the handle instead was
-  the silence that made section.3 read as broken.
-- **Chrome is not a section.** header/footer are the page's frame; they are not offered
-  arrows and the writer refuses them. Without this, "shares a parent" was enough to
-  offer the site header a swap with whatever band sat beside it in `<body>` — a move
-  that would have succeeded and put the header in the middle of the page.
-- **Cross-container is a NO.** Moving a node into a different parent relocates it into
-  a different styling context and the page can visibly break. Refused at the writer,
-  and the drag shows it by never drawing a line.
-- **Nothing is said in chat.** Direct manipulation does not produce conversation: the
-  feedback is the page moving plus the Undo toast, and a genuine failure is said ON the
-  toolbar ("Didn't save"), never in the thread.
-- **A wrapper is its own KIND** — it gets move, background and delete, never a caret.
-- **The breadcrumb climbs ONE level** and names it ("Card", "Block", the section), so
-  every wrapper between a leaf and its band is selectable. Before this the card could be
-  addressed by the server and reached by nothing in the interface.
-
-**Verified live as the owner on evergreen:** SERVICE PLANS dragged below the headline
-(real pointer drag, one version, chat untouched); a whole service card moved between
-its siblings with image, price, description and button intact; arrows at both grains;
-drop line and lift observed; an only-child block lifts, shows no line and returns; Undo
-put a move back; the page restored to its original order afterwards.
-
-### THE DEFINITION OF DONE — parity with Base44, so it stops being a moving target
-
-Recorded 2026-09-03 (Adrian). Twelve rows, eight gaps. This is the LIST; the ORDER
-below it matters more, and the first line of the order is the whole point.
+- **Claim → claimed shell.** Two modes on one switch (`hc.mode` → `data-mode`,
+  `hcOpenWorkspace`): Home and Website. Settings is a popout.
+- **Click-to-edit** on a claimed page (the iframe runs the auth handshake itself). Text and
+  image `src` are real; style goes through `applyFreeformStyle` — a closed vocabulary of
+  properties AND values, because the request is a POST like any other.
+- **Owner-authorised fact writes on a CLAIMED site — PROVEN LIVE.** Writer RPCs take
+  `p_owner_id`, are locked to `service_role`, and the edge verifies the JWT
+  (`resolveOwnerUid`).
+- **Grounding — never publish a fact the owner didn't state THIS turn (PROVEN LIVE).**
+  `hubly_grounding.ts`; `setServices` is replace-all, so it RECONCILES rather than filters.
+- **Contact & Hours block** (`hubly_contact.ts`), **services extraction + freeform
+  placement**, the **Edit-details panel** (every fact the assistant can write, a person can
+  write), and the **design knobs** (five offered; three withheld at the writer, each with a
+  stated reason).
+- **Stripe Connect Express** exists behind a Settings door, never proven end to end.
+
+---
+
+## The editor's definition of done — parity with Base44
+
+Recorded 2026-09-03. **CLEAN comes before PARITY, and they are different jobs.** Clean
+means nothing broken, nothing that lies, no flashing, no losing your place.
 
 | | Base44 | Hubly |
 |---|---|---|
-| Click element → toolbar beside it | yes | yes, roughly |
-| Font — named dropdown | yes | **yes** (2026-09-04, system stacks only) |
-| Size — number field | yes | **yes** (2026-09-04, clamped 8–96px, steps kept) |
-| Colour — real picker | yes | **yes** (2026-09-04, page's own colours + 30 hues) |
+| Click element → toolbar beside it | yes | yes |
+| Font — named dropdown | yes | **yes** (2026-09-04) |
+| Size — number field | yes | **yes** (clamped 8–96px) |
+| Colour — real picker | yes | **yes** (page's own + 30 hues) |
 | Bold / italic / align | yes | yes |
 | Link editing | yes | yes |
-| Delete element | yes | **yes** (2026-09-04) |
-| Selected element → chat context | yes | **no** |
+| Delete element | yes | **yes** |
+| Move blocks | yes | **yes** — drag + arrows, any grain |
+| Page background | yes | **yes** (inside the page's lightness band) |
+| Selected element → chat context | yes | **no** — the next one |
 | Per-turn Revert in chat | yes | **no** (the machinery exists) |
-| Multi-instruction prompts | yes | **no** |
-| Move blocks | yes | **yes** — drag + arrows, any grain (2026-09-04) |
-| Page background | yes | **yes** (2026-09-04, inside the page's lightness band) |
+| Multi-instruction prompts | yes | **no** — unsized |
 
-**CLEAN COMES BEFORE PARITY, AND THEY ARE DIFFERENT JOBS.** Clean means nothing
-broken, nothing that lies, no flashing, no losing your place. Parity means having the
-controls. Shipping controls onto a surface that loses your work is how you get a
-longer list of things that do not work.
+### Next, in order
 
-1. **CLEAN — all three DONE and verified live as the owner, 2026-09-03:** the
-   second-edit bug (it was a silent save drop, not the caret), reload keeping your
-   place (mode in the URL + canvas scroll restored), and Book Now going straight to
-   booking. Details in the sections above.
-2. **The cheap parity wins, all small — closes five of eight:** font dropdown, size
-   field, real colour picker, page background, delete element.
-3. **The two that matter:**
-   - **Selected element → chat context** — the `{}` span × chip. Click a heading, type
-     "make this feel more premium." This one feature replaces the whole Design-panel
-     argument, and it is what makes our AI feel like theirs. **NOT BUILT. Build it
-     AFTER the cheap parity wins, ship it on its own, and Adrian tests it before
-     anything else moves.** Both halves already exist — the toolbar knows what is
-     selected, and the model can already act on a label; what is missing is the wire
-     between them and the chip in the composer. Its rules, recorded 2026-09-03:
-     - **The chip says what was selected in words the owner would recognise** —
-       "Hero heading", not `hero.headline`.
-     - **Clearing the selection clears the chip.**
-     - **With a chip attached, a design instruction applies to THAT element, not the
-       page.**
-     - **It still never invents content.** "Make this more premium" is a design
-       change and proceeds. "Add a testimonial here" still asks who said it — the
-       standing rule at the top of `CLAUDE.md`, unchanged by having a target.
-   - **Section move (↑ ↓)** — **BUILT 2026-09-03**, see below.
-4. **The only one that is not cheap: multi-instruction prompts.** Their user said six
-   things in one message and got all six; ours does one capability action per turn.
-   **SIZE IT BEFORE SCHEDULING IT — Adrian wants a real number, not a guess.**
+1. **Selected element → chat context** — the `{}` span × chip. Click a heading, type "make
+   this feel more premium." Both halves already exist (the toolbar knows the selection; the
+   model can act on a label); what is missing is the wire between them and the chip in the
+   composer. **Ship it on its own; Adrian tests it before anything else moves.** Its rules:
+   the chip says what was selected in words the owner would recognise ("Hero heading", not
+   `hero.headline`); clearing the selection clears the chip; with a chip attached a design
+   instruction applies to THAT element, not the page; and it still never invents content —
+   "make this more premium" proceeds, "add a testimonial here" still asks who said it.
+2. **Multi-instruction prompts.** Their user said six things in one message and got all
+   six; ours does one capability action per turn. **SIZE IT BEFORE SCHEDULING IT — Adrian
+   wants a real number, not a guess.**
+3. Then: section select by click, duplicate, `+ Add section`.
 
-### THE LAZY UPGRADE — how an old page gets what the editor needs (built 2026-09-03)
+**Two constraints that bind all of it.** The AI **never invents content** — it adds a
+section empty and ASKS. And `+ Add section` offers only sections that can actually be
+filled: Services, Pricing, Contact, Booking (real records) and Hero, About, Text, Image,
+FAQ (page-only text, honest as such). **Events, Testimonials and Gallery are NOT offered**
+— there is no data model behind them, and page text dressed as data is what we refuse to
+ship.
 
-`restampFreeformPage` had existed and worked with **zero callers**, so every mark the
-editor was built on after generation reached only pages built since. Measured: **1
-stored page of 138** carried section stamps. The pass was never the problem; the door
-was missing — the same shape as the knobs, the photo upload, and the storefront.
+**DRAG-TO-POSITION IS STILL OUT, deliberately.** Free positioning needs a layout model:
+129 bespoke grids, 99% `display:grid`, **0% name their areas**, 81% never address a cell.
+Drag-to-*reorder* needed none of that and is built. **Cross-container drops are refused** —
+moving a node into a different parent relocates it into a different styling context and the
+page can visibly break; the drag shows this by never drawing a drop line, and the block
+returns.
 
-**How it runs.** On entering Website mode, a claimed owner's page is checked once per
-session (`restampPage` on `hubly-conversation`, owner-verified). The canvas frame is
-rendered with **no `src`** until the answer comes back, so the editor is never
-interactive on a document about to be replaced; the owner sees the ordinary "Loading
-your site…" that was already there. The wait is bounded at 7s — past it the canvas
-mounts anyway and the missing capability is named in one sentence.
+---
 
-**Why it cannot leave a half-stamped page.** The transform runs in memory and the save
-is a single atomic version insert. Either a new version exists or it does not; there is
-no partial state to be in. On failure the page is untouched, the editor still opens,
-and the section arrows are simply absent — the toolbar only offers them where a stamped
-band exists, so there is no control that would fail on use.
+## MOBILE — a priority, not a polish pass
 
-**Measured before it was built,** over 12 real stored pages: all 12 gain section stamps,
-7ms each, the cycle converges (pass 2 differs from pass 1 by ≤31 bytes of whitespace
-around our own injected block; pass 3 is identical), and the owner's visible text is
-unchanged — the only words that move are the business name inside our own chat widget.
+1. **The PUBLIC site at phone width** — ~5,000–5,400px at 390px, about six phone-screens
+   (`OPEN_FINDINGS` #10). It is what a CUSTOMER sees the moment they tap the link; it
+   outranks the shell's mobile problem.
+2. **The Hubly SHELL at phone width** — the rail is `display:none` at ≤760px, so Settings
+   is unreachable (`OPEN_FINDINGS` #13).
 
-**THE HAZARD THIS DOOR HAD TO CLOSE.** `restampFreeformPage` re-injects the page
-runtime and its defaults are `businessName: "this business"` and `slug: ""` — which
-would rewrite **every booking link on the page** to `https://.myhubly.app/?book=1`. The
-endpoint reads the real row, passes it, and **refuses the upgrade outright if the slug
-is missing** rather than publishing dead booking links across a live page.
+**What binds regardless:** anything NEW ships phone-aware, and **Claude Code cannot verify
+mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test.
 
-**AND THE BUG IT ALMOST SHIPPED WITH — a version per editor open, forever.**
-`freeformIsCurrent` required both `data-hc-section` and `data-hubly-bound`. But
-`stampDesignKnobs` returns early on any page that already carries knob variables, so a
-page stamped by an OLDER knob pass can never gain `data-hubly-bound` from this cycle:
-the guard was unsatisfiable for exactly the population the upgrade exists to serve, and
-it would have re-done the work and written a new version on every open. Caught by
-running the real upgrade on a real owned page and reading the row back — the fourth
-instance of "already done is not already this version", pointed the other way. Such a
-page is now current once it has the section containers; its knob binding stays whatever
-the old pass left, which the gate already reports honestly as UNKNOWN. The
-postcondition is asserted: if what was just saved still does not read as current, that
-returns `upgrade_incomplete` rather than looping quietly.
+---
 
-**Verified live on evergreen:** a deliberately un-stamped version was written (v120),
-the editor was opened, the upgrade produced v121 with all six section containers, 8
-booking links intact and 0 empty-slug links; a second open with the client memo cleared
-wrote **zero** new versions, and the arrows are present on the upgraded page.
+## Still owed, untouched
 
-### STILL OWED on the editor, in the order Adrian asked for
+- **Multi-instruction prompts** — unsized. A real number before scheduling.
+- **The design-knob re-test as the owner.** They failed once, were fixed, and have not been
+  re-tested. **Expect `heroScale` to be ABSENT from the Design panel on evergreen** — that
+  page carries an old stamp with no recorded counts, so the gate honestly says it cannot
+  tell. That absence is the fix working, not a regression. If any knob reports success and
+  the page sits still, that is the gate failing again and it is the highest-severity thing
+  in this file.
+- **The storefront hour.** The storefront is largely BUILT, in the legacy stack, and
+  unreachable from the claimed shell. One hour signing in and exercising the legacy Store
+  settles door-vs-re-implement, and both estimates hinge on the answer. Do not start
+  building either path. See `PRODUCT_SHAPE.md` §3 and `OPEN_FINDINGS` #14.
+- **`OPEN_FINDINGS` #16 — every site opens in the same shape.** Headline
+  `text-align:start` on 128/128 pages; 55% are the exact layout the generation prompt
+  forbids by name. The mechanism that would fix it (`CHROME_ENUMS`) exists on the AST
+  renderer only and reaches zero real businesses. **The next generator job.** Do not fix by
+  randomising — the commitment must emit structured, stored, correctable values.
+- **`OPEN_FINDINGS` #18 — placeholder copy still reachable by customers.** The classic
+  template's owner-facing empty states render for any business with no stored document. The
+  Back-from-booking route in is fixed; **the copy is not.**
+- **`OPEN_FINDINGS` #19 — video links on the storefront.** Recorded, not built, and
+  deliberately behind the storefront hour. Allowlisted sources, player AND link, two
+  placements, `youtube-nocookie`, and **the AI never invents a link** — a fabricated video
+  ID points somewhere real that is not ours.
+- **`service_photos` orphaning** — `set_business_draft_services` is replace-all, so a
+  legitimate service *add* may orphan photo links. Pre-existing; verify before leaning
+  harder on services.
+- **Google sign-in shows the raw Supabase domain** on the consent screen.
+- **The "hours already shown" consent offer** (`OPEN_FINDINGS` #9) — designed, unbuilt.
+- **A URL scheme and a wordmark placement** — both need SPECIFYING, not just surveying.
 
-1. ~~**The second-edit bug**~~ — **FIXED AND VERIFIED LIVE 2026-09-03.** It was never
-   the caret: `hcSendDirectEdit` opened with `if (hc.busy) return;`, so a second edit
-   made while the first save was in flight was discarded silently. Edits are queued now.
-2. ~~**Reload returns you to the Website editor**~~ — **DONE 2026-09-03.** The mode is
-   in the hash (`#website`), and the canvas reports its scroll so a reload puts the
-   owner back on the part of the page they were looking at.
-3. ~~**Book Now should go straight to booking**~~ — **DONE 2026-09-03.** `bookingOnly`
-   resolves the business and opens the wizard without building the site first.
-4. ~~**↑ ↓ section reorder**~~ — **BUILT AND VERIFIED LIVE 2026-09-03** on evergreen,
-   both directions, one undoable version each; the nav reorders inside the same
-   transform. **Its reach was 1 page in 138 (only evergreen carried section stamps) —
-   CLOSED the same night** by giving `restampFreeformPage` the door it never had: the
-   first time an owner opens the Website editor on a page without section stamps, it
-   is upgraded in place as one undoable version while the canvas is still held
-   un-mounted. See "THE LAZY UPGRADE" below.
-5. **A real colour palette.** Four swatches is not a palette. Wanted: a proper spread of hues
-   with a light and dark of each, PLUS the page's own colours pulled from the site so an
-   owner can match what is already there (`pagePalette()` already extracts them).
-6. **Page background** — not offered at all today.
-7. **A font picker**, not the `Aa` cycle. It currently rotates sans→serif→mono per press,
-   which is honest but is not a choice, and does nothing visible when the font comes from a
-   class.
-8. Then: **section select by click** (today sections are reachable only via the breadcrumb,
-   because `EDITABLE_SEL` is `[data-node],[data-hc]` and a section carries
-   `data-hc-section`), **duplicate / move / delete**, and **`+ Add section`**.
-
-**Two constraints that bind all of it.** The AI **never invents content** — it adds a section
-empty and ASKS; no invented events, dates, prices, names or testimonials, ever (see
-`OPEN_FINDINGS` #17 for what happened when it did). And the `+ Add section` picker offers only
-sections that can actually be filled: **Services, Pricing, Contact, Booking** (real records)
-and **Hero, About, Text, Image, FAQ** (page-only text, honest as such). **Events, Testimonials
-and Gallery are NOT offered** — there is no data model behind them, and page text dressed as
-data is the thing we refuse to ship.
-
-**DRAG IS NOT ON THIS LIST, deliberately.** Squarespace's Fluid Engine works because it owns
-the grid: 24 columns desktop, 8 mobile, positions stored as grid coordinates, blocks floored
-at content height, and a **separate grid per breakpoint**. Hubly has 129 bespoke grids the
-model invented — measured: 99% use `display:grid`, **0% name their areas**, 81% never address
-a cell. In an auto-flow grid, position IS document order; there is nowhere to store "column 7,
-row 3" because nothing reads it. Drag needs a layout model, which means changing what the
-generator emits plus a migration of every existing page. Reorder is cheap; free positioning is
-a separate decision.
-
-## MOBILE — a priority, not a polish pass (not being built now; binds everything new)
-
-Two distinct pieces. Neither is scheduled yet; both are named here so neither gets filed
-under "responsive tidy-up later", which is what they are not.
-
-1. **The PUBLIC site at phone width — this is the one that decides whether anyone books.**
-   ~5,000–5,400px at 390px, about six phone-screens, consistent across market AND test
-   (OPEN_FINDINGS #10). Cause is generously-sized stacked sections plus a generation prompt
-   that says nothing about phone-width length — not broken responsiveness. It outranks the
-   shell's mobile problem because it is what a CUSTOMER sees the moment they tap the link;
-   the shell is the owner's view, and an owner will find their way around a cramped screen
-   in a way a stranger deciding whether to book never will.
-2. **The Hubly SHELL at phone width.** The rail and the Home/Website mode switch are
-   desktop-shaped; on a phone an owner cannot reach Home, Website or Settings. **Cannot be
-   verified from here** — Claude Code has no true 390px viewport and no soft keyboard, so
-   this one is Adrian's to check on a real phone (the standing rule in CLAUDE.md).
-
-**What binds from here, whether or not either is scheduled:** anything NEW ships
-phone-aware. Every design knob is verified at 390px as well as desktop before it ships — a
-type scale that reads well wide can overflow on a phone, and the phone is where their
-customers are. Every editor control is designed for TOUCH from the first line, not
-mouse-and-hover with a mobile pass promised afterwards. Retrofitting an inspector built
-around hover is a rebuild; building it touch-first costs nothing today. This is cheaper
-than the two items above precisely because it is a constraint on new work rather than a
-repair of old work.
-
-## STOREFRONT — the decision, sized (surveyed 2026-09-02; NOTHING started)
-
-Do not treat this as greenfield and do not start building. `PRODUCT_SHAPE.md` §3 reads as
-direction; the storefront is **largely built, in the legacy stack, and unreachable from the
-claimed shell**. What the survey established:
-
-- **The SERVER is common to both paths.** `commerce-api` (739 lines), `create-store-checkout`,
-  `commerce_checkout.ts`, `hubly_commerce_inventory.ts`, `storefront_ast.ts` — ~1,607 lines
-  of edge functions over HTTP. They do not know which client calls them. **Neither option
-  rebuilds them.**
-- **The customer-facing half already works** and is unaffected by the choice.
-  `{slug}.myhubly.app/store` renders from `businesses.meta.storefront` + the public
-  `commerce-api` endpoint, and a storefront-only business (`capabilities.storefront &&
-  !capabilities.website`) already serves the store at `/`.
-- **So the decision is only ~2,810 lines of OWNER-SIDE CLIENT** — `store-commerce.js`
-  (1,027, the ten-tab admin) plus `journey-os/commerce/*.js` (1,783) — plus 300 lines of
-  namespaced CSS (`jos-store-*`, `hub-commerce-*`, 147 selectors, no collision risk).
-- **Four globals to shim** — the whole coupling to the legacy app:
-  `window.HublySupabase` (`{url, session, anonKey}`), `window.S` (only `.businessId` and a
-  role that defaults to `'owner'`), `window.toast` (41 calls), and — both already optional
-  and guarded — `window.HublyEvents.publish` and `window.HublyJourneyOS`.
-  `store-commerce.js` reads the global through **one accessor** (`function S(){ return
-  global.S || {} }`, line 30) and its header states it no longer reads or writes the legacy
-  `S.storeOs` blob; `store-page.js` says "no `S.storeOs`. `commerce_products` is the SSOT."
-- **THE NAMING TRAP — read this before opening either file.** In `hubly.html`,
-  **`#p-storefront` is the CLASSIC WEBSITE page** (`showP('p-storefront')` →
-  `renderWebsite()`). **The actual store is `#p-store` / `HublyStorePage`.** Two meanings of
-  "storefront" in one file.
-- **The door has an open decision attached — `OPEN_FINDINGS.md` #14.** Making the store
-  reachable is ~10–25 lines across two files *plus* an unmade security decision: whether the
-  `dashboard` context carries a raw owner write credential, which it never has. **It may not
-  need making at all**, depending on what the storefront hour finds.
-
-**Everything above is code-reading, not exercising.** The legacy store has NOT been run as an
-owner. The cheapest next step by a wide margin is one hour: sign in, reach the Store tab,
-create a product, see it on `/store`. Both cost estimates hinge on that answer. Usage numbers
-(`commerce_products` 0 / `commerce_orders` 0) are dated 2026-08-29 — see "Numbers in this
-file are DATED".
+---
 
 ## The standing rules these builds keep paying for — verbatim, do not soften
 
@@ -949,143 +332,18 @@ file are DATED".
   is the unearned checkmark one level down.
 - **Desktop is not verified.** A change confirmed at 1440 is not confirmed; the width their
   customers are on is the one that decides.
-- **A passing measurement of the wrong thing is not a passing measurement.** The contrast
-  check returned a true 5.1:1 for the body while the heading disappeared. The number was
-  real; the thing it measured was not the thing that mattered.
-- **Don't test the code — test the EXPERIENCE. Drive it at real size, as the owner, and
-  complete the task end to end before saying it works.** (Added to `CLAUDE.md` 2026-09-03.)
-  A harness that asks "is it inside the frame" is not asking "can a person finish the
-  action". All four editor bugs of 2026-09-02 had passed a harness written the same day: the
-  toolbar measured "fully visible" against the iframe's own 1440x900 viewport while being
-  clipped in the pane a human was looking at; a size change measured as saved while a second
-  tap was silently dropped; and two of the four -- prices whose digits overlapped into a
-  strikethrough, and the page scrolling itself under the owner's hand -- were **invisible in
-  every number collected and obvious in one screenshot.** Open it at the real canvas size,
-  finish the job, reload, confirm it stuck, and LOOK. Some defects have no number. A harness
-  is for what a person cannot repeat a hundred times; it is never the last word.
-- **An error is not an absence, and "already done" is not "already this version."** See THE
-  FAMILY OF TRAPS at the top of this file -- four instances, one mistake.
+- **A passing measurement of the wrong thing is not a passing measurement.**
+- **Don't test the code — test the EXPERIENCE**, at real size, as the owner, and finish the
+  task before saying it works. **And test the GESTURE, not the operation.**
+- **An error is not an absence, and "already done" is not "already this version."**
+- **A control that retires is making a claim**, and **a timer is the wrong mechanism for
+  interest.**
+- **A bug is a class, not a line** — grep for its siblings before closing it.
 
 ## The anchor-pattern discipline (the through-line)
 
-A freeform page has no async update path, so any fact a later change must touch is stamped with an
-anchor at generation, placed by it afterward, inserted into the section when absent, with a
-countable row and a read-back. Never re-recognize layout after the fact; never offer a suggestion
-whose action can't reach the page; never write a fact not grounded in the current message.
-
-## Needs Adrian's eyes on the DEPLOYED site (I can't hold a real session)
-
-- **THE DESIGN KNOB CONTROLS — deployed, and the gate FIXED after failing this exact test
-  once (2026-09-02).** First attempt: `heroScale` said "Changed the header size." over a
-  still page. Diagnosed, fixed, re-verified offline. **Re-test on evergreen — same knob,
-  same page:** sign in, open `Design`, set each offered knob, watch the page actually move,
-  then Undo and Reset — at 1440 **and** on a real phone. Then type "make my headings bigger"
-  in the chat.
-  - **Expect `heroScale` to be MISSING from the panel on evergreen**, because evergreen
-    carries an old stamp with no recorded counts, so the gate now honestly says it cannot
-    tell. That absence is the fix working, not a regression. If you reach it another way it
-    must say *"I can't tell what header size would change on your page…"* — never "Changed
-    the header size."
-  - If any knob reports success and the page sits still, that is the gate failing again and
-    it is the highest-severity thing here.
-
-- Every claimed-owner write flow after a deploy (services/hours/phone landing; grounding asking).
-- Home on a real return visit; the suggestion buttons; the optimistic edit + Undo toast.
-- Stripe test-mode cycle (I must not enter cards).
-
-## The survey — DONE 2026-09-02 (read-only). What it found
-
-Findings are folded into the sections above and into `OPEN_FINDINGS.md`; this is the index.
-
-- **Editor wiring — answered.** See "Click-to-edit" above: text and image `src` are real;
-  colour and font are structurally impossible on freeform and reach no market business;
-  size/crop/formatting do not exist; add-service is panel-or-chat only, no `+` on the page.
-- **Memberships and events — answered, and the code agrees they are NOT editor work.**
-  `memberships` (`schema.sql:3997`) is keyed `customer_id NOT NULL` with a UNIQUE constraint
-  on it, so a row is one CUSTOMER'S ENROLMENT, not a plan the business offers — there is no
-  plan-catalogue table, and `customer_membership.ts` names the real source of truth: "a read
-  projection of the browser's `[RP]` notes-tag maintained by `upsertCustomer()`". No Stripe,
-  no charge scheduling (`recurring_schedules`' migration is emphatic that scheduling and
-  billing are "deliberately not connected"). **Events do not exist at all** — of 119 tables
-  none is a class, session, ticket or dated offering (`business_timeline_events` is an audit
-  log, `google_calendar_events` is calendar sync, `hubly_reasoning_events` is AI telemetry).
-  So memberships are billing objects hanging off a customer, and events are greenfield with a
-  date dimension AND inventory (seats). Both are transaction-layer work, not editor work.
-- **Home redesign — answered.** There is **no Chats tab to remove** (`hcWorkspaces()` returns
-  Website only) and **no search bar** (zero matches); both asks are no-ops. **Logo pinned top
-  is not built** and the comment that claimed it was has been corrected (`hcRenderRail`).
-  **Dark is new for this surface but the pattern is in the repo**: `platform-home.html` has one
-  `:root` (warm cream, no `prefers-color-scheme`, no `data-theme`, nothing switches), while
-  `hubly.html` has a complete working token-based night theme (`html[data-theme="night"]`, boot
-  script honouring `localStorage.hubly_theme` then `prefers-color-scheme`) — though its toggle
-  is force-hidden on the app/landing/storefront pages, and the `-on-dark` wordmark asset is
-  hardcoded per dark SECTION, never theme-switched. **The four action cards: no cards exist**;
-  what exists is the 3-button arrival row (`:3977`) and up to 4 gap suggestions in `hcRenderHome`
-  (photos / hours / phone / service descriptions). The four suggestions DO have real
-  destinations — each fills `#hcInput` and calls `hcSend`, and each is gated on
-  `get_my_site_gaps`, so the earned-only rule is already correct. The arrival row's "See what a
-  customer sees" is still the BROKEN #4 above (it opens `/?book=1`, the booking form).
-- **Storefront — answered, and it reframes the work.** It is not direction and not greenfield:
-  18 `commerce_*` tables, `commerce-api` (739 lines), a public store route already live, and a
-  1,027-line owner UI — all in the LEGACY stack, all unreachable from the claimed shell. Full
-  inventory and the naming trap (`#p-storefront` is the classic WEBSITE page) are in
-  `PRODUCT_SHAPE.md` §3. **The open question is door-vs-re-implement, not build-vs-not.**
-  Not started; Adrian's call.
-- **URL scheme — surveyed; NOT specified anywhere in the record.** What exists: apex
-  `myhubly.app/` serves `platform-home.html` and is BOTH the marketing landing and the entire
-  claimed owner shell; `{slug}.myhubly.app/` → `hubly.html`; `/?book=1` → booking;
-  `/store` → store (or `/` if storefront-only). **The gap: the owner's workspace has no URL** —
-  `hc.mode` is memory only (`:3547/:3598/:3618/:4707`), never written to URL, hash or storage,
-  so there is no deep link to Website mode, a refresh always lands on Home, and Back does not
-  move between modes. Sharper on a phone, where Back is the system gesture.
-- **Wordmark — surveyed; NOT specified anywhere in the record.** Two implementations exist and
-  the claimed shell uses the one that is not the asset: `platform-home.html` renders a CSS text
-  lockup (`:907` header, `:1059` footer), while `hubly.html` uses the real
-  `assets/hubly-wordmark*.{svg,png}` via `.hubly-mark` in 18 places.
-
-## Still owed
-
-**BROKEN — fix first:**
-- ~~The second-edit bug~~ — **FIXED AND VERIFIED LIVE 2026-09-03.** Not the caret: a
-  second edit made while the first save was still in flight was dropped silently by
-  `if (hc.busy) return;`. Reproduced as the owner (two edits ~2s apart: one document
-  version written, the other change on screen and in no version, nothing said), fixed
-  with a serial queue, re-verified (both edits land, both survive a reload).
-
-**The editor, in order:** reload returning to the Website editor; Book Now going straight to
-booking; **^ v section reorder** (measured safe: 0 of 129 pages have section-level
-order-dependent CSS); a real colour palette; page background; a font picker instead of the
-`Aa` cycle; then section-select-by-click, duplicate/move/delete, and `+ Add section`. Full
-detail and the two binding constraints are in **THE EDITOR** above.
-
-**Proofs owed by Adrian (I cannot hold a real session):**
-- Re-test the design knob controls as the owner. They failed once, were fixed, and have not
-  been re-tested. **Expect `heroScale` to be ABSENT from the Design panel on evergreen** —
-  that page carries an old stamp with no recorded counts, so the gate honestly says it cannot
-  tell. That absence is the fix working, not a regression.
-
-**Decisions owed:**
-- **Storefront** — door on the legacy store, or re-implement on the new spine. **Buy the
-  information first**: one hour signing in and exercising the legacy Store settles it, and
-  both estimates hinge on the answer. See STOREFRONT above and `OPEN_FINDINGS.md` #14 for the
-  security decision riding with it. Do not start building either path.
-- **A URL scheme and a wordmark placement** — both need SPECIFYING, not just surveying.
-
-## The open findings that matter most
-
-- **#16 — every site opens in the same shape.** Headline `text-align:start` on **128/128**
-  pages; 55% are the exact layout the generation prompt forbids *by name*. The cause is the
-  model's own default, not the prompt, and the mechanism that would fix it (`CHROME_ENUMS`)
-  exists on the AST renderer only, reaching **zero** real businesses. **The next generator
-  job**, after the editor.
-- **#18 — placeholder copy is still reachable by customers.** The classic template's
-  owner-facing empty states ("Add what you do and we will lay it out") render for any
-  business that genuinely has no stored document. The freeform path strips scaffolding for
-  non-owners; the classic path has no equivalent. The Back-from-booking route into it is
-  fixed; **the copy is not.**
-- **#12 — the record and the page can disagree about services.**
-  `set_business_draft_services` is replace-all, so a partial write drops rows while the cards
-  stay. Evergreen is consistent now; the mechanism is untouched.
-- **#11 — a stray service anchor on another card's DESCRIPTION.** Inert today, and the new
-  card-CTA pass sidesteps it by requiring a price anchor, but a wrong anchor is worse than no
-  anchor because placement trusts it absolutely.
+A freeform page has no async update path, so any fact a later change must touch is stamped
+with an anchor at generation, placed by it afterward, inserted into the section when
+absent, with a countable row and a read-back. Never re-recognise layout after the fact;
+never offer a suggestion whose action can't reach the page; never write a fact not grounded
+in the current message.
