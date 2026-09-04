@@ -127,6 +127,22 @@ acts, or it says what will happen — it never gives directions to something it 
   the last word before shipping. This is the same rule as "verify by using it, AS THE
   OWNER, ON THE REAL THING" — extended, because it turns out you can obey that rule against
   a surface only you can see, and still ship something nobody else can use.
+- **A bug is a CLASS, not a line. Grep for its siblings before you close it.** Hubly
+  has two of almost everything — two edit lanes, two booking exits, two deploy paths,
+  two renderers — so a defect written once is usually present twice, and fixing the
+  copy that was reported leaves the other one live and waiting for the same report.
+  Twice now the second copy has been found by Adrian hitting it, not by the fix:
+  (1) the **edit queue** — the style path got a queue when a second tap was found being
+  dropped; the text/image path did not, and that omission IS the second-edit bug,
+  which then cost a week of being described as a caret problem; (2) the **booking
+  exit** — `bookingBack` was fixed to stop showing a different website, while
+  `closePublicBooking`, three lines of the same mistake, still did it (both are fixed
+  now, and the comment there records the rule). So: when a fix lands, name the CLASS in
+  one sentence ("an owner action discarded silently while something else is in
+  flight"), grep for that shape across the codebase, and either fix every hit or write
+  down the ones you are leaving with their line numbers. A fix reported as complete
+  while its sibling is live is a false green, and it is the same defect as any other
+  unearned checkmark.
 - **Claude Code cannot verify mobile.** There is no true 390px viewport and no soft
   keyboard in this environment. Anything mobile must be checked on a real phone before
   it is called done.

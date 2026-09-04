@@ -2170,7 +2170,8 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     btn.className = 'hc-retry-build';
     btn.textContent = 'Try building it again';
     btn.addEventListener('click', function(){
-      if(hc.busy) return;
+      // A retry button that does nothing when pressed reads as broken, not as busy.
+      if(hc.busy){ hcAppendMessage('hubly', "One moment — I'm still working on the last thing."); return; }
       wrap.remove();
       hcAppendMessage('hubly', 'Starting it again now.');
       hc.lastBuildFailure = null;   // a fresh attempt may fail afresh
@@ -3064,7 +3065,12 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         hcAppendMessage('hubly', "A logo needs to be an image — PNG, JPG, SVG or WebP.");
         return;
       }
-      if(hc.busy || !hc.draftBusiness) return;
+      // NEVER SWALLOW A FILE THE OWNER JUST CHOSE. This used to return in silence
+      // while something else was in flight — the logo they dropped simply vanished.
+      // Same class as the dropped text edit (the second-edit bug); found by grepping
+      // for the siblings of that fix, per the rule in CLAUDE.md.
+      if(hc.busy){ hcAppendMessage('hubly', "One moment — I'm still working on the last thing. Drop that logo again in a second."); return; }
+      if(!hc.draftBusiness) return;
       hcFileToBase64(file).then(function(data){
         hcClearLogoDropzones();
         hc.pendingLogoUpload = { imageBase64: data, mediaType: file.type || 'image/png' };
@@ -3079,7 +3085,8 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   }
 
   function hcSendContent(parts, displayText){
-    if(hc.busy) return;
+    // Carries attachments as well as text: a silent return drops both.
+    if(hc.busy){ hcAppendMessage('hubly', "One moment — I'm still working on the last thing. Try that again in a second."); return; }
     hcActivate();
     hcAppendMessage('user', displayText);
     hcPersist('user', displayText);
@@ -3204,7 +3211,10 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // silently. No account needed — this is data entry we read and discard, not a stored
   // photo (see KNOWN_ISSUES on the file gate).
   function hcExtractPricesFromImage(file){
-    if(hc.busy) return;
+    // A PRICE LIST is a file the owner just handed over, and this is the path the
+    // funnel leans on. Returning in silence here loses it with no word — the same
+    // class as the dropped text edit, found by grepping that fix's siblings.
+    if(hc.busy){ hcAppendMessage('hubly', "One moment — I'm still working on the last thing. Send that price list again in a second."); return; }
     hc.pendingCapture = null;                              // we're handling the services ask now
     var dropLabel = '📎 ' + (file.name || 'price list');
     hcAppendMessage('user', dropLabel); hcPersist('user', dropLabel);
