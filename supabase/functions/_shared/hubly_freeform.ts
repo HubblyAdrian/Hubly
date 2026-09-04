@@ -516,7 +516,7 @@ export interface FreeformSectionMoveResult {
   swappedWith?: string;
   /** How many in-page nav links were reordered to match. */
   navLinksMoved: number;
-  error?: "invalid_label" | "no_match" | "at_edge" | "not_siblings";
+  error?: "invalid_label" | "no_match" | "at_edge" | "not_siblings" | "not_movable";
 }
 
 /**
@@ -560,10 +560,22 @@ export function moveFreeformSection(html: string, edit: FreeformSectionMove): Fr
   if (!sections.length) return fail("no_match");
 
   const tokens = (e: ScannedEl) => String(e.attrs["data-hc-section"] || "").split(/\s+/).filter(Boolean);
+  // CHROME IS NOT A SECTION — the header and the footer are the page's frame, not
+  // content in the running order. Without this, "shares a parent" was enough to offer
+  // the site header a swap with whatever band happened to sit beside it in <body>
+  // (measured on evergreen: section.3), which would succeed and drop the header into
+  // the middle of the page. The interface no longer offers it; the writer refuses it.
+  const CHROME = new Set(["header", "footer"]);
+  const isChrome = (e: ScannedEl) => tokens(e).some((t) => CHROME.has(t));
   const idx = sections.findIndex((e) => tokens(e).includes(label));
   if (idx < 0) return fail("no_match");
 
-  const j = edit.dir === "up" ? idx - 1 : idx + 1;
+  if (idx >= 0 && isChrome(sections[idx])) return fail("not_movable");
+  // Step past chrome rather than through it: the neighbour that counts is the next
+  // CONTENT band sharing this one's parent.
+  const step = edit.dir === "up" ? -1 : 1;
+  let j = idx + step;
+  while (j >= 0 && j < sections.length && isChrome(sections[j])) j += step;
   if (j < 0 || j >= sections.length) return fail("at_edge");
 
   const a = sections[Math.min(idx, j)];

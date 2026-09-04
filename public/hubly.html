@@ -53906,7 +53906,20 @@ function wireHcEditingSurface(doc, root){
       }
       return true;
     });
-    return outermost.filter(function(e){ return e.parentNode === el.parentNode; });
+    // CHROME IS NOT A SECTION. Measured on evergreen: the bands live in TWO parents,
+    // interleaved — body holds [header, section.3, footer] and main holds [hero,
+    // section.1, section.2]. So "shares a parent" alone offered the site HEADER a ↓
+    // whose only legal partner was section.3: a move that would succeed and drop the
+    // header into the middle of the page. Possible is not the same as sensible, and a
+    // control that technically moves something is exactly what we are not shipping.
+    var CHROME = { header: 1, footer: 1 };
+    var isChrome = function(e){
+      var toks = String(e.getAttribute('data-hc-section') || '').split(/\s+/);
+      for(var i=0;i<toks.length;i++) if(CHROME[toks[i]]) return true;
+      return false;
+    };
+    if(isChrome(el)) return [];
+    return outermost.filter(function(e){ return e.parentNode === el.parentNode && !isChrome(e); });
   }
   /* A press is in flight: take the arrows out of service rather than let a second
      press queue up behind a move that is about to replace this whole document. No

@@ -1634,6 +1634,7 @@ export async function applyOwnerSectionMove(
         : "That's already the last section on the page.",
       no_match: "I couldn't find that section on the page any more — it may have been rebuilt since you opened this.",
       not_siblings: "I can't move that one — it isn't sitting alongside the other sections, and moving it could break the layout.",
+      not_movable: "The header and the footer stay where they are.",
       invalid_label: "I couldn't tell which section that was.",
     };
     return { ok: false, real: false, error: r.error, summary: said[r.error || ""] || "That section didn't move — nothing was saved." };
