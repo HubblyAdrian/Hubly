@@ -410,6 +410,10 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
 .hc-app.hc-claimed #hcDesignBtn{display:inline-flex}
 /* Ambient links — quieter than the two editing controls beside them, because they leave
    the editor rather than doing something in it. Still real buttons, still always there. */
+#hcUndoBtn{display:none;align-items:center;border:0;background:none;font:inherit;font-size:12.5px;
+  color:var(--ink-2,#6b6257);padding:6px 10px;border-radius:8px;cursor:pointer}
+#hcUndoBtn:hover{color:var(--ink);background:var(--panel-2,rgba(28,22,16,.05))}
+.hc-app.hc-claimed #hcUndoBtn:not([hidden]){display:inline-flex}
 #hcVisitBtn,#hcBookPreviewBtn{display:none;align-items:center;border:0;background:none;
   color:var(--ink-3);font:inherit;font-size:12.5px;font-weight:650;padding:6px 10px;
   border-radius:999px;cursor:pointer;white-space:nowrap;min-height:32px}
@@ -1564,6 +1568,9 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         // "Visit your site" beside it actually does. Two buttons whose labels both
         // promised the same thing, one of which went somewhere else (STATE, BROKEN #4).
         // A control says where it goes.
+        // UNDO LIVES HERE, not in a banner that appears after every click. Hidden until
+        // there is something to step back, so it is never a control that does nothing.
+        '<button type="button" id="hcUndoBtn" title="Undo the last change" hidden disabled>&#8617; Undo</button>' +
         '<button type="button" id="hcVisitBtn" title="Open your live site in a new tab">Visit site</button>' +
         '<button type="button" id="hcBookPreviewBtn" title="Open your booking form the way a customer gets it">Preview booking</button>' +
         '<button type="button" id="hcManageBtn" title="Add or edit services, hours and contact yourself">&#9998; Edit details</button>' +
@@ -1626,6 +1633,13 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     if(dsg) dsg.addEventListener('click', hcOpenDesign);
     var liveUrl = String((hc.draftBusiness && hc.draftBusiness.url) || '');
     if(liveUrl && !/^https?:\/\//i.test(liveUrl)) liveUrl = 'https://' + liveUrl;
+    var und = document.getElementById('hcUndoBtn');
+    if(und){
+      und.addEventListener('click', function(){ if(!und.disabled) hcUndoLastEdit(); });
+      // Survives a canvas re-render: if there is still something to step back, the
+      // control comes back with it.
+      if(hc._lastEdit){ und.hidden = false; und.disabled = false; }
+    }
     var vst = document.getElementById('hcVisitBtn');
     if(vst) vst.addEventListener('click', function(){ try{ window.open(liveUrl, '_blank', 'noopener'); }catch(e){} });
     var bkp = document.getElementById('hcBookPreviewBtn');
@@ -2414,11 +2428,12 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       hcUndoBusy = false;
       var out = res && res.data;
       if(out && out.ok){
-        hc._lastEdit = null;                 // single-step; the button doesn't re-appear on this turn
+        // The page visibly going back IS the confirmation, and the control retiring is
+        // the second half of it. No line in chat: the owner pressed Undo and watched it
+        // happen — narrating it turns the conversation into a log of their own clicks.
+        try{ hcClearUndoAvailable(); }catch(e){ hc._lastEdit = null; }
         try{ hcRefreshCanvasFrame(); }catch(e){}
-        var line = 'Put ' + noun + ' back the way it was.';
-        var m = hcAppendMessage('hubly', line); hcPersist('assistant', line);
-        void m;
+        void noun;
       } else {
         var err = out && out.error;
         hcAppendMessage('hubly', err === 'nothing_to_undo'
@@ -3426,8 +3441,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
           // NO SPOKEN LINE either. A direct edit is self-evident — the owner watched it
           // happen; "that photo is on the page now" is the app explaining them to themselves.
           // The undo is a quiet, transient control near the change, not a sentence in chat.
-          hc._lastEdit = { noun: _editNoun };
-          hcShowEditUndoToast(_editNoun);
+          hcMarkUndoAvailable(_editNoun);
           hcMaybeShowClaimCard();
           // Whatever the owner did while this was in flight goes next, in the order
           // they did it.
@@ -3444,6 +3458,24 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         hcEditQueueFailed("That change didn't save — I've put the page back. Try again in a moment.");
       });
   }
+  // UNDO IS A CONTROL, NOT AN ANNOUNCEMENT.
+  //
+  // Every edit used to drop a banner reading "Changed <noun>" — which, for a style
+  // edit, composed to "Changed that style change", i.e. nonsense — and it did it after
+  // every single click. Reversibility does not need a banner per action; it needs a
+  // control that is available. The canvas bar now carries Undo, enabled the moment
+  // there is something to step back, and nothing is announced.
+  function hcMarkUndoAvailable(noun){
+    hc._lastEdit = { noun: noun || 'that change' };
+    var b = document.getElementById('hcUndoBtn');
+    if(b){ b.disabled = false; b.hidden = false; b.title = 'Undo ' + String(noun || 'that change').replace(/^the /, ''); }
+  }
+  function hcClearUndoAvailable(){
+    hc._lastEdit = null;
+    var b = document.getElementById('hcUndoBtn');
+    if(b){ b.disabled = true; b.hidden = true; }
+  }
+
   // A quiet, transient control near the change — the direct-edit undo, off the chat. Fades
   // on its own; clicking Undo steps back one version (the same reversibility as the chat path).
   function hcShowEditUndoToast(noun){
@@ -4484,10 +4516,18 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     }catch(e){ r = null; }
     hcMoveBusy2 = false;
     if(r && r.ok){
-      hcRefreshCanvasFrame();
-      hc._lastEdit = { noun: 'that block' };
-      hcShowEditUndoToast('that block');
+      // NO RELOAD. The canvas already moved the block — reloading the frame after an
+      // edit that has already been painted is what makes the page flash and throws the
+      // owner's place away. Reported three times.
+      //
+      // The ONE exception is a section move whose NAV was reordered server-side: the
+      // optimistic paint cannot know about that, so the page and its menu would
+      // disagree until the next load. That is a real divergence, not a cosmetic one.
+      if(r.moveResult && r.moveResult.navLinksMoved > 0) hcRefreshCanvasFrame();
+      hcMarkUndoAvailable('that move');
     } else {
+      // The paint is now a lie — take it back and say so at the control.
+      hcRefreshCanvasFrame();
       hcFlashAtControl((r && r.reply) || 'Didn\'t move');
     }
   }
@@ -4506,9 +4546,8 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       r = await res.json().catch(function(){ return null; });
     }catch(e){ r = null; }
     if(r && r.ok){
-      hcRefreshCanvasFrame();
-      hc._lastEdit = { noun: 'that block' };
-      hcShowEditUndoToast('that block');
+      hcRefreshCanvasFrame();          // a removal has no optimistic paint to keep
+      hcMarkUndoAvailable('that removal');
     } else {
       hcFlashAtControl((r && r.reply) || 'Didn\'t remove');
     }
@@ -4590,7 +4629,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       // The optimistic paint already shows the truth, and the server agreed with it —
       // there is nothing to reconcile. The frame is only re-read when the save
       // DISAGREES, which is the only moment the screen and the record differ.
-      try{ hc._lastEdit = { noun: 'that style change' }; hcShowEditUndoToast('that style change'); }catch(e){}
+      try{ hcMarkUndoAvailable('that change'); }catch(e){}
     } else {
       // NEVER SILENT, BUT NEVER IN THE CHAT EITHER — same rule as the section arrows.
       // "That's already how it's set" was the other half of the receipt log the

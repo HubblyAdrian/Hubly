@@ -53823,6 +53823,7 @@ function wireHcEditingSurface(doc, root){
   }
   function hcClearSel(){
     hcCloseBar();
+    try{ hcHideGrip(); }catch(e){}
     try{
       var a = root.querySelectorAll('[data-hc-sel],[data-hc-sel-section]');
       for(var i=0;i<a.length;i++){ a[i].removeAttribute('data-hc-sel'); a[i].removeAttribute('data-hc-sel-section'); a[i].removeAttribute('contenteditable'); }
@@ -53898,6 +53899,19 @@ function wireHcEditingSurface(doc, root){
   function hcSendStyle(label, on, style){
     post({ type:'hcFreeformStyleEdit', label: label, on: on, style: style });
   }
+  /* Mirrors FONT_STACKS in hubly_freeform.ts — the closed set the writer accepts. Kept
+     here only so the canvas can paint the choice immediately; the server remains the
+     authority on what is allowed. */
+  var HC_FONT_STACKS = {
+    sans:      "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+    serif:     "Georgia, 'Times New Roman', serif",
+    mono:      "ui-monospace, 'SF Mono', Menlo, monospace",
+    rounded:   "ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Quicksand, system-ui, sans-serif",
+    condensed: "'Arial Narrow', 'Roboto Condensed', 'Liberation Sans Narrow', system-ui, sans-serif",
+    humanist:  "Optima, Candara, 'Gill Sans', 'Gill Sans MT', system-ui, sans-serif",
+    slab:      "Rockwell, 'Roboto Slab', 'Courier Bold', Georgia, serif"
+  };
+
   /* ── A REAL COLOUR PICKER ───────────────────────────────────────────────────
      Four swatches is not a palette, reported three times. This opens a panel with
      TWO things: the colours already on this page — read from the rendered document,
@@ -53987,6 +54001,65 @@ function wireHcEditingSurface(doc, root){
     hcPanel = panel;
   }
 
+  /* ── THE HANDLE LIVES ON THE BLOCK ─────────────────────────────────────────
+     It was inside the floating toolbar, which made starting a drag three steps:
+     select the thing, find the bar, find the handle in the bar. Reported as "I
+     cannot grab a service card" — and that was accurate: the card could be moved,
+     but only after climbing the breadcrumb twice and dragging a control that was
+     nowhere near it. The grip now sits at the edge of the block itself.
+
+     WHICH block: the SELECTED one when there is a selection (so the breadcrumb still
+     chooses the grain — a card, a section), otherwise the innermost movable thing
+     under the pointer. Hover to grab quickly; select to grab something bigger. */
+  var hcGrip = null, hcGripFor = null;
+  function hcGripEl(){
+    if(hcGrip) return hcGrip;
+    var g = doc.createElement('button');
+    g.type = 'button';
+    g.setAttribute('data-hc-editor','1');
+    g.title = 'Drag to move';
+    g.textContent = '⠿';
+    g.style.cssText = 'position:absolute;z-index:2147483645;display:none;align-items:center;justify-content:center;' +
+      'width:26px;height:26px;padding:0;border-radius:8px;border:1px solid rgba(255,255,255,.28);' +
+      'background:#12151f;color:#e8eaee;font-size:13px;line-height:1;cursor:grab;' +
+      'box-shadow:0 6px 18px rgba(0,0,0,.35);font-family:-apple-system,BlinkMacSystemFont,sans-serif';
+    g.addEventListener('pointerdown', function(ev){
+      ev.preventDefault(); ev.stopPropagation();
+      if(hcGripFor) hcBeginDrag(ev, hcGripFor);
+    });
+    g.addEventListener('click', function(ev){ ev.preventDefault(); ev.stopPropagation(); });
+    doc.body.appendChild(g);
+    hcGrip = g;
+    return g;
+  }
+  function hcHideGrip(){ if(hcGrip) hcGrip.style.display = 'none'; hcGripFor = null; }
+  function hcShowGripFor(el){
+    if(!el || el === doc.body) return hcHideGrip();
+    if(el.hasAttribute && el.hasAttribute('data-hc-editor')) return hcHideGrip();
+    var g = hcGripEl();
+    hcGripFor = el;
+    var r = el.getBoundingClientRect();
+    if(!r.width && !r.height) return hcHideGrip();
+    var sx = win.pageXOffset || 0, sy = win.pageYOffset || 0;
+    // Outside the left edge when there is room, tucked just inside when there is not,
+    // so it never covers the first words of the block.
+    var left = r.left + sx - 32;
+    if(left < sx + 4) left = r.left + sx + 4;
+    g.style.left = left + 'px';
+    g.style.top = (r.top + sy + 4) + 'px';
+    g.style.display = 'inline-flex';
+  }
+  /* The innermost thing under the pointer that could actually be picked up. */
+  function hcMovableAt(node){
+    for(var n = node; n && n !== doc.body; n = n.parentNode){
+      if(n.nodeType !== 1) continue;
+      if(n.hasAttribute && n.hasAttribute('data-hc-editor')) return null;
+      if(n.hasAttribute && n.hasAttribute('data-hubly-runtime')) return null;
+      if(n.parentNode && n.parentNode.nodeType === 1 && n.parentNode !== doc.body.parentNode) return n;
+    }
+    return null;
+  }
+
   /* ONE SET OF MOVE CONTROLS, AT EITHER GRAIN.
      The drag handle and the arrows are the same operation — the arrows exist as the
      keyboard and touch fallback, not as a second system. Each appears only where the
@@ -54008,14 +54081,6 @@ function wireHcEditingSurface(doc, root){
     for(var i=0;i<all.length;i++) if(all[i] === el || sibs.indexOf(all[i]) > -1) kids.push(all[i]);
     var at = kids.indexOf(el);
     var what = grain === 'section' ? 'section' : 'block';
-    var h = mk('⠿', 'Drag to move this ' + what, function(){});
-    try{
-      h.style.cursor = 'grab';
-      h.addEventListener('pointerdown', function(ev){
-        ev.preventDefault(); ev.stopPropagation();
-        hcBeginDrag(ev, el);
-      });
-    }catch(e){}
     if(sibs.length){
       if(at > 0) mk('↑', 'Move this ' + what + ' up', function(b){ hcArmMove(b); hcSendNodeMove(el, kids[at-1], 'before'); });
       if(at > -1 && at < kids.length - 1) mk('↓', 'Move this ' + what + ' down', function(b){ hcArmMove(b); hcSendNodeMove(el, kids[at+1], 'after'); });
@@ -54099,7 +54164,18 @@ function wireHcEditingSurface(doc, root){
   }
 
   function hcSendNodeMove(node, ref, place){
-    post({ type:'hcFreeformNodeMove', node: hcAddressOf(node), ref: hcAddressOf(ref), place: place });
+    // THE PAGE MOVES NOW. The address and fingerprint are computed BEFORE the DOM
+    // changes, because they describe the document the server still has; then the move
+    // is painted here and the save follows. Reloading the frame afterwards is what made
+    // every edit flash and threw the owner's scroll position away — reported three
+    // times. The frame is only re-read when the server DISAGREES.
+    var msg = { type:'hcFreeformNodeMove', node: hcAddressOf(node), ref: hcAddressOf(ref), place: place };
+    try{
+      if(place === 'before') ref.parentNode.insertBefore(node, ref);
+      else ref.parentNode.insertBefore(node, ref.nextSibling);
+      if(hcSel === node){ hcPlaceBar(node); hcShowGripFor(node); }
+    }catch(e){}
+    post(msg);
   }
 
   /* THE DRAG. Pointer events, not HTML5 drag-and-drop: the latter is unreliable
@@ -54354,6 +54430,11 @@ function wireHcEditingSurface(doc, root){
         sel.addEventListener('change', function(ev){
           ev.stopPropagation();
           var v = sel.value; if(!v) return;
+          // PAINT IT HERE. The save was working the whole time — the server accepted
+          // every one of these — but nothing on screen changed, so the control read as
+          // dead. A style that only appears after a reload is a control that does not
+          // work, whatever the record says.
+          try{ el.style.fontFamily = HC_FONT_STACKS[v] || ''; }catch(e){}
           hcSendStyle(label, on, { 'font-family': v });
         });
         bar.appendChild(sel);
@@ -54556,6 +54637,7 @@ function wireHcEditingSurface(doc, root){
     if(hcSel === el){ hcPlaceBar(el); return; }
     hcClearSel();
     hcSel = el;
+    try{ hcShowGripFor(el); }catch(e){}
     var kind = hcKindOf(el);
     el.setAttribute(kind === 'section' ? 'data-hc-sel-section' : 'data-hc-sel', '1');
     hcBuildBar(el, kind);
@@ -54604,8 +54686,8 @@ function wireHcEditingSurface(doc, root){
       });
     }
   }
-  win.addEventListener('scroll', function(){ if(hcSel) hcPlaceBar(hcSel); }, true);
-  win.addEventListener('resize', function(){ if(hcSel) hcPlaceBar(hcSel); });
+  win.addEventListener('scroll', function(){ if(hcSel){ hcPlaceBar(hcSel); hcShowGripFor(hcSel); } else if(hcGripFor) hcShowGripFor(hcGripFor); }, true);
+  win.addEventListener('resize', function(){ if(hcSel){ hcPlaceBar(hcSel); hcShowGripFor(hcSel); } });
   doc.addEventListener('keydown', function(e){ if(e.key === 'Escape') hcClearSel(); });
 
   // [data-node] is the AST handle, [data-hc] the freeform one. Both are
@@ -54692,7 +54774,16 @@ function wireHcEditingSurface(doc, root){
   root.addEventListener('mouseover', function(e){
     var target = e.target && e.target.closest ? e.target.closest(EDITABLE_SEL) : null;
     if(target && root.contains(target)) markEditable(target);
+    // The grip follows the pointer unless something is selected — then it stays on the
+    // selection, so the breadcrumb still decides the grain.
+    try{
+      if(hcSel) return;
+      if(hcDragging) return;
+      var m = hcMovableAt(e.target);
+      if(m) hcShowGripFor(m); else hcHideGrip();
+    }catch(err){}
   }, true);
+  root.addEventListener('mouseleave', function(){ if(!hcSel && !hcDragging) hcHideGrip(); }, true);
 
   // Clicking away deselects. Guarded so a tap ON the toolbar never dismisses the
   // thing the toolbar is editing — the commonest way a floating bar becomes
