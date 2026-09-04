@@ -3598,7 +3598,27 @@ export type OwnerEditResult = { ok: boolean; real: boolean; summary: string; err
  */
 /** Is this stored page current — does it carry everything the current passes stamp? */
 export function freeformIsCurrent(html: string): boolean {
-  return /data-hc-section=/.test(html) && /data-hubly-bound=/.test(html);
+  // Section containers are what this cycle can ALWAYS produce, so their absence
+  // always means "not upgraded yet".
+  if (!/data-hc-section=/.test(html)) return false;
+  // RECORDED KNOB COUNTS ARE NOT ALWAYS REACHABLE, AND REQUIRING THEM MADE THIS
+  // GUARD UNSATISFIABLE.
+  //
+  // `stampDesignKnobs` returns early on any page that already carries knob variables
+  // (`hasDesignKnobs`) — deliberately, so it never re-enters a stamped stylesheet. So
+  // a page stamped by an OLDER knob pass can never gain `data-hubly-bound` from this
+  // cycle, and demanding it meant the upgrade decided "not current" forever: it did
+  // the work, saved a version, and on the next editor open did it again. Caught by
+  // running the real upgrade on a real owned page and reading the row back — the
+  // fourth instance of "already done is not already this version", this time pointed
+  // the other way.
+  //
+  // A page in that state is upgraded as far as this pass can take it: it has the
+  // section containers the editor needs, and its knob binding stays whatever the old
+  // pass left, which the knob gate already reports honestly as UNKNOWN rather than
+  // guessing. Re-stamping an OLD KNOB stamp in place is separate, still unbuilt work
+  // (STATE.md, "Open on knobs").
+  return /data-hubly-bound=/.test(html) || /--hubly-type-scale\s*:/.test(html);
 }
 
 /**
@@ -3664,6 +3684,13 @@ export async function restampFreeformPage(
     p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
   });
   if (!saved || saved.ok !== true) return { ok: false, error: "save_failed" };
+  // ASSERT THE POSTCONDITION. If what we just wrote still does not read as current,
+  // the next open would run this again — a version per editor open, forever. Say so
+  // instead: the caller stops asking, and the failure is visible rather than a quiet
+  // loop that only shows up as a growing version history.
+  if (!freeformIsCurrent(knobbed.html)) {
+    return { ok: false, error: "upgrade_incomplete", version: saved.version };
+  }
   return { ok: true, version: saved.version, labels: stamped.labels.length, sections: stamped.sections.length };
 }
 
