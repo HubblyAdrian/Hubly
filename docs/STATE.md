@@ -715,11 +715,72 @@ longer list of things that do not work.
 3. **The two that matter:**
    - **Selected element → chat context** — the `{}` span × chip. Click a heading, type
      "make this feel more premium." This one feature replaces the whole Design-panel
-     argument, and it is what makes our AI feel like theirs.
+     argument, and it is what makes our AI feel like theirs. **NOT BUILT. Build it
+     AFTER the cheap parity wins, ship it on its own, and Adrian tests it before
+     anything else moves.** Both halves already exist — the toolbar knows what is
+     selected, and the model can already act on a label; what is missing is the wire
+     between them and the chip in the composer. Its rules, recorded 2026-09-03:
+     - **The chip says what was selected in words the owner would recognise** —
+       "Hero heading", not `hero.headline`.
+     - **Clearing the selection clears the chip.**
+     - **With a chip attached, a design instruction applies to THAT element, not the
+       page.**
+     - **It still never invents content.** "Make this more premium" is a design
+       change and proceeds. "Add a testimonial here" still asks who said it — the
+       standing rule at the top of `CLAUDE.md`, unchanged by having a target.
    - **Section move (↑ ↓)** — **BUILT 2026-09-03**, see below.
 4. **The only one that is not cheap: multi-instruction prompts.** Their user said six
    things in one message and got all six; ours does one capability action per turn.
    **SIZE IT BEFORE SCHEDULING IT — Adrian wants a real number, not a guess.**
+
+### THE LAZY UPGRADE — how an old page gets what the editor needs (built 2026-09-03)
+
+`restampFreeformPage` had existed and worked with **zero callers**, so every mark the
+editor was built on after generation reached only pages built since. Measured: **1
+stored page of 138** carried section stamps. The pass was never the problem; the door
+was missing — the same shape as the knobs, the photo upload, and the storefront.
+
+**How it runs.** On entering Website mode, a claimed owner's page is checked once per
+session (`restampPage` on `hubly-conversation`, owner-verified). The canvas frame is
+rendered with **no `src`** until the answer comes back, so the editor is never
+interactive on a document about to be replaced; the owner sees the ordinary "Loading
+your site…" that was already there. The wait is bounded at 7s — past it the canvas
+mounts anyway and the missing capability is named in one sentence.
+
+**Why it cannot leave a half-stamped page.** The transform runs in memory and the save
+is a single atomic version insert. Either a new version exists or it does not; there is
+no partial state to be in. On failure the page is untouched, the editor still opens,
+and the section arrows are simply absent — the toolbar only offers them where a stamped
+band exists, so there is no control that would fail on use.
+
+**Measured before it was built,** over 12 real stored pages: all 12 gain section stamps,
+7ms each, the cycle converges (pass 2 differs from pass 1 by ≤31 bytes of whitespace
+around our own injected block; pass 3 is identical), and the owner's visible text is
+unchanged — the only words that move are the business name inside our own chat widget.
+
+**THE HAZARD THIS DOOR HAD TO CLOSE.** `restampFreeformPage` re-injects the page
+runtime and its defaults are `businessName: "this business"` and `slug: ""` — which
+would rewrite **every booking link on the page** to `https://.myhubly.app/?book=1`. The
+endpoint reads the real row, passes it, and **refuses the upgrade outright if the slug
+is missing** rather than publishing dead booking links across a live page.
+
+**AND THE BUG IT ALMOST SHIPPED WITH — a version per editor open, forever.**
+`freeformIsCurrent` required both `data-hc-section` and `data-hubly-bound`. But
+`stampDesignKnobs` returns early on any page that already carries knob variables, so a
+page stamped by an OLDER knob pass can never gain `data-hubly-bound` from this cycle:
+the guard was unsatisfiable for exactly the population the upgrade exists to serve, and
+it would have re-done the work and written a new version on every open. Caught by
+running the real upgrade on a real owned page and reading the row back — the fourth
+instance of "already done is not already this version", pointed the other way. Such a
+page is now current once it has the section containers; its knob binding stays whatever
+the old pass left, which the gate already reports honestly as UNKNOWN. The
+postcondition is asserted: if what was just saved still does not read as current, that
+returns `upgrade_incomplete` rather than looping quietly.
+
+**Verified live on evergreen:** a deliberately un-stamped version was written (v120),
+the editor was opened, the upgrade produced v121 with all six section containers, 8
+booking links intact and 0 empty-slug links; a second open with the client memo cleared
+wrote **zero** new versions, and the arrows are present on the upgraded page.
 
 ### STILL OWED on the editor, in the order Adrian asked for
 
@@ -733,10 +794,11 @@ longer list of things that do not work.
    resolves the business and opens the wizard without building the site first.
 4. ~~**↑ ↓ section reorder**~~ — **BUILT AND VERIFIED LIVE 2026-09-03** on evergreen,
    both directions, one undoable version each; the nav reorders inside the same
-   transform. **Reach today is 1 page in 138: only evergreen carries `data-hc-section`
-   stamps** (containers have only been stamped since the generation pass that added
-   them). Every other stored page needs a re-stamp before the arrows can appear —
-   that is now the gating fact for this feature, not the transform.
+   transform. **Its reach was 1 page in 138 (only evergreen carried section stamps) —
+   CLOSED the same night** by giving `restampFreeformPage` the door it never had: the
+   first time an owner opens the Website editor on a page without section stamps, it
+   is upgraded in place as one undoable version while the canvas is still held
+   un-mounted. See "THE LAZY UPGRADE" below.
 5. **A real colour palette.** Four swatches is not a palette. Wanted: a proper spread of hues
    with a light and dark of each, PLUS the page's own colours pulled from the site so an
    owner can match what is already there (`pagePalette()` already extracts them).
