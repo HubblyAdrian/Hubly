@@ -4442,6 +4442,21 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     // the toolbar where they will look for it, not by a sentence about a re-stamp.
   }
 
+  // ANSWER AT THE CONTROL, NEVER IN THE CHAT.
+  //
+  // Direct manipulation must not produce conversation. The owner pressed a button on
+  // their own page; the feedback is the page moving and the Undo toast, and the only
+  // thing that needs words is a genuine FAILURE — which belongs on the toolbar they
+  // pressed, not in the thread. Writing these into chat turned the conversation into a
+  // receipt log for arrow presses (reported 2026-09-03: four messages, in pairs, for a
+  // handful of presses).
+  function hcFlashAtControl(text){
+    if(!text) return;
+    var origin; try{ origin = new URL(hc.draftBusiness.url).origin; }catch(e){ return; }
+    var frame = document.querySelector('#hcCanvasFrameWrap iframe.is-live') || document.getElementById('hcCanvasFrameA');
+    try{ if(frame && frame.contentWindow) frame.contentWindow.postMessage({ type:'hcEditorFlash', text: text }, origin); }catch(e){}
+  }
+
   // MOVE A SECTION. The one edit that is NOT painted optimistically: the same move
   // has to happen to the page's own nav, and implementing that transform twice —
   // here and on the server — is how a page and its record come to disagree. The
@@ -4451,12 +4466,12 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   var hcMoveBusy = false;
   async function hcSectionMove(label, dir){
     if(hcMoveBusy) return;                       // one move at a time; each is a version
-    if(!hc.draftBusiness){ hcAppendMessage('hubly', "I've lost track of which site I'm editing — reload the page and try again."); return; }
+    if(!hc.draftBusiness){ hcFlashAtControl('Reload and try again'); return; }
     hcMoveBusy = true;
     var r = null;
     try{
       var at = await hcFreshToken();
-      if(!at){ hcMoveBusy = false; hcAppendMessage('hubly', 'You need to be signed in to move a section.'); return; }
+      if(!at){ hcMoveBusy = false; hcFlashAtControl('Sign in to move sections'); return; }
       var res = await fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
         method: 'POST',
         headers: { 'content-type': 'application/json', apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + at },
@@ -4466,14 +4481,17 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     }catch(e){ r = null; }
     hcMoveBusy = false;
     if(r && r.ok){
-      // Say it happened, and give the way back — the same reversibility as every
-      // other edit, because this one rearranges the page more than any of them.
+      // The page moving IS the confirmation, and the toast is the way back. No line in
+      // chat: the owner watched it happen.
       hcRefreshCanvasFrame();
       hc._lastEdit = { noun: 'that section' };
       hcShowEditUndoToast('that section');
     } else {
-      // Includes the honest non-error: "that's already the first section on the page".
-      hcAppendMessage('hubly', (r && r.reply) || "That section didn't move — nothing on your page has changed.");
+      // The interface no longer offers an arrow that cannot act (the canvas computes
+      // that from the DOM), so at_edge and not_siblings should be unreachable from a
+      // press. What is left is a real failure — the save did not land — and it is said
+      // at the toolbar, in those words, not as an explanation in the conversation.
+      hcFlashAtControl("Didn't save");
     }
   }
 
@@ -4499,7 +4517,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     var r = null;
     try{
       var at = await hcFreshToken();
-      if(!at){ hcStyleBusy = false; hcAppendMessage('hubly', 'You need to be signed in to change how the page looks.'); return; }
+      if(!at){ hcStyleBusy = false; hcFlashAtControl('Sign in to change this'); return; }
       var res = await fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
         method:'POST',
         headers:{ 'content-type':'application/json', apikey: SUPA_ANON_KEY, authorization:'Bearer ' + at },
@@ -4517,10 +4535,12 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       // DISAGREES, which is the only moment the screen and the record differ.
       try{ hc._lastEdit = { noun: 'that style change' }; hcShowEditUndoToast('that style change'); }catch(e){}
     } else {
-      // NEVER SILENT. The server sends a specific sentence for every failure;
-      // show it rather than inventing a generic one — and NOW reload, because the
-      // optimistic paint is a lie that has to be taken back.
-      hcAppendMessage('hubly', (r && r.reply) || "That style change didn't save — nothing on your page has changed.");
+      // NEVER SILENT, BUT NEVER IN THE CHAT EITHER — same rule as the section arrows.
+      // "That's already how it's set" was the other half of the receipt log the
+      // conversation had become. It is a fact about the control, so it is said on the
+      // control. The reload stays: the optimistic paint is a lie that has to be taken
+      // back.
+      hcFlashAtControl((r && r.reply) === "That's already how it's set." ? "Already set" : "Didn't save");
       try{ hcRefreshCanvasFrame(); }catch(e){}
     }
     // Flush whatever arrived while this was in flight.

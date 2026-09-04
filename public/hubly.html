@@ -17495,6 +17495,11 @@ var hcAuthedFlag = false;
 // Set by wireHcEditingSurface so hcAuthState can open the element they clicked
 // before signing in, once auth resolves.
 var hcOpenEditByLabel = null;
+// A DIRECT EDIT ANSWERS AT THE CONTROL, NOT IN THE CONVERSATION. The owner clicked a
+// button on their own page, so the feedback belongs where they clicked — and only a
+// FAILURE needs words at all, because success is the page moving plus the Undo toast.
+// Set by wireHcEditingSurface, which is the only scope that knows where the bar is.
+var hcFlashMessage = null;
 // Which label the post-auth reopen has already fired for, so the ~6 retry
 // messages from hcTellPreviewAuthed open the editor once, not six times.
 var hcReopenedLabel = null;
@@ -17563,6 +17568,13 @@ window.addEventListener('message', function(ev){
   // retries with no idea whether any landed.
   try{ (ev.source || window.parent).postMessage({ type:'hcAuthStateAck', authed: hcAuthedFlag }, (ev.origin && ev.origin !== 'null') ? ev.origin : '*'); }catch(e){}
 });
+window.addEventListener('message', function(ev){
+  if(ev.source !== window.parent) return;
+  var d = ev.data;
+  if(!d || d.type !== 'hcEditorFlash' || typeof d.text !== 'string' || !d.text) return;
+  try{ if(typeof hcFlashMessage === 'function' && hcFlashMessage) hcFlashMessage(d.text); }catch(e){}
+});
+
 // Report where the owner is looking, so a reload can put them back. The builder is a
 // different origin and cannot read it, so telling it is the only way it can know.
 //
@@ -53480,6 +53492,17 @@ function wireHcEditingSurface(doc, root){
   // This is the document the owner actually scrolls, so this is where "put me back
   // where I was looking" has to be wired.
   try{ hcWireScrollReporting(doc.defaultView || doc.parentWindow); }catch(e){}
+  // The builder can now answer at the toolbar instead of in the chat.
+  hcFlashMessage = function(text){
+    try{
+      if(!hcBar) return;
+      // A flash means the action ENDED, however it ended — so the controls come back.
+      // Otherwise a failed move leaves the arrows disabled with no way to retry.
+      var bs = hcBar.querySelectorAll('button');
+      for(var i=0;i<bs.length;i++){ bs[i].disabled = false; bs[i].style.opacity = ''; }
+      if(hcSel) hcFlash(hcSel, text);
+    }catch(e){}
+  };
 
   // PLACEHOLDER MARKS — visible to the OWNER, in the editor only.
   //
@@ -53870,6 +53893,32 @@ function wireHcEditingSurface(doc, root){
   function hcSendStyle(label, on, style){
     post({ type:'hcFreeformStyleEdit', label: label, on: on, style: style });
   }
+  /* The bands this one can actually trade places with: outermost stamped sections
+     that share its parent, in document order. Same rule the server applies, run
+     here so the interface only offers what will work. */
+  function hcSectionSiblings(el){
+    if(!el || !el.parentNode) return [];
+    var all = [];
+    try{ all = Array.prototype.slice.call(root.querySelectorAll('[data-hc-section]')); }catch(e){ return []; }
+    var outermost = all.filter(function(e){
+      for(var p = e.parentNode; p && p !== root.parentNode; p = p.parentNode){
+        if(p.nodeType === 1 && p.hasAttribute && p.hasAttribute('data-hc-section')) return false;
+      }
+      return true;
+    });
+    return outermost.filter(function(e){ return e.parentNode === el.parentNode; });
+  }
+  /* A press is in flight: take the arrows out of service rather than let a second
+     press queue up behind a move that is about to replace this whole document. No
+     sentence anywhere — the control says it, by being unavailable. */
+  function hcArmMove(btn){
+    try{
+      var bar = btn && btn.parentNode;
+      if(!bar) return;
+      var bs = bar.querySelectorAll('button');
+      for(var i=0;i<bs.length;i++){ bs[i].disabled = true; bs[i].style.opacity = '.45'; }
+    }catch(e){}
+  }
   /* MOVE, WITHOUT PAINTING IT OURSELVES FIRST.
      Every other edit here paints optimistically, because the owner is typing into
      the thing they can see. A reorder is different: the same move has to happen to
@@ -53958,14 +54007,21 @@ function wireHcEditingSurface(doc, root){
     }
 
     if(kind === 'section'){
-      // ORDER FIRST, because "this section should be further down the page" is the
-      // thing Adrian has reported as a bug more than any styling of it. A section is
-      // a stamped container, so moving one is a move of a known element — not layout
-      // re-recognition. The server swaps it with its neighbour AND reorders any nav
-      // links to the two in the same document version.
-      mk('↑', 'Move this section up the page', function(){ hcMoveSection(label, 'up'); });
-      mk('↓', 'Move this section down the page', function(){ hcMoveSection(label, 'down'); });
-      sep();
+      // AN ARROW APPEARS ONLY WHERE THE MOVE IS ACTUALLY POSSIBLE.
+      //
+      // This is the earned-control rule, the same one that stops a design knob that
+      // binds nothing from appearing. Before, both arrows were always shown: pressing
+      // one that could not act sent a request, got a refusal, and the refusal was
+      // written into the CHAT — a control that explains why it cannot do its job
+      // instead of not being offered. The predicate below is the server's rule, run
+      // here where the DOM is: outermost stamped bands sharing this one's parent.
+      // at_edge and not_siblings are now unreachable through the interface; they stay
+      // on the server because a POST is a POST.
+      var sibs = hcSectionSiblings(el);
+      var at = sibs.indexOf(el);
+      if(at > 0) mk('↑', 'Move this section up the page', function(b){ hcArmMove(b); hcMoveSection(label, 'up'); });
+      if(at > -1 && at < sibs.length - 1) mk('↓', 'Move this section down the page', function(b){ hcArmMove(b); hcMoveSection(label, 'down'); });
+      if(at > 0 || (at > -1 && at < sibs.length - 1)) sep();
       mk('Roomier', 'More space inside this section', function(){ hcStepSpace(el, label, on, +1); });
       mk('Tighter', 'Less space inside this section', function(){ hcStepSpace(el, label, on, -1); });
       sep();
