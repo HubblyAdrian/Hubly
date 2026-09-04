@@ -53994,7 +53994,16 @@ function wireHcEditingSurface(doc, root){
      cannot do its job is not offered and never has to explain itself. */
   function hcMoveControls(el, mk, sep, grain){
     var sibs = hcPlaceableSiblings(el);
-    if(!sibs.length) return false;
+    // THE HANDLE AND THE ARROWS ARE EARNED DIFFERENTLY, on purpose.
+    //
+    // An ARROW names a specific destination, so it appears only when that neighbour
+    // exists. The HANDLE is the gesture, and it appears whenever picking the block up
+    // is meaningful at all — because a block with nowhere to go has to be able to SHOW
+    // that: it lifts, no drop line ever appears, and it returns. Hiding the handle
+    // instead would be the silence that made section.3 read as broken rather than as
+    // "this one can't go anywhere".
+    var pickable = !!(el && el.parentNode && el.parentNode.nodeType === 1 && el.parentNode !== doc.body.parentNode);
+    if(!pickable && !sibs.length) return false;
     var kids = [], all = el.parentNode ? el.parentNode.children : [];
     for(var i=0;i<all.length;i++) if(all[i] === el || sibs.indexOf(all[i]) > -1) kids.push(all[i]);
     var at = kids.indexOf(el);
@@ -54007,8 +54016,10 @@ function wireHcEditingSurface(doc, root){
         hcBeginDrag(ev, el);
       });
     }catch(e){}
-    if(at > 0) mk('↑', 'Move this ' + what + ' up', function(b){ hcArmMove(b); hcSendNodeMove(el, kids[at-1], 'before'); });
-    if(at > -1 && at < kids.length - 1) mk('↓', 'Move this ' + what + ' down', function(b){ hcArmMove(b); hcSendNodeMove(el, kids[at+1], 'after'); });
+    if(sibs.length){
+      if(at > 0) mk('↑', 'Move this ' + what + ' up', function(b){ hcArmMove(b); hcSendNodeMove(el, kids[at-1], 'before'); });
+      if(at > -1 && at < kids.length - 1) mk('↓', 'Move this ' + what + ' down', function(b){ hcArmMove(b); hcSendNodeMove(el, kids[at+1], 'after'); });
+    }
     sep();
     return true;
   }
