@@ -54133,15 +54133,13 @@ function wireHcEditingSurface(doc, root){
     return hit;
   }
   function hcCancelGripHide(){ if(hcGripHideTimer){ clearTimeout(hcGripHideTimer); hcGripHideTimer = null; } }
-  /* A short grace period, so crossing the gap — or clipping a corner on the way — does
-     not kill the thing you are reaching for. */
-  function hcScheduleGripHide(){
-    hcCancelGripHide();
-    hcGripHideTimer = setTimeout(function(){
-      if(hcGripOver || hcSel || hcDragging) return;
-      hcHideGrip();
-    }, 420);
-  }
+  /* NO TIMER. A timer is the wrong mechanism for "am I still interested in this thing":
+     it aged the grip out while the owner was still reaching for it, and any number I
+     pick is wrong for someone moving slower than I guessed. The grip now persists until
+     the pointer enters a DIFFERENT movable block — the only event that actually means
+     "I want that one instead" — or the selection changes. Leaving the page area does
+     not retire it either; it simply stays where it was until something else is chosen. */
+  function hcScheduleGripHide(){ /* deliberately nothing: see above */ }
   function hcHideGrip(){ hcCancelGripHide(); if(hcGrip) hcGrip.style.display = 'none'; hcGripFor = null; hcGripOver = false; }
   function hcShowGripFor(el){
     if(!el || el === doc.body) return hcHideGrip();
@@ -54895,17 +54893,16 @@ function wireHcEditingSurface(doc, root){
       if(hcDragging) return;
       if(hcGripOver) return;                      // the pointer is ON the grip — leave it alone
       var m = hcMovableAt(e.target);
-      // Never switch away from the block whose grip is showing while the pointer is
-      // still inside it: moving toward the grip crosses the block's own children, and
-      // an instant switch is what made the grip unreachable.
-      if(m && hcGripFor && (m === hcGripFor || (hcGripFor.contains && hcGripFor.contains(m)))){
-        hcCancelGripHide();
-        return;
-      }
-      if(m) hcShowGripFor(m); else hcScheduleGripHide();
+      // Still inside the block the grip belongs to (or one of its children, which is
+      // what you cross on the way out to it): keep it exactly where it is.
+      if(m && hcGripFor && (m === hcGripFor || (hcGripFor.contains && hcGripFor.contains(m)))) return;
+      // A DIFFERENT movable block: that is the owner choosing another one, and the only
+      // thing that moves the grip. Anything else — the gap, the page background, the
+      // gutter between cards — leaves it alone.
+      if(m) hcShowGripFor(m);
     }catch(err){}
   }, true);
-  root.addEventListener('mouseleave', function(){ if(!hcSel && !hcDragging) hcScheduleGripHide(); }, true);
+  // Leaving the page does not retire the grip — it waits for a different block.
 
   // Clicking away deselects. Guarded so a tap ON the toolbar never dismisses the
   // thing the toolbar is editing — the commonest way a floating bar becomes

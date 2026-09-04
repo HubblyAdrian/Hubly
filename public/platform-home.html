@@ -2424,16 +2424,40 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     hcUndoBusy = true;
     try{
       var c = await authGetClient();
-      var res = await c.rpc('restore_prev_business_document', { p_business_id: hc.draftBusiness.id });
+      // WALK BACK, don't toggle. The old call always restored the SECOND-latest version,
+      // so a second press restored what the first press had just undone — a redo wearing
+      // Undo's clothes. The cursor remembers how far back we have walked and steps one
+      // real change further each time; any NEW edit clears it (hcMarkUndoAvailable), so
+      // Undo always starts from where the owner actually is.
+      var res = await c.rpc('restore_business_document_version', {
+        p_business_id: hc.draftBusiness.id,
+        p_version: (hc._undoCursor != null) ? (hc._undoCursor - 1) : null
+      });
       hcUndoBusy = false;
       var out = res && res.data;
       if(out && out.ok){
-        // The page visibly going back IS the confirmation, and the control retiring is
-        // the second half of it. No line in chat: the owner pressed Undo and watched it
-        // happen — narrating it turns the conversation into a log of their own clicks.
-        try{ hcClearUndoAvailable(); }catch(e){ hc._lastEdit = null; }
+        // THE BUTTON DOES NOT RETIRE JUST BECAUSE IT WORKED.
+        //
+        // It used to hide after one press, which asserts "nothing left to undo" — and on
+        // a page with two changes that was simply false: the owner pressed Undo, watched
+        // one change come back, and had no way to reach the state before the other. A
+        // control disappearing is a claim about the world, and that one was unearned.
+        // It stays while there is an earlier version to walk back to.
+        hc._undoCursor = (typeof out.restored_from === 'number') ? out.restored_from : null;
+        if(hc._undoCursor != null && hc._undoCursor > 1){
+          hcMarkUndoAvailable('that change');
+          hc._undoCursor = out.restored_from;      // preserved: hcMarkUndoAvailable clears it
+        } else {
+          try{ hcClearUndoAvailable(); }catch(e){ hc._lastEdit = null; }
+        }
         try{ hcRefreshCanvasFrame(); }catch(e){}
         void noun;
+      } else if(out && out.error === 'no_change'){
+        // The step would have published a document identical to the live one: a version
+        // written, a success reported, and a page that does not move. Step further back
+        // instead of claiming it worked.
+        hc._undoCursor = (typeof out.restored_from === 'number') ? out.restored_from : hc._undoCursor;
+        hcAppendMessage('hubly', "That step was already how your page looks — press Undo again to go back further.");
       } else {
         var err = out && out.error;
         hcAppendMessage('hubly', err === 'nothing_to_undo'
@@ -3467,11 +3491,13 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // there is something to step back, and nothing is announced.
   function hcMarkUndoAvailable(noun){
     hc._lastEdit = { noun: noun || 'that change' };
+    hc._undoCursor = null;                 // a new change: Undo starts from here again
     var b = document.getElementById('hcUndoBtn');
     if(b){ b.disabled = false; b.hidden = false; b.title = 'Undo ' + String(noun || 'that change').replace(/^the /, ''); }
   }
   function hcClearUndoAvailable(){
     hc._lastEdit = null;
+    hc._undoCursor = null;
     var b = document.getElementById('hcUndoBtn');
     if(b){ b.disabled = true; b.hidden = true; }
   }
