@@ -91,6 +91,26 @@ verify interaction work.
 - **The editor keeps your place** — the mode is in the URL (`#website`), so reload and
   browser Back return to the Website editor, and the canvas is restored to the scroll
   position the owner was at.
+- **Selected element → chat context — the chip.** *(2026-09-04, shipped both paths.)* Click
+  something on the page and a chip appears above the composer naming it in the owner's
+  words — "Hero heading", "Basic Mow card", never `hero.headline`. The name is read off the
+  page's own STAMPS, never its layout: a band is named by the **shorter** of its
+  heading/subheading (a name is short; the model writes the sentence as the heading about
+  as often as the eyebrow), a card by the `.title` label of the item its label sits inside.
+  With a chip attached the instruction is scoped to that element — **how it LOOKS** →
+  `website.restyleElement` (new: size, weight, font, italics, alignment, spacing, corners;
+  every field an enum validated twice), **how it READS** → `website.patchDocument`, narrowed
+  to the selection's own labels. **A target changes the SCOPE, not the grounding rule** —
+  `restyleElement` cannot write text at all, so "add a testimonial here" is still a question
+  about who said it. **Nothing the canvas sends is trusted**: the label is looked up in the
+  STORED page, the node address re-resolved, the fingerprint re-checked as a drag's is; if
+  the page moved underneath the selection is refused and the model is told to say so. The
+  model never sees the label (injected like `draftId`) and must say the element's NAME back
+  as a checksum before anything is written. An unlabelled wrapper — which is what a service
+  card is — is styled by node address. The × on the chip clears the selection on the page
+  too; a labelled selection survives a canvas reload (it rides the auth handshake, like the
+  scroll position). **NO COLOUR**, the same withholding `setDesignKnob` makes and for the
+  same reason — a hex the model picks is a contrast decision against a page it cannot see.
 
 ### The page and the pipeline
 - **The lazy page upgrade.** The first time an owner opens the Website editor on a page
@@ -128,10 +148,22 @@ verify interaction work.
   driven through two nested frames** in this harness; hover was verified one frame deep
   with a real mouse. **Adrian is testing it now.** If it still fails in the builder
   specifically, that is a different cause — get his report rather than assert it works.
+- **The chip, as a signed-in owner in the running product.** *(2026-09-04.)* Everything
+  below was verified, but none of it in a real session, because Claude Code cannot sign in
+  as the owner. What WAS verified, over evergreen's real stored page (v162), with the real
+  editor function sliced out of `hubly.html` and the real writers: **54 of 54 labelled
+  leaves produce a chip**; every breadcrumb level yields a **distinct** node address;
+  styling one service card leaves the other five **byte-identical**; the text lane narrows
+  from **47 page-wide parts to 5** for one card; a stale fingerprint is refused; all **31**
+  values `restyleElement` can emit are accepted by the writer and all 6 out-of-vocabulary
+  values refused; a hostile name from the frame renders as text, not markup. **What that
+  does NOT prove:** that a real owner, signed in, typing "make this feel more premium" with
+  a chip attached, gets the change on their live page. **Adrian's four sentences settle it**
+  — and the fix in `OPEN_FINDINGS` #20 is on that exact path, so it is the same test.
 
 ---
 
-## THE FAMILY OF TRAPS — six now, so learn the pattern, not the anecdotes
+## THE FAMILY OF TRAPS — eight now, so learn the pattern, not the anecdotes
 
 Every one of these was written, reviewed, merged and believed to be working. Each is the
 same mistake wearing different clothes: **a check that answers an adjacent question and is
@@ -161,9 +193,25 @@ read as answering the real one.**
    after 420ms while an owner was still reaching for it. Any number would have been wrong
    for someone slower than the guess. Persist until something else is actually chosen —
    model the intent, not the delay.
+7. **A CREDENTIAL THAT USED TO WORK IS NOT A CREDENTIAL THAT WORKS.** *(2026-09-04,
+   `OPEN_FINDINGS` #20)* Six writers passed the draft token to
+   `create_business_document` — correct when they were written, and silently dead for
+   every claimed owner from the day claim started authorising by ownership instead. The
+   owner-authorised writers were all fixed; the model-invoked ones were not, because
+   nothing failed loudly and no test runs against a claimed site. The tell was a failure
+   sentence that fit every cause equally: "could not be saved".
+8. **THE REPLY IS COMPOSED FROM THE BEST NEWS.** *(2026-09-04, `OPEN_FINDINGS` #21)*
+   `photoTruth || servicesTruth || contactHoursTruth || model's reply` — a truth-composer
+   for one sub-action SUBSTITUTES the model's account of the turn. Observed: the model
+   said "I couldn't change the page styling yet because you're not signed in", the owner
+   was shown "Done — I added your phone number and your hours." Every other rule here
+   guards against claiming success we didn't earn; this one *manufactured* it out of an
+   unrelated success, and it gets worse the more a turn is asked to do.
 
-**The test that catches all six is the same:** ask whether the thing a person wants
-actually happened, on the real artefact, and look at it.
+**The test that catches all eight is the same:** ask whether the thing a person wants
+actually happened, on the real artefact, **in the state they are actually in**, and look
+at it. Traps 7 and 8 were both invisible to every test in the repo for the same reason —
+nothing exercises a CLAIMED site, and nothing reads back what the owner was actually told.
 
 ---
 
@@ -205,6 +253,13 @@ A count here was true when written and is not re-checked on read.
   12/12, unlabelled-wrapper moves 11/12 (the 12th correctly refused as chrome), band moves
   10/10, cross-parent refused 10/10, all text-preserving; nav follows on 7 of the 8 pages
   with two adjacent nav-linked sections.
+- **Chip figures are 2026-09-04**, measured on evergreen's stored page **v162** only (one
+  page — a page with a different label mix could name things differently): 54/54 labelled
+  leaves produce a chip; the text lane narrows 47 page-wide parts → 5 for one service card;
+  31/31 `restyleElement` values accepted by the writer, 6/6 out-of-vocabulary refused.
+- **Multi-instruction figures are 2026-09-04**, N=3 turns on **one UNCLAIMED** test draft:
+  ceiling 4 actions/turn, ~6–13s per round (median ~8s). The unclaimed state is a real
+  limit on those numbers — see `OPEN_FINDINGS` #21's caveat.
 
 ---
 
@@ -244,23 +299,28 @@ means nothing broken, nothing that lies, no flashing, no losing your place.
 | Delete element | yes | **yes** |
 | Move blocks | yes | **yes** — drag + arrows, any grain |
 | Page background | yes | **yes** (inside the page's lightness band) |
-| Selected element → chat context | yes | **no** — the next one |
+| Selected element → chat context | yes | **yes** (2026-09-04) — awaiting Adrian's test |
 | Per-turn Revert in chat | yes | **no** (the machinery exists) |
-| Multi-instruction prompts | yes | **no** — unsized |
+| Multi-instruction prompts | yes | **no** — now SIZED, see below |
 
 ### Next, in order
 
-1. **Selected element → chat context** — the `{}` span × chip. Click a heading, type "make
-   this feel more premium." Both halves already exist (the toolbar knows the selection; the
-   model can act on a label); what is missing is the wire between them and the chip in the
-   composer. **Ship it on its own; Adrian tests it before anything else moves.** Its rules:
-   the chip says what was selected in words the owner would recognise ("Hero heading", not
-   `hero.headline`); clearing the selection clears the chip; with a chip attached a design
-   instruction applies to THAT element, not the page; and it still never invents content —
-   "make this more premium" proceeds, "add a testimonial here" still asks who said it.
-2. **Multi-instruction prompts.** Their user said six things in one message and got all
-   six; ours does one capability action per turn. **SIZE IT BEFORE SCHEDULING IT — Adrian
-   wants a real number, not a guess.**
+1. **Selected element → chat context — SHIPPED 2026-09-04, both deploy paths.** Adrian
+   tests it before anything else moves. See "What is LIVE" above for what it does and
+   "NOT VERIFIED" for what his test settles.
+2. **Multi-instruction prompts — SIZED 2026-09-04. `OPEN_FINDINGS` #21 has the numbers.**
+   Short version: the ceiling is **4** model-invoked actions per turn
+   (`MAX_CAPABILITY_ROUNDS`), and only **3** can run and still get a reply — the fourth
+   eats the round the reply would have used. Measured on three real six-instruction turns:
+   a turn that spends all four **exhausts the loop and tells the owner nothing** — five
+   real changes landed and the reply was the canned "I've gathered what I can for now."
+   **Cost to make six work: ~2–3 days**, of which the reply rewrite is the majority and the
+   risk (reserve the reply round ~0.5d; compose from a turn ledger, re-verifying every
+   existing acknowledgement, ~1–1.5d; stream progress, because six actions is ~45–65s of
+   silence at the measured ~8s/round, ~0.5–1d). **Two live defects block it and are
+   recorded**: the exhausted-turn silence, and the reply being composed from whichever
+   truth-composer has the best news (a success line was observed replacing the model's own
+   honest failure report).
 3. Then: section select by click, duplicate, `+ Add section`.
 
 **Two constraints that bind all of it.** The AI **never invents content** — it adds a
@@ -294,7 +354,14 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
 
 ## Still owed, untouched
 
-- **Multi-instruction prompts** — unsized. A real number before scheduling.
+- **`OPEN_FINDINGS` #20 — FIVE model-invoked writers still omit `p_owner_id`**, so they are
+  dead on a claimed site exactly as `patchDocument` was. Named with line numbers there.
+  Reachable by a claimed owner today: **`website.newPage`** ("start over") and the
+  **re-render after a logo upload**. A boot-time audit of every
+  `create_business_document` call site — the shape `auditConversationAllowlists` already
+  uses — would have caught all six at once and would catch the seventh.
+- **Multi-instruction prompts** — SIZED 2026-09-04 (`OPEN_FINDINGS` #21): ~2–3 days, and
+  two live defects block it.
 - **The design-knob re-test as the owner.** They failed once, were fixed, and have not been
   re-tested. **Expect `heroScale` to be ABSENT from the Design panel on evergreen** — that
   page carries an old stamp with no recorded counts, so the gate honestly says it cannot

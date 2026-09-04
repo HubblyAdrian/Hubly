@@ -973,6 +973,121 @@ and seeing it in someone else's shipped product is not permission.
 
 ---
 
+## 20. EVERY PAGE EDIT MADE BY TALKING WAS DEAD ON A CLAIMED SITE — the one on the chip's
+## path is FIXED 2026-09-04; FIVE SIBLINGS ARE STILL LIVE, named below with line numbers
+
+**Found 2026-09-04 while wiring the selection chip, by reading both sides of the write —
+not by a test, because no test exercises a claimed site.**
+
+`create_business_document` stopped accepting the draft token the moment a business is
+claimed (migration `20260822030000`: unclaimed → token, claimed → `p_owner_id` must equal
+`owner_id`). Any writer that omits `p_owner_id` therefore returns `not_owner` on every
+claimed business — and the claimed business is the only kind a real owner has.
+
+**Proven against the live claimed business (`evergreen-yard-care`), write-free:**
+- without `p_owner_id` → `{"ok":false,"error":"not_owner"}`
+- with the real `p_owner_id`, and a deliberately invalid `p_created_by` so it fails *after*
+  the authorise block → `{"ok":false,"error":"invalid_created_by"}` — i.e. authorisation
+  passed
+- `business_documents` count **162 before and 162 after** — neither probe wrote a row
+
+**FIXED here:** `applyFreeformInstruction` (`hubly_capability_registry.ts`) — the freeform
+branch of `website.patchDocument`, which is *every page edit an owner makes by talking*.
+It now takes and passes `ownerUid`, and its failure sentence names the cause: "could not
+be saved" fitting every cause equally is precisely how this stayed invisible.
+
+**STILL LIVE — the siblings, all in `hubly_capability_registry.ts`, all the same one-line
+shape (`p_owner_id` absent from the `create_business_document` payload):**
+
+| fn | what breaks on a claimed site |
+|---|---|
+| `syncFreeformFacts` (~`:428`) | record-change → page fact sync |
+| `rebuildDocumentFromRecord` (~`:607`) | the background rebuild after a record change |
+| `rerenderLatestDocument` (~`:2586`) | re-render after `setChrome` **and after a logo upload** |
+| `applyOwnerPhotoToFreeform` (~`:2726`) | owner photo placement (the name says Owner; it has no ownerUid) |
+| `runFreeformGeneration` / `runDocumentGeneration` (~`:4399`, `:4555`, `:4702`, `:4794`) | generation, incl. **`website.newPage` — "start over" on a claimed site** |
+
+Generation mostly runs pre-claim so its exposure is smaller, but `newPage` and the logo
+re-render are reachable by a claimed owner today. **Not fixed here deliberately** — they
+are outside the chip's path and the chip was to ship on its own (the standing rule allows
+leaving siblings *written down with line numbers*, not left unnamed).
+
+**Why this class keeps recurring, and what would end it:** the owner-authorised writers
+(`applyOwnerStyleEdit`, `applyOwnerNodeMove`, `applyDirectFreeformEdit`, …) all pass
+`p_owner_id`; the *model-invoked* writers do not, because they were written against the
+draft-token era and nothing failed loudly when claim arrived. A boot-time audit in the
+shape of `auditConversationAllowlists` — "every call site of `create_business_document`
+either passes `p_owner_id` or is on a named pre-claim-only list" — would have caught all
+six at once and would catch the seventh.
+
+---
+
+## 21. WITH SIX INSTRUCTIONS IN ONE MESSAGE, THE WORK HAPPENS AND HUBLY SAYS NOTHING.
+## MEASURED 2026-09-04, NOT FIXED — this is the sizing Adrian asked for
+
+**Measured against the deployed function, N = 3 real six-instruction turns on one
+unclaimed test draft (`cedar-ridge-lawn`, `account_kind=test`). Unclaimed is a real
+limit on this number — see the caveat at the end.**
+
+**The ceiling, from the code:** `MAX_CAPABILITY_ROUNDS = 4`, and each round yields
+**either one capability action or the final reply**. So **4 model-invoked actions is the
+hard ceiling, and 3 is the most that can run and still get a reply** — the fourth action
+eats the round the reply would have used. A server-side extraction pass
+(`business.recordFacts`) runs outside the loop and is not round-limited.
+
+**Instructions are not actions.** `website.patchDocument` batched two text instructions
+into one action and **both reached the page** (verified on the stored document, v3:
+headline and button text present).
+
+| turn | model-invoked actions | rounds | what the owner was told |
+|---|---|---|---|
+| six, mixed | 1 (failed) | 2 of 4 | **a success line that erased the model's failure report** — see below |
+| six, all achievable | 2 | 3 of 4 | honest; named what landed and what didn't |
+| six, spanning four capabilities | **4** | **4 of 4 — exhausted** | **"I've gathered what I can for now — what would you like to do next?"** |
+
+**That last row is the finding.** Five real changes landed — a headline, a subheadline, a
+service with a price, a header preference, a brand colour — and the reply names **none of
+them**. Prohibition 6 at full strength: the operation worked, the database updated, and
+the product said nothing.
+
+**And a second, separate defect found in the same run:** the reply is composed from
+whichever composer has the best news.
+`primaryReply = photoTruth || servicesTruth || contactHoursTruth || deduped.reply`
+(`hubly-conversation/index.ts` ~`:2243`) — a truth-composer for ONE sub-action
+**substitutes** the model's reply rather than joining it. Observed verbatim: the model's
+final message was *"I couldn't change the page styling yet because you're not signed in."*
+and the owner was shown *"Done — I added your phone number and your hours on your page."*
+A success line replaced a failure report. This is the two-composers family (#4) with the
+worst possible tie-break, and it gets worse as instructions per turn rise.
+
+**THE COST OF MAKING SIX WORK — the number, not a guess. ~2–3 days, in three parts:**
+
+1. **Reserve the reply; raise the action budget.** The reply currently competes with
+   actions for rounds. Always run a final compose round, and lift the action budget from 4.
+   **~40–60 lines, one file.** Half a day.
+2. **Compose the reply from a TURN LEDGER — what every action actually did.** This is
+   `servicesTruth` generalised: collect each action's `summary`/`humanNote` and compose
+   once, honestly, naming per instruction what landed and what did not. The three truth
+   composers become *inputs*, not substitutes. **~80–120 lines — and this is the risk**,
+   because it touches every acknowledgement path Adrian has already paid to get right
+   (photo, services, contact/hours); each needs re-verifying. 1–1.5 days.
+3. **Progress while it runs.** Measured latency **~6–13s per round (median ~8s)**: 18s /
+   22s / 38s / 31s for the four turns above. Six actions plus a reply ≈ **45–65 seconds on
+   one turn with nothing on screen.** The `interimMessages` machinery exists but batches at
+   the end; streaming it per action is **~60–100 lines across client and server**, and it
+   is the difference between "works" and "usable". 0.5–1 day.
+
+Partial failure (some of six will fail — `setChrome` is a no-op on a freeform page and
+said so honestly) needs no separate work: it falls out of (2) done properly.
+
+**CAVEAT ON THE DENOMINATOR.** All three turns are an **unclaimed draft**. A claimed owner
+has a different action mix — design knobs and the owner-authorised writers become
+available, and `setDesignKnob` was refused (`not_signed_in`) in the first turn purely
+because the draft was unclaimed. So the round count on a claimed site could be **higher**
+than 4, not lower. Confirming the claimed number needs a signed-in owner and is Adrian's.
+
+---
+
 ## Related, already-tracked
 
 - **Freeform pages have no update path** — the structural finding under #3/#5/#7. See
