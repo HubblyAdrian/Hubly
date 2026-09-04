@@ -1019,18 +1019,66 @@ before claim can finish after it. That hop is safe because the receiving functio
 the presented credential against our secret key on both headers before its handler runs,
 so anyone able to set the field could already write as `service_role`.
 
-### THE CLASS IS NOW IMPOSSIBLE TO WRITE AGAIN — the invariant, not a bigger list
+### THE INVARIANT — and, just as important, WHERE IT STOPS
 
 `callBusinessRpc` **throws** when `create_business_document` is called without a
-`p_owner_id` key. The distinction is the whole design: **absent is a bug** (it throws, on
-the first call, in front of whoever wrote it), while an explicit **`p_owner_id: null` is a
-decision** — "this path only runs before claim" — that a reader can see and disagree with.
+`p_owner_id` key. **Absent is a bug**; an explicit **`p_owner_id: null` is a decision** —
+"this path only runs before claim" — that a reader can see and disagree with.
 
-This is deliberately not another hardcoded allow-list. Every list in this codebase has
-silently dropped an entry (`DRAFT_INJECTED_ACTIONS`, `GATED_WEBSITE_ACTIONS`,
-`CONTEXT_CAPABILITY_ALLOWLIST`), which is why they each have an audit. A rule that lives
-at the single point every writer already goes through cannot be forgotten by the next
-writer, who will not have read migration `20260822030000`.
+Deliberately not another hardcoded allow-list. Every list here has silently dropped an
+entry (`DRAFT_INJECTED_ACTIONS`, `GATED_WEBSITE_ACTIONS`, `CONTEXT_CAPABILITY_ALLOWLIST`),
+which is why they each ended up needing an audit. A rule at the single point every writer
+already passes through cannot be forgotten by the next writer, who will not have read
+migration `20260822030000`.
+
+**THE THROW IS NOT UNIFORMLY LOUD, and "throws in front of whoever wrote it" would be an
+over-claim.** Measured by walking outward from each of the 20 call sites:
+
+- **16 sites propagate** to `hubly-conversation`'s outer `catch (err)` → a **502 carrying
+  the guard's message in `detail`**. Loud, in production, immediately. This covers every
+  capability handler (`newPage`, `patchDocument`, `restyleElement`, the generation paths)
+  and every direct owner-edit branch.
+- **4 sites are caught** and degrade to a logged failure: `syncFreeformFacts`,
+  `rebuildDocumentFromRecord` and `rerenderLatestDocument` each `console.error` and return
+  `{status:"failed"}`; `applyOwnerPhotoToFreeform` is caught by `uploadDraftPhoto`'s own
+  try and becomes a `failed` placement the reply reports honestly. **On those four the
+  invariant degrades to a log line — which is close to the silent failure it exists to
+  end.** It is a log rather than nothing, and the owner is told the thing did not land,
+  but it does not stop a deploy.
+
+So the invariant's real force is at **development and test time**, plus the 16 loud paths.
+For the four caught ones, `scripts/check-owner-id-invariant.mjs` is the thing that
+actually catches a regression, not the throw.
+
+### THE GAP THE INVARIANT STRUCTURALLY CANNOT SEE
+
+The guard asks only whether the **key** is present. A handler that reads an owner the
+engine **never injects** yields `null`, the key IS present, the guard passes, and the
+write is refused on a claimed business exactly as before. **An accidental null and a
+deliberate pre-claim null are indistinguishable at the RPC.** That is not a flaw in the
+invariant; it is its boundary, and the routinely-hit claimed path — `website.newPage`,
+"start over" — sits inside it.
+
+Two things close that boundary, because only "this handler wants an owner" vs "the engine
+injects one for this action" can tell the two nulls apart:
+
+- **`auditConversationAllowlists` now audits the owner side too**: every action whose
+  handler reads `injectedOwnerUid` must be in `DRAFT_INJECTED_ACTIONS`. Verified by
+  removing `website.newPage` from the set and watching it fire, then restoring.
+- **`scripts/check-owner-id-invariant.mjs`** runs both checks without deploying.
+
+### "IT TYPECHECKS" WAS NOT EVIDENCE FOR TWO OF THE EIGHT
+
+Six sites take `ownerUid` as a typed parameter, so the compiler enforces them. Two —
+`website.newPage` and `patchDocument`'s AST branch — read
+`String((args as any)?.ownerUid || "").trim() || null`, and **`as any` switches the
+compiler off on exactly the expression that decides whether a claimed owner can write.**
+
+The `as any` was never needed: a handler's `args` is already `Record<string, unknown>`, so
+the property read is legal without it. All **9** such reads now go through one typed
+reader, `injectedOwnerUid(args)`. The key name `ownerUid` exists **once**; a typo at a
+call site is an unknown-function error rather than a silent null; and it is the single
+string the two audits above look for.
 
 ### VERIFIED — what was executed, and what was not
 
@@ -1051,13 +1099,30 @@ writer, who will not have read migration `20260822030000`.
 - **Static:** a brace-matched scan reports **20 of 20** call sites carrying `p_owner_id`,
   and `deno check` shows an identical error profile before and after on both functions.
 
+**THE TWO UNTYPED SITES, PROVEN IN TWO LINKS** (added after the first write-up asserted
+them). "It typechecks" was not available as evidence here, so each link was executed:
+
+- **Link 1 — is `ownerUid` injected into `args` at all?** Two turns run against the
+  DEPLOYED function, reading `actions[].args` from the response, where the function's own
+  redaction already replaces the value: `website.newPage` → keys
+  `["draftId","brief","confirm","draftToken","ownerUid","_userMessage"]`, ownerUid
+  **PRESENT** (`"[redacted]"`). `website.patchDocument` → ownerUid **PRESENT**. So both
+  are on `DRAFT_INJECTED_ACTIONS` in fact, not just in the source. **No ninth instance.**
+- **Link 2 — does the value read out of `args` reach `p_owner_id`?** Both handlers run end
+  to end with `globalThis.fetch` intercepted, so the real registry, the real reader and
+  the real payload are exercised against a stubbed database and model. With
+  `args.ownerUid` set, `p_owner_id` **= that value**; with it absent, `= null`. For the
+  AST branch the fixture is a **real stored document** from the corpus, minimally pruned:
+  it contains two `mailto:` links the CURRENT validator forbids, so the patch was
+  correctly rejected until they were removed — a real rejection, not a threading fault,
+  and worth recording as a fact about old stored AST documents.
+
 **NOT executed — say so rather than imply otherwise:** the **claimed** branch of any of
 it. Claude Code cannot sign in as an owner, so every live run above exercised the
 unclaimed path, which is the one that already worked. What the fix does on a claimed site
 is proven at the RPC (the write-free probe above) and by the owner uid arriving at each
-save, not by a signed-in owner watching their page change. `newPage`, the AST branches and
-the `setChrome` re-render were not run at all — each is a one-line read of an already-
-injected `args.ownerUid`, typechecked, and AST reaches zero real businesses.
+save, not by a signed-in owner watching their page change. The `setChrome` re-render was
+not run at all; it now uses the same typed reader as the two proven above.
 
 ---
 

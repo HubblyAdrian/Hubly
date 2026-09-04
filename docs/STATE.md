@@ -408,7 +408,17 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
 - **Close a class with an invariant at the choke point, not another allow-list.** Every
   hardcoded list here has silently dropped an entry, which is why each one now needs its
   own audit. A rule that fires where every caller already passes cannot be forgotten by
-  the next writer.
+  the next writer. **But state where the invariant STOPS**: the `p_owner_id` guard sees
+  only that the key is present, so an accidental null and a deliberate pre-claim null are
+  identical to it, and 4 of its 20 sites sit inside a `try` that turns the throw into a
+  log line. An invariant described without its boundary is another unearned checkmark.
+- **`as any` is not "typechecked".** It switches the compiler off on exactly the
+  expression under discussion. Two of the eight `p_owner_id` fixes read the owner through
+  `as any` and were claimed as typechecked; they were not, and neither cast was needed
+  (`args` is already `Record<string, unknown>`). One typed reader now, `injectedOwnerUid`.
+- **A check nobody can re-run is a number, not a check.** `scripts/check-owner-id-invariant.mjs`
+  brace-matches every `create_business_document` payload and cross-checks the owner-injection
+  list; both of its failure modes were proven by breaking them on purpose.
 
 ## The anchor-pattern discipline (the through-line)
 

@@ -412,6 +412,7 @@ const DRAFT_INJECTED_ACTIONS = new Set([
  */
 function auditConversationAllowlists(): void {
   const needsDraft: string[] = [];
+  const needsOwner: string[] = [];
   const websiteActions: string[] = [];
   for (const cap of HUBLY_CAPABILITY_REGISTRY) {
     for (const action of cap.actions) {
@@ -423,12 +424,27 @@ function auditConversationAllowlists(): void {
       // startDraft CREATES the draft, so it legitimately mentions both while
       // needing neither injected.
       if (reads && id !== "business.startDraft" && !DRAFT_INJECTED_ACTIONS.has(id)) needsDraft.push(id);
+      // THE OWNER SIDE, and it needs its own check because the invariant in
+      // callBusinessRpc structurally cannot see it. That guard only asks whether the
+      // p_owner_id KEY is present; a handler that reads an owner which was never
+      // injected produces null, the key is present, and the write is refused on a
+      // claimed business exactly as before — silently. An accidental null and a
+      // deliberate pre-claim null are indistinguishable at the RPC. So the place to
+      // catch it is here, where "this handler wants an owner" and "the engine injects
+      // one for this action" can actually be compared. (OPEN_FINDINGS #20.)
+      if (/injectedOwnerUid/.test(source) && !DRAFT_INJECTED_ACTIONS.has(id)) needsOwner.push(id);
     }
   }
   reportAllowlistDrops({
     list: "DRAFT_INJECTED_ACTIONS",
     dropped: needsDraft,
     consequence: "the handler gets no draftId/draftToken and answers 'missing_draft', which reads to the owner as 'you have no draft business'",
+    fixAt: "hubly-conversation/index.ts DRAFT_INJECTED_ACTIONS",
+  });
+  reportAllowlistDrops({
+    list: "DRAFT_INJECTED_ACTIONS (owner side)",
+    dropped: needsOwner,
+    consequence: "the handler reads an owner uid that is never injected, so it is always null and every write it makes is refused on a CLAIMED business — the failure is silent, and the p_owner_id invariant cannot see it",
     fixAt: "hubly-conversation/index.ts DRAFT_INJECTED_ACTIONS",
   });
 

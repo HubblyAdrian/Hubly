@@ -163,6 +163,26 @@ async function callMarketplace(action: string, payload: Record<string, unknown>)
 // the real start_business_in_progress / patch_business_in_progress Postgres
 // functions (20260803120000_business_in_progress.sql) directly over
 // PostgREST's /rpc/ endpoint — no business-record logic lives here.
+/**
+ * THE ENGINE-INJECTED OWNER, read in ONE typed place.
+ *
+ * Every site used to spell this `String((args as any)?.ownerUid || "").trim() || null`.
+ * `as any` switches the compiler off on exactly the expression that decides whether a
+ * CLAIMED owner can write — so "it typechecks" was not evidence for those sites, which
+ * is the difference between the six that thread `ownerUid` as a typed parameter and the
+ * ones that read it out of `args`. It was never needed either: a handler's args are
+ * already `Record<string, unknown>`, so the property read is legal without it.
+ *
+ * Now the key name `ownerUid` exists ONCE. A typo at a call site is an unknown-function
+ * error rather than a silent null, and there is a single function to test — which
+ * matters because the callBusinessRpc invariant below CANNOT catch this: an accidental
+ * null and a deliberate pre-claim null look identical to it. See OPEN_FINDINGS #20.
+ */
+function injectedOwnerUid(args: Record<string, unknown>): string | null {
+  const v = args?.ownerUid;
+  return typeof v === "string" && v.trim() ? v.trim() : null;
+}
+
 async function callBusinessRpc(fn: string, payload: Record<string, unknown>): Promise<any> {
   // ── THE CLAIMED-OWNER INVARIANT ────────────────────────────────────────────
   //
@@ -4830,7 +4850,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             // normally intercepts generateDocument and dispatches the background
             // build instead, which is where the job row lives.
             null,
-            String((args as any)?.ownerUid || "").trim() || null,
+            injectedOwnerUid(args),
           ),
       },
       {
@@ -4904,7 +4924,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_format: "html",
             // "Start over" is reachable AFTER claim, so this is the one generation
             // path a real owner hits routinely. Without this it failed every time.
-            p_owner_id: String((args as any)?.ownerUid || "").trim() || null,
+            p_owner_id: injectedOwnerUid(args),
           });
           if (!saved || saved.ok !== true) {
             return { ok: false, real: false, summary: "The new page was built but could not be saved.", error: "rpc_failed" };
@@ -4969,7 +4989,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
               draftToken,
               instruction,
               latest,
-              String((args as any)?.ownerUid || "").trim() || null,
+              injectedOwnerUid(args),
               sel && Array.isArray(sel.labels) ? sel : null,
             );
           }
@@ -5009,7 +5029,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_document: patchResult.document,
             p_rendered_html: html,
             p_created_by: "patch",
-            p_owner_id: String((args as any)?.ownerUid || "").trim() || null,
+            p_owner_id: injectedOwnerUid(args),
           });
           if (!r || r.ok !== true) {
             return { ok: false, real: false, summary: "The edit was computed but could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
@@ -5084,7 +5104,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           }
           // A Document stores its RENDERED html, so saving the preference alone
           // changes nothing anyone can see. Same re-render the logo upload does.
-          const rerendered = await rerenderLatestDocument(draftId, draftToken, "website", String((args as any)?.ownerUid || "").trim() || null);
+          const rerendered = await rerenderLatestDocument(draftId, draftToken, "website", injectedOwnerUid(args));
           const said = Object.entries(chrome).map(([k, v]) => `${k}=${v}`).join(", ");
           if (rerendered !== "updated") {
             return {
@@ -5166,7 +5186,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         handler: async (args) => {
           const draftId = String((args as any)?.draftId || "").trim();
           const draftToken = String((args as any)?.draftToken || "").trim();
-          const ownerUid = String((args as any)?.ownerUid || "").trim() || null;
+          const ownerUid = injectedOwnerUid(args);
           // Design changes are OWNER-ONLY, and this is the real gate, not a UI one: the
           // knob value is written into the stored page, so an unauthenticated caller must
           // not reach it. applyOwnerDesignEdit re-checks owner_id itself; this is the
@@ -5262,7 +5282,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         handler: async (args) => {
           const draftId = String((args as any)?.draftId || "").trim();
           const draftToken = String((args as any)?.draftToken || "").trim();
-          const ownerUid = String((args as any)?.ownerUid || "").trim() || null;
+          const ownerUid = injectedOwnerUid(args);
           const sel = (args as any)?._selection as
             | { name: string; styleLabel: string | null; styleOn: "element" | "section" | null; styleAddress: NodeAddress | null; currentTypeScale?: string; currentSpaceScale?: string }
             | undefined;
@@ -5774,7 +5794,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         handler: async (args) => {
           const draftId = String(args?.draftId || "").trim();
           const draftToken = String((args as any)?.draftToken || "").trim();
-          const ownerUid = String((args as any)?.ownerUid || "").trim() || null;
+          const ownerUid = injectedOwnerUid(args);
           const userMessage = String((args as any)?._userMessage || "");
           if (!draftId || (!draftToken && !ownerUid)) {
             return { ok: false, real: false, summary: "No draft business exists yet to update — call startDraft first.", error: "missing_draft" };
@@ -5886,7 +5906,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         handler: async (args) => {
           const draftId = String(args?.draftId || "").trim();
           const draftToken = String((args as any)?.draftToken || "").trim();
-          const ownerUid = String((args as any)?.ownerUid || "").trim() || null;
+          const ownerUid = injectedOwnerUid(args);
           const userMessage = String((args as any)?._userMessage || "");
           if (!draftId || (!draftToken && !ownerUid)) {
             return { ok: false, real: false, summary: "No draft business exists yet — call startDraft first.", error: "missing_draft" };
