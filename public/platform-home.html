@@ -3561,6 +3561,8 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       hcSendDirectEdit({ directFreeformImageEdit: { label: data.label, imageBase64: data.imageBase64, mediaType: data.mediaType || 'image/png' } });
     } else if(data.type === 'hcFreeformNodeMove' && data.node && data.ref && (data.place === 'before' || data.place === 'after')){
       hcNodeMove(data.node, data.ref, data.place);
+    } else if(data.type === 'hcFreeformAddService' && typeof data.name === 'string' && data.name.trim()){
+      hcAddServiceFromCanvas(data);
     } else if(data.type === 'hcFreeformNodeDelete' && data.node){
       hcNodeDelete(data.node);
     } else if(data.type === 'hcFreeformSectionMove' && typeof data.label === 'string' && data.label && (data.dir === 'up' || data.dir === 'down')){
@@ -4491,6 +4493,31 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     var origin; try{ origin = new URL(hc.draftBusiness.url).origin; }catch(e){ return; }
     var frame = document.querySelector('#hcCanvasFrameWrap iframe.is-live') || document.getElementById('hcCanvasFrameA');
     try{ if(frame && frame.contentWindow) frame.contentWindow.postMessage({ type:'hcEditorFlash', text: text }, origin); }catch(e){}
+  }
+
+  // ADD ONE SERVICE, from the grid the owner is looking at.
+  //
+  // Straight down the path that is already proven end to end (directRecordEdit ->
+  // applyOwnerRecordEdit): the service lands in the RECORD and on the PAGE in one
+  // undoable version. There is deliberately no page-only route — a card a customer can
+  // read and not book is a defect this codebase already has a scar for.
+  async function hcAddServiceFromCanvas(d){
+    if(!hc.draftBusiness){ hcFlashAtControl('Reload and try again'); return; }
+    var edit = { kind: 'service', op: 'add', name: String(d.name).trim(),
+                 price: (d.price === null || d.price === undefined || isNaN(d.price)) ? null : Number(d.price),
+                 description: d.description ? String(d.description) : null };
+    var r = null;
+    try{ r = await hcRecordEdit(edit); }catch(e){ r = null; }
+    if(r && r.ok){
+      // A new card has no optimistic paint — it does not exist until the server has
+      // written it — so this is one of the few places a re-read is the honest thing.
+      hcRefreshCanvasFrame();
+      hcMarkUndoAvailable('that service');
+      try{ await hcReadRecord(); hcRenderManageBody(); }catch(e){}
+    } else {
+      hcFlashAtControl((r && r.reply) || "Didn't add");
+      hcRefreshCanvasFrame();
+    }
   }
 
   // MOVE ANY NODE — the drag and the arrows, one path. Not painted optimistically:

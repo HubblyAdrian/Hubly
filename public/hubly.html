@@ -53492,6 +53492,7 @@ function wireHcEditingSurface(doc, root){
   // This is the document the owner actually scrolls, so this is where "put me back
   // where I was looking" has to be wired.
   try{ hcWireScrollReporting(doc.defaultView || doc.parentWindow); }catch(e){}
+  try{ hcMountAddService(); }catch(e){}
   // The builder can now answer at the toolbar instead of in the chat.
   hcFlashMessage = function(text){
     try{
@@ -53999,6 +54000,112 @@ function wireHcEditingSurface(doc, root){
     var top = r.bottom + 8 + sy, left = Math.max(8, Math.min(r.left + sx, (doc.documentElement.clientWidth || 800) - panel.offsetWidth - 8 + sx));
     panel.style.top = top + 'px'; panel.style.left = left + 'px';
     hcPanel = panel;
+  }
+
+  /* ── ADD A SERVICE, IN THE GRID YOU ARE LOOKING AT ─────────────────────────
+     Asked for repeatedly: a way to add one more service without talking to the AI.
+     Not "+ Add section" for a whole band — one more card in this grid, with a name,
+     a price and a description.
+
+     It writes through the path that is already proven end to end (directRecordEdit ->
+     applyOwnerRecordEdit), so the service lands in the RECORD and on the PAGE in one
+     undoable version — the same route the Edit-details panel uses. A card that appears
+     on the page but cannot be booked is the defect this codebase already has a scar
+     for, so there is no second, page-only way to add one. */
+  function hcServicesGrid(){
+    try{
+      var anchors = root.querySelectorAll('[data-hubly-service]');
+      if(!anchors.length) return null;
+      // The card is the ancestor that sits directly inside the grid every anchor shares.
+      var cards = [];
+      for(var i=0;i<anchors.length;i++){
+        var c = anchors[i];
+        while(c && c.parentNode && c.parentNode !== root){
+          if(c.parentNode && c.parentNode.children.length >= 2) break;
+          c = c.parentNode;
+        }
+        // climb to the outermost element whose parent holds several siblings
+        var best = c;
+        for(var n = c; n && n !== root; n = n.parentNode){
+          if(n.parentNode && n.parentNode.children.length >= 2) best = n;
+        }
+        if(best && cards.indexOf(best) === -1) cards.push(best);
+      }
+      if(cards.length < 2) return null;
+      // The grid is the parent shared by most of them.
+      var counts = [], parents = [];
+      cards.forEach(function(c){
+        var p = c.parentNode; var i = parents.indexOf(p);
+        if(i === -1){ parents.push(p); counts.push(1); } else counts[i]++;
+      });
+      var bi = 0; for(var k=1;k<counts.length;k++) if(counts[k] > counts[bi]) bi = k;
+      return counts[bi] >= 2 ? parents[bi] : null;
+    }catch(e){ return null; }
+  }
+  function hcMountAddService(){
+    var grid = hcServicesGrid();
+    if(!grid) return;
+    if(grid.querySelector(':scope > [data-hc-addsvc]')) return;
+    var wrap = doc.createElement('div');
+    wrap.setAttribute('data-hc-editor','1');
+    wrap.setAttribute('data-hc-addsvc','1');
+    wrap.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:120px;' +
+      'border:2px dashed rgba(120,120,120,.45);border-radius:14px;padding:14px;' +
+      'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+    var btn = doc.createElement('button');
+    btn.type = 'button'; btn.textContent = '+ Add service';
+    btn.style.cssText = 'font:inherit;font-size:14px;font-weight:650;color:#12151f;background:none;border:0;cursor:pointer;padding:10px 14px;border-radius:10px';
+    var form = doc.createElement('div');
+    form.style.cssText = 'display:none;flex-direction:column;gap:8px;width:100%';
+    var mkInput = function(ph, type){
+      var i = doc.createElement('input');
+      i.type = type || 'text'; i.placeholder = ph;
+      i.style.cssText = 'font:inherit;font-size:14px;padding:9px 10px;border:1px solid rgba(0,0,0,.22);' +
+        'border-radius:9px;width:100%;box-sizing:border-box;background:#fff;color:#12151f';
+      i.addEventListener('click', function(e){ e.stopPropagation(); });
+      i.addEventListener('keydown', function(e){ e.stopPropagation(); });
+      form.appendChild(i); return i;
+    };
+    var nameI = mkInput('Service name');
+    var priceI = mkInput('Price', 'number');
+    var descI = mkInput('One-line description');
+    var row = doc.createElement('div');
+    row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
+    var cancel = doc.createElement('button');
+    cancel.type='button'; cancel.textContent = 'Cancel';
+    cancel.style.cssText = 'font:inherit;font-size:13px;padding:8px 12px;border-radius:9px;border:1px solid rgba(0,0,0,.18);background:#fff;cursor:pointer';
+    var save = doc.createElement('button');
+    save.type='button'; save.textContent = 'Add';
+    save.style.cssText = 'font:inherit;font-size:13px;font-weight:650;padding:8px 14px;border-radius:9px;border:0;background:#2f5d45;color:#fff;cursor:pointer';
+    row.appendChild(cancel); row.appendChild(save); form.appendChild(row);
+    var note = doc.createElement('div');
+    note.style.cssText = 'font-size:12px;color:#b23;display:none';
+    form.appendChild(note);
+
+    btn.addEventListener('click', function(e){
+      e.preventDefault(); e.stopPropagation();
+      btn.style.display = 'none'; form.style.display = 'flex';
+      try{ nameI.focus(); }catch(_){}
+    });
+    cancel.addEventListener('click', function(e){
+      e.preventDefault(); e.stopPropagation();
+      form.style.display = 'none'; btn.style.display = ''; note.style.display = 'none';
+      nameI.value = priceI.value = descI.value = '';
+    });
+    save.addEventListener('click', function(e){
+      e.preventDefault(); e.stopPropagation();
+      var nm = String(nameI.value || '').trim();
+      // NEVER WRITE A FACT NOBODY TYPED. An empty name is refused here rather than
+      // sent and guessed at; price and description are optional and go as null.
+      if(!nm){ note.textContent = 'A name is needed.'; note.style.display = 'block'; try{ nameI.focus(); }catch(_){} return; }
+      var pr = String(priceI.value || '').trim();
+      save.disabled = true; save.textContent = 'Adding…';
+      post({ type:'hcFreeformAddService', name: nm,
+             price: pr === '' ? null : Number(pr),
+             description: String(descI.value || '').trim() || null });
+    });
+    wrap.appendChild(btn); wrap.appendChild(form);
+    grid.appendChild(wrap);
   }
 
   /* ── THE HANDLE LIVES ON THE BLOCK ─────────────────────────────────────────
