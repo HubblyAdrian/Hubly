@@ -38818,8 +38818,18 @@ function removeManualReview(i){
 }
 function onReviewsFieldChange(){
   ensureWebsiteCopy();
-  const rating=parseFloat(document.getElementById('ed-ws-rating')?.value);
+  const ratingEl=document.getElementById('ed-ws-rating');
+  let rating=parseFloat(ratingEl?.value);
   const count=parseInt(document.getElementById('ed-ws-review-count')?.value,10);
+  // max="5" on a number input is only checked on form validation — it does not
+  // stop a 6 being typed, stored and rendered. Clamp here, and write the clamped
+  // value back so the owner SEES the correction rather than having it happen to
+  // them silently somewhere downstream.
+  if(!isNaN(rating)&&rating>5){
+    rating=5;
+    if(ratingEl&&document.activeElement!==ratingEl)ratingEl.value='5';
+    try{toast('A star rating is out of 5 — set to 5.');}catch(e){}
+  }
   if(!isNaN(rating))S.website.rating=rating;
   if(!isNaN(count))S.website.reviewCount=count;
   renderWebsitePreview();
@@ -39361,6 +39371,24 @@ function wsFooterTagline(w){
    business owner said about his own work. */
 function wsWhyTitleOf(x){ return String((x&&(x.title||x.label))||'').trim(); }
 
+/* A RATING IS OUT OF FIVE. We render the number, so a 6 is OUR nonsense on a
+   customer's screen whoever typed it — devdetailing661 (market) has a stored 6,
+   and the page was drawing "★★★★★ 6". The editor input already carried max="5",
+   which HTML only enforces on form validation, not on what gets stored.
+   Clamped at BOTH ends: at the field, so the owner sees the correction as they
+   type, and here at render, so records that already hold a 6 stop rendering one.
+   Empty stays empty — this never invents a rating, and never gates one on having
+   rows in review_submissions (that table is empty for everyone, so such a rule
+   would blank out every owner with genuine Google reviews). */
+function wsClampRating(v){
+  if(v==null)return '';
+  const raw=String(v).trim();
+  if(!raw)return '';
+  const n=Number(raw);
+  if(!Number.isFinite(n)||n<=0)return '';
+  return String(Math.min(5,n));
+}
+
 /* ── A BOX AROUND NOTHING DOES NOT GET DRAWN ───────────────────────────────────
    One pass, at the end of renderWebsite, rather than a guard bolted onto each of
    the 36 places this renderer emits a repeated element (0 of which filtered).
@@ -39469,7 +39497,7 @@ function renderWebsite(prefix){
   if(starsEl){
     if(w.rating||w.reviewCount){
       starsEl.style.display='';
-      starsEl.innerHTML=`★★★★★<span>${w.rating||''}${w.rating&&w.reviewCount?' · ':''}${w.reviewCount?`${w.reviewCount} ${t('wsReviewsWord')}`:''}</span>`;
+      starsEl.innerHTML=`★★★★★<span>${wsClampRating(w.rating)}${wsClampRating(w.rating)&&w.reviewCount?' · ':''}${w.reviewCount?`${w.reviewCount} ${t('wsReviewsWord')}`:''}</span>`;
     }else{
       starsEl.innerHTML='';
       starsEl.style.display='none';
@@ -39490,7 +39518,7 @@ function renderWebsite(prefix){
   const badge=wsPageEl('ws-hero-badge');
   if(badge){
     if(layoutId==='neon-nights')badge.textContent=t('wsLiveBooking');
-    else if(layoutId==='obsidian-gold')badge.textContent=(w.rating||w.reviewCount)?`★★★★★ ${w.rating||''}${w.reviewCount?` · ${w.reviewCount} ${t('wsBadgeReviews')}`:''}`.trim():t('wsLiveBooking');
+    else if(layoutId==='obsidian-gold')badge.textContent=(wsClampRating(w.rating)||w.reviewCount)?`★★★★★ ${wsClampRating(w.rating)}${w.reviewCount?` · ${w.reviewCount} ${t('wsBadgeReviews')}`:''}`.trim():t('wsLiveBooking');
     else if(layoutId==='chrome-velocity')badge.textContent=t('wsChromeBadge');
     else badge.textContent=t('wsLiveBooking');
   }

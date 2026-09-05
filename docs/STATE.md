@@ -281,10 +281,19 @@ nothing exercises a CLAIMED site, and nothing reads back what the owner was actu
   page" as "nothing reads this field". Each was caught by one field whose behaviour was
   independently known (`cta-secondary` demonstrably works on the live page). Keep a known-good
   case in every sweep purely so a broken harness announces itself.
-- **DO NOT RUN A CORPUS SWEEP AND EDIT THE FILE IT IS READING.** The 34-page "after" render
-  was silently contaminated by the deliberate-break test running against the same working
-  tree; it reported graefs LOSING his five reasons. Caught only because a separate two-page
-  render of the same code disagreed. Finish the sweep, or copy the tree.
+- **DO NOT RUN A CORPUS SWEEP AND EDIT THE FILE IT IS READING**, and **never accept a
+  surprising result that only ONE measurement supports.** *(2026-09-04.)* The 34-page
+  "after" render was silently contaminated by the deliberate-break test running against the
+  same working tree, because the static server reads the file per request. It reported that
+  Graef had LOST his five reasons — the exact catastrophe the whole exercise existed to
+  prevent — and it would have been reported as fact. It was caught only because a separate
+  two-page render of the same code disagreed, and the disagreement was believed rather than
+  averaged. Two rules out of one incident:
+  **(a)** a sweep gets a frozen tree — finish it, or copy the tree, never edit under it;
+  **(b)** a result that changes the conclusion needs a second, independent measurement
+  before it is repeated to anyone. A surprising number is a hypothesis about the harness at
+  least as often as it is a fact about the product — which is also how the round-trip count
+  went 17 → 15 → 13 the same afternoon.
 
 ---
 

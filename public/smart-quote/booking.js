@@ -432,7 +432,11 @@
       ).toFixed(1);
       reviewCount = reviews.length;
     } else if (siteRating != null && siteRating !== '' && Number(siteCount) > 0) {
-      rating = Number(siteRating).toFixed(1);
+      // A rating is out of five. devdetailing661 (market) has a stored 6, and this
+      // card renders the number next to five stars — a six-out-of-five is our
+      // nonsense on a customer's screen whoever typed it. Clamped at render here
+      // and at the editor field in hubly.html (wsClampRating / onReviewsFieldChange).
+      rating = Math.min(5, Number(siteRating)).toFixed(1);
       reviewCount = Math.floor(Number(siteCount));
     } else {
       rating = null;
