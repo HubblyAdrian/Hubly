@@ -994,8 +994,16 @@ because most of it exists. Measured 2026-09-05:
 - **The classic renderer has no video path at all** — there is no `<video>` tag anywhere in
   `public/`. Bucket and Graef are both on classic.
 
-**A LICENSING feature: "the buyer watches what they bought."** Much larger, and it is not
-a video problem. Three missing pieces, stacked:
+**A LICENSING feature: "the buyer watches what they bought."**
+**OUT OF SCOPE as of 2026-09-05 — asked the customer, and it was never the requirement.**
+Bucket's "trainings" turned out to be (a) teaching people to detail in person or over a
+video call — a **bookable service with a price**, which Hubly already does — and (b)
+"available content", which is **video on a page**, i.e. the rendering half above. Nobody
+needs to buy access to anything.
+
+**We were one assumption away from building a course platform to sell a service and a video
+embed.** The three missing pieces below are recorded because they are true and will matter
+if a real gated-content requirement ever appears — not because anything is waiting on them:
 
 1. **No entitlement.** `product_type='digital'` exists but its entire meaning is
    `isStockless` in `commerce_checkout.ts:87` plus a "Digital item" label. `commerce_orders`
@@ -1017,19 +1025,21 @@ a video problem. Three missing pieces, stacked:
 conflated them.** "YouTube plays on the page" and "Bucket sells a course" share a noun and
 nothing else.
 
-### THE OPEN QUESTION THAT SIZES THE STOREFRONT — ANSWER BEFORE COMMITTING A DATE
+### THE QUESTION THAT USED TO SIZE THE STOREFRONT — NO LONGER BLOCKING
 
 **Can a customer authenticate to Hubly at all today, or is every auth path owner-side?**
+
+**Downgraded 2026-09-05: still worth knowing, no longer sizing anything.** It was the floor
+for gated delivery, and gated delivery is out of scope (above). Left here unanswered and
+explicitly not on anyone's critical path.
 
 Everything traced on 2026-09-05 is owner auth (`getOwnerUid()` resolving a verified owner
 from the JWT). `marketplace_customers` and `customer_profiles` exist as tables; whether
 either supports a buyer logging in has **not** been traced.
 
-This is the floor for the whole licensing feature: **gated delivery needs a buyer identity
-to gate against.** If there is no customer-side auth, "access after purchase" has nowhere to
-stand and the storefront job is materially larger than a store plus a video player. Adrian
-has a paying customer waiting on a date; **this question is worth more than any other single
-answer in the storefront area, and it is unanswered.**
+Everything traced is owner auth (`getOwnerUid()`). `marketplace_customers` and
+`customer_profiles` exist as tables; whether either supports a buyer logging in is still
+untraced. It would be the floor for gated delivery **if** that were ever required.
 
 ---
 
@@ -1751,8 +1761,9 @@ codebase has silently dropped an entry — so it scans. Proven by writing both v
 purpose (a `listRecentBookings` handler gated on `context === "dashboard"`, and a
 `context`-decided 401 in the conversation function) and watching each fail.
 
-The remaining unknown is the one in #19 — whether a customer can authenticate at all — which
-matters for the storefront, not for this.
+The remaining unknown is the one in #19 — whether a customer can authenticate at all — and
+as of 2026-09-05 that is **no longer blocking either**: gated digital delivery turned out not
+to be the requirement, so nothing is sized by it.
 
 ### Why this may be the highest-leverage gap in the product
 
@@ -1893,3 +1904,49 @@ be broken by an actor later changing their address — but it only works going f
 the view first for the retroactive answer, add the stamp when there is a reason to trust it
 over time. **Not built now, deliberately: it saves time, and time is not what is scarce this
 week.**
+
+---
+
+## #30 — A remote service cannot be booked today. The wizard demands an address.
+
+**Measured 2026-09-05 by walking the live flow on `graefs-autocare` (detailing, classic —
+the same blueprint and renderer Bucket is on). Nothing written: the only write in the
+booking flow is `writeAbandonedBookingRequest()`, called from `bkNext(3)`, and the walk
+stopped at step 3 without calling it. READ-ONLY. NOT FIXED.**
+
+Bucket's trainings are a bookable service delivered over a video call
+(`docs/BUSINESS.md` → Prospects). So the question is whether the existing wizard can sell
+one as-is. It cannot, for two reasons, both observed rather than inferred:
+
+**1. Every location option demands a street address.** `addressMode` has exactly two values
+in the whole codebase — `"studio"` and `"customer"` — resolved at three consumers
+(`hubly.html:41773`, `:42179`, `:42204`). Walked on Graef's site, all three where-options
+resolve to `addressMode: "customer"`, `hasRemoteMode: false`, and advancing step 2 with the
+address blank is refused:
+
+> **"Enter your service address"**
+
+A remote training would therefore either demand the customer's home address for a video
+call, or borrow `studio` mode and show the *business's* address. Both are wrong in a way a
+customer notices.
+
+**2. It would ask for their car.** `bookingNeedsVehicle()` returns `blueprintHas('vehicleDetails')`
+— a **per-BUSINESS-TYPE** flag, consulted at 11 call sites and **never per-service**.
+`detailing.json` has `vehicleDetails: true`, and the walk confirms `bookingNeedsVehicle()`
+is `true`. So a training sold by a detailer asks the buyer for year/make/model/colour.
+
+### The shape of the fix, since the finding is "impossible without code"
+
+Smaller than it sounds, and both halves are narrow:
+
+- **A third `addressMode`** — `"remote"` (or `"none"`) that skips the address requirement,
+  labels the location as the call rather than a place, and leaves the `.ics`/calendar
+  location empty or set to the meeting link. Three consumers, all named above.
+- **Make the vehicle question per-service, not per-trade.** This is the sharper of the two
+  because it touches 11 sites and is a real behaviour change for existing detailers. The
+  cheap version is a per-service opt-out flag consulted alongside the blueprint; the honest
+  version is that "what this service needs to know" belongs on the service, not the trade.
+
+Neither needs a meeting link to exist first — a training can be booked and the link sent in
+the confirmation. **Auto-generating a meeting link is a separate, later feature and should
+not be allowed to inflate this one.**

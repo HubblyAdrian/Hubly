@@ -197,6 +197,29 @@ Base44's looks made-for-him, the aesthetics half is lost before the capability h
 heard.** We do not need to win on looks. We do need to not lose on looks so badly that
 nobody listens to the rest.
 
+**WHAT "TRAININGS" ACTUALLY MEANS — reported by Bucket via Adrian, 2026-09-05.
+REPORTED BY PROSPECT, not measured by us. It collapses the hard half of the job.**
+
+Asked directly, it turned out to be two ordinary things and neither is a gated digital
+product:
+
+1. **Teaching people to detail, in person or over a video call.** That is a **bookable
+   service with a price** — a service card whose delivery is a call rather than a driveway.
+   Hubly already books services.
+2. **"Available content" / clickable content.** That is **content on the page**, and what
+   makes it good is video that plays instead of a bare link. That is the rendering half of
+   `OPEN_FINDINGS` #19, where `<video>` and the origin allowlist already exist.
+
+**So private storage, entitlements and buyer authentication are all OUT OF SCOPE.** The
+storefront job is now: **sell physical goods, plus play video on a page.**
+
+**Worth writing down because it nearly cost a fortnight:** on the strength of the word
+"trainings" we had scoped a course platform — private buckets, signed expiring URLs, an
+entitlement table, customer-side auth — to sell **a service and a video embed.** One
+question to the customer removed all of it. The lesson is not "ask more questions" in the
+abstract; it is that **a noun in a requirement is not a specification**, and the cheapest
+moment to find that out is before the estimate, not after the schema.
+
 **STILL TO FILL IN — Adrian:**
 
 - **How much, and what shape** — one-off, monthly, per-transaction? A number he said, or
