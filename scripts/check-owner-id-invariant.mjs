@@ -27,6 +27,32 @@
  *     pre-claim null are indistinguishable at the RPC. Only "this handler wants an
  *     owner" vs "the engine injects one for this action" can tell them apart.
  *     (hubly-conversation also runs this at boot; here it is checkable without deploying.)
+ *
+ *  3. NO ACCESS DECISION IS MADE FROM `context`.
+ *     hubly-conversation reads the surface off the REQUEST BODY:
+ *
+ *         const context = body?.context === "customer" ? "customer"
+ *                       : body?.context === "operate"  ? "operate" : "dashboard";
+ *
+ *     That string is whatever the caller sent. It shapes the prompt; it proves nothing.
+ *     Anyone can POST `context: "dashboard"` from a public website's chat widget.
+ *
+ *     Today nothing leaks, because no capability returns operational data — every action
+ *     either builds the page or reads free slots. The danger is the NEXT one: the first
+ *     handler that returns a business's bookings and guards them with
+ *     `if (context === "dashboard")` hands one business's customer list to whoever is
+ *     chatting on its public site, and in review it reads exactly like a real check.
+ *
+ *     THE RULE: access is gated on `getOwnerUid()` (a user JWT, verified server-side
+ *     against /auth/v1/user) AND on that uid owning THIS business
+ *     (`biz.owner_id === ownerUid`). Never on `context`.
+ *
+ *     A hardcoded list of forbidden handlers would go stale the first time someone adds
+ *     one — every hardcoded list in this codebase has silently dropped an entry. So this
+ *     scans instead: no capability handler may read `context` in code at all, and in
+ *     hubly-conversation `context` may never appear in an expression that also refuses
+ *     access. Both are strict on purpose: `context` has no legitimate use in an
+ *     authorisation decision, so "zero" is the only threshold that cannot rot.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -109,6 +135,53 @@ for (let i = 0; i < actionHits.length; i++) {
 console.log(`actions reading the injected owner        : ${readers} (all on the injection list unless failed above)`);
 if (!readers) fail("no action reads injectedOwnerUid — either the reader was renamed or this check has gone blind");
 
+// ---------------------------------------------------------------------------
+// CHECK 3 — no access decision is made from the caller-declared `context`.
+// ---------------------------------------------------------------------------
+
+/** Blank out comments and string/template literals so a mention in prose or in a
+ *  description field is never mistaken for a read. Only CODE positions survive. */
+function codeOnly(src) {
+  let out = "", i = 0;
+  while (i < src.length) {
+    const c = src[i], d = src[i + 1];
+    if (c === "/" && d === "/") { const j = src.indexOf("\n", i); const k = j < 0 ? src.length : j; out += " ".repeat(k - i); i = k; continue; }
+    if (c === "/" && d === "*") { const j = src.indexOf("*/", i + 2); const k = j < 0 ? src.length : j + 2; out += src.slice(i, k).replace(/[^\n]/g, " "); i = k; continue; }
+    if (c === '"' || c === "'" || c === "`") {
+      const q = c; let j = i + 1;
+      while (j < src.length && src[j] !== q) { if (src[j] === "\\") j++; j++; }
+      const k = Math.min(j + 1, src.length);
+      out += src.slice(i, k).replace(/[^\n]/g, " "); i = k; continue;
+    }
+    out += c; i++;
+  }
+  return out;
+}
+
+const regCode = codeOnly(reg);
+const ctxInHandlers = [...regCode.matchAll(/\bcontext\b/g)].map((m) => reg.slice(0, m.index).split("\n").length);
+console.log(`capability handlers reading \`context\` in code : ${ctxInHandlers.length} (must be 0)`);
+for (const ln of ctxInHandlers) {
+  fail(`a capability handler reads \`context\` (registry line ~${ln}).\n` +
+       `      \`context\` is whatever the CALLER sent — a public chat widget can send "dashboard".\n` +
+       `      Gate on getOwnerUid() plus biz.owner_id === ownerUid instead. See OPEN_FINDINGS #27.`);
+}
+
+// In hubly-conversation, `context` must never share an expression with a refusal.
+const convCode = codeOnly(conv);
+const REFUSAL = /not_signed_in|not_owner|forbidden|unauthori[sz]ed|\b40[13]\b/;
+let ctxGates = 0;
+convCode.split("\n").forEach((line, idx) => {
+  if (!/\bcontext\b/.test(line)) return;
+  if (!REFUSAL.test(line)) return;
+  ctxGates++;
+  fail(`hubly-conversation:${idx + 1} decides a refusal using \`context\`:\n` +
+       `      ${conv.split("\n")[idx].trim().slice(0, 96)}\n` +
+       `      That is a caller-declared string, not an auth check. See OPEN_FINDINGS #27.`);
+});
+console.log(`refusals decided from \`context\`                : ${ctxGates} (must be 0)`);
+
 if (failures) { console.error(`\n${failures} failure(s).`); process.exit(1); }
-console.log("\nOK — every create_business_document payload carries p_owner_id, and every");
-console.log("action that reads the injected owner is on the list that injects it.");
+console.log("\nOK — every create_business_document payload carries p_owner_id, every");
+console.log("action that reads the injected owner is on the list that injects it, and no");
+console.log("access decision anywhere is made from the caller-declared `context`.");

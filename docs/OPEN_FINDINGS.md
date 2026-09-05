@@ -1722,15 +1722,37 @@ needs already exist:
 **Rough size: days, not weeks, for read access to bookings, leads and memberships** — three
 actions plus an operational block in the chat turn's prompt.
 
-**The part I am least sure about, and it is not the plumbing:** the same assistant serves
-the **public customer chat** on a business's website and the **owner builder**. A capability
-that returns a business's booking list must be unreachable from the customer surface. The
-auth machinery exists; what I have **not** traced is whether the conversation function can
-always tell which surface a turn came from, or whether it currently infers it from context
-that a caller could shape. **Get that wrong and the feature leaks one business's customer
-list to whoever is chatting on its website.** That question should be answered before a line
-is written — and it is close kin to the open question in #19 about whether customers can
-authenticate at all.
+### THE SAFETY QUESTION — ANSWERED 2026-09-05, and it unblocks this finding
+
+The concern was that the same assistant serves the **public customer chat** and the **owner
+builder**, so a capability returning a booking list could be reachable from the wrong side.
+Traced:
+
+- **`context` is caller-declared and is NOT a boundary.** `hubly-conversation/index.ts:941`:
+  `body?.context === "customer" ? "customer" : body?.context === "operate" ? "operate" :
+  "dashboard"`. Anyone POSTing to the function can send `"dashboard"`. It shapes the prompt
+  and the understanding adapter. **It proves nothing about who is calling.**
+- **`resolveOwnerUid()` IS a boundary** (`:1548`): it rejects anything that is not a user
+  JWT (the anon/publishable key fails the `eyJ` test) and **verifies the token server-side
+  against `/auth/v1/user`**.
+- **The ownership assertion already exists** in ten places:
+  `String(biz.owner_id) !== String(ownerUid)` → refuse.
+
+**So the function CAN tell an owner from a customer, reliably — just not with the field that
+looks like it does.** The rule for every operational read capability:
+
+> **Gate on `getOwnerUid()` AND on that uid owning THIS business. Never on `context`.**
+
+That is a design rule plus a scanner, not a build. **Enforced by
+`scripts/check-owner-id-invariant.mjs` check 3**: zero capability handlers may read
+`context` in code, and zero refusals may be decided from it. A hardcoded list of forbidden
+handlers would go stale the first time someone added one — every hardcoded list in this
+codebase has silently dropped an entry — so it scans. Proven by writing both violations on
+purpose (a `listRecentBookings` handler gated on `context === "dashboard"`, and a
+`context`-decided 401 in the conversation function) and watching each fail.
+
+The remaining unknown is the one in #19 — whether a customer can authenticate at all — which
+matters for the storefront, not for this.
 
 ### Why this may be the highest-leverage gap in the product
 
@@ -1742,3 +1764,132 @@ is 18 presentation fields, and the owner finds out about his own bookings by ema
 website editor — which is a thing Base44 also has.** Everything that makes the pitch true
 is on the other side of read access. This is not a feature request; it is the difference
 between the product we describe and the product that exists.
+
+---
+
+## #28 — A booking arrived and nobody could be told. The address was never missing.
+
+**Found 2026-09-05 in the `notification_deliveries` ledger. FIXED the same day.**
+
+On 2026-09-01 a booking reached `lugnuts-regulators` (market). The customer's confirmation
+sent fine. The owner notification was **skipped — "no recipient address"** — and the only
+trace was a ledger row nobody reads. *(The booking itself was Adrian's own test; the defect
+is real regardless, and was found because the row looked like it wasn't.)*
+
+### The address was there the whole time
+
+All 5 market businesses with a null `businesses.email` have an owner with a working address
+in `auth.users` — the address they signed up with. `lugnuts-regulators` →
+`kaptn.awesome@gmail.com`. **The notifier read one column and gave up.**
+
+### THE ROOT CAUSE — this is the actual bug; the fallback is the mitigation
+
+**Exactly one code path in the entire product ever sets `businesses.email`:**
+`claim-draft-business/index.ts:151` — `.update({ owner_id: user.id, email })`.
+
+**Every other route to an owned business sets `owner_id` and never touches `email`.** The
+column is nullable with no default, so a business claimed by any other path is born
+unreachable and nothing notices. Measured: **141 of 159 businesses have no
+`businesses.email`; 24 of those are claimed; 5 are market.**
+
+Deliberately NOT fixed with `NOT NULL` or by gating signup on an email — that trades a
+silent miss for a blocked signup, and the claim path already captures the address, it just
+does not propagate it. The propagation gap is still open and should be closed at the source.
+
+### The class, counted by parsing
+
+A first scan said 23 and was wrong — it counted `return jsonRes({error}, 400)`, which is a
+*visible* failure. Narrowed to paths that actually notify:
+
+| site | on a missing recipient | who could see it |
+| --- | --- | --- |
+| `booking-notify/index.ts:139` | ledger row `status='skipped'` | a table no product surface reads |
+| `booking_notifications.ts:116` — `notifyBookingCreated`, provider branch | `if (input.business.email) {…}`, **no else** | nothing |
+| `booking_notifications.ts:150` — customer branch | same shape | nothing |
+| `booking_notifications.ts:206` — `notifyCustomerMessage` | `return false` | caller's choice |
+
+And **3 of 4 callers discarded the answer**: `booking_engine.ts:804` and `:1000` threw the
+result away entirely; `hubly_booking_execution.ts:447` read `.customer` and ignored
+`.provider`. Only `marketplace/index.ts:1502` returned it. **The function was honest; its
+callers were not listening.**
+
+### The fix, three layers
+
+1. **Resolve the recipient properly** — `businesses.email` → the owner's `auth.users.email`
+   → nothing (`booking-notify/index.ts`). No write to anyone's data; the address already
+   exists.
+2. **Stop the discards** — both `booking_engine.ts` sites now capture the result, and
+   `hubly_booking_execution.ts` now reads `.provider`. All three log an UNREACHABLE OWNER
+   error naming the business.
+3. **Make it loud** — after the fallback, an unreachable owner is rare and abnormal, so it
+   emails the operator at `PLATFORM_OWNER_EMAIL` (already configured). The person who needs
+   to know is us; the owner is unreachable by definition.
+
+### Proof, measured against the real database (read-only)
+
+Running the same two lookups the function now runs, in the same order, over all 34 claimed
+businesses:
+
+- **10** resolved from `businesses.email` — worked before, still does.
+- **24 recovered by the fallback** — could not be notified before, can be now. Including all
+  5 market: `lugnuts-regulators`, `window-washing`, `modern-landscaping-business`,
+  `mobile-auto-detailing-in-los-angeles`, `detailing-chemicals-equipment-courses`.
+- **0 genuinely unreachable.**
+
+**Honest limit on that last line:** because no business in the corpus is unreachable, the
+loud-failure branch **could not be exercised against real data**. Forcing it would mean
+writing to a business's record or sending mail, neither of which was authorised. It
+typechecks (`deno check`), the branch is present, and `PLATFORM_OWNER_EMAIL` is configured —
+but **it has not been run.** That is the one claim here that is read, not executed.
+
+---
+
+## #29 — Nothing in the data distinguishes a real event from our own test of it
+
+**Recorded 2026-09-05. STOPGAP APPLIED; the durable answer is designed here and NOT built.**
+
+**Three separate findings in one session were escalated as customer-facing incidents and all
+three turned out to be Adrian's own testing:** Graef's six bookings, the seeded booking-wizard
+records, and the `lugnuts-regulators` skipped notification. Each cost real time and, twice,
+alarm.
+
+**The cause is not carelessness, it is the column.** `account_kind = 'market'` means *"not
+labelled test"* — and Adrian tests on market-labelled businesses, because testing on
+Bucket's site is the only way to test Bucket's site. So **every inference drawn from that
+column has been shakier than it was stated to be**, including several in this file. The
+business-level flag cannot answer a row-level question.
+
+This gets sharply more expensive when Bucket is live and judging us: **we will need to tell
+his real booking from our test of his site in one glance, and right now nobody can** — not
+Adrian, not Claude Code, not a query.
+
+### STOPGAP, applied 2026-09-05 — option A
+
+A `[TEST]` marker in `booking_requests.notes`, following the convention that column already
+uses (`[SMS_CONSENT:yes]`, `[RETURNING:yes]`, `[RPJOB:…]`, `[source:…]`). The verification
+harness now stamps it. **Cost near zero; greppable; not enforceable, and only covers
+bookings.** It is a stopgap and should be read as one.
+
+### THE REAL ANSWER — option C, designed, not built
+
+**A `test_actors` table keyed on phone/email, plus a derived view.** The discriminator is
+**who acted**, not which business — which is the property actually required, because it
+**survives a real booking arriving at a business we also test on**. Test identities are
+already half-conventional in the data: `@hublytest.dev` addresses and `adriansmithee+tN@`
+aliases both appear in `auth.users` today.
+
+Rejected alternatives and why:
+
+- **B — an `is_test boolean` column per event table.** A writer that forgets it defaults to
+  "real", which is the wrong direction: per the `account_kind` scar, the honest default is
+  the unflattering one. If ever built it wants `null` = unknown, not `false` = real.
+- **D — a dedicated test business per trade.** Zero code and fails the requirement outright:
+  we specifically need to test *Bucket's* site.
+
+**Derived first, stamped later.** A view over known test identities **classifies history**,
+including the 13 rows the harness wrote on 2026-09-05, and needs no migration and no writer
+changes. Stamping at insert is more trustworthy long-term because it is immutable and cannot
+be broken by an actor later changing their address — but it only works going forward. Build
+the view first for the retroactive answer, add the stamp when there is a reason to trust it
+over time. **Not built now, deliberately: it saves time, and time is not what is scarce this
+week.**

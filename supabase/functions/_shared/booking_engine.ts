@@ -801,7 +801,7 @@ export async function createBooking(
 
   // Notify provider + customer (best-effort)
   try {
-    await notifyBookingCreated({
+    const notified = await notifyBookingCreated({
       status,
       confirmation_code: code,
       customer_name: customerName,
@@ -820,6 +820,16 @@ export async function createBooking(
         phone: input.business.phone ? String(input.business.phone) : null,
       },
     });
+    // notifyBookingCreated skips the provider silently when the business has no
+    // email — `if (input.business.email) {...}` with no else. Both call sites here
+    // used to discard the result, which is how that skip stayed invisible. The
+    // function was honest; its callers were not listening. (OPEN_FINDINGS #28)
+    if (!notified.provider) {
+      console.error(
+        `booking_engine: UNREACHABLE OWNER — business has no email on record, so a real`
+        + ` booking was not sent to them. Customer notified: ${notified.customer}.`,
+      );
+    }
   } catch (e) {
     console.warn("booking_engine notify", e);
   }
@@ -997,7 +1007,7 @@ export async function transitionBooking(
       .eq("id", opts.business_id)
       .maybeSingle();
     try {
-      await notifyBookingCreated({
+      const notified = await notifyBookingCreated({
         status: "confirmed",
         confirmation_code: booking.confirmation_code,
         customer_name: String(booking.customer_name || "there"),
@@ -1016,6 +1026,16 @@ export async function transitionBooking(
           phone: business?.phone,
         },
       });
+      // notifyBookingCreated skips the provider silently when the business has no
+      // email — `if (input.business.email) {...}` with no else. Both call sites here
+      // used to discard the result, which is how that skip stayed invisible. The
+      // function was honest; its callers were not listening. (OPEN_FINDINGS #28)
+      if (!notified.provider) {
+        console.error(
+          `booking_engine: UNREACHABLE OWNER — business has no email on record, so a real`
+          + ` booking was not sent to them. Customer notified: ${notified.customer}.`,
+        );
+      }
     } catch (_) { /* best-effort */ }
   }
 

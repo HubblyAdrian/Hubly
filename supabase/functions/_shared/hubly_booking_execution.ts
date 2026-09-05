@@ -461,6 +461,16 @@ export async function createWebsiteBookingJob(
       },
     });
     confirmation.emailSent = !!emailResult.customer;
+    // `.provider` was discarded here. notifyBookingCreated skips the provider
+    // silently when the business has no email, so a booking could be confirmed to
+    // the customer while the business was never told, and nothing recorded it.
+    // (OPEN_FINDINGS #28)
+    if (!emailResult.provider) {
+      console.error(
+        `hubly_booking_execution: UNREACHABLE OWNER — business ${String((business as Record<string, unknown>).id || "")}` +
+        ` has no email on record; the booking was confirmed to the customer and the business was not told.`,
+      );
+    }
   } catch (_e) { /* no-op — email is best-effort, never blocks the real booking */ }
 
   return {

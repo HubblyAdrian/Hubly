@@ -281,6 +281,22 @@ nothing exercises a CLAIMED site, and nothing reads back what the owner was actu
   page" as "nothing reads this field". Each was caught by one field whose behaviour was
   independently known (`cta-secondary` demonstrably works on the live page). Keep a known-good
   case in every sweep purely so a broken harness announces itself.
+- **`context` IS NOT AN AUTH CHECK. Gate on `getOwnerUid()` + `biz.owner_id === ownerUid`,
+  never on `context`.** *(2026-09-05, invariant.)* `hubly-conversation/index.ts:941` reads
+  the surface off the REQUEST BODY: `body?.context === "customer" ? … : "dashboard"`. That
+  string is whatever the caller sent — a public chat widget can send `"dashboard"`. It
+  shapes the prompt; it proves nothing. Today nothing leaks because no capability returns
+  operational data, so the danger is entirely in the NEXT one: the first handler that
+  returns a business's bookings and guards them with `if (context === "dashboard")` hands
+  one business's customer list to whoever is chatting on its public site, **and in review it
+  reads exactly like a real check.** The real boundary already exists — `resolveOwnerUid()`
+  verifies a user JWT server-side against `/auth/v1/user`, and the ownership assertion
+  `String(biz.owner_id) !== String(ownerUid)` is used in ten places.
+  **Enforced by `scripts/check-owner-id-invariant.mjs` check 3**, not by this paragraph: it
+  fails if any capability handler reads `context` in code, or if `context` appears in any
+  expression that also refuses access. Both thresholds are zero, because `context` has no
+  legitimate use in an authorisation decision and zero is the only threshold that cannot
+  rot. Proven by writing both violations on purpose and watching each fail.
 - **AN INSTRUCTION NOT TO SUBMIT IS NOT AN INSTRUCTION NOT TO WRITE.** *(2026-09-05, and
   this one is mine.)* Walking the booking flow "to the last screen before send, nothing
   submitted" wrote **13 lead rows to the production database** — 9 of them against real

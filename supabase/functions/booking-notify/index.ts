@@ -14,6 +14,15 @@ const RESEND_KEY = Deno.env.get('RESEND_API_KEY')!;
 const RESEND_FROM = Deno.env.get('RESEND_FROM_EMAIL') || 'Hubly <notifications@notifications.myhubly.app>';
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 
+/** Minimal HTML escape for the operator alert below. This file builds its other
+ *  emails from values it controls; the alert interpolates a business name and a
+ *  customer name, which are owner- and visitor-supplied. */
+function esc(v: unknown): string {
+  return String(v ?? '').replace(/[&<>"']/g, (c) => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string
+  ));
+}
+
 function icsEscape(str: string) {
   return String(str || '').replace(/[\\;,]/g, m => '\\' + m).replace(/\n/g, '\\n');
 }
@@ -279,11 +288,33 @@ Deno.serve(async (req) => {
     const supabase = createAdminClient();
     const { data: business } = await supabase
       .from('businesses')
-      .select('id, name, phone, email, slug, brand_color, timezone')
+      .select('id, name, phone, email, slug, brand_color, timezone, owner_id')
       .eq('id', booking.business_id)
       .single();
 
     if (!business) return new Response(JSON.stringify({ ok: true, skipped: 'no business' }));
+
+    // WHERE THE OWNER'S ADDRESS ACTUALLY LIVES.
+    //
+    // On 2026-09-01 a booking reached lugnuts-regulators and the owner email was
+    // skipped for 'no recipient address'. The address was never missing: the owner
+    // signed up with kaptn.awesome@gmail.com and it was sitting in auth.users the
+    // whole time. `businesses.email` was null because only ONE code path in the
+    // product ever sets it — claim-draft-business/index.ts:151 — and every other
+    // route to an owned business sets owner_id and never touches email. That is the
+    // real bug (OPEN_FINDINGS #28); this fallback is the mitigation, and it reaches
+    // all 24 claimed businesses with a null email without writing to anyone's data.
+    let ownerEmail = String(business.email || '').trim();
+    let ownerEmailSource = ownerEmail ? 'businesses.email' : '';
+    if (!ownerEmail && business.owner_id) {
+      try {
+        const { data: u } = await supabase.auth.admin.getUserById(String(business.owner_id));
+        const authEmail = String(u?.user?.email || '').trim();
+        if (authEmail) { ownerEmail = authEmail; ownerEmailSource = 'auth.users.email'; }
+      } catch (e) {
+        console.error('booking-notify: owner auth lookup failed', e);
+      }
+    }
 
     const timeZone = business.timezone || 'America/Denver';
     const when = fmtDate(booking.requested_date, booking.requested_time, timeZone);
@@ -376,8 +407,37 @@ Deno.serve(async (req) => {
     });
 
     const ledgerBase = { businessId: business.id ?? null, subjectType: 'booking_request', subjectId: booking.id ?? null };
+
+    // AN UNREACHABLE OWNER IS AN OPERATIONAL FAILURE, NOT A QUIET BRANCH.
+    //
+    // After the fallback above this is rare and abnormal: it means a real booking
+    // arrived and the business will never hear about it. Recording that in a ledger
+    // nobody reads is what let it happen once already. The person who needs to know
+    // is US — the owner is by definition unreachable — so it goes to the operator.
+    if (!ownerEmail) {
+      const opsTo = (Deno.env.get('PLATFORM_OWNER_EMAIL') || '').trim();
+      console.error(
+        `booking-notify: UNREACHABLE OWNER — business ${business.slug || business.id} has no email on ` +
+        `businesses.email and no auth email for owner_id ${business.owner_id || '(none)'}. ` +
+        `Booking ${booking.id} from ${booking.customer_name} will not reach them.`,
+      );
+      if (opsTo) {
+        await sendEmail(
+          supabase,
+          { businessId: business.id ?? null, subjectType: 'unreachable_owner', subjectId: booking.id ?? null, role: 'operator' },
+          opsTo,
+          `Hubly: ${business.name || business.slug} got a booking and cannot be told`,
+          `<p><strong>${esc(business.name || business.slug || 'A business')}</strong> received a booking from ` +
+          `${esc(booking.customer_name || 'a customer')} and has no reachable owner address.</p>` +
+          `<p>businesses.email is empty and owner_id ${business.owner_id ? esc(String(business.owner_id)) : '(none)'} ` +
+          `has no auth email. The customer has been confirmed; the business has not been told.</p>` +
+          `<p>Booking id: ${esc(String(booking.id || ''))} · slug: ${esc(String(business.slug || ''))}</p>`,
+        );
+      }
+    }
+
     await Promise.all([
-      sendEmail(supabase, { ...ledgerBase, role: 'owner', deliveryId }, business.email, `New booking from ${booking.customer_name}`, ownerHtml),
+      sendEmail(supabase, { ...ledgerBase, role: 'owner', deliveryId }, ownerEmail, `New booking from ${booking.customer_name}`, ownerHtml),
       sendEmail(supabase, { ...ledgerBase, role: 'customer' }, booking.customer_email, `Booking request sent to ${business.name}`, customerHtml, { filename: 'appointment.ics', content: icsBase64 }),
     ]);
 
