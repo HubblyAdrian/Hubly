@@ -419,6 +419,24 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
 - **A check nobody can re-run is a number, not a check.** `scripts/check-owner-id-invariant.mjs`
   brace-matches every `create_business_document` payload and cross-checks the owner-injection
   list; both of its failure modes were proven by breaking them on purpose.
+- **A RULE ENFORCED AT ONE LAYER IS NOT A RULE.** *(2026-09-04, the sharpest one yet.)* Our
+  guardrails were written for the MODEL. The freeform generator is explicitly forbidden from
+  writing a rating, a review count, a licence or an insurance claim —
+  `hubly_capability_registry.ts:2179`, *"Fake the shape and the voice of a page; never fake
+  its credentials"* — with `_shared/hubly_placeholders.ts` stripping anything ungrounded
+  behind it. Meanwhile the hand-written renderer in `public/hubly.html` composed
+  **"Someone in {city} just booked a {service} moments ago"** from the business's city and
+  its first service name, consulted no booking, and had it **on by default**; and filled an
+  empty trust row from a lookup table so a detailer's page said **"Insured"** and an HVAC
+  page said **"Licensed"**, said by nobody. Measured: **0 of 5** market pages with a stored
+  document were affected (the generator's guards hold) and **1 of 1** rendered by the older
+  path was. The guard has to sit where the CLAIM IS EMITTED, not on one of the things that
+  can emit it. Both removed 2026-09-04; see `OPEN_FINDINGS` #22.
+- **Expect the first count of a class to be low — it was three times in one day.** "Five
+  siblings" was eight (`p_owner_id`). A remembered list of placeholder strings missed a
+  hardcoded literal no locale scan could find (#18). And "one non-human writer of business
+  claims" was **102 literals across 20 files** once parsed. Parse the class; then say the
+  number will move again.
 
 ## The anchor-pattern discipline (the through-line)
 

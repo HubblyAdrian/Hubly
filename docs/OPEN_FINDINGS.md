@@ -1206,3 +1206,85 @@ than 4, not lower. Confirming the claimed number needs a signed-in owner and is 
   tab — the left rail renders per entitlement, and Website Editor exists only for an
   account that has a site (a marketplace-only provider has none). Do not treat it as
   the one shell tab everyone gets.
+
+---
+
+## 22. HUBLY COMPOSED A BOOKING THAT NEVER HAPPENED, AND ASSERTED BUSINESSES WERE
+## INSURED — FIXED 2026-09-04. The rating/review count is a separate, OPEN decision
+
+**Found 2026-09-04 while rendering live market pages for #18.** Three fields, and the
+important thing is that they have **three different authors**. Smearing them together
+would have produced a wrong fix and a wrong severity.
+
+### OURS — removed
+
+- **The activity ticker.** `hubly.html` composed
+  `⚡ Someone in {city} just booked a {service} moments ago` from the business's `city`
+  and its first service name (locale keys `wsTickerSomeone`/`wsTickerBooked`/`wsTickerAgo`,
+  and the Spanish set). **No booking record was consulted**, and `tickerEnabled` defaulted
+  to `true`. Hubly has never received a booking from a member of the public, so every one
+  was an event that did not happen, published under a real business's name. Removed — the
+  owner's own line, or nothing. Not made conditional on a real booking (a booking is a
+  customer's private business, not a marketing asset) and not softened. Default flipped to
+  `false`: 9 of 34 claimed businesses had `true` stored, which is the default being written
+  down, not nine people choosing.
+- **The trust-row auto-fill.** An empty row was filled from the trade blueprint's
+  `trustSignals` — detailing `["Insured","Mobile","Pro products"]`, hvac
+  `["Licensed","Insured","24/7 emergency","Financing"]`, house-cleaning
+  `["Background-checked",…]`, window-cleaning `["No-streak guarantee"]`. Regulated claims
+  about someone else's business, said by nobody. Empty means empty now.
+- **`WS_TRUST_DEFAULTS`** `['Mobile Service','Fully Insured','Satisfaction Guaranteed']` —
+  referenced nowhere, so it never reached a page. Deleted anyway: a ready-made "Fully
+  Insured" default beside the code we just stopped auto-filling.
+
+### THE OWNER'S — untouched, and Adrian's decision
+
+`rating` and `reviewCount` are written by **two editor form fields only**
+(`ed-ws-rating`, `ed-ws-review-count` → `onReviewsFieldChange`). No generator, migration,
+backfill or edge function writes them; the generation prompts forbid the model from
+producing them. **One stored rating is `"6"` on a five-star scale** — a value no generator
+emits and the strongest single tell for a human typing into an unvalidated field. So this
+is a validation/policy question, not a fabrication bug. `addManualReview`'s
+`{author:'Verified Customer', stars:5}` scaffold is likewise untouched.
+
+### THE NUMBERS, denominator stated
+
+**34 claimed (publicly reachable) businesses: market 9, internal 3, test 22.**
+Before: **1** displayed the ticker (graefs-autocare, market — stored `tickerText` empty, so
+Hubly's composition); **1** displayed a star rating/review count (aquaspeed, market, with
+**0** rows in `review_submissions` — which has **0 rows across the entire database**).
+
+### VERIFIED BY WHAT A VISITOR SEES
+
+All 34 rendered before and after, full `innerText` diffed:
+
+- `graefs-autocare` [market] lost exactly one line: `"⚡ Someone in Bakersfield just booked
+  a Full Detail moments ago"`. Nothing else.
+- `star-windows` [test] lost `"Insured"`, `"Ladder-safe"`, `"No-streak guarantee"`.
+- **32 of 34 pages byte-identical.** Trust pills went 3 → 0 on `bucket-mobile-detailing`
+  (market) and `star-windows`; **owner-written stats survived intact on `aquaspeed` and
+  `graefs-autocare`**, which was the over-deletion risk.
+- The three #18 pages still show their placeholder copy, unchanged — different bug, not
+  blurred.
+
+An empty ticker would have left visible furniture: `.ws-ticker-force` is `display:block`,
+so clearing the text alone leaves a padded, bordered strip on `obsidian-gold` — the layout
+the one affected page uses. Caught by reading the CSS after writing the first version.
+
+### STILL OPEN — do not read this entry as "the class is closed"
+
+- **3 businesses carry PERSISTED auto-fill** — the blueprint values were saved to
+  `meta.website.trustStats` before this fix, so the code change cannot reach them:
+  `my-auto-detailing` (internal), `adrians-lawn-service` (test), `my-photography` (test).
+  **Zero market**, so live customer exposure is nil. They are distinguishable by signature
+  (every `label` empty; values exactly match the trade's `trustSignals`) if we ever want a
+  data cleanup — which is a write to real businesses and was not authorised here.
+- **`public/booking-frames/*.json` is the same class, LIVE, and larger.** 47 credential
+  literals across 8 files — `"Licensed & Insured"`, `"Background-checked cleaners"`,
+  `"100% Satisfaction Guarantee"`, `"Trusted by homeowners in your area."` — loaded via
+  `hubly.html:13105` and rendered into the **booking wizard** (`bk-review-trust` at
+  `:42379`, package trust lines at `:25058`). That is the page a customer reaches to book.
+  **Not investigated further and not touched** — it needs its own pass.
+- The full parsed class is **102 credential/activity literals across 20 files**. Most of
+  the `hubly.html` hits are *advice to the owner* ("Publish licensed & insured language"),
+  which is a different thing and fine. The count will move again.
