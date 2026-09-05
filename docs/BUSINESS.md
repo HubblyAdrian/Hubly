@@ -65,8 +65,21 @@ matters more than it sounds: **none of the freeform document editor work reaches
 site.** Anything built for the freeform path has to be checked separately against the
 classic one, or it does not exist for him.
 
-**Zero transactions.** No booking has ever come through his page. (Stated, and consistent
-with everything measured — see the honest zeros below.)
+**Six bookings, all his own testing.** `booking_requests` holds 6 rows for him,
+2026-08-05 → 2026-08-15. **Reported by him, 2026-09-05: those are him testing his own
+site.** No stranger has booked. Corrects an earlier line in this file that said "zero
+bookings, ever" — see the corrected zeros below for why that was wrong and what the habit
+was.
+
+**Reported by Austin Graef, 2026-09-05 — reported by the owner, NOT measured by us:**
+when a booking comes in he *does* get an email, so that rail works for him. **The Hubly
+assistant inside the platform does not tell him. He finds out from email only.**
+That second half is the more important half and it is corroborated by code: the
+assistant is operationally blind (`OPEN_FINDINGS` #27). On the email half, the ledger
+holds no `notification_deliveries` row for his business — but the ledger only begins
+2026-08-20 and his bookings are 2026-08-05 → 2026-08-15, inside the lifetime of an
+older, noisier trigger that was dropped on 2026-08-17. His account and the record are
+consistent; there is simply no ledger row from that era to confirm it with.
 
 **On 2026-09-04 we found that Hubly had been silently discarding his work.** He used the
 click-to-edit editor on his own section headings; the edits saved to a field
@@ -80,13 +93,31 @@ It had never worked for anyone. It was fixed the same day, reader-side, without 
 to his record — his words were already there, our reader was looking at the wrong field.
 **Adrian told him.** Full account in `OPEN_FINDINGS` #23.
 
-Two things about his site are still open and are **his** to decide, not ours to change:
-his booking sidebar carries `"5-star rated service"`, seeded into his record from a
-template before we stopped that (`OPEN_FINDINGS` #25), and it is his data now. Adrian is
-handling it with him directly.
+**Told about the seeded claim, 2026-09-05.** His booking sidebar carries
+`"5-star rated service"` — written into his record by Hubly from a template, never said
+by him. Adrian spoke to him about it; **he said he would update the value himself.** No
+write to his data by us, and that stays the rule: these are owner-editable fields and the
+owner has been told. The code path that created them is closed (`OPEN_FINDINGS` #25).
 
 His page is protected by `scripts/check-graefs-page.mjs` — one command, PASS or it names
 what changed.
+
+### Bucket Mobile Detailing — customer, prospect, and the live comparison
+
+**`bucket-mobile-detailing` · `account_kind = market` · detailing · classic renderer, no
+stored `business_documents` row.** Full commercial entry under **Prospects** below; this
+is the record side.
+
+4 services in his catalog, **none of them rendering** on his page — his layout is the
+tabbed profile and the service cards do not appear. 1 booking, 2026-07-20.
+
+**One of the four seeded businesses from `OPEN_FINDINGS` #25.** His record carries
+`"Fully insured mobile service"` and `"Insured & background-checked"` — claims **Hubly
+wrote into his record from a template, which he never said.** For a mobile detailer
+entering customers' driveways, an insurance claim is not decoration.
+
+**Told, 2026-09-05.** Adrian spoke to him; **he said he would update the values himself.**
+No write by us. The code path that created them is closed.
 
 ### Everyone else on the market side
 
@@ -122,25 +153,60 @@ conversation actually stands.*
 Nothing here is inferred. If a line does not say who said it and roughly when, it does
 not belong in this section.
 
-### The storefront prospect — STUB, awaiting details from Adrian
+### Bucket Mobile Detailing — PAYING, and an explicit head-to-head against Base44
 
-Someone has expressed intent to pay for the storefront. That is the whole of what
-survived; the specifics were lost in the compaction that caused this file to be written,
-which is the point of it existing.
+**Recorded 2026-09-05, stated by Adrian. `bucket-mobile-detailing`, `account_kind =
+market`, detailing, classic renderer, no stored document.** This is the fact this whole
+file was created to stop losing.
 
-**Adrian to fill in:**
+**What he is paying for.** He is paying Hubly to build **his site and his store**. He
+wants our AI to build it the way Base44's did.
 
-- **Who** — name, business, trade, city. Are they already on Hubly (a slug) or brand new?
-- **What they want** — the Commerce storefront (`/store`, `commerce_products`), or
-  something they are calling a storefront that is actually the booking site?
-- **How much, and what shape** — one-off, monthly, per-transaction? A number they said,
-  or a number we proposed?
-- **By when** — a date they gave, or a date we hoped for. Mark which.
-- **State of the conversation** — have they been quoted? Is anything owed by us? Is
-  anyone waiting on a reply, and since when?
+**What he is selling.** Two kinds of thing, and the second is the hard one:
 
-Until those are filled in, this is a reminder that a prospect exists, not a pipeline
-entry, and it should not be counted in anything.
+- **Physical goods** — detailing product, kits.
+- **Trainings** — digital. Access after purchase, not a shipped box. **This is the larger
+  unknown**, and as of 2026-09-05 Hubly cannot do it at all: `product_type='digital'`
+  exists but means only "skip the stock check", there is no entitlement, no gated
+  delivery, and every storage bucket that could hold a video is public
+  (`OPEN_FINDINGS` #19).
+
+**He already has a Base44 site.** Sleek, and it does everything a website does. **This is
+an explicit comparison: he runs both and picks the winner.**
+
+**DECISION — build it as a product feature, not bespoke work, even under deadline.**
+Adrian's call, recorded so nobody quietly reverses it when the date gets close. What
+Bucket needs — a store, digital products, gated delivery — every Hubly business needs.
+**Losing that discipline to win one bake-off is the failure mode**, because the bespoke
+version wins the demo and leaves us with a customer-shaped fork to maintain and no
+product.
+
+**STRATEGIC POSITION — we do not win a page-aesthetics contest against a Wix-funded
+specialist, and should not try to.** Base44 builds beautiful pages. What Base44 will not
+do is sell his courses, book his details and bill his memberships off one customer list.
+**The comparison has to be fought on capability, and the demo has to make capability the
+question the customer is asking.** If he judges on how the hero looks, we lose to a
+better-funded design tool; if he judges on whether the thing runs his business, we are
+playing our own game.
+
+**Consequence for the roadmap — `OPEN_FINDINGS` #16 is now commercially blocking.**
+Every site opens in the same shape; 128 of 128 generated headlines are left-aligned.
+That was filed as unhurried generator work. It now has a buyer attached: **if our
+generator hands Bucket a page with the same skeleton as every other Hubly page while
+Base44's looks made-for-him, the aesthetics half is lost before the capability half gets
+heard.** We do not need to win on looks. We do need to not lose on looks so badly that
+nobody listens to the rest.
+
+**STILL TO FILL IN — Adrian:**
+
+- **How much, and what shape** — one-off, monthly, per-transaction? A number he said, or
+  a number we proposed?
+- **By when** — a date he gave, or a date we hoped for. Mark which.
+- **State of the conversation** — has he been quoted? Is anything owed by us, and since
+  when?
+
+Until those three are filled in this is a committed customer with no commercial terms
+recorded, which is better than nothing and is not a pipeline entry.
 
 ### Standing caution on this section
 
@@ -210,27 +276,70 @@ their business.
 
 ---
 
+### Notifications: does an owner find out? (2026-09-05, measured)
+
+The rail exists and is configured: a trigger `booking_request_completed_notify` is live on
+`booking_requests` (fires when status becomes `pending`, i.e. completion, never on a lead
+row), the `hubly_cron_secret` Vault entry is set, and `RESEND_API_KEY` / `RESEND_FROM_EMAIL`
+are configured in production. Provider is **Resend** for email; Twilio credentials exist for
+SMS.
+
+**But `notification_deliveries` — the ledger of every attempt — says this, in full:**
+
+| when | business | role | recipient | status |
+| --- | --- | --- | --- | --- |
+| 2026-08-20 | calder-vane-roofing (test) | **owner** | adriansmithee@gmail.com | **sent** |
+| 2026-08-20 | calder-vane-roofing (test) | **owner** | `not-a-valid-address` | **failed** |
+| 2026-08-20 | calder-vane-roofing (test) | customer | adriansmithee@gmail.com | sent ×2 |
+| **2026-09-01** | **lugnuts-regulators (MARKET)** | **owner** | *null* | **SKIPPED — "no recipient address"** |
+| 2026-09-01 | lugnuts-regulators (market) | customer | kaptn.awesome@gmail.com | sent |
+
+**Exactly one owner booking email has ever been sent, and it went to Adrian, on a test
+business.** The only time a real market business received a booking after the rail was
+built, **the owner was never told** — `lugnuts-regulators` has no email address on file, so
+the notification was skipped while the customer's confirmation went out fine. **2 of the 7
+businesses that have ever received a booking have no owner email on record.**
+
+So the rail is not another "the code exists" case — it demonstrably sends. It is a
+**"nothing downstream catches a missing address"** case, which fails silently in exactly
+the direction that costs a customer. See `OPEN_FINDINGS` #27.
+
+---
+
 ## WHAT HAS NEVER HAPPENED YET
 
 *The honest zeros. These say what Hubly is and is not today, and every one should be easy
 to re-check — a zero that nobody can verify is just a comfortable story.*
 
-- **Zero rows in `review_submissions`, across the whole database.** No customer has ever
-  submitted a review through Hubly. Every review on every site was typed in by the owner.
-  *Stated by Adrian; consistent with the rating code, which has no path that reads a
-  submitted review.* **Not independently verified here** — the publishable key returns an
-  empty set for this table, and under RLS an empty set means "nothing visible to anon", not
-  "nothing there". Confirm with the service key before quoting it outside.
-- **Zero businesses with an active store product.** The Commerce storefront section
-  (`#ws-sec-store`) only renders when `commerce-api` returns a product with
-  `status = 'active'`; on every business walked it stayed hidden, and two booking-wizard
-  fields (`store-title`, `store-sub`) could not be tested at all for want of a business
-  with a store. *Consistent with everything measured 2026-09-04/05.* **Not independently
-  verified** — anon is denied on `commerce_products` outright.
-- **Zero public bookings, ever.** No member of the public has submitted a booking request
-  through any Hubly site. This one has a scar: a forensics document once read the customer
-  names in `booking_requests` and wrote up three test bookings as real people whose requests
-  had been dropped. The names looked real. The count was zero then and is zero now.
+- **Zero rows in `review_submissions`, across the whole database. MEASURED 2026-09-05**
+  via `supabase db query --linked` (admin connection, sees past RLS). No customer has ever
+  submitted a review through Hubly; every review on every site was typed in by the owner.
+  This file previously hedged this number because it had been re-checked with the
+  publishable key, where an empty set means "nothing visible to anon" rather than "nothing
+  there". The hedge was right for that method and unnecessary once the right method was
+  used — **quote a count only from a method that could have seen a non-zero.**
+- **Zero products in Commerce at all. MEASURED 2026-09-05.** Not "zero active" — the table
+  is empty: `commerce_products` **0**, `commerce_orders` **0**, `commerce_order_items` **0**,
+  `commerce_product_variants` **0**, `commerce_store_settings` **0**. One
+  `stripe_connect_accounts` row exists — `adrians-lawn-service`, `account_kind = test`,
+  Adrian's own, `charges_enabled` and `payouts_enabled` true since 2026-07-23. So the payment
+  rail has completed onboarding once, on a test business, and **no dollar has ever moved
+  through Commerce.**
+- **Bookings: 17 real rows, not zero. CORRECTED 2026-09-05.**
+  Counted via `supabase db query --linked`, which goes through the admin connection and sees
+  past RLS: `booking_requests` holds **17 rows**, 2026-07-20 → 2026-09-01 —
+  **10 against market businesses** (4 accepted, 6 pending), 6 test, 1 internal. Seven
+  businesses have received at least one: `graefs-autocare` 6, `calder-vane-roofing` 4,
+  `adrians-lawn-service` 2, `aquaspeed` 2, `bucket-mobile-detailing` 1,
+  `lugnuts-regulators` 1, `lugnutz` 1.
+  Graef's six are him testing his own site (reported by him, 2026-09-05).
+  **The habit is the point, not the number.** This file first said "zero public bookings,
+  ever" because that figure was quoted from a scar note in `CLAUDE.md` — a note *about* a
+  measurement taken months earlier — and repeated rather than re-run. A remembered
+  measurement is folklore with a citation attached. Re-count before quoting.
+  *(A further 13 rows dated 2026-09-05 named "Test Customer" were written by a verification
+  harness, not by a person — see the STATE entry on walks that write. They are excluded from
+  every count above.)*
 - **Zero transactions on Graef's site**, our best customer. Eight services, two membership
   tiers, real prices, real photos, and nothing has ever been bought.
 

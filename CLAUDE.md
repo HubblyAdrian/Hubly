@@ -271,9 +271,14 @@ acts, or it says what will happen — it never gives directions to something it 
   step succeeded. The failure that produced this rule: a booking forensics doc demanded hard
   evidence for whether a *notification was delivered* and then applied NONE to whether the
   *requester was real* — it read the names and called three test bookings "real people whose
-  requests were dropped on the floor" (2026-08-29, docs/BOOKING_DESTINATION.md; Hubly has never
-  received a public booking — that count is zero, all the way back, and the corpus was
-  contaminated by this same "the row looks real" assumption once before). When a number or a
+  requests were dropped on the floor" (2026-08-29, docs/BOOKING_DESTINATION.md; the corpus was
+  contaminated by this same "the row looks real" assumption once before). **That entry also
+  carried "Hubly has never received a public booking — zero, all the way back", and that
+  number was wrong.** Counted 2026-09-05 via the admin connection: `booking_requests` holds
+  **17 real rows** (10 against market businesses, 4 accepted and 6 pending), 2026-07-20 →
+  2026-09-01. The zero survived because it was quoted from this scar note for months and
+  never re-counted — a scar note is a memory of a measurement, not a measurement, and the
+  moment it is repeated instead of re-run it becomes folklore with a citation. When a number or a
   claim describes WHO someone is, the denominator and the identity both need proof; the honest
   default when you can't prove it is "internal/unknown until confirmed", never the reading that
   makes the story more dramatic or more flattering.

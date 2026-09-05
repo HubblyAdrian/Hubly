@@ -723,6 +723,25 @@ every deployed function's entry matches production, so this stops needing a huma
 
 ## 16. Every Hubly site opens in the same shape — the prompt forbids it by name and loses.
 ## RECORDED 2026-09-02, NOT FIXED. Do not fix by randomising.
+## RE-RANKED 2026-09-05: COMMERCIALLY BLOCKING. It has a buyer attached now.
+
+**Re-ranked because a paying customer is about to judge it side by side.** Bucket Mobile
+Detailing (`bucket-mobile-detailing`, market) is paying Hubly to build his site and store,
+he already has a Base44 site that is sleek, and he is running an explicit head-to-head and
+picking the winner (`docs/BUSINESS.md` → Prospects).
+
+We do not win a page-aesthetics contest against a Wix-funded specialist and should not try
+to. But **the aesthetics half does not have to be won — it has to not be lost so badly that
+nobody hears the capability argument.** If our generator hands him a page with the same
+skeleton as every other Hubly page while Base44's looks made-for-him, the comparison is
+decided in the first three seconds and the thing we are actually better at — running the
+business, one customer list behind bookings, memberships and a store — never gets asked
+about.
+
+So this stops being unhurried generator work. **The constraint below still holds: do not
+fix it by randomising.** A random layout is not a designed one, and a customer comparing
+against a real design tool will see the difference immediately. The fix has to make the
+shape follow from something true about the business.
 
 **Measured by RENDERING 128 stored freeform pages at 1440×900** — not by reading markup.
 Where a logo sits is a layout fact, and DOM order is not screen position.
@@ -950,8 +969,71 @@ carrying the mark; then the count stops mattering.
 
 ---
 
-## 19. VIDEO LINKS ON THE STOREFRONT — RECORDED 2026-09-03, NOT BUILT, AND
-## DELIBERATELY BEHIND THE STOREFRONT HOUR
+## 19. VIDEO — RECORDED 2026-09-03, NOT BUILT.
+## RE-SCOPED 2026-09-05: this is TWO features sharing one word, and they are
+## different sizes. Bucket is selling trainings, and a training is video.
+
+### The split, and why it matters more than the feature
+
+**A RENDERING feature: "paste a link and it plays."** Days-scale on the freeform path,
+because most of it exists. Measured 2026-09-05:
+
+- `<video>` is **already in `ALLOWED_TAGS`** (`hubly_document.ts:161`), `src` is permitted
+  on it (`:200`), it counts as media for the has-content check (`:803`), and the model is
+  told it may use it (the tag list at `:1482` is generated from `ALLOWED_TAGS`).
+- `src` must pass `isValidMediaSrc` → `ALLOWED_MEDIA_ORIGINS` = our Supabase storage +
+  `images.unsplash.com` (`:528`). **The allowlist this finding asks for already exists**,
+  drawn tighter than proposed: "files we host", not "YouTube, Vimeo, direct MP4".
+- `<iframe>` is **explicitly banned** in the grammar and stays banned (`:1026`, `:1492`),
+  with one shell-emitted exception, the service-area map. So YouTube means either widening
+  that to a reserved `youtube-nocookie` element the shell emits — the same pattern the map
+  already uses — or hosting the file.
+- **Never used, not once: 0 of 401 `business_documents` contain `<video>`, 0 contain
+  YouTube or Vimeo. The 8 with an `<iframe>` are all service-area maps.** A permitted
+  capability with no door.
+- **The classic renderer has no video path at all** — there is no `<video>` tag anywhere in
+  `public/`. Bucket and Graef are both on classic.
+
+**A LICENSING feature: "the buyer watches what they bought."** Much larger, and it is not
+a video problem. Three missing pieces, stacked:
+
+1. **No entitlement.** `product_type='digital'` exists but its entire meaning is
+   `isStockless` in `commerce_checkout.ts:87` plus a "Digital item" label. `commerce_orders`
+   has a `fulfillment` column whose only code path sets it to `"cancelled"`. There is no
+   entitlement table, no access grant, no download URL.
+2. **No private storage.** `brand-assets` is images-only (5 MB); `business-assets` and
+   `site-media` have no MIME or size limits but are **`public: true`**, and no code writes
+   to either. A public URL cannot gate anything. Gating needs private objects and signed
+   expiring URLs — infrastructure that does not exist.
+3. **Video cannot even be uploaded today.** The only two `accept="video/*"` inputs are in
+   `photography-projects.js`, and that module's own comment says
+   `// brand-assets only allows image/* — skip video/docs for storage previews.` A chosen
+   video is dropped: it survives as a browser blob and dies on reload. It renders as the
+   word **"Video"** in a `<span>` (`:1803`) — no player, no thumbnail, not selectable.
+   `service_engine.ts` carries `media.videos?: string[]` (`:172`) which is parsed,
+   round-tripped, always written empty, and read by nothing.
+
+**Conflating these two is the expensive mistake, and this finding as originally written
+conflated them.** "YouTube plays on the page" and "Bucket sells a course" share a noun and
+nothing else.
+
+### THE OPEN QUESTION THAT SIZES THE STOREFRONT — ANSWER BEFORE COMMITTING A DATE
+
+**Can a customer authenticate to Hubly at all today, or is every auth path owner-side?**
+
+Everything traced on 2026-09-05 is owner auth (`getOwnerUid()` resolving a verified owner
+from the JWT). `marketplace_customers` and `customer_profiles` exist as tables; whether
+either supports a buyer logging in has **not** been traced.
+
+This is the floor for the whole licensing feature: **gated delivery needs a buyer identity
+to gate against.** If there is no customer-side auth, "access after purchase" has nowhere to
+stand and the storefront job is materially larger than a store plus a video player. Adrian
+has a paying customer waiting on a date; **this question is worth more than any other single
+answer in the storefront area, and it is unanswered.**
+
+---
+
+## 19a. ORIGINAL ENTRY — RECORDED 2026-09-03, kept for the design constraints
 
 **The want, from real use.** An owner pastes a YouTube link and it shows as a playable
 video. The cases are concrete: a detailer whose every product ships with a how-to
@@ -1488,8 +1570,17 @@ read *today* came from `engine.js`. Proven on `star-windows`, whose sidebar show
   - `bucket-mobile-detailing` (**market**) — `"Insured & background-checked"`,
     `"5-star rated service"`, `"Fully insured mobile service"`.
   - `adrians-lawn-service` (test), `cotter-aviation` (internal, empty).
-  These are owner-editable, and a write to a real business's record is not ours to
-  make. Adrian is handling Graef's directly with him.
+  **HANDLED BY CONVERSATION, 2026-09-05 — not by a write.** Adrian spoke to **both** Austin
+  Graef and Bucket Mobile Detailing about the claims Hubly had written into their records.
+  **Both said they would update the values themselves.** No write to their data by us, and
+  that stays the rule: these are owner-editable fields and the owners have been told. The
+  code path that created them is closed (seeding stopped in `registry.js` `frameDefaults`
+  and `booking-wizard/ui.js`), so the set cannot grow. `adrians-lawn-service` (test) and
+  `cotter-aviation` (internal, empty) need nothing.
+  This is the honest end-state for a class like this: **the defect is closed in code, the
+  data is the owner's, and the owner has been told.** It is not "still open", and it is not
+  "fixed" either — recording it as handled-by-conversation is the only description that is
+  true.
 - **Three strings left unruled in `engine.js`**, deliberately not guessed:
   `'Reliable routes'` (landscaping — the adjective rule applies but "Routes" alone
   reads wrong), `'Careful around plants'` (pressure_washing), `'No-streak standard'`
@@ -1548,3 +1639,106 @@ dedicated field — but that is a reading, not proof.
 someone their work landed somewhere it did not. Different mechanism (there, a writer with
 no reader; here, a reader that reads the wrong source and a label that overclaims), same
 cost to the person typing.
+
+---
+
+## #27 — The assistant cannot see the business it runs. Nothing operational reaches it.
+
+**Measured 2026-09-05 by parsing the capability registry and the prompt assembly, not by
+reading the prompt and inferring. NOT FIXED — sized here because it decides what Hubly is.**
+
+### What the assistant can DO — 4 capabilities, 23 actions
+
+| capability | actions |
+| --- | --- |
+| `storefront` (11) | listCatalog, createProduct, updateProduct, setProductVisibility, addVariant, updateVariant, createCollection, addProductsToCollection, configureStore, generateStorefront, patchStorefront |
+| `website` (7) | analyze, generateDocument, newPage, patchDocument, setChrome, setDesignKnob, restyleElement |
+| `business` (4) | create, startDraft, updateDraft, setServices |
+| `booking` (1) | **getAvailability** |
+
+**22 of 23 actions BUILD the presentation. One reads anything, and it reads free slots —
+not bookings received.** There is no action for leads, jobs, customers, memberships,
+orders or revenue. Note also that the 11 storefront actions exist against a
+`commerce_products` table with **0 rows** — a fully-built room whose door nobody has
+opened.
+
+### What the assistant can SEE — 18 fields, none operational
+
+`BusinessRecord` (`hubly_capability_registry.ts:274`) is titled to the model as
+*"everything Hubly actually knows about this business"*. In full: services, photos,
+reviews, hours, hoursNote, areaCities, city, state, travelRadiusMiles, yearsInBusiness,
+phone, email, address, logoUrl, businessType, about, tagline.
+
+**Every field is a presentation fact. Not one is operational.**
+
+And it is worse than that, in the codebase's own words
+(`hubly-conversation/index.ts:174`):
+
+> *"the conversation model never sees the business record (buildBusinessRecordBlock is only
+> ever assembled for document GENERATION)"*
+
+So in an ordinary chat turn the assistant does not even have the presentation record. Every
+table the conversation path touches, parsed: `create_business_document`,
+`patch_business_in_progress`, `document_build_jobs`, `set_business_hours_in_progress`,
+`start_business_in_progress`, `set_business_draft_services`, `record_planner_fallback`,
+`document_vocabulary_rejections`. **Every one is about building a page.** It reads
+`services` once, narrowly, so the post-build ask does not re-ask for prices it already has.
+
+**Corroborated by the owner.** Austin Graef, 2026-09-05: when a booking comes in he gets an
+email; *the Hubly assistant does not tell him.* He finds out from email only. The code says
+it cannot.
+
+### Is there any notification surface in the product at all?
+
+**No.** Grepping every owner surface for a badge, an unread count, an inbox or a
+"since you last logged in": the only hits are `journey-os/ceo-demo.js`, a seed-data fixture
+full of invented names — a mock of the feature, not the feature.
+
+The nearest real thing is a realtime subscription (`hubly.html:15873`) on `jobs`,
+`booking_requests` and `customers` — but its handler only **re-renders dashboard views that
+are already open**. No badge, no toast, no persistent marker. If the owner is not looking at
+the dashboard, nothing tells them. **Email is the only channel that ever informs an owner.**
+
+And that channel has a hole: of the 7 businesses that have received a booking, **2 have no
+owner email on file**, and on 2026-09-01 the only market booking since the notify trigger
+was built (`lugnuts-regulators`) had its owner notification **skipped — "no recipient
+address"** while the customer's confirmation sent fine.
+
+### Sizing: what would read access take?
+
+**Mostly a capability-registry addition, not a structural build.** The three things it
+needs already exist:
+
+1. **A template.** `booking.getAvailability` is exactly the shape — an argsSchema, an
+   admin client, a business-scoped query, and an honest `real: false` when it cannot
+   answer. `booking.listRecent`, `leads.list`, `memberships.list` are the same shape.
+2. **An auth floor.** `getOwnerUid()` resolves a verified owner from the JWT, and #20
+   closed the class where an action forgot to use it. A read that returns someone's
+   bookings **must** be owner-gated, and the gate is already built and already audited by
+   `scripts/check-owner-id-invariant.mjs`.
+3. **A context slot.** `buildBusinessRecordBlock` is the pattern for handing the model data
+   as DATA rather than prose, including its "none on record" discipline.
+
+**Rough size: days, not weeks, for read access to bookings, leads and memberships** — three
+actions plus an operational block in the chat turn's prompt.
+
+**The part I am least sure about, and it is not the plumbing:** the same assistant serves
+the **public customer chat** on a business's website and the **owner builder**. A capability
+that returns a business's booking list must be unreachable from the customer surface. The
+auth machinery exists; what I have **not** traced is whether the conversation function can
+always tell which surface a turn came from, or whether it currently infers it from context
+that a caller could shape. **Get that wrong and the feature leaks one business's customer
+list to whoever is chatting on its website.** That question should be answered before a line
+is written — and it is close kin to the open question in #19 about whether customers can
+authenticate at all.
+
+### Why this may be the highest-leverage gap in the product
+
+The claim against Base44 is that **Hubly runs the business rather than presenting it.**
+Measured against that claim: 22 of 23 capabilities present, 1 reads free slots, the context
+is 18 presentation fields, and the owner finds out about his own bookings by email.
+
+**An assistant that cannot tell an owner about his own bookings is a chat box beside a
+website editor — which is a thing Base44 also has.** Everything that makes the pitch true
+is on the other side of read access. This is not a feature request; it is the difference
+between the product we describe and the product that exists.

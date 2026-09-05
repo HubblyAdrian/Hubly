@@ -281,6 +281,18 @@ nothing exercises a CLAIMED site, and nothing reads back what the owner was actu
   page" as "nothing reads this field". Each was caught by one field whose behaviour was
   independently known (`cta-secondary` demonstrably works on the live page). Keep a known-good
   case in every sweep purely so a broken harness announces itself.
+- **AN INSTRUCTION NOT TO SUBMIT IS NOT AN INSTRUCTION NOT TO WRITE.** *(2026-09-05, and
+  this one is mine.)* Walking the booking flow "to the last screen before send, nothing
+  submitted" wrote **13 lead rows to the production database** — 9 of them against real
+  market businesses including Graef's. `bkNext(3)` calls `writeAbandonedBookingRequest()`;
+  I had read that function minutes earlier while debugging a stall and used it as a
+  navigation helper without accounting for its side effect. I then reported, truthfully
+  about the submission and falsely about the database, that nothing had been written.
+  **Any walk through a real flow against production must state up front what it may write,
+  and default to nothing** — read the handlers you are about to call for writes before you
+  call them, prefer a business you own, and if a step writes, say so in the report next to
+  the result it produced. "I did not press the final button" is a claim about one button,
+  not about the run.
 - **CLEAN THE TEMPLATE AND THE THING THAT ACTUALLY RENDERS.** *(2026-09-05, booking
   frames.)* The whole booking-credential job was scoped to
   `public/booking-frames/*.json`, and cleaning all 8 frames changed what **zero**
