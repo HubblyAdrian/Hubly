@@ -34094,7 +34094,11 @@ function updateReviewEmbed(){
 }
 
 // ═══ PREMIUM WEBSITE ═══
-const WS_TRUST_DEFAULTS=['Mobile Service','Fully Insured','Satisfaction Guaranteed'];
+// WS_TRUST_DEFAULTS removed 2026-09-04. It was ['Mobile Service','Fully Insured',
+// 'Satisfaction Guaranteed'] and was referenced NOWHERE — dead, so it never reached a
+// page. Deleted rather than left: it is a ready-made "Fully Insured" default sitting
+// next to the trust-row code we just stopped auto-filling, and the next person to need
+// a fallback would have found it waiting.
 const HERO_HEADLINE_PLACEHOLDERS=['Your Business','Your Business Name',''];
 const EDITOR_GUIDE_STEPS=[
   {id:'welcome',title:'Looks good — now make it yours',body:'Your draft layout is ready, and everything stays editable. Let’s confirm the look, then polish packages and hours.',section:'design',cta:'Check the layout →'},
@@ -36996,20 +37000,27 @@ function ensureWebsiteCopy(){
   if(w.areaZips==null)w.areaZips='';
   if(w.footerCtaTitle==null)w.footerCtaTitle='';
   if(w.customFooterCta==null)w.customFooterCta=false;
-  if(w.tickerEnabled==null)w.tickerEnabled=true;
+  // OFF BY DEFAULT. It was `true`, and 9 of 34 claimed businesses have `true` stored —
+  // which is this default being written down, not nine owners deciding they wanted an
+  // activity line. A default that publishes something on a person's behalf has to be
+  // the quiet one; the checkbox is still there for an owner who wants it.
+  if(w.tickerEnabled==null)w.tickerEnabled=false;
   if(w.tickerText==null)w.tickerText='';
   if(w.rating==null)w.rating='';
   if(w.reviewCount==null)w.reviewCount='';
   if(!Array.isArray(w.trustBadges))w.trustBadges=[];
   if(!Array.isArray(w.trustStats))w.trustStats=[];
-  if(!w.trustStats.length&&!w._trustClearedByOwner){
-    try{
-      const signals=(getActiveBlueprint()?.website?.trustSignals||[]).filter(Boolean).slice(0,3);
-      if(signals.length){
-        w.trustStats=signals.map(s=>({value:String(s),label:''}));
-      }
-    }catch(e){}
-  }
+  // EMPTY MEANS EMPTY.
+  //
+  // This filled an empty trust row from the trade blueprint's `trustSignals` — so a
+  // detailer got "Insured", an HVAC business got "Licensed", a cleaner got
+  // "Background-checked" and a window cleaner got "No-streak guarantee", none of it
+  // said by the owner and none of it on any record. Those are regulated claims about
+  // someone else's business, published on their own site.
+  //
+  // Hubly does not get to assert them. If an owner is insured they can say so in the
+  // trust row, which is a real editor control; a blank row stays blank.
+  // (Removed 2026-09-04. See STATE "a rule enforced at one layer is not a rule".)
   if(!w.layout&&typeof HublyLayouts!=='undefined'){
     w.layout=HublyLayouts.getActiveLayoutId(w);
   }else if(!w.layout){
@@ -39442,14 +39453,41 @@ function renderWebsite(prefix){
       ticker.classList.remove('ws-ticker-off');
       ticker.classList.add('ws-ticker-force');
       ticker.style.opacity='';
+      // THE OWNER'S LINE, OR NOTHING.
+      //
+      // This used to compose "Someone in {city} just booked a {service} moments ago"
+      // out of the business's city and its first service name — with no booking
+      // consulted, on by default, on a real business's public page. Hubly has never
+      // received a booking from a member of the public, so every one of those was an
+      // event that did not happen, published under someone else's name.
+      //
+      // There is no honest version of it, so there is no conditional version of it
+      // either: not "only when a booking exists" (a real booking is a customer's
+      // private business, not a marketing asset), not softer wording. An owner who
+      // writes their own activity line keeps it, exactly as typed.
+      //
+      // The wider point, which is the reason this shipped at all: the generator is
+      // FORBIDDEN from writing a rating, a licence or an insurance claim
+      // (hubly_capability_registry.ts:2179, "never fake its credentials") and there is
+      // a stripping pass behind it — and this hand-written renderer walked around both,
+      // because a rule enforced at one layer is not a rule.
       if(w.tickerText){
         ticker.innerHTML=escPeHtml(w.tickerText);
       }else{
-        const place=city||t('wsYourArea');
-        const named=getBookingServices().filter(s=>s.name)[0]?.name;
-        ticker.innerHTML=named
-          ?`⚡ <b>${t('wsTickerSomeone')} ${escPeHtml(place||t('wsYourArea'))}</b> ${t('wsTickerBooked')} ${escPeHtml(named)} ${t('wsTickerAgo')}`
-          :`⚡ <b>${t('wsTickerSomeone')} ${escPeHtml(place||t('wsYourArea'))}</b> ${t('wsTickerBooked')} ${t('wsTickerAgo')}`;
+        // NOTHING TO SAY MEANS NOTHING ON THE PAGE — including no empty furniture.
+        // `.ws-ticker-force` is `display:block`, so clearing the text alone would leave
+        // a padded, bordered strip on the obsidian-gold layout (which is the one the
+        // only affected page uses). Take the same path the OFF branch already takes.
+        ticker.classList.add('ws-ticker-off');
+        ticker.classList.remove('ws-ticker-force');
+        ticker.innerHTML='';
+        // The owner still needs to find the control — a thing that silently disappears
+        // from the editor is its own defect. Visible to them, never to a visitor.
+        if(isEditorViewOpen()){
+          ticker.classList.remove('ws-ticker-off');
+          ticker.style.opacity='.55';
+          ticker.innerHTML='⚡ Add your own activity line. click to edit';
+        }
       }
     }
   }
