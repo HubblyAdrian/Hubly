@@ -5,20 +5,16 @@
   "blurb": "Choose the service that fits your home and lifestyle.",
   "servicePrompt": "What type of cleaning do you need?",
   "trustLines": [
-    "Background-checked cleaners",
-    "Satisfaction guarantee",
     "Recurring plans available",
-    "Checklist you can trust"
+    "Cleaning checklist"
   ],
   "sidebarIncludes": [
     "Instant online quotes",
-    "Satisfaction guarantee",
-    "Background-checked cleaners",
     "Flexible scheduling"
   ],
   "helpBlurb": "Have questions? We're here to help!",
-  "reviewTrust": "Trusted by homeowners in your area.",
-  "cancelBlurb": "Peace of mind, guaranteed. Reschedule up to 24 hours before.",
+  "reviewTrust": "",
+  "cancelBlurb": "Reschedule up to 24 hours before.",
   "whereOptions": [
     {
       "id": "home",
@@ -51,10 +47,7 @@
   "packagesTitle": "Cleaning Plans",
   "benefitOptions": [
     "Instant online quotes",
-    "Satisfaction guarantee",
-    "Background-checked cleaners",
-    "Flexible scheduling",
-    "Eco-friendly products"
+    "Flexible scheduling"
   ],
   "ownerTips": [
     "Lead with recurring plans, not one-offs",

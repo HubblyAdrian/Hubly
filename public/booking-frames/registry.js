@@ -186,8 +186,24 @@
       headline: frame.headline || '',
       blurb: frame.blurb || '',
       servicePrompt: frame.servicePrompt || 'Choose a service',
-      trustLines: (frame.trustLines || []).slice(),
-      sidebarIncludes: (frame.sidebarIncludes || []).slice(),
+      // NOT SEEDED FROM THE FRAME — see OPEN_FINDINGS #25.
+      //
+      // These two are the business's own assertions to a customer:
+      // sidebarIncludes renders in the booking summary on every step of the
+      // wizard, and trustLines is the owner's trust list. Copying a template's
+      // values into a real business's record makes Hubly the author of a claim
+      // nobody made — the same auto-fill defect as the blueprint trust badges
+      // (#22), one level over, on the highest-trust screen in the product.
+      //
+      // Four businesses were seeded before this changed, two of them market;
+      // their values live in meta.bookingWizard now and are the owner's to edit.
+      //
+      // benefitOptions below is DIFFERENT and stays: it is the preset menu the
+      // owner picks from in the editor. Offering a choice is not asserting it —
+      // nothing reaches a customer until the owner selects it into
+      // sidebarIncludes. Empty means empty; the owner fills it.
+      trustLines: [],
+      sidebarIncludes: [],
       benefitOptions: benefits,
       ownerTips: (frame.ownerTips || []).slice(),
       ctaLabel: frame.ctaLabel || 'Book now',

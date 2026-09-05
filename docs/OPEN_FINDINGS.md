@@ -1412,3 +1412,139 @@ you got.
 The 10 genuinely on the classic renderer, which is where every defect in #23 lives:
 `adrians-lawn-service, aquaspeed, bucket-mobile-detailing, cedar-ridge-plumbing, cotter-aviation,
 devdetailing661, graefs-autocare, my-auto-detailing, my-photography, star-windows`.
+
+---
+
+## #25 — Booking-frame credentials: cleaned, seeding stopped, 4 businesses left holding
+
+**Found 2026-09-04, fixed 2026-09-05. The unfinished half of #22.**
+
+`public/booking-frames/*.json` supplies the booking wizard's copy. It carried
+credential claims Hubly has no way to know — `"Licensed & Insured"`,
+`"Background-checked cleaners"`, `"100% Satisfaction Guarantee"`,
+`"Trusted by homeowners in your area."` — on the screen where a customer decides
+to let a stranger into their home.
+
+### The count moved twice, both times because the first list was of SHAPES
+
+- First pass: **47** "credential literals", from a regex over raw file text. Wrong
+  method — the enumerate-the-valuable-side mistake, fifth instance.
+- The files actually hold **332 strings** (300 customer-capable, 32 `ownerTips`).
+  Sorting the six fields that can carry a credential gives **121**: **A=34 remove,
+  B=72 keep, C=15 ambiguous**. Verified by script: 0 unsorted, 0 sorted-but-absent.
+- Then, mid-fix, a **second file of the same class** turned up — and it is the one
+  that actually renders (below).
+
+### WHAT ACTUALLY REACHES A CUSTOMER — walked, not grepped
+
+Walking the real flow to the Review screen (nothing submitted):
+
+- **`sidebarIncludes`** — the booking summary, visible on **every** step. Customer-facing.
+- **`reviewTrust`** — the Review screen. Customer-facing.
+- **`whereOptions`, `infoFields`** — customer-facing.
+- **`trustLines`, `benefitOptions`, `cancelBlurb`, `helpBlurb`, `ownerTips`** — never
+  appeared on a customer screen. `benefitOptions` is the owner's preset menu;
+  `trustLines` renders only in the owner's package preview (see #26).
+
+And the source depends on whether the business has been seeded:
+
+| | source of the booking sidebar |
+| --- | --- |
+| 4 businesses with a seeded `meta.bookingWizard` | their own record — a JSON edit cannot reach them |
+| the other 30 | **`public/smart-quote/engine.js`** recipe `includes` — NOT the frames |
+
+So the frames' claims were a template for the future; the claims a customer could
+read *today* came from `engine.js`. Proven on `star-windows`, whose sidebar showed
+`"Interior & exterior options · Ladder-safe habits · No-streak standard"` — that is
+`engine.js:64`, and none of it is in `windows.json`.
+
+### What was done
+
+1. **All 8 frames cleaned** — 49 edits. Bucket A removed. Bucket C per ruling:
+   guarantee-welded-to-a-policy split (keep the policy, drop "guaranteed"),
+   character adjectives stripped ("Upfront, Honest Pricing" → "Upfront Pricing"),
+   safety promises removed, "Eco-friendly products" / "Local crews you recognize" /
+   "Premium Products" removed. Every field outside the six is byte-identical, and
+   all 72 bucket-B strings are still present — both checked by script.
+2. **Seeding stopped** for `trustLines` and `sidebarIncludes`, in both paths
+   (`booking-frames/registry.js` `frameDefaults`, and `booking-wizard/ui.js`). These
+   are the business's own assertions to a customer; copying a template's values into
+   a real record makes Hubly the author of a claim nobody made — the #22 auto-fill
+   defect one level over. `benefitOptions` still seeds ON PURPOSE: it is the preset
+   menu the owner picks from, and nothing reaches a customer until they select it.
+3. **`smart-quote/engine.js`** — the same rulings applied verbatim to the identical
+   strings in the file that actually renders: `'Satisfaction guarantee'` and
+   `'Pro products'` (detailing), `'Ladder-safe habits'` (windows),
+   `'Background-checked crew'` (cleaning), `'Licensed techs'` (hvac),
+   `'Licensed practitioners'` (spa).
+
+### STILL OPEN — do not read this as "the class is closed"
+
+- **4 businesses carry a PERSISTED `meta.bookingWizard`**, seeded before this change,
+  so no code change reaches them. **2 are market.** Same shape as #22's three:
+  - `graefs-autocare` (**market**) — `sidebarIncludes` includes `"5-star rated service"`,
+    live on his booking sidebar. `trustLines: ["100% Satisfaction Guarantee",
+    "Convenient & Hassle-Free","Premium Products"]`.
+  - `bucket-mobile-detailing` (**market**) — `"Insured & background-checked"`,
+    `"5-star rated service"`, `"Fully insured mobile service"`.
+  - `adrians-lawn-service` (test), `cotter-aviation` (internal, empty).
+  These are owner-editable, and a write to a real business's record is not ours to
+  make. Adrian is handling Graef's directly with him.
+- **Three strings left unruled in `engine.js`**, deliberately not guessed:
+  `'Reliable routes'` (landscaping — the adjective rule applies but "Routes" alone
+  reads wrong), `'Careful around plants'` (pressure_washing), `'No-streak standard'`
+  (windows).
+- **One string in the frames was never ruled on** and was removed by the same logic
+  as the safety promises: `pressure_washing.reviewTrust` =
+  `"Powerful results. Property care you can see."` One line, easily put back.
+- **Two claims Hubly composes in code, not in a template**, both live and both out of
+  scope here: `hubly.html:42587` prefixes the Review screen with
+  `"✓ We take care of your property"`, and `smart-quote/booking.js:445` writes
+  `"Trusted by customers who book online."` under the rating. Same principle, different
+  file.
+- **`modern-landscaping-business` (market)** renders `"Add services to show them here."`
+  on its booking landing — #18 family, on a market page.
+
+---
+
+## #26 — "Add trust lines customers see on review." No customer sees them.
+
+**Found 2026-09-05 while working #25. NOT FIXED — recorded with both possibilities named,
+because which one it is decides the fix.**
+
+`public/booking-wizard/ui.js:544` tells an owner, above a "+ Add trust line" button:
+
+> **"Add trust lines customers see on review."**
+
+`w.trustLines` is written by `updateTrustLine` (`:182`), `addTrustLine` (`:195`) and
+`removeTrustLine` (`:204`), and persisted. **No customer-facing code reads it.** Parsed
+across `hubly.html`, `smart-quote/*.js` and `booking-wizard/*.js`, `trustLines` has
+exactly one reader outside the editor: `isPkgPreviewTrustLines()` (`hubly.html:24735`),
+which paints into `#is-pkg-preview` — a mockup shown to the OWNER, labelled
+`"Edit packages on the left — this is how customers will see them."` (`:25071`).
+
+Two lies stacked, not one:
+
+1. The editor says these lines appear on the customer's review screen. They do not. The
+   review screen (`#bk-review-trust`, `hubly.html:42587`) renders `reviewTrust` and falls
+   back to `cancelBlurb` — a different field entirely.
+2. The one surface that draws trust lines reads **`frame.trustLines`**, not the owner's
+   `w.trustLines`. So even in the owner's own preview, their edits never show — and that
+   preview is labelled as what customers see.
+
+**The two possibilities, both plausible, neither confirmed:**
+
+- **(a) Broken feature.** Trust lines were meant to render on the customer's review
+  screen and the render was never wired, or was lost when `reviewTrust` was added. Fix:
+  wire `w.trustLines` into the review screen and make the preview read the owner's value.
+- **(b) False label.** Trust lines were only ever owner-preview chrome and `reviewTrust`
+  superseded them. Fix: correct the editor copy, and have the preview read the owner's
+  value or stop claiming to be the customer's view.
+
+Evidence tilts to **(b)** — the review screen has a dedicated trust slot fed by a
+dedicated field — but that is a reading, not proof.
+
+**This is the same family as Graef's stranded headings (#23):** the editor telling
+someone their work landed somewhere it did not. Different mechanism (there, a writer with
+no reader; here, a reader that reads the wrong source and a label that overclaims), same
+cost to the person typing.

@@ -6,13 +6,11 @@
   "servicePrompt": "What would you like?",
   "trustLines": [
     "Deep focus",
-    "Hassle-free changes",
-    "100% Satisfaction Guarantee"
+    "Hassle-free changes"
   ],
   "sidebarIncludes": [
     "Upfront, transparent pricing",
-    "Online booking in minutes",
-    "Licensed practitioners"
+    "Online booking in minutes"
   ],
   "helpBlurb": "Have questions? We're here to help!",
   "reviewTrust": "Relax. Reset. Renew.",
@@ -50,7 +48,6 @@
   "benefitOptions": [
     "Upfront, transparent pricing",
     "Online booking in minutes",
-    "Licensed practitioners",
     "Quiet, unhurried rooms",
     "Easy reschedule"
   ],

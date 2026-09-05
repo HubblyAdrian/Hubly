@@ -5,19 +5,14 @@
   "blurb": "Choose the service that best fits your needs.",
   "servicePrompt": "What type of service?",
   "trustLines": [
-    "Satisfaction guaranteed",
-    "Licensed & insured",
-    "Interior & exterior options",
-    "Safe on every story"
+    "Interior & exterior options"
   ],
   "sidebarIncludes": [
-    "Instant online quotes",
-    "100% satisfaction guarantee",
-    "Licensed & insured"
+    "Instant online quotes"
   ],
   "helpBlurb": "Have questions? We're here to help!",
-  "reviewTrust": "Safe. Insured. Reliable. We take care of your property like it's our own.",
-  "cancelBlurb": "Peace of mind, guaranteed. Free rescheduling up to 48 hours before your visit.",
+  "reviewTrust": "",
+  "cancelBlurb": "Free rescheduling up to 48 hours before your visit.",
   "whereOptions": [
     {
       "id": "residential",
@@ -43,8 +38,6 @@
   "packagesTitle": "Window Services",
   "benefitOptions": [
     "Instant online quotes",
-    "100% satisfaction guarantee",
-    "Licensed & insured",
     "Screen & track cleaning",
     "Residential & commercial"
   ],

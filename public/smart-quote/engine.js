@@ -12,12 +12,23 @@
   ];
 
   /** Trade recipes — open to owner overlay; photography never gets dirtiness. */
+  /* CREDENTIAL CLAIMS REMOVED 2026-09-05 — see OPEN_FINDINGS #25.
+     These `includes` render in the booking summary sidebar, on every step of the
+     wizard, for any business whose meta.bookingWizard was never seeded — which is
+     30 of 34 claimed businesses. They are the strings a customer ACTUALLY reads;
+     public/booking-frames/*.json only reaches a business at seed time.
+     The rulings applied here are the ones already given for the identical strings
+     in booking-frames, applied verbatim rather than re-decided.
+     STILL AMBIGUOUS, deliberately left for a ruling: 'Reliable routes'
+     (landscaping), 'Careful around plants' (pressure_washing), 'No-streak
+     standard' (windows). */
+
   const RECIPES = {
     detailing: {
       accent: '#7c3aed',
       title: 'Smart Quote',
       subtitle: 'Vehicle · packages · condition',
-      includes: ['Pro products', 'Satisfaction guarantee', 'Mobile available'],
+      includes: ['Mobile available'],  // detailing: 'Satisfaction guarantee' (ruled remove) and 'Pro products' (same claim as 'Premium Products', ruled remove)
       tip: { title: 'AI tip', body: 'Ceramic coating converts well after Full Detail on SUVs.' },
       steps: [
         { id: 'subject', title: 'What are we working on?', blurb: 'Vehicle type drives size pricing.' },
@@ -61,7 +72,7 @@
       accent: '#0284c7',
       title: 'Smart Quote',
       subtitle: 'Property · panes · stories',
-      includes: ['Interior & exterior options', 'Ladder-safe habits', 'No-streak standard'],
+      includes: ['Interior & exterior options', 'No-streak standard'],  // windows: 'Ladder-safe habits' — a safety promise about someone else's work (ruled remove)
       tip: { title: 'Save with recurring', body: 'Offer 15% off quarterly window plans.' },
       steps: [
         { id: 'subject', title: 'Property details', blurb: 'Type, height, and pane count set the math.' },
@@ -159,7 +170,7 @@
       accent: '#059669',
       title: 'Smart Quote',
       subtitle: 'Home size · frequency',
-      includes: ['Checklist clean', 'Background-checked crew', 'Supplies included'],
+      includes: ['Checklist clean', 'Supplies included'],  // cleaning: 'Background-checked crew' (ruled remove as 'Background-checked cleaners')
       tip: { title: 'Bundle & save', body: 'Weekly plans usually beat one-off deep cleans on cost.' },
       steps: [
         { id: 'subject', title: 'Home details', blurb: 'Rooms drive labor time.' },
@@ -209,7 +220,7 @@
       accent: '#ea580c',
       title: 'Smart Quote',
       subtitle: 'Issue · system · urgency',
-      includes: ['Licensed techs', 'Clear diagnosis', 'Maintenance plans'],
+      includes: ['Clear diagnosis', 'Maintenance plans'],  // hvac: 'Licensed techs' (ruled remove as 'Licensed technicians')
       tip: { title: 'Emergency?', body: 'Same-day emergency visits often need a priority dispatch fee.' },
       steps: [
         { id: 'subject', title: 'What do they need?', blurb: 'Issue and system type.' },
@@ -336,7 +347,7 @@
       accent: '#a855f7',
       title: 'Smart Quote',
       subtitle: 'Treatment · length',
-      includes: ['Licensed practitioners', 'Quiet rooms', 'Membership options'],
+      includes: ['Quiet rooms', 'Membership options'],  // spa: 'Licensed practitioners' (ruled remove, identical string)
       tip: { title: 'Upsell', body: 'Add-on mask or aromatherapy pairs well with facials.' },
       steps: [
         { id: 'subject', title: 'Treatment preferences', blurb: 'Service style and length.' },

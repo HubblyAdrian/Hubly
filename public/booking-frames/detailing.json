@@ -5,20 +5,15 @@
   "blurb": "Choose the service that fits your needs.",
   "servicePrompt": "What service would you like?",
   "trustLines": [
-    "100% Satisfaction Guarantee",
-    "Convenient & Hassle-Free",
-    "Premium Products",
-    "Fully insured mobile service"
+    "Convenient & Hassle-Free"
   ],
   "sidebarIncludes": [
     "Upfront pricing",
-    "Online booking in minutes",
-    "Insured & background-checked",
-    "5-star rated service"
+    "Online booking in minutes"
   ],
   "helpBlurb": "Have questions? We're here to help!",
-  "reviewTrust": "We come to you \u2014 fully equipped!",
-  "cancelBlurb": "Peace of mind, guaranteed. You can reschedule or cancel up to 24 hours before your appointment.",
+  "reviewTrust": "We come to you — fully equipped!",
+  "cancelBlurb": "You can reschedule or cancel up to 24 hours before your appointment.",
   "whereOptions": [
     {
       "id": "home",
@@ -76,15 +71,12 @@
   "benefitOptions": [
     "Upfront pricing",
     "Online booking in minutes",
-    "Insured & background-checked",
-    "5-star rated service",
-    "We come to you",
-    "Premium products"
+    "We come to you"
   ],
   "ownerTips": [
     "Lead with your most popular detail package",
     "Show mobile vs shop locations clearly",
     "Add pet hair and clay bar as add-ons",
-    "Keep pricing visible \u2014 detailers convert on clarity"
+    "Keep pricing visible — detailers convert on clarity"
   ]
 }

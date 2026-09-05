@@ -85,12 +85,11 @@
         }
         if (!w.ctaLabel) w.ctaLabel = frame.ctaLabel || '';
         if (!w.packagesTitle) w.packagesTitle = frame.packagesTitle || '';
-        if (!w.trustLines || !w.trustLines.length) {
-          w.trustLines = (frame.trustLines || []).slice();
-        }
-        if (!w.sidebarIncludes || !w.sidebarIncludes.length) {
-          w.sidebarIncludes = (frame.sidebarIncludes || []).slice();
-        }
+        // trustLines and sidebarIncludes are deliberately NOT filled from the
+        // frame here — same reason as registry.js frameDefaults(). What a
+        // business tells a customer in the booking summary is the owner's to
+        // choose from benefitOptions, not ours to pre-write into their record.
+        // See OPEN_FINDINGS #25.
         if (!w.whereOptions || !w.whereOptions.length) {
           w.whereOptions = (frame.whereOptions || []).map((x) => Object.assign({}, x));
         }

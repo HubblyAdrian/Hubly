@@ -281,6 +281,16 @@ nothing exercises a CLAIMED site, and nothing reads back what the owner was actu
   page" as "nothing reads this field". Each was caught by one field whose behaviour was
   independently known (`cta-secondary` demonstrably works on the live page). Keep a known-good
   case in every sweep purely so a broken harness announces itself.
+- **CLEAN THE TEMPLATE AND THE THING THAT ACTUALLY RENDERS.** *(2026-09-05, booking
+  frames.)* The whole booking-credential job was scoped to
+  `public/booking-frames/*.json`, and cleaning all 8 frames changed what **zero**
+  customers read. The strings a customer could actually see came from two other
+  places: `smart-quote/engine.js` recipe `includes` for the 30 businesses whose wizard
+  was never seeded, and each business's own `meta.bookingWizard` for the 4 that were.
+  The tell was one string — `star-windows` showed "Ladder-safe habits" in its booking
+  sidebar and that phrase is in no frame. Walking the flow found it; every grep and
+  every count before that had been over the template. **A template edit proves nothing
+  about a live page until you walk the live page.**
 - **DO NOT RUN A CORPUS SWEEP AND EDIT THE FILE IT IS READING**, and **never accept a
   surprising result that only ONE measurement supports.** *(2026-09-04.)* The 34-page
   "after" render was silently contaminated by the deliberate-break test running against the
