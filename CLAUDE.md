@@ -95,6 +95,13 @@ acts, or it says what will happen — it never gives directions to something it 
 
 ## Working agreement (how work is run here)
 
+- **Business facts go in `docs/BUSINESS.md` the moment they are stated** — a customer's
+  name, a commitment, a price, a date, the state a conversation is in. Same discipline as
+  recording a finding, and record how it was established (measured / stated / unverifiable)
+  the same way a number gets a denominator. A fact that only exists in a chat is a fact
+  that will be lost: on 2026-09-05 a compaction took everything technical through intact
+  and dropped a prospect who wanted to pay, because the repo had somewhere to put findings
+  and nowhere to put customers.
 - **Verify by using it, not by reading it — AS THE OWNER, ON THE REAL THING.** A change
   isn't done because the code looks right; it's done when the running product was exercised
   and did the thing. And it must be exercised in the STATE a real person is in, not a
