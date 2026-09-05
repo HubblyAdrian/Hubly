@@ -44,6 +44,25 @@ verify interaction work.
 
 ## What is LIVE as of 2026-09-04
 
+### The classic renderer (`#p-storefront`) — 2026-09-04
+Ten of the 34 claimed pages render here, including `graefs-autocare`, our one real
+detailer. Four fixes shipped after he reported four visible defects (see `OPEN_FINDINGS`
+#23 for why they were four causes and not one):
+- **Section headings an owner clicks and types now reach the public page.** `sectionCopy`
+  (written by click-to-edit) is read before the flat `w.<sec>Title`/`<sec>Sub` fields, and
+  **only when non-blank** — a cleared value falls through to the default rather than
+  blanking the section. Same for `footerTagline`. Before this, that editor had **never**
+  worked for anyone: it painted instantly and vanished on reload.
+- **`whyChooseUs` is read in both shapes** (`{label}` from generate-site, `{icon,title,desc}`
+  from the editor), and the generator's array is now MAPPED at the boundary instead of
+  assigned across. No business's stored data was rewritten.
+- **One empty-item pass** (`wsPruneEmptyCards`) at the tail of `renderWebsite`, plus the
+  three side doors that repaint without it. Conservative on purpose: no readable text AND
+  no `<img>` AND no `<svg>` AND no background-image, and never in the editor view.
+- **The Instagram glyph is `currentColor` where the chip paints Instagram's gradient** —
+  it was drawn in the same gradient as its own background.
+Protected by `scripts/check-graefs-page.mjs` (one command, PASS or names what changed).
+
 ### The editor
 - **Drag-to-reorder — one operation at two grains.** Elements and sections are the same
   move; only the grain differs. **The grip lives ON the block** (its left edge), not in
@@ -163,7 +182,7 @@ verify interaction work.
 
 ---
 
-## THE FAMILY OF TRAPS — eight now, so learn the pattern, not the anecdotes
+## THE FAMILY OF TRAPS — nine now, so learn the pattern, not the anecdotes
 
 Every one of these was written, reviewed, merged and believed to be working. Each is the
 same mistake wearing different clothes: **a check that answers an adjacent question and is
@@ -216,6 +235,17 @@ actually happened, on the real artefact, **in the state they are actually in**, 
 at it. Traps 7 and 8 were both invisible to every test in the repo for the same reason —
 nothing exercises a CLAIMED site, and nothing reads back what the owner was actually told.
 
+9. **WRITTEN AND READ BACK IS NOT SURVIVED A RELOAD.** *(2026-09-04, `sectionCopy`.)* The
+   click-to-edit editor saved every section heading an owner typed to a key no renderer
+   read. It painted instantly, because the commit handler updates local state — so it
+   looked right, every time, for as long as you did not refresh. It has never worked for
+   anyone. An audit that proves a field is written and read back proves nothing about
+   this; the only test that catches it discards state and rehydrates:
+   commit → `buildBizMeta` → **throw `S.website` away** → `applyBizMeta` → render → look.
+   13 of 24 click-to-edit targets failed that, identically on all 7 classic pages. The
+   adjacent question was "does the value get stored"; the real one is "does a visitor ever
+   see it again".
+
 ---
 
 ## THE HABITS THAT EARNED THEIR KEEP (2026-09-04)
@@ -233,6 +263,28 @@ nothing exercises a CLAIMED site, and nothing reads back what the owner was actu
   breadcrumb climbs away. The operation worked; the thing a person does did not. If the
   verification does not perform the action the way a person performs it, it has not
   verified the feature.
+- **A FRAMING FROM ADRIAN IS A HYPOTHESIS, AND TESTING IT IS THE JOB.** *(2026-09-04, twice
+  in one day.)* "#18 is the highest-severity live item" was three pages. "Graef's four
+  defects are all one bug — a container drawn around nothing" was four different causes,
+  and the one-rule fix would have **deleted five things he wrote about his own business**
+  off the page we were protecting. Both times the right move was to test the framing before
+  executing it and report the correction plainly. Executing a wrong framing faithfully is
+  not obedience, it is a defect with a signature on it.
+- **ENUMERATE FROM THE DATA, NOT FROM A LIST OF FIELDS YOU REMEMBER.** The first schema
+  audit read `applyGeneratedCopy` and found 1 mismatch. Walking every object-shaped field
+  in all 34 real records, and then every `S.website.<field>` write in the file (64), found
+  3. Same asymmetry as always: a field missing from the list is a silent miss; a field
+  wrongly on it costs one check.
+- **WHEN A HARNESS AND THE EVIDENCE DISAGREE, THE HARNESS IS THE SUSPECT.** The round-trip
+  test reported 17 lost fields, then 15, then 13. The first two numbers were harness bugs —
+  it was reading a stale editor-preview clone, and it counted "this element is not on this
+  page" as "nothing reads this field". Each was caught by one field whose behaviour was
+  independently known (`cta-secondary` demonstrably works on the live page). Keep a known-good
+  case in every sweep purely so a broken harness announces itself.
+- **DO NOT RUN A CORPUS SWEEP AND EDIT THE FILE IT IS READING.** The 34-page "after" render
+  was silently contaminated by the deliberate-break test running against the same working
+  tree; it reported graefs LOSING his five reasons. Caught only because a separate two-page
+  render of the same code disagreed. Finish the sweep, or copy the tree.
 
 ---
 

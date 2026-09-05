@@ -918,6 +918,27 @@ for any business that legitimately has no stored document. The freeform path alr
 strips scaffolding for non-owners (`hcStripPlaceholders`, gated on `hcBuilderPreview()`);
 **the classic path has no equivalent.** That is a separate fix and it is not done.
 
+**Line numbers, added 2026-09-04 while working #23 — deliberately NOT fixed there, so the
+two jobs stay separate.** Two of the three have no `isEditorViewOpen()` gate at all, so they
+render to a customer as written:
+
+- `hubly.html:39640` — `if(!phone&&!email&&!city)` appends `t('wsAddContactInfo')`, which
+  reads **"Add contact info in the editor"** in the footer of a live public page. It names
+  our editor to somebody trying to phone the business.
+- `hubly.html:39599` — the `else` branch of the service-area map emits
+  `t('wsAreaAddLocation')` = **"Add your location to show the map"**.
+- `hubly.html:35888` — `"What makes your business different."`, a hardcoded literal no
+  locale scan finds. Recorded here because a blocklist built from remembered strings missed
+  it once already.
+
+Confirmed still live on market pages 2026-09-04: `aquaspeed` renders "Add what you do and we
+will lay it out."; `devdetailing661` renders "Add photos of real work you have done." and
+"Gallery photos will appear here."
+
+The fix is **not** a blocklist of placeholder strings — that was demonstrated incomplete.
+Mark the copy editor-only at its source and have the public renderer refuse to emit anything
+carrying the mark; then the count stops mattering.
+
 ---
 
 ## Also noted 2026-08-28
@@ -1288,3 +1309,106 @@ the one affected page uses. Caught by reading the CSS after writing the first ve
 - The full parsed class is **102 credential/activity literals across 20 files**. Most of
   the `hubly.html` hits are *advice to the owner* ("Publish licensed & insured language"),
   which is a different thing and fine. The count will move again.
+
+---
+
+## #23 — Two writers, one reader: owner copy stored under a key nothing renders
+
+**Found 2026-09-04, on `graefs-autocare` — our one real detailer. FIXED (reader-side); the
+class is now the thing to keep watching, not the three instances.**
+
+Adrian looked at his live site and reported four visible defects, with the framing "I believe
+they are all one bug: the renderer draws a container even when it has nothing to put in it."
+That framing was right about one of the four and wrong about the biggest one, and acting on it
+unmodified would have **deleted five things Graef wrote about his own business**. Recording the
+shape, because the next version of this will arrive wearing the same clothes.
+
+### What the four actually were — four causes, not one
+
+| symptom on his page | underlying data | cause |
+| --- | --- | --- |
+| "Why Choose Us": 5 cards, a ✓ and no text | **present, non-empty** | writer emits `{label}`, renderer reads `{icon,title,desc}` |
+| hero trust row: 1 of 3 blank | **empty** (`{label:"",value:""}`) | empty item rendered anyway — the only one that WAS the reported bug |
+| "Full Detail": no description | **empty** (`description:""`) | not a rendered box at all; `<p>` is correctly omitted, the blank is grid stretch. Left alone |
+| Instagram chip: no logo | n/a | glyph filled `url(#ig-grad)` on a chip painted the same gradient |
+
+### The class: a field written under a name the public renderer does not read
+
+Counted two ways. Parsing every `S.website.<field>` assignment in `hubly.html` (**64 fields**)
+against whether anything reads that name back, and running the round trip on all 24
+click-to-edit targets across 7 classic pages. Three instances:
+
+1. **`why_choose` → `whyChooseUs`.** `generate-site/index.ts:40` asks the model for
+   `why_choose:[{label}]`; `hubly_brain_website.ts:147` builds the same; the renderer reads
+   `{icon,title,desc}`. `applyGenerateSitePayload` assigned the array across with no mapping.
+   **15 items, 3 businesses, all `market`** (graefs-autocare, devdetailing661,
+   bucket-mobile-detailing); visible on 1 page — the other two use the tabbed profile layout
+   that does not show the Why section.
+2. **`sectionCopy` — the worst of the three.** `commitWsPeInlineValue`, `pe==='sec-title'` /
+   `'sec-sub'` (`hubly.html:34725`) writes `S.website.sectionCopy[sec].{title,sub}`. Every
+   renderer read the flat `w.<sec>Title` / `w.<sec>Sub`. **Nothing read `sectionCopy`.** So an
+   owner clicking a heading on their own page and typing had it saved and never shown again —
+   and it has never worked for anyone. Graef lost "my port", "nruh", and a real pricing term:
+   *"(Some Higher Level Services may require Deposits and Quotes)"*.
+   There is a naming trap under it: the **blueprint** also has a `sectionCopy`, and it is a
+   FLAT shape (`servicesTitle`, `galleryTitle`, …) read at `:19109`, while the editor's is
+   NESTED (`{gallery:{title,sub}}`). Same name, different structure.
+3. **`footerTagline`.** Same handler block, three lines earlier (`:34718`, `pe==='footer-tag'`).
+   The identifier appeared **exactly once in the whole file — at its own write**. 0 of 34
+   records had used it, so this one was closed before it cost anybody anything.
+
+### THE SIGNATURE, and why nothing caught it
+
+**It works until you refresh.** The edit lands in local state and paints instantly, so every
+test that does not reload passes. An audit proving a field is *written* and *read back* does
+not prove it *survives a save and a reload* — and that gap is the whole bug.
+
+The round trip that does prove it: `commitWsPeInlineValue` → `buildBizMeta` → **discard
+`S.website` entirely** → `applyBizMeta` → `renderWebsite` → is the value on the page.
+Before the fix: **13 of 24 click-to-edit targets failed, identically on all 7 classic pages.**
+After: 22 of 24 survive.
+
+### The fix, and why reader-side
+
+Reader-side (`wsSectionCopy`, `wsFooterTagline`, `wsWhyTitleOf`), because it rescues copy
+already sitting in records without writing to anyone's business data. Non-blank wins only —
+a cleared or whitespace value falls through to the existing default rather than blanking a
+section, since losing a heading is worse than keeping a stale one.
+
+Plus **one** empty-item pass (`wsPruneEmptyCards`) at the tail of `renderWebsite`, not a guard
+in each of the 36 places this renderer emits a repeated element (**0 of which filtered**). It
+is deliberately conservative — an element goes only when it has no readable text, no `<img>`,
+no `<svg>`, and no background-image, and never in the editor view, because an owner has to see
+an empty slot to fill it. The deliberate-break test proved the `<svg>` guard is load-bearing:
+removing it eats the TikTok icon.
+
+### STILL OPEN
+
+- **`store-title` / `store-sub`** (`pe`, `hubly.html:34692`) fail the same round trip on all 7
+  pages. Their reader exists (`:39737`) but sits inside `sf.loadPublic(bizId).then(...)` and
+  needs a business with an active store product — **unprovable with the current corpus**, so
+  not counted as broken and not fixed. Check it the day one exists.
+- **`footer-cta`** failed the round trip on 2 of 7 pages (aquaspeed, cedar-ridge-plumbing) and
+  survived on 5. Layout-dependent; not the clean class; not investigated.
+- **`_trustClearedByOwner`** — dead state I created that morning in `22fda62`: its only reader
+  was the trust auto-fill that commit removed. The write is now gone too. Records that already
+  carry the flag are harmless.
+
+---
+
+## #24 — `site_mode` does not route. Do not trust it.
+
+**Found 2026-09-04. Not a defect to fix — a trap for the next reader.**
+
+The `businesses.site_mode` column reads `classic` for **all 34** claimed businesses, including
+the **24 that actually render on the freeform document renderer** (`#p-hubly-document`). Only
+**10** render `#p-storefront`. What routes is whether `get_public_business_document(slug,'website')`
+returns HTML — not the column.
+
+I would have reported "all 34 are on the classic renderer" if I had read the column instead of
+rendering the pages. The check that costs nothing: load the page and read which `.page.active`
+you got.
+
+The 10 genuinely on the classic renderer, which is where every defect in #23 lives:
+`adrians-lawn-service, aquaspeed, bucket-mobile-detailing, cedar-ridge-plumbing, cotter-aviation,
+devdetailing661, graefs-autocare, my-auto-detailing, my-photography, star-windows`.

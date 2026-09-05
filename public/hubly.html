@@ -6806,6 +6806,20 @@ body.ws-booking-open #ws-chat-teaser{display:none!important}
 .ws-footer .ws-social-btn[data-soc="facebook"]{background:#1877F2;border:none;color:#fff;}
 .ws-footer .ws-social-btn[data-soc="tiktok"]{background:#000;border:1px solid rgba(255,255,255,.35);color:#fff;}
 .ws-footer .ws-social-btn[data-soc="google"]{background:#fff;border:none;color:#4285F4;}
+/* A GLYPH MAY NOT BE PAINTED THE SAME COLOUR AS THE CHIP UNDERNEATH IT.
+   SOCIAL_SVGS.instagram fills its path with url(#ig-grad) — Instagram's own
+   gradient — and these two rules paint the chip with Instagram's own gradient
+   too. Measured on the live footer: background linear-gradient(135deg,#f58529,
+   #dd2a7b,#8134af,#515bd4) behind a path whose computed fill is url("#ig-grad").
+   Correct link, correct SVG, invisible ink: a coloured square with no logo, on
+   both market businesses that have an Instagram handle. facebook/tiktok/google
+   never had it because their glyphs are currentColor.
+   Scoped to exactly the two chips that paint a brand background, so everywhere
+   else keeps the gradient glyph. Note the footer rule never set a text colour
+   (its three siblings all do) — without that, currentColor would just be ink. */
+.ws-footer .ws-social-btn[data-soc="instagram"]{color:#fff;}
+.ws-footer .ws-social-btn[data-soc="instagram"] svg path,
+.ws-layout-simple-profile .ws-hero-socials a.ws-social-btn[data-soc="instagram"] svg path{fill:currentColor;}
 .ws-why-ico img{width:100%;height:100%;object-fit:cover;border-radius:10px;display:block;}
 .ws-why-ico.has-img{padding:0;overflow:hidden;background:transparent;}
 .ed-site-url-wrap{min-width:0;max-width:min(560px,60vw);flex:1;background:none!important;border:none!important;box-shadow:none!important;padding:0!important;border-radius:0!important;}
@@ -35933,6 +35947,9 @@ function fillProfileCardSlots(editing){
       ?`<div class="ws-profile-empty ws-pe-target" data-pe="add-membership" data-pe-label="Add membership">Tap to add memberships</div>${addTile}`
       :`<div class="ws-profile-empty">${t('wsAddMembershipPlan')}</div>`;
   }
+  // Side door: the profile-sheet layout paints gallery/services/memberships here
+  // without going through renderWebsite, so the pass has to be invited in.
+  try{wsPruneEmptyCards();}catch(e){}
   const about=wsPageEl('ws-profile-about');
   if(about){
     const bio=(S.website?.ownerBio||S.about||'').trim();
@@ -36143,7 +36160,10 @@ function applyWsPeTrustStats(){
   }
   S.website.trustStats=stats;
   const any=stats.some(s=>s.value||s.label);
-  S.website._trustClearedByOwner=!any;
+  /* _trustClearedByOwner used to gate the blueprint trust-badge auto-fill. That
+     auto-fill was removed (Hubly does not assert that a business is insured), so
+     the flag has no reader left and is not written any more. Records that already
+     carry it are harmless — nothing reads it. */
   closeWsPePop();
   renderWebsitePreview();
   toast('Stats updated');
@@ -39293,6 +39313,103 @@ function renderWsHeroContact(){
   }
 }
 
+/* ── ONE READER FOR THE COPY THE OWNER ACTUALLY TYPED ──────────────────────────
+   Two writers put section headings into website state and the renderer read only
+   one of them. Click-to-edit (commitWsPeInlineValue, pe==='sec-title'/'sec-sub')
+   writes S.website.sectionCopy[sec].{title,sub}; the flat w.<sec>Title/<sec>Sub
+   fields are what everything below read. NOTHING read sectionCopy — so every
+   heading an owner edited by clicking it was saved and never shown again. That is
+   the worst shape a bug can have here: it paints instantly in local state, so any
+   test that never reloads passes, which is exactly why it shipped. Measured by
+   round trip (commit -> buildBizMeta -> discard state -> applyBizMeta -> render)
+   on all 7 classic pages: 12 of 24 click-to-edit targets did not survive.
+   Graef's AutoCare typed "my port" over his gallery heading and a real pricing
+   term into his services subhead ("Some Higher Level Services may require
+   Deposits and Quotes"); the page went on showing blueprint defaults.
+
+   Reader-side on purpose: it rescues copy already in the record without writing
+   to anyone's data. And sectionCopy wins ONLY when non-blank — a cleared or
+   whitespace value falls through to the existing default rather than blanking a
+   section, because losing a heading is worse than keeping a stale one. */
+function wsSectionCopy(w,sec,kind,fallback){
+  try{
+    const bag=w&&w.sectionCopy&&typeof w.sectionCopy==='object'?w.sectionCopy[sec]:null;
+    const v=bag&&typeof bag==='object'?bag[kind]:null;
+    const str=String(v==null?'':v).trim();
+    if(str)return str;
+  }catch(e){}
+  return fallback;
+}
+/* The same split, three lines earlier in the same handler: pe==='footer-tag'
+   writes w.footerTagline, and the footer rendered w.heroSub. footerTagline
+   appeared exactly ONCE in this file — at its own write. Nobody has used it yet
+   (0 of 34 claimed records), so this is the rare chance to close one of these
+   before it costs someone their words. Non-blank wins, same as above. */
+function wsFooterTagline(w){
+  const s=String((w&&w.footerTagline)||'').trim();
+  return s||wsCopyOrT((w&&w.heroSub)||S.tag,'wsDefaultTag');
+}
+/* whyChooseUs arrives in two shapes and only one was ever read. generate-site's
+   JSON_SHAPE asks the model for why_choose:[{label}] and hubly_brain_website
+   builds the same; the editor writes {icon,title,desc}. applyGenerateSitePayload
+   assigned the generated array straight across with no mapping, so 15 real
+   reasons across 3 market businesses sat in the record under a key the renderer
+   never looked at and drew as five bare checkmarks.
+
+   Read BOTH here; never rewrite what is stored. Deleting the empty-looking cards
+   would have been the tempting fix and it would have thrown away five things a
+   business owner said about his own work. */
+function wsWhyTitleOf(x){ return String((x&&(x.title||x.label))||'').trim(); }
+
+/* ── A BOX AROUND NOTHING DOES NOT GET DRAWN ───────────────────────────────────
+   One pass, at the end of renderWebsite, rather than a guard bolted onto each of
+   the 36 places this renderer emits a repeated element (0 of which filtered).
+   Sections already decide visibility in one place — applyBlueprintSectionVisibility
+   — but it decides from the BLUEPRINT, never from content, and a section can be
+   full of empty cards while its own heading still reads fine. So the check has to
+   be at the item.
+
+   Deliberately conservative, because over-deletion here is silent and lands on a
+   real business's live page: an element is removed only when it has NO readable
+   text, NO <img>, NO <svg>, and NO background-image. A decorative glyph alone
+   (the ✓ on a why card) is not readable text. And never in the editor — an owner
+   has to be able to see an empty slot in order to fill it. */
+const WS_EMPTY_PRUNE_SELECTORS=[
+  '.ws-why-item','.ws-trust-pill','.ws-faq-item','.ws-review-card','.ws-mem-card',
+  '.ws-membership-card','.ws-gallery-card','.ws-gal-album','.ws-area-city-chip',
+  '.ws-svc-card','.ws-social-btn','.ws-badge','.ws-trust-badge',
+];
+function wsPruneEmptyCards(root){
+  try{
+    if(typeof isEditorViewOpen==='function'&&isEditorViewOpen())return 0;
+    const scope=root||document.getElementById('ws-page');
+    if(!scope)return 0;
+    // Decoration is not content: strip glyphs/punctuation/whitespace before asking
+    // whether a visitor has anything to read.
+    const readable=(el)=>String(el.textContent||'')
+      .replace(/[\s\u00a0\u2000-\u206f\u2190-\u2bff\u2e00-\u2e7f\u3000-\u303f\ufe00-\ufe0f]/g,'')
+      .replace(/[\u{1F000}-\u{1FAFF}]/gu,'')
+      .replace(/[^\p{L}\p{N}]/gu,'')
+      .trim();
+    let removed=0;
+    for(const sel of WS_EMPTY_PRUNE_SELECTORS){
+      for(const el of scope.querySelectorAll(sel)){
+        if(readable(el))continue;
+        if(el.querySelector('img,svg,picture,video,canvas,iframe'))continue;
+        let painted=false;
+        try{
+          if(getComputedStyle(el).backgroundImage!=='none')painted=true;
+          if(!painted)for(const kid of el.querySelectorAll('*')){
+            if(getComputedStyle(kid).backgroundImage!=='none'){painted=true;break;}
+          }
+        }catch(e){painted=true;} /* cannot measure it -> keep it */
+        if(painted)continue;
+        el.remove();removed++;
+      }
+    }
+    return removed;
+  }catch(e){return 0;}
+}
 function renderWebsite(prefix){
   ensureWebsiteCopy();
   try{S.color=isNormalizeTradeAccent(S.color);}catch(e){}
@@ -39508,8 +39625,10 @@ function renderWebsite(prefix){
   const svcHdr=wsPageEl('ws-services-title')||document.querySelector('#ws-sec-services .ws-section-hdr h2');
   const defaultSvcTitle=layoutId==='neon-nights'?t('wsServicesProtocol'):(layoutId==='chrome-velocity'?t('wsServicesPackage'):t('wsServicesTitle'));
   const defaultSvcSub=layoutId==='neon-nights'?t('wsServicesTitle'):(layoutId==='chrome-velocity'?'// '+t('wsServicesTitle'):t('wsServicesSub'));
-  if(svcHdr)svcHdr.textContent=wsCopyOrT(w.servicesTitle, layoutId==='neon-nights'?'wsServicesProtocol':(layoutId==='chrome-velocity'?'wsServicesPackage':'wsServicesTitle'))||defaultSvcTitle;
-  if(svcSub)svcSub.textContent=wsCopyOrT(w.servicesSub, layoutId==='neon-nights'?'wsServicesTitle':'wsServicesSub')||defaultSvcSub;
+  if(svcHdr)svcHdr.textContent=wsSectionCopy(w,'services','title',
+    wsCopyOrT(w.servicesTitle, layoutId==='neon-nights'?'wsServicesProtocol':(layoutId==='chrome-velocity'?'wsServicesPackage':'wsServicesTitle'))||defaultSvcTitle);
+  if(svcSub)svcSub.textContent=wsSectionCopy(w,'services','sub',
+    wsCopyOrT(w.servicesSub, layoutId==='neon-nights'?'wsServicesTitle':'wsServicesSub')||defaultSvcSub);
   const svcGrid=prefix?document.getElementById(p+'-services'):wsPageEl('ws-services');
   if(svcGrid){
     const svcs=getBookingServices().filter(s=>s.name);
@@ -39569,9 +39688,10 @@ function renderWebsite(prefix){
     const whyAdd=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-why" data-pe-label="Add reason" style="min-height:140px;"><span class="ws-pe-add-plus">+</span><span>Add reason</span></button>':'';
     whyEl.innerHTML=(w.whyChooseUs||[]).map((x,i)=>{
       const ico=x.iconUrl?`<div class="ws-why-ico has-img"><img src="${x.iconUrl}" alt=""></div>`:`<div class="ws-why-ico">${x.icon||'✓'}</div>`;
+      const whyTitle=wsWhyTitleOf(x);
       return isEditorViewOpen()
-        ?`<div class="ws-why-item ws-pe-target" data-pe="why-item" data-why-idx="${i}" data-pe-label="Edit reason">${ico}<h4>${x.title||''}</h4><p>${x.desc||''}</p></div>`
-        :`<div class="ws-why-item">${ico}<h4>${x.title||''}</h4><p>${x.desc||''}</p></div>`;
+        ?`<div class="ws-why-item ws-pe-target" data-pe="why-item" data-why-idx="${i}" data-pe-label="Edit reason">${ico}<h4>${whyTitle}</h4><p>${x.desc||''}</p></div>`
+        :`<div class="ws-why-item">${ico}<h4>${whyTitle}</h4><p>${x.desc||''}</p></div>`;
     }).join('')+whyAdd;
   }
   const setSec=(titleId,subId,titleVal,subVal)=>{
@@ -39579,20 +39699,27 @@ function renderWebsite(prefix){
     if(tEl)tEl.textContent=titleVal;
     if(sEl)sEl.textContent=subVal;
   };
-  setSec('ws-gallery-title','ws-gallery-sub',wsCopyOrT(w.galleryTitle,'wsGalleryTitle'),wsCopyOrT(w.gallerySub,'wsGallerySub'));
-  setSec('ws-reviews-title','ws-reviews-sub',wsCopyOrT(w.reviewsTitle,'wsReviewsTitle'),wsCopyOrT(w.reviewsSub,'wsReviewsSub'));
-  setSec('ws-why-title','ws-why-sub',wsCopyOrT(w.whyTitle,'wsWhyTitle'),wsCopyOrT(w.whySub,'wsWhySub'));
+  setSec('ws-gallery-title','ws-gallery-sub',
+    wsSectionCopy(w,'gallery','title',wsCopyOrT(w.galleryTitle,'wsGalleryTitle')),
+    wsSectionCopy(w,'gallery','sub',wsCopyOrT(w.gallerySub,'wsGallerySub')));
+  setSec('ws-reviews-title','ws-reviews-sub',
+    wsSectionCopy(w,'reviews','title',wsCopyOrT(w.reviewsTitle,'wsReviewsTitle')),
+    wsSectionCopy(w,'reviews','sub',wsCopyOrT(w.reviewsSub,'wsReviewsSub')));
+  setSec('ws-why-title','ws-why-sub',
+    wsSectionCopy(w,'why','title',wsCopyOrT(w.whyTitle,'wsWhyTitle')),
+    wsSectionCopy(w,'why','sub',wsCopyOrT(w.whySub,'wsWhySub')));
   const areaLoc=areaDisp.sub||city||(w.areaSub||'').trim()||(w.areaQuery||'').trim();
-  setSec('ws-area-title','ws-area-sub',wsCopyOrT(w.areaTitle,'wsAreaTitle'),
-    areaLoc||t('wsAreaComeToYou'));
+  setSec('ws-area-title','ws-area-sub',
+    wsSectionCopy(w,'area','title',wsCopyOrT(w.areaTitle,'wsAreaTitle')),
+    wsSectionCopy(w,'area','sub',areaLoc||t('wsAreaComeToYou')));
   const memTitle=wsPageEl('ws-membership-title');
   if(memTitle&&!memTitle.dataset.custom)memTitle.textContent=t('wsMembership');
   const memSub=wsPageEl('ws-membership-sub');
   if(memSub)memSub.textContent=t('wsMembershipSub');
   const faqTitle=wsPageEl('ws-faq-title');
-  if(faqTitle)faqTitle.textContent=wsCopyOrT(w.faqTitle,'wsFaqTitle')||t('wsFaqTitle');
+  if(faqTitle)faqTitle.textContent=wsSectionCopy(w,'faq','title',wsCopyOrT(w.faqTitle,'wsFaqTitle')||t('wsFaqTitle'));
   const faqSub=wsPageEl('ws-faq-sub');
-  if(faqSub)faqSub.textContent=wsCopyOrT(w.faqSub,'wsFaqSub')||t('wsFaqSub');
+  if(faqSub)faqSub.textContent=wsSectionCopy(w,'faq','sub',wsCopyOrT(w.faqSub,'wsFaqSub')||t('wsFaqSub'));
   const mapEl=prefix?document.getElementById(p+'-area-map'):wsPageEl('ws-area-map');
   const mapQuery=areaDisp.mapQuery||city||(w.areaZips||'').trim();
   if(mapEl&&mapQuery)mapEl.innerHTML=`<iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=11&output=embed"></iframe>`;
@@ -39626,9 +39753,9 @@ function renderWebsite(prefix){
   const footBrand=wsPageEl('ws-footer-brand');
   if(footBrand){
     if(isEditorViewOpen()){
-      footBrand.innerHTML=`<p class="ws-footer-brand-name ws-pe-target" data-pe="biz-name" data-pe-label="Edit name">${biz}</p><p class="ws-footer-brand-tag ws-pe-target" data-pe="footer-tag" data-pe-label="Edit tagline">${wsCopyOrT(w.heroSub||S.tag,'wsDefaultTag')}</p>`;
+      footBrand.innerHTML=`<p class="ws-footer-brand-name ws-pe-target" data-pe="biz-name" data-pe-label="Edit name">${biz}</p><p class="ws-footer-brand-tag ws-pe-target" data-pe="footer-tag" data-pe-label="Edit tagline">${wsFooterTagline(w)}</p>`;
     }else{
-      footBrand.innerHTML=`<p class="ws-footer-brand-name">${biz}</p><p class="ws-footer-brand-tag">${wsCopyOrT(w.heroSub||S.tag,'wsDefaultTag')}</p>`;
+      footBrand.innerHTML=`<p class="ws-footer-brand-name">${biz}</p><p class="ws-footer-brand-tag">${wsFooterTagline(w)}</p>`;
     }
   }
   const footContact=wsPageEl('ws-footer-contact');
@@ -39668,6 +39795,9 @@ function renderWebsite(prefix){
     backTop.style.background=accent||'var(--ws-accent)';
     ensureWsBackTop();
   }
+  // LAST THING THIS FUNCTION DOES: every card emission above has run, so this is
+  // the one place that can see the finished page. Not a guard in 36 emitters.
+  try{wsPruneEmptyCards(prefix?document.getElementById(p):null);}catch(e){}
 }
 function isStoreEnabledOnWebsite(){
   try{
@@ -39791,7 +39921,17 @@ function applyGenerateSitePayload(g){
   if(g.faq?.length&&!(S.website.faq||[]).length){S.website.faq=g.faq;applied=true;}
   if(g.seo_title&&!(S.website.seoTitle||'').trim()){S.website.seoTitle=g.seo_title;applied=true;}
   if(g.seo_description&&!(S.website.seoDescription||'').trim()){S.website.seoDescription=g.seo_description;applied=true;}
-  if(g.why_choose?.length&&!(S.website.whyChooseUs||[]).length){S.website.whyChooseUs=g.why_choose;applied=true;}
+  // generate-site returns why_choose:[{label}] (see its JSON_SHAPE); this state is
+  // read as {icon,title,desc}. This used to assign the array straight across, which
+  // is how 15 real reasons ended up stored under a key nothing rendered. Map it.
+  if(g.why_choose?.length&&!(S.website.whyChooseUs||[]).length){
+    S.website.whyChooseUs=g.why_choose.map(x=>{
+      if(!x||typeof x!=='object')return {title:String(x||'').trim(),desc:''};
+      const title=String(x.title||x.label||'').trim();
+      return {icon:x.icon||'',iconUrl:x.iconUrl||'',title,desc:String(x.desc||'').trim()};
+    }).filter(x=>x.title||x.desc);
+    applied=true;
+  }
   if(g.services_title&&!(S.website.servicesTitle||'').trim()){S.website.servicesTitle=g.services_title;applied=true;}
   if(g.services_sub&&!(S.website.servicesSub||'').trim()){S.website.servicesSub=g.services_sub;applied=true;}
   if(g.gallery_title&&!(S.website.galleryTitle||'').trim()){S.website.galleryTitle=g.gallery_title;applied=true;}
@@ -49638,6 +49778,8 @@ async function approvePendingReview(id){
     // widget, so it usually isn't.
     refreshJobsIfOpen();
     if(typeof renderWebsiteReviews==='function')renderWebsiteReviews('ws-reviews');
+    // Side door: a reviews-only repaint never reaches renderWebsite's tail.
+    try{wsPruneEmptyCards();}catch(e){}
     toast(t('reviewApproved'));
   }catch(e){
     toast('❌ '+(e.message||'Could not approve review'));
