@@ -3523,8 +3523,17 @@ does not break the current deployment before the new values exist.
 ### The migration — PROPOSED, NOT RUN, AND DELIBERATELY NOT IN `supabase/migrations/`
 
 **It lives here, in a document, on purpose.** A file under `supabase/migrations/` is picked up by
-`supabase db push` — it would be one absent-minded command away from running. It moves there when
-the ordering constraint below is satisfied, not before.
+`supabase db push` — it would be one absent-minded command away from running.
+
+**And that has a cost that must not be left implicit: a migration that lives only in a markdown
+finding is NOT in the schema history.** A database rebuilt from `supabase/migrations/` will not
+have this column, so from the moment this runs until the file moves, **the repo can no longer
+reproduce production.** That is the same defect as an unpinned API version — the authority
+living somewhere other than the repo.
+
+> **THE RULE: it stays in the finding until it runs, and it MOVES INTO `supabase/migrations/`
+> the moment it does — same commit, not "later".** Running it and leaving it here is not a
+> cautious half-step; it is the worst of both.
 
 ```sql
 -- stripe_connect_accounts.mode — PROPOSED 2026-09-06. NOT RUN.
@@ -3584,11 +3593,65 @@ alter table public.stripe_connect_accounts
 alter table public.stripe_connect_accounts
   drop constraint stripe_connect_accounts_business_unique;
 
-create unique index if not exists stripe_connect_accounts_biz_mode_uniq
+--    NOT `if not exists`, deliberately: if that index name already existed on
+--    DIFFERENT columns, IF NOT EXISTS would silently do nothing and the
+--    migration would COMMIT with no uniqueness at all — a silent no-op in the
+--    one place nobody would think to check. Let it error.
+create unique index stripe_connect_accounts_biz_mode_uniq
   on public.stripe_connect_accounts (business_id, mode);
 
 commit;
 ```
+
+**M-C2 checked before running — nothing depends on the dropped constraint for conflict
+resolution.** No `.upsert()` or `onConflict` on `stripe_connect_accounts` anywhere in the
+codebase (every one of the 16 sites is select/insert/update/delete), and **no database function
+references the table at all** (`pg_get_functiondef` scan over every `public` routine → 0 rows).
+The many `onConflict: "business_id"` hits in the repo are on other tables —
+`workspace_memories`, `hubly_app_connections`, `commerce_store_settings`, `business_memories`.
+This mattered because a broken `onConflict` fails at **runtime** and no schema diff would show it.
+
+### THE ROLLBACK — written BEFORE the migration runs
+
+```sql
+-- ROLLBACK for the mode migration. Write it first; an untested rollback is a wish.
+begin;
+
+drop index if exists public.stripe_connect_accounts_biz_mode_uniq;
+
+-- THIS IS THE STEP THAT CAN FAIL. If any business acquired a SECOND account row
+-- while `mode` existed, restoring a single-row-per-business constraint is
+-- impossible without deleting one — and choosing which mode's account to erase
+-- from our records is a decision, not a rollback.
+alter table public.stripe_connect_accounts
+  add constraint stripe_connect_accounts_business_unique unique (business_id);
+
+alter table public.stripe_connect_accounts
+  drop constraint stripe_connect_accounts_mode_chk;
+
+alter table public.stripe_connect_accounts drop column mode;
+
+commit;
+```
+
+**What the rollback CANNOT undo — stated plainly:**
+
+1. **A second account row.** If one exists, step 2 above fails and the rollback stops. Recovery
+   means deleting a row first, which permanently drops our only record of one mode's account id
+   (the account survives at Stripe; see the disconnect note above).
+2. **Stripe-side objects.** Any Connect account created during the window still exists at Stripe.
+   The rollback touches our schema only; it un-creates nothing.
+3. **The backfilled provenance.** `drop column mode` destroys the hand-asserted mode values. Re-
+   running the migration means re-asserting them — cheap for two rows we created, not cheap once
+   there are rows we did not.
+4. **Deployed code.** Any function shipped with a `.eq("mode", …)` filter breaks immediately
+   against a table with no `mode` column. **The rollback is only safe if the code deploy is
+   reverted in the same operation** — and reverting a Supabase function deploy is a redeploy of
+   the old source, not an automatic step. Rolling back the schema alone converts a working system
+   into a broken one.
+
+**Because of (4), the schema and the code are one unit in both directions.** That is the same
+constraint as the ordering rule at the top of this finding, seen from the other end.
 
 **Existing constraints, measured — this was the open question and it is now answered:**
 
