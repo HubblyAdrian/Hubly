@@ -2766,10 +2766,40 @@ runs once per webhook delivery instead of once per sale. That is the class — *
 not a line"* — and I fixed the symptom I had been shown. The comment I left at `:232` is
 accurate; the omission was not looking one function wider.
 
-**The fix is one line:** move the inventory deduction inside `if (didFlip)`, exactly like the
-notification. Not applied here — it was found during a walk whose remit was to observe and clean
-up, and it deserves its own change with its own verification (sell two units of a five-stock
-product and confirm stock reads 3, not 1).
+### THE CLASS SWEEP, done before the patch this time
+
+Every side effect in `finalizePaidCommerceOrder`, sorted into *safe to run twice* vs *must run
+once* — because naming the class is the step I skipped when I added `didFlip` for the
+notification alone.
+
+| # | step | line | verdict |
+| --- | --- | --- | --- |
+| 1 | read the order | 154 | read only — safe |
+| 2 | early return if `status === "paid"` | 160 | a guard, but **sequential only**: two concurrent deliveries both read `pending` and both pass it |
+| 3 | `resolveOrCreateCrmCustomer` | 170 | find-then-insert with **no unique constraint on `customers`** — safe in practice when the buyer gave an email or phone (the second call finds the first's row), **can duplicate a buyer who gave only a name** |
+| 4 | order flip → `didFlip` | 190 | `.neq("status","paid")` + `.select()` — **safe**, exactly one delivery wins |
+| 5 | **inventory deduction** | 195 | `atomicDecrement` is atomic **per call**, not idempotent **per order** — **MUST RUN ONCE. This is the bug.** |
+| 6 | shortfall note | 211 | fixed-value update — idempotent, but rides on #5 |
+| 7 | cart conversion | 215 | fixed-value update — safe |
+| 8 | sale notification | 236 | inside `if (didFlip)` — **safe** |
+
+**Wider than the function**, since narrowness was the original error: all six writes in
+`stripe-webhook` are `.update()` with fixed values — there are no inserts anywhere in it.
+`createJobFromBookingRequest` is built idempotent on `jobs.booking_request_id`. The booking and
+marketplace-booking paths are clean. Exactly one must-run-once operation was unguarded.
+
+**FIXED 2026-09-06:** the deduction moved inside `if (didFlip)`.
+
+**Also corrected:** the comment at `stripe-webhook:210` claimed the `payment_intent.succeeded`
+path was *"idempotent (finalize no-ops if the order is already paid)"*. That is true only when
+this delivery arrives **after** the other has written. The comment asserted a property the code
+did not have, and it is what let the double deduction ship — a comment describing an unbuilt
+guarantee reads as a spec.
+
+**NOT fixed, filed separately as #44:** row 3. `customer_id` has to be in the patch that performs
+the flip, so the customer lookup cannot simply move inside `didFlip`; it needs a unique constraint
+on `customers`, which is a migration and a decision about what makes a customer unique — not a
+one-liner to smuggle into an inventory fix.
 
 **Why it matters at real size:** a shop with 5 in stock reads sold-out after 2 sales, and every
 number downstream — the sold-out badge, the low-stock threshold, the owner's own count — is
@@ -2777,9 +2807,42 @@ wrong in the direction that loses sales.
 
 ---
 
-## #42 — The buyer's order confirmation is unreadable
+## #42 — WRONG, CLOSED 2026-09-06. The buyer's confirmation email is fine.
 
-**Found 2026-09-06 on the first real purchase. The very first thing a paying customer sees.**
+**FILED IN ERROR AND DISPROVED THE SAME NIGHT.** Kept, not deleted: a wrong finding recorded
+and corrected is worth more than one quietly dropped, and the reason it was wrong is the useful
+part.
+
+**What actually happens.** Adrian opened the buyer's confirmation in Gmail: dark green header,
+white "Order confirmed", white card, black body text, `$24.99` right-aligned. Perfectly legible.
+Nothing is unreadable. The email is fine and was always fine.
+
+**Why I got it wrong.** I measured `#hub-store-confirm` — the **in-page banner** rendered by
+`storefront-cart.js` after the redirect — with `getComputedStyle` in a browser, and then wrote
+the finding as though it described the buyer's **email**. Two different surfaces. Worse, even for
+the in-page banner the browser measurement is not what a mail client would do: an email's outer
+wrapper background is applied by the client, and a `background: rgba(0,0,0,0)` reading on a
+rendered file says nothing about how the message looks in an inbox.
+
+> **AN EMAIL PROVES NOTHING UNTIL YOU READ IT IN A MAIL CLIENT.**
+>
+> This is the same lesson as the booking frames, and as "a template edit proves nothing about a
+> live page until you walk the live page." For email, *live* means an actual inbox — Gmail, Apple
+> Mail, Outlook — not an HTML file, not a browser tab, and not a computed style. I had a rule
+> that said measure the real thing in the real state, applied it all night to pages, and then
+> filed a defect about an email I had never opened.
+
+**What remains true and is NOT closed by this:** the in-page banner on the site after redirect is
+a separate surface from the email, and the observation that the buyer is returned to the business
+**homepage** rather than to the store or an order view still stands. If that banner is ever worth
+styling, it is a small piece of #39's cause (class names with no stylesheet) — but it is not the
+customer-facing defect this finding claimed, and it is not urgent.
+
+---
+
+<details>
+<summary>The original, incorrect finding as filed — kept for the record</summary>
+
 
 After paying, the buyer lands back on the business's homepage and a confirmation appears:
 
@@ -2799,12 +2862,17 @@ The wording is fine. It is invisible. **Fix it with the styles it never had**, a
 and while there, note that the buyer is returned to the site **homepage**, not to the store or an
 order page, so there is nowhere to see what they just bought.
 
+</details>
+
 ---
 
 ## #43 — The sale notifier has no link in it, and our own standard requires one
 
-**Self-audit, 2026-09-06. A defect in something I built, found by checking it against the
-notification standard rather than against whether it ran.**
+**Self-audit, 2026-09-06, then CONFIRMED FROM A REAL INBOX the same night.** Adrian read both
+emails in Gmail: there is no link anywhere in either. The closest thing to a next step is
+*"Questions about this order go to Evergreen Yard Care directly"* — and it is not clickable.
+
+Unlike #42, this one survived contact with a mail client, which is the only reason it stands.
 
 The standard says a notification must *"link straight to the thing — one tap to the booking, the
 site, the signup. If the recipient has to open something else to act on it, the notification has
@@ -2826,3 +2894,33 @@ and does not invite a reply to an unmonitored address (*"Questions about this or
 view. Blocked on there being somewhere to link to — the claimed shell has no Store workspace
 (#36), so today there is no owner-facing order page to point at. **That makes #36 a prerequisite
 for closing this, not a separate nicety.**
+
+---
+
+## #44 — Two webhook deliveries can create two CRM customers for one buyer
+
+**Found 2026-09-06 by the #41 class sweep, not by a symptom. Latent — it did not fire on either
+walk. Recorded rather than patched.**
+
+`finalizePaidCommerceOrder:170` calls `resolveOrCreateCrmCustomer`, which is **find-then-insert**
+(`crm_customer.ts:82`) against a `customers` table with **no unique constraint** — no unique index
+on `(business_id, email)` or `(business_id, phone)` exists in any migration.
+
+`stripe-webhook` delivers `checkout.session.completed` and `payment_intent.succeeded` for the same
+purchase, and both can read the order before either flips it (measured: that is exactly what
+happened in #41). Both then reach the customer lookup.
+
+**Why it did not fire tonight:** the second delivery matched the first's row by email. The lookup
+is genuinely idempotent whenever the buyer supplied a strong identifier — an email or a phone with
+7+ digits. **It is not idempotent when the buyer supplied only a name**, which the store checkout
+allows: the email field in the cart is optional markup, and a buyer who leaves it blank falls
+through to the create branch on both deliveries.
+
+**Why it is not a one-liner.** The obvious fix — move the lookup inside `if (didFlip)` — does not
+work: `customer_id` has to be part of the patch that performs the flip. The real fix is a unique
+constraint plus an upsert, and that needs a decision first: **what makes a customer unique to a
+business?** Email? Phone? Either? That decision belongs with the #185 canonical-identity policy
+already documented in `crm_customer.ts`, and it should not be made inside an inventory bugfix.
+
+Cost if it fires: a duplicate customer row, split history across two records, and the owner
+seeing one person as two.

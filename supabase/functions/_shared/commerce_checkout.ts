@@ -192,9 +192,29 @@ export async function finalizePaidCommerceOrder(
   if (upErr) return { ok: false, error: upErr.message };
   const didFlip = Array.isArray(flipped) ? flipped.length > 0 : !!flipped;
 
-  // Deduct inventory (only paid orders reach here → abandoned checkouts never consume stock).
+  // Deduct inventory — ONLY on the delivery that actually flipped the order.
+  //
+  // MEASURED 2026-09-06, first real purchase: one sale of ONE unit took stock from
+  // 5 to 3. Two commerce_inventory_logs rows, same order_id, reason "order.paid",
+  // 0.6s apart (5→4, then 4→3). stripe-webhook calls this from BOTH
+  // checkout.session.completed and payment_intent.succeeded; both deliveries read
+  // status "pending" before either wrote, so both passed the early return above —
+  // exactly the race the didFlip comment predicts. The flip was safe, the
+  // notification was safe (it is inside `if (didFlip)`), the cart conversion is
+  // idempotent — and this was not, because applyOrderInventoryDeduction is atomic
+  // PER CALL but not idempotent PER ORDER.
+  //
+  // The class this belongs to: everything in this function is either safe to run
+  // once per webhook delivery, or must run exactly once per SALE. Stock and the
+  // owner's email are the second kind. `didFlip` is the one fact that separates
+  // them, so anything in the second kind goes inside it.
+  //
+  // Left OUTSIDE deliberately: resolveOrCreateCrmCustomer above, because
+  // customer_id has to be in the patch that does the flip. It is find-then-insert
+  // with no unique constraint on customers, so it can still duplicate a buyer who
+  // supplied only a name — recorded as its own finding, not smuggled in here.
   let shortfalls: unknown[] = [];
-  try {
+  if (didFlip) try {
     const { data: rows } = await admin
       .from("commerce_order_items").select("product_id,variant_id,qty,title").eq("order_id", orderId);
     const res = await applyOrderInventoryDeduction(admin, {

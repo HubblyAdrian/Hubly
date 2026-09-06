@@ -206,7 +206,13 @@ Deno.serve(async (req: Request) => {
       ).trim();
       const piId = String(piObj.id || "");
       if (commerceOrderId) {
-        // Backup finalize path — idempotent (finalize no-ops if the order is already paid).
+        // Backup finalize path. NOTE, corrected 2026-09-06: this used to say
+        // "idempotent (finalize no-ops if the order is already paid)". That is true
+        // only when this delivery arrives AFTER the other one has written. When both
+        // deliveries of the same purchase arrive together they both read "pending",
+        // both pass finalize's early return, and only the `didFlip` guard inside
+        // finalize separates run-once work from run-per-delivery work. That wrong
+        // comment is what let a double inventory deduction ship.
         try {
           const { finalizePaidCommerceOrder } = await import("../_shared/commerce_checkout.ts");
           await finalizePaidCommerceOrder(admin, { orderId: commerceOrderId, paymentIntentId: piId });
