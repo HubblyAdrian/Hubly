@@ -63,10 +63,15 @@
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
 import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
-import { adminHeaders, requireSecretKey } from "../_shared/supabase_admin.ts";
+import { adminHeaders, createAdminClient, requireSecretKey } from "../_shared/supabase_admin.ts";
 import { reportAllowlistDrops } from "../_shared/hubly_allowlist.ts";
 import { findAction, buildCapabilitiesPromptBlock, HUBLY_CAPABILITY_REGISTRY, applyExtractedFacts, startDocumentBuildJob, dispatchDocumentBuild, latestDocumentBuildJob, rebuildDocumentFromRecord, documentHasOwnerEdits, applyContactHoursToFreeform, composeContactHoursTruth, applyOwnerRecordEdit, applyOwnerDesignEdit, applyOwnerStyleEdit, applyOwnerSectionMove, applyOwnerNodeMove, applyOwnerNodeDelete, restampFreeformPage, readOwnerDesignKnobs, type OwnerRecordEdit, type RecordChange, uploadDraftLogo, uploadDraftPhoto, uploadDraftHeroImage, applyDirectDocumentPatch, uploadAndPatchDocumentImage, applyDirectFreeformEdit, uploadAndPatchFreeformImage, planFreeformRegeneration, resolveOwnerSelection, type OwnerSelectionContext } from "../_shared/hubly_capability_registry.ts";
 import { type NodeAddress } from "../_shared/hubly_freeform.ts";
+import {
+  loadOperationalState,
+  buildOperationalStateBlock,
+  type OperationalState,
+} from "../_shared/hubly_operational_state.ts";
 import {
   selectRelevantCapabilityKnowledge,
   buildCapabilityKnowledgePromptBlock,
@@ -395,6 +400,11 @@ const DRAFT_INJECTED_ACTIONS = new Set([
   // only the source-based audit below would catch a miss. It writes a new document
   // version, so it is meaningless — and correctly refused — without a verified owner.
   "website.restyleElement",
+  // Operational reads (2026-09-05, #27). The handler reads injectedOwnerUid to gate
+  // on a VERIFIED owner, so it must be on this list or it would always see null and
+  // refuse every real owner — the exact class check-owner-id-invariant.mjs check 2
+  // exists to catch, and the scanner fails the build if this line is removed.
+  "operations.read",
 ]);
 
 /**
@@ -668,6 +678,7 @@ function buildSystemPrompt(
   latestUserMessage: string | null,
   draftBusiness: { id: string; slug: string; url: string } | null,
   selection: OwnerSelectionContext | null,
+  operational: OperationalState | null,
 ): string {
   const adapter = getUnderstandingAdapter(context);
   const knownSoFar = adapter.isEmpty(currentUnderstanding as any)
@@ -843,6 +854,7 @@ HUBLY CAPABILITIES YOU CAN ACTUALLY INVOKE RIGHT NOW
 This is the only list of things you can actually DO. Never claim, promise, or imply you can do something from the list above unless it also appears here:
 ${capabilitiesBlock}
 ${buildSelectionBlock(selection)}
+${operational ? buildOperationalStateBlock(operational) : ""}
 
 Photos or screenshots someone attaches are visible to you directly in the conversation — look at them and describe honestly what you can actually see. That doesn't require a capability call. If a file arrives and you were NOT waiting on anything specific (you hadn't just asked for services, a logo, or photos), ask ONE open question — "what would you like me to do with this?" — never a menu of options, and then act on whatever they say ("these are my prices" → set services; "make it look like this" → use it as a reference; "that's my logo" → treat it as the logo).
 
@@ -1818,11 +1830,40 @@ Deno.serve(async (req) => {
     });
   }
 
+  // OPERATIONAL STATE — read once per turn, for a signed-in owner of THIS business.
+  //
+  // A BLOCK, NOT A TOOL CALL. A capability round costs a round out of
+  // MAX_CAPABILITY_ROUNDS and several seconds of silence; the block is simply
+  // present, so the owner never has to ask whether he has bookings. (#27)
+  //
+  // Gated on the settled rule and nothing else: resolveOwnerUid() verifies a real
+  // user JWT server-side, and loadOperationalState re-checks that the uid owns THIS
+  // business. `context` is never consulted — it is caller-declared, and
+  // scripts/check-owner-id-invariant.mjs check 3 fails the build if anyone tries.
+  //
+  // Costs nothing for the hot path: an anonymous visitor has no owner uid, so
+  // getOwnerUid() short-circuits and no query runs.
+  let operational: OperationalState | null = null;
+  if (draftBusiness?.id) {
+    try {
+      const opsOwner = await getOwnerUid();
+      if (opsOwner) {
+        const st = await loadOperationalState(createAdminClient(), String(draftBusiness.id), opsOwner);
+        if (st.authorised) operational = st;
+      }
+    } catch (e) {
+      // A failed read must never look like "no bookings". Leaving `operational`
+      // null omits the block entirely, which is honest: the model then has nothing
+      // to say about bookings rather than something wrong.
+      console.error("operational state load failed:", (e as Error)?.message || e);
+    }
+  }
+
   try {
     for (let round = 0; round < MAX_CAPABILITY_ROUNDS; round++) {
       const ai = await HublyAI.chat({
         feature: "hubly-conversation",
-        system: buildSystemPrompt(context, adapter.merge(currentUnderstanding, turnPatch), latestUserMessage, draftBusiness, selection),
+        system: buildSystemPrompt(context, adapter.merge(currentUnderstanding, turnPatch), latestUserMessage, draftBusiness, selection, operational),
         messages: history,
         jsonMode: true,
         // 900 was survivable while this decision was "pick a capability and

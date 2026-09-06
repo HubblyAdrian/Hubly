@@ -1652,7 +1652,91 @@ cost to the person typing.
 
 ---
 
-## #27 — The assistant cannot see the business it runs. Nothing operational reaches it.
+## #27 — The assistant cannot see the business it runs. BUILT 2026-09-05 (read-only half).
+
+**STATUS: the read path ships. `hubly-conversation` v236.** The assistant now receives live
+operational state — bookings, upcoming jobs, leads — on every turn where a **verified owner**
+of **that** business is talking, and can also read it on request via a new `operations.read`
+capability. Read-only by design: it reports, and cannot accept, decline, reschedule or
+message anyone. Operational *action* is a separate, deliberate decision.
+
+**Shape (`_shared/hubly_operational_state.ts`): a registry of SLICES, not a booking special
+case.** Each slice is a named reader returning rows plus an honest empty line. Adding
+invoices or memberships or revenue is one reader and one line in `SLICES` — the capability's
+argument enum is derived from that same registry, so a new slice cannot silently drift out of
+the list the model is offered. This is step one of chat-plus-generated-views; the tab
+machinery and view system are deliberately absent, and this only had to avoid making them a
+rewrite.
+
+**A BLOCK, NOT A TOOL CALL.** A capability round costs a round out of
+`MAX_CAPABILITY_ROUNDS` and several seconds of silence; the block is simply present. The
+owner never has to ask whether he has bookings.
+
+**Security — the settled rule and nothing else.** `resolveOwnerUid()` (a real user JWT,
+verified server-side against `/auth/v1/user`) plus `loadOperationalState` re-checking that the
+uid owns THIS business. `context` is never consulted, and `check-owner-id-invariant.mjs`
+check 3 fails the build if anyone reaches for it. `operations.read` is on
+`DRAFT_INJECTED_ACTIONS`, so check 2 covers it too — the scanner reports 9 owner-reading
+actions now, all on the list.
+
+**Never invent.** An empty slice prints "none on record"; a failed read prints "could not be
+read — say you could not check, not that there are none". A count is never estimated and a
+customer is never named who is not in a row.
+
+### Proved
+
+- **The block says true things.** Rendered from Graef's real rows: 6 bookings with real
+  names, dates, services, statuses and contact details; "UPCOMING JOBS: none on record".
+- **The empty case is honest and calm** — `window-washing` renders three "none on record"
+  lines and nothing else, at a cost of 49 tokens.
+- **The gate refuses, live, on the deployed function.** An anonymous caller carrying only the
+  publishable key asked "do I have any bookings?" against Graef's business id and got **no
+  operational data** — the assistant said it had no connected booking records. Graef's six
+  real bookings were not leaked.
+- **Cross-business reads are refused** by `biz.owner_id === ownerUid`; a verified owner of one
+  business does not match another's owner id.
+
+### NOT proved, and it is the acceptance test
+
+**An owner signing in and reading the sentence.** I cannot authenticate as a real person's
+account, and doing so to produce a screenshot would be exactly the fabricated-state defect
+this repo has a rule against. **Adrian runs this leg.** Everything up to the JWT is proved
+above; the JWT is the one link I cannot supply.
+
+### Cost per turn
+
+**Tokens:** ~423 for Graef (6 bookings + 5 leads, the busiest real business), ~49–56 for a
+quiet one. The block scales with rows and is capped at 8 per slice.
+**Latency:** the four reads now run in parallel, so the added cost is one round trip, not
+four. Measured from outside the datacenter before parallelising: ~790ms for four sequential
+reads; the edge function sits beside the database, so the real figure is well under that.
+**An anonymous visitor pays nothing** — `getOwnerUid()` short-circuits and no query runs.
+If it ever becomes material, `buildOperationalSummaryLine()` is already there: counts only,
+no names, no amounts.
+
+### Renderer
+
+**It works for classic and freeform alike, and needed no client change.** The block lives in
+the conversation function and depends only on `draftBusiness.id` plus a verified owner —
+neither is renderer-specific. The client already sends both on every turn (`hcFreshToken()`
+plus `draftBusiness`). Confirmed against data: the block renders identically for
+`graefs-autocare` (classic) and `window-washing` (freeform). **Bucket and Graef are both
+covered.**
+
+### A consequence worth naming
+
+The first thing this feature would have told Austin Graef is that he has **five leads from
+"Test Customer"** — the rows my own verification harness wrote on 2026-09-05. The `[TEST]`
+note tag only started that day, so those rows carry no tag. `isTestRow` therefore also
+recognises the **NANP reserved-for-fiction range** (555-0100…555-0199), which can never
+belong to a real person. That is a general rule rather than a hack about one harness, and it
+is the cheapest form of #29's `test_actors` idea. **A feature that surfaces operational data
+inherits every piece of junk in that data** — the marking problem stopped being cosmetic the
+moment the assistant could read.
+
+---
+
+## #27a — ORIGINAL FINDING, kept for the measurement that produced it
 
 **Measured 2026-09-05 by parsing the capability registry and the prompt assembly, not by
 reading the prompt and inferring. NOT FIXED — sized here because it decides what Hubly is.**

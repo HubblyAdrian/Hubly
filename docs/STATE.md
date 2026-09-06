@@ -44,6 +44,25 @@ verify interaction work.
 
 ## What is LIVE as of 2026-09-04
 
+### The assistant can see the business — 2026-09-05 (`hubly-conversation` v236)
+The read-only half of #27 ships. On any turn where a **verified owner of that business** is
+talking, the system prompt carries live operational state — bookings, upcoming jobs, leads —
+read fresh from their own records, plus an `operations.read` capability for detail on demand.
+- **A registry of SLICES, not a booking special case** (`_shared/hubly_operational_state.ts`).
+  A new slice is one reader and one line; the capability's enum derives from the same
+  registry so the two cannot drift.
+- **A block, not a tool call** — a capability round costs a round and several seconds of
+  silence; a block is simply present. The owner never has to ask if he has bookings.
+- **Read-only on purpose.** No accepting, declining, rescheduling or messaging.
+- **Gated on `resolveOwnerUid()` + `biz.owner_id === ownerUid`, never on `context`.** Proved
+  live: an anonymous caller asking about Graef's bookings gets nothing.
+- **Works on classic and freeform**, no client change — it depends on `draftBusiness.id` and
+  a verified owner, neither renderer-specific.
+- **Never invent**: "none on record" for empty, "could not be read" for a failed query.
+- Cost ~423 tokens on the busiest real business, ~49 on a quiet one; four reads run in
+  parallel; an anonymous visitor pays nothing.
+**NOT yet proved:** an owner signing in and reading the sentence. That leg is Adrian's.
+
 ### The classic renderer (`#p-storefront`) — 2026-09-04
 Ten of the 34 claimed pages render here, including `graefs-autocare`, our one real
 detailer. Four fixes shipped after he reported four visible defects (see `OPEN_FINDINGS`

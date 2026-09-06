@@ -271,6 +271,17 @@ async function selectMany(table: string, filterCol: string, filterVal: string, c
  * single source of truth for services and prices: this loads them, it does not
  * copy or re-derive them.
  */
+import {
+  loadOperationalState,
+  renderRow,
+  SLICES as OPERATIONAL_SLICES,
+} from "./hubly_operational_state.ts";
+
+/** The slice keys the model may ask for. Derived from the slice registry, so a new
+ *  reader appears in the capability automatically rather than needing a second list
+ *  that can silently drift — the failure mode every hardcoded list here has had. */
+const OPERATIONAL_SLICE_KEYS: string[] = OPERATIONAL_SLICES.map((s) => s.key);
+
 export type BusinessRecord = {
   services: { name: string; price: number | null; description: string | null; duration_hours: number | null; includes: unknown; is_popular: boolean | null }[];
   photos: { url: string; kind: string; caption?: string | null }[];
@@ -4789,6 +4800,77 @@ export async function runDocumentGeneration(
 }
 
 export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
+  {
+    name: "operations",
+    description:
+      "READ what this business is actually doing right now — real bookings, upcoming jobs, and leads who started a booking and did not finish. Read-only: it reports, it never accepts, declines, reschedules or messages anyone. Every figure comes from a row in the business's own records; there is no path here that can invent a customer, a date or an amount. Most turns will not need this at all, because the live operational state is already in your context — use it only when the owner asks for detail beyond what you were given, or asks about a slice you cannot see.",
+    actions: [
+      {
+        name: "read",
+        description:
+          "Read one or more slices of live operational state. Returns real rows, or an honest 'none on record' — never a summary of rows that do not exist. Requires a signed-in owner of THIS business; anyone else is refused.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            slice: {
+              type: "string",
+              enum: OPERATIONAL_SLICE_KEYS,
+              description: `One slice to read: ${OPERATIONAL_SLICE_KEYS.join(", ")}. Omit to read all of them.`,
+            },
+          },
+          required: [],
+        },
+        handler: async (args) => {
+          // THE SETTLED SECURITY RULE, and nothing else: a verified owner uid
+          // (resolveOwnerUid -> /auth/v1/user, injected by the engine) plus
+          // loadOperationalState re-checking that the uid owns THIS business.
+          // `context` is never consulted — it is caller-declared, and
+          // scripts/check-owner-id-invariant.mjs check 3 fails the build on it.
+          const businessId = String((args as Record<string, unknown>)?.businessId || "").trim();
+          const ownerUid = injectedOwnerUid(args as Record<string, unknown>);
+          if (!businessId) {
+            return { ok: false, real: false, summary: "No business was specified.", error: "missing_business_id" };
+          }
+          if (!ownerUid) {
+            return {
+              ok: false, real: false, error: "not_signed_in",
+              summary: "Only the signed-in owner of this business can see its bookings. Say that plainly — do not describe any bookings.",
+            };
+          }
+          const rawSlice = String((args as Record<string, unknown>)?.slice || "").trim();
+          const only = rawSlice && OPERATIONAL_SLICE_KEYS.includes(rawSlice) ? [rawSlice] : undefined;
+          let state;
+          try {
+            state = await loadOperationalState(adminClient(), businessId, ownerUid, only);
+          } catch (e) {
+            return {
+              ok: false, real: false, error: "read_failed",
+              summary: `Their records could not be read just now (${String((e as Error)?.message || e).slice(0, 120)}). Say you could not check — never that there are none.`,
+            };
+          }
+          if (!state.authorised) {
+            return {
+              ok: false, real: false, error: state.reason || "not_owner",
+              summary: "This business's records are not readable by the signed-in account. Say that plainly; describe no bookings.",
+            };
+          }
+          const parts: string[] = [];
+          for (const sl of state.slices) {
+            if (sl.error) { parts.push(`${sl.title}: could not be read (${sl.error}) — say you could not check, not that there are none.`); continue; }
+            if (!sl.rows.length) { parts.push(sl.emptyLine); continue; }
+            parts.push(`${sl.title} (${sl.rows.length}):`);
+            for (const r of sl.rows) parts.push(`- ${renderRow(sl.key, r)}`);
+          }
+          return {
+            ok: true, real: true,
+            summary: parts.join("\n"),
+            raw: { asOf: state.asOf, slices: state.slices.map((x) => ({ key: x.key, count: x.rows.length })) },
+          };
+        },
+      },
+    ],
+  },
+
   {
     name: "website",
     description: "Build and manage a business's website.",
