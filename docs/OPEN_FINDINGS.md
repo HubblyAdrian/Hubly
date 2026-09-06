@@ -1956,6 +1956,30 @@ but **it has not been run.** That is the one claim here that is read, not execut
 
 **Recorded 2026-09-05. STOPGAP APPLIED; the durable answer is designed here and NOT built.**
 
+### ESCALATED the same day: this stopped being a convenience and became a USER-FACING cost
+
+It was filed as something that wasted *our* time — three findings escalated as incidents,
+all three Adrian's own testing. Then #27 shipped and the assistant could read operational
+data, and the calculation changed: **a feature that surfaces operational state inherits every
+piece of junk in that state.**
+
+Concretely, and measured: the first thing the new operational block would have told Austin
+Graef is that he has **five leads from "Test Customer"** — rows our own harness wrote that
+morning, before the `[TEST]` tag existed. Not a report we read; a sentence the product says
+to a paying customer about his own business.
+
+That was patched by teaching `isTestRow` the **NANP reserved-for-fiction range**
+(555-0100…555-0199), which can never belong to a real person — general enough to be honest,
+and the cheapest possible form of the `test_actors` idea below. But the patch only covers
+rows whose phone happens to fall in that range. **Every future surface that reads operational
+data — the schedule view, the jobs view, any generated view, any notification digest —
+inherits the same exposure, and each one will need its own version of this guard unless the
+classification lives in the data.**
+
+So the priority changes: **not now, but no longer optional.** The derived view (below) is
+what makes it stop being a per-surface problem, because it classifies once and every reader
+gets the same answer.
+
 **Three separate findings in one session were escalated as customer-facing incidents and all
 three turned out to be Adrian's own testing:** Graef's six bookings, the seeded booking-wizard
 records, and the `lugnuts-regulators` skipped notification. Each cost real time and, twice,
