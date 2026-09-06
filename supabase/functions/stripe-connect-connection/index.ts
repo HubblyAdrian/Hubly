@@ -7,6 +7,7 @@ import {
   retrieveAccount,
   stripeConfigured,
   stripeLivemode,
+  currentStripeMode,
 } from "../_shared/stripe.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase_admin.ts";
 
@@ -75,6 +76,7 @@ Deno.serve(async (req: Request) => {
         "id,stripe_account_id,charges_enabled,payouts_enabled,details_submitted,email,connected_at,updated_at,last_error",
       )
       .eq("business_id", businessId)
+      .eq("mode", currentStripeMode())
       .maybeSingle();
 
     if (action === "disconnect") {

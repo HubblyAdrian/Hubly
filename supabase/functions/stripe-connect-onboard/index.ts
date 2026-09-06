@@ -11,6 +11,7 @@ import {
   retrieveAccount,
   sanitizeAppReturnUrl,
   stripeConfigured,
+  currentStripeMode,
 } from "../_shared/stripe.ts";
 import { createAdminClient, createUserClient } from "../_shared/supabase_admin.ts";
 
@@ -99,10 +100,15 @@ Deno.serve(async (req: Request) => {
       return jsonRes({ error: "Business not found" }, 404);
     }
 
+    // A connected account exists in exactly ONE Stripe mode. Reading without this
+    // filter returns the other mode's row and we then try to reuse an account id
+    // the current key cannot see — which fails at createAccountLink with a 500.
+    const mode = currentStripeMode();
     const { data: existing } = await admin
       .from("stripe_connect_accounts")
       .select("id,stripe_account_id,charges_enabled,payouts_enabled,details_submitted,email")
       .eq("business_id", businessId)
+      .eq("mode", mode)
       .maybeSingle();
 
     const branding = accountBrandingForm(biz as Record<string, string | null>);
@@ -122,6 +128,7 @@ Deno.serve(async (req: Request) => {
       const { error: insErr } = await admin.from("stripe_connect_accounts").insert({
         business_id: businessId,
         owner_id: user.id,
+        mode,
         stripe_account_id: stripeAccountId,
         charges_enabled: !!acct.charges_enabled,
         payouts_enabled: !!acct.payouts_enabled,
@@ -151,10 +158,10 @@ Deno.serve(async (req: Request) => {
           charges_enabled: !!acct.charges_enabled,
           payouts_enabled: !!acct.payouts_enabled,
           details_submitted: !!acct.details_submitted,
-          email: acct.email || existing.email || null,
+          email: acct.email || existing?.email || null,
           updated_at: new Date().toISOString(),
           last_error: null,
-        }).eq("business_id", businessId);
+        }).eq("business_id", businessId).eq("mode", mode);
       } catch (e) {
         console.warn("retrieveAccount before link", e);
       }

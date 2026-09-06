@@ -14,6 +14,7 @@ import {
   createDestinationCheckout,
   sanitizeAppReturnUrl,
   stripeConfigured,
+  currentStripeMode,
 } from "../_shared/stripe.ts";
 import { computeAuthoritativeOrder, type ComputedOrderItem } from "../_shared/commerce_checkout.ts";
 // Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
@@ -59,6 +60,7 @@ Deno.serve(async (req: Request) => {
       .from("stripe_connect_accounts")
       .select("stripe_account_id,charges_enabled")
       .eq("business_id", businessId)
+      .eq("mode", currentStripeMode())
       .maybeSingle();
     if (!connect?.stripe_account_id || !connect.charges_enabled) {
       return json({ error: "Stripe Connect is not ready for this business.", code: "not_configured", message: "Provider not configured" }, 503);

@@ -24,6 +24,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { currentStripeMode } from "../_shared/stripe.ts";
 import { getBusinessMeta } from "../_shared/hubly_business_meta.ts";
 import { resolveZipCentroid } from "../_shared/zip_geo.ts";
 import {
@@ -1296,6 +1297,7 @@ async function handleOps(req: Request, body: Record<string, unknown>) {
       .from("stripe_connect_accounts")
       .select("stripe_account_id,charges_enabled")
       .eq("business_id", provider.business_id)
+      .eq("mode", currentStripeMode())
       .maybeSingle();
     const missing = missingRequirements(provider, business || {}, stripe);
     if (missing.includes("Stripe")) {

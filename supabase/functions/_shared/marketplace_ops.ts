@@ -1,3 +1,4 @@
+import { currentStripeMode } from "./stripe.ts";
 /**
  * Marketplace Ops — Hubly internal control center helpers.
  * Owns: quality, verification, trust, analytics, fraud, moderation, lifecycle.
@@ -172,7 +173,11 @@ export async function listOpsProviders(
     const { data: stripes } = await admin
       .from("stripe_connect_accounts")
       .select("business_id,stripe_account_id,charges_enabled")
-      .in("business_id", ids);
+      .in("business_id", ids)
+      // Without this the Map below keeps whichever mode's row arrived LAST and
+      // shows it as the business's status — silently. With it, (business_id,
+      // mode) is unique and one row per business is guaranteed again (#49).
+      .eq("mode", currentStripeMode());
     for (const s of stripes || []) {
       stripeByBiz.set(String(s.business_id), s);
     }
@@ -298,6 +303,7 @@ export async function buildOpsProvider360(
     .from("stripe_connect_accounts")
     .select("stripe_account_id,charges_enabled,payouts_enabled,details_submitted")
     .eq("business_id", provider.business_id)
+    .eq("mode", currentStripeMode())
     .maybeSingle();
 
   const missing = missingRequirements(provider, business, stripe);

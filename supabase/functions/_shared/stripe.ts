@@ -83,6 +83,28 @@ export function stripeLivemode(): boolean | null {
   return !/_test_/.test(key);
 }
 
+/**
+ * THE PLATFORM'S CURRENT STRIPE MODE — `"test"` or `"live"`.
+ *
+ * Derived from the one secret key, so it cannot disagree with the key actually being used.
+ * Every read of `stripe_connect_accounts` filters by this: a connected account exists in
+ * EXACTLY ONE mode, and an account from the other mode is not "connected" — it is invisible.
+ * Returning it would render a green "Connected" badge for an account that cannot take a
+ * payment (OPEN_FINDINGS #48, arriving by a second route).
+ *
+ * `stripeLivemode()` returns null when no key is set. There is no honest mode in that case, so
+ * this throws rather than guessing: defaulting to "test" would silently show a live business as
+ * unconnected, and defaulting to "live" is worse. Callers that must tolerate a missing key check
+ * `stripeConfigured()` first.
+ */
+export function currentStripeMode(): "test" | "live" {
+  const live = stripeLivemode();
+  if (live === null) {
+    throw new Error("Stripe isn’t configured yet. Add STRIPE_SECRET_KEY.");
+  }
+  return live ? "live" : "test";
+}
+
 export async function stripeRequest<T>(
   path: string,
   init: { method?: string; form?: Record<string, string | number | boolean | undefined | null> } = {},

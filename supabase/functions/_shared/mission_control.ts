@@ -1,3 +1,4 @@
+import { currentStripeMode } from "./stripe.ts";
 /**
  * Hubly HQ (Mission Control edge) — internal platform operating system.
  * Read-first aggregates for CEO Daily, funnel, launch queue, health.
@@ -131,7 +132,11 @@ export async function writeAudit(
 async function loadStripeMap(admin: Admin): Promise<Map<string, Record<string, unknown>>> {
   const { data } = await admin
     .from("stripe_connect_accounts")
-    .select("business_id,stripe_account_id,charges_enabled,payouts_enabled,details_submitted,last_error");
+    .select("business_id,stripe_account_id,charges_enabled,payouts_enabled,details_submitted,last_error")
+    // Was a GLOBAL unfiltered scan feeding a Map keyed by business_id — with two
+    // modes per business it kept whichever row arrived last. (business_id, mode)
+    // is unique, so filtering by mode restores one row per business (#49).
+    .eq("mode", currentStripeMode());
   const map = new Map<string, Record<string, unknown>>();
   for (const row of data || []) {
     if (row?.business_id) map.set(String(row.business_id), row as Record<string, unknown>);
@@ -474,6 +479,7 @@ export async function buildPlatformFeed(admin: Admin, limit = 40) {
     .from("stripe_connect_accounts")
     .select("business_id,charges_enabled,updated_at,created_at")
     .eq("charges_enabled", true)
+    .eq("mode", currentStripeMode())
     .order("updated_at", { ascending: false })
     .limit(20);
   for (const s of stripe || []) {
@@ -866,6 +872,7 @@ export async function buildErrors(admin: Admin) {
     .from("stripe_connect_accounts")
     .select("business_id,last_error,updated_at")
     .not("last_error", "is", null)
+    .eq("mode", currentStripeMode())
     .order("updated_at", { ascending: false })
     .limit(30);
   for (const s of stripe || []) {
@@ -913,7 +920,8 @@ export async function buildAdoption(admin: Admin) {
   const { count: stripe } = await admin
     .from("stripe_connect_accounts")
     .select("business_id", { count: "exact", head: true })
-    .eq("charges_enabled", true);
+    .eq("charges_enabled", true)
+    .eq("mode", currentStripeMode());
   const { count: gcal } = await admin
     .from("google_calendar_connections")
     .select("business_id", { count: "exact", head: true });

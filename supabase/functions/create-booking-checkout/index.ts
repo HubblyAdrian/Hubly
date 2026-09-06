@@ -11,6 +11,7 @@ import {
   createDestinationCheckout,
   sanitizeAppReturnUrl,
   stripeConfigured,
+  currentStripeMode,
 } from "../_shared/stripe.ts";
 // Supabase key resolution goes through _shared/supabase_admin.ts. It THROWS on a
 // missing key instead of continuing with "" (nine call sites used to 401 quietly
@@ -108,6 +109,7 @@ Deno.serve(async (req: Request) => {
       .from("stripe_connect_accounts")
       .select("stripe_account_id,charges_enabled")
       .eq("business_id", businessId)
+      .eq("mode", currentStripeMode())
       .maybeSingle();
     if (!conn?.stripe_account_id || !conn.charges_enabled) {
       return jsonRes({

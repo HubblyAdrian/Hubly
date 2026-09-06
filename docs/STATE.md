@@ -750,7 +750,20 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
   patterns rather than to lists: assume the form you have not seen exists, and prove the matcher
   can see the forms you have.
 
-- **NO BUSINESS MAY HOLD TWO STRIPE ACCOUNT ROWS UNTIL ALL 13 CALL SITES FILTER BY MODE.**
+- **`stripe_connect_accounts.mode` SHIPPED 2026-09-06 — migration and code in one unit.**
+  `mode NOT NULL check (test|live)`, `UNIQUE (business_id, mode)` replacing `UNIQUE
+  (business_id)`. All 13 read sites filter by `currentStripeMode()` (derived from the one secret
+  key, so it cannot disagree with the key in use); the insert supplies it. Deployed to the 6
+  functions that read the table. `scripts/check-stripe-mode-filter.mjs` holds the line — 16 sites,
+  13 filtered, 3 exempt (PK/globally-unique keyed, listed by name), 0 unfiltered — and was proven
+  to fail by deleting one filter. **Verified with a SYNTHETIC second row** (`mode='live'`,
+  `acct_0000FAKEFORTESTONLY`) on `evergreen-yard-care`, which made the previously-impossible
+  two-rows-one-business state real: every read path returned exactly ONE row, the correct one,
+  including both Map sites; the same query without the filter returned 2. The fake id was never
+  forwarded to Stripe and **the row was deleted** — a fake account id left in that table would
+  poison every future count and could reach Stripe later. **The ordering constraint below is now
+  SATISFIED and kept only as the record of why it existed:**
+  **NO BUSINESS MAY HOLD TWO STRIPE ACCOUNT ROWS UNTIL ALL 13 CALL SITES FILTER BY MODE.**
   The moment the `mode` migration's step 4 lands — `drop constraint
   stripe_connect_accounts_business_unique` — the schema **permits** something the code cannot yet
   handle: two account rows for one business. The 13 sites that read
