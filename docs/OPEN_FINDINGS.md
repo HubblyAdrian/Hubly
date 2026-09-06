@@ -800,6 +800,22 @@ food business chose centre while the three trades chose left, which is the trade
 distinction the fallback would have hardcoded, arrived at by the model instead. **The
 trade-informed default is therefore NOT needed and stays unbuilt.**
 
+### TWO HONEST LIMITS — read this before quoting the result
+
+1. **Three of four trades came back `left`. A single generated page is not visibly
+   transformed.** What changed is that the alignment is now a DECISION rather than an
+   inheritance — written out explicitly in both directions, stored on the business, and
+   enforced so prose cannot silently revert it. Variety across a corpus will follow from
+   that; one page in isolation may look exactly as it did yesterday. Anyone quoting "#16 is
+   fixed" as "our pages look different now" is over-reading it.
+2. **Mark position is committed and stored but NOT enforced.** Forcing a brand mark into
+   position means reaching into a header whose flex/grid structure the model chose and we
+   have not seen, which fails the "cannot make a good page worse" test that justifies every
+   other appended rule. It is a recorded decision the generator is asked to honour, not a
+   guarantee. Only `headlineAlignment` is guaranteed.
+
+Hero shape and nav mode remain deliberately unbuilt.
+
 **A false alarm worth recording.** Mid-build I reverted `jsonMode` believing it had stopped
 pages from landing. It had not: **generation is ASYNCHRONOUS** — the reply literally says
 "the page should appear in about a minute" — and every check ran seconds after the call
