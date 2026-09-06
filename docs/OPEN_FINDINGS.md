@@ -2604,6 +2604,32 @@ price they will be charged, all now on the one formatter:
 totals, `photography-projects.js`. Rounding a KPI is a summary; rounding a price is a lie. If
 any of those ever becomes a number a customer is charged, it moves to `HublyMoney`.
 
+### PROOF ON THE LIVE PAGE (2026-09-06, `evergreen-yard-care.myhubly.app/store`)
+
+Proven the same way the bug was: set a price with cents, then look.
+`commerce_products.price_cents = 2499`.
+
+| surface | before | after |
+| --- | --- | --- |
+| product card | `$25` | **`$24.99`** |
+| cart line | `$25` | **`$24.99`** |
+| cart subtotal | `$25` | **`$24.99`** |
+| what checkout charges | `2499` | `2499` |
+
+Read back from the DOM, not from the screenshot: three `$24.99` on the page and **no `$25`
+anywhere**. All three displayed values now equal the charged value.
+
+**The fourth surface — the amount on Stripe's own Checkout page — is NOT yet verified.** Connect
+verification was still in progress (`charges_enabled: false`), so `create-store-checkout`
+correctly returned 503 and no Stripe session was created. That check happens when the walk
+resumes, and it is the one that closes this finding.
+
+Same page, same moment, #39 confirmed: `.hub-commerce-cart-drawer` computes to
+**`position: fixed`** and is on screen, and `#hub-store-cart-msg` reads *"Online checkout isn't
+set up for this store yet."* — **the same words as before**, now visible. One cart control shows
+`Cart (1)`; the floating one is suppressed (`display: none`) because this surface has a header
+chip. One section, "Shop all", and the placeholder reads `T`.
+
 ---
 
 ## #39 — The cart on `/store` is not a drawer: it renders unstyled, below the footer, off-screen
