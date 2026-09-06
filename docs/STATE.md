@@ -705,7 +705,14 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
   **no.** 3 rows have no usable phone and none has a phone-carrying booking matching by email
   or exact name — though all 3 lack an email, so the join could only use exact name and the
   evidence is weak rather than conclusive.
-- **DEBT, not for now: `deno check` fails at HEAD on 4 of 8 of those functions.** `TS2440`,
+- **DEBT, and NO LONGER BOTTOM OF THE LIST: `deno check` fails at HEAD on 4 of 8 of those
+  functions.** Upgraded 2026-09-06 from theoretical to demonstrated. Pinning the Stripe API
+  version, a doc-comment edit swallowed the closing `*/` and turned the rest of
+  `_shared/stripe.ts` into a comment — the pin would have **deployed as dead code that reads as
+  live in review**. A *file-scoped* `deno check` caught it in seconds. The same check run
+  repo-wide is red on the pre-existing `TS2440`, which is why it had been treated as decoration.
+  It is not decoration; it is unusable at full width. Fixing `TS2440` in `hubly_ai.ts:52` now has
+  a measured return, not an argued one. `TS2440`,
   `HublyCapability` import conflict at `_shared/hubly_ai.ts:52` — pre-existing, 2 occurrences
   at pristine HEAD, unrelated to any recent diff. `chatbot-message`, `hubly-conversation`,
   `hubly-document-build` and `marketplace` therefore ship without a green typecheck.
