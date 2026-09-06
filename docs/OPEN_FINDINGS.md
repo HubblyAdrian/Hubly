@@ -994,6 +994,19 @@ because most of it exists. Measured 2026-09-05:
 - **The classic renderer has no video path at all** — there is no `<video>` tag anywhere in
   `public/`. Bucket and Graef are both on classic.
 
+### DECISION 2026-09-05 — YouTube ships as a RESERVED ELEMENT. The grammar never loosens.
+
+Neither of the two options originally posed (widen `ALLOWED_MEDIA_ORIGINS`, or host the
+file). **`HublyMap` is already the exact template**: the model places `<HublyMap/>`, the
+SHELL emits the iframe from context, and `<iframe>` stays banned in the document grammar
+(`hubly_document.ts:1026`). `HUBLY_RESERVED_TAGS` already holds six such elements.
+
+**`HublyVideo` follows it exactly** — the model places the element, the shell emits a
+`youtube-nocookie` embed built from a URL the OWNER supplied, and the model never writes an
+iframe or a URL of its own. That preserves #19's own constraint that the AI must never
+invent a link: a fabricated video ID points at somebody else's real video, which is worse
+than a fabricated price. Recorded as the decision; no un-banning, no allowlist widening.
+
 **A LICENSING feature: "the buyer watches what they bought."**
 **OUT OF SCOPE as of 2026-09-05 — asked the customer, and it was never the requirement.**
 Bucket's "trainings" turned out to be (a) teaching people to detail in person or over a
