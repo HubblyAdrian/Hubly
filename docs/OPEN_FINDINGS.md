@@ -3278,3 +3278,236 @@ Sketch only, not a plan: a generated/stored normalised column (a `text` column w
 drift, which is the same duplicated-rule problem R5 just solved), a **partial** unique index over
 it scoped to `business_id`, a `23505` catch in the resolver that re-reads and returns the winner,
 and a decision about the owner UI. The email index waits on the four rows.
+
+---
+
+## #48 — A failed account read writes the error and leaves the green standing
+
+**Filed 2026-09-06. Not built. Mode-independent — a mode switch is one instance, not the class.**
+
+`stripe-connect-connection`'s status action refreshes a connected account from Stripe and, when
+that read **fails**, does this (`index.ts:114–133`):
+
+```ts
+let charges = !!conn?.charges_enabled;      // seeded from the LAST successful read
+let payouts = !!conn?.payouts_enabled;
+let details = !!conn?.details_submitted;
+try {
+  const acct = await retrieveAccount(conn.stripe_account_id);
+  charges = !!acct.charges_enabled;  /* … */  lastError = null;
+  await admin.from("stripe_connect_accounts").update({ charges_enabled: charges, /* … */ });
+} catch (e) {
+  lastError = (e as Error)?.message || "Could not refresh Stripe status";
+  console.warn("stripe status refresh", e);
+}
+```
+
+**On failure only `last_error` is set. `charges_enabled`, `payouts_enabled` and
+`details_submitted` keep their values from the last successful read, and the response still
+returns them.** The Settings panel renders **Stripe · Connected** in green off `charges_enabled`.
+
+So the green badge does not mean "this account can take a payment". It means **"this account
+could take a payment the last time we successfully asked, whenever that was."** Nothing on the
+surface distinguishes those, and `updated_at` is only written on success, so the row cannot even
+say how stale it is.
+
+### The class, not the instance
+
+This fires on **any** failed read:
+
+- a Stripe outage or a network blip;
+- an account deauthorised or rejected by Stripe;
+- a revoked or rotated secret key;
+- an account being read under the wrong mode's key.
+
+Only the last is about mode. I originally scoped this as "test mode makes
+`adrians-lawn-service` stale", and that was too narrow — mode is how we noticed it, not what it is.
+
+**Same family as the booking ticker (#22), the invented trust badges, and #45: a surface
+asserting a fact the underlying data no longer supports.** The tell is identical each time —
+something renders confidently from a value nobody re-established.
+
+### What the correct behaviour would be — recorded, NOT built
+
+Either of these closes it; the second is better:
+
+1. **Clear the capability flags on a failed read.** `charges_enabled` etc. become false and the
+   badge stops being green. Honest, but loses the distinction between "not connected" and "we
+   could not check", which are different things an owner would want worded differently.
+2. **Mark the row stale with a read timestamp.** Add `last_checked_at` (written on every attempt,
+   success or failure) and have every consumer treat a stale row as unknown rather than
+   connected. Then *"Connected"* can never outlive the last successful check, and the UI can say
+   *"we couldn't reach Stripe just now"* instead of implying either extreme.
+
+Whichever is chosen, the invariant is: **no capability flag may be rendered as current unless the
+read that produced it succeeded.** That is prohibition 2 — green is earned, never the default —
+applied to a value that was earned once and then inherited forever.
+
+### PREDICTION, untested — the status action writes, so it was not run
+
+`adrians-lawn-service` holds a **live**-mode account (`acct_1TwA…`) and its row was last updated
+**2026-08-20**, before the platform switched to test keys on 2026-09-06. Its
+`charges_enabled = true` and `last_error = (none)` are therefore values from live mode that have
+**never been re-read under the current test key**.
+
+I expect that opening that Store screen now would call `retrieveAccount` with the test key, get
+"No such account", set `last_error`, leave `charges_enabled` true, and render **Connected** for an
+account that cannot take a payment. **This is a prediction and nothing more** — verifying it means
+calling the status action, which writes the row, and this was a read-only pass.
+
+---
+
+## #49 — DESIGN: the `mode` column on `stripe_connect_accounts` (proposed, not run)
+
+**2026-09-06. Read-only measurement + a migration to review. Nothing executed, nothing deployed.**
+
+Rulings taken as given: **M1** `mode NOT NULL`, values `'test' | 'live'`, no default. **M2**
+`UNIQUE (business_id, mode)`. **M3** every read filters by the current platform mode.
+
+### M4 — 16 read/write sites across 8 files, and 13 of them need to change
+
+| site | op | keyed by | needs the M3 filter? |
+| --- | --- | --- | --- |
+| `stripe-connect-onboard:103` | select | business_id | **yes** |
+| `stripe-connect-onboard:122` | insert | — | **must SET mode** |
+| `stripe-connect-onboard:150` | update | business_id | **yes — and this one BREAKS without it** |
+| `stripe-connect-connection:73` | select | business_id | **yes** |
+| `stripe-connect-connection:82` | delete | id (PK) | no |
+| `stripe-connect-connection:122` | update | id (PK) | no |
+| `create-store-checkout:59` | select | business_id | **yes — money path** |
+| `create-booking-checkout:108` | select | business_id | **yes — money path** |
+| `stripe-webhook:101` | update | stripe_account_id | no (globally unique) |
+| `marketplace:1296` | select | business_id | **yes** |
+| `marketplace_ops:173` | select | `.in(business_id)` | **yes — see below** |
+| `marketplace_ops:298` | select | business_id | **yes** |
+| `mission_control:133` | select | *(unfiltered scan)* | **yes — see below** |
+| `mission_control:474` | select | charges_enabled | **yes** (a count) |
+| `mission_control:866` | select | — | **yes** |
+| `mission_control:914` | select | charges_enabled | **yes** (a count) |
+
+Three are safe because they key on a primary key or on the globally-unique `stripe_account_id`.
+**Thirteen are not.**
+
+**Two of them fail silently rather than loudly, which is worse.** `mission_control:133` and
+`marketplace_ops:173` both read many rows and build a **`Map` keyed by `business_id`**. With two
+rows per business, the map keeps whichever row arrives last — no error, no duplicate warning, an
+arbitrary mode's status shown as the business's status. That is finding #48 arriving by a third
+route.
+
+**And `stripe-connect-onboard:150` is the dangerous one:** it updates `.eq("business_id", …)`
+with no mode filter. The moment a business has both rows, that statement updates **both** —
+writing the live account's capability flags onto the test row and vice versa.
+
+### M5 — the three bypass reads can and should use the accessor
+
+`mission_control.ts:760, 761, 763` call `Deno.env.get("STRIPE_SECRET_KEY")` directly to render a
+health tile. `_shared/stripe.ts` already exports `stripeConfigured()` and `stripeLivemode()`, and
+`mission_control.ts` currently imports nothing from it — **there is no obstacle, only an import.**
+
+Once mode selection depends on the key, those three reads are wrong by construction: they ask
+"is a key set" when the question has become "which mode is this platform in". This is the five
+copies of `money()` again — a rule that lives in one place and is consulted in another.
+
+**The tile should also state the mode.** "Stripe: healthy" without saying *test* or *live* is the
+same unearned green as #48.
+
+### M6 — mode CANNOT be determined from our data. This changes the migration.
+
+- Stripe account ids carry **no mode signal**: both rows are `acct_` + 21 characters. Unlike keys
+  (`sk_test_` / `sk_live_`), there is nothing to parse.
+- No column records it (that is the finding).
+- `connected_at` allows an **inference**, not a determination: `adrians-lawn-service` connected
+  2026-07-23, while the platform ran live keys; `evergreen-yard-care` connected 2026-09-06 05:28,
+  after the switch to test keys that morning.
+
+**The only authoritative check is to call Stripe under each key** — `retrieveAccount` succeeds
+under the owning mode and 404s under the other.
+
+So the backfill cannot be a pure SQL migration and also be *proven*. With exactly two rows, the
+honest options are:
+
+1. **Hand-assert in the migration, recording how it was established.** `adrians-lawn-service` =
+   `live`, `evergreen-yard-care` = `test`, **stated by Adrian**, corroborated by `connected_at`
+   against the key-switch date. Cheapest, and the provenance is written down rather than implied.
+2. A one-off script that calls Stripe under both keys and reports before anything is written.
+   Proof rather than assertion, but it is code that touches live Stripe to migrate two rows.
+
+**Recommended: option 1 for these two rows, because they are ours and known.** Option 2 becomes
+correct the moment there are rows we did not personally create — and that is before Bucket.
+
+### M7 — the webhook secret needs to become two
+
+`STRIPE_WEBHOOK_SECRET` is one variable with one read site (`stripe-webhook/index.ts:77`). Test
+and live are separate endpoints with separate signing secrets, so live operation needs both, and
+verification must try the one matching the current mode.
+
+Proposed: `STRIPE_WEBHOOK_SECRET_TEST` and `STRIPE_WEBHOOK_SECRET_LIVE`, selected by
+`stripeLivemode()`, with the existing `STRIPE_WEBHOOK_SECRET` kept as a fallback so the change
+does not break the current deployment before the new values exist.
+
+> **FOR THE RECORD: these values go into the Supabase web dashboard, entered by Adrian. Never
+> `supabase secrets set`.** That command puts the value in shell history, in scrollback, and in
+> any transcript that is later shared. That is the August leak, and the rule is that a key which
+> has appeared in terminal output is compromised — the appearance itself is the breach.
+
+### The migration — PROPOSED, NOT RUN
+
+```sql
+-- 1. add the column nullable so the backfill can run
+alter table public.stripe_connect_accounts add column mode text;
+
+-- 2. backfill. STATED BY ADRIAN, corroborated by connected_at against the
+--    2026-09-06 key switch. Mode cannot be derived from acct_ ids or from any
+--    column; the only proof is calling Stripe under each key (see M6).
+update public.stripe_connect_accounts a set mode = 'live'
+  from public.businesses b where b.id = a.business_id and b.slug = 'adrians-lawn-service';
+update public.stripe_connect_accounts a set mode = 'test'
+  from public.businesses b where b.id = a.business_id and b.slug = 'evergreen-yard-care';
+
+-- 3. refuse to continue if anything is unaccounted for. A migration that
+--    silently leaves a NULL is the bug this column exists to fix.
+do $$ declare n int; begin
+  select count(*) into n from public.stripe_connect_accounts where mode is null;
+  if n > 0 then raise exception 'stripe_connect_accounts: % row(s) have no mode', n; end if;
+end $$;
+
+-- 4. now enforce
+alter table public.stripe_connect_accounts alter column mode set not null;
+alter table public.stripe_connect_accounts
+  add constraint stripe_connect_accounts_mode_chk check (mode in ('test','live'));
+
+-- 5. M2 — one account per business per mode.
+--    MEASURED: `stripe_connect_accounts_business_unique UNIQUE (business_id)`
+--    EXISTS TODAY. It must be dropped, or a business can never hold both a test
+--    and a live account and the first dual-mode onboard fails with 23505 at
+--    insert. `stripe_connect_accounts_stripe_unique UNIQUE (stripe_account_id)`
+--    stays — an account id is globally unique in reality too.
+alter table public.stripe_connect_accounts
+  drop constraint stripe_connect_accounts_business_unique;
+create unique index if not exists stripe_connect_accounts_biz_mode_uniq
+  on public.stripe_connect_accounts (business_id, mode);
+```
+
+**Existing constraints, measured — this was the open question and it is now answered:**
+
+| constraint | keep? |
+| --- | --- |
+| `stripe_connect_accounts_pkey PRIMARY KEY (id)` | keep |
+| `stripe_connect_accounts_business_unique UNIQUE (business_id)` | **DROP — it is the blocker** |
+| `stripe_connect_accounts_stripe_unique UNIQUE (stripe_account_id)` | keep |
+| `business_id` / `owner_id` foreign keys, `owner_idx` | keep |
+
+**`UNIQUE (business_id)` is why M2 is not additive.** Today the schema enforces *one account per
+business, full stop* — so a business physically cannot hold both a test and a live account, and
+the first owner to onboard in the second mode gets a `23505` at insert, not a helpful message.
+Dropping it and adding `(business_id, mode)` is strictly a widening, and the ordering matters:
+**drop before create, both inside the same migration**, or there is a window where either two
+accounts are impossible or two of one mode are.
+
+**Deliberately NO default on `mode`.** A default is how a row that cannot say which mode it
+belongs to gets one anyway, which is the defect being fixed.
+
+**Open before this runs:** whether a `business_id`-only unique constraint already exists (it would
+have to be dropped, and I have not checked); and that all 13 call sites land in the same change
+as the migration — a mode column with unfiltered readers is worse than no column, because
+`stripe-connect-onboard:150` would begin writing across modes.
