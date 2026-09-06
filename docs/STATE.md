@@ -733,6 +733,41 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
   is on `2026-06-24.dahlia`, two months behind the API version, because event payload shapes and
   API response shapes are different axes (#50). Do not "align" them.
 
+- **A pattern that structurally cannot match the thing you are looking for will report absence,
+  and absence reads as a result.** 2026-09-06, sweeping every text column in the database for
+  Stripe object ids: the regex was `^[a-z]{2,6}_[A-Za-z0-9]{10,}$`. Stripe TEST-mode ids contain
+  an inner underscore — `cs_test_a1jq…` — so the character class **rejected every test-mode id in
+  the database**. It returned one hit and would have been reported as "no Stripe ids exist
+  outside the named columns". It was caught only because a session id was known to be sitting in
+  `commerce_orders` and did not appear.
+  **That is now twice.** The price scan counted `$` and missed every priced service rendered
+  without the symbol; this counted `[A-Za-z0-9]` and missed every id with an underscore in it.
+  Both times the pattern was written from the examples in front of us, and both times the shape
+  we had not seen was the one that mattered.
+  So: before trusting a scan that returns few or no hits, **run it against a value you KNOW is
+  there.** A search that cannot find a known positive has told you nothing about the negatives —
+  it has told you about the regex. This is the enumerate-the-harmless-side rule applied to
+  patterns rather than to lists: assume the form you have not seen exists, and prove the matcher
+  can see the forms you have.
+
+- **NO BUSINESS MAY HOLD TWO STRIPE ACCOUNT ROWS UNTIL ALL 13 CALL SITES FILTER BY MODE.**
+  The moment the `mode` migration's step 4 lands — `drop constraint
+  stripe_connect_accounts_business_unique` — the schema **permits** something the code cannot yet
+  handle: two account rows for one business. The 13 sites that read
+  `stripe_connect_accounts` do not filter by mode (`OPEN_FINDINGS` #49 M4 lists them). Two of
+  them fail **silently** rather than loudly — `mission_control:133` and `marketplace_ops:173`
+  build a `Map` keyed by `business_id`, so a second row is not an error, it just overwrites and
+  shows an arbitrary mode's status as the business's status. And
+  `stripe-connect-onboard:150` updates `.eq("business_id", …)` unfiltered, so it would write one
+  mode's capability flags onto the other mode's row.
+  **The rule, concretely: after that migration and before the filter work, nobody runs Connect
+  onboarding for a business that already has an account row. Today that is exactly two
+  businesses — `adrians-lawn-service` (live account) and `evergreen-yard-care` (test account).**
+  The window is safe right now only because each holds exactly one row and nothing is trying to
+  add a second. **It stops being safe the moment we onboard anyone.** That is why the filter work
+  lands **before Bucket**, not after — and why "add the mode column" and "teach the 13 sites to
+  filter" are one piece of work with two steps, never two pieces of work.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped

@@ -3271,6 +3271,59 @@ so a constraint enforces the resolver's policy on a surface we deliberately excl
 Any index work has to answer that first: either the owner UI gets an explicit conflict path, or
 the index cannot be unconditional.
 
+### Q1–Q4, 2026-09-06: does `mode` belong on more than this table? NO — and here is the limit
+
+Every column in the database holding a Stripe object identifier, found by scanning column NAMES
+**and** by scanning column VALUES across every `text`/`varchar` column in `public` (names alone
+would miss an id in a generically-named column):
+
+| table.column | non-null rows | sent back to Stripe? | verdict |
+| --- | --- | --- | --- |
+| `stripe_connect_accounts.stripe_account_id` | **2** | **yes, constantly** — `retrieveAccount`, `createConnectLoginLink`, and as `connectedAccountId` on every destination charge | **BREAKS on a mode flip** |
+| `commerce_orders.stripe_checkout_session_id` | 1 | no | inert |
+| `commerce_orders.stripe_payment_intent_id` | 0 | no | inert |
+| `booking_requests.stripe_checkout_session_id` | 0 | no | inert |
+| `booking_requests.stripe_payment_intent_id` | 0 | no | inert |
+| `photography_project_invoices.stripe_invoice_id` | 0 | no writer, no reader | inert |
+
+**Three non-null Stripe ids exist in the entire database.** `retrieveCheckoutSession` is exported
+at `_shared/stripe.ts:334` and has **zero callers**; nothing calls `payment_intents` or
+`/refunds` anywhere. Session and payment-intent ids are used **only as local lookup keys**
+(`.eq("stripe_checkout_session_id", sessionId)`, matching a webhook's own id against our row) —
+both sides come from the same event, so mode never enters. They are audit trail, not handles.
+
+**So `mode` goes on `stripe_connect_accounts` and nowhere else.** The cost of a mode column is
+not the backfill — it is the call sites that must learn to filter, which is per-column,
+permanent, and does not shrink with row count. On the account id that buys correctness on the
+money path. On orders it would be **inert by construction**, and an inert column is worse than
+none: it must be written at four sites, filtered at zero, and it *looks* like something enforces
+it.
+
+#### THE DERIVABILITY FALLBACK COVERS SESSIONS AND SILENTLY FAILS FOR PAYMENT INTENTS
+
+The argument for not adding the column elsewhere is that mode is recoverable from the id itself.
+**That is true for checkout sessions and FALSE for payment intents. Checked, not assumed:**
+
+| id kind | example (leading tokens only) | carries mode? |
+| --- | --- | --- |
+| checkout session | `cs_test_a1jq…` | **YES** — `_test_` segment |
+| payment intent | `pi_3UCbhO…`, `pi_3UCZEE…` | **NO** |
+| connected account | `acct_1TwA…`, `acct_1UCY…` | **NO** |
+
+Both payment intents above are **real ids from the two real test-mode purchases** on 2026-09-06,
+and both are `pi_3` + base62 — structurally identical to a live-mode id. Exactly like `acct_`,
+which we already proved carries nothing.
+
+> **A payment intent id in our database cannot be attributed to a mode by inspection, ever.**
+
+Inert today because nothing reads a PI back, and there are **zero** non-null PI rows — so this is
+free to get right now and expensive later. **The condition that makes it live:** the
+reconciliation sweep proposed in **#45** calls `retrieveCheckoutSession`, and any refund or
+dispute feature would call `payment_intents`. The moment either exists, those columns become
+read-back ids in the account id's category, and the derivability fallback will cover the session
+half while quietly failing on the payment-intent half. **Revisit this table then — do not assume
+the "mode is in the value" argument still holds, because for `pi_` it never did.**
+
 ### If it is built
 
 Sketch only, not a plan: a generated/stored normalised column (a `text` column written through
@@ -3358,6 +3411,23 @@ calling the status action, which writes the row, and this was a read-only pass.
 ---
 
 ## #49 — DESIGN: the `mode` column on `stripe_connect_accounts` (proposed, not run)
+
+> ### ⛔ ORDERING CONSTRAINT — READ BEFORE RUNNING ANYTHING HERE
+>
+> **NO BUSINESS MAY HOLD TWO ACCOUNT ROWS UNTIL ALL 13 CALL SITES FILTER BY MODE.**
+>
+> Step 4 of the migration drops `UNIQUE (business_id)`. From that instant the schema permits two
+> rows per business while the code still assumes one — and two of the readers fail *silently*
+> (a `Map` keyed by `business_id` keeps whichever row arrives last), while
+> `stripe-connect-onboard:150` would write one mode's flags onto the other mode's row.
+>
+> **So: after this migration and before the filter work, nobody runs Connect onboarding for a
+> business that already has an account row — today that is `adrians-lawn-service` (live) and
+> `evergreen-yard-care` (test).**
+>
+> The window is safe today only because each holds exactly one row and nothing is adding a
+> second. It stops being safe the moment we onboard anyone, which is why the filter work lands
+> **before Bucket**.
 
 **2026-09-06. Read-only measurement + a migration to review. Nothing executed, nothing deployed.**
 
@@ -3450,51 +3520,70 @@ does not break the current deployment before the new values exist.
 > any transcript that is later shared. That is the August leak, and the rule is that a key which
 > has appeared in terminal output is compromised — the appearance itself is the breach.
 
-### The migration — PROPOSED, NOT RUN
+### The migration — PROPOSED, NOT RUN, AND DELIBERATELY NOT IN `supabase/migrations/`
+
+**It lives here, in a document, on purpose.** A file under `supabase/migrations/` is picked up by
+`supabase db push` — it would be one absent-minded command away from running. It moves there when
+the ordering constraint below is satisfied, not before.
 
 ```sql
+-- stripe_connect_accounts.mode — PROPOSED 2026-09-06. NOT RUN.
+--
 -- ONE TRANSACTION. Between the DROP at step 4 and the CREATE at step 5 there is
 -- NO uniqueness on this table at all — a concurrent onboard could insert a
 -- second row for the same business+mode and the index would then fail to build,
 -- leaving the table with no constraint and the migration half-applied. Wrapped,
--- that window does not exist. (A Supabase migration file is already wrapped; the
--- BEGIN/COMMIT is explicit so this is safe to paste anywhere.)
+-- that window does not exist.
 --
--- NOTE: plain CREATE UNIQUE INDEX is used, not CONCURRENTLY — CONCURRENTLY
--- cannot run inside a transaction, and with 2 rows the lock is irrelevant.
+-- Plain CREATE UNIQUE INDEX, not CONCURRENTLY: CONCURRENTLY cannot run inside a
+-- transaction, and with 2 rows the lock is irrelevant.
 begin;
 
--- 1. add the column nullable so the backfill can run
+-- 1. add nullable, so the backfill has something to write into.
+--    (NOT NULL with no default cannot be added to a table with existing rows.)
 alter table public.stripe_connect_accounts add column mode text;
 
--- 2. backfill. STATED BY ADRIAN, corroborated by connected_at against the
---    2026-09-06 key switch. Mode cannot be derived from acct_ ids or from any
---    column; the only proof is calling Stripe under each key (see M6).
+-- 2. backfill the two existing rows.
+--    PROVENANCE: stated by Adrian, corroborated by connected_at against the
+--    2026-09-06 key switch. Mode CANNOT be derived from an acct_ id (both are
+--    acct_ + 21 chars, no marker) or from any column — the only proof is calling
+--    Stripe under each key, which is what scripts/verify-stripe-account-modes.mjs
+--    does. These two rows are hand-asserted because WE created both and can
+--    vouch for them; that allow-list is deliberately tiny and the script exits
+--    non-zero for any row not on it.
 update public.stripe_connect_accounts a set mode = 'live'
-  from public.businesses b where b.id = a.business_id and b.slug = 'adrians-lawn-service';
+  from public.businesses b
+ where b.id = a.business_id and b.slug = 'adrians-lawn-service';
+
 update public.stripe_connect_accounts a set mode = 'test'
-  from public.businesses b where b.id = a.business_id and b.slug = 'evergreen-yard-care';
+  from public.businesses b
+ where b.id = a.business_id and b.slug = 'evergreen-yard-care';
 
 -- 3. refuse to continue if anything is unaccounted for. A migration that
---    silently leaves a NULL is the bug this column exists to fix.
-do $$ declare n int; begin
+--    silently leaves a NULL is the exact bug this column exists to fix.
+do $$
+declare n int;
+begin
   select count(*) into n from public.stripe_connect_accounts where mode is null;
-  if n > 0 then raise exception 'stripe_connect_accounts: % row(s) have no mode', n; end if;
+  if n > 0 then
+    raise exception 'stripe_connect_accounts: % row(s) have no mode - backfill is incomplete', n;
+  end if;
 end $$;
 
--- 4. now enforce
+-- 4. enforce. NO DEFAULT, deliberately: a default is how a row that cannot say
+--    which mode it belongs to gets one anyway.
 alter table public.stripe_connect_accounts alter column mode set not null;
 alter table public.stripe_connect_accounts
   add constraint stripe_connect_accounts_mode_chk check (mode in ('test','live'));
 
--- 5. M2 — one account per business per mode.
---    MEASURED: `stripe_connect_accounts_business_unique UNIQUE (business_id)`
---    EXISTS TODAY. It must be dropped, or a business can never hold both a test
---    and a live account and the first dual-mode onboard fails with 23505 at
---    insert. `stripe_connect_accounts_stripe_unique UNIQUE (stripe_account_id)`
---    stays — an account id is globally unique in reality too.
+-- 5. the old constraint is the blocker: UNIQUE (business_id) means a business can
+--    NEVER hold both a test and a live account, so the first dual-mode onboard
+--    fails with 23505 at insert. Dropped and replaced, in that order, inside this
+--    transaction. stripe_connect_accounts_stripe_unique UNIQUE (stripe_account_id)
+--    STAYS — an account id is globally unique in reality too.
 alter table public.stripe_connect_accounts
   drop constraint stripe_connect_accounts_business_unique;
+
 create unique index if not exists stripe_connect_accounts_biz_mode_uniq
   on public.stripe_connect_accounts (business_id, mode);
 
