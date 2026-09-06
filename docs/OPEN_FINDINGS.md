@@ -743,6 +743,55 @@ fix it by randomising.** A random layout is not a designed one, and a customer c
 against a real design tool will see the difference immediately. The fix has to make the
 shape follow from something true about the business.
 
+### ATTEMPT 1, 2026-09-05 — BUILT, INERT, AND IT FAILED FOR THE REASON THIS FINDING NAMES
+
+The narrow fix (headline alignment + mark position only) is built and deployed. **It changes
+nothing on any page**, because the planner will not emit the commitment.
+
+Built and unit-proven in isolation:
+- `CHROME_ENUMS` += `headlineAlignment: ["left","centre"]`, `markPosition: ["left","centre","right"]`.
+- `applyShapeNet()` — appends `<style id="hubly-shape-net">[data-hc="hero.headline"]{text-align:…}</style>`,
+  in BOTH directions so a left page is a decision rather than an accident. Idempotent: a
+  re-run replaces rather than stacks, the same "append ONCE" discipline as the price-marker
+  style. Rejects a value outside the enum.
+- The SHAPE-line parser — 8 realistic planner outputs. **One case earned its keep before
+  shipping: the model's likeliest answer is `center`, the CSS spelling, and the enum is
+  British to match `logoPlacement`. It was being silently dropped — regressing the page to
+  the inherited default, the exact failure the change exists to stop.** Normalised at the
+  parser, not by widening the enum.
+- Storage via `patch_business_in_progress` → `meta.website.chrome`, the field `setChrome`
+  already writes and `chromeOverridesFrom` already re-validates. No new column, no migration.
+
+**And then it failed.** Four trades (bike repair, landscaping, food, gutters) generated on
+unclaimed test businesses, twice — once with the SHAPE line requested LAST, once moved FIRST
+and declared part of the commitment format. **0 of 4 both times.**
+
+**It is not the plumbing being skipped.** The sibling `hubly-layout-net`, appended two lines
+away in the same chain, is present on all four fresh pages; the shape net is absent. So
+nothing downstream strips it — `applyShapeNet` ran and returned "no commitment", because the
+planner never produced the line. The planner's own prompt ends *"Output ONLY the commitment.
+No preamble, no options, no bullet lists of alternatives"*, and the requested line reads as
+exactly the addendum that suppresses.
+
+**THE FAILURE IS THIS FINDING'S OWN THESIS, APPLIED TO ITS OWN FIX.** #16 says prose does not
+beat a model's default. Attempt 1 tried to escape the default by **asking the model in prose
+to declare its default**, and it declined twice. See `STATE.md`.
+
+**Next: `jsonMode` with a schema** — `{shape:{headlineAlignment, markPosition}, plan}` — one
+call, same latency, structurally unable to omit the field. That is what `CHROME_ENUMS` exists
+for and what `:89` already says prose cannot do.
+
+**The acceptance test is VARIETY, NOT PRESENCE.** JSON mode guarantees the field exists; it
+does not guarantee the value differs. Four commitments and one distinct value is a FAILURE —
+that is precisely what "the model's default" means. Report both numbers.
+
+**If it emits reliably but will not vary, the fallback is NOT randomising.** A trade-informed
+default — a spa centred, a repair shop left, a landscaper full-bleed — chosen deterministically
+from business type with the model free to override. That is a design opinion rather than a
+dice roll, and it is checkable. Not built; not ruled out.
+
+---
+
 **Measured by RENDERING 128 stored freeform pages at 1440×900** — not by reading markup.
 Where a logo sits is a layout fact, and DOM order is not screen position.
 
@@ -2071,3 +2120,35 @@ Smaller than it sounds, and both halves are narrow:
 Neither needs a meeting link to exist first — a training can be booked and the link sent in
 the confirmation. **Auto-generating a meeting link is a separate, later feature and should
 not be allowed to inflate this one.**
+
+---
+
+## #31 — `design_rationale` stores a conversation decorator, not the plan
+
+**Found 2026-09-05 while debugging #16 attempt 1. Recorded, NOT chased.**
+
+`business_documents.design_rationale` is documented in `hubly_capability_registry.ts` as the
+plan the freeform planner committed to, and specifically as *"the cheapest debugging artifact:
+when a page comes out wrong we can read what it MEANT to build."*
+
+On at least some builds it is not that. Every one of the four pages generated on 2026-09-05
+stores a rationale ending:
+
+> `… Nice work — this is a real milestone.`
+
+That string is `hubly_brain_experience_director.ts:413` — a **conversation reply decorator**,
+appended to a chat response. The stored text is also truncated with a literal `…` at ~558
+characters, so it is neither the whole plan nor only the plan.
+
+**Why it matters beyond tidiness:** this field is the designated instrument for exactly the
+investigation that was running. Reading it, the plan looked complete and simply lacked the
+SHAPE line — which pointed at the planner ignoring an instruction. The real answer was the
+same, but confirming it took an extra pass through the render chain to prove nothing
+downstream was stripping the CSS net. **A debugging artifact that is unreliable costs most
+precisely when it is being relied on.**
+
+Not chased: the four pages went through `runFreeformGeneration` (confirmed by the stored
+document's key shape — `brief,images,generatedAt`), which sets
+`p_design_rationale: gen.plan`. So either `gen.plan` itself carries the decorator, or a
+second write overwrites the row's rationale afterwards. **Both are one query away and neither
+was on tonight's path.** It will pay for itself the next time the generator misbehaves.

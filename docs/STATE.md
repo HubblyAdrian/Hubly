@@ -300,6 +300,20 @@ nothing exercises a CLAIMED site, and nothing reads back what the owner was actu
   page" as "nothing reads this field". Each was caught by one field whose behaviour was
   independently known (`cta-secondary` demonstrably works on the live page). Keep a known-good
   case in every sweep purely so a broken harness announces itself.
+- **A FINDING CAN PREDICT ITS OWN FIX. Read it before you fix it, and check whether the fix
+  is an instance of the thing it describes.** *(2026-09-05, #16 attempt 1.)* #16's whole
+  thesis is that **prose does not beat a model's default** — the prompt has forbidden the
+  identical page shape by name since the beginning and 55% of pages are that exact shape.
+  The fix built for it tried to escape the default by **asking the model, in prose, to
+  declare its default**. It declined twice, in two phrasings, across eight generated pages —
+  0 of 4, then 0 of 4 again after moving the request to the front of the output format.
+  All the plumbing worked; the proof that it worked is that the sibling CSS net appended two
+  lines away is on every page and this one is on none.
+  The tell was there in the finding's own words before a line was written, quoting
+  `hubly_capability_registry.ts:89`: *"prose alone does not stop a model"*. **A fix whose
+  mechanism is the thing the finding says fails is not a fix, however well built.** The
+  structured version — jsonMode with a schema — is what the enum machinery already exists
+  for.
 - **`context` IS NOT AN AUTH CHECK. Gate on `getOwnerUid()` + `biz.owner_id === ownerUid`,
   never on `context`.** *(2026-09-05, invariant.)* `hubly-conversation/index.ts:941` reads
   the surface off the REQUEST BODY: `body?.context === "customer" ? … : "dashboard"`. That

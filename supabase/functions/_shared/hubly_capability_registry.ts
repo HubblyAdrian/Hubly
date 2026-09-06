@@ -742,6 +742,20 @@ function logoAspectFrom(meta: unknown): number | undefined {
  *  against the enum it belongs to and dropped if it does not match -- this is
  *  persisted jsonb, so it is untrusted input like any other. */
 const CHROME_ENUMS: Record<string, readonly string[]> = {
+  // THE FIRST SCREEN IS THE ONE THING EVERY HUBLY PAGE HAS IN COMMON. Measured
+  // 2026-09-02 and again 2026-09-05: 128/128 pages render the hero headline
+  // text-align:start, and only 1 of 133 <h1> tags carries any class or style at
+  // all. The model is not choosing left — it never writes a rule that touches
+  // the headline, so it inherits the default. Meanwhile 77 of 134 pages DO put
+  // text-align:center somewhere in their own CSS: it centres section headers and
+  // footers happily. The headline is the one element it never decides.
+  //
+  // A decision that is never made can be forced to be made. These two are enums
+  // for the reason stated at :89 — "prose alone does not stop a model" — and the
+  // prompt has forbidden this exact shape by name since the beginning and lost.
+  // Closed lists, validated, same shape as logoPlacement. (OPEN_FINDINGS #16.)
+  headlineAlignment: ["left", "centre"],
+  markPosition: ["left", "centre", "right"],
   logoPlacement: ["left", "centre", "stack"],
   logoScale: ["sm", "md", "lg"],
   logoShape: ["wordmark", "wide", "square", "tall"],
@@ -2005,6 +2019,42 @@ export function fixCollapsibleGridColumns(html: string): { html: string; fixed: 
   return { html: out, fixed };
 }
 
+/**
+ * THE SHAPE NET — makes the headline commitment real, rather than hoped for.
+ *
+ * Same discipline as fixCollapsibleGridColumns above: a small deterministic
+ * appended rule, not a per-page guess, and one that cannot make a good page
+ * worse. It sets text-align on the hero headline to the value the planner
+ * COMMITTED to. Emitted in BOTH directions on purpose — writing `left`
+ * explicitly is what makes the left pages a decision rather than an accident,
+ * and it is what makes the choice measurable afterwards.
+ *
+ * WHY CSS AND NOT JUST THE PROMPT: the prompt has told the model not to default
+ * to one shape since the beginning, by name, and 55% of pages are that exact
+ * shape. Prose does not beat a model's default. This is the half that must not
+ * be able to silently revert.
+ *
+ * MARK POSITION IS NOT ENFORCED HERE, deliberately. Alignment is safe to force —
+ * text-align on one element cannot break a layout. Forcing a brand mark's
+ * position means reaching into a header whose flex/grid structure the model
+ * chose and we have not seen, which fails the "cannot make a good page worse"
+ * test that justifies every other rule in this family. It is committed, stored
+ * and injected as a decision; it is not overridden after the fact.
+ */
+export function applyShapeNet(html: string, shape: { headlineAlignment?: string }): { html: string; applied: string | null } {
+  const align = shape?.headlineAlignment;
+  if (align !== "left" && align !== "centre") return { html, applied: null };
+  const css = align === "centre" ? "center" : "left";
+  const net = `<style id="hubly-shape-net">[data-hc="hero.headline"]{text-align:${css}}</style>`;
+  // APPEND ONCE — same discipline as the price-marker style. A rebuild or a
+  // restamp can put this pass over a page that already carries the net, and two
+  // blocks means the later one silently wins: the page would still render, so a
+  // stale alignment would be invisible rather than wrong.
+  const stripped = html.replace(/<style id="hubly-shape-net">[\s\S]*?<\/style>/g, "");
+  const out = stripped.includes("</body>") ? stripped.replace("</body>", net + "</body>") : stripped + net;
+  return { html: out, applied: align };
+}
+
 export function protectBusinessName(html: string, rawName: string | null | undefined): string {
   const name = String(rawName || "").trim();
   if (name.length < 2) return html;
@@ -2127,7 +2177,7 @@ export async function generateFreeformPage(
   brief: string,
   record: Record<string, unknown>,
   jobId?: string | null,
-): Promise<{ ok: true; html: string; plan: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string; imagesPlaced?: number; imageBlanks?: number; placeholders?: number; strippedCredentials?: number } | { ok: false; error: string }> {
+): Promise<{ ok: true; html: string; plan: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string; imagesPlaced?: number; imageBlanks?: number; placeholders?: number; strippedCredentials?: number; shape?: { headlineAlignment?: string; markPosition?: string } } | { ok: false; error: string }> {
   // WHAT HUBLY SUPPLIES, told to the model so it can DESIGN for it.
   //
   // The first three freeform pages were call-only brochures for one reason:
@@ -2230,7 +2280,17 @@ export async function generateFreeformPage(
       reasoningEffort: "low",
       maxTokens: 500,
       system:
-        "You decide what ONE web page should BE for a specific local business, before any HTML exists. You are NOT writing the page — you commit to its shape in plain words so a builder executes exactly that. Think about THIS trade specifically: in the first three seconds, what must a visitor see to know they're in the right place and can act; what would be a WASTE of space for this trade (a section generic templates include but this business does not need); what is the ONE thing this page is for; and what SHAPE that implies. Be opinionated and trade-specific — a roofer after a hailstorm is not a bakery is not a bookkeeper, and they should NOT end up the same shape. Do NOT default to 'top nav + hero-with-image-on-the-right + three service cards' unless it is genuinely right for THIS trade. Then COMMIT in 3-5 sentences: the overall shape, the one hero image or none, nav or no nav, how many sections and what each is for, and where the single action lives. Concrete, e.g. 'One full-bleed photo of a finished roof, the phone number huge over it, three sentences of what you do and a request-a-look button — no top nav, no card grid; roofing is an emergency, not a browse.' Output ONLY the commitment. No preamble, no options, no bullet lists of alternatives.",
+        "You decide what ONE web page should BE for a specific local business, before any HTML exists. You are NOT writing the page — you commit to its shape in plain words so a builder executes exactly that. Think about THIS trade specifically: in the first three seconds, what must a visitor see to know they're in the right place and can act; what would be a WASTE of space for this trade (a section generic templates include but this business does not need); what is the ONE thing this page is for; and what SHAPE that implies. Be opinionated and trade-specific — a roofer after a hailstorm is not a bakery is not a bookkeeper, and they should NOT end up the same shape. Do NOT default to 'top nav + hero-with-image-on-the-right + three service cards' unless it is genuinely right for THIS trade. Then COMMIT in 3-5 sentences: the overall shape, the one hero image or none, nav or no nav, how many sections and what each is for, and where the single action lives. Concrete, e.g. 'One full-bleed photo of a finished roof, the phone number huge over it, three sentences of what you do and a request-a-look button — no top nav, no card grid; roofing is an emergency, not a browse.' Output ONLY the commitment. No preamble, no options, no bullet lists of alternatives."
+        + "\n\nOUTPUT FORMAT — TWO PARTS, IN THIS ORDER, ALWAYS. Part one is a single machine-readable line; " +
+        "it comes FIRST, before the commitment prose, and it is part of the commitment rather than an addition to it:\n" +
+        "SHAPE: headlineAlignment=<left|centre>; markPosition=<left|centre|right>\n" +
+        "Choose both from what this business IS — the trade, its materials, how its customers arrive. " +
+        "A centred mark and centred headline suit a place people already know by name and come to deliberately: a bakery, a salon, a studio. " +
+        "A left mark and left headline suit work that gets scanned and compared quickly: a roofer, a plumber, a detailer. " +
+        "These are not defaults to fall back on — they are a decision you are accountable for, and Hubly will enforce the alignment you name here. " +
+        "Do NOT pick left for both simply because it is common. " +
+        "Part two is the commitment prose, on the following lines, exactly as described above. " +
+        "The SHAPE line is never optional and is never omitted for brevity — a commitment without it is incomplete.",
       messages: [{ role: "user", content: `THE BUSINESS RECORD:\n${JSON.stringify(record, null, 1)}\n\nThe owner's own words: ${brief}` }],
       jsonMode: false,
     });
@@ -2247,8 +2307,45 @@ export async function generateFreeformPage(
     console.error(`freeform-planner FAILED [${businessId}] — building single-pass without a plan: ${String((e as Error)?.message || e).slice(0, 200)}`);
     try { await callBusinessRpc("record_planner_fallback", { p_business_id: businessId, p_error: String((e as Error)?.message || e).slice(0, 300) }); } catch (_r) { /* recording must not fail the build */ }
   }
+  // THE COMMITMENT, READ BACK AS DATA. The planner already decided the page's
+  // shape; until now that decision existed only as prose and was thrown away —
+  // the same class as expandBands computing sections and discarding them, and the
+  // knob pass computing bind counts and discarding them. Parsed against the same
+  // CHROME_ENUMS that guard setChrome, so an invented sixth value is dropped
+  // rather than carried. (OPEN_FINDINGS #16.)
+  const shape: { headlineAlignment?: string; markPosition?: string } = {};
+  {
+    const m = plan.match(/SHAPE:\s*headlineAlignment\s*=\s*([a-z]+)\s*;\s*markPosition\s*=\s*([a-z]+)/i);
+    // "center" is the CSS spelling and the likelier one for a model to write; the
+    // enum is British to match logoPlacement, which shipped first. Normalising is
+    // a parser concern, not an enum change — and without it the commonest possible
+    // answer would be silently dropped and the page would regress to the inherited
+    // default, which is the exact failure this whole change exists to stop. Caught
+    // by unit-testing the parser against realistic planner output before shipping.
+    const norm = (v: string) => (v === "center" ? "centre" : v);
+    const ha = m ? norm(String(m[1]).toLowerCase()) : "";
+    const mp = m ? norm(String(m[2]).toLowerCase()) : "";
+    if (CHROME_ENUMS.headlineAlignment.includes(ha)) shape.headlineAlignment = ha;
+    if (CHROME_ENUMS.markPosition.includes(mp)) shape.markPosition = mp;
+  }
+  // Countable, never silent. A planner that stops emitting the line, or emits a
+  // value outside the enum, regresses every page to the inherited default — which
+  // is exactly the state this fixes and would look identical from outside.
+  if (!shape.headlineAlignment || !shape.markPosition) {
+    console.error(`freeform-shape MISSING [${businessId}] — planner emitted no usable SHAPE line; page falls back to the inherited default. plan tail: ${plan.slice(-140)}`);
+  } else {
+    console.log(`freeform-shape [${businessId}] headlineAlignment=${shape.headlineAlignment} markPosition=${shape.markPosition}`);
+  }
+
+  const shapeDirective = (shape.headlineAlignment || shape.markPosition)
+    ? "THE SHAPE IS ALREADY DECIDED — these are not suggestions, and not yours to reconsider:\n" +
+      (shape.headlineAlignment ? `- The hero headline is ${shape.headlineAlignment === "centre" ? "CENTRED" : "LEFT-ALIGNED"}. Write the CSS that makes it so.\n` : "") +
+      (shape.markPosition ? `- The brand mark sits ${shape.markPosition.toUpperCase()} in the header. Build the header around that.\n` : "") +
+      "Design the rest of the page to suit these two, rather than treating them as decoration on a layout you already had in mind.\n\n"
+    : "";
+
   const genBrief = plan
-    ? `THE PLAN — build EXACTLY this page. Execute its shape faithfully; do NOT fall back to a generic nav+hero+cards layout if the plan says otherwise:\n${plan}\n\nThe owner's own words: ${brief}`
+    ? shapeDirective + `THE PLAN — build EXACTLY this page. Execute its shape faithfully; do NOT fall back to a generic nav+hero+cards layout if the plan says otherwise:\n${plan}\n\nThe owner's own words: ${brief}`
     : brief;
   try {
     const ai = await HublyAI.complete({
@@ -2425,7 +2522,13 @@ export async function generateFreeformPage(
   // CTA to a working URL, adds one if there is none, and injects the chat
   // widget. Ordered after stamping so the injected runtime is not itself
   // labelled as editable content — the owner edits their page, not our widget.
-  const wired = injectHublyRuntime(gridSafe.html, {
+  // THE SHAPE NET — enforce the headline alignment the planner committed to, so a
+  // prose failure cannot silently revert it to the inherited default. Emitted in
+  // both directions: writing `left` explicitly is what makes a left page a
+  // decision rather than an accident, and what makes the choice measurable.
+  const shaped = applyShapeNet(gridSafe.html, shape);
+  console.log(`freeform [${businessId}] shape net: headline ${shaped.applied ?? "NOT APPLIED (no commitment)"}`);
+  const wired = injectHublyRuntime(shaped.html, {
     businessId,
     businessName: String((record as Record<string, unknown>)?.name || "this business"),
     slug: String((record as Record<string, unknown>)?.slug || ""),
@@ -2468,6 +2571,10 @@ export async function generateFreeformPage(
     imageBlanks: resolved.blanks,
     placeholders: annotated.placeholders.length,
     strippedCredentials: annotated.stripped.length,
+    // The commitment, handed back so it can be STORED on the business rather than
+    // living only inside this function — a decision that is not recorded cannot be
+    // inspected, corrected by the owner, or measured against trade. (#16)
+    shape,
   };
 }
 
@@ -4628,6 +4735,27 @@ async function runFreeformGeneration(
   sw.mark("persistDocument");
   if (!r || r.ok !== true) {
     return { ok: false, real: false, summary: "The page was generated but could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
+
+  // STORE THE COMMITMENT ON THE BUSINESS. meta.website.chrome is the field
+  // website.setChrome already writes and chromeOverridesFrom already reads, and
+  // every value is re-validated against CHROME_ENUMS on the way back out — so
+  // this needs no new column, no migration and no second reader. Best-effort by
+  // design: the page is already saved and correct, and a failure to record the
+  // decision must never fail the build. It IS logged, because a decision we
+  // stopped recording is the exact regression this finding is about. (#16)
+  const gshape: { headlineAlignment?: string; markPosition?: string } =
+    (gen as { shape?: { headlineAlignment?: string; markPosition?: string } }).shape ?? {};
+  if (gshape.headlineAlignment || gshape.markPosition) {
+    try {
+      await callBusinessRpc("patch_business_in_progress", {
+        p_business_id: draftId,
+        p_draft_token: draftToken,
+        p_website_meta: { chrome: gshape },
+      });
+    } catch (e) {
+      console.error(`freeform-shape NOT STORED [${draftId}] — page is live and correct, the decision was not recorded: ${String((e as Error)?.message || e).slice(0, 160)}`);
+    }
+  }
   }
   const timing = sw.done();
   // Same one-line-per-build shape as the AST path, so the two are directly
