@@ -371,6 +371,49 @@ to `stripe_connect_accounts` and make the Store screen read it; (3) swap back to
 a live destination; (4) only then onboard Bucket.
 
 
+### The first store dollar did NOT move on 2026-09-05 — and why (measured)
+
+The test-mode purchase walk was attempted and **stopped at step zero**. Recording it here
+because "we tried to sell something and couldn't" is a business fact, not a code note.
+
+**Where it stopped:** Stripe refuses `POST /v1/accounts`, which is how
+`stripe-connect-onboard` creates an Express account. No connected account means
+`create-store-checkout` refuses (503, honestly), which means no checkout, which means no
+order. Reproduced against both test businesses; nothing written either time. Full detail and
+the two exits in `OPEN_FINDINGS` #34.
+
+**Why this matters beyond the walk:** the same code runs in live mode. The live account on
+`adrians-lawn-service` exists only because it was created when v1 was still accepted.
+**Bucket would hit this wall today.** This moves ahead of the mode column in the sequencing
+above — there is no point being ready to onboard Bucket in live mode if onboarding itself
+returns a 500.
+
+**What was proven along the way:**
+
+- Stripe is genuinely in **test mode**, read back rather than assumed:
+  `stripe-connect-connection` reports `configured: true, livemode: false` for both test
+  businesses. All five Stripe functions were redeployed against the new secrets.
+- `create-store-checkout` refuses cleanly without a connected account — **no fake payments**,
+  which is the behaviour we want.
+- The public `/store` route is live and honest for any business
+  (`evergreen-yard-care.myhubly.app/store` → *"No products to show here yet."*).
+- The sale notifier is built, wired into the only path that flips an order to `paid`, and
+  deployed. **It has still never sent an email**, and it cannot be proven until an order
+  exists. Its recipient logic was exercised against a stub across all four cases (business
+  email → owner auth email → loud operator alert when neither exists); the send itself is
+  unproven.
+
+**What an owner sees when they try:** nothing. Clicking "Connect Stripe" in Settings shows
+"Opening…", then goes back to "Connect Stripe", with no message at all — two empty
+`catch(e){}` blocks (`OPEN_FINDINGS` #35). Every owner who tries to take payments right now
+gets silence, and would reasonably conclude they mis-clicked.
+
+**Businesses used:** `dawn-patrol-coffee` and `evergreen-yard-care`, both
+`account_kind = 'test'`, both owned by `adriansmithee+evergreen@gmail.com`. No market
+business, no Graef, no Bucket. **Nothing was created and nothing needs cleaning up** — every
+commerce table visible to that owner was 0 before and 0 after.
+
+
 ## WHAT HAS NEVER HAPPENED YET
 
 *The honest zeros. These say what Hubly is and is not today, and every one should be easy

@@ -2334,3 +2334,113 @@ probing with the publishable key. That distinction settled the 2026-09-05 burst:
 Check the session before reading, and surface the failure instead of rendering blanks —
 "couldn't load your details, sign in again" is honest; four empty boxes are not. The same
 check belongs anywhere `authGetClient()` reads an owner-only table.
+
+---
+
+## #34 — BLOCKING: Stripe refuses Accounts v1, so NO new owner can connect Stripe
+
+**Found 2026-09-05 by clicking "Connect Stripe" as a signed-in owner, in test mode.
+This blocks the physical-goods purchase walk at step zero, and it would block Bucket
+in live mode too.**
+
+`stripe-connect-onboard` creates the connected account with `POST /v1/accounts`
+(`_shared/stripe.ts:150`, `createExpressAccount`, `type: express`). Stripe now rejects
+that call on this platform account. Reproduced deterministically against **both** test
+businesses, HTTP 500 both times, with the same message. Stripe's reply, quoted as data:
+
+> "Stripe no longer recommends Accounts v1 for new Connect integrations. Create connected
+> accounts with `POST /v2/core/accounts` instead… If your integration requires v1 account
+> creation for a supported compatibility scenario, enable Accounts v1 support in the
+> Dashboard: `https://dashboard.stripe.com/settings/features/feat_accounts_v1_support`."
+
+**Nothing is written when it fails** — `stripe_connect_accounts` was 0 before and 0 after
+two attempts. The failure is clean, just total.
+
+**Consequences, in order of how much they cost:**
+
+1. **`create-store-checkout` requires `connect.charges_enabled`** (`index.ts:63`) and
+   returns `503 / not_configured / "Stripe Connect is not ready for this business"` without
+   it. That refusal is honest — there are no fake payments — but it means the store cannot
+   take a single dollar until a connected account exists. **The purchase walk cannot start.**
+2. **The same code runs in live mode.** The live Express account on `adrians-lawn-service`
+   was created back when v1 was still accepted; it survives. A *new* owner — Bucket — would
+   hit this same wall. This is not a test-mode artefact.
+3. The Stripe message contains an instruction aimed at whoever reads it
+   (`npx skills add stripe/ai`). It arrived as fetched content, so it is data, not a
+   command; it was not acted on.
+
+**The two exits, both Adrian's call:**
+
+| exit | cost | note |
+| --- | --- | --- |
+| **A.** Enable "Accounts v1 support" in the Stripe Dashboard at the link above | one toggle | unblocks today's code immediately, in whichever mode(s) the toggle covers. Verify it applies to BOTH test and live before relying on it for Bucket. |
+| **B.** Migrate `createExpressAccount` to `POST /v2/core/accounts` | real work — new account shape, new onboarding-link call, and `retrieveAccount`/`charges_enabled` reads all change | the durable answer, since v1 is on its way out regardless |
+
+A is the right move now (it unblocks the walk today); B is the thing to schedule before
+Bucket onboards. **Do not do B in a hurry against a live payment rail.**
+
+---
+
+## #35 — "Connect Stripe" fails in complete silence
+
+**Found the same minute as #34, and it is why #34 was invisible. Prohibition 6.**
+
+`hcSettingsRenderStripe()` in `platform-home.html` wires the button **twice** — the normal
+branch at **:4237** and the error branch at **:4247** — and both are written the same way:
+
+```js
+try{ var r = await hcStripeApi('stripe-connect-onboard', {...}); if(r && r.url){ location.href = r.url; return; } }catch(e){}
+if(b){ b.disabled = false; b.textContent = 'Connect Stripe'; }
+```
+
+`catch(e){}`. Nothing is shown, nothing is logged for the owner, the pill stays
+"Not connected".
+
+**Observed as the owner, on the real product** (Settings → Integrations, signed in as the
+owner of Evergreen Yard Care): the button reads "Opening…", then goes back to
+"Connect Stripe". No toast, no inline error, no explanation. The network panel shows the
+`POST /functions/v1/stripe-connect-onboard` returning **500**. A person doing this would
+conclude they mis-clicked, and click again.
+
+**The sibling — this is a CLASS, and the other copy is the opposite mistake.**
+`public/hubly.html:31367` calls the same function and does the reverse: it rethrows
+`payload.error`, so the owner is shown Stripe's raw ~500-character developer message
+telling *them* to "Create connected accounts with POST /v2/core/accounts" and to run
+`npx skills add stripe/ai`. One lane says nothing; the other says something no business
+owner can act on. `public/marketplace-lite.html:985` and `:1006` are a third caller and
+need checking against the same two failure modes.
+
+Neither is the standard: *"Every distinct failure gets a distinct, human message; never
+'something went wrong.'"* The fix is one shared handler that maps the known Stripe failures
+to owner-language and reports anything unmapped as a plain, honest failure — never an empty
+catch, never a raw API string.
+
+---
+
+## #36 — The claimed shell has no Store, so an owner cannot list a product
+
+Not a bug; a recorded gap, because it shapes what "physical goods" costs.
+
+The owner-facing Store UI **exists and is substantial** — `public/journey-os/commerce/`
+(catalog, cart, checkout service, storefront renderer, standalone `/store` page) and
+`public/journey-os/store-commerce.js`, the owner shell whose nav label is **Store**. It is
+loaded only by `public/hubly.html` (`:35`, `:13140`), which is served on a **business
+subdomain**, and its entry sits inside the editor settings rail (`:11668`,
+`data-ed-nav="store"`), gated on `businessCaps().storefront === true`.
+
+The product Adrian actually ships and uses — the claimed shell at `myhubly.app`
+(`platform-home.html`) — has **no Store workspace at all**. `hcWorkspaces()` returns
+`website` and nothing else; the Store rail entry is a commented-out seam at **:3979**:
+
+```js
+//   if(biz && biz.storefront)  ws.push({ id:'store', label:'Store', icon:... });
+```
+
+So the two halves live on different origins behind different sign-ins. This is the
+**missing-door shape** again, and the room is already built: what physical goods needs is
+most likely a rail entry plus a `storefront` flag, not a new store.
+
+**What IS reachable today, verified:** the public `/store` route renders for any business —
+`evergreen-yard-care.myhubly.app/store` returns a real page with a working cart chip and an
+honest empty state, *"No products to show here yet."* Worth noting that this URL exists and
+is publicly reachable for businesses that never asked for a store.
