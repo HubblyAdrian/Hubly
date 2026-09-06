@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <script src="/journey-os/hubly-public-key.js"></script>
+  <script src="/journey-os/stripe-connect-message.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>hubly · Marketplace</title>
@@ -981,14 +982,22 @@ a{color:inherit;text-decoration:none}
           '</div></div>';
       const connectBtn = $('stripe-connect');
       if (connectBtn) {
+        // Had no catch at all until 2026-09-05: a failure rejected into nothing and
+        // the provider saw the button do absolutely nothing. Same defect as the two
+        // empty catches in platform-home.html, written a third way.
         connectBtn.onclick = async () => {
-          const r = await stripeApi('stripe-connect-onboard', {
-            business_id: business.id,
-            return_to: location.origin + '/marketplace/home',
-            return_url: location.origin + '/marketplace/home',
-            refresh_url: location.origin + '/marketplace/home',
-          });
-          if (r.url) location.href = r.url;
+          try {
+            const r = await stripeApi('stripe-connect-onboard', {
+              business_id: business.id,
+              return_to: location.origin + '/marketplace/home',
+              return_url: location.origin + '/marketplace/home',
+              refresh_url: location.origin + '/marketplace/home',
+            });
+            if (r.url) { location.href = r.url; return; }
+            throw new Error('No Stripe onboarding URL returned');
+          } catch (err) {
+            window.HublyStripeConnectError.report(err, (t) => setStatus(t, 'err'));
+          }
         };
       }
       const dashBtn = $('stripe-dash');
@@ -999,7 +1008,7 @@ a{color:inherit;text-decoration:none}
         };
       }
     } catch (e) {
-      root.innerHTML = '<div class="card"><div class="status err">' + esc(e.message) + '</div>' +
+      root.innerHTML = '<div class="card"><div class="status err">' + esc(window.HublyStripeConnectError.message(e)) + '</div>' +
         '<div class="actions" style="margin-top:10px"><button type="button" class="btn btn-brand btn-sm" id="stripe-connect">Connect Stripe</button></div></div>';
       $('stripe-connect').onclick = async () => {
         try {
@@ -1011,7 +1020,9 @@ a{color:inherit;text-decoration:none}
           });
           if (r.url) location.href = r.url;
         } catch (err) {
-          setStatus(err.message, 'err');
+          // Was setStatus(err.message) — Stripe's raw developer prose, shown to a
+          // provider who cannot act on it. The mapper owns the wording now.
+          window.HublyStripeConnectError.report(err, (t) => setStatus(t, 'err'));
         }
       };
     }

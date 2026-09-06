@@ -2,6 +2,7 @@
 <html lang="en" class="notranslate" translate="no">
 <head>
   <script src="/journey-os/hubly-public-key.js"></script>
+  <script src="/journey-os/stripe-connect-message.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="google" content="notranslate">
@@ -31384,15 +31385,17 @@ async function connectStripe(){
     if(!payload?.url)throw new Error('No Stripe onboarding URL returned');
     location.href=payload.url;
   }catch(e){
-    console.warn('connectStripe',e);
-    const msg=String(e?.message||'Could not start Stripe');
+    // Was toast(e.message) — which on 2026-09-05 meant toasting ~500 characters of
+    // Stripe developer prose at a business owner, instructing THEM to call
+    // POST /v2/core/accounts and run a shell command. The opposite half of the same
+    // defect as platform-home's empty catches: one lane said nothing, this one said
+    // something unusable. The shared mapper owns the wording for both now.
+    const msg=String(e?.message||'');
     const platformIncomplete=e?.code==='connect_platform_incomplete'||/signed up for Connect|Connect platform/i.test(msg);
+    window.HublyStripeConnectError.report(e, (t)=>toast(t));
     if(platformIncomplete){
       showStripePlatformSetupNeeded(true);
-      toast('Finish Hubly Connect platform setup in Stripe, then retry');
       try{window.open(e?.docs_url||'https://dashboard.stripe.com/connect/accounts/overview','_blank','noopener');}catch(err){}
-    }else{
-      toast(msg);
     }
     setStripeConnectBusy(false);
   }

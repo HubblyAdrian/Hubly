@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <script src="/journey-os/hubly-public-key.js"></script>
+  <script src="/journey-os/stripe-connect-message.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>hubly · Hubly gets it done.</title>
@@ -358,6 +359,10 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
 .hc-set-k{font-size:14px;color:var(--ink,#111)}
 .hc-set-v{font-size:14px;color:var(--ink-500,#5b616e);text-align:right;word-break:break-word}
 .hc-set-note{font-size:12px;color:var(--ink-500,#6b7280);line-height:1.5;margin-top:4px}
+/* The Stripe failure line. Not a toast: it stays on screen next to the button that
+   failed, because an owner who missed a 3-second toast is an owner who was told
+   nothing (prohibition 6). Cleared only when they try again. */
+.hc-set-err{font-size:12px;line-height:1.5;margin-top:8px;padding:8px 10px;border-radius:8px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
 .hc-set-btn{border:1px solid var(--line,#e5e7eb);background:var(--bg,#fff);color:var(--brand-700,#8a3f1c);font:inherit;font-size:13px;font-weight:700;
   padding:8px 14px;border-radius:10px;cursor:pointer;min-height:36px}
 .hc-set-btn:hover{border-color:var(--brand-600,#D9632D)}
@@ -4201,6 +4206,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         // INTEGRATIONS
         '<div class="hc-set-sec"><h3>Integrations</h3>' +
           '<div class="hc-set-row"><span class="hc-set-k">Stripe <span class="hc-set-pill off" id="hcSetStripePill">…</span></span><span class="hc-set-v" id="hcSetStripeAction"></span></div>' +
+          '<div class="hc-set-err" id="hcSetStripeErr" role="alert" hidden></div>' +
           '<div class="hc-set-note">Take card payments when a customer books. Stripe’s processing rate passes straight through — Hubly takes no cut of a booking.</div>' +
         '</div>' +
       '</div>';
@@ -4214,6 +4220,35 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     })();
     // Stripe status + the door.
     hcSettingsRenderStripe(biz.id);
+  }
+  // Show a Stripe Connect failure as a sentence, always. This exists because both
+  // handlers below used to be `catch(e){}` — the owner clicked, the button said
+  // "Opening…", the request 500'd, and the screen said nothing at all. The wording
+  // comes from the shared mapper so this surface can never invent its own phrasing
+  // and can never leak a raw API string.
+  function hcStripeErrShow(err){
+    var box = document.getElementById('hcSetStripeErr');
+    var W = window.HublyStripeConnectError;
+    var text = W ? W.report(err, function(t){ if(box){ box.textContent = t; box.hidden = false; } })
+                 : null;
+    // If the shared mapper failed to load we still say something rather than nothing.
+    if(!W && box){ box.textContent = 'Hubly could not start Stripe setup just now. Try again in a minute — if it keeps failing, tell us.'; box.hidden = false; }
+    return text;
+  }
+  function hcStripeErrClear(){ var box = document.getElementById('hcSetStripeErr'); if(box){ box.hidden = true; box.textContent = ''; } }
+  // One connect attempt, one guaranteed outcome: either we navigate to Stripe, or a
+  // sentence appears. There is no third path.
+  async function hcStripeConnectClick(btn, businessId){
+    hcStripeErrClear();
+    if(btn){ btn.disabled = true; btn.textContent = 'Opening…'; }
+    try{
+      var r = await hcStripeApi('stripe-connect-onboard', { business_id: businessId, return_to: location.href });
+      if(r && r.url){ location.href = r.url; return; }
+      hcStripeErrShow(new Error('No Stripe onboarding URL returned'));
+    }catch(e){
+      hcStripeErrShow(e);
+    }
+    if(btn){ btn.disabled = false; btn.textContent = 'Connect Stripe'; }
   }
   async function hcSettingsRenderStripe(businessId){
     var pill = document.getElementById('hcSetStripePill');
@@ -4232,21 +4267,15 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         });
       } else {
         act.innerHTML = '<button type="button" class="hc-set-btn" id="hcSetStripeConnect">Connect Stripe</button>';
-        document.getElementById('hcSetStripeConnect').addEventListener('click', async function(){
-          var b = document.getElementById('hcSetStripeConnect'); if(b){ b.disabled = true; b.textContent = 'Opening…'; }
-          try{ var r = await hcStripeApi('stripe-connect-onboard', { business_id: businessId, return_to: location.href }); if(r && r.url){ location.href = r.url; return; } }catch(e){}
-          if(b){ b.disabled = false; b.textContent = 'Connect Stripe'; }
+        document.getElementById('hcSetStripeConnect').addEventListener('click', function(){
+          hcStripeConnectClick(document.getElementById('hcSetStripeConnect'), businessId);
         });
       }
     }catch(e){
       pill.textContent = 'Not connected'; pill.className = 'hc-set-pill off';
       act.innerHTML = '<button type="button" class="hc-set-btn" id="hcSetStripeConnect">Connect Stripe</button>';
       var cb = document.getElementById('hcSetStripeConnect');
-      if(cb) cb.addEventListener('click', async function(){
-        cb.disabled = true; cb.textContent = 'Opening…';
-        try{ var r = await hcStripeApi('stripe-connect-onboard', { business_id: businessId, return_to: location.href }); if(r && r.url){ location.href = r.url; return; } }catch(err){}
-        cb.disabled = false; cb.textContent = 'Connect Stripe';
-      });
+      if(cb) cb.addEventListener('click', function(){ hcStripeConnectClick(cb, businessId); });
     }
   }
   // ── MANUAL FORM — edit services / contact / hours WITHOUT the assistant ───────
