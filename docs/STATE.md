@@ -300,6 +300,18 @@ nothing exercises a CLAIMED site, and nothing reads back what the owner was actu
   page" as "nothing reads this field". Each was caught by one field whose behaviour was
   independently known (`cta-secondary` demonstrably works on the live page). Keep a known-good
   case in every sweep purely so a broken harness announces itself.
+- **AN EMPTY TABLE IS NOT A HISTORY. A measured zero from a narrow query never overrides
+  something the owner told you.** *(2026-09-05, twice, same direction.)* `commerce_orders = 0`
+  is true, and I wrote "no dollar has ever moved through Commerce" from it — then widened it
+  in my own head to "Hubly has never taken a payment." **Real money HAS moved through
+  Stripe**; Adrian ran it deliberately to prove the rail, has said so before, and it was lost
+  to a compaction once already (`docs/BUSINESS.md` → the payment rail). The same error killed
+  the booking count: "zero public bookings, ever" came from a scar note and the table holds 17
+  real rows.
+  The rule: a query answers **exactly** the question it asks. `commerce_orders = 0` means the
+  store checkout has produced no order. It says nothing about Stripe, about Connect, or about
+  money. **When a measured zero contradicts something a person told you, the query is almost
+  always narrower than the claim — reconcile before you overwrite.**
 - **PAGE GENERATION IS ASYNCHRONOUS. Wait for the write before reading, or you will measure
   an empty table and call it a regression.** *(2026-09-05, #16 attempt 2.)* `generateDocument`
   returns in ~15s with `ok`, and the reply says "the page should appear in about a minute" —

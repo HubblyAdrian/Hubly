@@ -344,10 +344,12 @@ to re-check — a zero that nobody can verify is just a comfortable story.*
 - **Zero products in Commerce at all. MEASURED 2026-09-05.** Not "zero active" — the table
   is empty: `commerce_products` **0**, `commerce_orders` **0**, `commerce_order_items` **0**,
   `commerce_product_variants` **0**, `commerce_store_settings` **0**. One
-  `stripe_connect_accounts` row exists — `adrians-lawn-service`, `account_kind = test`,
-  Adrian's own, `charges_enabled` and `payouts_enabled` true since 2026-07-23. So the payment
-  rail has completed onboarding once, on a test business, and **no dollar has ever moved
-  through Commerce.**
+  `stripe_connect_accounts` row exists — `adrians-lawn-service`, Adrian's own,
+  `charges_enabled` and `payouts_enabled` true since 2026-07-23, **and it is a LIVE-mode
+  account** (confirmed by Adrian 2026-09-05: Stripe test mode shows no connected accounts).
+  **The store checkout path specifically has never produced an order** — that is what these
+  zeros measure. It is NOT the same as "no money has moved through Stripe"; see the payment
+  rail entry below.
 - **Bookings: 17 real rows, not zero. CORRECTED 2026-09-05.**
   Counted via `supabase db query --linked`, which goes through the admin connection and sees
   past RLS: `booking_requests` holds **17 rows**, 2026-07-20 → 2026-09-01 —
@@ -366,8 +368,34 @@ to re-check — a zero that nobody can verify is just a comfortable story.*
 - **Zero transactions on Graef's site**, our best customer. Eight services, two membership
   tiers, real prices, real photos, and nothing has ever been bought.
 
-Read together these say something worth being blunt about: **Hubly today is a site builder
-that a handful of real businesses have used to build a site.** It has never taken a booking,
-never taken a payment, never received a review. Any sentence that implies otherwise is
-ahead of the evidence — and the storefront prospect above is the first thing that could
+**MEASURED ZEROS vs THINGS WE WERE TOLD — do not collapse these.** Everything above is a
+count from a query. A statement from Adrian is a different kind of fact: good enough to
+record, not the same as measured, and it must never be *overridden* by a measured zero from
+a narrower query. That mistake has now been made twice in this file, both times in the same
+direction — reading "this table is empty" as "this has never happened." The payment rail
+below is the case in point: `commerce_orders = 0` is true and says nothing about whether
+money has moved through Stripe.
+
+### THE PAYMENT RAIL IS PROVEN WITH REAL MONEY — reported by Adrian, 2026-09-05
+
+**Real money has been exchanged through Stripe. Adrian did it deliberately, to verify the
+rail works end to end.** Reported by the owner; not measured by us, and not something a query
+here can confirm, because Stripe holds it and `commerce_orders` is not where it landed.
+
+**HE HAS SAID THIS BEFORE AND IT WAS LOST ONCE ALREADY** — to a compaction, before this file
+existed. It was then re-lost from my own framing on 2026-09-05, when I wrote "no dollar has
+ever moved" from a `commerce_orders` count. **This file exists to stop exactly that**, so the
+history is recorded with the fact.
+
+Both halves matter and neither implies the other:
+
+- **The rail is proven.** Hubly is NOT pre-transaction on payments. Stripe Connect,
+  onboarding, a live key, and a real charge have all happened.
+- **The store checkout path has never produced an order.** `commerce_orders = 0`, measured
+  2026-09-05. That path is unproven. The rail working does not make it work.
+
+Read together, the honest sentence is: **Hubly is a site builder that a handful of real
+businesses have used, whose payment rail has carried real money at least once, and whose
+store checkout, bookings and reviews have not yet been used by a member of the public.** Any
+sentence that implies otherwise is ahead of the evidence — and the storefront prospect above is the first thing that could
 change it, which is exactly why losing their details mattered enough to create this file.
