@@ -589,6 +589,24 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
   claims" was **102 literals across 20 files** once parsed. Parse the class; then say the
   number will move again.
 
+- **A failure rendered as emptiness — three defects this week, one shape.** supabase-js
+  returns `{data, error}`; it does **not throw**. So a read that was DENIED and a read that
+  found NOTHING arrive at the caller looking identical, and every `|| {}`, `|| []`,
+  `data?.foo` and bare `catch`-less call silently converts a permission failure into a blank
+  surface. The page renders. Nothing is logged client-side. The owner sees empty boxes and
+  concludes the data is gone. Three this week, all the same shape:
+  (1) `whyChooseUs` written as `{label}` and read as `{title}` — five reason cards rendered
+  as five empty checkmarks (#23, fixed);
+  (2) the operational-state loader would have printed *"no bookings on record"* for a read
+  that FAILED — an honest-empty line is a lie when the read never succeeded, so
+  `loadOperationalState()` distinguishes the two and says so (#27, guarded at build time);
+  (3) `hcReadRecord()` swallows a `42501` into `{}` and shows an owner blank contact details
+  where real data exists (#33, filed 2026-09-05, not fixed).
+  This is prohibition 3 wearing its most ordinary clothes: *no step may assume a previous
+  step succeeded*. An empty render is the neutral screen the rule names, and it is exactly
+  what makes a broken step invisible. **Check `error` before you use `data`** — and when the
+  read failed, say the read failed. Never let a denial and an absence render the same.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped

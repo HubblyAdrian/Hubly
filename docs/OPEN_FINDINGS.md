@@ -2261,3 +2261,76 @@ is built and deployed, not demonstrated.
 list so it picked the new key up with no second edit. **Deliberately not verified against
 an empty table**: proving "STORE ORDERS: none on record" says nothing. It is wired and
 waits for the first real order.
+
+---
+
+## #33 — The Edit-details panel renders blank contact fields when the session is dead
+
+**Found 2026-09-05 while attributing a burst of `42501` in the Postgres logs. FILED, NOT
+FIXED. Second symptom of the stale-token root cause already noted at
+`platform-home.html:5380` (found 2026-09-01).**
+
+### What happens
+
+`hcReadRecord()` — `platform-home.html:4265`, behind the **"Edit details"** button:
+
+```js
+var c = await authGetClient();   // anon key + persisted session; ANON if the session is gone
+var biz = await c.from('businesses').select('phone,email,address,hours_note').eq('id', id).maybeSingle();
+...
+hcManage.contact = (biz && biz.data) || {};
+hcManage.note    = (biz && biz.data && biz.data.hours_note) || '';
+```
+
+`authGetClient()` builds a client on `SUPA_ANON_KEY` with `persistSession`. With a live
+session it sends the owner JWT; **with a dead one it sends the anon key**, and anon's grant
+on `businesses` is exactly `id` and `slug` — verified:
+
+```
+select=id ALLOWED   select=slug ALLOWED   select=id,slug ALLOWED
+select=name DENIED  select=phone DENIED   select=email DENIED
+select=owner_id DENIED   select=meta DENIED
+```
+
+So the read returns `401 / 42501 permission denied for table businesses`. supabase-js
+returns `{data:null,error}` rather than throwing, so `|| {}` swallows it, the `catch` at
+`:4395` never fires, and **the owner sees blank phone, blank email, blank address and blank
+hours where real data exists, with no error anywhere.**
+
+### Reachability — precisely
+
+- **Claimed business only.** The button is CSS-gated: `#hcManageBtn{display:none}` and
+  `.hc-app.hc-claimed #hcManageBtn{display:inline-flex}` (`:391`, `:395`). An unclaimed
+  draft cannot reach it.
+- **Dead session.** `hc.draftClaimed` is still true in page state while the refresh token
+  has expired, been revoked, or been cleared — a tab left open overnight is the ordinary
+  case.
+- Reproduced against a real business id with the publishable key; both denials confirmed.
+
+### What limits it
+
+**A save cannot write the blanks back.** `hcRecordEdit()` (`:4272`) calls `hcFreshToken()`
+first and returns *"You need to be signed in to edit this."* when there is no token. So this
+is a **display** defect, not a destructive one — it is NOT the `sectionCopy` shape (#23),
+where an owner's real work was discarded.
+
+### THE TWO-DENIAL SIGNATURE — for whoever reads the logs next
+
+One click of "Edit details" produces **two** `42501`s in the same instant:
+
+| table | result |
+| --- | --- |
+| `businesses` (`select=phone,email,address,hours_note`) | **401 / 42501** |
+| `settings_business_hours` (`select=weekday,...`) | **401 / 42501** |
+| `services` | 200 `[]` — RLS filters rather than denying |
+
+**That pairing is the tell.** `businesses` denials *without* a matching
+`settings_business_hours` denial in the same window are not this panel — they are a script
+probing with the publishable key. That distinction settled the 2026-09-05 burst: fifteen
+`businesses` denials, zero `settings_business_hours`, therefore probing, not the product.
+
+### The fix, when it is done
+
+Check the session before reading, and surface the failure instead of rendering blanks —
+"couldn't load your details, sign in again" is honest; four empty boxes are not. The same
+check belongs anywhere `authGetClient()` reads an owner-only table.

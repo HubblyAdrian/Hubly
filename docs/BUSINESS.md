@@ -329,6 +329,48 @@ the direction that costs a customer. See `OPEN_FINDINGS` #27.
 
 ---
 
+### Stripe is in TEST MODE as of 2026-09-05 — and getting back to live is a sequenced job
+
+Adrian swapped both secrets himself. **Names and prefixes only, never values:**
+`STRIPE_SECRET_KEY` is now an `sk_test_…` key; `STRIPE_WEBHOOK_SECRET` is the signing
+secret of a **new test-mode event destination**. All five Stripe functions were redeployed
+against it: `stripe-webhook`, `create-store-checkout`, `create-booking-checkout`,
+`stripe-connect-onboard`, `stripe-connect-connection`.
+
+**The destination as configured:**
+
+| setting | value | why |
+| --- | --- | --- |
+| scope | **Your account** | every event we handle is a platform event — destination charges settle on the platform and carry `payment_intent_data[transfer_data][destination]`; there is no `Stripe-Account` header anywhere in the codebase, so "Connected accounts" would deliver events we have no handler for |
+| payload | Snapshot | what the handler parses |
+| API version | `2026-06-24.dahlia` | the preselected default; the handler reads only long-stable fields |
+| events | six | checkout + payment_intent + the Connect account lifecycle |
+| `account.updated` | **deliberately skipped** | see the consequence below |
+
+**The `account.updated` consequence, stated so nobody is surprised by it:** an owner's
+Connect status (`charges_enabled`, `payouts_enabled`, `details_submitted`) refreshes when the
+**Store screen loads** and calls `stripe-connect-connection` — not the instant Stripe finishes
+verifying them. So an owner who completes onboarding and stares at a stale screen sees the old
+status until they reload. That is a real, if small, instance of prohibition 2's neighbourhood:
+the status shown is one we fetched, never one we assumed, but it can be *behind*. Acceptable
+for now because the fetch is honest and cheap; revisit if an owner ever reports "I finished
+Stripe and Hubly still says I haven't."
+
+**THE HARD SEQUENCING CONSTRAINT — read this before touching Bucket:**
+
+> **No Stripe onboarding for Bucket Mobile Detailing until we are back in live mode AND the
+> mode column is built.** A Stripe Connect account exists in **exactly one mode**. The live
+> account already on `adrians-lawn-service` does not exist in test mode; a test account
+> created now will not exist in live mode. `stripe_connect_accounts` has **no column recording
+> which mode an account belongs to**, so the two are indistinguishable in our own data — which
+> means an account onboarded in the wrong mode has to be redone from scratch by the owner, and
+> we would be asking a paying customer to do identity verification twice.
+
+Order of operations, therefore: (1) finish the test-mode purchase walk; (2) add a mode column
+to `stripe_connect_accounts` and make the Store screen read it; (3) swap back to live keys and
+a live destination; (4) only then onboard Bucket.
+
+
 ## WHAT HAS NEVER HAPPENED YET
 
 *The honest zeros. These say what Hubly is and is not today, and every one should be easy

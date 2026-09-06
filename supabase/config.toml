@@ -156,3 +156,12 @@ verify_jwt = false
 # branch only with a verified uid.
 [functions.hubly-conversation]
 verify_jwt = false
+
+# Stripe Connect owner APIs — JWT checked in-function (Bearer -> auth.getUser -> owner_id
+# must match the business). Declared here so the gateway setting stops being implicit:
+# it was undeclared until 2026-09-05, which meant a redeploy could silently flip it.
+[functions.stripe-connect-onboard]
+verify_jwt = false
+
+[functions.stripe-connect-connection]
+verify_jwt = false
