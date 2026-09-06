@@ -3453,6 +3453,17 @@ does not break the current deployment before the new values exist.
 ### The migration — PROPOSED, NOT RUN
 
 ```sql
+-- ONE TRANSACTION. Between the DROP at step 4 and the CREATE at step 5 there is
+-- NO uniqueness on this table at all — a concurrent onboard could insert a
+-- second row for the same business+mode and the index would then fail to build,
+-- leaving the table with no constraint and the migration half-applied. Wrapped,
+-- that window does not exist. (A Supabase migration file is already wrapped; the
+-- BEGIN/COMMIT is explicit so this is safe to paste anywhere.)
+--
+-- NOTE: plain CREATE UNIQUE INDEX is used, not CONCURRENTLY — CONCURRENTLY
+-- cannot run inside a transaction, and with 2 rows the lock is irrelevant.
+begin;
+
 -- 1. add the column nullable so the backfill can run
 alter table public.stripe_connect_accounts add column mode text;
 
@@ -3486,6 +3497,8 @@ alter table public.stripe_connect_accounts
   drop constraint stripe_connect_accounts_business_unique;
 create unique index if not exists stripe_connect_accounts_biz_mode_uniq
   on public.stripe_connect_accounts (business_id, mode);
+
+commit;
 ```
 
 **Existing constraints, measured — this was the open question and it is now answered:**
@@ -3506,6 +3519,35 @@ accounts are impossible or two of one mode are.
 
 **Deliberately NO default on `mode`.** A default is how a row that cannot say which mode it
 belongs to gets one anyway, which is the defect being fixed.
+
+### WHY THIS IS URGENT RATHER THAN TIDY — checked, and the news is mixed
+
+**`stripe-connect-onboard:150` does NOT write `stripe_account_id`.** Quoted in full it writes six
+columns — `charges_enabled`, `payouts_enabled`, `details_submitted`, `email`, `updated_at`,
+`last_error`. The insert at `:122` is the only writer of the account id and is unreachable for a
+business that already has a row (`stripe_account_id` is `NOT NULL`, so the `else` branch always
+runs). Onboarding `adrians-lawn-service` under a test key fails with a 500 at `createAccountLink`
+and writes nothing.
+
+**Nor has that row been touched since the switch.** `connected_at 2026-07-23 00:11:50`,
+`updated_at 2026-08-20 02:36:00` — three weeks before the 2026-09-06 key switch. Every write path
+sets `updated_at` explicitly, so `touched_since_mode_switch = false`.
+
+**But `stripe-connect-connection:82` deletes the row outright**, and with `UNIQUE (business_id)`
+that row is the ONLY record of the live account id in our database:
+
+```ts
+if (action === "disconnect") {
+  if (conn?.id) await admin.from("stripe_connect_accounts").delete().eq("id", conn.id);
+}
+```
+
+The adjacent comment notes the remote Stripe account is deliberately left alive "for reuse" — but
+reuse requires knowing the id, and after this statement nothing on our side does. An owner who
+clicks Disconnect while the platform is in test mode permanently loses the live account id from
+Hubly; it survives only in the Stripe dashboard. It is owner-initiated rather than silent, so it
+is not corruption — but it is why the mode column is urgent rather than tidy: **with `mode`, a
+disconnect scopes to the current mode and the other mode's row survives.**
 
 **Open before this runs:** whether a `business_id`-only unique constraint already exists (it would
 have to be dropped, and I have not checked); and that all 13 call sites land in the same change
