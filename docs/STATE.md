@@ -663,6 +663,50 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
   answer to #46's chicken-and-egg is the one the mockup already gives: the owner asks, and Hubly
   adds it.
 
+- **One customer identity resolver, DEPLOYED 2026-09-06 (#44).** There is exactly one
+  `resolveOrCreateCrmCustomer`, in `_shared/crm_customer.ts`. `crm_from_booking.ts` used to
+  carry a second one that disagreed on all three things that matter — precedence, raw-text vs
+  normalised phone, and whether name could match alone — and **two resolvers that disagree IS
+  the bug class**, so the second was removed rather than aligned. Name is now never a match key
+  anywhere; `crm_customer`'s guarded version went too, because "no phone/email AND exactly one
+  match" still merges two people called John Smith when one has no contact details. Rare is not
+  safe. One exported `normalisePhone()` (last 10 digits, ≥7 required) owns every phone
+  comparison and write. `scripts/check-customer-identity-invariant.mjs` asserts all of it and
+  **fails with 5 errors against pristine HEAD**, so it is a check that can fail.
+  **DEPLOYED — all 8 functions that bundle those shared files:** `chatbot-message`,
+  `create-booking-checkout`, `create-store-checkout`, `hubly-conversation`,
+  `hubly-document-build`, `marketplace`, `stripe-webhook`, `hire-crm`.
+  **Verified after deploy, against `dawn-patrol-coffee` (`account_kind = test`, 0 customers
+  before) through the real `hire-crm` endpoint — never Graef's CRM:**
+  **V1** `check-graefs-page.mjs` PASS, baseline unchanged (162 text runs, 8 links, 8 services,
+  5 why cards, 2 trust pills, 2 membership cards, 2 reviews, 2 social icons).
+  **V2** a second booking with the same phone and a *different name* matched the existing row
+  and created nothing — one `customer_id` returned four times; the stored name stayed
+  `[TEST] V2 Alpha`, NOT the incoming `V2 Beta DIFFERENT NAME`.
+  **V3** `+1 (801) 555-9001` matched a stored `8015559001` — R5 working — and the stored phone
+  was **not** reformatted.
+  **V4** the four pre-existing duplicate rows are untouched: still 4 rows in 1 email group,
+  0 sharing a phone. The fix is forward-only.
+  **V5** a booking matching by email (`V2Alpha@Example.Test` → stored `v2alpha@example.test`)
+  carrying **no phone** left the stored phone intact. The blanking bug is dead, tested
+  directly rather than inferred.
+  Fields written vs not, from the read-back: `preferred_service`, `vehicle_make` and
+  `vehicle_color` updated normally (a customer's current vehicle is legitimately new
+  information); `name`, `phone` and `email` fill blanks only and were never overwritten.
+  **#44 remains a real merge path with ZERO OBSERVED INSTANCES** — demonstrated by reading the
+  code, not by finding it in data. The four duplicate rows were hand-entered through the owner
+  CRM (`public/hubly.html`), which does no identity resolution and is deliberately out of
+  scope. Measured before deploying whether the phone-blanking half had fired on real data:
+  **no.** 3 rows have no usable phone and none has a phone-carrying booking matching by email
+  or exact name — though all 3 lack an email, so the join could only use exact name and the
+  evidence is weak rather than conclusive.
+- **DEBT, not for now: `deno check` fails at HEAD on 4 of 8 of those functions.** `TS2440`,
+  `HublyCapability` import conflict at `_shared/hubly_ai.ts:52` — pre-existing, 2 occurrences
+  at pristine HEAD, unrelated to any recent diff. `chatbot-message`, `hubly-conversation`,
+  `hubly-document-build` and `marketplace` therefore ship without a green typecheck.
+  **A permanently failing check is the same as no check** — it cannot catch a regression until
+  it is green, and every deploy of those four leans entirely on runtime verification instead.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped
