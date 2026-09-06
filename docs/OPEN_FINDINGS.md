@@ -777,9 +777,36 @@ exactly the addendum that suppresses.
 beat a model's default. Attempt 1 tried to escape the default by **asking the model in prose
 to declare its default**, and it declined twice. See `STATE.md`.
 
-**Next: `jsonMode` with a schema** — `{shape:{headlineAlignment, markPosition}, plan}` — one
-call, same latency, structurally unable to omit the field. That is what `CHROME_ENUMS` exists
-for and what `:89` already says prose cannot do.
+### ATTEMPT 2, 2026-09-05 — jsonMode. WORKS. 4/4 commitments, 2 distinct values.
+
+The planner now returns `{"shape":{"headlineAlignment","markPosition"},"plan":"…"}` with
+`jsonMode: true`. A required field in a JSON response cannot be omitted for brevity, which is
+the whole difference from attempt 1.
+
+**Measured, four trades, unclaimed test businesses, clean run:**
+
+| business | trade | commitment | enforced |
+| --- | --- | --- | --- |
+| tamales-by-the-dozen | food | **centre** | `text-align:center` |
+| weekly-lawn-care-and-seasonal… | landscaping | left | `text-align:left` |
+| bike-repair-shop | repair | left | `text-align:left` |
+| gutter-guard-installation… | cleaning | left | `text-align:left` |
+
+**Commitments emitted: 4 of 4. Distinct values: 2.**
+
+Presence alone would have been a failure — JSON mode guarantees the field exists, not that the
+value varies, and 4/4 with one distinct value is exactly what "the model's default" means. The
+food business chose centre while the three trades chose left, which is the trade-informed
+distinction the fallback would have hardcoded, arrived at by the model instead. **The
+trade-informed default is therefore NOT needed and stays unbuilt.**
+
+**A false alarm worth recording.** Mid-build I reverted `jsonMode` believing it had stopped
+pages from landing. It had not: **generation is ASYNCHRONOUS** — the reply literally says
+"the page should appear in about a minute" — and every check ran seconds after the call
+returned, finding nothing. The pages were landing and carrying the commitment. Two lessons,
+both already in `STATE.md` in other forms: wait for the async write before reading, and a
+surprising result needs a second measurement before it drives an action — here it nearly
+drove a revert of a working feature.
 
 **The acceptance test is VARIETY, NOT PRESENCE.** JSON mode guarantees the field exists; it
 does not guarantee the value differs. Four commitments and one distinct value is a FAILURE —

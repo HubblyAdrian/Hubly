@@ -300,6 +300,13 @@ nothing exercises a CLAIMED site, and nothing reads back what the owner was actu
   page" as "nothing reads this field". Each was caught by one field whose behaviour was
   independently known (`cta-secondary` demonstrably works on the live page). Keep a known-good
   case in every sweep purely so a broken harness announces itself.
+- **PAGE GENERATION IS ASYNCHRONOUS. Wait for the write before reading, or you will measure
+  an empty table and call it a regression.** *(2026-09-05, #16 attempt 2.)* `generateDocument`
+  returns in ~15s with `ok`, and the reply says "the page should appear in about a minute" —
+  the document lands a minute or two later. Checking `business_documents` immediately after
+  the call finds nothing, which reads exactly like "my change broke generation". It nearly
+  caused a revert of a feature that was working correctly the whole time. Poll for the row,
+  never assume the call's return means the write happened.
 - **A FINDING CAN PREDICT ITS OWN FIX. Read it before you fix it, and check whether the fix
   is an instance of the thing it describes.** *(2026-09-05, #16 attempt 1.)* #16's whole
   thesis is that **prose does not beat a model's default** — the prompt has forbidden the

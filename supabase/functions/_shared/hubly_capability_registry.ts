@@ -2273,29 +2273,54 @@ export async function generateFreeformPage(
   // total build stays near ~40s. The plan is persisted in design_rationale (cheapest debugging
   // artifact: when a page comes out wrong we can read what it MEANT to build).
   let plan = "";
+  // The shape the planner commits to, read out of STRUCTURED output rather than
+  // asked for in prose. Attempt 1 requested a machine-readable line in the system
+  // prompt — first last, then first — and the planner declined both times, 0 of 4
+  // pages each. That failure is #16's own thesis applied to its own fix: prose
+  // does not beat a model's default, including prose asking the model to declare
+  // its default. jsonMode cannot omit a required field.
+  let planShape: { headlineAlignment?: unknown; markPosition?: unknown } = {};
   try {
     const planResp = await HublyAI.complete({
       feature: "hubly-freeform-plan",
       task: "chat",
       reasoningEffort: "low",
-      maxTokens: 500,
+      maxTokens: 700,
       system:
         "You decide what ONE web page should BE for a specific local business, before any HTML exists. You are NOT writing the page — you commit to its shape in plain words so a builder executes exactly that. Think about THIS trade specifically: in the first three seconds, what must a visitor see to know they're in the right place and can act; what would be a WASTE of space for this trade (a section generic templates include but this business does not need); what is the ONE thing this page is for; and what SHAPE that implies. Be opinionated and trade-specific — a roofer after a hailstorm is not a bakery is not a bookkeeper, and they should NOT end up the same shape. Do NOT default to 'top nav + hero-with-image-on-the-right + three service cards' unless it is genuinely right for THIS trade. Then COMMIT in 3-5 sentences: the overall shape, the one hero image or none, nav or no nav, how many sections and what each is for, and where the single action lives. Concrete, e.g. 'One full-bleed photo of a finished roof, the phone number huge over it, three sentences of what you do and a request-a-look button — no top nav, no card grid; roofing is an emergency, not a browse.' Output ONLY the commitment. No preamble, no options, no bullet lists of alternatives."
-        + "\n\nOUTPUT FORMAT — TWO PARTS, IN THIS ORDER, ALWAYS. Part one is a single machine-readable line; " +
-        "it comes FIRST, before the commitment prose, and it is part of the commitment rather than an addition to it:\n" +
-        "SHAPE: headlineAlignment=<left|centre>; markPosition=<left|centre|right>\n" +
-        "Choose both from what this business IS — the trade, its materials, how its customers arrive. " +
-        "A centred mark and centred headline suit a place people already know by name and come to deliberately: a bakery, a salon, a studio. " +
-        "A left mark and left headline suit work that gets scanned and compared quickly: a roofer, a plumber, a detailer. " +
-        "These are not defaults to fall back on — they are a decision you are accountable for, and Hubly will enforce the alignment you name here. " +
-        "Do NOT pick left for both simply because it is common. " +
-        "Part two is the commitment prose, on the following lines, exactly as described above. " +
-        "The SHAPE line is never optional and is never omitted for brevity — a commitment without it is incomplete.",
+        + "\n\nRETURN JSON, exactly this shape and nothing else:\n" +
+        '{"shape":{"headlineAlignment":"left|centre","markPosition":"left|centre|right"},"plan":"your commitment, as described above"}\n' +
+        "BOTH shape fields are REQUIRED. Choose them from what this business IS — the trade, its materials, " +
+        "how its customers arrive, whether people come to it by name or find it by comparison. " +
+        "A centred mark and centred headline suit a place people already know and come to deliberately: a bakery, a salon, a spa, a studio. " +
+        "A left mark and left headline suit work that gets scanned and compared quickly: a roofer, a plumber, a detailer, a repair shop. " +
+        "Hubly ENFORCES the headlineAlignment you name here, so it is a decision you are accountable for and not a label on one you already made. " +
+        "Left is the common answer and that is exactly why it must be earned: if this business would genuinely read better centred, say centre.",
       messages: [{ role: "user", content: `THE BUSINESS RECORD:\n${JSON.stringify(record, null, 1)}\n\nThe owner's own words: ${brief}` }],
-      jsonMode: false,
+      // JSON MODE IS THE MECHANISM. Attempt 1 asked for the commitment in prose —
+      // twice, 0 of 4 each time — which is #16's own thesis failing on #16's own
+      // fix. A required field in a JSON response cannot be omitted for brevity.
+      //
+      // Briefly reverted during the build on a FALSE ALARM: generation is
+      // ASYNCHRONOUS (the reply says "the page should appear in about a minute"),
+      // and querying for new documents seconds after the call returns finds none.
+      // That looked like "my change stopped pages landing". The pages were landing
+      // fine and carrying the commitment. Wait for the async write before reading.
+      jsonMode: true,
     });
-    plan = String(planResp.text || "").trim();
+    const rawPlan = String(planResp.text || "").trim();
     addUsage(usage, planResp.usage);
+    if (!rawPlan) throw new Error("planner returned an empty plan");
+    // Degrade to the prose plan rather than losing the build: a planner that
+    // returns unparseable output still said something useful about the page.
+    try {
+      const parsed = JSON.parse(rawPlan.replace(/^```(?:json)?\s*|\s*```$/g, ""));
+      plan = String(parsed?.plan || "").trim() || rawPlan;
+      if (parsed?.shape && typeof parsed.shape === "object") planShape = parsed.shape;
+    } catch {
+      plan = rawPlan;
+      console.error(`freeform-planner NOT JSON [${businessId}] — falling back to prose plan, no shape commitment.`);
+    }
     if (!plan) throw new Error("planner returned an empty plan");
   } catch (e) {
     // LOUD + COUNTABLE — never a silent fallback. If the planner starts failing, every page
@@ -2315,16 +2340,19 @@ export async function generateFreeformPage(
   // rather than carried. (OPEN_FINDINGS #16.)
   const shape: { headlineAlignment?: string; markPosition?: string } = {};
   {
+    // From the STRUCTURED field. The prose fallback stays for the degraded path
+    // where the planner returns text instead of JSON — it costs one regex and
+    // means a planner that regresses to prose is not silently shapeless.
+    const sh = planShape as { headlineAlignment?: unknown; markPosition?: unknown };
     const m = plan.match(/SHAPE:\s*headlineAlignment\s*=\s*([a-z]+)\s*;\s*markPosition\s*=\s*([a-z]+)/i);
     // "center" is the CSS spelling and the likelier one for a model to write; the
     // enum is British to match logoPlacement, which shipped first. Normalising is
-    // a parser concern, not an enum change — and without it the commonest possible
-    // answer would be silently dropped and the page would regress to the inherited
-    // default, which is the exact failure this whole change exists to stop. Caught
-    // by unit-testing the parser against realistic planner output before shipping.
-    const norm = (v: string) => (v === "center" ? "centre" : v);
-    const ha = m ? norm(String(m[1]).toLowerCase()) : "";
-    const mp = m ? norm(String(m[2]).toLowerCase()) : "";
+    // a parser concern, not an enum change — without it the commonest possible
+    // answer is silently dropped and the page regresses to the inherited default,
+    // which is the exact failure this change exists to stop.
+    const norm = (v: unknown) => { const x = String(v ?? "").trim().toLowerCase(); return x === "center" ? "centre" : x; };
+    const ha = norm(sh.headlineAlignment) || (m ? norm(m[1]) : "");
+    const mp = norm(sh.markPosition) || (m ? norm(m[2]) : "");
     if (CHROME_ENUMS.headlineAlignment.includes(ha)) shape.headlineAlignment = ha;
     if (CHROME_ENUMS.markPosition.includes(mp)) shape.markPosition = mp;
   }
