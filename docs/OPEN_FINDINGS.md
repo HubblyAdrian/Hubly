@@ -3076,3 +3076,114 @@ already documented in `crm_customer.ts`, and it should not be made inside an inv
 
 Cost if it fires: a duplicate customer row, split history across two records, and the owner
 seeing one person as two.
+
+---
+
+## #46 — RECON for #36: why the Store seam is commented out, and what opening it costs
+
+**Read-only, 2026-09-06. Nothing built. Answers the four questions before any code.**
+
+### 1. Why is `platform-home.html:3984` commented out?
+
+**It was never built — not disabled, not broken, not reverted.** It is an original seam from
+`67e3ef2` (2026-08-31, "Claimed frame (Part 2)"), whose message says so explicitly:
+
+> "Jobs (Marketplace provider) and Storefront are one push line each when those flags land on the
+> business row — **the seam is in the code, commented, not built.**"
+
+`git log -S "biz.storefront" -- public/platform-home.html` returns that one commit. There is no
+history of it being enabled and pulled. **So no prior reason survives to block re-enabling it** —
+this is genuinely a missing door, and the recon below is about what is behind it, not about
+relitigating a decision.
+
+**But the seam's own condition is wrong.** It tests `biz.storefront`. The real flag is
+`businesses.capabilities.storefront` (JSONB). And `hc.draftBusiness` is built at
+`platform-home.html:3923` as exactly `{ id, slug, name, draftToken, url }` — **no capabilities**.
+`grep capabilities public/platform-home.html` → **0 hits**. The shell has never loaded the field
+the seam depends on, so uncommenting the line alone yields `undefined` forever.
+
+### 2. What "earned" means here — and the chicken-and-egg that breaks it
+
+The machinery exists and is coherent: `businesses.capabilities` is a JSONB map, read in
+`hubly.html` by `businessCaps()` (`:18668`), and Website and Store are documented as **peer
+surfaces** — a business may be website-only, store-only, or both.
+
+`capabilities.storefront` is written by exactly one live function,
+`ensureStorefrontCapabilityOnBusiness()` (`hubly.html:18726`), called from two places (`:37760`,
+`:40225`) — **both inside the Store builder/publish flow itself**.
+
+> **So the flag is only earned by using the Store UI, and the Store UI is only reachable if you
+> have the flag.** Gate the rail on `capabilities.storefront` and no business that has not already
+> used the store in `hubly.html` can ever earn the entry. **Bucket included.**
+
+`setBusinessSurfaces()` (`:18740`) was written to set it explicitly from a "what are you building?"
+chooser — **it has no callers anywhere.** The intended escape hatch is dead code.
+
+**So "earned" needs a definition that a new owner can actually reach.** The honest candidates,
+cheapest first: the owner *asks* for a store in conversation (a capability write, which is the
+door Hubly already uses for everything else); or the chooser that `setBusinessSurfaces` was built
+for gets wired. What must NOT happen is gating on `commerce_products > 0` — that is the same
+chicken-and-egg one level down, since you cannot add a product without reaching the store.
+
+Also unmeasured and worth measuring before deciding: **how many businesses currently have
+`capabilities.storefront = true`.** `businesses` is owner/admin-gated, so I could not count it
+from this session; it needs the admin connection.
+
+### 3. What breaks if the door opens — measured, and it is the real cost
+
+**The Store panel is not portable. It is written against `hubly.html`'s DOM skeleton and
+stylesheet, neither of which exists in `platform-home.html`.**
+
+| dependency | `hubly.html` | `platform-home.html` |
+| --- | --- | --- |
+| `#v-store` (the mount `ownRoot()` requires) | present | **absent** |
+| `#p-app` (`setStoreMode` target, and the CSS scope) | present | **absent** |
+| `.app-main` / `.app-bar` / `.app-nav` (styled by the store CSS) | present | **absent** |
+| `store-commerce.css` (15KB, every rule scoped `#p-app.jos-pixel.jos-store-mode …`) | loaded | not loaded |
+| `--jos-*` design tokens | via `operate-pixel.css` (**355KB**) | **undefined** |
+| `window.HublySupabase` (`{url, anonKey, session}` — the commerce client's whole config) | defined (`:9752`) | **0 hits** |
+| the 15 commerce JS modules (**159KB**) | loaded | not loaded |
+
+**The specific way it would fail is the bad one:** `ownRoot()` returns `null` when `#v-store` is
+missing, and `render()` then **returns silently** (`store-commerce.js:990–992`). A rail entry
+would open a blank panel with no error — precisely the "worse than no entry" outcome, and the same
+failure-rendered-as-emptiness shape as #23, #27 and #33.
+
+**What is genuinely light:** the module itself only needs `window.S.businessId` (`S()` at `:30` is
+`global.S || {}`), and `toast()` degrades to `console.log` if absent. It does not need the rest of
+`hubly.html`'s app state. The weight is the **chrome and the stylesheet**, not the logic.
+
+### 4. Sizing — and the split matters more than the total
+
+**MINIMUM — "Bucket can reach and use his store from where he signs in":**
+
+1. Load the 15 commerce modules + `store-commerce.css` in `platform-home.html` (~174KB).
+2. Define `window.HublySupabase` there and keep `.session` in sync with auth — a direct port of
+   `hubly.html:9752–9775`.
+3. Add a `#v-store` mount inside the claimed workspace canvas, and give the store CSS a scope that
+   exists — either wrap the canvas in `#p-app.jos-pixel` or re-scope `store-commerce.css` to the
+   shell's own root. **Re-scoping is the honest choice**; adopting `#p-app` imports `hubly.html`'s
+   chrome assumptions (`.app-bar{display:none!important}` and friends) into a shell that has none.
+4. Supply the `--jos-*` tokens. **Do not load `operate-pixel.css` (355KB) for four variables** —
+   copy the handful the store CSS actually reads.
+5. Load `capabilities` into `hc.draftBusiness` and fix the seam to
+   `biz.capabilities && biz.capabilities.storefront === true`.
+6. Decide and implement how a new owner earns the flag (§2). Without this, Bucket still cannot get
+   in.
+7. Announce it — a rail entry appearing is the interface changing shape, which prohibition 4 says
+   must never be silent.
+
+**Estimate: one focused day**, most of it in step 3, plus a walk as the owner on a real claimed
+business. Steps 1, 2, 5 are mechanical; 3 and 6 carry the judgement.
+
+**FULL INTEGRATION — deliberately not in the minimum:** the eight store tabs (`Overview, Products,
+Collections, Bundles, Orders, Inventory, Discounts, Analytics`) reviewed and cut to what a
+one-person business needs; the Orders tab as the destination `commerce_notify` has no link to
+(#43 is blocked on exactly this); the mobile bottom-bar 4-place cap (prohibition 5) once Store is a
+third place; retiring the `hubly.html` store entry so there is one lane, not two — this codebase's
+recurring defect is having two of everything.
+
+**Recommendation:** do the minimum, but do step 6 FIRST and separately, because it is a product
+decision about how an owner asks for a store — and if the answer is "they ask Hubly in
+conversation", that is a capability write, not a rail change, and it may be worth more than the
+panel.
