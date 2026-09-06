@@ -690,6 +690,11 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
   **V5** a booking matching by email (`V2Alpha@Example.Test` → stored `v2alpha@example.test`)
   carrying **no phone** left the stored phone intact. The blanking bug is dead, tested
   directly rather than inferred.
+  **The V2–V5 row is kept on purpose.** `[TEST] V2 Alpha` (`fbc2fb7f…`) on
+  **`dawn-patrol-coffee`** is the record that this verification actually ran, so
+  `customers` is **17**, not 16 — that is expected, not drift. We deleted the `commerce_orders`
+  rows after the purchase walk and lost the evidence the payment path had worked end to end;
+  not repeating that for a labelled row on a test business that costs nothing.
   Fields written vs not, from the read-back: `preferred_service`, `vehicle_make` and
   `vehicle_color` updated normally (a customer's current vehicle is legitimately new
   information); `name`, `phone` and `email` fill blanks only and were never overwritten.

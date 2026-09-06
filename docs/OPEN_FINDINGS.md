@@ -3187,3 +3187,94 @@ recurring defect is having two of everything.
 decision about how an owner asks for a store — and if the answer is "they ask Hubly in
 conversation", that is a capability write, not a rail change, and it may be worth more than the
 panel.
+
+---
+
+## #47 — The read-then-write race: the ONLY observed duplicate creation, and #44 does not close it
+
+**Filed 2026-09-06. Not built. The measurement below decides whether this is an hour or a day,
+and it turns out to be both, for different columns.**
+
+Two `customers` rows, `adrians-lawn-service`, both named `jonas mosh`, created **1.2
+milliseconds apart**:
+
+```
+2026-08-11 03:24:00.403298+00
+2026-08-11 03:24:00.404548+00
+```
+
+**This is the only observed duplicate-creation instance in production.** Everything else in #44
+was latent, demonstrated by reading code. This one happened.
+
+**#44's fix does not address it and cannot.** Every resolver is read-then-write: look up, find
+nothing, insert. The window between the read and the write is not closeable by resolver logic —
+two concurrent callers both read "nothing", both insert, and both are individually correct.
+**Only a database constraint closes a read-then-write race.**
+
+### Why this is newly possible — R5 is the unlock
+
+A unique index on phone was **worthless** before #44, and that is worth being precise about:
+`crm_from_booking` compared phone as **raw text** while `crm_customer` compared the **last 10
+digits**. With two normalisations in play, `+1 (801) 555-1234` and `8015551234` were different
+values at one call site and the same customer at the other — so any index would have been
+enforcing a rule half the code did not follow.
+
+R5 changed that. There is now exactly one `normalisePhone()`, and **an index on the normalised
+value is possible for the first time.**
+
+### MEASURED — would the index build today?
+
+| | count | verdict |
+| --- | --- | --- |
+| phone collisions blocking a unique index | **0** | **buildable today** |
+| email collisions blocking a unique index | **1** | **BLOCKED** — the 4-row group |
+| rows with no usable phone (unconstrained) | 3 | NULLs never collide |
+| rows with no email (unconstrained) | 5 | NULLs never collide |
+| customers total | 17 | |
+
+**So it is an hour for phone and a day for email.** A partial unique index on
+`(business_id, normalised_phone) WHERE phone is usable` can be created **right now** against
+production without touching a single existing row. The same index on email **cannot be created
+at all** until the four duplicate rows are resolved — and that is the decision Adrian has
+deliberately not made. Anyone who plans "add unique indexes" as one task will discover this
+halfway through.
+
+### THE UNCOMFORTABLE PART — the index would NOT have prevented this instance
+
+Both `jonas mosh` rows have **no phone and no email**. They are name-only rows.
+
+- A unique index on normalised phone does not constrain them — `NULL` never collides.
+- A unique index on email does not constrain them either.
+- And under #44's new rules, name is **never** a match key, so the resolver would *correctly*
+  insert both again today.
+
+**A partial unique index closes the race only for rows that carry the thing being indexed.** For
+a contact with neither phone nor email there is nothing to constrain, and every such booking is
+a new row — by design (R3: never guess). Whether that is acceptable is a product question, not a
+schema one: the alternative is matching on name, which is the merge #44 exists to prevent.
+
+So the honest framing is: **the index is worth building, and it would not have stopped the one
+instance we have.** Do not let this finding be closed by an index and a green tick.
+
+### What would break — the call sites that would start receiving a violation
+
+Three insert sites exist after #44:
+
+| site | effect of a unique phone index |
+| --- | --- |
+| `_shared/crm_customer.ts:166` — the resolver's insert | Would raise `23505` on a genuine race. **Needs a catch that re-reads and returns the winning row**, which is the correct behaviour and the actual fix. Without it a race turns into a user-visible booking failure — worse than the duplicate. |
+| `public/hubly.html:44883` — owner CRM insert | **Would start throwing at owners**, mid-typing, for a case they are entitled to: an owner deliberately entering two customers who share a phone (a household, a business line, a couple). This surface is out of scope by ruling and does no identity resolution at all. A constraint would override that ruling from underneath. |
+| `public/hubly.html:44911` | comment only, not a live insert |
+
+**That second row is the real cost.** The database does not know about the owner-UI exemption,
+so a constraint enforces the resolver's policy on a surface we deliberately excluded from it.
+Any index work has to answer that first: either the owner UI gets an explicit conflict path, or
+the index cannot be unconditional.
+
+### If it is built
+
+Sketch only, not a plan: a generated/stored normalised column (a `text` column written through
+`normalisePhone`, or a `generated always as` expression matching it exactly — the two must not
+drift, which is the same duplicated-rule problem R5 just solved), a **partial** unique index over
+it scoped to `business_id`, a `23505` catch in the resolver that re-reads and returns the winner,
+and a decision about the owner UI. The email index waits on the four rows.
