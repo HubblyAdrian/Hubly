@@ -3543,11 +3543,14 @@ if (action === "disconnect") {
 ```
 
 The adjacent comment notes the remote Stripe account is deliberately left alive "for reuse" — but
-reuse requires knowing the id, and after this statement nothing on our side does. An owner who
-clicks Disconnect while the platform is in test mode permanently loses the live account id from
-Hubly; it survives only in the Stripe dashboard. It is owner-initiated rather than silent, so it
-is not corruption — but it is why the mode column is urgent rather than tidy: **with `mode`, a
-disconnect scopes to the current mode and the other mode's row survives.**
+reuse requires knowing the id, and after this statement nothing on our side does.
+
+**Sized honestly: this is RECOVERABLE, not permanent.** The account continues to exist in Stripe
+and its id can be read from the Stripe dashboard, so the loss is of *our* record, not of the
+account. It is also owner-initiated rather than silent. So it is **an argument for the mode
+column, not an emergency** — with `mode`, a disconnect scopes to the current mode and the other
+mode's row survives untouched. Without it, an owner who disconnects while the platform is in the
+other mode has to go find the id by hand to get back.
 
 **Open before this runs:** whether a `business_id`-only unique constraint already exists (it would
 have to be dropped, and I have not checked); and that all 13 call sites land in the same change
