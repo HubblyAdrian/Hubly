@@ -414,6 +414,62 @@ business, no Graef, no Bucket. **Nothing was created and nothing needs cleaning 
 commerce table visible to that owner was 0 before and 0 after.
 
 
+### 2026-09-06 — THE FIRST END-TO-END PURCHASE THROUGH THE HUBLY STORE
+
+A customer bought something, the business got paid, and the business was told. That had never
+happened before through the store; `commerce_orders` had been zero all the way back.
+
+**What was bought.** `[TEST] Spring Lawn Feed 10kg`, $24.99, one unit, from Evergreen Yard Care
+(`account_kind = test`) at `evergreen-yard-care.myhubly.app/store`. Order **`STO-74536512`**,
+`status: paid`, `total_cents: 2499`, `paid_at: 2026-09-06T06:07:02Z`, payment intent
+`pi_3UCZEEEEmwNmC4XD14yUfH3z`. Adrian entered the Stripe test card; the account owner had
+completed Connect onboarding himself minutes earlier.
+
+**What the buyer saw.** A store page with the product at **$24.99**; a cart drawer showing the
+same $24.99 line and $24.99 subtotal; Stripe Checkout branded *Hubly* with a **Sandbox** badge
+showing **$24.99**; then a redirect back to the business's homepage with the cart emptied and a
+confirmation banner. Six surfaces, one number, equal to what was charged — that closed
+`OPEN_FINDINGS` #38. The confirmation banner itself was **unreadable** (#42).
+
+**What the owner was told.** An email, subject **"You sold $24.99 — [TEST] Store Walk"**,
+headline **"You sold $24.99"**, naming the business, listing the item and total, and giving the
+buyer's email to reach them at. And in the product, asked "Has anything come in lately?", Hubly
+answered:
+
+> "No real bookings, jobs, or leads are on record right now. There is one paid store order
+> showing, but it's marked as a test row: Store Walk, $24.99, pickup, paid Sep 6, 2026."
+
+That is the operational-state read path (#27) proven against a real row for the first time — and
+it declined to count a `[TEST]` row as real business, which is the `account_kind` discipline
+holding at row level.
+
+**WHAT THIS PROVES.** The full chain works: store page → cart → `create-store-checkout` →
+Stripe Checkout → destination charge on the platform → `stripe-webhook` (signature verified
+against the new test signing secret) → `finalizePaidCommerceOrder` → `commerce_orders.paid` →
+CRM customer linked → inventory deducted → sale notifier invoked → the assistant can see it.
+
+**WHAT THIS DOES NOT PROVE — read this before repeating the claim.**
+
+1. **Not live mode.** Every part of this ran in Stripe **test mode**, against a **test-mode**
+   Connect account, with a test card. No real money moved. Nothing here says the live rail
+   behaves the same.
+2. **Not that Bucket can onboard.** The Connect account only exists because Accounts v1 was
+   re-enabled in the Stripe Dashboard on 2026-09-06 as a **legacy compatibility flag**, and only
+   for test mode. Stripe says new integrations should use `POST /v2/core/accounts`. Whether
+   Bucket can onboard in live mode is untested and gated on `OPEN_FINDINGS` #37.
+3. **Not that the emails arrived.** The notifier was invoked and uses the same Resend
+   configuration as the proven booking path, but `notification_deliveries` is admin-only
+   (`42501` for an owner) and edge logs are unreadable from here. Delivery is confirmed by
+   looking in the two inboxes, not by anything measured in this walk.
+4. **Not a market customer.** The buyer was us. `account_kind = test`, `[TEST]` stamped
+   throughout, and every row deleted afterwards.
+
+**Cleaned up completely**, verified by re-counting rather than by trusting the deletes: every
+commerce table back to baseline, `commerce_products` 1 → 0, `customers` test row removed. The
+Stripe Connect account was **deliberately left in place** — Adrian did that verification by hand
+and deleting it would cost him the work.
+
+
 ## WHAT HAS NEVER HAPPENED YET
 
 *The honest zeros. These say what Hubly is and is not today, and every one should be easy

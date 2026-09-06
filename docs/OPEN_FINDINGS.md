@@ -2619,10 +2619,11 @@ Proven the same way the bug was: set a price with cents, then look.
 Read back from the DOM, not from the screenshot: three `$24.99` on the page and **no `$25`
 anywhere**. All three displayed values now equal the charged value.
 
-**The fourth surface — the amount on Stripe's own Checkout page — is NOT yet verified.** Connect
-verification was still in progress (`charges_enabled: false`), so `create-store-checkout`
-correctly returned 503 and no Stripe session was created. That check happens when the walk
-resumes, and it is the one that closes this finding.
+**CLOSED 2026-09-06.** The fourth surface — Stripe's own Checkout page — showed **`$24.99`**
+on session `cs_test_a1jqxZ3…`, and the money followed it: `commerce_order_items.unit_price_cents`
+`2499`, `commerce_orders.total_cents` `2499`, charged `2499`. Six places, one number, equal to
+what the customer paid. This was the last place the displayed price could have disagreed with the
+charge.
 
 Same page, same moment, #39 confirmed: `.hub-commerce-cart-drawer` computes to
 **`position: fixed`** and is on screen, and `#hub-store-cart-msg` reads *"Online checkout isn't
@@ -2689,3 +2690,139 @@ correct and stays word for word; it now renders inside the visible drawer on a r
 - **Image placeholder → first letter or digit.** `(p.name || 'P').slice(0, 1)` drew a lone `[`
   for `[TEST] Spring Lawn Feed`. Now the first `[A-Za-z0-9]`, uppercased, falling back to `P`.
   **Both copies fixed** — `store-page.js` (×2) and `components.js`.
+
+---
+
+## #40 — The owner finishes Stripe onboarding and Hubly says nothing
+
+**Found 2026-09-06, on the single most effortful task in the product. Prohibition 6.**
+
+The owner completes Stripe Connect onboarding — legal name, date of birth, home address, last
+four of their SSN, a phone verification, and bank details for payouts. Several minutes of real
+work, handing over more sensitive information than anything else Hubly asks for. Stripe returns
+them to:
+
+```
+https://myhubly.app/?stripe_connect=connected
+```
+
+**And Hubly says nothing.** Home renders its usual suggestions — *"Add photos of your own work"*,
+*"Write descriptions for your services"* — as though nothing had happened.
+
+**Cause, measured.** `stripe-connect-onboard/index.ts:65` appends `?stripe_connect=connected`
+(and `:74` appends `?stripe_connect=refresh`). Grepping `public/platform-home.html` for
+`stripe_connect` returns **nothing**. The server sets the flag; no client reads it. The signal
+is right there in the URL and is dropped on the floor.
+
+Settings *does* show **Stripe · Connected** in green, and that green is honestly earned — it
+comes from a live `retrieveAccount` call, not a default (`stripe-connect-connection` refreshes
+from Stripe on every status read). But the owner has to go looking for it. Nobody who just spent
+five minutes on an identity form should have to open a settings panel to find out whether it
+worked.
+
+> *"Silence after a request is a failure mode. If a person asked for something and it succeeded,
+> they must be told."*
+
+This is that, on the highest-stakes action in the product. It is the counterpart to #35, which
+was the same journey failing silently; this is the same journey **succeeding** silently. And
+**Bucket will do exactly this journey** — hand over his SSN and bank details to a screen that
+then acts like he did nothing.
+
+**The fix is small and the shape is already decided:** read the parameter on load, confirm it in
+words ("Stripe is connected — you can take card payments now"), strip it from the URL so a
+refresh doesn't repeat it, and handle `refresh` as the honest failure case ("Stripe needs a bit
+more from you — pick up where you left off"). Announce it the way any other state change is
+announced; do not make a settings panel the only place the truth lives.
+
+---
+
+## #41 — One sale, one unit, TWO removed from stock
+
+**Found 2026-09-06 by the first real purchase. Measured, not inferred. This corrupts inventory
+on the live path and it is adjacent to a guard I added yesterday.**
+
+Selling **one** unit took the product from **5 to 3**. Two `commerce_inventory_logs` rows, same
+`order_id`, `reason: "order.paid"`, 0.6 seconds apart:
+
+| created_at | before_qty | after_qty | delta |
+| --- | --- | --- | --- |
+| 06:07:04.572 | 5 | 4 | −1 |
+| 06:07:05.165 | 4 | 3 | −1 |
+
+**Cause.** `stripe-webhook` calls `finalizePaidCommerceOrder` from **both**
+`checkout.session.completed` (`:158`) and `payment_intent.succeeded` (`:212`). The early return
+at `commerce_checkout.ts:160` (`if (order.status === "paid") return`) catches the *sequential*
+case. It does not catch two deliveries arriving together — both read `pending` before either
+wrote, which is exactly the race the comment at `:181` predicts. Then:
+
+- the order flip is safe — `.neq("status","paid")` means only one delivery wins;
+- the **notification** is safe — it is inside `if (didFlip)`;
+- the **cart conversion** is idempotent;
+- the **inventory deduction at `:195` is OUTSIDE the guard**, so it ran on both.
+
+**This one is partly mine.** When I added `didFlip` on 2026-09-05 to stop the owner being
+emailed twice, I reasoned about the notification and did not ask what *else* in that function
+runs once per webhook delivery instead of once per sale. That is the class — *"a bug is a CLASS,
+not a line"* — and I fixed the symptom I had been shown. The comment I left at `:232` is
+accurate; the omission was not looking one function wider.
+
+**The fix is one line:** move the inventory deduction inside `if (didFlip)`, exactly like the
+notification. Not applied here — it was found during a walk whose remit was to observe and clean
+up, and it deserves its own change with its own verification (sell two units of a five-stock
+product and confirm stock reads 3, not 1).
+
+**Why it matters at real size:** a shop with 5 in stock reads sold-out after 2 sales, and every
+number downstream — the sold-out badge, the low-stock threshold, the owner's own count — is
+wrong in the direction that loses sales.
+
+---
+
+## #42 — The buyer's order confirmation is unreadable
+
+**Found 2026-09-06 on the first real purchase. The very first thing a paying customer sees.**
+
+After paying, the buyer lands back on the business's homepage and a confirmation appears:
+
+> ✓ Order confirmed — Thank you for your purchase — your order has been recorded.
+
+Measured on the live page: `#hub-store-confirm` computes to `background: rgba(0, 0, 0, 0)`
+(fully transparent), `padding: 0px`, `border: none`, `box-shadow: none`, `color: rgb(20, 20, 20)`
+— near-black text with no backing, positioned `top: 20px` directly over the site's **dark green**
+header, colliding with the business name.
+
+**Same cause as #39, third instance.** `storefront-cart.js` writes `class="hub-commerce-confirm"`
+and **no stylesheet anywhere defines it** — checked with the same scan that found the drawer had
+no rules: `hasClassCss: false`. Three pieces of the commerce client shipped with class names
+nothing styles (the drawer, the drawer's refusal message, this).
+
+The wording is fine. It is invisible. **Fix it with the styles it never had**, alongside #39's —
+and while there, note that the buyer is returned to the site **homepage**, not to the store or an
+order page, so there is nowhere to see what they just bought.
+
+---
+
+## #43 — The sale notifier has no link in it, and our own standard requires one
+
+**Self-audit, 2026-09-06. A defect in something I built, found by checking it against the
+notification standard rather than against whether it ran.**
+
+The standard says a notification must *"link straight to the thing — one tap to the booking, the
+site, the signup. If the recipient has to open something else to act on it, the notification has
+not done its job."*
+
+`grep -c "href=" supabase/functions/booking-notify/index.ts` → **3**.
+`grep "href=" supabase/functions/_shared/commerce_notify.ts` → **nothing**.
+
+Neither the owner email nor the buyer email contains a single link. The owner is told *"You sold
+$24.99 — [TEST] Store Walk"*, shown the item, the total and the buyer's email — and then has to
+go find Hubly on their own. The buyer gets a confirmation with an order number and no way to
+reach the order.
+
+The other three bullets of the standard are met: it names what happened, says who it involves,
+and does not invite a reply to an unmonitored address (*"Questions about this order go to
+{business} directly."*). This is the one it misses, and I wrote it that way.
+
+**The fix:** an owner link to the order inside Hubly, and a buyer link to the store or an order
+view. Blocked on there being somewhere to link to — the claimed shell has no Store workspace
+(#36), so today there is no owner-facing order page to point at. **That makes #36 a prerequisite
+for closing this, not a separate nicety.**
