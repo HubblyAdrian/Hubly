@@ -638,6 +638,31 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
   and re-measure the observation it rests on, because elegance is evidence about the argument and
   no evidence at all about the world.
 
+- **The owner-home design rulings live in `docs/design/README.md`, and they are rulings, not
+  pictures.** Three mockups from 2026-09-06 with a verdict attached to each: the approved
+  direction (**home is a conversation plus what it produces, not a dashboard laid out in
+  advance**), a rejected counter-example, and one deliberately left unruled. The rule that came
+  out of it is checkable and belongs here too:
+  **Hubly may suggest; Hubly may not manufacture a fact to support a suggestion.**
+  *"Want to try a fall promotion?"* is fine. *"Many detailers in Bakersfield see a bump in
+  October"* is not — we have no data on Bakersfield detailers. The rejected mockup has four cards
+  asserting data we do not hold, two of them **unsolicited pricing advice** ("raise your Basic
+  Detail from $149 to $169" off an average-ticket trend we cannot compute; "$45, based on similar
+  businesses" off a competitor benchmark we do not possess). That is Hedge Trimming in a helpful
+  voice — same family as #22, #25 and #45, and harder to see precisely because the voice is
+  helpful. **The check:** for every sentence in a suggestion, name the row it came from; if you
+  cannot, delete the sentence, not the suggestion.
+  The approved booking card is the standard for any future card — every field on it (name, date,
+  package, price, address, vehicle, the customer's own note) is something we actually hold, and
+  both buttons act on a real record.
+  And the announcement line is the model for every capability change: *"Got it! I've added
+  Schedule to your sidebar. You can always ask me to remove it or add more tabs later."* — it
+  announces (prohibition 4), it is reversible, and it teaches the mechanic without a tooltip.
+  **The Store capability decision in flight (`OPEN_FINDINGS` #36, #46) IS that screen** — the
+  first real instance of the tab mechanic, arriving with a paying customer attached, and the
+  answer to #46's chicken-and-egg is the one the mockup already gives: the owner asks, and Hubly
+  adds it.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped
