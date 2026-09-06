@@ -196,7 +196,10 @@ export function buildDefaultStorefront(
 ): StorefrontAst {
   const active = ctx.products.filter((p) => (p.status || "active") === "active");
   const featured = active.filter((p) => p.featured).map((p) => p.id);
-  const featIds = (featured.length ? featured : active.map((p) => p.id)).slice(0, 4);
+  // Featured means FEATURED -- see the note in public/journey-os/commerce/storefront-ast.js.
+  // Falling back to the first four active products made a one-product store render that
+  // product twice and asserted a curation the owner never made.
+  const featIds = featured.slice(0, 4);
   const blocks: StorefrontBlock[] = [];
   let order = 10;
   const add = (type: StorefrontBlockType, config: Record<string, unknown>, variant?: string) => {

@@ -1420,9 +1420,11 @@ body.is-chatting .hero-intro h1{font-size:clamp(1.35rem, 3vw, 1.85rem)}
     return data;
   }
 
+  // Delegates to journey-os/money.js — a quoted price must equal the charged price.
   function money(n) {
     if (n == null || !Number.isFinite(Number(n))) return null;
-    return '$' + Math.round(Number(n));
+    var M = window.HublyMoney;
+    return M ? M.format(Number(n)) : ('$' + Number(n).toFixed(2));
   }
 
   function initials(name) {

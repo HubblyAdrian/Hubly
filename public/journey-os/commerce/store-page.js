@@ -22,10 +22,19 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
+  // Money formatting lives in ONE place: public/journey-os/money.js. This used to be
+  // a local copy with maximumFractionDigits: 0, which rounded a $24.99 product to
+  // "$25" while checkout charged $24.99. Five files had that same copy. Do not
+  // reintroduce a local formatter here — see money.js for why.
   function money(n) {
-    var v = Number(n) || 0;
-    try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v); }
-    catch (e) { return '$' + Math.round(v); }
+    var M = global.HublyMoney;
+    return M ? M.format(n) : ('$' + (Number(n) || 0).toFixed(2));
+  }
+  // First LETTER OR DIGIT, not first character: a product called "[TEST] Lawn Feed"
+  // rendered a lone "[" in a grey box.
+  function initial(name) {
+    var m = String(name || '').match(/[A-Za-z0-9]/);
+    return m ? m[0].toUpperCase() : 'P';
   }
   var C = function () { return global.HublyCommerceComponents; };
   var Cart = function () { return global.HublyStorefrontCart; };
@@ -212,7 +221,7 @@
         if (!sp) return sectionHtml(cfg.title || 'Spotlight', '<div class="sp-empty-mini">Pick a product to spotlight.</div>');
         var spImg = (sp.images && sp.images.length && sp.images[0].url)
           ? '<img src="' + esc(sp.images[0].url) + '" alt="' + esc(sp.name) + '">'
-          : esc((sp.name || 'P').slice(0, 1));
+          : esc(initial(sp.name));
         var spCard = C() ? C().ProductCard(sp) : '';
         return '<section class="sp-block sp-spotlight sp-spotlight--' + esc(b.variant) + '">' +
           (cfg.title ? '<h2 class="sp-sec-title">' + esc(cfg.title) + '</h2>' : '') +
@@ -292,7 +301,7 @@
     var soldOut = !digital && stock != null && Number(stock) <= 0;
     var img = (p.images && p.images.length && p.images[0].url)
       ? '<img src="' + esc(p.images[0].url) + '" alt="' + esc(p.name) + '">'
-      : esc((p.name || 'P').slice(0, 1));
+      : esc(initial(p.name));
     var variantSel = variants.length
       ? '<label>Option</label><select data-store-page="variant">' + variants.map(function (v) {
         var vp = v.price != null ? v.price : p.price;

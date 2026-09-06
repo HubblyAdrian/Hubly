@@ -94,7 +94,12 @@
     var colls = Array.isArray(ctx.collections) ? ctx.collections : [];
     var active = prods.filter(function (p) { return (p.status || 'active') === 'active'; });
     var featured = active.filter(function (p) { return p.featured; }).map(function (p) { return p.id; });
-    var featIds = (featured.length ? featured : active.map(function (p) { return p.id; })).slice(0, 4);
+    // Featured means FEATURED. This used to fall back to the first four active
+    // products when the owner had marked none, which made a one-product store render
+    // that product twice -- once under "Featured" and again under "Shop all" -- and
+    // told the visitor something the owner never said. No featured products, no
+    // Featured section. Mirrored in _shared/storefront_ast.ts.
+    var featIds = featured.slice(0, 4);
     var blocks = [];
     var order = 10;
     function add(type, config, variant) {

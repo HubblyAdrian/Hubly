@@ -13115,6 +13115,8 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<!-- money.js first: every price a customer is quoted goes through it. -->
+<script defer src="/journey-os/money.js?v=money-1"></script>
 <script defer src="/business-blueprints/validator.js"></script>
 <script defer src="/business-blueprints/registry.js"></script>
 <script defer src="/booking-frames/registry.js"></script>
@@ -13128,17 +13130,17 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/api.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/events.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/permissions.js?v=commerce-1"></script>
-<script defer src="/journey-os/commerce/components.js?v=commerce-2"></script>
-<script defer src="/journey-os/commerce/storefront-renderer.js?v=commerce-2"></script>
+<script defer src="/journey-os/commerce/components.js?v=commerce-4"></script>
+<script defer src="/journey-os/commerce/storefront-renderer.js?v=commerce-3"></script>
 <script defer src="/journey-os/commerce/checkout/checkout.service.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/ai/product-coach.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/ai/merchandising.js?v=commerce-1"></script>
 <script defer src="/journey-os/commerce/index.js?v=commerce-1"></script>
-<script defer src="/journey-os/commerce/storefront-cart.js?v=commerce-3"></script>
-<script defer src="/journey-os/commerce/storefront-ast.js?v=commerce-2"></script>
-<script defer src="/journey-os/commerce/store-page.js?v=commerce-5"></script>
+<script defer src="/journey-os/commerce/storefront-cart.js?v=commerce-5"></script>
+<script defer src="/journey-os/commerce/storefront-ast.js?v=commerce-3"></script>
+<script defer src="/journey-os/commerce/store-page.js?v=commerce-7"></script>
 <script defer src="/journey-os/journey.js?v=20260808025356"></script>
-<script defer src="/journey-os/store-commerce.js?v=store-3"></script>
+<script defer src="/journey-os/store-commerce.js?v=store-4"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
 <script defer src="/journey-os/media-studio-bridge.js?v=studio-15"></script>
 <script defer src="/journey-os/hubly-studio.js?v=studio-15"></script>
@@ -15611,6 +15613,16 @@ function formatHoursBlock(compact){
   }).join('');
   return title+'<div class="hours-list">'+lines+'</div>';
 }
+// A quoted price must equal the price that will be charged. Formatting lives in ONE
+// place — public/journey-os/money.js. Five local copies of it all rounded, and the
+// storefront quoted $25 for a product it charged $24.99 for (OPEN_FINDINGS #38).
+function hublyMoney(n){
+  const M=window.HublyMoney;
+  if(M)return M.format(n);
+  const v=Number(n)||0;
+  return '$'+(v%1===0?String(v):v.toFixed(2));
+}
+
 function svcDisplayPrice(s){
   if(s.showPrice===false)return t('quoteAtBooking');
   if(s.pricingType==='variable'){
@@ -25059,7 +25071,7 @@ function isRenderPkgPreview(){
   const prompt=typeof HublyBookingFrames!=='undefined'?(HublyBookingFrames.get(S.businessType)?.servicePrompt||'Choose a package'):'Choose a package';
   const cards=draft.length?draft.map(p=>{
     const priceNum=Number(p.price);
-    const price=Number.isFinite(priceNum)&&priceNum>0?`$${Math.round(priceNum)}`:(p.price?`$${escPeHtml(p.price)}`:'—');
+    const price=Number.isFinite(priceNum)&&priceNum>0?hublyMoney(priceNum):(p.price?`$${escPeHtml(p.price)}`:'—');
     const dur=String(p.dur||'').trim();
     return `<div class="is-pkg-preview-card${p.popular?' pop':''}">
       ${p.imgUrl?`<img src="${escPeHtml(p.imgUrl)}" alt="">`:`<div class="is-pkg-preview-ph">◆</div>`}
@@ -32602,7 +32614,7 @@ function renderPkgHubList(){
   }
   el.innerHTML=list.map((svc,i)=>{
     const thumb=svc.imgUrl||(Array.isArray(svc.photos)&&svc.photos[0])||'';
-    const priceTxt=typeof svcDisplayPrice==='function'?svcDisplayPrice(svc):(svc.price?`$${Math.round(Number(svc.price)||0)}`:'—');
+    const priceTxt=typeof svcDisplayPrice==='function'?svcDisplayPrice(svc):(svc.price?hublyMoney(Number(svc.price)||0):'—');
     const dur=String(svc.dur||'').trim();
     return `<div class="ed-pkg-row${S._pkgHubSel===i?' on':''}" onclick="selectPkgHub(${i})">
       <div class="ord" onclick="event.stopPropagation()">
@@ -32651,7 +32663,7 @@ function renderPkgHubPreview(){
   if(!bookBlurb)bookBlurb='Packages customers can pick in Book Now.';
   const cards=list.map(svc=>{
     const thumb=svc.imgUrl||(Array.isArray(svc.photos)&&svc.photos[0])||'';
-    const priceTxt=typeof svcDisplayPrice==='function'?svcDisplayPrice(svc):(svc.price?`$${Math.round(Number(svc.price)||0)}`:'');
+    const priceTxt=typeof svcDisplayPrice==='function'?svcDisplayPrice(svc):(svc.price?hublyMoney(Number(svc.price)||0):'');
     const dur=String(svc.dur||'').trim();
     return `<div class="ed-pkg-card">
       ${thumb?`<img src="${esc(thumb)}" alt="">`:`<div class="ph">◆</div>`}

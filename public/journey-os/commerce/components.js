@@ -11,13 +11,20 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
+  // Money formatting lives in ONE place: public/journey-os/money.js. This used to be
+  // a local copy with maximumFractionDigits: 0, which rounded a $24.99 product to
+  // "$25" while checkout charged $24.99. Five files had that same copy. Do not
+  // reintroduce a local formatter here — see money.js for why.
+  // First LETTER OR DIGIT, not first character -- "[TEST] Lawn Feed" drew a lone "[".
+  // Sibling of the same line in store-page.js; both fixed 2026-09-06.
+  function initial(name) {
+    var m = String(name || '').match(/[A-Za-z0-9]/);
+    return m ? m[0].toUpperCase() : 'P';
+  }
+
   function money(n) {
-    var v = Number(n) || 0;
-    try {
-      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
-    } catch (e) {
-      return '$' + Math.round(v);
-    }
+    var M = global.HublyMoney;
+    return M ? M.format(n) : ('$' + (Number(n) || 0).toFixed(2));
   }
 
   function ProductCard(p, opts) {
@@ -47,7 +54,7 @@
     }
     var media = (p.images && p.images.length && p.images[0].url)
       ? '<div class="hub-commerce-product-card__media"><img src="' + esc(p.images[0].url) + '" alt="' + esc(p.images[0].alt || p.name || '') + '" loading="lazy"></div>'
-      : '<div class="hub-commerce-product-card__media" aria-hidden="true">' + esc((p.name || 'P').slice(0, 1)) + '</div>';
+      : '<div class="hub-commerce-product-card__media" aria-hidden="true">' + esc(initial(p.name)) + '</div>';
     // Variant selector — the guest cart reads the chosen variant id; the server re-prices.
     var variantSelect = variants.length
       ? '<select class="hub-commerce-variant-select" data-variant-select aria-label="Choose option">' +

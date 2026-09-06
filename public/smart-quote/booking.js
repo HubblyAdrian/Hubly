@@ -3,6 +3,16 @@
  * Same trade fields + price math as owner Smart Quote; schedule stays booking-native.
  */
 (function (global) {
+  // A quoted price must equal the price that will be charged. Formatting lives in
+  // ONE place — public/journey-os/money.js — because five local copies of it all
+  // rounded, and the storefront quoted $25 for a product it charged $24.99 for.
+  function sqMoney(n) {
+    var M = global.HublyMoney;
+    if (M) return M.format(n);
+    var v = Number(n) || 0;
+    return '$' + (v % 1 === 0 ? String(v) : v.toFixed(2));
+  }
+
   function esc(s) {
     if (typeof global.escPeHtml === 'function') return global.escPeHtml(s);
     return String(s == null ? '' : s)
@@ -483,7 +493,7 @@
       '';
     const priceNum = Number(svc.price != null ? svc.price : app.bkBasePrice);
     const price =
-      Number.isFinite(priceNum) && priceNum > 0 ? `$${Math.round(priceNum)}` : '';
+      Number.isFinite(priceNum) && priceNum > 0 ? sqMoney(priceNum) : '';
     const durRaw = String(svc.dur || '').trim();
     const dur = durRaw
       ? `${durRaw}${/hr|hour|min/i.test(durRaw) ? '' : ' hrs'}`
@@ -558,7 +568,7 @@
         const priceNum = Number(s.price);
         const price =
           Number.isFinite(priceNum) && priceNum > 0
-            ? `$${Math.round(priceNum)}`
+            ? sqMoney(priceNum)
             : '';
         const durRaw = String(s.dur || '').trim();
         const dur = durRaw

@@ -2447,7 +2447,7 @@ is publicly reachable for businesses that never asked for a store.
 
 ---
 
-## #37 — SIZING: the Stripe Accounts v2 migration (sized 2026-09-06, not built)
+## #37 — SIZING: Stripe Accounts v2 is NOT a migration that finishes (sized 2026-09-06, not built)
 
 **We are running on a legacy compatibility flag.** Accounts v1 was re-enabled in the Stripe
 Dashboard (test mode) on 2026-09-06 to unblock tonight's purchase walk. Stripe's own dashboard
@@ -2509,9 +2509,28 @@ So after the migration we hold two kinds of account in one table and every read 
 for both, indefinitely. That is what `account_version` is for, and it is why this cannot be a
 find-and-replace.
 
-**Estimate: half a day to a day of focused work, plus a full purchase walk to verify** —
-assuming the two unknowns below hold. That is not a week; it is also not something to do in an
-hour against a live payment rail.
+### THE REFRAME — this changes the decision, so read it before quoting a date
+
+**This is not a migration that finishes.** A migration has an end state where the old thing is
+gone. That end state does not exist here.
+
+Live Connect accounts today are v1, including Adrian's on `adrians-lawn-service`. **They do not
+become v2, ever.** Stripe does not convert them and we cannot recreate them without asking each
+owner to redo identity verification. So the day the v2 work "lands", we do not have a v2
+integration — we have an integration that serves **two account shapes, permanently**, and every
+read path has to handle both for as long as those accounts exist.
+
+That is what `account_version` is for, sitting alongside the `mode` column already owed. Two
+columns, because we now have two facts about an account we cannot infer from the row: which
+Stripe mode it belongs to, and which account API created it.
+
+> **The day is the code. The permanent cost is two shapes forever.**
+> Every future change to Connect status handling gets written twice, tested twice, and can
+> break on the shape you did not have in front of you. Budget the ongoing tax, not the sprint.
+
+**Estimate for the code: half a day to a day, plus a full purchase walk to verify** — assuming
+the two unknowns below hold. That is not a week. It is also not the number that matters, and it
+must not be the number anyone quotes Bucket.
 
 ### Two unknowns that could move the number, both checkable in Stripe's docs first
 
@@ -2523,8 +2542,12 @@ hour against a live payment rail.
    button in Settings and in marketplace-lite has no v2 equivalent and needs a different
    destination.
 
-**Answer those two from the docs before writing any code** — they are the difference between a
-four-file change and a nine-file one. Do not size this from memory; read the current v2 docs.
+**Both must be answered from CURRENT Stripe documentation before anyone commits a date.** Not
+from memory, not from this file, not from a model's recollection of the Stripe API — the same
+rule that governs price research governs this. They are the difference between a four-file
+change and a nine-file one, and either answer coming back "no" invalidates the estimate above.
+
+**Nobody promises Bucket a date until those two are answered in writing.**
 
 ---
 
@@ -2557,8 +2580,29 @@ This is the same shape as the publishable key: *a value duplicated five times is
 owns*. The fix is one shared `money()` that shows cents whenever cents exist, imported by all
 five — not five edits.
 
-Not fixed in this pass; it was found mid-walk and fixing it changes what the walk is measuring.
-**It should be fixed before any real customer sees a store**, and it is cheap.
+**FIXED 2026-09-06.** One owner — `public/journey-os/money.js` — and the five copies deleted, not
+corrected. The rule it enforces: *a displayed price is the price that will be charged.* Whole
+amounts stay clean (`$25`), anything with cents shows them (`$24.99`); both are exact, so the
+look survives without lying. `fromCents()` is there for new code because cents are the
+authoritative unit in `commerce_*` and in Stripe.
+
+**The class, grepped as instructed.** The server was already correct — `commerce_notify.ts:57`
+and `booking-notify:349` both use `(cents/100).toFixed(2)`, so the sale notifier and the booking
+emails never had this bug. The client had six more sites, all in paths that quote a customer a
+price they will be charged, all now on the one formatter:
+
+| file | what it quotes |
+| --- | --- |
+| `booking-wizard/ui.js` ×3 | service price, package price, add-on price (`+$X`) |
+| `smart-quote/booking.js` ×2 | public Book-Now prices |
+| `smart-quote/ui.js` | quote line items (`.toFixed(0)`) |
+| `hubly.html` ×3 | package preview cards, two `svcDisplayPrice` fallbacks |
+| `get-done.html` | its own local `money()` |
+
+**Deliberately left rounding**, because these are labelled estimates and aggregates, not quotes:
+`hubly.html` "Est. revenue", customer lifetime-value and avg-ticket KPIs, `marketplace-ops.html`
+totals, `photography-projects.js`. Rounding a KPI is a summary; rounding a price is a lie. If
+any of those ever becomes a number a customer is charged, it moves to `HublyMoney`.
 
 ---
 
@@ -2572,9 +2616,16 @@ not: `<aside class="hub-commerce-cart-drawer">` is inserted, with the right cont
 **y = 890 in a 792px viewport** — beneath the footer, off the bottom of the page, with no
 indication that anything happened.
 
-**Cause, measured:** the standalone `/store` route injects `hub-store-page-style` and nothing
-else. `hub-commerce-cart-style` and `hub-commerce-components-style` are **never injected on this
-route**. The drawer CSS that makes it a fixed overlay simply is not on the page.
+**CAUSE — and my first reading of it was wrong, so it is corrected here rather than quietly
+edited.** I originally recorded this as a stylesheet that fails to load on the `/store` route.
+It is worse and simpler than that: **the drawer CSS does not exist anywhere.** Not in
+`store-commerce.css`, not injected by any JS, not in any file in the repo. Grepping every `.css`
+and every source file for `hub-commerce-cart-drawer` returns only the two JS files that *write*
+the class names. The markup shipped with no styles behind it from day one, so
+`position` computed to `static` and it laid out as an ordinary block after the footer.
+
+A stylesheet that fails to load is a wiring problem; a stylesheet that was never written is a
+gap. Checking which one it was took one grep and changed the fix entirely.
 
 What a buyer who scrolls down finds is raw unstyled markup below the footer:
 `Your cart✕` / `[TEST] Spring Lawn Feed 10kg−1+$25✕` / `Subtotal$25` / two bare boxes /
@@ -2587,14 +2638,28 @@ exactly one pixel below the fold. The copy is right; the layout makes it invisib
 effect for the customer as saying nothing, different cause, and worth separating: **do not
 "fix" this by rewriting the message.**
 
-### Two smaller things found in the same minute
+**FIXED 2026-09-06 — in the layout, not the message.** `storefront-cart.js` now injects
+`hub-commerce-cart-style` and owns its own presentation, exactly as `store-page.js` owns its own:
+a real fixed overlay with a backdrop, a readable line/qty/subtotal grid, and form inputs that fit
+their box. **The 503 copy is untouched** — *"Online checkout isn't set up for this store yet."* is
+correct and stays word for word; it now renders inside the visible drawer on a red field with
+`:empty{display:none}` so it appears only when there is something to say.
 
-- **Two cart controls that disagree.** `button.hub-store-cartbtn` in the header stays at
-  **Cart (0)** forever; `#hub-store-cart-btn.hub-commerce-cart-fab` floating bottom-right shows
-  the true **Cart (1)**. Two of almost everything, again. The floating one also appears out of
-  nowhere on first add — the interface changing shape silently (prohibition 4).
-- **A one-product store looks like a two-product store.** The single product renders under
-  **Featured** *and* under **Shop all**, though `featured` is false. "Featured" appears to fall
-  back to the first N products when nothing is featured.
-- **Image placeholder.** With no product image the card draws the name's first character; for
-  `[TEST] Spring Lawn Feed` that is a lone `[` in a grey box.
+### Two smaller things found in the same minute — both fixed, both cheap
+
+- **Two cart controls that disagree → one per surface, always present.** The header chip baked
+  its count in at render time and sat at **Cart (0)** forever; the floating button was
+  `display:none` until the first add, then popped into existence with the true count — the
+  interface changing shape silently (prohibition 4) on top of the disagreement. `updateBadge()`
+  now updates the header chip too, and the floating button is used **only on surfaces that have
+  no header chip** (the website store embed), never hidden merely because the cart is empty.
+  Whichever control a surface has is there from the start and always correct.
+- **A one-product store rendered as two → "Featured" now means featured.** `buildDefault` did
+  `featured.length ? featured : active.map(id)` — with nothing marked featured it fell back to
+  the first four products, so the catalogue rendered twice and the page asserted a curation the
+  owner never made. Now `featured.slice(0, 4)`, and no Featured section when nothing is featured.
+  **Both copies fixed** — `commerce/storefront-ast.js` and its server sibling
+  `_shared/storefront_ast.ts:199`, which had the identical line.
+- **Image placeholder → first letter or digit.** `(p.name || 'P').slice(0, 1)` drew a lone `[`
+  for `[TEST] Spring Lawn Feed`. Now the first `[A-Za-z0-9]`, uppercased, falling back to `P`.
+  **Both copies fixed** — `store-page.js` (×2) and `components.js`.

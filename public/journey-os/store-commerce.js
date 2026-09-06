@@ -37,13 +37,13 @@
     if (typeof global.toast === 'function') return global.toast(msg);
     try { console.log('[Hubly Store]', msg); } catch (e) {}
   }
+  // Money formatting lives in ONE place: public/journey-os/money.js. This used to be
+  // a local copy with maximumFractionDigits: 0, which rounded a $24.99 product to
+  // "$25" while checkout charged $24.99. Five files had that same copy. Do not
+  // reintroduce a local formatter here — see money.js for why.
   function money(n) {
-    var v = Number(n) || 0;
-    try {
-      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
-    } catch (e) {
-      return '$' + Math.round(v);
-    }
+    var M = global.HublyMoney;
+    return M ? M.format(n) : ('$' + (Number(n) || 0).toFixed(2));
   }
   function todayStr() {
     return new Date().toISOString().slice(0, 10);

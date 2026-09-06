@@ -13,15 +13,77 @@
   var KEY_PREFIX = 'hubly_store_cart_';
   var state = { businessId: null, mount: null, drawerOpen: false };
 
+  // ── THE DRAWER'S OWN STYLES ────────────────────────────────────────────────
+  // These class names were written here from the day the cart shipped and NOTHING
+  // ever styled them — not store-commerce.css, not an injected block, nowhere. So
+  // `.hub-commerce-cart-drawer` computed to `position: static` and laid out as an
+  // ordinary block AFTER the footer: on /store that put the cart at y=890 in a
+  // 792px viewport. Clicking "Cart (1)" looked like it did nothing.
+  //
+  // It also hid an honest message. When Connect isn't ready, create-store-checkout
+  // returns 503 and this file correctly writes "Online checkout isn't set up for
+  // this store yet." into #hub-store-cart-msg — which rendered one pixel below the
+  // fold. The copy was right; the layout was hiding it. Fixed here, in the layout.
+  //
+  // Owned by this file because this file writes the markup, exactly as store-page.js
+  // owns its own. A layout that cannot be read is a defect, not a style choice.
+  var CART_STYLE_ID = 'hub-commerce-cart-style';
+  function injectCartStyle() {
+    var d = global.document;
+    if (!d || d.getElementById(CART_STYLE_ID)) return;
+    var css = [
+      '.hub-commerce-cart-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:9998;}',
+      '.hub-commerce-cart-drawer{position:fixed;top:0;right:0;bottom:0;width:min(400px,100vw);z-index:9999;',
+      '  background:#fff;color:#0f172a;box-shadow:-8px 0 32px rgba(15,23,42,.18);',
+      '  display:flex;flex-direction:column;gap:0;overflow-y:auto;padding:18px 20px 24px;',
+      '  font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;}',
+      '.hub-commerce-cart-drawer header{display:flex;align-items:center;justify-content:space-between;',
+      '  gap:12px;padding-bottom:12px;border-bottom:1px solid #e2e8f0;margin-bottom:12px;}',
+      '.hub-commerce-cart-drawer header strong{font-size:16px;}',
+      '.hub-commerce-cart-drawer header button{background:none;border:0;font-size:18px;line-height:1;',
+      '  cursor:pointer;color:#64748b;padding:4px;}',
+      '.hub-commerce-cart-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}',
+      '.hub-commerce-cart-line{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;',
+      '  gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;}',
+      '.hub-commerce-cart-qty{display:inline-flex;align-items:center;gap:8px;}',
+      '.hub-commerce-cart-qty button{width:26px;height:26px;border:1px solid #cbd5e1;background:#fff;',
+      '  border-radius:6px;cursor:pointer;font-size:14px;line-height:1;color:#0f172a;}',
+      '.hub-commerce-cart-x{background:none;border:0;color:#94a3b8;cursor:pointer;font-size:14px;padding:4px;}',
+      '.hub-commerce-cart-subtotal{display:flex;justify-content:space-between;align-items:baseline;',
+      '  margin-top:14px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:15px;}',
+      '.hub-commerce-cart-note{margin:6px 0 0;font-size:12px;color:#64748b;}',
+      '.hub-commerce-cart-form{display:flex;flex-direction:column;gap:8px;margin-top:16px;}',
+      '.hub-commerce-cart-form input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;',
+      '  border-radius:8px;font:inherit;color:#0f172a;background:#fff;}',
+      '.hub-commerce-cart-form .hub-commerce-btn{padding:11px 16px;border:0;border-radius:8px;cursor:pointer;',
+      '  background:#0f172a;color:#fff;font:inherit;font-weight:600;}',
+      // The refusal line. It must be impossible to miss and impossible to mistake
+      // for success -- it is the only thing standing between a customer and a
+      // checkout that cannot happen.
+      '.hub-commerce-cart-msg{margin:10px 0 0;font-size:13px;line-height:1.5;color:#991b1b;',
+      '  background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:9px 11px;}',
+      '.hub-commerce-cart-msg:empty{display:none;}',
+      '.hub-commerce-empty{color:#64748b;margin:12px 0;}',
+      '@media (max-width:520px){.hub-commerce-cart-drawer{width:100vw;}}'
+    ].join('');
+    var st = d.createElement('style');
+    st.id = CART_STYLE_ID;
+    st.textContent = css;
+    d.head.appendChild(st);
+  }
+
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
+  // Money formatting lives in ONE place: public/journey-os/money.js. This used to be
+  // a local copy with maximumFractionDigits: 0, which rounded a $24.99 product to
+  // "$25" while checkout charged $24.99. Five files had that same copy. Do not
+  // reintroduce a local formatter here — see money.js for why.
   function money(n) {
-    var v = Number(n) || 0;
-    try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v); }
-    catch (e) { return '$' + Math.round(v); }
+    var M = global.HublyMoney;
+    return M ? M.format(n) : ('$' + (Number(n) || 0).toFixed(2));
   }
   function key() { return KEY_PREFIX + (state.businessId || 'x'); }
   function read() { try { return JSON.parse(global.localStorage.getItem(key()) || '[]') || []; } catch (e) { return []; } }
@@ -101,14 +163,38 @@
     b.id = 'hub-store-cart-btn';
     b.className = 'hub-commerce-cart-fab';
     b.setAttribute('data-store-cart', 'open');
-    b.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:9998;';
+    b.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:9997;padding:10px 16px;'
+      + 'border:0;border-radius:999px;background:#0f172a;color:#fff;font:600 14px/1 system-ui,sans-serif;'
+      + 'cursor:pointer;box-shadow:0 6px 20px rgba(15,23,42,.22);';
     b.addEventListener('click', function () { state.drawerOpen = true; refresh(); });
     b.textContent = 'Cart (0)';
     return b;
   }
+  // ONE cart control per surface, and it never appears or disappears.
+  //
+  // Before 2026-09-06 there were two that disagreed: the header chip rendered by
+  // store-page.js baked its count in at render time and sat at "Cart (0)" forever,
+  // while this floating button was display:none until the first add and then popped
+  // into existence showing the true count. Two of almost everything, plus an
+  // interface changing shape silently (prohibition 4).
+  //
+  // Now: the header chip is updated here too when it exists, and the floating button
+  // is only used on surfaces that have no header chip (the website store embed).
+  // Whichever one a surface has is present from the start and always correct.
+  function headerChip() {
+    try { return global.document.querySelector('.hub-store-cartbtn'); } catch (e) { return null; }
+  }
   function updateBadge() {
+    var label = 'Cart (' + count() + ')';
+    var chip = headerChip();
+    if (chip) chip.textContent = label;
     var b = global.document.getElementById('hub-store-cart-btn');
-    if (b) { b.textContent = 'Cart (' + count() + ')'; b.style.display = count() ? '' : 'none'; }
+    if (b) {
+      b.textContent = label;
+      // Hidden only when the surface already has a cart control of its own — never
+      // hidden merely because the cart is empty.
+      b.style.display = chip ? 'none' : '';
+    }
   }
   function onRootClick(e) {
     var actEl = e.target.closest('[data-store-cart]');
@@ -169,6 +255,7 @@
       '</aside>';
   }
   function refresh() {
+    injectCartStyle();
     updateBadge();
     var root = global.document.getElementById('hub-store-cart-root');
     if (!root) return;

@@ -2,6 +2,16 @@
  * Owner Smart Quote UI — depends on HublySmartQuote + globals (S, toast, escPeHtml).
  */
 (function (global) {
+  // A quoted price must equal the price that will be charged. Formatting lives in
+  // ONE place — public/journey-os/money.js — because five local copies of it all
+  // rounded, and the storefront quoted $25 for a product it charged $24.99 for.
+  function sqUiMoney(n) {
+    var M = global.HublyMoney;
+    if (M) return M.format(n);
+    var v = Number(n) || 0;
+    return '$' + (v % 1 === 0 ? String(v) : v.toFixed(2));
+  }
+
   function esc(s) {
     if (typeof global.escPeHtml === 'function') return global.escPeHtml(s);
     return String(s == null ? '' : s)
@@ -1105,7 +1115,7 @@ ${biz}`,
     const lines = ((money && money.lineItems) || (rec && rec.lineItems) || [])
       .filter((l) => l && l.amount)
       .slice(0, 4)
-      .map((l) => `${l.label}: $${Math.abs(Number(l.amount) || 0).toFixed(0)}`)
+      .map((l) => `${l.label}: ${sqUiMoney(Math.abs(Number(l.amount) || 0))}`)
       .join(' · ');
     return `Hi ${(rec && rec.customerName) || 'there'} — quote from ${biz}: ${lines || total}. Total ${total}. Reply to book!`;
   }

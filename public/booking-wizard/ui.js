@@ -2,6 +2,16 @@
  * Owner Booking Wizard — edit industry frame like the website editor.
  */
 (function (global) {
+  // A quoted price must equal the price that will be charged. Formatting lives in
+  // ONE place — public/journey-os/money.js — because five local copies of it all
+  // rounded, and the storefront quoted $25 for a product it charged $24.99 for.
+  function hbwMoney(n) {
+    var M = global.HublyMoney;
+    if (M) return M.format(n);
+    var v = Number(n) || 0;
+    return '$' + (v % 1 === 0 ? String(v) : v.toFixed(2));
+  }
+
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
@@ -452,7 +462,7 @@
     const svcHtml = (w.services || [])
       .map((s) => {
         const price = Number(s.price);
-        const priceTxt = Number.isFinite(price) && price > 0 ? `$${Math.round(price)}` : '—';
+        const priceTxt = Number.isFinite(price) && price > 0 ? hbwMoney(price) : '—';
         const dur = s.dur ? `+ ${esc(String(s.dur))} hrs` : '';
         return `<div class="bw-pkg-ro">
           <div class="thumb">${s.image ? `<img src="${esc(s.image)}" alt="">` : ''}</div>
@@ -619,7 +629,7 @@
       .map((s, i) => {
         const priceNum = Number(s.price);
         const price =
-          Number.isFinite(priceNum) && priceNum > 0 ? `$${Math.round(priceNum)}` : '';
+          Number.isFinite(priceNum) && priceNum > 0 ? hbwMoney(priceNum) : '';
         const dur = String(s.dur || '').trim();
         return `<div class="bw-prev-card ${s.popular ? 'pop' : ''} ${i === 0 ? 'is-sel' : ''}">
           <div class="bw-prev-media">${s.image ? `<img src="${esc(s.image)}" alt="">` : '<span class="bw-prev-ph" aria-hidden="true">▦</span>'}</div>
@@ -638,7 +648,7 @@
           `<div class="bw-prev-addon">
             <span class="bw-prev-check" aria-hidden="true"></span>
             <div class="bw-prev-addon-copy"><strong>${esc(a.name)}</strong></div>
-            <em>+$${Math.round(Number(a.price) || 0)}</em>
+            <em>+${hbwMoney(Number(a.price) || 0)}</em>
           </div>`
       )
       .join('');
