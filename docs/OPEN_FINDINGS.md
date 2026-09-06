@@ -2195,3 +2195,69 @@ document's key shape — `brief,images,generatedAt`), which sets
 `p_design_rationale: gen.plan`. So either `gen.plan` itself carries the decorator, or a
 second write overwrites the row's rationale afterwards. **Both are one query away and neither
 was on tonight's path.** It will pay for itself the next time the generator misbehaves.
+
+---
+
+## #32 — A sale told nobody. Built 2026-09-05, unproven until the first real order.
+
+**Traced 2026-09-05 while sizing physical goods. FIXED (built), NOT YET EXERCISED.**
+
+Grepping `notify|sendEmail|resend|twilio|notification_deliveries` across
+`_shared/commerce_checkout.ts`, `create-store-checkout/index.ts` and
+`commerce-api/index.ts` returned **zero hits**. `finalizePaidCommerceOrder` marked the
+order paid, linked a customer, deducted inventory, converted the cart — **and told
+nobody.** Not the owner, not the buyer.
+
+**Worse than the booking defect it mirrors (#28).** `booking-notify` at least tries and
+writes a `notification_deliveries` row when it skips. Commerce had **no notifier to
+skip**: nothing to log, nothing to count, and no way to discover afterwards that a sale
+had gone unheard. A silent failure you cannot even measure is the worst version of it.
+
+Built before the first purchase deliberately — `commerce_orders` is 0, so there was
+exactly one chance to have this in place *before* a sale rather than after one went
+missing.
+
+### `_shared/commerce_notify.ts`, following what already works
+
+- **Recipient resolution** — `businesses.email` → the owner's `auth.users.email` → a
+  loud operator alert to `PLATFORM_OWNER_EMAIL`. The same fallback built for #28, where
+  the address was never missing: 141 of 159 businesses have a null `businesses.email`
+  because exactly one code path ever sets it.
+- **`notification_deliveries` on every path** — `sent` with the provider receipt,
+  `failed` with the reason, `skipped` with "no recipient address". `subject_type` is
+  `commerce_order`, so store notifications are queryable separately from bookings.
+- **The buyer gets a HUBLY confirmation**, not a reliance on Stripe's receipt — that
+  depends on dashboard settings we neither control nor can see, and a confirmation that
+  exists only if a setting happens to be on is not one we can promise.
+- **No reply-to-a-dead-inbox**: the buyer email points them at the business, per the
+  notification standard.
+
+### A double-send this uncovered
+
+`stripe-webhook` calls `finalizePaidCommerceOrder` from **both**
+`checkout.session.completed` *and* `payment_intent.succeeded` — and Stripe retries
+deliveries. So for one ordinary purchase the function runs more than once. The existing
+`.neq("status","paid")` guard made the WRITE safe but told the caller nothing, and the
+read at the top only catches the sequential case. Now the update does `.select("id")`
+and the notification fires **only for the delivery that actually flipped the row** —
+one "You sold $X" per sale, not one per webhook.
+
+### Proven, and not
+
+**Proven** by exercising the decisions against a stub with `RESEND_API_KEY` unset, so
+nothing was sent: business-email present → used; business-email empty → **auth email
+used**; neither → `skipped` ledger row **plus** the operator alert row; no `owner_id` →
+same. Every path writes a ledger row.
+
+**NOT proven:** no email has actually been sent, because no order exists. `commerce_orders`
+is 0 and the Connect account is live-mode, so a real checkout was correctly not run.
+**This gets verified against the first test-mode order, in the same pass.** Until then it
+is built and deployed, not demonstrated.
+
+### The orders slice
+
+`hubly_operational_state.ts` gains an `orders` slice — the registry is now
+`bookings, jobs, orders, leads`, and the capability's argument enum derives from that
+list so it picked the new key up with no second edit. **Deliberately not verified against
+an empty table**: proving "STORE ORDERS: none on record" says nothing. It is wired and
+waits for the first real order.

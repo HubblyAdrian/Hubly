@@ -178,9 +178,19 @@ export async function finalizePaidCommerceOrder(
   }
   if (customerId) patch.customer_id = customerId;
 
-  const { error: upErr } = await admin
-    .from("commerce_orders").update(patch).eq("id", orderId).neq("status", "paid");
+  // WHO ACTUALLY FLIPPED IT. The `.neq("status","paid")` guard already made this
+  // update safe to run twice; what it did not do is tell the CALLER which run won.
+  // That matters now that a notification hangs off it: stripe-webhook calls this
+  // from BOTH `checkout.session.completed` and `payment_intent.succeeded`, and
+  // Stripe retries deliveries — so for one ordinary purchase this function runs
+  // more than once. The read at the top catches the sequential case; two
+  // deliveries arriving together both pass it. Selecting the changed rows makes
+  // "I am the one that flipped it" a fact rather than an assumption, and the
+  // owner gets one "You sold $X" email per sale instead of one per webhook.
+  const { data: flipped, error: upErr } = await admin
+    .from("commerce_orders").update(patch).eq("id", orderId).neq("status", "paid").select("id");
   if (upErr) return { ok: false, error: upErr.message };
+  const didFlip = Array.isArray(flipped) ? flipped.length > 0 : !!flipped;
 
   // Deduct inventory (only paid orders reach here → abandoned checkouts never consume stock).
   let shortfalls: unknown[] = [];
@@ -207,6 +217,30 @@ export async function finalizePaidCommerceOrder(
     await admin.from("commerce_carts")
       .update({ status: "converted", updated_at: new Date().toISOString() })
       .eq("id", String(opts.cartId));
+  }
+
+  // TELL SOMEONE. Until 2026-09-05 this function ended here: order paid, customer
+  // linked, inventory deducted, cart converted — and nobody told. No notifier to
+  // fail, no ledger row, nothing measurable after the fact, which is worse than
+  // the booking defect it mirrors. (See commerce_notify.ts for the trace.)
+  //
+  // Best-effort and non-blocking BY DESIGN: the money has moved and the order is
+  // recorded, so a notification failure must never un-pay it or fail the webhook
+  // Stripe is waiting on. Never silent, though — every outcome is a
+  // notification_deliveries row, and an unreachable owner raises an operator alert.
+  //
+  // Guarded so an already-paid re-entry does not email twice: finalize returns
+  // early on `status === "paid"` above, so this line is only reached on the
+  // transition INTO paid.
+  try {
+    if (didFlip) {
+      const { notifyCommerceSale } = await import("./commerce_notify.ts");
+      await notifyCommerceSale(admin, { orderId });
+    } else {
+      console.log(`finalizePaidCommerceOrder: order ${orderId} was already paid by another delivery — not notifying twice.`);
+    }
+  } catch (e) {
+    console.error("finalizePaidCommerceOrder: sale notification threw (order is paid regardless):", (e as Error)?.message || e);
   }
 
   return { ok: true, customerId, shortfalls };

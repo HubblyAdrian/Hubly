@@ -185,6 +185,29 @@ export const SLICES: SliceDef[] = [
     },
   },
   {
+    key: "orders",
+    title: "STORE ORDERS",
+    emptyLine: "STORE ORDERS: none on record. Nobody has bought anything through the store yet — say that plainly if asked, and never imply a sale.",
+    read: async (admin, businessId) => {
+      const { data } = await admin
+        .from("commerce_orders")
+        .select("id,order_number,status,fulfillment,total_cents,currency,customer_name,customer_email,customer_phone,paid_at,created_at")
+        .eq("business_id", businessId)
+        .order("created_at", { ascending: false })
+        .limit(MAX_ROWS);
+      return Array.isArray(data) ? data : [];
+    },
+    line: (r) => [
+      `${String(r.customer_name || "someone").trim()} — ${money(r.total_cents) ?? "no total on record"}`,
+      `· ${String(r.status || "unknown")}`,
+      r.paid_at ? `· paid ${String(r.paid_at).slice(0, 10)}` : "· not paid",
+      r.fulfillment ? `· fulfilment ${String(r.fulfillment)}` : null,
+      `· ${contact(r)}`,
+      r.order_number ? `· order ${String(r.order_number)}` : null,
+      isTestRow(r) ? "· [TEST ROW — written by our own harness, not a real customer]" : null,
+    ].filter(Boolean).join(" "),
+  },
+  {
     key: "leads",
     title: "RECENT LEADS (started a booking and did not finish)",
     emptyLine: "RECENT LEADS: none on record.",
