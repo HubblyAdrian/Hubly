@@ -181,7 +181,36 @@ convCode.split("\n").forEach((line, idx) => {
 });
 console.log(`refusals decided from \`context\`                : ${ctxGates} (must be 0)`);
 
+// ---------------------------------------------------------------------------
+// CHECK 4 — the Stripe API version is actually pinned.
+//
+// `stripeRequest()` sends `Stripe-Version` only when STRIPE_API_VERSION is
+// non-empty, and empty deliberately means "no header" so an unset pin cannot
+// silently select a version. That safety has a cost: an empty pin READS AS
+// PINNED in code review. The constant is there, the header line is there, and
+// nothing about the diff says the value is "".
+//
+// A pin nobody can tell is unset is worse than no pin, because it stops people
+// looking. So the emptiness is asserted here, where it is seen.
+// ---------------------------------------------------------------------------
+const STRIPE_SHARED = path.join(ROOT, "supabase/functions/_shared/stripe.ts");
+const stripeSrc = fs.readFileSync(STRIPE_SHARED, "utf8");
+const pinMatch = stripeSrc.match(/export const STRIPE_API_VERSION\s*=\s*"([^"]*)"/);
+const pinned = pinMatch ? pinMatch[1].trim() : null;
+console.log(`Stripe API version pinned                  : ${pinned ? pinned : "(EMPTY)"} (must be non-empty)`);
+if (pinMatch === null) {
+  fail(`_shared/stripe.ts no longer exports STRIPE_API_VERSION.\n` +
+       `      Without it every Stripe call uses the dashboard's default — a value outside\n` +
+       `      the repo that can change with no commit and no deploy.`);
+} else if (!pinned) {
+  fail(`STRIPE_API_VERSION is EMPTY, so no Stripe-Version header is sent and every call\n` +
+       `      uses whatever the Stripe Dashboard currently defaults to. Set it to the\n` +
+       `      account's CURRENT default, verbatim — a pin to any other version is an API\n` +
+       `      upgrade wearing a bug fix's clothes.`);
+}
+
 if (failures) { console.error(`\n${failures} failure(s).`); process.exit(1); }
 console.log("\nOK — every create_business_document payload carries p_owner_id, every");
 console.log("action that reads the injected owner is on the list that injects it, and no");
 console.log("access decision anywhere is made from the caller-declared `context`.");
+console.log("The Stripe API version is pinned in the repo, not in the dashboard.");

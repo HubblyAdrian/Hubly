@@ -3556,3 +3556,71 @@ other mode has to go find the id by hand to get back.
 have to be dropped, and I have not checked); and that all 13 call sites land in the same change
 as the migration — a mode column with unfiltered readers is worse than no column, because
 `stripe-connect-onboard:150` would begin writing across modes.
+
+---
+
+## #50 — The API version and the webhook version are two months apart, and that is not a bug to fix
+
+**Documented 2026-09-06. Pre-existing. DO NOT "align" these by changing the webhook version.**
+
+| axis | version | governs |
+| --- | --- | --- |
+| Stripe API (`Stripe-Version` header, now pinned in `_shared/stripe.ts`) | **`2026-08-26.dahlia`** | the shape of **responses** to our outbound calls |
+| Webhook event destination (set in the Stripe Dashboard) | **`2026-06-24.dahlia`** | the shape of **event payloads** Stripe sends us |
+
+**Two months apart, and the divergence predates the pin.** We are recording it, not creating it.
+
+They are genuinely different axes. `stripe-webhook` parses **event payloads**, whose shape comes
+from the destination's version — nothing it reads is affected by the API header. Everything else
+(`create-store-checkout`, `create-booking-checkout`, `stripe-connect-*`) reads **responses**,
+governed by the API version.
+
+**Why this is filed rather than fixed:** changing the destination's version changes the shape of
+every event `stripe-webhook` parses, on a path that has been carrying real payments for two days
+and was only stabilised on 2026-09-06 (#45, #41). That is a payment-path change wearing a
+tidiness costume. The fields we actually read — `payment_status`, `amount_total`,
+`payment_intent`, `metadata`, `id` — are long-stable across both versions, so the divergence is
+**inert today**.
+
+**What would make it live:** reading a field whose shape changed between the two versions, in a
+handler, without noticing which axis it came from. If anyone touches `stripe-webhook`'s parsing,
+check the field against `2026-06-24.dahlia`, not against the API version pinned in code.
+
+---
+
+## #51 — OPERATIONAL RULE: the dashboard API-version knob is FROZEN until all 22 functions carry the pin
+
+**2026-09-06. Not a defect — a rule with an expiry condition, recorded where it will be seen.**
+
+> **DO NOT touch the API version knob in the Stripe Dashboard.**
+
+As of today the pin is deployed to **4** functions — `create-booking-checkout`,
+`create-store-checkout`, `stripe-connect-onboard`, `stripe-connect-connection`. Those read the
+version **from the repo**. Every other function that can reach `api.stripe.com` still reads it
+**from the dashboard**.
+
+**While that split exists, changing the dashboard knob changes behaviour for one half of the
+system and not the other, with nothing in git to show it happened.** That is worse than the
+original problem: before the pin, everything drifted together and at least stayed consistent
+with itself. A half-pinned platform can diverge from itself, and the difference is invisible to
+code review because the changed value does not live in the repo.
+
+**The closing action** — after which the knob is free again: deploy the pin to the remaining
+**18** functions that transitively bundle `_shared/stripe.ts` via `hubly_provider_payments.ts`:
+
+```
+ai-advisor, analyze-photos, chatbot-message, creative-director, draft-customer-message,
+generate-site, hubly-ai-status, hubly-brain, hubly-build-business, hubly-conversation,
+hubly-daily, hubly-document-build, hubly-find-pro, hubly-intent-classify, import-offers,
+lead-extract, marketplace, scratch-freeform
+```
+
+They are deliberately NOT deployed today, because the pin is today's one variable and 18 extra
+deploys is a second one. Note the honest caveat: those 18 only *reach* Stripe through the
+payments provider, and **whether that provider is ever actually invoked at runtime has not been
+established** — so the practical exposure may be zero. That trace is the cheap thing to do
+before deciding whether the 18 need a dedicated deploy or can pick the pin up whenever they next
+ship for their own reasons.
+
+**`stripe-webhook` is not on either list**: it imports only `verifyStripeWebhook`, which is local
+HMAC with no outbound call. The pin cannot affect it.

@@ -32,6 +32,39 @@ export type StripeCheckoutSession = {
   currency?: string | null;
 };
 
+/**
+ * THE PINNED STRIPE API VERSION.
+ *
+ * Until 2026-09-06 `stripeRequest()` sent no `Stripe-Version` header at all, so every call
+ * used the **account default set in the Stripe Dashboard** — a value outside the repo,
+ * invisible to code review, and changeable by anyone with dashboard access without a deploy
+ * and without a commit. We are riding an Accounts v1 compatibility flag; behaviour changing
+ * under us with nothing in git changing is exactly the failure that flag makes possible.
+ *
+ * THIS MUST BE SET TO THE ACCOUNT'S CURRENT DEFAULT, verbatim.
+ *
+ * A pin to any OTHER version is an API upgrade wearing a bug fix's clothes: it changes
+ * behaviour while looking like it is freezing it. The point of this constant is that today
+ * behaves exactly as yesterday did, and that tomorrow cannot differ without a commit.
+ *
+ * Leave it empty and no header is sent — i.e. today's behaviour, unchanged. That is
+ * deliberate: an unset pin must not be able to silently select a version.
+ * `scripts/check-owner-id-invariant.mjs` CHECK 4 fails on an empty value, because a pin
+ * nobody can tell is unset reads as pinned in review and stops people looking.
+ *
+ * SET 2026-09-06 to the account's then-current default, read off the Stripe Dashboard, where
+ * it was labelled **"Latest"** — i.e. the account was NOT pinned and was tracking whatever
+ * Stripe shipped. So this is not a trade of "we stop receiving Stripe's changes": it FREEZES
+ * today's behaviour and ENDS an active drift, which is strictly better than what we had.
+ *
+ * NOT the same axis as the webhook. The event destination is on `2026-06-24.dahlia` while
+ * this is `2026-08-26.dahlia` — two months apart, and that divergence PREDATES this pin. We
+ * are documenting it, not creating it. `stripe-webhook` parses EVENT payloads, whose shape
+ * comes from the destination's version, not from this header. Do not "align" them by changing
+ * the destination; see OPEN_FINDINGS #50.
+ */
+export const STRIPE_API_VERSION = "2026-08-26.dahlia";
+
 function stripeKey() {
   return (Deno.env.get("STRIPE_SECRET_KEY") || "").trim();
 }
@@ -61,6 +94,8 @@ export async function stripeRequest<T>(
   const headers: Record<string, string> = {
     Authorization: `Bearer ${key}`,
   };
+  // One builder, one header, one place the version can be changed — and it is in git.
+  if (STRIPE_API_VERSION) headers["Stripe-Version"] = STRIPE_API_VERSION;
   let body: string | undefined;
   if (init.form) {
     headers["content-type"] = "application/x-www-form-urlencoded";

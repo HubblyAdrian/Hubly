@@ -712,6 +712,20 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
   **A permanently failing check is the same as no check** — it cannot catch a regression until
   it is green, and every deploy of those four leans entirely on runtime verification instead.
 
+- **DO NOT touch the Stripe Dashboard API-version knob.** The API version is pinned in the repo
+  (`_shared/stripe.ts`, `STRIPE_API_VERSION = "2026-08-26.dahlia"`) and deployed to **4 of 22**
+  functions. While 4 read it from git and 18 from the dashboard, turning that knob splits the
+  platform's behaviour in half with **nothing in git to show it**. Before the pin everything
+  drifted together and stayed self-consistent; a half-pinned system can diverge from itself,
+  invisibly. Frozen until the other 18 carry the pin — `OPEN_FINDINGS` #51 names them and the
+  closing action. `check-owner-id-invariant.mjs` CHECK 4 fails if the pin is ever emptied, because
+  an empty pin reads as pinned in review and stops people looking.
+  The value was the account's own default, labelled **"Latest"** in the dashboard — the account
+  was **not** pinned and was tracking whatever Stripe shipped, so this **ends an active drift**
+  rather than trading anything away. Separately and deliberately unfixed: the webhook destination
+  is on `2026-06-24.dahlia`, two months behind the API version, because event payload shapes and
+  API response shapes are different axes (#50). Do not "align" them.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped
