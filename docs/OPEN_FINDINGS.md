@@ -2736,10 +2736,39 @@ announced; do not make a settings panel the only place the truth lives.
 
 ---
 
-## #45 — A PAYMENT CAN SUCCEED WHILE OUR RECORD OF IT DOES NOT, AND EVERY SYSTEM INVOLVED REPORTS SUCCESS
+## #45 — THE INCIDENT DID NOT HAPPEN. I read the database 61 seconds too early.
 
-**Found 2026-09-06, ~02:45. The most serious defect in this project. Filed above #41 because
-#41 is a line of code and this is the reason nobody would ever notice it.**
+**CORRECTED 2026-09-06 09:41Z, and the correction is the important part.**
+
+**There was no swallowed payment.** Order `STO-75904418` finalised normally:
+`paid_at = 2026-09-06T08:45:17.884Z`, `updated_at = 08:45:18.367Z`, one inventory log at
+`08:45:19.282Z`. That is **one to two seconds after the payment**, on the original delivery —
+exactly the behaviour we wanted.
+
+**My last "still pending" read was `08:44:16.860Z` — 61 seconds BEFORE the order was paid.** I
+polled four times, every one of them before the purchase completed, reported the order as stuck,
+and escalated. Adrian then went to the Stripe dashboard, saw `200 OK` on events that had in fact
+worked, and built a theory on top of my stale read. The dramatic conclusion was mine and it was
+wrong.
+
+**This is the exact defect I spent the night filing against other people's code, committed by me
+against my own reporting: a state read too early and then reported as final.** I had already made
+this mistake once tonight (querying for a generated page before the async build finished) and
+written it down. Reading a row is not the same as waiting for the thing to happen, and "it is not
+there yet" is not "it will never be there". A poll needs a deadline and a stated confidence, not
+a screenshot of the moment you happened to look.
+
+**WHAT SURVIVES, and why the fix was still worth making.** The three code paths named below are
+real — they are properties of the source, not of the incident, and anyone can read them. The
+`payment_intent.succeeded` branch genuinely discarded `fin.ok` and genuinely swallowed throws into
+a 200. That was a live way to answer "handled" without having handled it, and it is now fixed. But
+it is a latent defect found by inspection, **not** something that has ever been observed to drop a
+payment, and this finding must not be quoted as though a customer was ever charged without a
+record. Nobody was.
+
+<details>
+<summary>The original, incorrect framing as filed — kept because a wrong finding corrected is worth more than one quietly dropped</summary>
+
 
 Stripe took **$18.99**. It delivered `evt_1UCbhQEEmwNmC4XDS4WUaH59` (payment intent
 `pi_3UCbhOEEmwNmC4XD0oic1eZ4`). Our endpoint answered **`200 OK`**, body **`{"received": true}`**.
@@ -2757,7 +2786,9 @@ system, that distinguishes a processed order from a swallowed one.
 That is the same disease as everything else this week — a failure rendered as success — except
 here **the customer has already paid.**
 
-### The paths that return 200 without finalising — named
+</details>
+
+### The paths that return 200 without finalising — named (these are real, and verified by reading the source)
 
 `stripe-webhook/index.ts`, three of them:
 
@@ -2781,11 +2812,12 @@ key onto `payment_intent_data[metadata]`. Both objects carried it.
 **Therefore proven:** `checkout.session.completed` returning 200 means the gate at `:154` was
 false — i.e. **`payment_status` was not `"paid"`** when that event fired.
 
-**Inference, falsifiable in one glance at the event:** the checkout page we generate offers
-**Cash App Pay** and **Afterpay** beside Card, and both are *asynchronous* — they fire
-`checkout.session.completed` with `payment_status: "unpaid"`, then settle later. A plain card
-payment is *inconsistent* with what we observed; an async method fits it exactly. **Check the
-failing session's `payment_status` and `payment_method_types` to confirm or kill this.**
+**DEAD — and it deserves naming as a lesson.** I inferred an async payment method (Cash App Pay
+or Afterpay) from the premise that `checkout.session.completed` had returned 200 without
+finalising. That premise was my stale read. The session finalised on its first delivery, so
+`payment_status` was `"paid"` and the ordinary card path worked exactly as designed. **A chain of
+sound reasoning on a false premise produces a confident, specific, wrong answer** — and it is more
+convincing than a vague one, which is what makes it dangerous.
 
 **Structural gap found while tracing:** `checkout.session.async_payment_succeeded` is **not
 handled anywhere in the codebase** (`grep async_payment` → nothing) and is not among the six
@@ -2887,10 +2919,23 @@ notification alone.
 `createJobFromBookingRequest` is built idempotent on `jobs.booking_request_id`. The booking and
 marketplace-booking paths are clean. Exactly one must-run-once operation was unguarded.
 
-**FIXED 2026-09-06:** the deduction moved inside `if (didFlip)`. **Not yet proven by a
-two-delivery test** — the verification purchase was the one swallowed by #45, so the guard is
-correct by construction and unverified in practice. It gets proven when the resent event
-finalises.
+**FIXED 2026-09-06:** the deduction moved inside `if (didFlip)`.
+
+**Verified, partially.** Order `STO-75904418`, product `[TEST] Double-Delivery Check`, stock 5
+before. After the live purchase **and** a dashboard resend of
+`evt_1UCbhQEEmwNmC4XDS4WUaH59` — at least three deliveries against one order:
+
+| measure | before | after |
+| --- | --- | --- |
+| `commerce_inventory_logs` for this order | 0 | **1** (5 → 4, delta −1) |
+| stock | 5 | **4** |
+| CRM customer rows | 0 | **1** |
+
+The old code would have read 3 or lower. **Honest limit:** this proves the *outcome*, not
+specifically the `didFlip` guard. The resend arrived long after the order was `paid`, so it was
+caught by the sequential early return at `:160`, never reaching `didFlip`. Whether the two
+original deliveries raced (exercising `didFlip`) or arrived sequentially (exercising `:160`) is
+not determinable from these rows. **The concurrent case remains proven only by construction.**
 
 **And the sweep is why the fix is trustworthy.** It turned up #44, which the one-line fix would
 have left live. The instinct that patches the line it was shown without asking what else runs
