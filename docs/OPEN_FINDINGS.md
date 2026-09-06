@@ -2444,3 +2444,157 @@ most likely a rail entry plus a `storefront` flag, not a new store.
 `evergreen-yard-care.myhubly.app/store` returns a real page with a working cart chip and an
 honest empty state, *"No products to show here yet."* Worth noting that this URL exists and
 is publicly reachable for businesses that never asked for a store.
+
+---
+
+## #37 — SIZING: the Stripe Accounts v2 migration (sized 2026-09-06, not built)
+
+**We are running on a legacy compatibility flag.** Accounts v1 was re-enabled in the Stripe
+Dashboard (test mode) on 2026-09-06 to unblock tonight's purchase walk. Stripe's own dashboard
+says new integrations should use `POST /v2/core/accounts`, and **we do not control how long v1
+stays available.** This must land before Bucket onboards. Sized here so the decision is a
+number, not a feeling.
+
+### The surface is small: FOUR files talk to the v1 account API
+
+Everything Stripe-facing goes through `_shared/stripe.ts`; nothing else calls Stripe directly.
+The v1 *account* surface is five helpers, and only four files use them:
+
+| helper | v1 endpoint | used by |
+| --- | --- | --- |
+| `createExpressAccount` | `POST /v1/accounts` | `stripe-connect-onboard` |
+| `retrieveAccount` | `GET /v1/accounts/{id}` | onboard, connection, `hubly_provider_payments` |
+| `createAccountLink` | `POST /v1/account_links` | `stripe-connect-onboard` |
+| `createConnectLoginLink` | `POST /v1/accounts/{id}/login_links` | `stripe-connect-connection` (the "Open Stripe" button) |
+| `fillMissingAccountBranding` / `accountBrandingForm` | `POST /v1/accounts/{id}` | onboard |
+
+Files: `_shared/stripe.ts`, `stripe-connect-onboard/index.ts`,
+`stripe-connect-connection/index.ts`, `_shared/hubly_provider_payments.ts`.
+
+### The blast radius LOOKS big and is not — if one thing holds
+
+`charges_enabled` / `payouts_enabled` / `details_submitted` appear **69 times across 16 files**
+(edge functions, mission control, marketplace ops, three HTML surfaces). Almost every one of
+those reads **our `stripe_connect_accounts` columns**, not Stripe's payload. So:
+
+> **If the v2 mapping writes the same three booleans into the same three columns, 12 of the 16
+> files never learn that anything changed.** That is the whole design constraint. Keep the
+> translation inside `_shared/stripe.ts` and the migration is four files; let the v2 account
+> shape leak outward and it is sixteen.
+
+Helping us: nothing reads `account.requirements` today, and the only capabilities we request
+are `card_payments` and `transfers`.
+
+### What actually has to be done
+
+1. `_shared/stripe.ts` — port the five helpers, and map the v2 account shape down to our three
+   booleans in one function so nothing downstream sees a v2 object. (~150 lines)
+2. `stripe-connect-onboard` / `stripe-connect-connection` / `hubly_provider_payments` — consume
+   that mapping. (~60 lines total)
+3. **Migration: `stripe_connect_accounts` needs both a `mode` column and an `account_version`
+   column.** Mode was already owed (an account exists in exactly one mode and we cannot
+   currently tell test from live in our own data). Version is new and is the harder half — see
+   coexistence below.
+4. `stripe-webhook:70` — the `account.updated` handler parses a v1 account object. We do not
+   subscribe to that event today (deliberately skipped), so this is **latent, not broken** —
+   but it must be ported before that subscription is ever switched on, or the Connect-status
+   refresh will silently write nonsense.
+5. Re-run the full test-mode purchase walk, twice: once against a surviving v1 account and once
+   against a new v2 account.
+
+### The cost is not the code — it is COEXISTENCE
+
+Live accounts today are v1, including Adrian's on `adrians-lawn-service`. They do not become v2.
+So after the migration we hold two kinds of account in one table and every read path must work
+for both, indefinitely. That is what `account_version` is for, and it is why this cannot be a
+find-and-replace.
+
+**Estimate: half a day to a day of focused work, plus a full purchase walk to verify** —
+assuming the two unknowns below hold. That is not a week; it is also not something to do in an
+hour against a live payment rail.
+
+### Two unknowns that could move the number, both checkable in Stripe's docs first
+
+1. **Do destination charges take a v2 account id unchanged?** We pass
+   `payment_intent_data[transfer_data][destination]` on the platform. v2 account ids are still
+   `acct_…`, so this most likely needs no change — but if the v2 destination contract differs,
+   `create-store-checkout` and `create-booking-checkout` join the blast radius.
+2. **Do v2 accounts still have an Express dashboard login link?** If not, the "Open Stripe"
+   button in Settings and in marketplace-lite has no v2 equivalent and needs a different
+   destination.
+
+**Answer those two from the docs before writing any code** — they are the difference between a
+four-file change and a nine-file one. Do not size this from memory; read the current v2 docs.
+
+---
+
+## #38 — The store shows a price it will not charge: five copies of `money()` round to whole dollars
+
+**Found 2026-09-06 during the purchase walk. Verified on the live page, not inferred.**
+
+Every price in the storefront is formatted with
+`Intl.NumberFormat('en-US', { style:'currency', currency:'USD', maximumFractionDigits: 0 })`.
+That **rounds**. There are **five copies** of it:
+
+```
+public/journey-os/commerce/components.js:17        (product cards)
+public/journey-os/commerce/store-page.js:27        (the /store route)
+public/journey-os/commerce/storefront-cart.js:23   (cart lines and subtotal)
+public/journey-os/commerce/storefront-renderer.js:17 (website store embed)
+public/journey-os/store-commerce.js:43             (owner Store admin)
+```
+
+**Measured:** a product priced `price_cents = 2499` renders as **`$25`** on
+`evergreen-yard-care.myhubly.app/store`, on the card AND in the cart line AND in the subtotal.
+`create-store-checkout` charges the real `price_cents`. So the buyer is shown one number and
+charged another.
+
+It is not always in the buyer's favour: `$24.40` displays as **`$24`** and charges **$24.40** —
+the customer is billed *more* than the sticker price. On a $600 ceramic coating the gap is
+dollars, and it is the merchant who gets the complaint.
+
+This is the same shape as the publishable key: *a value duplicated five times is a value nobody
+owns*. The fix is one shared `money()` that shows cents whenever cents exist, imported by all
+five — not five edits.
+
+Not fixed in this pass; it was found mid-walk and fixing it changes what the walk is measuring.
+**It should be fixed before any real customer sees a store**, and it is cheap.
+
+---
+
+## #39 — The cart on `/store` is not a drawer: it renders unstyled, below the footer, off-screen
+
+**Found 2026-09-06 during the purchase walk. This is a checkout blocker in practice.**
+
+Clicking **Cart (1)** on `evergreen-yard-care.myhubly.app/store` appears to do nothing. It does
+not: `<aside class="hub-commerce-cart-drawer">` is inserted, with the right contents. But
+`getComputedStyle` reports **`position: static`**, so it lays out as an ordinary block at
+**y = 890 in a 792px viewport** — beneath the footer, off the bottom of the page, with no
+indication that anything happened.
+
+**Cause, measured:** the standalone `/store` route injects `hub-store-page-style` and nothing
+else. `hub-commerce-cart-style` and `hub-commerce-components-style` are **never injected on this
+route**. The drawer CSS that makes it a fixed overlay simply is not on the page.
+
+What a buyer who scrolls down finds is raw unstyled markup below the footer:
+`Your cart✕` / `[TEST] Spring Lawn Feed 10kg−1+$25✕` / `Subtotal$25` / two bare boxes /
+`Pay with card`. Legibility is a defect, not a style choice.
+
+**And it hides an honest message.** With Connect not yet ready, `create-store-checkout` returns
+`503 not_configured` and the cart correctly writes *"Online checkout isn't set up for this store
+yet."* into `#hub-store-cart-msg`. That element renders at **y = 792 in a 792px viewport** —
+exactly one pixel below the fold. The copy is right; the layout makes it invisible. Same net
+effect for the customer as saying nothing, different cause, and worth separating: **do not
+"fix" this by rewriting the message.**
+
+### Two smaller things found in the same minute
+
+- **Two cart controls that disagree.** `button.hub-store-cartbtn` in the header stays at
+  **Cart (0)** forever; `#hub-store-cart-btn.hub-commerce-cart-fab` floating bottom-right shows
+  the true **Cart (1)**. Two of almost everything, again. The floating one also appears out of
+  nowhere on first add — the interface changing shape silently (prohibition 4).
+- **A one-product store looks like a two-product store.** The single product renders under
+  **Featured** *and* under **Shop all**, though `featured` is false. "Featured" appears to fall
+  back to the first N products when nothing is featured.
+- **Image placeholder.** With no product image the card draws the name's first character; for
+  `[TEST] Spring Lawn Feed` that is a lone `[` in a grey box.
