@@ -32,6 +32,33 @@ import { verifyStripeWebhook } from "../_shared/stripe.ts";
 // "Invalid JWT", which looks exactly like the empty-key 401 in a log.
 import { createAdminClient } from "../_shared/supabase_admin.ts";
 
+// TELLING STRIPE THE TRUTH.
+//
+// 200 + {"received": true} is a CLAIM that we handled the event, and Stripe acts
+// on it: a 2xx marks the event delivered and it is never retried. So a 200 we did
+// not earn destroys the only automatic recovery the payment rail has.
+//
+// Found 2026-09-06 the hard way. Event evt_1UCbhQEEmwNmC4XDS4WUaH59 (payment
+// intent pi_3UCbhOEEmwNmC4XD0oic1eZ4, order STO-75904418) was delivered, answered
+// 200 {"received": true}, and finalised nothing. The order is still `pending`
+// behind a successful charge. An earlier purchase that worked completely answered
+// with the identical bytes — so our response carried no signal at all about
+// whether the order had been recorded.
+//
+// The distinction the handler must make:
+//   finalise FAILED               -> non-2xx. Stripe retries; a stuck pending
+//                                    order self-heals. This is what its retry
+//                                    machinery is for.
+//   finalise OK, notification bad -> 200 + a loud operator alert. A notification
+//                                    failure must never un-pay an order
+//                                    (commerce_checkout.ts:228).
+function webhookFailed(what: string) {
+  return new Response(JSON.stringify({ error: what }), {
+    status: 500,
+    headers: { "content-type": "application/json" },
+  });
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, {
@@ -162,18 +189,12 @@ Deno.serve(async (req: Request) => {
             cartId: String(meta.hubly_cart_id || "").trim() || null,
           });
           if (!fin.ok) {
-            console.error("stripe-webhook finalize commerce order", fin.error);
-            return new Response(JSON.stringify({ error: "commerce order update failed" }), {
-              status: 500,
-              headers: { "content-type": "application/json" },
-            });
+            console.error("stripe-webhook finalize commerce order", commerceOrderId, fin.error);
+            return webhookFailed("commerce order update failed");
           }
         } catch (finErr) {
-          console.error("stripe-webhook finalize commerce order", finErr);
-          return new Response(JSON.stringify({ error: "commerce order update failed" }), {
-            status: 500,
-            headers: { "content-type": "application/json" },
-          });
+          console.error("stripe-webhook finalize commerce order threw", commerceOrderId, finErr);
+          return webhookFailed("commerce order update failed");
         }
       }
 
@@ -213,11 +234,24 @@ Deno.serve(async (req: Request) => {
         // both pass finalize's early return, and only the `didFlip` guard inside
         // finalize separates run-once work from run-per-delivery work. That wrong
         // comment is what let a double inventory deduction ship.
+        // THE LINES THAT SWALLOWED THE SALE. Until 2026-09-06 this block threw
+        // away finalize's return value — `{ok:false}` for order_not_found,
+        // order_id_required or any update error was simply discarded — and its
+        // catch logged and fell through to the shared 200 below. So this path,
+        // the BACKUP that runs precisely when the session path was skipped,
+        // reported success for every possible outcome. The session branch above
+        // has always returned 500 on both; the two disagreed, and the one that
+        // did not check is the one that ran.
         try {
           const { finalizePaidCommerceOrder } = await import("../_shared/commerce_checkout.ts");
-          await finalizePaidCommerceOrder(admin, { orderId: commerceOrderId, paymentIntentId: piId });
+          const fin = await finalizePaidCommerceOrder(admin, { orderId: commerceOrderId, paymentIntentId: piId });
+          if (!fin.ok) {
+            console.error("stripe-webhook pi finalize commerce order", commerceOrderId, fin.error);
+            return webhookFailed("commerce order update failed");
+          }
         } catch (finErr) {
-          console.error("stripe-webhook pi finalize commerce order", finErr);
+          console.error("stripe-webhook pi finalize commerce order threw", commerceOrderId, finErr);
+          return webhookFailed("commerce order update failed");
         }
       }
     }

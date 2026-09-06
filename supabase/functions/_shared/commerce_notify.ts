@@ -269,31 +269,51 @@ export async function notifyCommerceSale(
     ownerHtml,
   );
 
-  // AN UNREACHABLE OWNER IS AN OPERATIONAL FAILURE, NOT A QUIET BRANCH.
-  // Same treatment as #28: after the auth-email fallback this is rare and
-  // abnormal, and it means real money moved that the business will never hear
-  // about. The operator is told, because the owner cannot be.
-  if (!ownerEmail) {
+  // AN OWNER WHO WAS NOT TOLD IS AN OPERATIONAL FAILURE, NOT A QUIET BRANCH.
+  // Same treatment as #28: it means real money moved that the business will never
+  // hear about. The operator is told, because the owner was not.
+  //
+  // TWO ways that happens, and until 2026-09-06 only the first raised an alert:
+  //   - no reachable address at all (businesses.email empty, no auth email); or
+  //   - we HAD an address and the send FAILED (Resend rejected it, not
+  //     configured, network). That left a `failed` ledger row nobody reads and
+  //     no alert — a silent version of exactly the defect this notifier exists
+  //     to fix.
+  //
+  // Neither un-pays the order: the money moved and the record stands
+  // (commerce_checkout.ts:228). The webhook still answers 200, because finalise
+  // SUCCEEDED — it is the telling that failed, and that is what the alert is for.
+  const ownerNotTold = !ownerEmail || ownerStatus === "failed";
+  if (ownerNotTold) {
     const opsTo = (Deno.env.get("PLATFORM_OWNER_EMAIL") || "").trim();
     console.error(
-      `commerce_notify: UNREACHABLE OWNER — business ${String(business?.slug || order.business_id)} sold ${total} ` +
-      `and cannot be told. businesses.email empty and no auth email for owner_id ${String(business?.owner_id || "(none)")}. Order ${orderId}.`,
+      `commerce_notify: OWNER NOT TOLD — business ${String(business?.slug || order.business_id)} sold ${total}. ` +
+      (ownerEmail
+        ? `Address ${ownerEmail} (${ownerEmailSource || "unknown"}) but the send FAILED.`
+        : `No reachable address: businesses.email empty and no auth email for owner_id ${String(business?.owner_id || "(none)")}.`) +
+      ` Order ${orderId}.`,
     );
     if (opsTo) {
       await sendEmail(
         admin,
         { ...ledgerBase, role: "operator" },
         opsTo,
-        `Hubly: ${bizName} made a sale and cannot be told`,
+        ownerEmail
+          ? `Hubly: ${bizName} made a sale and we could not tell them`
+          : `Hubly: ${bizName} made a sale and cannot be told`,
         shell({
           accent: "#B91C1C",
           headline: "A sale nobody can be told about",
           subhead: bizName,
           bodyHtml:
             `<p style="margin:0 0 12px;color:#3f3f46;font-size:14px;"><strong>${esc(bizName)}</strong> ` +
-            `(${esc(String(business?.slug || ""))}) took ${total} from ${esc(buyer)} and has no reachable owner address.</p>` +
-            `<p style="margin:0;color:#3f3f46;font-size:14px;">businesses.email is empty and owner_id ` +
-            `${esc(String(business?.owner_id || "(none)"))} has no auth email. The buyer has been confirmed; the business has not been told.</p>` +
+            `(${esc(String(business?.slug || ""))}) took ${total} from ${esc(buyer)} and the owner has not been told.</p>` +
+            `<p style="margin:0;color:#3f3f46;font-size:14px;">` +
+            (ownerEmail
+              ? `We had an address (${esc(ownerEmail)}, from ${esc(ownerEmailSource || "unknown")}) and the send FAILED. ` +
+                `The order is paid and recorded; only the notification did not go out.`
+              : `businesses.email is empty and owner_id ${esc(String(business?.owner_id || "(none)"))} has no auth email.`) +
+            `</p>` +
             `<p style="margin:12px 0 0;color:#a1a1aa;font-size:12px;">Order ${esc(orderId)}</p>`,
         }),
       );

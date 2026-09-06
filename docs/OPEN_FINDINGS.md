@@ -2736,6 +2736,105 @@ announced; do not make a settings panel the only place the truth lives.
 
 ---
 
+## #45 — A PAYMENT CAN SUCCEED WHILE OUR RECORD OF IT DOES NOT, AND EVERY SYSTEM INVOLVED REPORTS SUCCESS
+
+**Found 2026-09-06, ~02:45. The most serious defect in this project. Filed above #41 because
+#41 is a line of code and this is the reason nobody would ever notice it.**
+
+Stripe took **$18.99**. It delivered `evt_1UCbhQEEmwNmC4XDS4WUaH59` (payment intent
+`pi_3UCbhOEEmwNmC4XD0oic1eZ4`). Our endpoint answered **`200 OK`**, body **`{"received": true}`**.
+Order **`STO-75904418`** is still **`pending`**. No stock movement, no emails, no ledger row.
+
+Stripe now considers that event successfully handled. **It will never retry it.** The money is
+taken, the record does not exist, and every system in the chain believes it went fine.
+
+**And the response is byte-identical when it works.** The 00:07 purchase — which completed
+perfectly — also returned `200 OK {"received": true}`. There is no signal anywhere, in any
+system, that distinguishes a processed order from a swallowed one.
+
+> A `200` is a CLAIM that we handled the event. We were making it without checking.
+
+That is the same disease as everything else this week — a failure rendered as success — except
+here **the customer has already paid.**
+
+### The paths that return 200 without finalising — named
+
+`stripe-webhook/index.ts`, three of them:
+
+| line | path | why it 200s |
+| --- | --- | --- |
+| `:152–155` | `checkout.session.completed` | finalises **only** when `payment_status` is `"paid"` or `"no_payment_required"`. Any other value skips the entire branch and falls through to the shared 200. |
+| `:216–219` | `payment_intent.succeeded` | called `await finalizePaidCommerceOrder(...)` and **discarded the return value** — `{ok:false}` for `order_not_found`, `order_id_required` or any update error was thrown away. |
+| `:220–222` | `payment_intent.succeeded` | its `catch` logged and **fell through** to the shared 200. A thrown exception, including a failed dynamic `import()`, was reported to Stripe as success. |
+
+**The two branches disagreed, and the one that did not check is the one that ran.** The session
+branch has always returned 500 on both a failed and a thrown finalise (`:163`, `:171`). The
+payment-intent branch — the **backup** path, which exists precisely for when the session path was
+skipped — checked neither.
+
+### Which one fired, and what is inference rather than proof
+
+**Proven:** `commerceOrderId` cannot have been empty. `create-store-checkout:156` sets
+`hubly_commerce_order_id: order.id` unconditionally, and `stripe.ts:286` mirrors every metadata
+key onto `payment_intent_data[metadata]`. Both objects carried it.
+
+**Therefore proven:** `checkout.session.completed` returning 200 means the gate at `:154` was
+false — i.e. **`payment_status` was not `"paid"`** when that event fired.
+
+**Inference, falsifiable in one glance at the event:** the checkout page we generate offers
+**Cash App Pay** and **Afterpay** beside Card, and both are *asynchronous* — they fire
+`checkout.session.completed` with `payment_status: "unpaid"`, then settle later. A plain card
+payment is *inconsistent* with what we observed; an async method fits it exactly. **Check the
+failing session's `payment_status` and `payment_method_types` to confirm or kill this.**
+
+**Structural gap found while tracing:** `checkout.session.async_payment_succeeded` is **not
+handled anywhere in the codebase** (`grep async_payment` → nothing) and is not among the six
+subscribed events. For an async payment method the session path therefore never gets a second
+chance, leaving `payment_intent.succeeded` as the *only* route to finalisation — the one route
+that could not report its own failure. That is the whole accident in one sentence.
+
+### FIXED 2026-09-06 — the class, not the instance
+
+The handler must not tell Stripe "handled" when it was not. The two cases are now separated,
+exactly as they should have been:
+
+- **Finalise failed** → **non-2xx**. Both branches now return `webhookFailed(...)`, a single
+  shared helper, on `!fin.ok` **and** on a thrown finalise. Stripe retries, and a stuck `pending`
+  order self-heals — which is what its retry machinery is for and what we were denying ourselves.
+- **Finalise succeeded, notification failed** → **200 plus a loud operator alert**. A
+  notification failure must never un-pay an order (`commerce_checkout.ts:228`), so the 200 is
+  correct there. But it was silent: `commerce_notify` raised an operator alert only when there
+  was **no reachable address**, never when there **was** an address and the send **failed**. That
+  left a `failed` ledger row nobody reads. Now both raise the alert, and the message says which
+  of the two happened.
+
+**Not fixed, deliberately:** `checkout.session.async_payment_succeeded` is still unhandled. With
+the fix above, an async payment now finalises via `payment_intent.succeeded` *and* reports
+failure honestly, so the hole is closed for the money — but subscribing to that event is a
+Stripe-dashboard change plus a new branch, and it is a decision, not a repair.
+
+### PROPOSED, NOT BUILT — the thing that would have caught this without a human reading a dashboard
+
+There is **no reconciliation anywhere**: nothing notices an order sitting `pending` behind a
+successful charge. Bucket would take money, ship nothing, and find out when a customer complained.
+
+**Cheapest thing that closes it,** in order of cost:
+
+1. **A scheduled sweep (recommended).** Once every 15 minutes, select `commerce_orders` where
+   `status = 'pending'` **and** `stripe_checkout_session_id is not null` **and**
+   `created_at < now() - interval '20 minutes'`. For each, ask Stripe whether that session was
+   paid; if it was, call `finalizePaidCommerceOrder` — which is now safe to run late because
+   `didFlip` makes every side effect run once — and raise an operator alert naming the order.
+   Reuses `retrieveCheckoutSession`, which already exists in `_shared/stripe.ts:299`. One cron,
+   one query, no new tables. **This also self-heals every order stranded by the bug above.**
+2. **A daily count** as the floor, if even that is too much: number of `pending` orders older
+   than an hour with a session id, emailed to the operator. Detects without repairing.
+
+The sweep is the right one: **it repairs rather than reports**, and the repair path already
+exists and is now idempotent.
+
+---
+
 ## #41 — One sale, one unit, TWO removed from stock
 
 **Found 2026-09-06 by the first real purchase. Measured, not inferred. This corrupts inventory
@@ -2788,7 +2887,15 @@ notification alone.
 `createJobFromBookingRequest` is built idempotent on `jobs.booking_request_id`. The booking and
 marketplace-booking paths are clean. Exactly one must-run-once operation was unguarded.
 
-**FIXED 2026-09-06:** the deduction moved inside `if (didFlip)`.
+**FIXED 2026-09-06:** the deduction moved inside `if (didFlip)`. **Not yet proven by a
+two-delivery test** — the verification purchase was the one swallowed by #45, so the guard is
+correct by construction and unverified in practice. It gets proven when the resent event
+finalises.
+
+**And the sweep is why the fix is trustworthy.** It turned up #44, which the one-line fix would
+have left live. The instinct that patches the line it was shown without asking what else runs
+per-delivery is the same instinct that shipped this bug in the first place; the only difference
+between the two passes is that the second one enumerated before editing.
 
 **Also corrected:** the comment at `stripe-webhook:210` claimed the `payment_intent.succeeded`
 path was *"idempotent (finalize no-ops if the order is already paid)"*. That is true only when
