@@ -470,6 +470,44 @@ Stripe Connect account was **deliberately left in place** — Adrian did that ve
 and deleting it would cost him the work.
 
 
+### 2026-09-06 — the store has now taken payment end to end TWICE
+
+The second purchase completed the same night, and it is the more informative one because it ran
+against the fixed code.
+
+**Purchase 2:** `[TEST] Double-Delivery Check`, **$18.99**, one unit, Evergreen Yard Care
+(`account_kind = test`). Order **`STO-75904418`**, `paid_at 2026-09-06T08:45:17.884Z`, payment
+intent `pi_3UCbhOEEmwNmC4XD0oic1eZ4`.
+
+| what had to be true | measured |
+| --- | --- |
+| order paid | `status: paid`, payment intent stored |
+| **stock deducted exactly once** | one inventory log, **5 → 4**, delta −1 — after the purchase **and** a dashboard resend of the event |
+| buyer told | Hubly confirmation to the buyer address |
+| owner told | *"You sold $18.99"* to the business |
+| CRM linked | one customer row, not two |
+
+Purchase 1 (`STO-74536512`, $24.99, 00:07) is what proved the chain existed at all. Purchase 2
+proves it survives the thing that broke it: **one sale removes one unit**, where the first
+purchase removed two.
+
+**WHAT THIS PROVES — unchanged from purchase 1, and worth repeating rather than quietly widening:**
+**test mode**, on a **test-mode Connect account**, created under an **Accounts v1 compatibility
+flag** re-enabled that day, **with us as the buyer**. It does not prove live mode, it does not
+prove Bucket can onboard, and no market customer has bought anything.
+
+**One correction belongs in the business record, not just the engineering one.** Between the two
+purchases I reported that a payment had been taken with no order recorded, and escalated it. That
+was false: I had read the database 61 seconds before the order was paid. Nobody was ever charged
+without a record. The engineering finding it produced (`OPEN_FINDINGS` #45) survives only as a
+latent code defect found by inspection — it must never be repeated as an incident, because if it
+reaches a customer conversation it is a claim that Hubly loses payments, and that has not happened.
+
+**Cleaned up completely**, verified by re-counting at `09:51:31Z`: all **eighteen** `commerce_*`
+tables at **0**, no test CRM rows, the public store showing no products. The Stripe Connect account
+is deliberately left in place.
+
+
 ## WHAT HAS NEVER HAPPENED YET
 
 *The honest zeros. These say what Hubly is and is not today, and every one should be easy

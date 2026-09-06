@@ -607,6 +607,37 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
   what makes a broken step invisible. **Check `error` before you use `data`** — and when the
   read failed, say the read failed. Never let a denial and an absence render the same.
 
+- **A report that state is WRONG is not a finding until it carries two timestamps: when the state
+  was read, and when the event it is judged against happened.** Checkable, and it takes ten
+  seconds. If you cannot state both, you have not found a defect — you have found a moment you
+  happened to look. *"It is not there yet"* is not *"it will never be there."*
+  This is the **third time in two days** something was read too early, and it is the most
+  expensive recurring mistake here:
+  (1) a generated page queried before the async build finished, which nearly reverted a working
+  `jsonMode` change; (2) a corpus render read while the file under test was being edited, which
+  reported Graef losing his five reasons; (3) 2026-09-06, the worst — `commerce_orders` polled
+  four times, last at **08:44:16.860Z**, and reported as a stuck payment. The order was paid at
+  **08:45:17.884Z**. Sixty-one seconds. That stale read became OPEN_FINDINGS #45, "a payment can
+  succeed while our record of it does not", and an escalation to Adrian, before the timestamps
+  were compared. **The disproof was on screen the whole time** — a Stripe screenshot showing the
+  payment succeeding at 2:45 AM local beside a database read from 08:44:16Z — and neither of us
+  put the two clocks side by side.
+  So: before reporting that something did not happen, write down the read time and the event
+  time, in the same timezone, and subtract. Poll with a deadline and say what it is
+  ("still pending 3 minutes after payment"), never a bare snapshot of the instant you looked.
+- **Sound reasoning from a false premise produces a confident, SPECIFIC, wrong answer — and that
+  is more convincing than a vague one, which is why it survives scrutiny.** From the false premise
+  above ("`checkout.session.completed` returned 200 and finalised nothing") followed a genuinely
+  good chain: metadata is set unconditionally, so the order id cannot be missing; therefore the
+  `payment_status` gate must have failed; our checkout offers Cash App Pay and Afterpay; both are
+  asynchronous and fire `completed` with `payment_status: "unpaid"`; `async_payment_succeeded` is
+  handled nowhere. Every link was true. The conclusion was fiction, and it was *more* persuasive
+  than "something went wrong" because it named lines, quoted event types and proposed a test.
+  The tell is not the reasoning — the reasoning was fine. The tell is that **nobody re-checked the
+  premise once the chain got interesting.** When an explanation starts feeling elegant, go back
+  and re-measure the observation it rests on, because elegance is evidence about the argument and
+  no evidence at all about the world.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped
