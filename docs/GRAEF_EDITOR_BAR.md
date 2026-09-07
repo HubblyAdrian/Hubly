@@ -21,10 +21,23 @@ Two things block it, and neither is a judgement call I should make silently:
 **To unblock:** `export SUPABASE_SERVICE_ROLE_KEY` (via `read -rs`), then
 
 ```
-node scripts/seed-graef-clone.mjs --owner <adrian-uid>            # dry run, prints the checklist
-node scripts/seed-graef-clone.mjs --owner <adrian-uid> --apply    # one INSERT
-node scripts/check-graefs-page.mjs --slug graef-clone-2026-09-07 --update   # baseline BEFORE any editing
+node scripts/seed-graef-clone.mjs --owner d69837c1-bde6-4f90-89ad-56684520717f
+node scripts/seed-graef-clone.mjs --owner d69837c1-bde6-4f90-89ad-56684520717f --apply
+node scripts/check-graefs-page.mjs --slug graef-clone-2026-09-07 --update
 ```
+
+`d69837c1-bde6-4f90-89ad-56684520717f` is Adrian's auth uid (`adriansmithee@gmail.com`, created
+2026-07-17), looked up over the linked admin connection and corroborated: it is the `owner_id` on
+1 existing business. `graefs-autocare` is owned by someone else, `account_kind: market` — the
+clone will not collide with him, and the slug `graef-clone-2026-09-07` is free.
+
+**The baseline write path was checked before that third command was handed over.** It is
+**per-slug** — `BASELINE = baselines/<SLUG>.json` (`check-graefs-page.mjs:54`), and `--update`
+writes only that path — so the clone's fingerprint lands in `baselines/graef-clone-2026-09-07.json`
+and the real `graefs-autocare.json` is untouched. **That was not the whole story, though:** the
+DEFAULT slug is `graefs-autocare`, so a bare `--update`, or `--update --slug` with the value
+dropped, silently fell back to overwriting his baseline. Both now fail closed (exit 1, verified by
+exit code rather than the printed word), and overwriting his baseline requires `--i-mean-graef`.
 
 Then I drive the editor in that tab and produce the real list.
 

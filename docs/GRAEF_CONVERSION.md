@@ -44,9 +44,16 @@ SERVICES: none on record. Do not invent a service list.
 REVIEWS: none on record. Do not write testimonials, star ratings, review counts…
 ```
 
-> **Converting him today produces a page with no services, no reviews, no why-cards, no FAQ, no
-> memberships and no social links — because the generator is correctly forbidden from inventing
-> what the record does not hold, and his record does not hold it. His content is in `meta`.**
+> # THE NEAR-MISS OF THE DAY, in one sentence
+>
+> **Converting him produces a page with NO services and NO reviews, because the generator reads
+> the TABLES and both are empty for him — and `documentHasOwnerEdits` can't protect him because
+> no document means no edit history.**
+>
+> Everything he hand-built on top of that — why-cards, FAQ, memberships, social links, trust
+> pills, named albums — is not even modelled, so it goes too. The generator is correctly
+> forbidden from inventing what the record does not hold; his content is in `meta`, and the
+> record block does not read `meta`.
 
 The safety property at `:426` (`documentHasOwnerEdits` — refuse to regenerate over
 `created_by='patch'`) does **not** protect him: he has no document, so there is no owner-edit

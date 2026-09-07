@@ -51,6 +51,36 @@ const BASE_DIR = path.join(ROOT, 'scripts', 'baselines');
 const argv = process.argv.slice(2);
 const UPDATE = argv.includes('--update');
 const SLUG = (argv[argv.indexOf('--slug') + 1] && argv.includes('--slug')) ? argv[argv.indexOf('--slug') + 1] : 'graefs-autocare';
+
+/* ── THE BASELINE IS PER-SLUG, AND THAT IS NOT ENOUGH ──────────────────────────
+   `BASELINE` is `baselines/<SLUG>.json`, so --slug X --update only ever writes
+   X's file. The real Graef baseline is safe from a correctly-typed command.
+
+   But the DEFAULT slug is graefs-autocare, and there are two ways to reach it by
+   accident, both of which silently overwrite the only record we have of what his
+   page is supposed to look like:
+
+     node scripts/check-graefs-page.mjs --update            # no --slug at all
+     node scripts/check-graefs-page.mjs --update --slug     # value dropped/truncated
+                                                            #  -> argv[i+1] is undefined
+                                                            #  -> falls back to graefs-autocare
+
+   The second is the dangerous one: a command that LOOKS scoped to a clone, cut
+   short, quietly retargets the real business. --update is already recorded as a
+   trap (running it mid-rebuild records the damage as the new truth); this is the
+   same trap with our own hand on it, so overwriting HIS baseline now needs to be
+   said out loud rather than defaulted into. */
+if (argv.includes('--slug') && !argv[argv.indexOf('--slug') + 1]) {
+  console.error('FAIL — --slug was given with no value. Refusing to fall back to graefs-autocare.');
+  process.exit(1);
+}
+if (UPDATE && SLUG === 'graefs-autocare' && !argv.includes('--i-mean-graef')) {
+  console.error('FAIL — this would overwrite the REAL graefs-autocare baseline,');
+  console.error('       the only record of what his live page is supposed to look like.');
+  console.error('       For a clone:  --slug <clone-slug> --update');
+  console.error('       If you truly mean Graef, add --i-mean-graef.');
+  process.exit(1);
+}
 const PORT = 8791;
 const BASELINE = path.join(BASE_DIR, `${SLUG}.json`);
 

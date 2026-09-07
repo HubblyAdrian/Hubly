@@ -1099,7 +1099,10 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   wizard, per-vehicle pricing or per-service photos. Worse: the record block is built from the
   TABLES, and his `services` and `review_submissions` are both **0 rows**, so the generator would
   be handed *"SERVICES: none on record. Do not invent a service list"* and *"REVIEWS: none on
-  record"* — producing a page with no services and no reviews. And `documentHasOwnerEdits:426`,
+  record"*. **The near-miss of the day, in the words that make it stick: converting him produces
+  a page with NO services and NO reviews, because the generator reads the TABLES and both are
+  empty for him — and `documentHasOwnerEdits` can't protect him because no document means no edit
+  history.** And `documentHasOwnerEdits:426`,
   the guard that refuses to regenerate over hand-edits, **cannot see him**: he has no document, so
   there is no `created_by='patch'` history to detect. The withdrawn plan is kept, clearly marked,
   at the top of `docs/GRAEF_CONVERSION.md` so it is never picked up as approved.
