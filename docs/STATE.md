@@ -1013,6 +1013,27 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   subject by whether a failure would be VISIBLE on it, and if the smallest case cannot show the
   defect, say so at the time and name the case that will carry the proof.
 
+- **GRAEF IS THE SPECIFICATION for the new structure, not a migration problem to handle
+  afterwards.** He is the one real owner who has put sustained work in, and the richest business
+  in the corpus — so if the new model can hold everything he has, it can hold anything. Design
+  against his content and the migration path falls out of it; **anything in
+  `docs/GRAEF_INVENTORY.md` with no home in the new model is a gap in the MODEL, not a problem
+  with Graef.** Inventoried 2026-09-07 (read-only): 56 columns, a 46KB `meta` holding 52 keys, 8
+  services with per-vehicle-class pricing, 5 why-cards, 3 trust pills, 2 memberships, 2 reviews,
+  6 FAQ, 7 named gallery albums, 35 storage images (zero base64), all 7 days of hours, a 21-key
+  booking wizard in his own words — **and three real customers with phone, email and address
+  sitting in `meta.pipeline.manual`, in a JSON blob beside his font choice.** He has NO
+  `business_documents` row, so his page renders live from the record every time: the rebuild
+  inherits structured data, not frozen HTML.
+- **`scripts/check-graefs-page.mjs` now has a SECOND JOB: it is the acceptance test for the
+  rebuild.** Built 2026-09-04 as a regression guard, its fingerprint (162 text runs, 8 links, 8
+  services, 5 why cards, 2 trust pills, 2 membership cards, 2 reviews, 2 social icons) is exactly
+  the question a rebuild has to answer — same fingerprint after, content survived. Run it BEFORE
+  the rebuild for the baseline and AFTER, with no `--update` in between; `--update` mid-rebuild
+  records the damage as the new truth. And it only sees the RENDERED page: the blank trust pill,
+  the three empty gallery albums, the unfilled `ourStory`, the `custom*` override flags and the
+  three pipeline customers are all invisible to it and must be checked against the inventory.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped

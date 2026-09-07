@@ -11,3 +11,7 @@ backups/
 scripts/*/corpus.json
 scripts/*/audit_input.json
 scripts/*/squeeze_results.json
+
+# Business snapshots — contain real customer PII (names, phones, emails, addresses).
+# Deliberately never committed; see exports/<slug>-<ts>/README.md.
+exports/

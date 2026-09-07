@@ -607,3 +607,23 @@ businesses have used, whose payment rail has carried real money at least once, a
 store checkout, bookings and reviews have not yet been used by a member of the public.** Any
 sentence that implies otherwise is ahead of the evidence — and the storefront prospect above is the first thing that could
 change it, which is exactly why losing their details mattered enough to create this file.
+
+## Graef's AutoCare — the reference business (2026-09-07)
+
+`graefs-autocare`, Bakersfield, detailing, `account_kind = market`, `tier = pro`, owner identified.
+**The one real owner who has put sustained work in** — and therefore the specification the new
+structure is designed against, not a migration to handle afterwards (see `docs/GRAEF_INVENTORY.md`
+for the itemised checklist, and STATE for the framing).
+
+- **Established:** measured — parsed from the live record, read-only, 2026-09-07.
+- **8 services**, $75–$400, with **per-vehicle-class pricing** (coupe/sedan/suv/van) — a shape no
+  single-price model can hold.
+- **2 memberships** he priced himself: Monthly $60, Bi-Weekly $50.
+- **3 real customers** with name, phone, email, address and message history — stored in
+  `meta.pipeline.manual`, not in a table. Snapshot is gitignored for that reason.
+- **35 images**, all live, all in `brand-assets`, zero base64.
+- **Store is switched on with 0 products** (`meta.storeOs.seeded`, `enabled`, `showOnWebsite`) —
+  the #66 gating case, in a real business.
+- **Unknown, and NOT zero:** whether he has bookings, jobs or `services` table rows. The anon
+  credential returns an empty array for both "none" and "RLS denied", so this is unmeasured until
+  the export is re-run with the service role.
