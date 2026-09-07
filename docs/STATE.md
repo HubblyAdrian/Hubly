@@ -875,6 +875,21 @@ Not adopted yet: it needs a re-read-and-merge path in `hubly.html`'s 9 whole-met
 just trades silent loss for a refusal that also drops the owner's typing. **Size that before
 adopting.**
 
+**Bucket's public page ships 522KB per visitor, 95% base64 (#60).** Not in the HTML — in the
+`get_public_business` API payload every visitor blocks on before first paint, on the site being
+compared against Base44. Two writers cause it: `handleProfileHeroImage`/`handleProfileSheetImage`
+(`hubly.html:35628`/`:35654`) store `FileReader` base64 straight into `meta` and **have no Storage
+path at all**, while the repair pass at `:30800` covers logo/banner/ownerPhotoUrl and **not those
+two fields**. `hostBrandImage` already exists and already retries — **the code fix is ~1 hour**,
+and the cleanup is **6 images across 3 businesses**, self-healing on next save if the repair pass
+is extended.
+
+**Move 1 priced both ways (#61): FULL 2–3 days closes the meta race; NARROW 1 day gives Graef and
+Bucket a working services panel and two honest strings.** NARROW leaves the two autosave sites
+able to clobber a service edit — **the same exposure as today in kind, but with more traffic on
+the contested blob**, since service writes move from a quiet table into the blob those autosaves
+contest. Not chosen. If NARROW is picked, the autosave pair needs a dated entry, not a "later".
+
 **THE GATE (adopted): no write site adopts CAS until it can survive a refusal without losing the
 user's input.** Sized — of the 9 whole-meta writers in `hubly.html`: **2 are inserts (exempt), 5
 are explicit-save (cheap — re-read and tell the owner), and 2 are AUTOSAVE-shaped** (`:33503`

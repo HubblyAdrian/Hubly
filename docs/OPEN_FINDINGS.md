@@ -4669,3 +4669,166 @@ taken tonight.**
 
 **Do not fix this by shrinking the images.** The fix is to put them in Storage and keep a URL in
 `meta`, which is what the rest of the product already does.
+
+---
+
+## #60 — Every visitor to Bucket's page downloads 522KB, 95% of it base64. Two writers skip Storage.
+
+**Measured 2026-09-06 against the live site. This is the read side of #59, and it is the most
+visible item on the list.**
+
+### 1. What a visitor actually downloads
+
+| measure | value |
+| --- | --- |
+| initial HTML document | 2,965,661 bytes — **0 data URIs** |
+| **public API response** (`rpc/get_public_business`, the anon door) | **522,117 bytes** |
+| **base64 inside that response** | **496,437 bytes — 95%** |
+| data URIs returned to the visitor | **3** |
+| rendered DOM after load | 4,188,789 bytes, 8 data URIs, 1,114,432 bytes of base64 (27%) |
+
+**The base64 is not in the HTML — it arrives in the API payload**, which every visitor fetches
+before the page can render. So it is not a "big page" in the usual sense; it is **half a megabyte
+of blocking JSON before first paint**, on a business whose customers are on phones in a driveway.
+
+**This is the site being compared against Base44.** Page speed is the most visible axis in that
+comparison and this is a self-inflicted 500KB.
+
+*(Method note: the 1.1MB in the DOM exceeds the 496KB in the API response because the editor
+duplicates URIs into style attributes and preview nodes — one image can appear several times once
+rendered. The API figure is the transfer cost; the DOM figure is the memory cost.)*
+
+### 2. Which writer does it — two, and they are different failures
+
+**`profileHeroImage` and `profileSheetImage` — no Storage path at all.**
+`handleProfileHeroImage` (`hubly.html:35628`) and `handleProfileSheetImage` (`:35654`) do:
+
+```js
+const r = new FileReader();
+r.onload = async e => {
+  const url = compressImageDataUrl ? await compressImageDataUrl(e.target.result, 1400) : e.target.result;
+  S.website.profileHeroImage = url;      // <- base64, straight into meta
+  ...
+};
+r.readAsDataURL(f);
+```
+
+`compressImageDataUrl` shrinks the image but **keeps it a data URI**. These two fields were never
+routed through Storage — this is by construction, not by accident.
+
+**`ownerPhotoUrl` — has a Storage path that did not run.** There is a repair pass
+(`hubly.html:30800–30813`) that converts data URIs to hosted URLs via
+`hostBrandImage(kind, dataUrl)` → `uploadBrandAsset` (3 retries, refuses to store a data URI on
+failure). **It covers `logo`, `banner` and `ownerPhotoUrl` — and NOT the two profile images.** So
+Bucket's `ownerPhotoUrl` holding 60,779 bytes of base64 means that pass either never ran for him
+or failed all three attempts. **Not traced which** — that is a separate question from the two
+writers above.
+
+### 3. Size of the code fix — small, as expected
+
+`hostBrandImage` already exists, already retries, already refuses to store a data URI on failure.
+The fix for the two profile writers is to call it, exactly as `ownerPhotoUrl` does:
+
+```js
+const hosted = await hostBrandImage('profile-hero', url);
+if (isHttpsAssetUrl(hosted)) S.website.profileHeroImage = hosted;
+else /* keep the existing refusal behaviour — do not silently store base64 */
+```
+
+**Estimate: ~1 hour for both writers**, plus adding the two fields to the repair pass at `:30800`
+so existing data URIs self-heal on the next save. The only decision is what to do when the upload
+fails — `hostBrandImage` returns null and the current code for `ownerPhotoUrl` simply leaves the
+data URI in place, which is how Bucket got here. **Refusing the image with a visible message is
+the honest behaviour** and matches prohibition 6.
+
+### 4. Size of the data cleanup — bounded, 3 businesses, 6 images
+
+| business | inlined images | meta |
+| --- | --- | --- |
+| bucket-mobile-detailing | 3 | 515,856 |
+| devdetailing661 | 2 | 178,500 |
+| aquaspeed | 1 | 30,341 |
+
+**Six images total.** With the repair pass extended, they migrate themselves the next time each
+owner saves — no migration script, no backfill. If that is too passive (Bucket may not save for
+weeks, and he is the one being demoed), a one-off script that reads the three metas, uploads six
+images and rewrites the URLs is **~2 hours** and is bounded by construction.
+
+**Estimate: 1 hour code + 2 hours cleanup, and the cleanup is optional if passive healing is
+acceptable.** Do not fix by shrinking or re-encoding — Storage plus a URL, like the rest of the
+product.
+
+---
+
+## #61 — PRICING: FULL vs NARROW for Move 1. Both costed, neither chosen.
+
+**Requested 2026-09-06. This is a schedule decision with Bucket dated, so the exposure is stated
+rather than buried.**
+
+### FULL — all 9 sites CAS-safe, `service_engine` owns service writes
+
+**2–3 days** (from #58: 7 cheap sites ≈ half a day, 2 autosave sites ≈ 1–2 days, plus the RPC and
+the door).
+
+**Delivers:** the `meta` race is closed for every writer. Graef and Bucket see, edit and remove
+their services. Both false strings become true. Nothing in the product can silently clobber
+anything else in `meta`.
+
+### NARROW — service writes only, through the hash-CAS RPC
+
+**Scope:** `service_engine.applyServiceChange` + the RPC + re-point two callers
+(`applyOwnerRecordEdit` at `hubly_capability_registry.ts:4340–4366`, and the manage panel's read
+at `platform-home.html:4293`). The other 8 meta writers are **left exactly as they are** — not
+touched, not newly broken.
+
+**Estimate: 1 day.** The RPC is ~30 lines; the door is ~120; the manage-panel read needs the
+catalog shape mapped to its existing render (~6 lines, per #54 M4); `applyOwnerRecordEdit`'s
+service branch is rewritten to call the door instead of writing the `services` table.
+
+**What it DELIVERS — checked against the actual questions:**
+
+| | NARROW? |
+| --- | --- |
+| Graef can **see** his 8 services in the panel | **yes** — panel reads the catalog |
+| Graef can **edit** one | **yes** — write goes to the catalog, which is what his page renders from |
+| Graef can **REMOVE** one | **yes** — same door, `{op:"remove"}` |
+| Bucket the same | **yes** — identical path |
+| `:4365` "it will appear on the next rebuild" | **becomes true** — for a catalog business the write IS the placement |
+| `:4347` "may still show until the next rebuild" | **becomes true** — becomes "It's off your page." |
+| two service writes racing each other | **closed** — both go through the CAS door |
+
+**What it does NOT deliver, stated plainly:**
+
+An autosave elsewhere in `hubly.html` — `persistPipelineSoon` (`:45783`) or the post-render
+`persist` (`:33503`) — reads `meta`, holds it in memory, and writes the whole blob back. If a
+service edit lands in between, **the autosave overwrites it**, because those two sites are
+untouched by NARROW and still do a blind whole-blob write.
+
+**Is that the same exposure as today, or a new one? THE SAME, and slightly smaller.** Today those
+autosaves can already clobber a service write — the `services` table is a different column so
+service writes are safe from them *today*, but the catalog is not, and the catalog is what
+Graef's page reads. **Under NARROW the exposure is unchanged in kind:** the same two autosave
+sites, doing the same blind whole-blob write, able to clobber the same catalog. NARROW does not
+add a new race; it moves service writes from a column nothing reads into the blob those autosaves
+already contest.
+
+**The one honest asterisk:** NARROW *increases the traffic* on the contested blob, because
+service edits now go there instead of to a quiet table. Same race, more entrants. The window is
+small (the autosaves fire on a debounce, service edits are deliberate owner actions), but the
+probability is not zero and it is higher than today's.
+
+**And the CAS door will REFUSE rather than lose** — a service write that collides with an autosave
+gets a conflict and can re-read and retry, which is strictly better than today's silent loss. The
+autosave, being blind, still wins the other direction.
+
+### The trade, stated so it is chosen and not slipped in
+
+**NARROW is strictly better than today for the thing Bucket is dated on** — Graef and Bucket get
+a working services panel and two honest strings, in a day — **and it leaves one known race open
+that already exists**, with a somewhat higher chance of firing.
+
+**FULL closes it and costs 2–3 days.**
+
+The failure mode of choosing NARROW and then not returning is that it becomes permanent, and the
+exposure above stops being a decision and becomes a fact nobody remembers deciding. **If NARROW is
+chosen, the two autosave sites should get a dated entry here, not a "later".**
