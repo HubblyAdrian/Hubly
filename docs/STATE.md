@@ -884,6 +884,20 @@ two fields**. `hostBrandImage` already exists and already retries — **the code
 and the cleanup is **6 images across 3 businesses**, self-healing on next save if the repair pass
 is extended.
 
+**DECIDED 2026-09-06 — NARROW.** Certain before unmeasurable: the service failure reproduces every
+time for both Graef and Bucket; the meta race is real but has never been counted and *cannot* be,
+because a lost update leaves no trace. Unmeasurable is not rare, and that is not being pretended.
+
+> ### 📌 DATED EXPOSURE — accepted 2026-09-06, owed
+> **NARROW leaves `hubly.html:33503` (post-render `persist`) and `hubly.html:45783`
+> (`persistPipelineSoon`) doing blind whole-blob `meta` writes that can overwrite a service edit.**
+> Same exposure as today in kind, with **more traffic on the contested blob**, because service
+> writes move from a quiet table into the blob those two contest.
+> **Accepted: 2026-09-06. Owed: the CAS gate applied to both sites (#58), which is the 1–2 day
+> half of FULL.** This is a decision that was made, not a thing that was forgotten — if it is
+> still open when the meta race is next discussed, it was chosen on this date with the exposure
+> written down.
+
 **Move 1 priced both ways (#61): FULL 2–3 days closes the meta race; NARROW 1 day gives Graef and
 Bucket a working services panel and two honest strings.** NARROW leaves the two autosave sites
 able to clobber a service edit — **the same exposure as today in kind, but with more traffic on

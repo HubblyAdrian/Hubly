@@ -30811,6 +30811,19 @@ async function persistHostedBrandFields(){
     const hosted=await hostBrandImage('owner',S.website.ownerPhotoUrl);
     if(isHttpsAssetUrl(hosted)){S.website.ownerPhotoUrl=hosted;changed=true;}
   }
+  // ADDED 2026-09-06. This pass covered logo, banner and ownerPhotoUrl and NOT these two,
+  // which is why they were the fields that accumulated base64: bucket-mobile-detailing's
+  // profileSheetImage alone is 420,855 bytes inside `meta`, shipped to every visitor in the
+  // public API payload. The writers now host on upload (above); this heals what is already
+  // stored, on the owner's next save. 6 images across 3 businesses (OPEN_FINDINGS #60).
+  if(S.website?.profileHeroImage&&String(S.website.profileHeroImage).startsWith('data:')){
+    const hosted=await hostBrandImage('profile-hero',S.website.profileHeroImage);
+    if(isHttpsAssetUrl(hosted)){S.website.profileHeroImage=hosted;changed=true;}
+  }
+  if(S.website?.profileSheetImage&&String(S.website.profileSheetImage).startsWith('data:')){
+    const hosted=await hostBrandImage('profile-sheet',S.website.profileSheetImage);
+    if(isHttpsAssetUrl(hosted)){S.website.profileSheetImage=hosted;changed=true;}
+  }
   if(!changed)return;
   try{
     syncBookingBrandFromSiteMedia();
@@ -35630,9 +35643,26 @@ function handleProfileHeroImage(input){
   const r=new FileReader();
   r.onload=async e=>{
     try{
-      const url=typeof compressImageDataUrl==='function'?await compressImageDataUrl(e.target.result,1400):e.target.result;
+      const dataUrl=typeof compressImageDataUrl==='function'?await compressImageDataUrl(e.target.result,1400):e.target.result;
+      // HOST IT. Never store the data URI.
+      //
+      // This used to assign the compressed base64 straight into S.website, and that is
+      // how bucket-mobile-detailing ended up with 420KB of base64 in `meta` and a 522KB
+      // public API payload -- 95% of it image -- blocking first paint on the site we are
+      // compared against. logo/banner/ownerPhotoUrl have gone through Storage for ages;
+      // these two fields were simply never wired to it (OPEN_FINDINGS #59, #60).
+      const hosted=await hostBrandImage('profile-hero',dataUrl);
+      if(!isHttpsAssetUrl(hosted)){
+        // FAIL LOUDLY. The old behaviour was to keep the data URI when the upload failed --
+        // when it could not do the right thing it quietly did the wrong thing and told
+        // nobody. A missing image the owner knows about beats a half-megabyte one nobody
+        // knows about.
+        toast('Couldn\u2019t save that picture \u2014 check your connection and try again.');
+        input.value='';
+        return;
+      }
       ensureWebsiteCopy();
-      S.website.profileHeroImage=url;
+      S.website.profileHeroImage=hosted;
       S.website.profileHeroMode='image';
       closeWsPePop();
       renderWebsitePreview();
@@ -35656,9 +35686,26 @@ function handleProfileSheetImage(input){
   const r=new FileReader();
   r.onload=async e=>{
     try{
-      const url=typeof compressImageDataUrl==='function'?await compressImageDataUrl(e.target.result,1400):e.target.result;
+      const dataUrl=typeof compressImageDataUrl==='function'?await compressImageDataUrl(e.target.result,1400):e.target.result;
+      // HOST IT. Never store the data URI.
+      //
+      // This used to assign the compressed base64 straight into S.website, and that is
+      // how bucket-mobile-detailing ended up with 420KB of base64 in `meta` and a 522KB
+      // public API payload -- 95% of it image -- blocking first paint on the site we are
+      // compared against. logo/banner/ownerPhotoUrl have gone through Storage for ages;
+      // these two fields were simply never wired to it (OPEN_FINDINGS #59, #60).
+      const hosted=await hostBrandImage('profile-sheet',dataUrl);
+      if(!isHttpsAssetUrl(hosted)){
+        // FAIL LOUDLY. The old behaviour was to keep the data URI when the upload failed --
+        // when it could not do the right thing it quietly did the wrong thing and told
+        // nobody. A missing image the owner knows about beats a half-megabyte one nobody
+        // knows about.
+        toast('Couldn\u2019t save that picture \u2014 check your connection and try again.');
+        input.value='';
+        return;
+      }
       ensureWebsiteCopy();
-      S.website.profileSheetImage=url;
+      S.website.profileSheetImage=hosted;
       S.website.profileSheetMode='image';
       closeWsPePop();
       renderWebsitePreview();

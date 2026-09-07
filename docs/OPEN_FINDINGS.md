@@ -4832,3 +4832,36 @@ that already exists**, with a somewhat higher chance of firing.
 The failure mode of choosing NARROW and then not returning is that it becomes permanent, and the
 exposure above stops being a decision and becomes a fact nobody remembers deciding. **If NARROW is
 chosen, the two autosave sites should get a dated entry here, not a "later".**
+
+---
+
+## #62 — The public page is ~3.5MB before it is useful. Filed, not investigated.
+
+**Measured 2026-09-06 while answering #60. Not tonight.**
+
+`bucket-mobile-detailing.myhubly.app`:
+
+| | bytes |
+| --- | --- |
+| initial HTML document | **2,965,661** — and **zero** data URIs in it |
+| public API payload (`get_public_business`) | 522,117 |
+| **total before the page is useful** | **~3.5 MB** |
+
+The 522KB is #60 and is being fixed. **The 2.9MB is a separate finding: that is `hubly.html`
+itself** — a single-file SPA serving every surface (owner editor, booking wizard, storefront,
+marketplace, studio) to a visitor who wants to look at a detailer's prices.
+
+**Why this is its own item rather than part of #60:** fixing the images takes the payload from
+522KB to ~25KB, which is a 95% cut of the *smaller* number. The document is 85% of the total and
+is unaffected. A visitor on a phone still downloads ~3MB of application code to read eight service
+names.
+
+**Not investigated** — no measurement of what fraction is reachable on a public page, whether the
+editor could be split out, or what the compressed transfer size actually is (the figure above is
+uncompressed; gzip/brotli will cut it substantially and that number should be measured before
+anyone panics or plans). **The honest next step is to measure the compressed wire size first**,
+because a 2.9MB uncompressed file may be ~400KB on the wire, which changes the priority
+completely.
+
+This is the site being compared against Base44, so it belongs on the list — but it belongs there
+with a real number, not this one.
