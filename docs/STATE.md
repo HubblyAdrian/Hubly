@@ -863,6 +863,18 @@ becomes the single WRITER as well as the single reader, with optimistic concurre
 losing one; (2) storage — stay on `text`, migrate `meta` to `jsonb`, or promote the catalog to a
 real table — deliberately not chosen, because Move 1 makes it non-urgent.
 
+**CAS on the whole `meta` text is the right guard and CANNOT be done by URL filter — measured.**
+A PostgREST `.eq()` value travels in the query string and dies between **24,000 and 26,000
+characters** (as a bare `Bad Request`, not a clean 414). **5 of 178 businesses exceed that, and 4
+are market**: bucket-mobile-detailing **515,856**, devdetailing661 178,500, graefs-autocare
+46,254, aquaspeed 30,341. It fails exactly where #54 lives. **The variant that works is hash-CAS
+in an RPC** — guard on `md5(coalesce(meta,''))`, a 32-char value in a POST body — which keeps the
+whole-blob semantics (all 11 writers seen) with no column, no `jsonb` migration and no valid-JSON
+precondition. **With that, Move 1 closes #54 rather than narrowing it, and Move 2 is optional.**
+Not adopted yet: it needs a re-read-and-merge path in `hubly.html`'s 9 whole-meta writers, or CAS
+just trades silent loss for a refusal that also drops the owner's typing. **Size that before
+adopting.**
+
 **Two things found while designing that change the shape of the work:**
 - **The only server-side catalog writer cannot succeed.** `businesses` has **no `updated_at`
   column** (57 columns, `created_at` only), and `marketplace/index.ts:1543` — the live

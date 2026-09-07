@@ -4379,6 +4379,110 @@ and becomes "this business does not use documents", which is a fact, not an erro
 
 ---
 
+## CAS ON THE WHOLE META TEXT — TESTED, AND IT BREAKS. The hash variant survives.
+
+**Adrian's proposal:** `.update({meta:next}).eq("id",id).eq("meta",priorText)` — guard on the
+entire prior blob so all 11 writers are seen, not just the ones touching `service_catalog`.
+**The idea is right and the mechanism does not work.** Measured, not reasoned:
+
+### 1. Does PostgREST filter on a ~46KB text equality? NO.
+
+A `.eq()` filter travels in the **query string**, so the value hits the request-line limit.
+Probed read-only against `businesses` with values of increasing length:
+
+| filter value | result |
+| --- | --- |
+| 500 – 24,000 chars | **OK** |
+| 26,000 chars | **Bad Request** |
+| 32,000 / 46,254 chars | **Bad Request** |
+
+**The ceiling is between 24,000 and 26,000 characters.** And it is not a clean `414 URI Too
+Long` — it comes back as a bare `Bad Request` with no message, which is its own problem: a caller
+could not distinguish "your CAS failed" from "your URL was too long".
+
+### 2. It fails for exactly the businesses this is about
+
+| business | account_kind | `meta` length | CAS-by-URL |
+| --- | --- | --- | --- |
+| **bucket-mobile-detailing** | market | **515,856** | **impossible** |
+| **devdetailing661** | market | **178,500** | **impossible** |
+| **graefs-autocare** | market | **46,254** | **impossible** |
+| **aquaspeed** | market | **30,341** | **impossible** |
+| my-auto-detailing | internal | 9,478 | works |
+| everything else | — | avg **4,795** | works |
+
+**5 of 178 businesses exceed the limit — and 4 of them are market businesses**, including both
+businesses in #54. The proposal fails precisely where it is needed and works everywhere it is not.
+Bucket's `meta` is **half a megabyte**, which is worth noticing on its own.
+
+### 3. The variant that survives: CAS on a HASH, in an RPC
+
+Keep the semantics — guard the whole blob, see all 11 writers — and stop putting the blob in a
+URL:
+
+```sql
+-- create_business_meta_cas(p_business_id uuid, p_expected_hash text, p_next_meta text)
+update public.businesses
+   set meta = p_next_meta
+ where id = p_business_id
+   and md5(coalesce(meta,'')) = p_expected_hash
+returning id;
+-- zero rows -> somebody wrote in between. Re-read, refuse, report. Never retry blindly.
+```
+
+The guard value is **32 characters** against a ~24,000 ceiling — three orders of magnitude of
+headroom — and in an RPC it travels in the **POST body** anyway, where no such limit applies.
+Verified: `md5(meta)` over Bucket's 515,856 chars and Graef's 46,254 both return 32-char digests.
+
+This also matches a pattern already in the codebase — `create_business_document` is an RPC that
+takes its payload in the body for the same reason.
+
+**Cost:** one migration (a `security definer` function, ownership asserted inside it, same shape
+as the existing business RPCs). No column, no `jsonb` conversion, no valid-JSON precondition —
+so it keeps every advantage Adrian's version had over the version-key design.
+
+**Residual risk, stated:** `md5` is a collision-resistant-enough check for accidental concurrent
+writes; it is not a security boundary and is not being used as one. Two *different* metas hashing
+equal is not a threat model here — the adversary would have to be our own writer.
+
+### 4. Writers that need to win unconditionally
+
+Three, and each needs an explicit escape hatch rather than a silent bypass:
+
+- **Generation** (`hubly_brain_website.ts:460/487` writes `service_catalog` during a build). A
+  build legitimately replaces what was there. It should pass the hash it read, and on conflict
+  **fail loudly** — a build racing an owner edit is exactly the case we want to hear about, not
+  paper over.
+- **Migrations and backfills.** Out of band, no CAS, by definition.
+- **A retry after a network timeout.** The first write may have succeeded; CAS then refuses the
+  retry. That is *correct*, but the caller must distinguish **"conflict — someone else wrote"**
+  from **"conflict — I already applied this"**, or it will report a false failure to the owner.
+  The result object needs enough information to tell them apart (compare the current catalog to
+  what was being written).
+
+### 5. Does contention make it worse than the loss it prevents? Probably not — with one caveat
+
+Average `meta` is 4,795 bytes and writes are overwhelmingly one owner at a time; genuine
+concurrency is rare. The real exposure is **`hubly.html`'s 9 whole-meta write sites**, some of
+which are autosave-shaped: if the editor autosaves while the assistant writes, refusals could
+become frequent.
+
+**The caveat is the honest one:** CAS converts *silent loss* into *visible refusal*, which is
+strictly better by our own rules (prohibition 6) — **but only if the caller re-reads and merges.**
+A refusal that surfaces as "couldn't save, try again" and drops the owner's typing has traded one
+data loss for another. **So CAS is not complete without a re-read-and-merge path in the client**,
+and that is real work in `hubly.html`, not a one-liner. It should be sized before adoption rather
+than discovered during it.
+
+### Verdict
+
+**Adopt the semantics, reject the mechanism.** CAS on the whole blob is the right guard and does
+close #54 rather than narrowing it. It must be implemented as **hash-CAS inside an RPC**, because
+the URL form is impossible for 4 of 9 market businesses. With that change, Move 2 becomes
+genuinely optional — as Adrian said it would.
+
+---
+
 ## MOVE 2 — storage. NOT NOW, and the point of Move 1 is that it stops being urgent.
 
 Behind one door the backing store is swappable. Options, with costs, **not chosen**:
