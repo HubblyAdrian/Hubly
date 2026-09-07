@@ -122,3 +122,70 @@ so the owner reads it as their reviews having been read. It is not AI output at 
 
 **Deploy path:** `public/journey-os/journey.js` is client code — it goes live **only** via a git
 push to Vercel. Nothing here is deployed yet.
+
+
+---
+
+# ALL THREE FIXED AND VERIFIED — 2026-09-07
+
+**Order note, stated because it changed:** `public/` ships **only** via a git push to Vercel, so
+the browser could not see these fixes before the push. Verification was split rather than faked:
+**logic** verified pre-push against Graef's real exported record, **integration** verified
+post-push on a clone (`graef-clone3-2026-09-07`, deleted the same session).
+
+## Pre-push, logic (`scripts/lift-editor-fixes.mjs` + `scripts/verify-editor-fixes.mjs`)
+
+The functions under test are lifted **verbatim out of `public/hubly.html` at run time**, so the
+verifier cannot drift from what ships. **13 checks, all passing.** And the old expression was
+lifted out of `HEAD^` and run against the same cases — **it fails both**, returning `""` where
+the owner's words should be and `"OLD TEXT"` when the owner clears the field. **The shipped code
+could neither save a description nor clear one.** The fix is not a no-op.
+
+## Post-push, on the clone
+
+| fix | check | result |
+| --- | --- | --- |
+| **F1** | type `F1PROOF` → panel Save → publish | `_serviceCatalog` carries it (before: stayed `""`) |
+| **F1** | → the **record** | `description: "F1PROOF"` |
+| **F1** | → **full page reload** | field rehydrates as `F1PROOF` |
+| **F1** | → **CLEAR it** → save → publish | record is `""` — **not resurrected.** The bug a truthiness fix would have introduced is not there |
+| **F2** | `portfolioUrls` after three publishes | **26** (both earlier clones dropped to 16 on their first publish) |
+| **F2** | Interior album pushed to **13** → save | record: `Interior=13` — the old cap would have dropped the 13th |
+| **F2** | → the **public page** | **27 gallery `<img>` elements** (13+12+1+1), **0 broken** |
+| **F3** | live Reviews dashboard, string check | `quality of work (95%)`, `1.8 Hours`, `+42%`, `+0.2` — **all four absent** |
+| **F3** | **looked at the screen** | **FAILED FIRST TIME — see below** |
+
+## F3's deletion left a hole, and only looking found it
+
+With the canned sentence returning `''`, the dashboard rendered **a bordered container with an AI
+avatar, an "AI Reputation Summary" heading and two buttons standing over nothing.** The string
+check had already passed; it said nothing about the hole. Fixed by making the **whole `<section>`**
+conditional, not the paragraph inside it — when there is nothing true to say, the section does not
+exist.
+
+> **"The fabrication is gone" and "the screen still looks right" are two checks, and the first one
+> passing is what makes it tempting to skip the second.**
+
+## The toast: verified at the logic level, NOT in the product
+
+The new ceilings are 200/100 and nobody uploads 101 photos to an album, so the notification path
+cannot be reached by clicking. The harness **can** construct it, and does: exceeding both ceilings
+produces exactly one message naming the counts and the album —
+
+> `Saved — but 3 portfolio photos and 2 photos from "Interior" couldn't be included. Remove a few and save again to keep the rest.`
+
+**What remains unverified is whether `toast()` renders that in the app.** `toast` is an existing,
+widely-used function, but that is a reason to expect it to work, not evidence that it does.
+**Recorded as UNTESTED-IN-PRODUCT**, per the rule: an unclickable control is untested, never
+working — including when the control is my own fix.
+
+## The last gate
+
+```
+node scripts/check-graefs-page.mjs --slug graefs-autocare
+PASS — graefs-autocare: 162 text runs, 8 links, 8 services, 5 why cards,
+       2 trust pills, 2 membership cards, 2 reviews, 2 social icons — all match the baseline.
+```
+
+**The working tree carrying all three fixes renders Graef's real page identically to its
+baseline.** `hubly.html` ships to every owner including him; his page is unchanged.
