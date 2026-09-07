@@ -3849,6 +3849,51 @@ So this is **one site, not a class**. Worth stating plainly because the instinct
 is to assume twenty. (Separately: **60 `as any`** across edge functions — a different and larger
 question, not measured here.)
 
+### WHO SETS `op` — traced, and it lowers the priority
+
+**`op` is set by client form code, as a literal. The model never composes a
+`directRecordEdit`.** Three constructors, all in `public/`:
+
+| site | what it sends |
+| --- | --- |
+| `platform-home.html:4387` | `{ kind:'service', op:'add', name, price, description }` |
+| `platform-home.html:4395` | `{ kind:'service', op:'edit', id: data-id, prevName, name, … }` |
+| `platform-home.html:4400` | `{ kind:'service', op:'remove', id: data-id, name }` |
+| `platform-home.html:4693` | `{ kind:'service', op:'add', … }` (add-from-canvas) |
+
+`hubly-conversation:1546` says so in as many words — *"The MANUAL FORM edit — a signed-in owner
+changing a fact through a form, not the assistant."* The model's service changes go through
+capability actions, a different path entirely. **So this is not "our own AI's output fires it
+during normal use."**
+
+**And `op:'edit'` always ships an `id`.** The id comes from `data-id` at `:4325`, rendered from
+`hcManage.services`, which is a direct read of the `services` table (`:4296`) where `id` is the
+primary key — never null. So the edit-without-id path is **not** reachable from our own UI today.
+
+**What that leaves:** the `else` fires only for a caller that sends a `service` edit with a
+missing or misspelled `op`. Nothing in the product does that. It is a latent trap for the next
+caller — and the endpoint accepts a raw JSON body from any signed-in owner.
+
+### HAS IT FIRED? Measured — and the answer is no, with one caveat worth keeping
+
+**8 duplicate service names exist, and none of them came from this path:**
+
+| business | kind | duplicates | span |
+| --- | --- | --- | --- |
+| `adrians-lawn-service` | test | 4 names × 2 | **8 seconds**, 2026-07-17 |
+| `star-windows` | test | 4 names × 2 | **8 seconds**, 2026-07-18 |
+
+Both are **8-second bursts** in July — a double-write during generation, not an owner editing a
+form. Clustered, not chronic; two sessions, nine months of operation between them and now.
+
+**Market businesses: 12 service rows, ZERO duplicate groups.**
+**`graefs-autocare`: ZERO rows in `services` at all** — his eight services live in the generated
+document, not the table, which is why the live page is unaffected either way.
+
+**So: an honest zero for this defect.** It has never fired. That is a reason to schedule it
+rather than rush it — but it does not make it safe, because the reason it has not fired is that
+every current caller happens to be well-formed, not that anything checks.
+
 ### The fix, when it is done — not tonight
 
 A `default`/exhaustiveness guard at the end of the `kind` dispatch (`kind: never` forces the

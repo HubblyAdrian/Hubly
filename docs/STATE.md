@@ -799,6 +799,33 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
   lands **before Bucket**, not after — and why "add the mode column" and "teach the 13 sites to
   filter" are one piece of work with two steps, never two pieces of work.
 
+- **WHEN THIS CODEBASE DOESN'T UNDERSTAND ITS INPUT, IT CREATES A ROW.** Three subsystems, one
+  reflex, each invisible until someone counted:
+  (1) **`bkNext(3)`** wrote **13 abandoned `booking_requests`** to production because a harness
+  stepped a wizard forward — "do not submit" was not "do not write";
+  (2) **the old customer resolver** inserted when its lookup ERRORED — `.maybeSingle()` on a
+  non-unique column returns `{data:null, error}`, the error was discarded, and "I could not see"
+  became "nobody matched" became a new row, forever, for that email (#44);
+  (3) **`applyOwnerRecordEdit:4357`** — `if (op === "edit" && id) PATCH; else INSERT`. The `else`
+  is every other input, so a service edit with a missing or bogus `op` creates a duplicate
+  instead of failing (#52).
+  The shape is always the same: **an ambiguous input takes the CREATE branch**, silently, and the
+  evidence is a row nobody is looking at. The costs are not symmetric — an unnecessary refusal is
+  one annoyed person, an unnecessary row is data corruption that compounds — so **the default for
+  input we cannot classify is REFUSE, not create.** That is the same asymmetry argument as never
+  discarding a draft, pointed the other way: there, ambiguity must preserve; here, ambiguity must
+  not fabricate. Before writing `else { insert }`, ask what reaches that branch that you have not
+  named.
+- **The typecheck is PARTIALLY usable, not fixed, and must not be described as fixed.** 2026-09-06:
+  129 → 40 distinct errors in customer-facing code (20 removed type-only, 69 parked with the
+  Adobe exclusion, #53). **22 of 53 functions still fail**, so it is still not usable at full
+  width and still catches nothing it is not specifically pointed at. The remaining 40, by file:
+  `hubly_capability_registry.ts` (6 — #52), `mission_control.ts` (8), `page-view/index.ts` (5),
+  `google-calendar-connection/index.ts` (3), `marketplace_match.ts` (3), `hubly-conversation`
+  (3), `hubly_brain_platform.ts` (2), `hubly_brain_builder_expert.ts` (2), `studio-api` (2), and
+  four singletons. Also filed and deliberately unopened: **60 `as any`** across edge functions —
+  a bigger question than one evening.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped
