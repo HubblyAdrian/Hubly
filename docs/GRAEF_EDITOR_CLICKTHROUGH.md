@@ -125,3 +125,67 @@ description, why 5→6. **No unintended visible damage.**
 Note the script's own closing hint reads `re-record with: node scripts/check-graefs-page.mjs
 --update` — **without `--slug`**, which would have overwritten the real Graef baseline. The guard
 added earlier today refuses that. The hint should carry the slug.
+
+
+---
+
+# ROUND 2 — the unexercised controls (clone 2, 2026-09-07, deleted same session)
+
+Second clone seeded from the same export, baselined at **162 text runs / 8 links / 8 services —
+identical to the real Graef fingerprint**, so it is a faithful rehearsal. Deleted; real
+`graefs-autocare` re-read afterwards and confirmed unchanged (26 portfolio URLs, `Mon.close`
+`17:00`, city `Bakersfield`).
+
+**Method note, stated because it matters:** rail buttons were located in the DOM and clicked with
+a real `click()` rather than by screen coordinates — the rail closes after every publish and
+re-lays out, and two coordinate clicks landed on the wrong item. For native `<input type="time">`
+fields, typed keystrokes would not reach the control, so the value was set with the native setter
+plus real `input`/`change` events, then **Save was clicked for real**. The save path — the thing
+under test — was exercised genuinely in every case.
+
+| control | verdict | notes |
+| --- | --- | --- |
+| **Business info → contact** | **WORKS** | city persisted to the `city` column **and** `website.areaQuery`/`areaSub`; visible on the page |
+| **Hours** | **WORKS** | panel opens with all 7 days; `Mon.close` → `18:00` reached the record |
+| **Add-ons** | **OPENS, populated** | all 3 add-ons with prices ($35, $40, …). **No description field exists** — see below |
+| **Gallery** | **WORKS** | full photo grid, "Dump your best photos here", all his images present |
+| **Styles / Logo & brand** | **OPENS** | they navigate to their own editor routes rather than an input panel; not save-tested |
+| **FAQ (render)** | **WORKS** | all 6 questions render and expand |
+| **Trust pills** | **CONFIRMED BROKEN — for everyone** | exactly **6 inputs**: `ws-pe-tv-0/1/2` + `ws-pe-tl-0/1/2`. **3 fixed slots, no add, no remove.** Slot 0 is blank — his empty pill, which renders as an empty card on the live page and cannot be deleted |
+| **`portfolioUrls` truncation** | **REPRODUCED** | 26 → 16 on this clone's **first publish, from the Business-info panel** — nothing to do with services. Confirms the cause is the shared save path (`slimBizPayload`), not any one panel |
+| **"Saved" button label** | **suspect — status not earned** | it read **"Saved"** while an unsaved hours change sat in the preview, then flipped to "Save & publish" *after* the save completed. Observed once; the label appears inverted or one state behind. Prohibition 2 territory |
+
+## The add-on description prediction: the code bug is real, the UI cannot reach it
+
+I predicted `buildServiceCatalogFromEditor`'s `!= null` defect also swallows **add-on**
+descriptions (`pushAddon`, `:14689`). The code is identical and the hydration double-write is
+identical — **but the Add-ons panel has no description field at all** (name, price, enabled only).
+
+**So the defect exists and is currently unexercisable from this panel.** It is not a live bug
+today; it becomes one the moment an add-on description input is added. Recorded as latent, not
+confirmed-in-product.
+
+## Predictions, final score
+
+| prediction | outcome |
+| --- | --- |
+| Website editor services OK (reads the catalog) | **RIGHT** |
+| **Trust pills broken for everyone (3 fixed slots)** | **RIGHT — confirmed by clicking** |
+| Per-vehicle pricing / `includes` / per-service photos not editable | **WRONG ×3** (round 1) |
+| Add-on description swallowed by the same bug | **partly wrong** — code yes, reachable no |
+| Claimed-shell panel + AI `setServices` broken | **STILL UNTESTED** |
+| Add-section impossible on classic | **STILL UNTESTED** |
+
+## Still untested after two rounds — listed, not padded
+
+Book Now · Questions · Stripe · Styles and Logo & brand save paths · FAQ **add** · deposit terms ·
+social-link editing · service-area radius · add-section · the claimed-shell inline panel · AI
+`setServices`. **An unexercised control is not a passing control.** Mobile remains unverifiable
+here.
+
+## Damage check
+
+`check-graefs-page.mjs --slug graef-clone2-2026-09-07` (no `--update`): **2 changes, both mine** —
+Bakersfield → TESTCITY1 in three places, and `8:00 AM – 5:00 PM` → `8:00 AM – 6:00 PM`.
+**No unintended visible damage** — and note again that the `portfolioUrls` 26→16 loss does **not**
+appear here, because the fingerprint reads text.
