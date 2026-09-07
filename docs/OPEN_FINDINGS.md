@@ -5041,6 +5041,107 @@ noted here only so it is not later mistaken for migration damage. (Also visible 
 already known: the run-together hero headline "YOUR CAR CLEANEDAT YOUR PLACE", and the
 placeholder services copy of #18.)
 
+### R4 — THE UNDO IS SAFE, AND R3 VERIFIED THE WRONG IMAGE (2026-09-07)
+
+`--restore aquaspeed` ran: 5.9KB → 29.6KB, script reports the row byte-matches the backup.
+Loaded the public page to answer the half the script cannot.
+
+**Does the logo render?** **Yes.** **Is it now a `data:` URI?** **No — it is still the hosted
+URL, and it always was.** The restored base64 is not what the page draws.
+
+Read the page's own data source (`rpc get_public_business`, called from the page, no cache):
+
+| | value |
+| --- | --- |
+| `meta` bytes | **30,341** — restored |
+| data URIs in `meta` | **1** |
+| `meta.logoUrl` | **DATA-URI, 23,887 chars** — restored, exactly the original |
+| **`businesses.logo_url` (the COLUMN)** | **hosted URL, 170 chars** |
+
+And the renderer, at four sites in `public/hubly.html` (`:14487`, `:17801`, `:17915`, `:40269`):
+
+```js
+logo_url || S.logoUrl
+```
+
+**The column wins. `meta.logoUrl` is only the fallback.** aquaspeed's column has been a hosted URL
+since **2026-08-18**, so the page has never drawn `meta.logoUrl` — before the apply, after the
+apply, or now.
+
+**The URL I verified in R3 was NOT produced by this migration.** It is
+`brand-assets/<owner_id>/logo-migrated-<business_id>.jpg` — the naming of
+`scripts/migrate-data-uri-logos.ts:78` (`${b.owner_id}/logo-migrated-${b.id}.${ext}`, the
+completed 2026-08-18 run). This script emits `${owner_id}/${kind}-${Date.now()}-${rand}.${ext}`
+and **never writes the `logo_url` column at all** — its only write is `.update({ meta })`, at two
+places. So the object I fetched, hashed and photographed predates the run I was verifying.
+
+**The byte-identical sha256 did not disambiguate, and I read it as if it had.** Both migrations
+decoded the *same original image*, so of course the hashes match. The hash proved the hosted
+object is that image; it could not prove *which run* put it there — and I presented it as the
+strongest evidence in the report. Sound check, wrong premise, confident conclusion: the same
+shape as #45, and the tell was available (a naming convention that does not match this script's).
+
+**Worse: the script itself already said so.** Its header comment, lines 16–17 and 29:
+
+```
+ *   aquaspeed                 meta.logoUrl                      23,887   <- STALE DUPLICATE
+ *   devdetailing661           meta.logoUrl                      37,207   <- STALE DUPLICATE
+ * https URL in the `logo_url` COLUMN, so `meta.logoUrl` is a stale duplicate of an image
+```
+
+and it has a `columnFallback` branch that plans these as **REWRITE — "existing column URL (no
+upload)"**. I wrote that, then verified against it as though it said something else.
+
+**So both directions of the aquaspeed round trip were invisible on the page, by design.** Apply
+rewrote a shadowed field to the URL already in the column; restore put the base64 back into the
+same shadowed field. No upload, no orphan, no pixel changed either way.
+
+### Which images are actually SHADOWED — the migration is only 91% observable
+
+Read from `get_public_business` for all three:
+
+| business | column `logo_url` | `meta.logoUrl` | status |
+| --- | --- | --- | --- |
+| aquaspeed | hosted (170) | **DATA-URI 23,887** | **shadowed — never read** |
+| devdetailing661 | hosted (170) | **DATA-URI 37,207** | **shadowed — never read** |
+| bucket-mobile-detailing | hosted (138) | hosted (138) | in sync |
+
+**61,094 of the 693,906 bytes (8.8%) are a shadowed duplicate of an image already hosted** — dead
+weight in the row, invisible on the page. The other **632,812 bytes (91.2%) are live**, and they
+are all profile fields with no column to shadow them:
+
+| business | field | bytes |
+| --- | --- | --- |
+| devdetailing661 | `website.ownerPhotoUrl` | 136,375 |
+| bucket-mobile-detailing | `website.profileSheetImage` | 420,855 |
+| bucket-mobile-detailing | `website.ownerPhotoUrl` | 60,779 |
+| bucket-mobile-detailing | `website.profileHeroImage` | 14,803 |
+
+Confirmed live on the page: `devdetailing661.myhubly.app` currently renders `ownerPhotoUrl` as
+`src="data:image…"` in **4 `<img>` elements** (`.ws-owner-photo`, `.ws-profile-about-photo`), all
+decoded at 384 × 512, straight out of `meta.website.ownerPhotoUrl`. **That is the field whose
+migration is observable** — apply it and the `src` must change from `data:` to a hosted URL while
+the picture stays; restore it and it must change back. aquaspeed could never show that.
+
+### THE LESSON: cheapest-first is a SAFETY ordering, not an EVIDENCE ordering
+
+S3 ordered the staged run smallest-blast-radius-first, and that is right for limiting damage. But
+it selected, as the single sample to verify, **the one business whose only inlined image is a
+field the page does not read** — so the pilot run was guaranteed to produce a green result
+whatever the migration did. A rehearsal that cannot fail is not a rehearsal.
+
+> **When staging a risky change, the first business you apply it to and the first business you
+> VERIFY on are two different choices.** Order the apply by blast radius; choose the verification
+> subject by whether a failure would be *visible* on it. If the smallest case cannot show the
+> defect, it is a safety warm-up, not evidence — say so at the time, and name which case will
+> actually carry the proof.
+
+**What is still true from R3:** the storage object serves 200 / `image/jpeg` / 17,897 bytes and
+renders correctly, and the restore did put back byte-exact bytes. **What is not:** that any of it
+verified this migration.
+
+---
+
 ### The label bug — a status line that overstated its scope
 
 The verification summary read:

@@ -998,6 +998,21 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   **Three of five keys do not do what their name implies.** Make the difference between a LABEL
   and a GATE legible; the honest move may be to stop calling the decorative ones capabilities.
 
+- **Cheapest-first is a SAFETY ordering, not an EVIDENCE ordering — and on 2026-09-07 they
+  disagreed.** The staged image migration applied to the smallest business first (right, for
+  blast radius) and then verified on it — but aquaspeed's only inlined image was `meta.logoUrl`,
+  a field the public page never reads (`logo_url || S.logoUrl`; the column has been a hosted URL
+  since 2026-08-18). Both the apply and the restore were invisible on the page **by design**, so
+  the pilot was guaranteed green whatever the migration did. Worse, the verification I reported
+  rested on a hosted URL produced by a *different* migration three weeks earlier — the
+  byte-identical sha256 could not tell the two runs apart, because both decoded the same original
+  image, and the naming convention (`logo-migrated-<business_id>.jpg`) was the tell I did not
+  read. Sound check, false premise, confident wrong conclusion — the #45 shape again.
+  **So: when staging a risky change, the first subject to APPLY to and the first subject to
+  VERIFY on are two separate choices.** Order the apply by blast radius; choose the verification
+  subject by whether a failure would be VISIBLE on it, and if the smallest case cannot show the
+  defect, say so at the time and name the case that will carry the proof.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped
