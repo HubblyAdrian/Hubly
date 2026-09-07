@@ -47,6 +47,77 @@ including the 3 empty ones, 26 images, 21 wizard keys, 7 days of hours, 4 `custo
 `ourStory` still `""`, and **refuses to write if any is missing.** A clone that doesn't carry his
 content is not a rehearsal.
 
+## THE CLONE IS A PUBLIC PAGE CARRYING A REAL CUSTOMER'S DETAILS — accepted deliberately, with an end time
+
+### `account_kind`
+
+**`test`.** Set explicitly at `seed-graef-clone.mjs:110`, never inherited. Graef's row says
+`market`; inheriting it would put a duplicate business into every user/adoption number measured
+today — the denominator rule — and into anything reading `account_kind` downstream.
+
+**But `test` is not itself a marketplace filter, and that is worth knowing rather than assuming:**
+`marketplace_providers` currently holds **22 `test`**, 9 `market`, 3 `internal` rows. What keeps
+the clone out of the marketplace is not its kind — it is that **the seeder inserts into
+`businesses` and nothing else.** No `marketplace_providers` row, no bookings, no customers, no
+jobs. (Graef has one `marketplace_providers` row; the clone gets none.)
+
+### Would a crawler pick it up? **Yes, if it found the URL. There is no noindex on it.**
+
+| | |
+| --- | --- |
+| `hcNoIndex()` (`hubly.html:17497`) | adds `<meta name="robots" content="noindex, nofollow">` |
+| its only callers | `:17810` and `:17887`, both `if(!data.owner_id)` |
+| the clone | **has `owner_id` set** — it must, or it is not a claimed-state rehearsal |
+| result | **treated as a real claimed site. No noindex.** |
+| `robots.txt` | `User-agent: * / Allow: /` — drafts deliberately not blocked there, "done per-page instead" |
+| `X-Robots-Tag` header | none (checked on a live business subdomain) |
+
+**Discovery is the only thing protecting it, and it is thin but real:** `/sitemap.xml` returns
+**0 `<loc>` entries** (it serves the SPA shell — the same catch-all bug `robots.txt` was fixed
+for, still open for `sitemap.xml`; minor finding, filed here). No public directory lists business
+subdomains. Nothing links to the clone. So it is reachable only by someone who knows the URL, or
+a crawler that learns the hostname another way.
+
+**That is not "safe", it is "unlikely" — so it gets an end time, not a hope.**
+
+### The name is NOT changed, and that was a bug in my first draft
+
+The seeder originally appended `" (CLONE)"` to the business name. **That would have broken the
+comparison the clone exists for** — the fingerprint diffs the page's visible text runs, and the
+name is in several of them. Removed. **Fidelity is the point; a clone that reads differently is
+not a rehearsal.** The consequence is accepted: the public page is an exact copy of a real
+business at a URL he does not control.
+
+### DELETION IS A COMMAND, NOT A MEMORY
+
+Shipped in the same file as creation, and printed loudly at the end of every successful seed:
+
+```
+node scripts/seed-graef-clone.mjs --delete graef-clone-2026-09-07 --apply
+```
+
+It refuses any slug whose `account_kind` is not `test`, so a mistyped slug can never delete a
+real business, and it **re-reads after deleting** to confirm the row is gone rather than trusting
+the status code.
+
+**The commitment: the clone is deleted the moment the click-through is done — the same working
+session, not "later".** If the click-through is interrupted, the clone is deleted anyway and
+re-seeded when work resumes; a half-finished test is not a reason to leave a copy of a customer's
+business live.
+
+### Optional belt-and-braces, if you want it before seeding
+
+One line, at both call sites:
+
+```js
+if (!data.owner_id || data.account_kind === 'test') hcNoIndex();
+```
+
+**It would have to be pushed to Vercel BEFORE the clone is created** — `public/hubly.html` goes
+live only via a git push, so seeding first leaves the page exposed in the gap. My read: given the
+clone is unlinked, absent from the sitemap, and short-lived, the deletion deadline is the load-
+bearing control and this is optional. Say the word and I'll prepare it as its own push.
+
 **PII:** the three real customers in `meta.pipeline.manual` are **redacted** — every key kept,
 values replaced with marked placeholders, and the redaction printed. Their shape is what the test
 needs; their phone numbers are not. Reviewer names become "Reviewer N"; review *quotes* stay,

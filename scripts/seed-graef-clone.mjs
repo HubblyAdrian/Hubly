@@ -44,6 +44,7 @@ import path from 'node:path';
 const argv = process.argv.slice(2);
 const arg = (n, d) => (argv.includes(n) ? argv[argv.indexOf(n) + 1] : d);
 const APPLY = argv.includes('--apply');
+const DELETE = arg('--delete', '');
 const EXPORT = arg('--export', 'exports/graefs-autocare-2026-09-07T18-05-36');
 const OWNER = arg('--owner', '');
 const SLUG = arg('--slug', `graef-clone-${new Date().toISOString().slice(0, 10)}`);
@@ -52,6 +53,39 @@ const URL_ = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
 const SRK = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
 if (!SRK) { console.error('SUPABASE_SERVICE_ROLE_KEY is not set. Export it (read -rs) and re-run.'); process.exit(1); }
 if (!OWNER) { console.error('--owner <uid> is required: an EXISTING auth uid, so the clone opens in a session you are already signed into.'); process.exit(1); }
+/* ── TEARDOWN IS A COMMAND, NOT A MEMORY ──────────────────────────────────────
+   The clone is publicly reachable at <slug>.myhubly.app carrying a real
+   customer's name, phone, email and photos, at a URL he does not control. That
+   is accepted deliberately and for a bounded time — not left live because nobody
+   remembered. So deletion ships in the same file as creation.
+
+   It refuses any slug that is not a `test` row, so a mistyped slug can never
+   delete a real business. */
+if (DELETE) {
+  const q = new URL(`${URL_}/rest/v1/businesses`);
+  q.searchParams.set('select', 'id,slug,name,account_kind,owner_id');
+  q.searchParams.set('slug', `eq.${DELETE}`);
+  const r = await fetch(q, { headers: { apikey: SRK, Authorization: `Bearer ${SRK}` } });
+  const rows = await r.json();
+  if (!Array.isArray(rows) || !rows.length) { console.error(`No business with slug "${DELETE}".`); process.exit(1); }
+  const t = rows[0];
+  console.log(`found: ${t.slug}  "${t.name}"  account_kind=${t.account_kind}`);
+  if (t.account_kind !== 'test') {
+    console.error(`REFUSING — account_kind is "${t.account_kind}", not "test". This script only deletes test rows.`);
+    process.exit(1);
+  }
+  if (!APPLY) { console.log(`(DRY RUN — would DELETE businesses row ${t.id}. Re-run with --apply.)`); process.exit(0); }
+  const d = await fetch(`${URL_}/rest/v1/businesses?id=eq.${t.id}`, { method: 'DELETE', headers: { apikey: SRK, Authorization: `Bearer ${SRK}` } });
+  if (!d.ok) { console.error(`DELETE failed ${d.status}: ${(await d.text()).slice(0, 200)}`); process.exit(1); }
+  // Assert the postcondition rather than trusting the status code.
+  const back = await fetch(q, { headers: { apikey: SRK, Authorization: `Bearer ${SRK}` } });
+  const left = await back.json();
+  if (Array.isArray(left) && left.length) { console.error('DELETE reported success but the row is still there. Investigate.'); process.exit(1); }
+  console.log(`DELETED ${t.slug}. Confirmed gone by re-reading, not by the status code.`);
+  console.log(`https://${t.slug}.myhubly.app is now dead.`);
+  process.exit(0);
+}
+
 const rowPath = path.join(EXPORT, '01-businesses-row.json');
 if (!existsSync(rowPath)) { console.error(`no export at ${rowPath}`); process.exit(1); }
 
@@ -62,9 +96,18 @@ console.log(`━━ source: ${EXPORT}  (${Object.keys(src).length} columns, slug
 const row = { ...src };
 delete row.id; delete row.created_at; delete row.first_visitor_at;
 row.slug = SLUG;
-row.name = `${src.name} (CLONE)`;
+// THE NAME IS NOT CHANGED. An earlier draft of this script appended " (CLONE)",
+// which would have broken the very comparison the clone exists for: the
+// fingerprint in scripts/baselines is a diff of the page's visible TEXT RUNS, and
+// the business name is in several of them. Fidelity is the point — a clone that
+// reads differently is not a rehearsal. The exposure that creates is handled by
+// account_kind, by the noindex question recorded in docs/GRAEF_EDITOR_BAR.md, and
+// above all by DELETING IT (--delete) the moment the click-through is done.
 row.owner_id = OWNER;
-row.account_kind = 'test';           // never 'market' — it is not a business
+// NEVER 'market'. Graef's row says market; inheriting that would put a duplicate
+// business into every user/adoption number we have measured all day (the
+// denominator rule) and into anything that reads account_kind downstream.
+row.account_kind = 'test';
 row.owner_identified = false;
 
 // ── redact the three real customers, keeping the shape ────────────────────────
@@ -137,3 +180,8 @@ const made = JSON.parse(body)[0];
 console.log(`\n━━ CREATED  slug: ${made.slug}   https://${made.slug}.myhubly.app`);
 console.log('   Nothing else was written. graefs-autocare was never read or touched by this run.');
 console.log(`   Baseline the clone before any editor work:  node scripts/check-graefs-page.mjs --slug ${made.slug} --update`);
+console.log('');
+console.log('━━ THIS PAGE IS PUBLIC AND CARRIES A REAL CUSTOMER\'S NAME, PHONE, EMAIL AND PHOTOS.');
+console.log('   It is accepted deliberately, for the duration of the click-through, and no longer.');
+console.log('   DELETE IT THE MOMENT YOU ARE DONE — the command, so it is not a memory:');
+console.log(`     node scripts/seed-graef-clone.mjs --delete ${made.slug} --apply`);
