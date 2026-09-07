@@ -4553,3 +4553,119 @@ In the style of `check-owner-id-invariant`, `check-customer-identity-invariant`,
   the wrong catalog passes every check here.
 - It cannot verify the two strings are true; it can only check they are composed from the result
   object. Truth is still a walk-the-product question.
+
+---
+
+## #58 — THE CAS GATE: sizing the 9 whole-meta write sites in `hubly.html`
+
+**Ruling adopted 2026-09-06:** hash-CAS in a `security definer` RPC, guarded on
+`md5(coalesce(meta,''))`.
+
+> **`md5` is deliberate and must not be "upgraded" without a reason.** We are detecting
+> ACCIDENTAL concurrent writes between our own writers, not defending against a forger. There is
+> no adversary who benefits from colliding a hash here. Swapping it for sha256 costs bytes and
+> buys nothing; if someone changes it, they should be able to name the threat first.
+
+> ### ⛔ THE GATE
+> **NO WRITE SITE ADOPTS CAS UNTIL IT CAN SURVIVE A REFUSAL WITHOUT LOSING THE USER'S INPUT.**
+> A refusal that drops the owner's typing is the same data loss with better manners.
+
+### The nine sites, classified by what a refusal would cost
+
+| # | line | trigger | error handling today | shape | conflict-safe cost |
+| --- | --- | --- | --- | --- | --- |
+| 1 | `13896` | `markM2ExperienceHome()` — a UI flag | `.then(()=>{})` **swallows** | **fire-and-forget** | **trivial** — retry once on conflict; there is no user input to lose |
+| 2 | `18470` | business **creation** (`buildBizMeta()` in the insert) | n/a | **INSERT, not update** | **exempt** — no prior row, no CAS |
+| 3 | `24581` | import-offers apply (`pkg-hub`/`svc-editor`) | `.then(({error})` | **explicit save**, already behind a `confirm()` | **cheap** — the payload is in memory; on conflict re-read and re-show the confirm |
+| 4 | `28814` | onboarding submit | n/a in this path | **INSERT/first save** | **cheap** |
+| 5 | `28957` | hero-headline choice | `await`, error checked | **explicit save**, single field | **cheap** — re-read, re-apply one field |
+| 6 | `33445` | logo-scale button | `.then(({error})` | **fire-and-forget UI setting** | **trivial** — retry once |
+| 7 | `33503` | generic `persist` after a preview render | `.then(({error})` | **AUTOSAVE-SHAPED** ⚠ | **expensive** — see below |
+| 8 | `45783` | `persistPipelineSoon()` — **debounced timer** | `await`, error checked | **AUTOSAVE-SHAPED** ⚠ | **expensive** |
+| 9 | `49811` | `approvePendingReview()` | `await`, error checked | **explicit action** | **cheap** — re-read, re-apply the approval |
+
+**Counts: 2 autosave-shaped, 5 explicit-save-shaped, 2 inserts (exempt).**
+
+### Why the two autosave sites are the whole cost
+
+`persistPipelineSoon` (`:45777`) is a `setTimeout` debounce and `:33499`'s `persist` fires after a
+preview render. In both, **nobody is watching**: a refusal has no dialog to appear in, and the
+in-memory state the owner has been editing is the only copy. Retrying blindly is exactly what the
+CAS design forbids (it would clobber the other writer). So these two need a **read-merge-rewrite**
+loop: re-read `meta`, re-apply *this site's own keys* onto the fresh blob, recompute the hash,
+write again — and give up loudly after N attempts rather than silently.
+
+**That is per-site work and it is the honest reason this is not a one-day change.** The other
+seven are hours; these two are the day.
+
+### The estimate
+
+- **7 sites (2 exempt + 5 explicit): ~half a day.** Mostly "on conflict, re-read and tell the
+  owner", and five of them already destructure `error`, so the plumbing exists.
+- **2 autosave sites: ~1–2 days**, because each needs a key-scoped merge, and `persistPipelineSoon`
+  in particular writes the whole blob on a timer while the owner is still typing elsewhere.
+- **Plus the RPC + `service_engine` door itself.**
+
+> **So Move 1 is 2–3 days, not a day — and the two autosave sites are the reason.** Worth knowing
+> now: the alternative is adopting CAS on the 7 cheap sites and leaving the 2 autosave sites
+> unguarded, which would mean the loudest, most frequent writer in the product is the one that can
+> still clobber. **That is not a partial win, it is the same bug with fewer witnesses.**
+
+---
+
+## #59 — Bucket's `meta` is half a megabyte because base64 images are inlined into the JSON
+
+**Measured 2026-09-06.** This is why the CAS-by-URL mechanism was impossible, and it is a defect
+on its own.
+
+`bucket-mobile-detailing.meta` = **515,856 bytes**, and it decomposes as:
+
+| key | bytes |
+| --- | --- |
+| `website` | **503,598** |
+| `service_catalog` | 5,423 |
+| `bookingWizard` | 3,601 |
+| everything else (~37 keys) | < 2,000 combined |
+
+Inside `website`:
+
+| key | bytes |
+| --- | --- |
+| **`website.profileSheetImage`** | **420,855** |
+| **`website.ownerPhotoUrl`** | **60,779** |
+| **`website.profileHeroImage`** | **14,803** |
+| all real content (`faq`, `ourStory`, `ownerBio`, `galleryAlbums`, `page`) | ~4,700 |
+
+**Three `data:image/…` base64 URIs stored inside a `text` column.** Confirmed by counting
+occurrences of `data:image/` in the raw meta: **3**.
+
+**It is not just Bucket:**
+
+| business | account_kind | meta | inlined images |
+| --- | --- | --- | --- |
+| bucket-mobile-detailing | market | 515,856 | 3 |
+| devdetailing661 | market | 178,500 | 2 |
+| aquaspeed | market | 30,341 | 1 |
+
+**3 of 9 market businesses**, and they are 3 of the 4 that blow the PostgREST URL ceiling.
+
+### Why this matters beyond size
+
+1. **Every whole-meta write re-transmits the images.** Nine client write sites each PUT the entire
+   blob — so toggling a logo-scale button on Bucket's business uploads 516KB. On a phone, on a
+   detailer's data plan, repeatedly.
+2. **It makes the read-modify-write window longer**, which makes the race #57 addresses *more*
+   likely for exactly these businesses.
+3. **Hubly has Supabase Storage and uses it elsewhere** (`uploadDraftLogo`, `uploadDraftPhoto`,
+   `uploadAndPatchDocumentImage` all produce URLs). These three images took a different path and
+   nobody noticed.
+4. There is a real ceiling ahead: Postgres will tolerate this for a long time, but a row that
+   grows with every uploaded image has no natural bound.
+
+**Not investigated: which writer inlines them.** `profileSheetImage` and `profileHeroImage` are
+profile-sheet fields; `ownerPhotoUrl` is named `…Url` and holds base64, which suggests a path that
+was meant to store a URL and stores the data instead. **That trace is the next step and was not
+taken tonight.**
+
+**Do not fix this by shrinking the images.** The fix is to put them in Storage and keep a URL in
+`meta`, which is what the rest of the product already does.

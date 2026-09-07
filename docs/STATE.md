@@ -875,6 +875,16 @@ Not adopted yet: it needs a re-read-and-merge path in `hubly.html`'s 9 whole-met
 just trades silent loss for a refusal that also drops the owner's typing. **Size that before
 adopting.**
 
+**THE GATE (adopted): no write site adopts CAS until it can survive a refusal without losing the
+user's input.** Sized — of the 9 whole-meta writers in `hubly.html`: **2 are inserts (exempt), 5
+are explicit-save (cheap — re-read and tell the owner), and 2 are AUTOSAVE-shaped** (`:33503`
+after a preview render, `:45783` `persistPipelineSoon`, a debounced timer). The autosave pair is
+the whole cost: nobody is watching, so a refusal has no dialog and the in-memory edit is the only
+copy — each needs a key-scoped read-merge-rewrite loop. **Move 1 is 2–3 days, not one.** And
+adopting CAS on only the cheap 7 would leave the most frequent writer as the one that can still
+clobber — the same bug with fewer witnesses. `md5` is deliberate (accidental-collision detection,
+not forgery defence) and should not be "upgraded" without naming a threat.
+
 **Two things found while designing that change the shape of the work:**
 - **The only server-side catalog writer cannot succeed.** `businesses` has **no `updated_at`
   column** (57 columns, `created_at` only), and `marketplace/index.ts:1543` — the live
