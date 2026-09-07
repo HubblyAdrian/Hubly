@@ -1121,6 +1121,35 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   load-bearing: adding an action before the record field gives the assistant a fact the next
   regeneration silently discards, which is the shadowed-`meta.logoUrl` defect again.
 
+- **CLICKED, NOT PREDICTED (2026-09-07, on a clone, since deleted): the editor already works for a
+  claimed NO_DOC business, and the premise behind the conversion plan was FALSE.** "His manage
+  panel is empty because he is NO_DOC" did not reproduce — the shell renders all 19 rail entries
+  including **Website editor**, the editor opens and renders his page, and the Builder rail shows
+  all 13 panels. Home button present. **Graef's criterion 2 is met today.** Verified WORKS (saved
+  AND survived a reload): membership edit, why-card add (visible on the PUBLIC page after
+  reload), Leads showing his pipeline entries, Customers showing an honest empty state, Reviews,
+  Memberships Plans, and the service panel opening fully populated.
+- **TWO SILENT DEFECTS FOUND BY CLICKING, both broken FOR EVERYONE, neither NO_DOC-related.**
+  (1) A **service description is accepted, rendered in the preview, and never persisted** — the
+  text reached `S.editorSvcs`/`S.services` but never `S._serviceCatalog`; publish rewrote
+  `service_catalog.updated_at` anyway, and the string is absent from `meta` and from the public
+  page after a reload. The owner sees their words, publishes, and the record never had them.
+  (2) **One editor save dropped `meta.portfolioUrls` from 26 to 16** — 38% truncation, no message,
+  while `galleryAlbums[].urls` kept all 26. The two-homes defect again, and **invisible to
+  `check-graefs-page.mjs`** because the gallery renders from the albums: a record-level loss no
+  page check would ever find. This is exactly why the inventory exists beside the fingerprint.
+- **THREE ROWS OF THE COVERAGE MATRIX WERE WRONG, and clicking corrected them.** Per-vehicle-class
+  pricing (six editable price fields), service `includes` (editable list) and per-service photos
+  (thumbnail + add) are ALL editable in the service panel; all three were marked "editor: NO"
+  from a code trace. **Second time in one day a code trace was reported as a finding and the
+  running product disagreed** (the first was R3/aquaspeed). A trace locates a control; only
+  clicking it says whether it works. The prediction that HELD: the website editor reads
+  `meta.service_catalog` and never touched the `services` table, which stayed at 0 rows — but the
+  claimed-shell and `setServices` halves were NOT exercised and remain unverified.
+- **Fabricated metrics on the Reviews dashboard:** quality 95%, punctuality 92%, communication
+  90%, "Average 1.8 Hours" response time and "+42%" — from TWO manual reviews on a business
+  created that morning. None of it is recorded anywhere. Same class as an unearned checkmark.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped

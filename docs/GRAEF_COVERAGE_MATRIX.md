@@ -1,3 +1,8 @@
+> **CORRECTED 2026-09-07 by a click-through on a clone** — see `docs/GRAEF_EDITOR_CLICKTHROUGH.md`.
+> Three rows below were **WRONG**: per-vehicle-class pricing, service `includes` and per-service
+> photos are all editable in the service panel. They were marked NO from a code trace.
+> **A code trace locates a control; only clicking it says whether it works.**
+
 # GRAEF COVERAGE MATRIX — buildable BOTH ways, or it isn't built
 
 Extends `docs/GRAEF_INVENTORY.md`. The requirement: **everything Graef has must be creatable and
@@ -40,9 +45,9 @@ writes the services list. **Nothing else in the registry writes an owner fact.**
 | content type | he has | editor: create/edit? | AI: create/edit? | section addable if missing? |
 | --- | --- | --- | --- | --- |
 | **Services** | 8 | **YES** — `platform-home.html:4307` → `applyOwnerRecordEdit` kind `service` (add/edit/remove), and `hcServicesGrid` `hubly.html:54327` | **YES** — `business.setServices` `:6126` | **fixed** — `SECTION_DEFS` `:50388`, one of 5 |
-| ↳ per-vehicle-class pricing | 4 classes | **NO** | **NO** — `setServices` takes one price | n/a |
-| ↳ service `includes` lines | 6+ per service | **NO** | **NO** | n/a |
-| ↳ service photos | 8 | **NO** — no per-service image UI found | **NO** | n/a |
+| ↳ per-vehicle-class pricing | 4 classes | **YES** — six price fields in the service panel (**CORRECTED 2026-09-07 by clicking**; was NO from a code trace) | **NO** — `setServices` takes one price | n/a |
+| ↳ service `includes` lines | 6+ per service | **YES** — editable list in the service panel (**CORRECTED 2026-09-07**) | **NO** | n/a |
+| ↳ service photos | 8 | **YES** — thumbnail with remove, plus "+ Add photo" (**CORRECTED 2026-09-07**) | **NO** | n/a |
 | **Why-choose cards** | 5 | **YES** — `add-why` `hubly.html:35210` | **NO** | **fixed** |
 | **Trust pills** | 3 (1 blank) | **PARTIAL** — `trust-stats` `:35263`, **exactly 3 fixed slots**, `applyWsPeTrustStats` `:36236` | **NO** | **fixed** |
 | **Memberships** | 2 | **YES** — `:36742`, `:36805` | **NO** | **fixed** |
