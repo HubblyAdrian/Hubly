@@ -4865,3 +4865,28 @@ completely.
 
 This is the site being compared against Base44, so it belongs on the list — but it belongs there
 with a real number, not this one.
+
+---
+
+## #63 — DESIGN NOTE, not a defect: the empty service-image slot reads as broken
+
+**2026-09-06. Not a bug. Not now.**
+
+A service with no photo renders `.ws-svc-img` as a large empty grey rectangle with a small emoji
+(🌿). **It is behaving exactly as designed** — and both Adrian and I independently read it as
+broken on first sight, from a cropped screenshot where the name and price sat below the fold.
+
+The diagnosis that followed was correct and the code is fine: 6 services present in both
+`S.editorSvcs` and `meta.service_catalog`, all names and prices rendering, zero `<img>` elements
+because none of those services has a photo, no failed loads. Nothing to fix.
+
+**The design problem is real anyway.** A placeholder occupying the most visually dominant part of
+a card, with a tiny glyph and nothing else, is indistinguishable from a failed image at a glance.
+Every service without a photo looks like this, and **Bucket's demo will be a page full of them** —
+a working page that reads as broken to the person being sold to.
+
+Options worth a pass (not chosen): shrink the slot to its content when there is no photo; use the
+service name's initial as the placeholder the way the store cards now do (#39); or let the card
+collapse to a text row. The rule it should satisfy: **a correct empty state must not look like a
+failure.** Same family as the layout-legibility rule in `STATE` — the model's freedom ends where
+"this looks broken" begins — but pointed at an intentional empty state rather than an accident.
