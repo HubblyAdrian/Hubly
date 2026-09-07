@@ -1150,6 +1150,22 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   90%, "Average 1.8 Hours" response time and "+42%" — from TWO manual reviews on a business
   created that morning. None of it is recorded anywhere. Same class as an unearned checkmark.
 
+- **A CODE TRACE IS A HYPOTHESIS. A CLICK IS A FINDING. On this codebase a trace is roughly a
+  coin flip weighted against you — 2 of 8 predictions survived contact (2026-09-07).** The eight,
+  scored: website-editor-reads-the-catalog ✓, trust-pills-3-fixed-slots ✓, per-vehicle pricing not
+  editable ✗, service `includes` not editable ✗, per-service photos not editable ✗, add-on
+  description swallowed by the same bug ~half (real in code, unreachable in the UI), claimed-shell
+  `setServices` untested, add-section untested. **Reporting a trace as a finding produced a
+  confident wrong answer twice in one day** — R3/aquaspeed (a hosted URL from a different
+  migration read as proof of this one) and the coverage matrix (three rows marked "no editor UI"
+  for controls that are sitting in the panel).
+  **The rule, not the anecdote: never write a trace into a findings document as a fact.** Trace to
+  decide WHERE to click and WHAT to expect; state the expectation as a prediction with its
+  reasoning; then click, and let the click write the row. If a control cannot be clicked in this
+  session, it is recorded as UNTESTED — never as working and never as broken. The cost asymmetry
+  is the argument: a wrong prediction costs one click to correct, while a wrong finding gets
+  planned around, and both of today's wrong findings were about to change what we built.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped

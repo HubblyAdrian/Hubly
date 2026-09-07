@@ -14686,7 +14686,11 @@ function buildServiceCatalogFromEditor(){
     const cents=raw.price_cents!=null?Number(raw.price_cents):(raw.price!=null&&raw.price!==''?Math.round(Number(raw.price)*100):null);
     addons.push({
       id,name,
-      description:raw.description!=null?String(raw.description):(raw.desc!=null?String(raw.desc):null),
+      // Same defect as the service branch above, same fix. Latent today only
+      // because the Add-ons panel has no description input yet — fixed at the
+      // same time because leaving one half of a duplicated bug is how it
+      // comes back.
+      description:('desc' in raw)?String(raw.desc==null?'':raw.desc):(raw.description!=null?String(raw.description):null),
       price_cents:Number.isFinite(cents)?cents:null,
       duration_delta_minutes:Number(raw.duration_delta_minutes)||0,
       active:raw.active!==false,
@@ -14741,7 +14745,16 @@ function buildServiceCatalogFromEditor(){
     return {
       id:String(s.id||('svc-'+Date.now()+'-'+i)),
       name:String(s.name).trim()||'Service',
-      description:s.description!=null?String(s.description):(s.desc!=null?String(s.desc):null),
+      // `desc` IS THE LIVE FIELD. Hydration writes this one fact to BOTH keys
+      // (:14620-14621, each from `s.description||''`), so a service with no
+      // description carries description:'' — and the inline panel only ever
+      // writes the owner's typed text to `desc`. The old test was
+      // `s.description!=null`, and '' is not null, so the empty string won and
+      // the fallback to `desc` was unreachable exactly when it was needed: the
+      // owner's words rendered in the preview and never reached the record.
+      // Presence of the KEY decides, not truthiness — a truthiness fallback
+      // would resurrect a stale `description` when the owner CLEARS the text.
+      description:('desc' in s)?String(s.desc==null?'':s.desc):(s.description!=null?String(s.description):null),
       category:s.category!=null?String(s.category):null,
       subcategory:s.subcategory!=null?String(s.subcategory):null,
       status:['active','inactive','archived'].includes(String(s.status))?String(s.status):'active',
@@ -19018,19 +19031,57 @@ function stripDataUrlsDeep(v){
   }
   return v;
 }
+/* WHY THESE CEILINGS ARE HIGH, AND WHY THEY STILL EXIST.
+ *
+ * This function was written on 2026-07-14 (de1ed5b, "Fix Instant Site blank
+ * screen when save fails") for ONE cause: raw `data:image` blobs in meta made
+ * the payload oversized and Supabase rejected the write, wiping the save. The
+ * fix for that is `stripDataUrlsDeep` on the first line — it is what
+ * buildPersistableBizMeta calls this for ("never POST data:image blobs").
+ *
+ * The COUNT caps (16 portfolio, 12 per album) were a second, cruder belt from
+ * the same commit, applied to https URLs. A hosted URL is ~150 bytes; since the
+ * image migration every gallery image is one. 26 of them is ~4KB, which is not
+ * what threatened a save — the blobs were. So the old caps were not protecting
+ * anything, and on 2026-09-07 they silently truncated a real owner's gallery
+ * from 26 images to 16 on a save he made from the CONTACT panel. His Interior
+ * and Exterior albums sat at exactly 12: the next photo he added would have
+ * vanished with no error.
+ *
+ * They are raised rather than removed, because an unbounded payload is still a
+ * failure mode, and a save that fails is worse than one that trims — it would
+ * land hardest on the owners with the most photos, who are exactly the people
+ * who would care. So: a ceiling no real business reaches, and if it is ever hit
+ * the owner is TOLD. Silent truncation is the defect; the cap is not.
+ */
+const SLIM_MAX_PORTFOLIO=200, SLIM_MAX_ALBUM=100;
 function slimBizPayload(payload){
   const meta=stripDataUrlsDeep(payload.meta||{})||{};
+  const dropped=[];
   if(Array.isArray(meta.portfolioUrls)){
-    meta.portfolioUrls=meta.portfolioUrls.filter(u=>typeof u==='string'&&/^https?:\/\//i.test(u)).slice(0,16);
+    const kept=meta.portfolioUrls.filter(u=>typeof u==='string'&&/^https?:\/\//i.test(u));
+    if(kept.length>SLIM_MAX_PORTFOLIO)dropped.push((kept.length-SLIM_MAX_PORTFOLIO)+' portfolio photo'+(kept.length-SLIM_MAX_PORTFOLIO===1?'':'s'));
+    meta.portfolioUrls=kept.slice(0,SLIM_MAX_PORTFOLIO);
   }
   if(meta.website&&typeof meta.website==='object'){
     delete meta.website.pendingGalleryPairs;
     if(Array.isArray(meta.website.galleryAlbums)){
-      meta.website.galleryAlbums=meta.website.galleryAlbums.map(a=>({
-        id:a.id,name:a.name,
-        urls:(a.urls||[]).filter(u=>typeof u==='string'&&/^https?:\/\//i.test(u)).slice(0,12),
-      }));
+      meta.website.galleryAlbums=meta.website.galleryAlbums.map(a=>{
+        const kept=(a.urls||[]).filter(u=>typeof u==='string'&&/^https?:\/\//i.test(u));
+        if(kept.length>SLIM_MAX_ALBUM)dropped.push((kept.length-SLIM_MAX_ALBUM)+' photo'+(kept.length-SLIM_MAX_ALBUM===1?'':'s')+' from "'+(a.name||'an album')+'"');
+        return {id:a.id,name:a.name,urls:kept.slice(0,SLIM_MAX_ALBUM)};
+      });
     }
+  }
+  // TELL THE OWNER. A trim the person never hears about is the defect; the
+  // ceiling itself is fine. This fires only above the ceilings above, so in
+  // normal use it never runs — and when it does, it names what went and how
+  // many, rather than "something went wrong".
+  if(dropped.length){
+    try{
+      console.warn('slimBizPayload trimmed:',dropped.join('; '));
+      if(typeof toast==='function')toast("Saved — but "+dropped.join(' and ')+" couldn't be included. Remove a few and save again to keep the rest.");
+    }catch(e){}
   }
   const cleanUrl=(u)=> (typeof u==='string'&&/^https?:\/\//i.test(u))?u:null;
   return {

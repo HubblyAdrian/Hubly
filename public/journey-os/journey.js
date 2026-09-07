@@ -4098,7 +4098,7 @@
   function recalcReviewsAnalytics(reviews) {
     var list = reviews || [];
     var count = list.length;
-    if (!count) return { rating: 0, count: 0, responseRate: 0, fiveStarPct: 0, newThisMonth: 0, avgResponseHours: 0, ratingDelta: 0, newDeltaPct: 0 };
+    if (!count) return { rating: 0, count: 0, responseRate: 0, fiveStarPct: 0, newThisMonth: 0 };
     var sum = list.reduce(function (s, rv) { return s + (Number(rv.rating) || 0); }, 0);
     var replied = list.filter(function (rv) { return rv.status === 'replied' || rv.reply; }).length;
     var five = list.filter(function (rv) { return Number(rv.rating) >= 5; }).length;
@@ -4110,15 +4110,24 @@
       responseRate: Math.round((replied / count) * 100),
       fiveStarPct: Math.round((five / count) * 100),
       newThisMonth: newMo,
-      avgResponseHours: 1.8,
-      ratingDelta: 0.2,
-      newDeltaPct: 42
+      // DELETED 2026-09-07: avgResponseHours (1.8), ratingDelta (0.2) and
+      // newDeltaPct (42) were hardcoded literals rendered as if measured. On a
+      // business with two reviews and one day of history the dashboard claimed an
+      // average 1.8-hour response time and +42% growth. Nothing recorded those;
+      // there is no row to name. Every field left here is computed from real
+      // review rows above. Hubly may suggest; Hubly may not manufacture a fact.
     };
   }
   function buildReviewsAiSummary(reviews) {
     var list = reviews || [];
     if (!list.length) return 'No reviews yet — request feedback after completed jobs to build your reputation.';
-    return 'Customers rave about your quality of work (95%), punctuality (92%), and communication (90%). Strengths: professional service, attention to detail, easy booking. Opportunity: respond faster to 4-star reviews and ask for reviews after every completed job.';
+    // DELETED 2026-09-07: this returned ONE CONSTANT SENTENCE for any non-empty
+    // review list, rendered under an "AI" badge so the owner read it as their
+    // reviews having been analysed. It was not AI output and the percentages
+    // measured nothing. A canned sentence under an AI avatar is the product lying
+    // about its own nature, which is worse than a wrong number. Returning ''
+    // renders nothing; the real empty-state line above stays.
+    return '';
   }
   function ensureReviewsOsState() {
     var st = S();
@@ -4383,9 +4392,9 @@
     var body = kpi === 'rating'
       ? '<p><strong>' + a.rating.toFixed(1) + '</strong> average · ' + a.count + ' reviews</p><p class="jos-muted">Star breakdown, platform mix, and sentiment trends (demo).</p>'
       : kpi === 'new'
-        ? '<p><strong>' + a.newThisMonth + '</strong> new this month · <span class="up">+' + a.newDeltaPct + '%</span></p>'
+        ? '<p><strong>' + a.newThisMonth + '</strong> new this month</p>'
         : kpi === 'response'
-          ? '<p><strong>' + a.responseRate + '%</strong> response rate · avg ' + a.avgResponseHours + ' hours</p>'
+          ? '<p><strong>' + a.responseRate + '%</strong> response rate</p>'
           : '<p><strong>' + r.requestStats.sent + '</strong> sent · ' + r.requestStats.completed + ' completed · ' + r.requestStats.conversionPct + '%</p>';
   var acts = kpi === 'rating'
       ? dsBtn('rev-export-csv', 'Download CSV', 'jos-btn jos-btn-sm') + dsBtn('rev-ai-report', 'Generate AI Report', 'jos-btn-brand jos-btn-sm')
@@ -4551,14 +4560,14 @@
         '</div>' +
       '</header>' +
       '<div class="jos-rev-mc-kpis">' +
-        '<button type="button" class="jos-rev-mc-kpi tone-lav" data-jos-act="rev-kpi-rating"><span class="ico">★</span><span class="lbl">Overall Rating</span><strong>' + (a.rating ? a.rating.toFixed(1) : '—') + '</strong>' + revStars(Math.round(a.rating)) + '<span class="sub">' + a.count + ' Reviews</span><span class="delta up">+' + a.ratingDelta + ' This Month</span></button>' +
-        '<button type="button" class="jos-rev-mc-kpi tone-blue" data-jos-act="rev-kpi-new"><span class="lbl">New Reviews</span><strong>' + a.newThisMonth + '</strong><span class="sub">This Month</span><span class="delta up">+' + a.newDeltaPct + '%</span>' + revMcSparkline([2, 4, 3, 6, 5, 8, a.newThisMonth], true) + '</button>' +
-        '<button type="button" class="jos-rev-mc-kpi tone-green" data-jos-act="rev-kpi-response"><span class="lbl">Response Rate</span><strong>' + a.responseRate + '%</strong><span class="sub">Average ' + a.avgResponseHours + ' Hours</span></button>' +
+        '<button type="button" class="jos-rev-mc-kpi tone-lav" data-jos-act="rev-kpi-rating"><span class="ico">★</span><span class="lbl">Overall Rating</span><strong>' + (a.rating ? a.rating.toFixed(1) : '—') + '</strong>' + revStars(Math.round(a.rating)) + '<span class="sub">' + a.count + ' Reviews</span></button>' +
+        '<button type="button" class="jos-rev-mc-kpi tone-blue" data-jos-act="rev-kpi-new"><span class="lbl">New Reviews</span><strong>' + a.newThisMonth + '</strong><span class="sub">This Month</span></button>' +
+        '<button type="button" class="jos-rev-mc-kpi tone-green" data-jos-act="rev-kpi-response"><span class="lbl">Response Rate</span><strong>' + a.responseRate + '%</strong></button>' +
         '<button type="button" class="jos-rev-mc-kpi tone-orange" data-jos-act="rev-kpi-requests"><span class="lbl">Review Requests</span><strong>' + rs.sent + ' Sent</strong><span class="sub">' + rs.completed + ' Completed · ' + rs.conversionPct + '%</span><span class="delta up">+' + rs.deltaPct + '%</span></button>' +
       '</div>' +
       '<section class="jos-rev-mc-ai">' +
         '<div class="jos-rev-mc-ai-badge" aria-hidden="true">AI</div>' +
-        '<div class="jos-rev-mc-ai-copy"><strong>AI Reputation Summary</strong><p>' + esc(r.aiSummary) + '</p></div>' +
+        '<div class="jos-rev-mc-ai-copy"><strong>AI Reputation Summary</strong>' + (r.aiSummary ? '<p>' + esc(r.aiSummary) + '</p>' : '') + '</div>' +
         '<div class="jos-rev-mc-ai-btns">' +
           '<button type="button" class="jos-btn jos-rev-mc-ai-outline" data-jos-act="rev-ai-report">View Report</button>' +
           '<button type="button" class="jos-btn jos-rev-mc-ai-purple" data-jos-act="rev-ai-actions">AI Actions</button>' +
