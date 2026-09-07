@@ -1061,6 +1061,36 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   `business_documents` row, which Graef does not have (0 rows) — so the assistant's entire
   page-editing capability returns `not_freeform` for the owner who has done the most work.
 
+- **A CONVERTER RUNS ON A CLONE FIRST, NEVER ON THE REAL BUSINESS — and the clone is chosen
+  because it CAN show the defect, not because it is small.** Graef has 11 booking requests, 4
+  customers and 2 jobs; he is not the rehearsal. Seed a `test` business from the completed export
+  (`exports/graefs-autocare-…T18-05-36/`), convert that, verify it against his fingerprint AND
+  the items the fingerprint cannot see, and only then touch the real record. Seed from the EXPORT,
+  never by re-reading the live row — that is one more chance to touch it. This is the correction
+  to the migration pilot chosen by blast radius on 2026-09-07, which landed on a case that could
+  not fail and proved nothing.
+- **`site_mode` is a FOURTH decorative column — nothing reads it.** Three occurrences repo-wide:
+  the schema default (`docs/schema.sql:2421`), a debug RLS migration's column list, and a
+  `grant select` list. Graef being `classic` causes nothing. **What actually decides the renderer
+  is whether a `business_documents` row exists** (`loadLatestBusinessDocumentHtml`,
+  `public/hubly.html:17358`) — no row means the legacy archetype renderer, in the code's own words.
+- **THERE ARE THREE RENDERER STATES AND NO STATE IN WHICH ALL SEVEN AI HELPERS WORK.** No document
+  → nothing works. `format:'ast'` → only `patchDocument` (`applyDirectDocumentPatch:1449` requires
+  `ast`). `format:'html'` → the other six (`applyDirectFreeformEdit:1885`, `applyOwnerStyleEdit
+  :1643`, `applyOwnerSectionMove:1761`, `applyOwnerNodeMove:1822`, `applyOwnerNodeDelete:1860`,
+  `applyOwnerDesignEdit:4110`) and NOT `patchDocument`. `generateDocument`/`newPage` both produce
+  `html`. **So "all green" is not reachable for anybody today** — the target of Graef's conversion
+  does not fully exist and part of it has to be built before anyone is converted to it. Which
+  businesses sit in which state is UNMEASURED; `scripts/probe-standard-path.mjs` (read-only,
+  written, not run) counts it, and prints in plain words if the good state has no occupants.
+- **Converting Graef today would cost him 32 prices.** His 8 services carry per-vehicle-class
+  pricing (`{coupe, sedan, suv, van}`) and every writer in the target holds ONE price. Eight of
+  his content shapes have no home in the target at all (per-vehicle pricing, service `includes`,
+  per-service photos, service flags/ai, album names and the three EMPTY albums, service-area
+  radius, the three competing ordering records, and structured homes for why-cards / trust pills
+  / memberships / reviews / FAQ). **Each is a gap in the TARGET, not a problem with Graef** — and
+  repricing a live business without asking is the failure class CLAUDE.md names under pricing.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped
