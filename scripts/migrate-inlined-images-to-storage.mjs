@@ -45,16 +45,35 @@
  * Mitigation beyond the code: all three owners last signed in seven weeks ago, and this
  * should be run at a quiet hour. Do not run it during a demo.
  *
+ * ── THE UNDO MUST BE PROVEN BEFORE IT IS TRUSTED ─────────────────────────────────────
+ *
+ * `--restore <slug>` exists so a bad migration is recoverable. A --restore that has never
+ * run is the same defect as a backup nobody can restore from, so the sequence on the
+ * CHEAPEST business is a full round trip before anything touches the expensive one:
+ *
+ *   1. --apply --only aquaspeed        (one field, a rewrite, no upload)
+ *   2. verify the logo displays on the live page
+ *   3. --restore aquaspeed
+ *   4. verify the base64 is back AND the page still renders
+ *   5. --apply --only aquaspeed        (again)
+ *
+ * If step 3 does not cleanly put it back, there is no undo and NOTHING touches
+ * bucket-mobile-detailing. Prove the recovery path where a mistake costs nothing.
+ *
  * ── SECRETS ───────────────────────────────────────────────────────────────────────────
  *
  * The service-role key is read from the environment ONLY. It is never printed, never
  * written to a file, never passed as an argument, and never included in any output. Set it
  * for the length of one run:
  *
- *   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/migrate-inlined-images-to-storage.mjs
+ *   read -rs SUPABASE_SERVICE_ROLE_KEY && export SUPABASE_SERVICE_ROLE_KEY
+ *   export SUPABASE_URL=https://<project>.supabase.co
+ *   node scripts/migrate-inlined-images-to-storage.mjs
  *
- * Do NOT use `supabase secrets set` or put it in a file. A key that reaches terminal
- * scrollback is compromised.
+ * `read -rs` keeps the value off the command line AND out of `ps`. Putting it inline as
+ * `KEY=... node ...` is NOT sufficient: it is visible in `ps` for the life of the process
+ * regardless of shell history settings. Do NOT use `supabase secrets set`, do not put it in
+ * a file. A key that reaches terminal scrollback is compromised and must be rotated.
  */
 // The npm package, not the esm.sh URL: scripts/ run under NODE, which cannot
 // import an https: specifier. @supabase/supabase-js is already in node_modules.
@@ -63,6 +82,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 const APPLY = process.argv.includes("--apply");
+/** --restore <slug>: put a business's meta back from its backup file. THE UNDO. */
+const RESTORE = (() => { const i = process.argv.indexOf("--restore"); return i > -1 ? (process.argv[i + 1] || "").trim() : ""; })();
 /** --only <slug>: run a single business. The first real run should touch one, not three. */
 const ONLY = (() => { const i = process.argv.indexOf("--only"); return i > -1 ? (process.argv[i + 1] || "").trim() : ""; })();
 const SUPABASE_URL = (process.env.SUPABASE_URL || "").trim();
@@ -97,13 +118,85 @@ function dataUrlToBuffer(dataUrl) {
 
 function fail(msg) { console.error(`  ✗ ${msg}`); }
 
+/**
+ * THE UNDO. `--restore <slug>` writes a business's meta back from its backup file.
+ *
+ * A backup the script cannot consume is a file, not an undo — and the moment it is needed is
+ * exactly the moment nobody should be hand-pasting half a megabyte of JSON into a text column.
+ *
+ * Same guards as the migration, for the same reasons:
+ *   - re-reads meta immediately before writing and ABORTS if it changed since this call began
+ *     (someone else wrote in between; overwriting them is how a restore becomes a second
+ *     incident);
+ *   - all-or-nothing: one write of the whole blob, never a partial merge;
+ *   - refuses if the backup is missing, empty, or not valid JSON, rather than writing
+ *     something it cannot vouch for.
+ *
+ * It does NOT delete the storage objects the migration uploaded. They become orphans, which
+ * cost nothing and are the safe direction: an orphaned object is invisible, whereas deleting
+ * one that a later re-run relies on would break a live page.
+ */
+async function restore(admin, slug) {
+  console.log(`*** RESTORE ${slug} — THIS WRITES ***\n`);
+  const backupPath = path.join(BACKUP_DIR, `${slug}.meta.json`);
+
+  let backup;
+  try {
+    backup = fs.readFileSync(backupPath, "utf8");
+    if (!backup.trim()) throw new Error("backup file is empty");
+    JSON.parse(backup);
+  } catch (e) {
+    fail(`cannot use backup ${backupPath}: ${e.message}`);
+    try {
+      const dirs = fs.readdirSync(path.dirname(BACKUP_DIR)).filter((d) => d.startsWith("meta-"));
+      if (dirs.length) console.error(`      backup directories present: ${dirs.join(", ")}`);
+    } catch (e2) { /* none */ }
+    process.exit(1);
+  }
+
+  const { data: cur, error } = await admin
+    .from("businesses").select("id,meta").eq("slug", slug).maybeSingle();
+  if (error || !cur) { fail(`could not read ${slug}: ${error?.message || "not found"}`); process.exit(1); }
+  const curRaw = typeof cur.meta === "string" ? cur.meta : JSON.stringify(cur.meta || {});
+
+  console.log(`   current  ${kb(curRaw.length)}  (${(curRaw.match(/data:image\//g) || []).length} data URIs)`);
+  console.log(`   backup   ${kb(backup.length)}  (${(backup.match(/data:image\//g) || []).length} data URIs)`);
+  if (curRaw === backup) { console.log("\n   already identical to the backup — nothing to do."); return; }
+
+  // Re-read immediately before writing. Narrow the window; do not pretend it is closed.
+  const { data: fresh, error: reErr } = await admin
+    .from("businesses").select("meta").eq("id", cur.id).maybeSingle();
+  if (reErr || !fresh) { fail("re-read failed — NOT writing"); process.exit(1); }
+  const freshRaw = typeof fresh.meta === "string" ? fresh.meta : JSON.stringify(fresh.meta || {});
+  if (freshRaw !== curRaw) {
+    fail(`meta CHANGED during this call (${kb(curRaw.length)} -> ${kb(freshRaw.length)}) — ABORTING, nothing written`);
+    process.exit(1);
+  }
+
+  const { error: upErr } = await admin.from("businesses").update({ meta: backup }).eq("id", cur.id);
+  if (upErr) { fail(`write failed (${upErr.message}) — ${slug} unchanged`); process.exit(1); }
+
+  // Verify from the DATA, not from the fact that the write returned.
+  const { data: after } = await admin.from("businesses").select("meta").eq("slug", slug).maybeSingle();
+  const afterRaw = after && (typeof after.meta === "string" ? after.meta : JSON.stringify(after.meta || {}));
+  const ok = afterRaw === backup;
+  console.log(`\n   RESTORED ${kb(curRaw.length)} -> ${kb(afterRaw ? afterRaw.length : 0)}`);
+  console.log(ok
+    ? "   SUCCESS — the row now byte-matches the backup file."
+    : "   MISMATCH — the row does NOT match the backup. Investigate before doing anything else.");
+  if (!ok) process.exit(1);
+}
+
 async function main() {
   if (!SUPABASE_URL || !SERVICE_KEY) {
     console.error("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set in the environment.");
     console.error("Never pass a key as an argument and never write it to a file.");
     process.exit(2);
   }
+  if (RESTORE && APPLY) { console.error("--restore and --apply are contradictory. Pick one."); process.exit(2); }
   const admin = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+
+  if (RESTORE) { await restore(admin, RESTORE); return; }
 
   console.log(APPLY ? "*** APPLY MODE — THIS WRITES ***\n" : "DRY RUN — nothing will be written. Use --apply to write.\n");
 
