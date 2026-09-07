@@ -3950,3 +3950,169 @@ conflicts. **These are not fixed and not forgotten — they are parked with the 
 **Result: 22 of 53 functions still fail with the adobe files excluded** — so the exclusion alone
 does not make the check green. It removes the largest *unowned* block; the remaining 40 distinct
 errors are in code with customers and are worth fixing on their merits.
+
+---
+
+## #54 — Service data has THREE homes, the manage panel reads one, and our anchor customer is in another
+
+**Measured 2026-09-06, read-only. Nothing fixed.** Filed because it was found as a half-sentence
+("Graef has zero rows in `services`") and is much larger than that.
+
+### Correction first: I said his services live in the generated document. They do not.
+
+`graefs-autocare` has **0 rows in `services`** AND **0 rows in `business_documents`**. His eight
+services live in a **third** place: **`businesses.meta` — a `text` column holding JSON — at
+`meta.service_catalog.services`**, an array of exactly **8**, matching the live page.
+
+### The three homes
+
+| home | what reads it | what writes it |
+| --- | --- | --- |
+| **`services` table** | the manage panel (`hcReadRecord` → `hcManage.services`), `applyOwnerRecordEdit` | the manage panel, capability actions |
+| **`business_documents`** (freeform HTML) | the public freeform page | `create_business_document`, `applyServicesToFreeform` |
+| **`businesses.meta.service_catalog`** | the **classic renderer**, the AI context loader (`hubly_conversation_context_loader.ts:132` — *"listServices → getCatalog reads meta.service_catalog"*), `marketplace:1518` | `hubly.html:15051` (`buildServiceCatalogFromEditor`), `hubly_brain_website.ts:460/487` |
+
+**Nothing synchronises them.** `grep service_catalog` in `hubly_capability_registry.ts` returns
+**zero** — the capability registry, which is what the assistant and the manage panel both write
+through, has never heard of the catalog.
+
+### 1. What the owner actually sees
+
+`hcRenderManageBody` (`platform-home.html:4324`) builds service rows from `hcManage.services`,
+which is a direct read of the `services` table (`:4296`). For Graef that array is empty, so
+`svcRows` is `""` and the panel renders:
+
+> **Services**
+> *(nothing)*
+> `[ New service name ] [ Price ] [ Short description ] [ Add ]`
+
+**There is no empty state and no explanation** — just the heading, then the add-a-new-one row. An
+owner whose live page shows eight priced services opens the panel and sees a blank Services
+section with an add form. The reasonable reading is *"Hubly has lost my services"*, and the
+reasonable next action is to retype all eight — which would create eight `services` rows that
+**still do not appear on his page** (see §4).
+
+### 2. The corpus split — measured across all three homes
+
+| account_kind | businesses | in `services` | in `meta.service_catalog` | has document | **meta-only (panel blind)** | none anywhere |
+| --- | --- | --- | --- | --- | --- | --- |
+| test | 166 | 65 | 1 | 151 | 0 | 101 |
+| **market** | **9** | **4** | **2** | 5 | **2** | 3 |
+| internal | 3 | 1 | 1 | 1 | 1 | 1 |
+
+**Market, by name:**
+
+| business | `services` | `meta.service_catalog` | documents | `commerce_products` |
+| --- | --- | --- | --- | --- |
+| aquaspeed | 3 | 0 | 0 | 0 |
+| **bucket-mobile-detailing** | **0** | **4** | 0 | **0** |
+| detailing-chemicals-…-courses | 4 | 0 | 1 | 0 |
+| devdetailing661 | 0 | 0 | 0 | 0 |
+| **graefs-autocare** | **0** | **8** | 0 | **0** |
+| lugnuts-regulators | 3 | 0 | 1 | 0 |
+| mobile-auto-detailing-in-los-angeles | 0 | 0 | 1 | 0 |
+| modern-landscaping-business | 0 | 0 | 1 | 0 |
+| window-washing | 2 | 2 | 2 | 0 |
+
+**So it is 2 of 9 market businesses — and they are the two that matter most: Graef, our anchor
+customer, and Bucket, the paying one.** Both are meta-only. Both would see a blank Services
+panel. `meta.service_catalog` is rare overall (4 businesses) but it is not randomly distributed.
+
+### 3. Where the split comes from — NOT what I guessed
+
+I expected it to track the renderer (classic vs freeform). **It does not.** All four of these are
+`site_mode = 'classic'`, and so is everything else — that column has never routed anything.
+
+The split tracks **which writer last touched the business**:
+
+- built through the **editor** in `hubly.html` → `buildServiceCatalogFromEditor()` (`:15051`)
+  writes `meta.service_catalog`;
+- built/edited through the **capability registry** (the assistant, the manage panel) → rows in
+  `services`;
+- built as a **freeform document** → services baked into the stored HTML.
+
+They are three independent lineages, not three modes of one system. A business ends up wherever
+its last writer happened to live.
+
+### 4. What an edit does for a meta-only business — traced, and it is worse than a no-op
+
+`applyOwnerRecordEdit` for `kind:"service"`:
+
+1. writes a row to the **`services` table** (`:4352` PATCH or `:4359` POST);
+2. calls `applyServicesToFreeform` (`:4361`), which begins
+   `const latest = await selectLatestBusinessDocument(draftId, "website"); if (!latest …) return { status: "not_freeform" }`.
+
+For Graef there is **no document**, so step 2 returns `not_freeform` immediately and **the page is
+never touched**. Nothing anywhere writes `meta.service_catalog`. So:
+
+> **The owner types a service, it is saved to a table his page does not read, and his page does
+> not change.** The function returns `ok: true, real: true` — and the summary it composes for the
+> `not_freeform` case is *"Saved {name} to your list. I couldn't place it on the page — it will
+> appear on the next rebuild."*
+
+That last clause is **not true for this business**: a rebuild reads the catalog, not the table, so
+the service will never appear. It is a promise the product cannot keep — the same defect family as
+naming a control that does not exist.
+
+**This is also why retyping the eight would be actively harmful**: eight new rows, a page that
+still shows the original eight from the catalog, and two sources of truth diverging silently.
+
+### Not fixed. The decision this needs is which home wins
+
+There are three, nothing syncs them, and picking one is a product decision with a migration
+behind it. What must NOT happen is a fourth reader being added to whichever is convenient.
+
+---
+
+## #55 — `commerce_products` IS the single home for goods. The service split does not repeat.
+
+**Measured 2026-09-06 in answer to: does #46's Store assumption hold given #54?**
+
+**It holds.** Unlike services, product data has exactly one home:
+
+- **`commerce_products` is the only table**, read by `commerce-api` for both the owner Store admin
+  and the public `/store` route, and by `create-store-checkout`, which **re-prices from it
+  server-side** and never trusts client prices.
+- `businesses.meta` carries `storefront`, `storefrontDraft` and `storeOs` keys — but those are
+  **presentation** (the Storefront AST: layout, theme, which products are featured), not the goods
+  themselves. `commerce/store-page.js:7` states it: *"no second catalog, cart, or checkout, and no
+  S.storeOs. commerce_products is the SSOT."*
+- **All 9 market businesses have `commerce_products = 0`**, including Bucket — so there is no
+  legacy product data anywhere to reconcile. The table is empty and uncontested.
+
+**So #46 can be designed against `commerce_products` without inheriting #54's problem.** Two
+caveats worth carrying:
+
+1. **Bucket has 4 services in `meta.service_catalog` and 0 products.** Services and goods are
+   different things, so this is not a conflict — but the business we are building a Store for
+   already has its *service* data in the home the manage panel cannot see (#54). Whatever we ship
+   for products, his services stay broken until #54 is decided.
+2. The Storefront AST lives in `meta`, so **presentation** for the store follows the same
+   blob-in-a-text-column pattern that produced #54. That is a smaller risk (it is layout, not
+   facts a customer acts on) but it is the same shape, and it is worth not adding to.
+
+---
+
+## #56 — Generation wrote every service twice, in an 8-second burst, and nothing noticed for nine months
+
+**Filed 2026-09-06, NOT investigated, per instruction. Member of the create-on-ambiguity family
+(`STATE`).**
+
+Eight duplicate service names exist in production, and they are not from the owner-edit path:
+
+| business | account_kind | duplicates | window |
+| --- | --- | --- | --- |
+| `adrians-lawn-service` | test | 4 names × 2 | **8 seconds**, 2026-07-17 18:02:44 → 18:02:52 |
+| `star-windows` | test | 4 names × 2 | **8 seconds**, 2026-07-18 05:10:20 → 05:10:27 |
+
+Every service the business had, written twice, 8 seconds apart, in a single session. That is a
+**generation path firing twice** — a retry, a double-dispatch, or a second write with no
+idempotency key — not a person clicking twice.
+
+**Both are test businesses and no market business is affected**, which is why this is filed rather
+than urgent. But it went **nine months** without anyone noticing, and it was found only because a
+different question happened to count duplicate names. The write path that did it has not been
+identified.
+
+Same family as #52 and #44: **the system created rows when it should have recognised it had
+already done the work.**

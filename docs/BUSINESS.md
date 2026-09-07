@@ -508,6 +508,35 @@ tables at **0**, no test CRM rows, the public store showing no products. The Str
 is deliberately left in place.
 
 
+### 2026-09-06 — Graef's and Bucket's services are invisible to the management UI (#54)
+
+Found while tracing something else, and it is the kind of thing a customer reports rather than a
+query finds.
+
+**Graef's live page shows eight priced services. His management panel shows none.** His services
+live in `businesses.meta.service_catalog` (a JSON blob in a text column); the panel reads the
+`services` table, where he has zero rows. There is no empty state, so what he sees is the heading
+"Services" followed immediately by a blank add-a-new-one form.
+
+**The reasonable reading of that screen is "Hubly lost my services", and the reasonable response
+is to retype them — which would make it worse**, creating eight rows that still do not appear on
+his page while a second source of truth diverges from the first.
+
+**Bucket is in the same position.** 4 services in the catalog, 0 rows in the table. Of nine market
+businesses, these two are the only meta-only ones — our anchor customer and our paying customer.
+
+Neither has reported it. That is not evidence it is fine; the panel is behind a button most owners
+have not pressed.
+
+**Not fixed.** Three homes exist for service data, nothing synchronises them, and choosing which
+one wins is a product decision with a migration behind it (`OPEN_FINDINGS` #54).
+
+**Related, and better news for the Store work:** goods do NOT have this problem.
+`commerce_products` is the single home, all nine market businesses have zero rows, and there is no
+legacy product data to reconcile (#55). The Store for Bucket can be designed against it directly —
+but his *services* stay broken until #54 is decided.
+
+
 ## WHAT HAS NEVER HAPPENED YET
 
 *The honest zeros. These say what Hubly is and is not today, and every one should be easy
