@@ -5147,6 +5147,73 @@ are two CSS `::after` badge rules (`:250`, `:5042`). `grep` for anything hiding
 `storefront` moves the store rather than granting it. **`hubly_pro` is on 34 of 34 rows that have
 it and its reads were not traced** — that is a gap in this map, not a finding.
 
+### THE GAP CLOSED: `hubly_pro` has ZERO reads. It is the third decorative key.
+
+Traced every occurrence (excluding `hubly_provider_*` filename collisions and `hubly_promo_*`):
+
+| site | kind |
+| --- | --- |
+| `marketplace-lite.html:374` | **write** — `hubly_pro: false` |
+| `marketplace/index.ts:1860` | **write** — `hubly_pro: false` |
+| `marketplace/index.ts:1803` | comment |
+| `20260720060000_business_capabilities.sql` | the backfill that created it |
+
+**Nothing reads it. Anywhere.** Not in `public/`, not in `supabase/functions/`, not in `scripts/`.
+
+**And the plan flag it is named for is a different field.** The rail's *"Free plan"* comes from
+`hubly.html:52683`:
+
+```js
+if(navPlan) navPlan.textContent = S.tier==='pro' ? t('proPlan') : t('freePlan');
+```
+
+`S.tier` ← **`businesses.tier`, a column** — not `capabilities.hubly_pro`. Measured:
+
+| `tier` | count |
+| --- | --- |
+| `starter` | **176** |
+| `pro` | **2** |
+
+**And the two disagree on 32 rows:**
+
+| tier | hubly_pro | businesses |
+| --- | --- | --- |
+| starter | *(absent)* | 144 |
+| **starter** | **true** | **32** ← disagree |
+| pro | true | 2 |
+
+**32 businesses are marked `hubly_pro: true` while their `tier` says `starter`.** The migration's
+own comment says *"Upgrade Lite→Pro = flip hubly_pro"* — an intent that was never wired, while
+`tier` quietly became the real field. Two homes for one fact again (#54's shape, third instance),
+except this one is harmless **only because nobody reads the wrong one**.
+
+### THE SYNTHESIS: this is not extending a capability system. It is BUILDING THE FIRST ONE.
+
+Five keys. **Not one of them gates a tab:**
+
+| key | what it actually is |
+| --- | --- |
+| `storefront` | **layout** — moves the store, does not grant it |
+| `projects` | **decorative** — `hasBusinessCapability('projects')` returns `true` unconditionally |
+| `hubly_pro` | **decorative** — zero reads; `businesses.tier` is the real plan field, and they disagree on 32 rows |
+| `website` | picks the builder's **default surface** |
+| `marketplace` | **membership** in the provider directory |
+
+> **`capabilities` looks like a permission system and is not one.** It is a set of labels: two
+> unread, one about layout, one about a default, one about directory membership. Every rail entry
+> in the editor is static markup, and the one composed rail (`hcWorkspaces`) composes from
+> `hc.draftClaimed`, not from capabilities at all.
+
+**This changes how much care the design deserves.** Whatever shape we choose for Store is not a
+Store feature — it becomes the shape for `website`, `marketplace`, `projects` and everything
+after, because there is nothing else for them to follow. It is the first real one, and it should
+be designed as a system rather than as a flag for one tab.
+
+**Three of five keys do not do what their name implies.** That is itself the finding: a reader
+encountering `capabilities.projects` reasonably assumes it gates Projects, and it does not.
+Whatever is built should make the difference between a **label** and a **gate** legible — the
+honest move may be to stop calling the decorative ones capabilities at all.
+
 ### THE DESIGN CALL — a separate key, and here is why
 
 `capabilities.storefront` today answers **"where does the store render?"** — embedded section, or
@@ -5185,6 +5252,13 @@ path 3-and-4 with marketplace bolted on. **There is no real provider-only row to
 path 2 is unrepresented in the data, and designing its rail means designing for a case we have
 never seen.
 
+**RECORDED AS DESIGNED-FOR-BUT-UNOBSERVED.** Do not build speculative rail logic for a shape that
+has never existed; build a composition mechanism that can *express* it, and let the first real
+provider-only signup be the test of whether the model holds. If that signup needs a rail entry
+the mechanism cannot express without a rewrite, the model was wrong — and finding that out with
+one real business is cheap, whereas guessing now and being wrong is a shape everything else
+inherits.
+
 ### THE REMOVAL EVIDENCE — nobody has ever used the Store
 
 | | count |
@@ -5221,6 +5295,25 @@ gated too. **That is a fourth surface**, and #46 counted three.
 | **`/store` route** (`:17348`) | **URL only** | `hasStore(biz)` — else 404/redirect |
 
 One predicate, `hasStore(biz) === biz.capabilities?.store === true`, read at four call sites.
+
+**WHAT AN UNGATED `/store` SHOULD DO — a real decision, not a detail.** Three options for
+`<slug>.myhubly.app/store` on a business with no store:
+
+| option | what the visitor gets | verdict |
+| --- | --- | --- |
+| **404** | a dead end on a subdomain someone may have shared | **no** — it punishes the visitor for the owner's configuration, and a shared link that dies looks like the business is gone |
+| **empty state** — "this business doesn't have a store" | honest, but it advertises an absence on the owner's own domain to their customer | **no** — it is a true sentence nobody benefits from |
+| **redirect to `/`** | the visitor lands on the business's homepage, where the services and booking are | **YES** |
+
+**Redirect.** The visitor came to buy something from this business; the homepage is where they can
+still do that. It matches the standing rule that a failure must never dead-end into a neutral
+screen — except here it is not a failure at all, just a route that does not apply, and the
+homepage is the honest destination. A 301/302 rather than a client-side swap, so a shared link
+resolves cleanly.
+
+**Note this is a behaviour change for a URL that currently works for all 177 businesses** — it
+renders an empty store today. Nobody has linked to one (0 products, 0 settings corpus-wide), so
+the risk is theoretical, but it is a live route being narrowed and should be stated as such.
 
 ### Q5, Q6, Q7 — confirmed, with one correction
 

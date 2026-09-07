@@ -983,6 +983,21 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   the same bucket, differing only in which credential ran it** — which is exactly why "I tested
   my path" did not generalise.
 
+- **`businesses.capabilities` LOOKS like a permission system and is not one — nothing in it gates
+  a tab.** Measured 2026-09-07 across all five keys that exist (#66): `storefront` is **layout**
+  (it moves the store out of the page, it does not grant it); `projects` is **decorative**
+  (`hasBusinessCapability('projects')` returns `true` unconditionally); `hubly_pro` is
+  **decorative** — **zero reads anywhere**, while the real plan field is the `businesses.tier`
+  column, and **the two disagree on 32 rows** (`tier='starter'` with `hubly_pro:true`);
+  `website` picks the builder's default surface; `marketplace` is directory membership.
+  Meanwhile the editor's Builder rail is **14 static buttons with no gate at all**, and the one
+  composed rail (`hcWorkspaces`) composes from `hc.draftClaimed`, not from capabilities.
+  **So gating the Store is not extending a capability system — it is building the first one**, and
+  whatever shape it takes becomes the shape for `website`, `marketplace`, `projects` and
+  everything after. Design it as a system, not as a flag for one tab.
+  **Three of five keys do not do what their name implies.** Make the difference between a LABEL
+  and a GATE legible; the honest move may be to stop calling the decorative ones capabilities.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped
