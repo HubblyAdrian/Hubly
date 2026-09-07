@@ -5134,6 +5134,27 @@ duplicate, no upload, nothing to see). `ownerPhotoUrl` migrated **observably** �
 flipped from `data:` to hosted, byte-exact, same picture, in an object this run created. **The
 undo remains unproven; that is step 5.**
 
+### R6 — THE UNDO WORKS. Proven on an observable field, which aquaspeed could not do.
+
+`--restore devdetailing661`: 4.8KB → 174.3KB, row byte-matches the backup. Then the half the
+script cannot check.
+
+| check | result |
+| --- | --- |
+| **1. Back to `data:`?** | **Yes.** All 4 `<img>` are `src="data:image/jpeg…"`, **136,375 chars** each — the original length. `src="data:image` on the page: **4** (was 0). References to the apply's hosted object: **0**. |
+| **2. Still renders?** | **Yes** — all four `complete: true`, `naturalWidth/Height` **384 × 512**. Opened the **About** tab and looked: the photo is there beside "Devin F", upright, correctly cropped in the circular avatar. Visually identical to the post-apply shot. |
+| **2b. Same bytes through the whole round trip?** | Decoded the restored data URI **in the page** and hashed it: **102,263 bytes, sha256 `591233…0745e`** — identical to the backup and to the hosted object. base64 → storage → base64 changed nothing. |
+| **3. Orphan kept?** | **Yes, verified not assumed.** `…/owner-1788803637264-598u7mg.jpg` still returns **200 / `image/jpeg` / 102,263 bytes** after the restore. The script's own note (`:135`) says it deliberately does not delete: *an orphaned object is invisible, whereas deleting one a later re-run relies on would break a live page.* Behaviour matches the stated policy. |
+
+**The round trip is proven on a field the page actually reads.** Apply: 4 elements `data:` →
+hosted, byte-exact, object created by this run. Restore: 4 elements hosted → `data:`, byte-exact,
+still rendering, orphan retained. **This is what aquaspeed could not establish** — there, both
+directions touched a shadowed field and no pixel moved either way.
+
+**Remaining before Bucket:** the re-apply (step 6). Bucket's `profileSheetImage` is **420,855
+bytes**, ~4× the largest thing migrated so far, and it is the only one of the six where size
+itself is a new variable.
+
 ---
 
 ### Which images are actually SHADOWED — the migration is only 91% observable
