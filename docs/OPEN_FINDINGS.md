@@ -4950,6 +4950,32 @@ auth.uid()`), never public**. Do not add it to enable an option nothing needs.
 The claimed shell was never affected, which is why `drafts/…` objects kept appearing in the
 bucket after 2026-08-18 while `brand-assets` owner uploads stopped.
 
+### THE 2026-08-18 TIMELINE — and a correction I owe the earlier work
+
+Investigating the `logo-migrated-` filenames on the two stale `meta.logoUrl` blobs, I first read
+them as evidence of *"a migration abandoned partway."* **That was wrong, and the correction
+matters more than the original observation.**
+
+`scripts/migrate-data-uri-logos.ts` (commit `15a1fea`, 2026-08-18) migrated
+**`businesses.logo_url` — the COLUMN**. It never reads or writes `meta`. Its verification line
+says *"zero data: URIs remain in the table"*, which is true of the column it targeted. The copy
+inside `meta.logoUrl` was a **second home for the same value**, outside its scope — the #54 shape
+in miniature. The script itself is careful work: it reads the uploaded object back before
+touching the row, never re-encodes, and leaves the row untouched on failure.
+
+**It cannot undo our cleanup.** Nothing invokes it — no `package.json` entry, no cron, no CI, no
+edge function; it is manual `deno run` only. And its direction is data-URI → hosted URL, so it
+can never write base64 back.
+
+**Storage timestamps place it precisely:** `2026-08-18 19:18:05` and `19:18:07`, two seconds
+apart — the same day as the enumeration migration. It **succeeded** because it uses a raw `fetch`
+with the **service-role key**, which bypasses RLS entirely and sends no `x-upsert`. The browser
+path, doing the same operation on the same bucket with a *user* credential, broke hours later.
+
+So the whole timeline is: **two correct changes on one day, and the defect lived in the seam
+between them.** Recorded as its own lesson in `STATE` — it is not the usual coverage failure,
+because this one had no author.
+
 ### THE TRUE BLAST RADIUS — and my "larger than Bucket's six" was WRONG
 
 Scanned **every** `text`/`varchar` column in `public` for `data:image/`:

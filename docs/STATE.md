@@ -955,6 +955,30 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   The tell here was available and unused: a `grep` for `storage.from(` would have found the
   browser-side caller in one line.
 
+- **TWO CORRECT CHANGES CAN PRODUCE A DEFECT BETWEEN THEM. The bug lives in the seam, where
+  neither author was looking and neither was wrong.** 2026-08-18, one day, two careful pieces of
+  work:
+  (a) `scripts/migrate-data-uri-logos.ts` + commit `15a1fea` — the data-URI logo problem was
+  found, `hostBrandImage` was fixed to return null instead of `hosted || dataUrl`, all 13 call
+  sites were audited, and both existing rows in `businesses.logo_url` were migrated with the
+  uploaded object read back before the row was touched. **Complete and correct for its scope.**
+  (b) `20260818030000_storage_no_enumeration.sql` — a real enumeration hole (72 files walkable,
+  folder names that are `auth.uid()` values, owner photos reachable by strangers) was closed by
+  dropping the public SELECT policies on `storage.objects`. **Also complete, also correct.**
+  Between them: the browser's `uploadBrandAsset` passed `upsert:true`, which needs the SELECT
+  that (b) removed. It failed silently into a base64 fallback **for three weeks** (#64).
+  **This is not the coverage lesson.** Every other entry here is "someone checked the paths they
+  thought of" — one author, one blind spot. **This one had no author.** Both verified their own
+  change thoroughly and both were right about it. Nobody owned the interaction.
+  **THE TELL, which existed and which nobody had reason to run: after changing a PERMISSION,
+  grep for every caller of the thing whose permission changed — including the ones in the
+  browser.** Not *"did my change work"* — that was verified, twice — but *"what else was relying
+  on what I just removed."* One `grep "storage.from("` across `public/` would have found it.
+  Note (a) was immune to (b) because it uses a raw `fetch` with the service-role key, which
+  bypasses RLS. **The change that was safe and the change that broke were the same operation on
+  the same bucket, differing only in which credential ran it** — which is exactly why "I tested
+  my path" did not generalise.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped
