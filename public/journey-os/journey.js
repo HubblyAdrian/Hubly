@@ -4565,15 +4565,23 @@
         '<button type="button" class="jos-rev-mc-kpi tone-green" data-jos-act="rev-kpi-response"><span class="lbl">Response Rate</span><strong>' + a.responseRate + '%</strong></button>' +
         '<button type="button" class="jos-rev-mc-kpi tone-orange" data-jos-act="rev-kpi-requests"><span class="lbl">Review Requests</span><strong>' + rs.sent + ' Sent</strong><span class="sub">' + rs.completed + ' Completed · ' + rs.conversionPct + '%</span><span class="delta up">+' + rs.deltaPct + '%</span></button>' +
       '</div>' +
-      '<section class="jos-rev-mc-ai">' +
-        '<div class="jos-rev-mc-ai-badge" aria-hidden="true">AI</div>' +
-        '<div class="jos-rev-mc-ai-copy"><strong>AI Reputation Summary</strong>' + (r.aiSummary ? '<p>' + esc(r.aiSummary) + '</p>' : '') + '</div>' +
-        '<div class="jos-rev-mc-ai-btns">' +
-          '<button type="button" class="jos-btn jos-rev-mc-ai-outline" data-jos-act="rev-ai-report">View Report</button>' +
-          '<button type="button" class="jos-btn jos-rev-mc-ai-purple" data-jos-act="rev-ai-actions">AI Actions</button>' +
-          '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-ai-refresh">Refresh</button>' +
-        '</div>' +
-      '</section>' +
+      // THE WHOLE SECTION IS CONDITIONAL, not just the paragraph. Deleting the
+      // canned sentence (2026-09-07) left a bordered box with an AI avatar, an
+      // "AI Reputation Summary" heading and two buttons standing over nothing —
+      // which reads as broken, and still implies an analysis that did not
+      // happen. A deletion leaves a hole; the hole is part of the fix. When
+      // there is no real summary the section does not exist.
+      (r.aiSummary
+        ? '<section class="jos-rev-mc-ai">' +
+            '<div class="jos-rev-mc-ai-badge" aria-hidden="true">AI</div>' +
+            '<div class="jos-rev-mc-ai-copy"><strong>AI Reputation Summary</strong><p>' + esc(r.aiSummary) + '</p></div>' +
+            '<div class="jos-rev-mc-ai-btns">' +
+              '<button type="button" class="jos-btn jos-rev-mc-ai-outline" data-jos-act="rev-ai-report">View Report</button>' +
+              '<button type="button" class="jos-btn jos-rev-mc-ai-purple" data-jos-act="rev-ai-actions">AI Actions</button>' +
+              '<button type="button" class="jos-btn jos-btn-sm" data-jos-act="rev-ai-refresh">Refresh</button>' +
+            '</div>' +
+          '</section>'
+        : '') +
       '<div class="jos-rev-mc-main' + (showSide ? '' : ' full') + '">' +
         '<div class="jos-rev-mc-feed-col">' + tabsHtml + mainBody + '</div>' +
         (showSide ? renderRevSidebar(root) : '') +
