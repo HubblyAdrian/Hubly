@@ -1091,6 +1091,33 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   / memberships / reviews / FAQ). **Each is a gap in the TARGET, not a problem with Graef** — and
   repricing a live business without asking is the failure class CLAUDE.md names under pricing.
 
+- **RULING 2026-09-07: DO NOT CONVERT GRAEF TO A `business_documents` ROW. Not now, possibly not
+  ever.** His content is RICHER than what the generator can produce, so running his record
+  through the producer is a downgrade by construction. `BusinessRecord`
+  (`hubly_capability_registry.ts:285`) has 18 fields and **no concept of** why-choose cards, FAQ,
+  social links, memberships, trust pills, gallery ALBUMS, Our Story, deposit terms, the booking
+  wizard, per-vehicle pricing or per-service photos. Worse: the record block is built from the
+  TABLES, and his `services` and `review_submissions` are both **0 rows**, so the generator would
+  be handed *"SERVICES: none on record. Do not invent a service list"* and *"REVIEWS: none on
+  record"* — producing a page with no services and no reviews. And `documentHasOwnerEdits:426`,
+  the guard that refuses to regenerate over hand-edits, **cannot see him**: he has no document, so
+  there is no `created_by='patch'` history to detect. The withdrawn plan is kept, clearly marked,
+  at the top of `docs/GRAEF_CONVERSION.md` so it is never picked up as approved.
+  **The job is to make the EDITOR fully work for a NO_DOC business, not to move him.**
+- **THE EDITOR AND THE AI DISAGREE ABOUT WHERE SERVICES LIVE, and the editor calls the AI's home
+  legacy.** `public/hubly.html:18486`: *"Services live in Service Engine (meta.service_catalog) …
+  Do not write the legacy relational `services` table."* The editor reads/writes the catalog (the
+  table read at `:15231` is labelled "last-resort"); `applyOwnerRecordEdit` and `setServices`
+  read/write the TABLE. Graef: catalog 8, table 0. **So #54 is predicted NOT to be an editor bug
+  — services should work in the website editor and fail in the claimed-shell panel and the AI —
+  and that is broken FOR EVERYONE whose services were entered in the editor, not because he is
+  NO_DOC.** Predicted from code and NOT yet clicked; the click-through is the test.
+- **14 content types a human can add and the assistant cannot** (`docs/AI_CANNOT_BUILD.md`), 12 of
+  them absent from `BusinessRecord` entirely — the model is never told they exist. **That list,
+  not the store gate, is what "our AI builds it for them" requires**, and the order is
+  load-bearing: adding an action before the record field gives the assistant a fact the next
+  regeneration silently discards, which is the shadowed-`meta.logoUrl` defect again.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped

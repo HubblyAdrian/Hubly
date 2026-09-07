@@ -1,3 +1,64 @@
+# ⛔ REVERSED 2026-09-07 — DO NOT CONVERT GRAEF TO A DOCUMENT
+
+**This document's plan is WITHDRAWN. It is not an approved plan and must not be picked up as
+one.** Everything below the line is kept only as the record of what was considered and why it
+was rejected.
+
+## The ruling
+
+**Do not convert Graef to a `business_documents` row. Not now, possibly not ever.** The
+conversion designed below is the single most likely way to destroy the work he cares most about.
+
+## The reason — measured, not argued
+
+His acceptance criterion is the **EDITOR UI**: home button, website editor, all buttons
+functional. **Not AI parity.** And the decisive fact is that **his content is richer than
+anything the generator can produce**, so running his record through the producer is a downgrade
+by construction.
+
+`generateFreeformPage` builds its prompt from `buildBusinessRecordBlock(record)`
+(`hubly_capability_registry.ts:316`), and `BusinessRecord` (`:285`) has **18 fields**:
+
+> services, photos, reviews, hours, hoursNote, areaCities, city, state, travelRadiusMiles,
+> yearsInBusiness, phone, email, address, logoUrl, businessType, about, tagline
+
+**It has no field for anything Graef built by hand:**
+
+| his content | count | in `BusinessRecord`? |
+| --- | --- | --- |
+| Why-choose cards | 5 | **no concept** |
+| FAQ | 6 | **no concept** |
+| Social links (his own URLs) | 2 | **no concept** |
+| Memberships | 2 | **no concept** |
+| Trust pills | 3 | **no concept** |
+| Gallery **albums** (named, incl. 3 empty) | 7 | **no concept** — `photos` is a flat list |
+| Per-vehicle-class pricing | 32 prices | **no concept** — one `price` per service |
+| Booking wizard, deposit terms, `custom*` flags, `ourStory` | 26 fields | **no concept** |
+
+**And it is worse than "those get dropped."** The record block is built from the TABLES, and for
+Graef the tables are empty (service-role confirmed): `services` **0 rows**, `review_submissions`
+**0 rows**. So the generator would be handed, verbatim from `:316`:
+
+```
+SERVICES: none on record. Do not invent a service list.
+REVIEWS: none on record. Do not write testimonials, star ratings, review counts…
+```
+
+> **Converting him today produces a page with no services, no reviews, no why-cards, no FAQ, no
+> memberships and no social links — because the generator is correctly forbidden from inventing
+> what the record does not hold, and his record does not hold it. His content is in `meta`.**
+
+The safety property at `:426` (`documentHasOwnerEdits` — refuse to regenerate over
+`created_by='patch'`) does **not** protect him: he has no document, so there is no owner-edit
+history to detect. The guard that exists for this exact class of destruction cannot see him.
+
+## The job instead
+
+**Make the editor fully work for a NO_DOC business.** Not move him to where the editor already
+works. See `docs/GRAEF_EDITOR_BAR.md`.
+
+---
+
 # CONVERTING GRAEF ONTO THE STANDARD PATH — design only, nothing built
 
 **Graef's acceptance criterion, in his words:** *the same display as the others — the home
