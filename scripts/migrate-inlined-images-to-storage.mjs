@@ -63,6 +63,8 @@ import fs from "node:fs";
 import path from "node:path";
 
 const APPLY = process.argv.includes("--apply");
+/** --only <slug>: run a single business. The first real run should touch one, not three. */
+const ONLY = (() => { const i = process.argv.indexOf("--only"); return i > -1 ? (process.argv[i + 1] || "").trim() : ""; })();
 const SUPABASE_URL = (process.env.SUPABASE_URL || "").trim();
 const SERVICE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
 const BACKUP_DIR = path.resolve("backups/meta-" + new Date().toISOString().slice(0, 10));
@@ -107,7 +109,11 @@ async function main() {
 
   const summary = [];
 
-  for (const slug of TARGETS) {
+  const run = ONLY ? TARGETS.filter((t) => t === ONLY) : TARGETS;
+  if (ONLY && !run.length) { console.error(`--only ${ONLY}: not one of ${TARGETS.join(", ")}`); process.exit(2); }
+  if (ONLY) console.log(`--only ${ONLY} — the other ${TARGETS.length - 1} are untouched\n`);
+
+  for (const slug of run) {
     console.log(`━━ ${slug}`);
     const { data: biz, error } = await admin
       .from("businesses").select("id,slug,owner_id,meta,logo_url,banner_url").eq("slug", slug).maybeSingle();
@@ -117,20 +123,21 @@ async function main() {
     const bytesBefore = rawBefore.length;
 
     // ── S1. BACK UP FIRST. No backup, no migration for this business. ──────────────────
+    // THE DRY RUN WRITES THE BACKUP FOR REAL. Backups are read-only with respect to the
+    // database, so there is no reason to defer them — and deferring them made the backup
+    // path the riskiest UNTESTED code in the script, first executed at --apply time against
+    // a paying prospect's row. Now the only thing --apply exercises for the first time is
+    // the write itself.
     const backupPath = path.join(BACKUP_DIR, `${slug}.meta.json`);
-    if (APPLY) {
-      try {
-        fs.mkdirSync(BACKUP_DIR, { recursive: true });
-        fs.writeFileSync(backupPath, rawBefore, "utf8");
-        const verify = fs.readFileSync(backupPath, "utf8");
-        if (verify.length !== bytesBefore) throw new Error("backup size mismatch");
-        console.log(`   backup  ${backupPath} (${kb(bytesBefore)}) ✓`);
-      } catch (e) {
-        fail(`BACKUP FAILED (${e.message}) — skipping ${slug} entirely, nothing written`);
-        continue;
-      }
-    } else {
-      console.log(`   backup  would write ${backupPath} (${kb(bytesBefore)})`);
+    try {
+      fs.mkdirSync(BACKUP_DIR, { recursive: true });
+      fs.writeFileSync(backupPath, rawBefore, "utf8");
+      const verify = fs.readFileSync(backupPath, "utf8");
+      if (verify.length !== bytesBefore) throw new Error(`size mismatch ${verify.length} != ${bytesBefore}`);
+      console.log(`   backup  ${backupPath} (${kb(bytesBefore)}) ✓ verified`);
+    } catch (e) {
+      fail(`BACKUP FAILED (${e.message}) — skipping ${slug} entirely, nothing written`);
+      continue;
     }
 
     let meta;
@@ -214,7 +221,7 @@ async function main() {
   // ── S7. Verify from the DATA, not from what this script believes it did. ────────────
   console.log("━━ verification (corpus scan, independent of what the script thinks it did)");
   const { data: rows, error: scanErr } = await admin
-    .from("businesses").select("slug,meta").in("slug", TARGETS);
+    .from("businesses").select("slug,meta").in("slug", ONLY ? [ONLY] : TARGETS);
   if (scanErr) { fail(`verification scan failed: ${scanErr.message}`); process.exit(1); }
   let remaining = 0, totalBytes = 0;
   for (const r of rows || []) {
