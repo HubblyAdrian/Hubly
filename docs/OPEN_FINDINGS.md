@@ -5002,6 +5002,80 @@ from reasoning, corrected by counting.
 
 ---
 
+### R3 — VERIFIED ON THE LIVE PAGE, NOT INFERRED FROM THE ROW (aquaspeed, 2026-09-07)
+
+`--apply --only aquaspeed` ran: meta **29.6KB → 5.9KB**, scan returns 0 data URIs. *"Zero data
+URIs remaining" is also exactly what a migration that broke every image looks like*, so the row
+was not accepted as evidence. Loaded `https://aquaspeed.myhubly.app` in a browser:
+
+| question | answer |
+| --- | --- |
+| Does the logo render? | **Yes** — seen in the header beside "AQUASPEED"; a photo of a car with red lettering in a rounded square |
+| From what URL? | `…supabase.co/storage/v1/object/public/brand-assets/f62da44f-…/logo-migrated-64211e3a-….jpg` |
+| HTTP status | **200** |
+| Content type | **`image/jpeg`** |
+| Bytes served | **17,897** (`content-length` and the downloaded body agree) |
+| Decoded in the page | `complete: true`, `naturalWidth/Height` = **236 × 512** — matches `file(1)` on the fetched bytes |
+
+**Five `<img>` elements** carry that logo (`.ph-logo`, `.ws-header-logo` ×2, `.ws-bk-hero-logo`,
+`.booking-logo`) — **one distinct URL**, all five decoded; one is on screen at 36×36, the other
+four sit in panels that are not currently displayed. **Zero raster base64 left in the delivered
+HTML** (`src="data:image` = 0, `data:image/(png|jpe?g|webp|gif);base64` = 0; the 4 remaining
+`data:image` hits are inline SVG icons, which were never in scope).
+
+**And the bytes are the SAME bytes.** Decoded the base64 out of the dry-run backup
+(`backups/meta-2026-09-07/aquaspeed.meta.json`, `.logoUrl`, 17,897 bytes) and hashed both:
+
+```
+backup .logoUrl  17897 bytes  sha256=f28d221775f242a7776b838d66b6ccce5c13867d9e3f17e7af85d90556e152a8
+hosted object    17897 bytes  sha256=f28d221775f242a7776b838d66b6ccce5c13867d9e3f17e7af85d90556e152a8
+```
+
+**Byte-identical.** The migration moved the image; it did not re-encode, truncate, or replace it.
+That is a stronger statement than "an image loads" — a *different* working image would also load.
+
+**One observation, NOT caused by the migration:** the logo is a 236 × 512 portrait image squeezed
+into a 36 × 36 square, so it renders letterboxed with white bars and the artwork is tiny. The
+source bytes are unchanged, so this is how it looked before — a pre-existing presentation issue,
+noted here only so it is not later mistaken for migration damage. (Also visible on the page and
+already known: the run-together hero headline "YOUR CAR CLEANEDAT YOUR PLACE", and the
+placeholder services copy of #18.)
+
+### The label bug — a status line that overstated its scope
+
+The verification summary read:
+
+```
+   TOTAL meta across the three: 5.9KB   data URIs remaining: 0
+```
+
+under `--only aquaspeed`. **The scan was correctly scoped to one business** (`.in("slug", ONLY ?
+[ONLY] : TARGETS)`) — only the *label* was wrong, and it read as though `devdetailing661` and
+`bucket-mobile-detailing` had been emptied too. They are untouched. This is the same family as
+everything else this week: **a message the data does not support**, and the moment it misleads is
+a real incident, when someone is reading that line to decide what still needs doing.
+
+Fixed by deriving the label from the rows that actually came back, never a fixed phrase — the
+scan is unchanged:
+
+```
+   TOTAL meta across 1 business (aquaspeed): 5.9KB   data URIs remaining: 0
+   SUCCESS — the scan of 1 business (aquaspeed) returns zero.
+```
+
+Two further label corrections in the same block, both the same defect:
+- the section header said `verification (corpus scan…)` → now `verification (re-read from the DB…)`;
+- **a scan that matched nothing also produced `remaining === 0` and printed SUCCESS.** An absence
+  of evidence was rendering as a green result — prohibition 2 exactly. It now prints
+  `NO ROWS SCANNED — no business matched --only <slug>. This is NOT a success; nothing was
+  verified.`
+
+Proven by lifting the shipped lines out of the script into a harness (not a retyped copy) and
+running all five cases: one business, three businesses clean, three businesses with 4 remaining,
+`--only` matching nothing, and no targets returning.
+
+---
+
 ## #65 — INVENTORY: dual-credential write paths, where an RLS change is invisible to every server-side test
 
 **2026-09-07, read-only. Nothing fixed. This is the list to consult BEFORE the next policy

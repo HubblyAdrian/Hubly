@@ -312,7 +312,7 @@ async function main() {
   }
 
   // ── S7. Verify from the DATA, not from what this script believes it did. ────────────
-  console.log("━━ verification (corpus scan, independent of what the script thinks it did)");
+  console.log("━━ verification (re-read from the DB, independent of what the script thinks it did)");
   const { data: rows, error: scanErr } = await admin
     .from("businesses").select("slug,meta").in("slug", ONLY ? [ONLY] : TARGETS);
   if (scanErr) { fail(`verification scan failed: ${scanErr.message}`); process.exit(1); }
@@ -323,10 +323,27 @@ async function main() {
     remaining += n; totalBytes += raw.length;
     console.log(`   ${r.slug.padEnd(26)} ${kb(raw.length).padStart(9)}   data URIs remaining: ${n}`);
   }
-  console.log(`\n   TOTAL meta across the three: ${kb(totalBytes)}   data URIs remaining: ${remaining}`);
-  console.log(remaining === 0
-    ? "   SUCCESS — the corpus scan returns zero."
-    : "   NOT DONE — re-run, or investigate the failures above.");
+
+  // The summary line names what the scan ACTUALLY covered, derived from the rows that came
+  // back — never a fixed phrase. Under --only this scan is one business, and a line reading
+  // "across the three" or "the corpus scan" there claims a scope the data does not support:
+  // it reads as though the other two had been emptied too, which during a real incident is
+  // exactly the wrong thing to believe. Same family as a checkmark nobody earned.
+  const scanned = (rows || []).map((r) => r.slug);
+  const scope = scanned.length === 0
+    ? "0 businesses"
+    : scanned.length <= 3
+      ? `${scanned.length} business${scanned.length === 1 ? "" : "es"} (${scanned.join(", ")})`
+      : `${scanned.length} businesses`;
+  console.log(`\n   TOTAL meta across ${scope}: ${kb(totalBytes)}   data URIs remaining: ${remaining}`);
+  // A scan that matched nothing also reports remaining === 0. That is an absence of evidence,
+  // not a success, and it must never print as one.
+  console.log(scanned.length === 0
+    ? `   NO ROWS SCANNED — ${ONLY ? `no business matched --only ${ONLY}` : "none of the targets came back"}. ` +
+      "This is NOT a success; nothing was verified."
+    : remaining === 0
+      ? `   SUCCESS — the scan of ${scope} returns zero.`
+      : "   NOT DONE — re-run, or investigate the failures above.");
   if (!APPLY) console.log("\n(DRY RUN — nothing above was written.)");
 }
 
