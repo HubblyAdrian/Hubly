@@ -975,7 +975,11 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   browser.** Not *"did my change work"* — that was verified, twice — but *"what else was relying
   on what I just removed."* One `grep "storage.from("` across `public/` would have found it.
   Note (a) was immune to (b) because it uses a raw `fetch` with the service-role key, which
-  bypasses RLS. **The change that was safe and the change that broke were the same operation on
+  bypasses RLS. **The inventory of every place this can happen again is `OPEN_FINDINGS` #65: 10
+  tables/buckets written from BOTH a service-role context and the browser, ranked by whether a
+  browser-side failure would be swallowed.** `jobs` is top of that list — all six browser writes
+  swallow the error, five server modules write it, and a dropped job is indistinguishable from a
+  job never created. Consult it before a policy change, not after. **The change that was safe and the change that broke were the same operation on
   the same bucket, differing only in which credential ran it** — which is exactly why "I tested
   my path" did not generalise.
 

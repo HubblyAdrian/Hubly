@@ -4999,3 +4999,87 @@ so the number was right the first time — what I had wrong was the *composition
 six were the three profile fields; two are actually `logoUrl`). **Three weeks of a broken upload
 path produced no new base64 because almost nobody used that path.** An assertion of "larger"
 from reasoning, corrected by counting.
+
+---
+
+## #65 — INVENTORY: dual-credential write paths, where an RLS change is invisible to every server-side test
+
+**2026-09-07, read-only. Nothing fixed. This is the list to consult BEFORE the next policy
+change, not three weeks after it.**
+
+### Why this class exists
+
+`#64` was not a coding error. Two callers wrote the **same operation to the same bucket** and
+differed only in **who ran them**:
+
+| caller | credential | outcome of the 2026-08-18 policy change |
+| --- | --- | --- |
+| `scripts/migrate-data-uri-logos.ts` | **service role** (raw `fetch`) | unaffected — service role bypasses RLS |
+| `hubly.html` `uploadBrandAsset` | **user JWT** (supabase-js) | broke silently for three weeks |
+
+**"I tested my path" was true and told us nothing.** Any table written from both a service-role
+context and the browser has this property: a server-side test cannot see an RLS regression,
+because the credential it uses is exempt from RLS by design.
+
+### THE INVENTORY — 10 dual-credential surfaces
+
+Parsed, not eyeballed: `.from("x").insert|update|upsert|delete`, `adminWrite("POST|PATCH|DELETE","x")`
+and `storage.from("bucket").upload|remove`, intersected between `supabase/functions/` + `scripts/`
+(service role) and `public/` (browser, user JWT).
+
+| # | table / bucket | browser writers | server writers (sample) |
+| --- | --- | --- | --- |
+| 1 | **`[storage] brand-assets`** | `hubly.html`, `photography-projects.js` | migration scripts |
+| 2 | **`jobs`** | `hubly.html`, `journey.js` | `booking_job.ts`, `google_calendar_sync.ts`, `hubly-recurring-maintain` |
+| 3 | **`businesses`** | `hubly.html`, `hubly-studio.js`, `marketplace-lite.html` | `hubly_brain_website.ts`, `claim-draft-account`, `generate-site` |
+| 4 | **`booking_requests`** | `hubly.html` | `booking_engine.ts`, `booking_job.ts`, `create-booking-checkout` |
+| 5 | `customers` | `hubly.html` | `crm_customer.ts`, `crm_from_booking.ts` |
+| 6 | `recurring_schedules` | `journey.js` | `hubly_booking_execution.ts`, `hubly-recurring-maintain` |
+| 7 | `business_memories` | `hubly.html` | `hubly_brain_executors.ts` |
+| 8 | `marketplace_providers` | `marketplace-lite.html` | `marketplace_provider.ts`, `marketplace` |
+| 9 | `photography_projects` | `photography-projects.js` | `adobe-lightroom` |
+| 10 | `photography_project_workspaces` | `photography-projects.js` | `adobe-lightroom`, `adobe-oauth-*` |
+
+For scale: **58 tables are written server-side only** (RLS changes cannot break them from the
+browser) and **3 browser-only** (a server test was never going to cover them anyway). These 10
+are the seam.
+
+### RANKED BY WHAT HAPPENS WHEN THE BROWSER WRITE FAILS
+
+The combination that produced three weeks and 693,906 bytes is **dual-credential path + a
+fallback that looks like success**. Ranked on that, worst first:
+
+**TIER 1 — swallows the error entirely (`catch{}`, `.then(()=>{})`, or no error read at all):**
+
+| surface | sites that swallow |
+| --- | --- |
+| **`jobs`** | `hubly.html:32415`, `:32439`, `:44134`, `:44171`, `:44436`, and `:44456` reads no error at all — **6 of 6** |
+| **`businesses`** | `hubly.html:13896`, `:14510`, `:14532`, `:17229`, `:17232` — the whole-meta writers from #57/#58 |
+| **`booking_requests`** | `hubly.html:42134`, `:43087` swallow; `:43091` reads no error |
+| **`[storage] brand-assets`** | `hubly.html:30625`; `photography-projects.js:3266`/`:3271` |
+| `customers` | `hubly.html:44980` reads no error |
+
+**`jobs` is the one I would look at first.** Every browser write to it swallows, it is written by
+five different server-side modules, and a job is the thing an owner *does the work from* — a
+silently dropped job write is indistinguishable from a job that was never created.
+
+**TIER 2 — reads the error (a break would surface, though not necessarily well):**
+`business_memories`, `marketplace_providers`, `recurring_schedules`, `photography_projects`,
+`photography_project_workspaces`, and the checked sites in `customers`/`booking_requests`.
+
+### THE CHECK THAT WOULD HAVE CAUGHT #64
+
+Not a test — a habit, with a concrete trigger:
+
+> **After changing any RLS policy, grep for every browser caller of the affected table or
+> bucket, and exercise ONE of them under a real user JWT.** A service-role test proves nothing
+> about the policy you just changed, because it is exempt from it.
+
+For storage that is `grep "storage.from(" public/` — two lines. For a table it is
+`grep "from('<table>')" public/`. **The cost is seconds; the cost of skipping it was three weeks.**
+
+**What this inventory cannot tell you:** it finds writes by shape, so a write assembled at
+runtime or reached through a variable table name is invisible; it does not distinguish a write
+that RLS would actually refuse from one that happens to be permitted; and it says nothing about
+*reads*, which can fail the same way — `#33` is exactly that, a denied SELECT rendering as an
+empty panel.
