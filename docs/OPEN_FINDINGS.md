@@ -3776,3 +3776,132 @@ ship for their own reasons.
 
 **`stripe-webhook` is not on either list**: it imports only `verifyStripeWebhook`, which is local
 HMAC with no outbound call. The pin cannot affect it.
+
+---
+
+## #52 — `as OwnerRecordEdit` on a request body: one unhandled kind, and a catch-all that INSERTS
+
+**Measured 2026-09-06, read-only. NOT FIXED — the fix needs a runtime guard, which emits JS.**
+
+The `design` case is the instance. **The cause is a cast on client-supplied input**
+(`hubly-conversation/index.ts:1551`):
+
+```ts
+const directRecordEdit: OwnerRecordEdit | null =
+  body?.directRecordEdit && typeof body.directRecordEdit === "object" &&
+  typeof body.directRecordEdit.kind === "string"
+    ? (body.directRecordEdit as OwnerRecordEdit)   // <- asserts a shape we do not control
+    : null;
+```
+
+The only validation is *"`kind` is a string"*. The cast then asserts the entire union member —
+every field, every literal — on a payload from the network. Same family as `as any`: it silences
+the checker rather than establishing the fact.
+
+### 1–2. The union vs the branches
+
+| union member | branch in `applyOwnerRecordEdit` |
+| --- | --- |
+| `{ kind: "contact", … }` | ✅ `:4305` |
+| `{ kind: "hours", … }` | ✅ `:4321` |
+| `{ kind: "service", op: "add"\|"edit", … }` | ✅ fallthrough at `:4340` |
+| `{ kind: "service", op: "remove", … }` | ✅ `:4343` |
+| `{ kind: "design", knob, … }` | ❌ **none — falls into the service path** |
+
+**5 members, 4 kinds, 2 explicit branches plus one implicit fallthrough.** One kind unhandled,
+not three — the branch count is misleading because `service` is handled by falling off the end.
+
+### 3. What actually happens — and the worse one is not `design`
+
+**`design` is benign, as reported:** `String(edit.name || "")` is `""`, so `:4342` returns
+`no_name` — *"A service needs a name."* No write.
+
+**The catch-all at `:4357` is the real finding.** After the `remove` branch, the code does:
+
+```ts
+if (edit.op === "edit" && edit.id) { …PATCH… }
+else { row.business_id = draftId; await adminWrite("POST", "services", "", row); }   // :4357
+```
+
+`else` is **everything that is not exactly `op === "edit"` with an `id`**. So a `service` edit
+that carries a name and a **missing, misspelled, or bogus `op`** — `"delete"`, `"update"`, or
+simply omitted — **INSERTS a new service row** instead of erroring. An edit intended as an update
+silently becomes a duplicate.
+
+**Severity, honestly:** the auth gate at `:4297–4304` runs first and requires a verified
+`ownerUid` that owns this business, so this is not a security hole — it is an authenticated owner
+writing to their own business, something they may do anyway. It is a **correctness** defect: a
+malformed request from our own UI, or any future caller, creates a duplicate service instead of
+failing. Given that services are what the pages are built from, a silent duplicate is not
+cosmetic.
+
+### 4. How widespread is the pattern — narrower than feared
+
+**19 casts of a request-body value to a type across all edge functions:**
+
+| cast target | count | verdict |
+| --- | --- | --- |
+| `as Record<string, unknown>` | **17** | **honest** — it asserts only "this is an object", forcing field-by-field reads with their own coercion |
+| `as unknown as BodyInit` | 1 | a `fetch` body, not a request payload |
+| **`as OwnerRecordEdit`** | **1** | **the outlier — the only cast to a discriminated domain union** |
+
+So this is **one site, not a class**. Worth stating plainly because the instinct after finding one
+is to assume twenty. (Separately: **60 `as any`** across edge functions — a different and larger
+question, not measured here.)
+
+### The fix, when it is done — not tonight
+
+A `default`/exhaustiveness guard at the end of the `kind` dispatch (`kind: never` forces the
+compiler to prove every member is handled, so a sixth union member becomes a compile error rather
+than a silent fallthrough), and an explicit `op` check instead of `else`. Both emit JavaScript,
+which is why they are recorded here rather than done in a type-only batch.
+
+---
+
+## #53 — Adobe/Lightroom excluded from the repo-wide typecheck. RULING: exclude, do not delete.
+
+**2026-09-06. Reversible on purpose.**
+
+**Zero usage, measured across every table that could hold it:**
+
+| | count |
+| --- | --- |
+| `hubly_app_connections` (any provider) | **0** |
+| adobe/lightroom connections | **0** |
+| `photography_project_workspaces` | **0** |
+| `photography_projects` | **0** |
+| businesses with `capabilities.lightroom = true` | **0** |
+| all five adobe edge functions | v31, last deployed **2026-08-19** |
+
+**But it is NOT dead code, and that is why this is an exclusion rather than a deletion.**
+`public/hubly.html:13147` loads `adobe-lightroom-service.js`, and `hasBusinessCapability()`
+returns true for `lightroom` on any photo-led trade **even without the flag** — so the door can
+open for the 9 businesses with `projects: true`. It is an **unused live feature**. Deleting a
+built feature is a product decision; excluding it from a checker is not.
+
+**THE NAMED FILES** — a list, never a glob or a directory, so that adding one is a deliberate act
+that shows up in a diff:
+
+```
+supabase/functions/adobe-lightroom/index.ts              (64 distinct errors)
+supabase/functions/adobe-oauth-disconnect/index.ts       (3)
+supabase/functions/_shared/adobe_lightroom_client.ts     (1)
+supabase/functions/_shared/hubly_provider_lightroom.ts   (1)
+```
+
+**Why:** 69 of 109 distinct errors — 63% of the remaining debt — in a feature with no users. The
+point of the check is to cover code with customers, and this has none.
+
+**What the exclusion is knowingly hiding.** Two of those 69 are genuine logic bugs, not inference
+gaps: `TS2783` *"'x' is specified more than once, so this usage will be overwritten"* and
+`TS2785` *"this spread always overwrites this property"*. There is also a
+`Uint8Array → BodyInit` mismatch that could fail at runtime, and 26 `SupabaseClient` generic
+conflicts. **These are not fixed and not forgotten — they are parked with the feature.**
+
+> **THE CONDITION THAT BRINGS IT BACK: the first business that actually connects Lightroom.**
+> At that moment this stops being unused code and the exclusion must be removed and the 69 fixed
+> — including the two real bugs above, which will then be sitting in a live path.
+
+**Result: 22 of 53 functions still fail with the adobe files excluded** — so the exclusion alone
+does not make the check green. It removes the largest *unowned* block; the remaining 40 distinct
+errors are in code with customers and are worth fixing on their merits.
