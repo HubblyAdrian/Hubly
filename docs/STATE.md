@@ -1034,6 +1034,33 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   the three empty gallery albums, the unfilled `ourStory`, the `custom*` override flags and the
   three pipeline customers are all invisible to it and must be checked against the inventory.
 
+- **"Adding a Reviews section" and "adding a Store tab" are the same mechanic at different
+  scopes — and the #66 gate as designed does NOT generalise to it.** Right shape (one predicate,
+  earned not default, announced when it lands), wrong scope: it gates a BOOLEAN where the general
+  case needs an ORDERED LIST of `{type, variant, order, visible, config}`; it names the readers
+  and never names the WRITER, so "asked for in conversation" has no landing point (there is no
+  `addSection` action, and nothing in the registry writes `capabilities` at all); and it would
+  grant an empty room the AI cannot furnish, because the assistant has no action that writes a
+  review, a why-card, a membership or an FAQ. **The load-bearing change is that the classic
+  renderer's section set is a hardcoded five** (`SECTION_DEFS`, `public/hubly.html:50388`;
+  `S_sections.splice:50496` is drag-reorder, there is no add) — until that reads a per-business
+  list, no gate design can add anything for Graef, who is on `site_mode: classic`. The ONE place
+  in the product where a section can be added by hand today is the storefront AST panel
+  (`:40547`, `sfAddBlock:40616`) — the surface he is not using. **So: build the section list +
+  a classic renderer that reads it + one `addSection` registry action as ONE mechanism, and let
+  Store be its first entry.** Shipping Store as a boolean does not cost rework — it costs a
+  second section model built against a different shape, which is the defect this codebase already
+  has more of than any other.
+- **The AI cannot touch most of what an owner actually makes.** The whole registry is 5
+  capabilities / 16 actions, and only THREE write owner facts: `startDraft`, `updateDraft` (name,
+  tagline, about, businessType, phone, email, city, brandColor, hero headline/subhead, seoTitle,
+  layout) and `setServices`. Why-cards, trust pills, memberships, reviews, FAQ, gallery, Our
+  Story, social links, service-area radius, owner photo, the booking wizard and deposit terms are
+  **editor-only — the assistant can neither read nor write any of them**, so it will offer to
+  build what already exists or say it cannot. And every `website.*` action operates on a
+  `business_documents` row, which Graef does not have (0 rows) — so the assistant's entire
+  page-editing capability returns `not_freeform` for the owner who has done the most work.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped

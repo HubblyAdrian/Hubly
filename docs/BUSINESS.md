@@ -624,6 +624,14 @@ for the itemised checklist, and STATE for the framing).
 - **35 images**, all live, all in `brand-assets`, zero base64.
 - **Store is switched on with 0 products** (`meta.storeOs.seeded`, `enabled`, `showOnWebsite`) —
   the #66 gating case, in a real business.
-- **Unknown, and NOT zero:** whether he has bookings, jobs or `services` table rows. The anon
-  credential returns an empty array for both "none" and "RLS denied", so this is unmeasured until
-  the export is re-run with the service role.
+- **MEASURED with the service role** (export re-run 2026-09-07T18:05, `COMPLETE: true`, 117
+  tables enumerated from the live OpenAPI spec, **0 denied** — so a 0 here is a real 0):
+  **11 `booking_requests`, 4 `customers`, 2 `jobs`**, 1 `business_memories`, 1
+  `marketplace_providers`, 1 `notification_deliveries`, 14 `page_loads`, 19
+  `hubly_brain_executions` — **53 related rows across 8 tables.** *Who those 11 requesters are is
+  not established by the rows themselves* (a row is not evidence of a person) — the count is the
+  claim, not their identity.
+- **And the zeros that matter: `services` = 0, `memberships` = 0, `business_documents` = 0.**
+  His 8 services and 2 memberships exist ONLY in `meta` — while both the AI writer
+  (`business.setServices`) and the panel writer (`applyOwnerRecordEdit` kind `service`) address
+  the empty `services` TABLE. That is #54, measured. See `docs/GRAEF_COVERAGE_MATRIX.md`.
