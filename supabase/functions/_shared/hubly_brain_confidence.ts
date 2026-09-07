@@ -35,7 +35,16 @@ export type HublyCapabilityConfidence = {
 
 const ASK_THRESHOLD = 70;
 
-type Req = {
+// RENAMED Req -> Ctx, 2026-09-06. `Req` was declared here and referenced NOWHERE, while
+// `Ctx` was referenced in 13 places and declared nowhere — a half-finished rename. The
+// consequence was not cosmetic: an undefined type annotation makes every one of those 13
+// parameters implicitly `any`, so TypeScript was checking NOTHING inside the ten assessor
+// functions that decide the AI's capability confidence. Type-only (an unused type alias
+// and a rename emit no JavaScript), but it takes ten functions out of a blind spot.
+//
+// The shape is confirmed by the only construction site, assessCapabilityConfidence below:
+//   const ctx: Ctx = { memory: normalizeBusinessMemory(...), dna: normalizeBusinessDNA(...) }
+type Ctx = {
   memory: ReturnType<typeof normalizeBusinessMemory>;
   dna: HublyBusinessDNA;
 };

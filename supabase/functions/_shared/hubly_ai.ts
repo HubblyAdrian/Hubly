@@ -450,10 +450,20 @@ export type HublyAIResult = {
   finishReason?: string;
 };
 
-/** @deprecated use HublySkillId */
-export type HublyCapabilityId = HublySkillId;
-/** @deprecated use HublySkill */
-export type HublyCapability = HublySkill;
+// REMOVED 2026-09-06: two deprecated aliases, `HublyCapabilityId = HublySkillId` and
+// `HublyCapability = HublySkill`, that COLLIDED with the imports of the same names from
+// ./hubly_brain_capabilities.ts at the top of this file (TS2440 ×2, TS2484 ×2). Four
+// errors, and they blocked `deno check` for SEVENTEEN functions — every AI function in
+// the codebase — which is why the repo-wide typecheck was permanently red and therefore
+// never read.
+//
+// The IMPORTED definitions are the correct ones, not these: `listRuntimeCapabilities()`
+// below is typed `HublyCapability[]` and returns `listHublyCapabilities()` — the DAG-node
+// capability from hubly_brain_capabilities.ts, not a skill. Keeping the aliases would have
+// been a type-level lie that happened to compile.
+//
+// Type-only: both were `export type`, so nothing changes in the emitted JavaScript.
+// Use HublySkill / HublySkillId directly; both remain exported.
 
 const DEFAULT_CLAUDE_MODEL = "claude-haiku-4-5-20251001";
 /** Primary reasoning model for business-building work. */

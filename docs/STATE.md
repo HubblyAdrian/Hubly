@@ -705,6 +705,24 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
   **no.** 3 rows have no usable phone and none has a phone-carrying booking matching by email
   or exact name — though all 3 lack an email, so the join could only use exact name and the
   evidence is weak rather than conclusive.
+- **The typecheck debt, MEASURED 2026-09-06 — and my earlier framing was wrong three ways.**
+  I said "4 of 8 functions fail on a pre-existing TS2440 in `hubly_ai.ts`". Parsed: **53
+  deployable functions, 27 pass, 26 fail**; `hubly_ai.ts` accounts for **4 of 129** distinct
+  errors, not the cause; and the raw count of **634** is the same **grouping error made a fourth
+  time** — it counts a shared file once per importer. Deduplicated by `file:line:col:code` the
+  real number is **129**. Fifteen functions share a byte-identical 29-error fingerprint, which is
+  one shared subtree, not fifteen problems. **Parse the class; the first count is always low, and
+  now also sometimes far too high.**
+  Root causes, not error codes: **`adobe-lightroom` + client = 69 of 129 (53%)** and genuinely
+  independent; everything else is a handful of tiny shared-file causes with enormous fan-out.
+  Fixed 2026-09-06, type-only: `hubly_ai.ts` (4) and `hubly_brain_confidence.ts` (16) → **129 →
+  109 distinct, 634 → 274 raw, zero new errors**. Still 27/26 pass/fail, because the 17 AI
+  functions remain blocked by 6 errors in `hubly_capability_registry.ts`.
+  **`Ctx` is the one to remember:** a half-finished rename left a type referenced 13 times and
+  declared nowhere, so ten assessor functions deciding the AI's capability confidence had
+  **implicitly-`any` parameters and were being type-checked not at all.** "Type-only, cannot
+  bite" was true of the errors and false of the consequence. Defining it revealed **no** new
+  errors — the blind spot happened to contain no bugs, which is luck, not evidence.
 - **DEBT, and NO LONGER BOTTOM OF THE LIST: `deno check` fails at HEAD on 4 of 8 of those
   functions.** Upgraded 2026-09-06 from theoretical to demonstrated. Pinning the Stripe API
   version, a doc-comment edit swallowed the closing `*/` and turned the rest of
