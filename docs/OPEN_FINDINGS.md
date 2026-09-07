@@ -5096,6 +5096,46 @@ upload)"**. I wrote that, then verified against it as though it said something e
 rewrote a shadowed field to the URL already in the column; restore put the base64 back into the
 same shadowed field. No upload, no orphan, no pixel changed either way.
 
+### R5 — devdetailing661 applied. THE FIRST OBSERVABLE CASE, and the two changes verified SEPARATELY
+
+`--apply --only devdetailing661`: meta **178,510 → 4,939 bytes**, 2 migrated, **0 data URIs left**.
+Two changes happened, and they are not the same kind of change.
+
+#### Change A — `meta.logoUrl`: SHADOWED. Invisible by design, and it should be.
+
+| | |
+| --- | --- |
+| action | **REWRITE** — set to the URL already in the column. **No upload.** |
+| `businesses.logo_url` | `…/1a328efb-…/logo-migrated-172d4777-….jpg` (the **2026-08-18** object) |
+| `meta.logoUrl` after | **the same URL** — `row.logo_url === m.logoUrl` is `true` |
+| header logo on the page | loads that object, `naturalWidth/Height` 410 × 512, decoded |
+| pixels changed | **zero** |
+
+The page renders `logo_url || S.logoUrl`, so it was drawing the column before the apply and is
+drawing the column now. 27,887 bytes of base64 left the row and nothing on screen moved. **That
+is the correct outcome for a shadowed field — it is not evidence the migration works.**
+
+#### Change B — `meta.website.ownerPhotoUrl`: THE OBSERVABLE ONE. It worked.
+
+| check | result |
+| --- | --- |
+| **1. The 4 `<img>` elements** | all four now load `https://…/brand-assets/1a328efb-…/owner-1788803637264-598u7mg.jpg`. **`src="data:image` on the page: 0. Raster base64 on the page: 0.** (Before: 4 and 4.) |
+| **2. Same picture?** | **Byte-identical.** Backup `.website.ownerPhotoUrl` decodes to **102,263 bytes, sha256 `591233…0745e`**; the hosted object is **102,263 bytes, sha256 `591233…0745e`**. `file(1)`: JPEG, **384 × 512** — the dimensions from before. Served 200 / `image/jpeg`. |
+| **3. LOOKED at it** | Fetched the bytes and viewed them, then opened the **About** tab and viewed it *in situ* beside "Devin F": Devin holding a polisher in a garage, upright, correctly cropped into the circular avatar. Same photo. |
+| **4. Whose object is it?** | **`<owner_id>/<kind>-<Date.now()>-<rand>.<ext>`** — `owner-1788803637264-598u7mg.jpg`, kind `owner`, timestamp **2026-09-07T17:53:57.264Z**, matching the apply run. **NOT `logo-migrated-`.** This script created it. |
+
+**This is the check we skipped on aquaspeed**, and it is the one that distinguishes "an image
+loads" from "this migration produced the image that loads". Both hashes and the naming now agree,
+and they are independent: the hash proves the *content* survived, the object name proves the
+*provenance*.
+
+**Verdict, kept separate as it must be:** `logoUrl` migrated invisibly and correctly (shadowed
+duplicate, no upload, nothing to see). `ownerPhotoUrl` migrated **observably** — 4 elements
+flipped from `data:` to hosted, byte-exact, same picture, in an object this run created. **The
+undo remains unproven; that is step 5.**
+
+---
+
 ### Which images are actually SHADOWED — the migration is only 91% observable
 
 Read from `get_public_business` for all three:
