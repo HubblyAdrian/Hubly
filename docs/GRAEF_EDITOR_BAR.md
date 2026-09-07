@@ -1,5 +1,21 @@
 # GRAEF'S BAR: MAKE THE EDITOR FULLY WORK FOR A NO_DOC BUSINESS
 
+> # ✅ THE PREMISE IS DEAD — CRITERION 2 IS ALREADY MET
+>
+> **Measured 2026-09-07 by clicking a clone, not by reading code.** A claimed NO_DOC business
+> already gets **the full rail (19 entries, including Website editor), the website editor — which
+> opens and renders his page — and all 13 Builder panels.** The home button is there.
+>
+> **"His manage panel is empty because he is NO_DOC" did not reproduce.** Whatever Graef was
+> describing, it is not caused by having no `business_documents` row, and the plan to move him
+> onto a document was aimed at a cause that does not exist. (The conversion is separately, and
+> permanently, withdrawn — see `docs/GRAEF_CONVERSION.md`.)
+>
+> What is left is not a missing UI. It is **three defects inside a UI that is already there**, all
+> of them broken for everyone: see `docs/EDITOR_DEFECTS_2026-09-07.md`. **His bar is days.**
+
+
+
 **The job is no longer to move him to where the editor works.** Conversion is withdrawn — see the
 reversal at the top of `docs/GRAEF_CONVERSION.md`. His bar is the **EDITOR UI**: home button,
 website editor, all buttons functional. Not AI parity.
