@@ -4218,3 +4218,234 @@ identified.
 
 Same family as #52 and #44: **the system created rows when it should have recognised it had
 already done the work.**
+
+---
+
+## #57 — DESIGN for #54: `service_engine.ts` as the single owner. Two moves. NOTHING BUILT.
+
+**2026-09-06, design only. No writes, no migration, no code. Recommendation stands — catalog
+canonical — but see the blocker first, which was found while designing and changes Move 1's
+opening step.**
+
+### ⛔ BLOCKER FOUND WHILE DESIGNING: the only server-side catalog writer cannot succeed
+
+`businesses` has **57 columns and `updated_at` is not one of them** (`created_at` is). Verified
+against `information_schema`: `has_updated_at: 0`.
+
+Both server-side meta writers set it anyway:
+
+```ts
+// marketplace/index.ts:1543  (handleLiteServicesSave — the catalog write)
+// marketplace/index.ts:2014  (the hours write)
+.update({ meta, updated_at: new Date().toISOString() }).eq("id", businessId);
+```
+
+PostgREST rejects an update naming a column that does not exist, so `upErr` is set and the
+handler returns **500** every time. `handleLiteServicesSave` is reachable and live —
+`marketplace-lite.html:772` posts `action: 'lite_services_save'`, routed at
+`marketplace/index.ts:2333`.
+
+> **So the one server-side path that writes `meta.service_catalog` has been returning 500. The
+> catalogs in production were written by the CLIENT (`hubly.html` `buildBizMeta`), not by this.**
+
+Unverified by execution — calling it writes, and this was a design pass. It is a code-and-schema
+reading, and it should be confirmed by one request before Move 1 depends on it. **It also means
+the hours save at `:2014` is broken the same way.** Filed here rather than as its own item because
+it lands inside the code Move 1 replaces.
+
+### THE RACE IS WIDER THAN SERVICES
+
+`meta` is `text`. Every write is read-parse-modify-serialize-write of the **entire blob** —
+Graef's is 46KB across ~40 top-level keys (`storefront`, `storeOs`, `bookingWizard`, `hours`,
+`pipeline`, `quoteConfig`, …). `.update({ meta })` replaces all of it.
+
+So the collision is not "two service edits". It is **"a service edit silently discards a
+storefront edit"** — any two writers touching *any* two keys. Counted: **9 whole-meta writes in
+`public/hubly.html`** plus the 2 server-side ones. Eleven doors onto one blob, no locking, no
+version.
+
+**And there is no version column to build optimistic concurrency on.** No `updated_at`, no
+`meta_version`. That is a Move-1 requirement, not an optional refinement.
+
+---
+
+## MOVE 1 — one door in and out of service data
+
+The same move that worked five times today: one customer resolver (#44), one money formatter
+(#38), one phone normaliser (#44/R5), one Stripe mode deriver (#49), one service owner.
+
+### The interface
+
+`service_engine.ts` already owns every READ (`getCatalog:541`, `listServices:624`,
+`getService:644`, `toBookingDto:664`, `listBookingServices:696`, `toMatchDto:705`,
+`toAiSummary:728`) and already has the *shape* of a write (`buildCatalogWritePayload:803`,
+`catalogFromOwnerServicesPayload:830`) — but those are pure functions that hand a blob back to
+the caller, and the caller does the `.update()`. **That is the gap: there is no write DOOR, only
+a write HELPER.**
+
+Proposed additions — the only functions permitted to persist service data:
+
+```ts
+// Every mutation goes through one of these three. Each takes the admin client,
+// performs read-modify-write inside a single guarded operation, and returns what
+// ACTUALLY landed — never what was requested.
+export async function applyServiceChange(
+  admin: Admin,
+  businessId: string,
+  change:
+    | { op: "add";    service: ServiceInput }
+    | { op: "edit";   id: string; patch: Partial<ServiceInput> }
+    | { op: "remove"; id: string }
+    | { op: "replaceAll"; services: ServiceInput[] },   // the Lite/editor bulk save
+  opts: { ownerUid: string; expectedVersion?: number },
+): Promise<ServiceWriteResult>;
+
+export type ServiceWriteResult = {
+  ok: boolean;
+  catalog: ServiceCatalog;        // the catalog as it now stands, read back
+  applied: string[];              // names that actually changed
+  conflict?: { expected: number; actual: number };  // set when the write was refused
+  error?: string;
+};
+
+// Read-back, so a caller never composes a summary from what it asked for.
+export function catalogVersion(business: Record<string, unknown>): number;
+```
+
+**Ownership is checked inside the door**, not by each caller — `ownerUid` is required and the
+function asserts `businesses.owner_id === ownerUid`, the settled rule (never `context`).
+
+### Who has to change
+
+| caller | file:line | today | under Move 1 |
+| --- | --- | --- | --- |
+| manage panel read | `platform-home.html:4293` | reads `services` table | reads the catalog (via a thin edge read, since the client cannot import Deno modules) |
+| manage panel write | `platform-home.html:4307` → `hcRecordEdit` | posts `directRecordEdit` | unchanged wire format; the server side re-points |
+| `applyOwnerRecordEdit` | `hubly_capability_registry.ts:4340–4366` | writes `services` table + `applyServicesToFreeform` | calls `applyServiceChange` |
+| Lite bulk save | `marketplace/index.ts:1538–1545` | inline read-modify-write (**and 500s**) | calls `applyServiceChange({op:"replaceAll"})` |
+| editor bulk save | `hubly.html:15051` `buildServiceCatalogFromEditor` | client composes whole `meta` and PUTs it | posts services to the door; stops writing `meta` wholesale |
+| the other 8 whole-meta writes | `hubly.html` (9 total) | replace the blob | **out of scope for Move 1** — they do not touch services, but they are the same race (see Move 2) |
+
+**Note the honest edge:** Move 1 makes *service* writes safe. It does not make `meta` safe. A
+storefront write at `hubly.html:24581` can still clobber a service write that landed a second
+earlier, because it replaces the whole blob. **Move 1 narrows the race to one key; only Move 2
+removes it.** That must not be described as fixed.
+
+### The race, concretely — optimistic concurrency, last-writer-REFUSED
+
+There is no version column today, so Move 1 must add one. Cheapest that works:
+`service_catalog.version` already exists **inside** the catalog JSON (`buildCatalogWritePayload`
+stamps `version: 1` — currently a constant, never incremented).
+
+```
+1. read businesses.meta -> parse -> catalog, v = catalog.version
+2. apply the change in memory -> catalog', version = v + 1
+3. write, guarded:  UPDATE businesses SET meta = :newMeta
+                    WHERE id = :id
+                      AND (meta::jsonb -> 'service_catalog' ->> 'version')::int = :v
+                    RETURNING id
+4. zero rows returned  ->  somebody else wrote between 1 and 3.
+                           DO NOT retry blindly and DO NOT overwrite.
+                           Re-read, and return { ok:false, conflict:{expected:v, actual} }.
+```
+
+**Which write wins: the FIRST one to commit. The second is refused, not silently dropped.** The
+caller is told, and the owner sees *"Someone else changed your services while you were editing —
+here they are now."* That is the opposite of today, where the second write wins and the first
+vanishes with nothing said.
+
+The guard is one `AND` on the UPDATE and requires no schema change (the version lives in the JSON
+we are already writing). It works on a `text` column because the cast happens in the predicate.
+
+**What it does not cover:** two writes to *different* meta keys still clobber, because the
+predicate only guards the catalog version. Move 2.
+
+### `applyServicesToFreeform` under Move 1
+
+Today it is the dead end: `selectLatestBusinessDocument(...)` → no document → `not_freeform` →
+the page is never touched and the caller emits a promise it cannot keep.
+
+Under Move 1 it stops being the page-update path and becomes **one of two placement strategies
+chosen by what the business actually has**:
+
+- **freeform business** (a `business_documents` row): unchanged — stamp the anchors, save a
+  version. Placement is real and reportable.
+- **classic/catalog business** (Graef, Bucket): there is nothing to patch, because the page is
+  rendered from the catalog at request time. **The write to the catalog IS the page update.**
+  Placement is not "not_freeform" — it is *already done*.
+
+That reframing is what makes the two strings honest, below. `not_freeform` stops being a failure
+and becomes "this business does not use documents", which is a fact, not an error.
+
+---
+
+## MOVE 2 — storage. NOT NOW, and the point of Move 1 is that it stops being urgent.
+
+Behind one door the backing store is swappable. Options, with costs, **not chosen**:
+
+| option | cost | what it buys | what it does not |
+| --- | --- | --- | --- |
+| **A. Stay on `text`** | zero | nothing changes | the whole-blob race stays for all ~40 keys; 11 writers keep clobbering each other |
+| **B. `meta` → `jsonb`** | one migration (`alter column meta type jsonb using meta::jsonb`), plus auditing every reader that does `JSON.parse(meta)` and every writer that sends a string. Risk: any row whose `meta` is not valid JSON fails the cast — **must be counted first** | enables `jsonb_set(meta, '{service_catalog}', …)`, so a service write touches ONE key and stops clobbering the other 39. Kills the wide race | still one row per business; no per-service constraints, no indexes on service fields |
+| **C. promote to a real `service_catalog` table** | largest — new table with the catalog's richer schema (pricing mode, `show_price`, duration, status, sort_order, addons, ai), backfill 4 businesses, re-point 11 `service_engine` importers, and decide what happens to the legacy `services` table | per-row constraints, a unique index on (business, name), real concurrency, queryability | a migration with a live booking path behind it |
+
+**Sequencing note:** B is a strict prerequisite for nothing and a strict improvement for
+everything; C subsumes B. The decision is not urgent **once Move 1 lands**, which is the argument
+for doing Move 1 first.
+
+---
+
+## THE TWO STRINGS, AFTER MOVE 1
+
+| today | after |
+| --- | --- |
+| `:4365` *"Saved {name} to your list. I couldn't place it on the page — it will appear on the next rebuild."* | **"Added {name} to your services, at {price}. It's on your page now."** — for a catalog business the write IS the placement; for a freeform business the anchor pass ran and reported. |
+| `:4347` *"Removed {name} from your list. It may still show on the page until the next rebuild."* | **"Removed {name}. It's off your page."** |
+
+**Neither needs a hedge**, because both are composed from `ServiceWriteResult` — what landed, read
+back — rather than from what was requested. That is the `servicesTruth` pattern already used
+elsewhere.
+
+**The one case that still needs a sentence, and it is not a hedge:** the conflict path.
+*"Someone else changed your services while you were editing. Here's the current list — try again."*
+That is a true statement about a real event, which is the opposite of a hedge.
+
+**Where Move 1 does NOT finish the job, stated because you asked:** a freeform business whose
+anchor pass genuinely fails (the page has no services section to place into) still needs
+*"Saved — I couldn't place it on the page."* That is honest and reportable; what it must never
+again say is **"it will appear on the next rebuild"**, because nothing guarantees that. The hedge
+that remains is a real uncertainty; the one being removed was a false promise.
+
+---
+
+## THE INVARIANT — `scripts/check-service-data-owner.mjs` (designed, not written)
+
+In the style of `check-owner-id-invariant`, `check-customer-identity-invariant`,
+`check-stripe-mode-filter`:
+
+1. **`meta.service_catalog` is written in exactly one place.** Scan every `.ts`/`.js`/`.html`
+   under `supabase/functions/` and `public/` for an assignment to `service_catalog` or a
+   `.update(`/`PATCH` on `businesses` whose payload mentions `meta`. Exactly one file may match:
+   `_shared/service_engine.ts`. **Today that count is 11** (2 server, 9 client).
+2. **The `services` table is written in exactly one place** — or zero, once the catalog is
+   canonical. Today: `hubly_capability_registry.ts:4352/:4359` plus the client editor.
+3. **No caller composes a service summary from its own input.** Flag any `summary:` template
+   literal in the service branch that interpolates a variable not derived from a
+   `ServiceWriteResult` — the `servicesTruth` rule, mechanised.
+4. **Proven to fail:** run it against `HEAD~1` and require a non-zero exit, the same
+   deliberate-break test used on the other three.
+
+**Where it stops — and this list matters more than the checks:**
+
+- **It cannot see the whole-meta race.** Every one of the 9 client writers replaces `meta`
+  wholesale; a check that only looks for the literal `service_catalog` will pass them all while
+  they silently clobber it. **This check would go green on a codebase that still loses service
+  edits.** Only Move 2 (B or C) closes that, and until then the check is guarding one key while
+  the blob is unguarded.
+- It is static and text-based: a write assembled at runtime, or reached through a variable
+  holding the table name, is invisible.
+- It cannot see SQL, an RPC, or a trigger — the same limit as the other three.
+- It proves *where* writes happen, never that they are *correct*. A single owner that computes
+  the wrong catalog passes every check here.
+- It cannot verify the two strings are true; it can only check they are composed from the result
+  object. Truth is still a walk-the-product question.

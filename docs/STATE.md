@@ -857,6 +857,24 @@ and it was deliberately not made at 9pm. What exists is the measurement that sho
   reads. That turns a visibly broken panel into a silently lying one. It is only viable as
   read-AND-write, which is the decision, not a patch.
 
+**The design is written and NOT built — `OPEN_FINDINGS` #57.** Two moves: (1) `service_engine.ts`
+becomes the single WRITER as well as the single reader, with optimistic concurrency on
+`service_catalog.version` so a colliding write is REFUSED and reported rather than silently
+losing one; (2) storage — stay on `text`, migrate `meta` to `jsonb`, or promote the catalog to a
+real table — deliberately not chosen, because Move 1 makes it non-urgent.
+
+**Two things found while designing that change the shape of the work:**
+- **The only server-side catalog writer cannot succeed.** `businesses` has **no `updated_at`
+  column** (57 columns, `created_at` only), and `marketplace/index.ts:1543` — the live
+  `lite_services_save` route — sets it on every write, so PostgREST rejects the update and the
+  handler 500s. The same bug sits on the hours write at `:2014`. Production catalogs were written
+  by the CLIENT, not by this. Read from code and schema, **not yet confirmed by a request**.
+- **The race is wider than services.** `meta` is `text`, so every write replaces the whole ~40-key
+  blob — **9 whole-meta writes in `hubly.html` plus 2 server-side**. A service edit can discard a
+  storefront edit. Move 1 narrows the race to one key; only Move 2 removes it, and the designed
+  invariant check would go **green on a codebase that still loses service edits**. That limit is
+  written into the check's own header.
+
 **Tomorrow starts with: decide which home is canonical for service data — knowing the catalog owns
 booking and pricing, the table owns the two UI surfaces, and for Graef and Bucket a merge is a
 copy rather than a reconciliation.**
