@@ -30816,6 +30816,15 @@ async function persistHostedBrandFields(){
   // profileSheetImage alone is 420,855 bytes inside `meta`, shipped to every visitor in the
   // public API payload. The writers now host on upload (above); this heals what is already
   // stored, on the owner's next save. 6 images across 3 businesses (OPEN_FINDINGS #60).
+  //
+  // FAILURE BEHAVIOUR HERE IS THE OPPOSITE OF THE UPLOAD WRITER'S, DELIBERATELY.
+  // A NEW upload that fails stores nothing and tells the owner. A MIGRATION that fails
+  // LEAVES THE BASE64 ALONE and retries on the next save -- that data URI is the owner's
+  // actual, working picture. "Never store base64" is a rule about what we accept, not a
+  // licence to blank an image that is already on someone's live page to satisfy it.
+  // The assignment is inside `if(isHttpsAssetUrl(hosted))` for exactly this reason: on a
+  // failed upload hostBrandImage returns null, the branch does not run, and both the field
+  // and `changed` are untouched. Do not "simplify" this to an unconditional assignment.
   if(S.website?.profileHeroImage&&String(S.website.profileHeroImage).startsWith('data:')){
     const hosted=await hostBrandImage('profile-hero',S.website.profileHeroImage);
     if(isHttpsAssetUrl(hosted)){S.website.profileHeroImage=hosted;changed=true;}
