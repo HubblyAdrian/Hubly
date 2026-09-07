@@ -5083,3 +5083,160 @@ runtime or reached through a variable table name is invisible; it does not disti
 that RLS would actually refuse from one that happens to be permitted; and it says nothing about
 *reads*, which can fail the same way — `#33` is exactly that, a denied SELECT rendering as an
 empty panel.
+
+---
+
+## #66 — #46 INVERTED: the Store is ON for all 177 businesses. Making it earned is a REMOVAL.
+
+**Measured 2026-09-07, read-only. Nothing built, nothing switched off.**
+
+`#46` was designed around a chicken-and-egg — *"the flag is only earned by using the Store UI,
+and the Store UI is only reachable with the flag"* — and **that does not exist**. Nothing gates
+the Store on `capabilities.storefront`. The work is not unlocking something locked; it is
+**turning off something that is on for everyone, and making it earned**.
+
+### Q0 — DOES A COMPOSITION MECHANISM ALREADY EXIST? Yes, on one rail. No, on the other.
+
+Adrian: *"when someone claims a website they don't get all the tabs."* **True on one rail and
+false on the other — they are two different rails, and this is the two-of-everything pattern
+again.**
+
+**RAIL A — the claimed shell, `platform-home.html` `hcWorkspaces()` (`:3976`). COMPOSED.**
+It builds the list from state and is exactly the shape Adrian describes:
+
+```js
+function hcWorkspaces(){
+  var ws = [];
+  if(biz && hc.draftClaimed) ws.push({ id:'website', label:'Website', … });
+  //   if(biz && biz.marketplaceProvider && jobsCount>0) ws.push({ id:'jobs',  … });
+  //   if(biz && biz.storefront)                         ws.push({ id:'store', … });
+  return ws;
+}
+```
+
+**The mechanism exists and is the right shape.** It composes from data, and its own comment says
+a workspace appears only "once they have something to show". It just never pushes anything but
+Website — the other two are the commented seam.
+
+**RAIL B — the editor's Builder menu, `hubly.html:11660–11693`. NOT composed. 14 static buttons,
+ZERO gated.**
+
+| entry | gate |
+| --- | --- |
+| Website, **Store**, Packages, Hours, Business info, Membership, Styles, Logo & brand, Gallery, Book, Quote, Add-ons, Stripe, Google Calendar | **none — static markup, all 14** |
+
+`data-ed-kind="storefront"` on the Store button is **never read for visibility** — its only uses
+are two CSS `::after` badge rules (`:250`, `:5042`). `grep` for anything hiding
+`.ed-settings-item` by capability returns **nothing**.
+
+> **So: extend `hcWorkspaces` (Rail A), and BUILD the mechanism for Rail B.** Store should use
+> Rail A's shape rather than a third one — but Rail B is where Adrian saw the Store button, and
+> it has no gate to extend.
+
+### Q1 — every capability key that exists, and what each controls
+
+| key | rows | true | what it actually does — parsed from its reads |
+| --- | --- | --- | --- |
+| `hubly_pro` | 34 | **34** | *(reads not traced — flagged, see below)* |
+| `marketplace` | 34 | **1** | marketplace provider membership; written by `marketplace/index.ts:1858` |
+| `website` | 16 | **16** | with `storefront`, decides which surface the builder opens by default (`builderDefaultSurface`, `:18668`) |
+| `projects` | 10 | **10** | `hasBusinessCapability('projects')` returns **`true` unconditionally** (`:18651` — *"Media is a core Hubly module for every business"*), so the stored value is **decorative** |
+| **`storefront`** | **0** | **0** | **layout only** — `:39950` *hides* the embedded section and adds a `/store` nav link; `:17771` renders the store at `/` for store-only; `:18671`/`:18679` pick the builder's default surface |
+
+**Two of the five are not gates at all.** `projects` is overridden by a hard-coded `true`, and
+`storefront` moves the store rather than granting it. **`hubly_pro` is on 34 of 34 rows that have
+it and its reads were not traced** — that is a gap in this map, not a finding.
+
+### THE DESIGN CALL — a separate key, and here is why
+
+`capabilities.storefront` today answers **"where does the store render?"** — embedded section, or
+standalone `/store` with a nav link. That is **layout**.
+
+Adrian wants **"does this business have a store at all?"** — that is **existence**.
+
+> **Do not overload one flag with both.** Proposed: **`capabilities.store` (existence)** stays
+> separate from **`capabilities.storefront` (layout)**. A business can have a store rendered
+> inline (`store: true, storefront: false`) or as a standalone site (`store: true, storefront:
+> true`), and those are genuinely different products.
+>
+> Overloading is exactly how service data ended up in three homes (#54) — one field answering
+> two questions, and every reader picking the meaning it needed. `storefront` already has four
+> readers depending on its layout meaning; changing it to mean existence silently changes all
+> four.
+
+### Q2 — the four arrival paths mapped to keys
+
+| path | keys at start | rail should show | gap |
+| --- | --- | --- | --- |
+| 1. **Seeker** — wants help, not a business | *none* — **not a business row at all** | n/a — guided to the marketplace | **No capability models this.** A seeker should probably never own a `businesses` row; today the funnel creates one. |
+| 2. **Provider only** — marketplace, none of our services | `marketplace: true` | Home + **Jobs** only | **`jobs` is not a capability key.** Rail A's seam wants `marketplaceProvider && jobsCount>0`, which is a *different* name from `capabilities.marketplace` |
+| 3. **Website + help** | `website: true` | Home + Website | covered |
+| 4. **Website + storefront** | `website: true, store: true` | Home + Website + Store | needs the new `store` key |
+
+**Missing rather than forced:** a key for path 1 (or the decision that path 1 creates no
+business), and a name reconciliation for path 2 — `capabilities.marketplace` vs the seam's
+`biz.marketplaceProvider`.
+
+### Q3 — the one `marketplace: true` business
+
+`adrians-lawn-service` — `{"website":true,"projects":true,"hubly_pro":true,"marketplace":true}`,
+`account_kind = test`, claimed. **It is not a path-2 business**: it has `website` too, so it is
+path 3-and-4 with marketplace bolted on. **There is no real provider-only row to reason from** —
+path 2 is unrepresented in the data, and designing its rail means designing for a case we have
+never seen.
+
+### THE REMOVAL EVIDENCE — nobody has ever used the Store
+
+| | count |
+| --- | --- |
+| `commerce_products` — **active** | **0** |
+| `commerce_products` — archived | 2 |
+| `commerce_orders` | 2 |
+| `commerce_store_settings` | **0** |
+| `commerce_collections`, `commerce_carts` | 0 |
+
+**All four non-zero rows are mine**, on `evergreen-yard-care` (`account_kind = test`) from last
+night's purchase-walk and pin verification. **No market or internal business has a product, an
+order, or a settings row.**
+
+`meta.storeOs` exists on 3 businesses (`adrians-lawn-service`, `graefs-autocare`,
+`my-auto-detailing`) at **exactly 298 bytes each** — byte-identical empty scaffolding from a
+default constructor, not usage. `meta.storefront` is JSON `null` on two of them.
+
+> **Nobody gets grandfathered, because nobody is using it.** The removal is safe on the
+> evidence.
+
+**What would still break:** the `/store` route checks **only the URL path** (`isStoreRoutePath`,
+`:17348`) — no capability, no products, no settings. So `<any-slug>.myhubly.app/store` renders a
+store page for **all 177 businesses today**, and it will keep doing so unless that route is
+gated too. **That is a fourth surface**, and #46 counted three.
+
+### Q4 — ONE gate, now FOUR surfaces
+
+| surface | today | after |
+| --- | --- | --- |
+| page section (`hubly.html:39977`) | `settings.enabled && showOnWebsite && (hasProducts \|\| inEditor)` | `hasStore(biz)` |
+| `/store` nav link (`:39950`) | `caps.storefront === true` | `hasStore(biz) && caps.storefront === true` (layout still decides *where*) |
+| Builder rail button (`:11669`) | **nothing** | `hasStore(biz)` |
+| **`/store` route** (`:17348`) | **URL only** | `hasStore(biz)` — else 404/redirect |
+
+One predicate, `hasStore(biz) === biz.capabilities?.store === true`, read at four call sites.
+
+### Q5, Q6, Q7 — confirmed, with one correction
+
+**Q5 — the RPC shape is still right, and now more clearly so.** Yesterday's ruling holds: a
+`security definer` RPC carrying `p_owner_id`, so `check-owner-id-invariant.mjs` covers it. What
+has changed is the *reason* — this is not "granting access to a locked feature", it is **writing
+a fact about what the business is**, which is exactly the class that rule was written for.
+
+**Q6 — the write emits the sentence.** The same code path that sets `capabilities.store` returns
+the confirmation, per `docs/design/README.md` screen 3: *"Got it! I've added Store to your
+sidebar. You can always ask me to remove it or add more tabs later."* **Not the UI inferring it
+afterwards** — a write and a claim that can disagree eventually will, which is `servicesTruth`.
+
+**Q7 — the Store's empty state is the standard.** *"No products yet — add them in Store"* names
+the state and the next action. The services panel shows a blank section with no explanation
+(#54). **Keep the Store's manners.** Note the same copy is what made the Store look "already
+built" in the editor — because `inEditor` shows the section with no products — so if the section
+becomes gated on `hasStore`, that editor affordance disappears for businesses without a store,
+which is the intended behaviour and worth stating so it does not read as a regression later.
