@@ -5096,6 +5096,82 @@ upload)"**. I wrote that, then verified against it as though it said something e
 rewrote a shadowed field to the URL already in the column; restore put the base64 back into the
 same shadowed field. No upload, no orphan, no pixel changed either way.
 
+### R7 — BUCKET APPLIED. The paying customer, all three fields live, and the number that was the point.
+
+`--apply --only bucket-mobile-detailing`: meta **503.8KB → 18,723 bytes**, 3 images uploaded,
+**0 data URIs**. No shadowed duplicates here — all three fields are read by his page, so every
+part of this is observable.
+
+#### 1. All three render. Looked at each.
+
+| field | object | on his page | decoded |
+| --- | --- | --- | --- |
+| `ownerPhotoUrl` | `owner-1788815893232-r4yy22f.jpg` | **4 `<img>` elements**, 0 broken | **288 × 512** |
+| `profileHeroImage` | `profile-hero-1788815895295-yodi03w.jpg` | **CSS background**, on a visible 1710 × 590 element | **236 × 258** |
+| `profileSheetImage` | `profile-sheet-1788815895595-fcmo4yt.jpg` | **CSS background**, on a visible 1710 × 399 element | **1206 × 831** |
+
+The hero and sheet are `background-image`, not `<img>` — an element count alone would have missed
+them. Each background URL was loaded through a fresh `Image()` and **decoded at exactly its
+source dimensions**, which is the check that separates "the CSS references it" from "the browser
+got the pixels".
+
+**Viewed the bytes:** the sheet is a white Mercedes GLE photographed front-on in an RV park; the
+owner photo is two young men beside a UTV; the hero is his brown dog. Real pictures, right way
+up, nothing substituted. On the page the dog renders as the blurred backdrop behind the header
+and the Mercedes as the faint wash behind "Our Story". **Zero raster base64 in the delivered
+HTML.**
+
+#### 2. Provenance — all three from THIS run
+
+All under `ef695882-…/`, which is his `owner_id`, in this script's `<kind>-<Date.now()>-<rand>`
+form. Timestamps **21:18:13.232Z, 21:18:15.295Z, 21:18:15.595Z** — 2.4 seconds apart, one run.
+**None is `logo-migrated-`; none pre-existed.**
+
+#### 3. Byte-identical to the backup
+
+```
+ownerPhotoUrl       45,567 B  a66335b9ecb7694e…   hosted  45,567 B  a66335b9ecb7694e…  MATCH
+profileHeroImage    11,084 B  b6ba9e383c1e9eda…   hosted  11,084 B  b6ba9e383c1e9eda…  MATCH
+profileSheetImage  315,624 B  35e74ac393104762…   hosted 315,624 B  35e74ac393104762…  MATCH
+```
+
+#### 4. THE API PAYLOAD, MEASURED ON THE WIRE
+
+`POST /rest/v1/rpc/get_public_business`, `Accept-Encoding: identity` — real bytes, not a gzipped
+figure and not calculated from the row:
+
+| business | payload |
+| --- | --- |
+| **bucket-mobile-detailing** | **25,028 bytes** |
+| graefs-autocare | 55,037 bytes |
+| devdetailing661 | 9,597 bytes |
+| aquaspeed | 10,302 bytes |
+
+> **522,117 → 25,028 bytes. 497,089 bytes removed — 95.2% smaller, 20.9× down.**
+> Every visitor to his page was downloading half a megabyte of base64 to see three photos the
+> browser could have cached separately. That is the whole exercise, and it is now a measurement.
+
+#### 5. WHOLE-CORPUS SCAN — clean, and the scan proves it ran
+
+Not just `businesses`: **every `text` / `varchar` / `json` / `jsonb` column of every base table in
+`public`.**
+
+```
+columns scanned: 667      across 124 tables
+rows containing 'data:image': 0
+```
+
+The scan emits a `__SENTINEL__` row carrying the column count, so **an empty result is
+distinguishable from a scan that never ran** — the empty-vs-denied trap this same migration
+already caught once in the export script. Also zero in `businesses.logo_url` and
+`businesses.banner_url` as plain columns, across all **178** businesses.
+
+**The base64 era is over.** What remains is the orphaned storage objects from the apply/restore
+round trips, which the script deliberately keeps (`:135`) — invisible, and cheaper than deleting
+one a live page turns out to need.
+
+---
+
 ### R5 — devdetailing661 applied. THE FIRST OBSERVABLE CASE, and the two changes verified SEPARATELY
 
 `--apply --only devdetailing661`: meta **178,510 → 4,939 bytes**, 2 migrated, **0 data URIs left**.
