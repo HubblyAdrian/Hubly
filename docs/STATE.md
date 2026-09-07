@@ -940,6 +940,21 @@ functions, V1–V5 green); `stripe_connect_accounts.mode` (migration + 13 filter
 two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
 `2026-08-26.dahlia` (deployed to 4, CHECK 4 guards it).
 
+- **AN AUDIT ONLY COVERS THE PATHS SOMEONE THOUGHT TO CHECK — a clean audit is evidence about
+  the checker, not the system.** `20260818030000_storage_no_enumeration.sql` was a careful,
+  correct security migration with its measurements in the header, and it broke every client-side
+  image upload for three weeks (#64). Its own words: *"uploads run server-side with the service
+  role, and nothing calls `.list()` anywhere in public/, api/ or supabase/functions/ (checked
+  before changing)"*. It verified `.list()` and public URL reads — **the two paths its author
+  thought of** — and both still worked. It never tested a client-side **upsert**, which needs a
+  SELECT the migration had just removed, and `uploadBrandAsset` runs in the browser, not
+  server-side.
+  Same family as the regex that structurally could not match `cs_test_`: the check was run, the
+  check passed, and the check could not see the failure. **So: when an audit clears something,
+  write down which paths it exercised — and treat every path it did not name as unaudited.**
+  The tell here was available and unused: a `grep` for `storage.from(` would have found the
+  browser-side caller in one line.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped

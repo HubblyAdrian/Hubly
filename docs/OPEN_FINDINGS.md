@@ -4890,3 +4890,86 @@ service name's initial as the placeholder the way the store cards now do (#39); 
 collapse to a text row. The rule it should satisfy: **a correct empty state must not look like a
 failure.** Same family as the layout-legibility rule in `STATE` — the model's freedom ends where
 "this looks broken" begins — but pointed at an intentional empty state rather than an accident.
+
+---
+
+## #64 — IMAGE UPLOAD HAS BEEN FAILING SINCE 2026-08-18 AND THE FALLBACK HID IT
+
+**Root cause found and fixed 2026-09-07. The worst instance yet of the create-on-ambiguity
+family: a broken subsystem masked by a fallback that looked like success.**
+
+### The chain
+
+1. Migration `20260818030000_storage_no_enumeration.sql` (commit `6dc4c6c`, **2026-08-18**)
+   dropped the public SELECT policies on `storage.objects` to stop bucket enumeration. **That was
+   correct** — its header documents the measurement: 72 enumerable files, folder names that are
+   real `auth.uid()` values, owner photos reachable by strangers.
+2. It left **zero SELECT policies** on `storage.objects`.
+3. `uploadBrandAsset` (`hubly.html:30603`) passed **`upsert: true`**, which sends `x-upsert` and
+   makes the write an `INSERT … ON CONFLICT DO UPDATE` — **which must read the table first**.
+4. With no SELECT policy that read fails, and the whole upload returns
+   `new row violates row-level security policy`.
+5. `hostBrandImage` retries 3× and returns `null`.
+6. **Every caller then silently kept the base64.** Not one of them said anything.
+
+### Proven, not reasoned
+
+| test | result |
+| --- | --- |
+| `.upload(path, blob, {contentType})` | **OK** |
+| `.upload(path, blob, {contentType, upsert:true})` | **403 RLS** |
+| upsert onto a path that already exists | **403 RLS** |
+| raw `fetch` with the same JWT, no `x-upsert` | **200** |
+| `uploadBrandAsset('diag', …)` — the product function | **null** |
+
+**Hypothesis disproven along the way:** supabase-js *was* sending the session token
+(`Authorization: Bearer eyJ…` matching `session.access_token`, `role: authenticated`,
+`sub === uid`). The publishable-key theory was wrong, and the raw-fetch comparison would have
+"confirmed" it if I had not noticed the extra `x-upsert` header. **Ruled out:** expired JWT,
+wrong client instance, client-built-before-session, publishable-key-as-Authorization, missing
+INSERT/UPDATE policies, bucket misconfiguration.
+
+### THE FIX — remove the option, not the protection
+
+`upsert: true` deleted. Paths are `${ownerId}/${safeKind}-${Date.now()}-${random}.jpg`, unique by
+construction, so there was never anything to overwrite. **Dead optionality that happened to
+require a permission a security migration deliberately removed.**
+
+**NOT chosen: adding a SELECT policy.** Recorded as the shape to use **IF** something ever
+legitimately needs to read storage objects — **owner-scoped (`(storage.foldername(name))[1] =
+auth.uid()`), never public**. Do not add it to enable an option nothing needs.
+
+### How many copies — three checked, one broken
+
+| site | upsert? | failure path |
+| --- | --- | --- |
+| `hubly.html:30603` `uploadBrandAsset` | **`true`** ← **the bug** | caller keeps base64 |
+| `journey-os/photography-projects.js:3266` | `false` | counts `uploadFail`, stores no base64 — **fine** |
+| `platform-home.html` | n/a — sends base64 to **edge functions** (`uploadDraftPhoto`/`uploadDraftLogo`, service role, RLS does not apply) | **fine** |
+
+The claimed shell was never affected, which is why `drafts/…` objects kept appearing in the
+bucket after 2026-08-18 while `brand-assets` owner uploads stopped.
+
+### THE TRUE BLAST RADIUS — and my "larger than Bucket's six" was WRONG
+
+Scanned **every** `text`/`varchar` column in `public` for `data:image/`:
+
+| business | field | bytes |
+| --- | --- | --- |
+| aquaspeed | `logoUrl` | 23,887 |
+| bucket-mobile-detailing | `website.profileSheetImage` | 420,855 |
+| bucket-mobile-detailing | `website.ownerPhotoUrl` | 60,779 |
+| bucket-mobile-detailing | `website.profileHeroImage` | 14,803 |
+| devdetailing661 | `website.ownerPhotoUrl` | 136,375 |
+| devdetailing661 | `logoUrl` | 37,207 |
+
+**6 images, 3 businesses, 693,906 bytes. Not larger — exactly the same six.** Nothing in
+`business_documents`, no commerce table, no other column, and `logo_url`/`banner_url` as plain
+columns hold **zero** base64.
+
+**What I got wrong and why it matters:** I said "larger than Bucket's six" reasoning that three
+weeks of failures must have accumulated more. The original scan already covered all of `meta`,
+so the number was right the first time — what I had wrong was the *composition* (I assumed the
+six were the three profile fields; two are actually `logoUrl`). **Three weeks of a broken upload
+path produced no new base64 because almost nobody used that path.** An assertion of "larger"
+from reasoning, corrected by counting.

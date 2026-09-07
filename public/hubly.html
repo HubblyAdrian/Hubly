@@ -30600,9 +30600,22 @@ async function uploadBrandAsset(kind,dataUrl){
     const uploadBlob=dataUrlToBlob(payload);
     const safeKind=String(kind||'asset').replace(/[^a-z0-9_-]/gi,'').toLowerCase()||'asset';
     const path=`${ownerId}/${safeKind}-${Date.now()}-${Math.random().toString(36).slice(2,9)}.jpg`;
+    // NO upsert. It is dead optionality that costs a permission we deliberately removed.
+    //
+    // `path` is `${ownerId}/${safeKind}-${Date.now()}-${random}.jpg` — unique by
+    // construction, so there is never anything to overwrite and upsert buys nothing.
+    // But `upsert:true` sends `x-upsert`, which makes the write an INSERT ... ON CONFLICT
+    // DO UPDATE, and that needs to READ storage.objects first. Migration
+    // 20260818030000_storage_no_enumeration.sql dropped the public SELECT policies on
+    // storage.objects — correctly, to stop bucket enumeration — leaving ZERO SELECT
+    // policies. Since 2026-08-18 every client-side brand-asset upload has therefore failed
+    // with "new row violates row-level security policy", and hostBrandImage's caller
+    // silently kept the base64 instead. That is how 693,906 bytes of inlined images
+    // reached three businesses (OPEN_FINDINGS #64).
+    //
+    // Fixed by removing the option, NOT by re-opening the read. Nothing needs upsert here.
     const {error}=await dbClient.storage.from('brand-assets').upload(path,uploadBlob||blob,{
       contentType:'image/jpeg',
-      upsert:true,
       cacheControl:'3600',
     });
     if(error){
