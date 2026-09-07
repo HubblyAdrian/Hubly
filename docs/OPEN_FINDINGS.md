@@ -4057,6 +4057,108 @@ naming a control that does not exist.
 **This is also why retyping the eight would be actively harmful**: eight new rows, a page that
 still shows the original eight from the catalog, and two sources of truth diverging silently.
 
+### M1 — what is actually IN each home (2026-09-06). The merge is trivial for the ones that matter.
+
+Item shape is `meta.service_catalog.services[]`, keyed `{ name, pricing:{mode, price_cents,
+show_price}, status, sort_order, description, duration_minutes, … }` — a far richer record than
+the `services` table's `{name, price, description, sort_order}`.
+
+| business | catalog | table | conflict? |
+| --- | --- | --- | --- |
+| **graefs-autocare** (market) | **8** | **0** | **none — table side empty** |
+| **bucket-mobile-detailing** (market) | **4** | **0** | **none — table side empty** |
+| cotter-aviation (internal) | 2 | 0 | none — table side empty |
+| adrians-lawn-service (test) | 5 | **9** | **REAL CONFLICT — both populated, different counts** |
+
+**Graef** (all `mode: "variable"`, `show_price: true`): Full Detail 8500, Premium Detail 13000,
+Shampoo Detail 12000, Clay & Seal Package 7500, Paint Enhancement 15000, All-in-One Paint
+Correction 20000, Single Stage 27500, 2 Stage 40000 — cents.
+
+**Bucket** (all `mode: "fixed"`): Ceramic Coating 69900, Paint Correction 44900, Full Detail
+24900, Interior Detail 14900.
+
+**This is the important half: for both market businesses the table side is EMPTY.** There is
+nothing to reconcile — no competing names, no diverging prices, no "which one is right". A merge
+is a copy. The only genuine conflict is one **test** business.
+
+### M2 — READERS, parsed. The two homes are not remotely equal.
+
+**`services` table — 3 readers:**
+
+| file:line | what |
+| --- | --- |
+| `public/platform-home.html:4293` | the manage panel |
+| `public/hubly.html:15231` | the editor |
+| `_shared/hubly_conversation_context_loader.ts:143` | AI context |
+
+**`meta.service_catalog` — read through ONE module, `_shared/service_engine.ts`
+(`getCatalog:541`, `listServices:624`, `getService:644`, `toBookingDto:664`,
+`listBookingServices:696`, `toMatchDto:705`, `toAiSummary:728`), which is imported by ELEVEN
+files:**
+
+```
+_shared/booking_job.ts          _shared/booking_price.ts
+_shared/hubly_booking_execution.ts   _shared/hubly_conversation_context_loader.ts
+_shared/marketplace_document.ts _shared/marketplace_lite.ts
+_shared/marketplace_match.ts    _shared/marketplace_provider.ts
+_shared/marketplace_score.ts    chatbot-message/index.ts
+create-booking-checkout/index.ts
+```
+
+Plus client-side `hubly.html:15126` (`hydrateEditorFromServiceCatalog`) and
+`journey-os/hubly-studio.js:143`.
+
+> **The catalog is what BOOKING and PRICING read.** `booking_price.ts`, `booking_job.ts`,
+> `create-booking-checkout` — the money path — all go through `service_engine`, i.e. through
+> `meta.service_catalog`. The `services` table is read by two UI surfaces and one AI summariser.
+>
+> **That inverts the intuition.** The manage panel is not "the real one that Graef is missing from"
+> — it is the *minor* home. The catalog is where the product actually operates.
+
+**Cost of changing which is canonical, parsed rather than assumed:** making the table canonical
+means re-pointing 11 importers plus the money path. Making the catalog canonical means changing 3
+readers, one of which (`platform-home.html:4293`) is the broken panel itself. **The counts are
+13-ish versus 3.**
+
+### M3 — the false promises: TWO strings, both in the same function
+
+| file:line | string |
+| --- | --- |
+| `hubly_capability_registry.ts:4365` | *"Saved {name} to your list. I couldn't place it on the page — **it will appear on the next rebuild**."* |
+| `hubly_capability_registry.ts:4347` | *"Removed {name} from your list. **It may still show on the page until the next rebuild**."* |
+
+Both are the `not_freeform` fallback in the service branch. **Both are false for a meta-only
+business** — a rebuild reads `meta.service_catalog`, so an added service will never appear and a
+removed one will never disappear. The removal string is the worse of the two: it tells the owner a
+service he deleted is still publicly visible **and will stop being visible on its own**. It will
+not.
+
+Three other "until the next reload" comments exist (`platform-home.html:4739`,
+`journey-os/journey.js:16875`, `:21968`) — those are code comments about client cache, not owner-
+facing copy. **The owner-facing set is exactly these two.**
+
+### M4 — the cheap fix is real, and it is ~6 lines, but it moves the split rather than closing it
+
+`hcReadRecord` (`platform-home.html:4290`) already reads `businesses` on the very next line
+(`:4294`). Adding `meta` to that existing `select`, parsing `meta.service_catalog.services`, and
+falling back to it when the table read is empty is roughly:
+
+```
++ 1 line   add `meta` to the existing businesses select
++ 4 lines  parse + map {name, pricing.price_cents/100, description} -> the panel's shape
++ 1 line   use it when hcManage.services is empty
+```
+
+**But it makes the panel READ-only-correct and WRITE-still-wrong.** Every save still goes to
+`hcRecordEdit` → `applyOwnerRecordEdit` → the `services` table, which no rebuild and no booking
+path reads. So Graef would see his eight services, edit one, get "Saved", and nothing would change
+anywhere — **which is worse than the blank panel**, because a blank panel is obviously broken and
+a populated one that silently discards edits is not.
+
+**So the cheap fix is a real option only as half of a pair** (read the catalog AND write the
+catalog). Reading alone converts a visible bug into an invisible one. That is the whole reason
+this is a source-of-truth decision and not a patch.
+
 ### Not fixed. The decision this needs is which home wins
 
 There are three, nothing syncs them, and picking one is a product decision with a migration

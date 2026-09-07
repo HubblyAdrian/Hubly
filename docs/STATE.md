@@ -826,6 +826,51 @@ mobile** — no true 390px viewport, no soft keyboard. Adrian is the mobile test
   four singletons. Also filed and deliberately unopened: **60 `as any`** across edge functions —
   a bigger question than one evening.
 
+## ⬅ TOMORROW STARTS HERE (written 2026-09-06, end of a nine-hour day)
+
+**TOP ITEM, ahead of the flip to live and ahead of #46: service data has THREE homes and the
+management UI reads the wrong one. `OPEN_FINDINGS` #54.**
+
+**Bucket is in the database right now with 4 services in `meta.service_catalog` and 0 rows in the
+`services` table** — the same position as Graef, who has 8 and 0. Both are market businesses, both
+are claimed, and Bucket is the head-to-head against Base44. Their live pages show their services;
+their management panel shows a blank Services section with an add form and no explanation.
+
+**The decision is NOT made.** Three writers for one concept is a source-of-truth call made once,
+and it was deliberately not made at 9pm. What exists is the measurement that should make it cheap:
+
+- **M1 — the merge is trivial for the two that matter.** Graef 8/0, Bucket 4/0, cotter-aviation
+  2/0: the table side is EMPTY, so there is nothing to reconcile, no competing names, no diverging
+  prices. Exactly one business has a real conflict (`adrians-lawn-service`, 5 catalog vs 9 table)
+  and it is a **test** account.
+- **M2 — the readers are 13-ish vs 3, and the intuition inverts.** `meta.service_catalog` is read
+  through `_shared/service_engine.ts`, imported by **eleven** files including `booking_price.ts`,
+  `booking_job.ts` and `create-booking-checkout` — **the catalog is what booking and pricing
+  read**. The `services` table has **three** readers: the manage panel, the editor, and one AI
+  summariser. The panel is the minor home, not the real one.
+- **M3 — two owner-facing false promises**, both the `not_freeform` fallback in
+  `hubly_capability_registry.ts` (`:4365` "it will appear on the next rebuild", `:4347` "may still
+  show on the page until the next rebuild"). Both are false for a meta-only business. The removal
+  one is worse: it says a deleted service is still public and will stop being public on its own.
+- **M4 — the cheap fix is ~6 lines and is a trap on its own.** Reading the catalog in
+  `hcReadRecord` makes the panel display correctly while every save still writes the table nothing
+  reads. That turns a visibly broken panel into a silently lying one. It is only viable as
+  read-AND-write, which is the decision, not a patch.
+
+**Tomorrow starts with: decide which home is canonical for service data — knowing the catalog owns
+booking and pricing, the table owns the two UI surfaces, and for Graef and Bucket a merge is a
+copy rather than a reconciliation.**
+
+Also open and deliberately untouched: #55 (`commerce_products` IS single-home, so #46's Store can
+be designed against it), #56 (generation wrote every service twice in an 8-second burst, nine
+months unnoticed), #52 (the `else`-inserts service edit, latent), the webhook secret split (#49
+M7), and the 18 functions still missing the API-version pin (#51 — dashboard knob stays frozen).
+
+**Today landed, all verified:** the customer identity resolver (#44, one resolver, deployed to 8
+functions, V1–V5 green); `stripe_connect_accounts.mode` (migration + 13 filter sites + synthetic
+two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
+`2026-08-26.dahlia` (deployed to 4, CHECK 4 guards it).
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped
