@@ -5400,6 +5400,14 @@ empty panel.
 
 ## #66 — #46 INVERTED: the Store is ON for all 177 businesses. Making it earned is a REMOVAL.
 
+> **Before picking the Store up again, read `docs/CUSTOMER_DIRECTION.md`.** It is a direction
+> note, not a roadmap — nothing in it is scheduled, and its section 5 lists what must NOT be
+> built yet (customer accounts, portals, saved items, loyalty, order history). Its section 4
+> names the Store specifically: Store, memberships and commerce are currently ASSUMPTIONS,
+> not findings — this very finding is the proof, and the memberships on at least one live
+> site are text the owner typed. Verify each by clicking before anything is built on top.
+
+
 **Measured 2026-09-07, read-only. Nothing built, nothing switched off.**
 
 `#46` was designed around a chicken-and-egg — *"the flag is only earned by using the Store UI,

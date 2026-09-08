@@ -6515,6 +6515,12 @@ const sfBusinessIdArg = {
 // The Storefront capability — appended to the registry via push so the big literal above
 // stays readable. Every handler wraps the owner-gated Commerce API; none writes tables.
 HUBLY_CAPABILITY_REGISTRY.push({
+  // DIRECTION, BEFORE BUILDING ON THIS: docs/CUSTOMER_DIRECTION.md. A direction note, not a
+  // roadmap — nothing in it is scheduled, and section 5 lists what must NOT be built yet
+  // (customer accounts, portals, saved items, loyalty, customer-facing order history).
+  // Section 4 names the Store directly: Store, memberships and commerce are ASSUMPTIONS,
+  // not findings — the Store was open to all 177 businesses until a screenshot proved it
+  // (OPEN_FINDINGS #66). A code trace is a hypothesis; a click is a finding.
   name: "storefront",
   description:
     "Operate the business's real online Store — the products/supplies they sell to customers (distinct from their services/booking). List the catalog, create and edit products, add and edit variants (sizes/options with their own price and stock), publish or hide products, organize products into collections, and turn the store on or configure it. Everything here changes their real, live Commerce catalog through the same system the owner's Store screen uses.",

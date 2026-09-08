@@ -102,3 +102,47 @@ Two failures with one shape, both on 2026-09-08, in opposite directions:
 The class: **what is running and what is written must be reconciled explicitly, in both
 directions.** Neither state announces itself, and a deploy list is not the same artefact as
 a source tree. Deleting a function means deleting it from the platform, not from the folder.
+
+## 6. Never claim to recognise someone whose identity cannot be established
+
+Recorded 2026-09-08 from `docs/CUSTOMER_DIRECTION.md` §2. This is the **customer-facing**
+version of the rule the rest of this file enforces on the owner side, and it is the one
+with the higher cost.
+
+> **Hubly must never claim to recognise someone whose identity it cannot establish.**
+
+Everything else here is about not telling an OWNER something we did not establish — a
+checkmark we did not earn, a count that meant two things, a "Saved" for a value nothing
+reads. This is the same rule pointed at the person on the other side of the conversation,
+and the asymmetry matters:
+
+> An owner shrugs at a bad number. A customer greeted as the wrong person leaves, and tells
+> the business owner why.
+
+**Why it is live now, not theoretical.** Visitor conversations are stored as of 2026-09-08,
+and a conversation that ends without a booking surfaces to the owner as a lead. The moment
+anything greets a returning visitor by name, this rule binds. What we can actually establish
+today:
+
+- `resolveOrCreateCrmCustomer` matches on **phone, then email, then nothing**. Name is
+  deliberately never a match key — two people called "John Smith" are not one customer, and
+  merging them is silent and unrecoverable (lesson: `check-customer-identity-invariant.mjs`).
+- Chat leads frequently carry **neither** phone nor email. The lead card already says so
+  truthfully: *"They didn't leave a phone or email, so there's no way to reach them from
+  here."* That sentence is the correct shape — it reports the absence rather than papering
+  over it.
+
+So recognition is not a rendering problem, it is an identity problem, and it is unsolved.
+There are no cookies and no magic link on a public site with no login.
+
+**The failure mode to guard against** is the one this codebase produces repeatedly: a
+greeting that renders *something* because a slot exists. "Welcome back, {name}" with a
+plausible name in it is the same defect as a score of 72 for a business with no data — a
+shape drawn for a value we do not have, except this one is shown to a stranger.
+
+**Fails safe:** no established identity → no greeting → the ordinary first-visit
+conversation, which already converts a cold anonymous visitor into a booking.
+
+Direction only. `docs/CUSTOMER_DIRECTION.md` is explicitly not a roadmap, nothing in it is
+scheduled, and its §5 lists what must not be built yet. This entry records the RULE, which
+binds now, not the work, which does not exist.
