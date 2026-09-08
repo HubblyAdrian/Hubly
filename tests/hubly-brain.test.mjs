@@ -256,14 +256,19 @@ test('Section 12 — Hubly Mission Control proves AI Replay flight recorder', ()
   assert.equal(proof.evidence.releaseGate.aiReplay, true);
 });
 
-test('Milestone 1 gate reports partial progress (not ready until 18/18)', () => {
+// RENAMED AND INVERTED 2026-09-08. This asserted the gate must be INCOMPLETE — it
+// required a non-zero exit and ready:false. All 18 sections now pass (18 of 18,
+// ready:true), so the test was defending a "not finished yet" state the product has
+// since left behind, and had been red ever since it was reached. What is worth guarding
+// is that the gate RUNS and reports a real count, not that the count is short.
+test('Milestone 1 gate runs and reports its section count', () => {
   const r = run('scripts/milestone1.mjs');
-  assert.notEqual(r.status, 0);
+  assert.equal(r.status, 0);
   const gate = JSON.parse(
     fs.readFileSync(path.join(root, 'docs/MILESTONE1_RELEASE_GATE.json'), 'utf8'),
   );
   assert.equal(gate.milestone, 1);
-  assert.equal(gate.ready, false);
+  assert.equal(gate.ready, true);
   assert.ok(gate.passed >= 3);
   assert.equal(gate.total, 18);
   assert.equal(gate.sections.find((s) => s.n === 1).status, 'pass');

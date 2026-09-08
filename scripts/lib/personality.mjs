@@ -7,7 +7,7 @@ import {
   HUBLY_NEVER,
   HUBLY_PHILOSOPHY,
   HUBLY_COMMUNICATION_RULES
-} from "/workspace/scripts/lib/identity-system.mjs";
+} from "./identity-system.mjs";
 var PERSONALITY_VERSION = "1.0.0";
 var PERSONALITY_OWNER = "hubly_brain";
 var PERSONALITY_LABEL = "Hubly Identity & Personality";

@@ -2,7 +2,7 @@
   "section": 2,
   "title": "Experience Director",
   "passed": true,
-  "checkedAt": "2026-07-24T17:35:16.940Z",
+  "checkedAt": "2026-09-08T23:03:58.125Z",
   "version": "1.2.0",
   "implementationSummary": {
     "module": "supabase/functions/_shared/hubly_brain_experience_director.ts",
@@ -292,8 +292,8 @@
     ],
     "interceptionLogs": [
       {
-        "id": "ed_mrz80nnt_28laj",
-        "at": "2026-07-24T17:35:16.937Z",
+        "id": "ed_mtta0jai_2vepi",
+        "at": "2026-09-08T23:03:58.122Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -322,8 +322,8 @@
         ]
       },
       {
-        "id": "ed_mrz80nnu_sgd1e",
-        "at": "2026-07-24T17:35:16.938Z",
+        "id": "ed_mtta0jak_rqge1",
+        "at": "2026-09-08T23:03:58.124Z",
         "modified": true,
         "vetoed": true,
         "before": {
@@ -353,8 +353,8 @@
         ]
       },
       {
-        "id": "ed_mrz80nnv_sf2i1",
-        "at": "2026-07-24T17:35:16.939Z",
+        "id": "ed_mtta0jak_ug7vl",
+        "at": "2026-09-08T23:03:58.124Z",
         "modified": true,
         "vetoed": true,
         "before": {
@@ -384,8 +384,8 @@
         ]
       },
       {
-        "id": "ed_mrz80nnv_tjj91",
-        "at": "2026-07-24T17:35:16.939Z",
+        "id": "ed_mtta0jak_ngq9a",
+        "at": "2026-09-08T23:03:58.124Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -415,8 +415,8 @@
         ]
       },
       {
-        "id": "ed_mrz80nnv_ogkzu",
-        "at": "2026-07-24T17:35:16.939Z",
+        "id": "ed_mtta0jal_ogij3",
+        "at": "2026-09-08T23:03:58.125Z",
         "modified": true,
         "vetoed": false,
         "before": {

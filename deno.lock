@@ -21,6 +21,7 @@
     "packageJson": {
       "dependencies": [
         "npm:@supabase/supabase-js@^2.39.0",
+        "npm:esbuild@~0.28.2",
         "npm:playwright@^1.49.1"
       ]
     }

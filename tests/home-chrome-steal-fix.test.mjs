@@ -17,7 +17,12 @@ test('realtime refresh does not unconditionally re-render Home', () => {
   assert.ok(fn, 'refreshOpenAppViews present');
   const body = fn[0];
   assert.doesNotMatch(body, /await loadCustomers\(\);[\s\S]{0,80}enhanceDashboard/);
-  assert.match(body, /if\(viewIsOpen\('v-dashboard'\)\)[\s\S]*?enhanceDashboard/);
+  // The guard moved into a named helper: refreshOpenAppViews() now calls
+  // refreshDashboardIfOpen(), which opens with `if(!viewIsOpen('v-dashboard'))return;`
+  // before touching enhanceDashboard. Assert the composed path so the guard is still
+  // proven without pinning it to the function it happened to be inlined in.
+  assert.match(body, /refreshDashboardIfOpen\(\)/);
+  assert.match(hubly, /function refreshDashboardIfOpen\(\)\{\s*if\(!viewIsOpen\('v-dashboard'\)\)return;[\s\S]*?enhanceDashboard/);
 });
 
 test('enhanceDashboard and Home live timer refuse to steal other tabs', () => {

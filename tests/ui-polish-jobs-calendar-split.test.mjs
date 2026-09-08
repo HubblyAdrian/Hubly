@@ -33,7 +33,11 @@ test('Shared layout tokens and PageLayout helpers exist', () => {
   const css = read('public/journey-os/hubly-layout.css');
   const ds = read('public/journey-os/design-system.js');
   const html = read('public/hubly.html');
-  assert.match(css, /--hub-title:\s*32px/);
+  // 19px, not 32px. The token was deliberately reduced in a79e227 (2026-07-28) to match
+  // .jos-ld-title, the confirmed-live page-header size — the file says so in a comment.
+  // This assertion defended a decision that had already been reversed, and had been red
+  // ever since. The guard worth keeping is that the token EXISTS and is a real size.
+  assert.match(css, /--hub-title:\s*19px/);
   assert.match(css, /--hub-input-h:\s*48px/);
   assert.match(css, /--hub-btn-h:\s*44px/);
   assert.match(css, /\.hub-page-header/);

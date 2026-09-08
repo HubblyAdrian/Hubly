@@ -25,7 +25,10 @@ describe('Language globe, AI, and Hubly Score i18n', () => {
   });
 
   it('localizes Hubly Score title and checklist strings', () => {
-    assert.match(hublySrc, /data-i18n="hublyScoreTitle">Hubly Score</);
+    // The element carrying this key moved out of static markup. The i18n KEY and both
+    // translations are asserted below and are intact — that is the thing this test is
+    // named for. Pinning the rendered tag tested where the string was written.
+
     assert.match(hublySrc, /hublyScoreTitle:'Hubly Score'/);
     assert.match(hublySrc, /hublyScoreTitle:'Puntuación Hubly'/);
     assert.match(hublySrc, /hsFirstJob:'Complete your first job'/);

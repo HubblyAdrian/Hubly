@@ -87,6 +87,12 @@ describe('hubly runtime injection', () => {
     const r = inject(WITH_CTA);
     const stripped = r.html
       .replace(/\n<!-- Hubly chat[\s\S]*?<\/script>/, '')
+      // The runtime also injects the chat container itself, not just the comment+script.
+      // "Otherwise untouched" has to be measured against everything it deliberately adds,
+      // or this goes red every time the widget gains a wrapper.
+      // The chat container nests divs, so match through to </body> rather than the first
+      // closing tag — a non-greedy </div> stops inside the widget and leaves half of it behind.
+      .replace(/\n?<div id="hubly-chat"[\s\S]*?(?=<\/body>)/, '')
       .replace(/ target="_top"/, '')
       .replace(/href="https:\/\/ridge-co\.[^"]*"/, 'href="#hubly-book"');
     assert.equal(stripped, WITH_CTA);

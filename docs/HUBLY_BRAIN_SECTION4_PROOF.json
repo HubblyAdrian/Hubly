@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-07-24T17:35:17.039Z",
+  "checkedAt": "2026-09-08T23:03:58.232Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -272,7 +272,7 @@
     "timing": [
       {
         "expertId": "experience_director",
-        "executionTimeMs": 6
+        "executionTimeMs": 4
       },
       {
         "expertId": "research",
@@ -1664,7 +1664,7 @@
           "output": {
             "type": "Builder Intent",
             "builderIntent": {
-              "intentId": "bint_mrz80nq1_tl1o81",
+              "intentId": "bint_mtta0jd6_7l7bkf",
               "version": "1.0.0",
               "originalRequest": "I'm starting a pressure washing company.",
               "intentCategory": "Business Strategy",
@@ -1695,7 +1695,7 @@
                   "confidence": 81
                 }
               ],
-              "timestamp": "2026-07-24T17:35:17.017Z",
+              "timestamp": "2026-09-08T23:03:58.218Z",
               "applied": false,
               "changePlanGenerated": false
             },
@@ -1708,7 +1708,7 @@
         {
           "expertName": "Experience Director",
           "expertId": "experience_director",
-          "executionTimeMs": 6,
+          "executionTimeMs": 4,
           "reasoning": [
             {
               "reason": "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
@@ -1990,7 +1990,7 @@
           "changedFromPrevious": "Builder Expert produced Builder Intent; Experience Director advanced that into Experience Review (confidence 81 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 6,
+          "executionTimeMs": 4,
           "outputType": "Experience Review",
           "retries": 0
         }

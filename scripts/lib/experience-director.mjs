@@ -8,11 +8,11 @@ import {
   HUBLY_IS,
   HUBLY_NEVER,
   HUBLY_IDENTITY_VERSION
-} from "/workspace/scripts/lib/identity-system.mjs";
+} from "./identity-system.mjs";
 import {
   applyExperienceLayer,
   isForbiddenLoading
-} from "/workspace/scripts/lib/experience-layer.mjs";
+} from "./experience-layer.mjs";
 var EXPERIENCE_DIRECTOR_VERSION = "1.2.0";
 var ED_MAX_QUESTIONS = 3;
 var ED_MAX_OWNER_LINES = 3;

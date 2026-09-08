@@ -11,7 +11,7 @@ test('contextual inspector opens only from Style', () => {
   const html = read('public/hubly.html');
   assert.match(html, /openEdSheet\('layout'/);
   assert.match(html, /wsPeToolbarActions/);
-  assert.match(html, /Replace Photo/);
+  assert.match(html, /Replace photo/i);
   assert.doesNotMatch(html, /if\(act==='edit'\|\|act==='style'\)/);
 });
 

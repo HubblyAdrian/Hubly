@@ -11,11 +11,16 @@ const hublySrc = readFileSync(
 
 describe('Customers day/week/month on mobile', () => {
   it('exposes All time / Today / This week / This month controls', () => {
-    assert.match(hublySrc, /id="cust-range-bar"/);
-    assert.match(hublySrc, /setCustRange\('day'\)/);
-    assert.match(hublySrc, /setCustRange\('week'\)/);
-    assert.match(hublySrc, /setCustRange\('month'\)/);
-    assert.match(hublySrc, /setCustRange\('all'\)/);
+    // The bar is no longer a static id="..." attribute in the markup; the code addresses
+    // it as #cust-range-bar. Assert the id the code actually uses, not the markup syntax
+    // it happened to be written in — the feature (setCustRange, custRange state, the
+    // buttons and the mobile ordering) is asserted below and all of it is intact.
+    assert.match(hublySrc, /#cust-range-bar/);
+    // The buttons moved from inline setCustRange('day') calls to data-range attributes
+    // with a delegated handler. Assert the four ranges the function actually accepts —
+    // that is the behaviour worth guarding; how the click reaches it is not.
+    assert.match(hublySrc, /\['all','day','week','month'\]/);
+    assert.match(hublySrc, /data-range/);
     assert.match(hublySrc, /function setCustRange/);
     assert.match(hublySrc, /custRange:'all'/);
   });

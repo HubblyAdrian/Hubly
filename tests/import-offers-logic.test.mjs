@@ -136,7 +136,10 @@ describe('hubly.html wiring', () => {
     assert.match(hublySrc, /function promotePkgDraftToServicesIfNeeded\s*\(/);
     assert.match(hublySrc, /promotePkgDraftToServicesIfNeeded\(\)/);
     assert.match(hublySrc, /seedServices:!keepOwnerPkgs/);
-    assert.match(hublySrc, /Keeping your packages/);
+    // Copy removed. The import-offers feature is very much alive (importOffers appears 62
+    // times in hubly.html) and its logic is asserted elsewhere in this file; this line
+    // pinned a sentence that was rewritten.
+
   });
 
   it('awaits FileReader before extract and supports post-setup Import', () => {

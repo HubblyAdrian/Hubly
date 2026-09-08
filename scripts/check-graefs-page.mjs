@@ -150,7 +150,36 @@ const CAPTURE = () => {
   };
 };
 
-const browser = await chromium.launch({ headless: true, args: [`--host-resolver-rules=MAP *.myhubly.app 127.0.0.1:${PORT}`, '--ignore-certificate-errors'] });
+// ── A CHECK THAT CANNOT RUN MUST SAY SO. NEVER PASS, NEVER FAIL. ──────────────
+//
+// 2026-09-08: an unrelated `npm install` reset Playwright's browser cache and this gate
+// stopped being able to launch. The symptom was a stack trace that read like a hang —
+// indistinguishable, at a glance, from the check running slowly. It was neither passing
+// nor failing; it was NOT LOOKING, and nothing said so.
+//
+// That is the third instance in one day of a check reporting a result it had not
+// established (see docs/CHECKER_LESSONS.md). The distinct exit state below exists so this
+// can never be read as "Graef's page is fine" or "Graef's page broke" — only as "I could
+// not look", which is the only true answer when there is no browser.
+//
+// EXIT CODES: 0 = PASS, 1 = FAIL (a real difference from the baseline), 2 = COULD NOT RUN.
+// Anything consuming this must treat 2 as "unknown", never as either outcome.
+const CANNOT_RUN = 2;
+let browser;
+try {
+  browser = await chromium.launch({ headless: true, args: [`--host-resolver-rules=MAP *.myhubly.app 127.0.0.1:${PORT}`, '--ignore-certificate-errors'] });
+} catch (launchErr) {
+  const msg = String(launchErr && launchErr.message || launchErr);
+  const missing = /Executable doesn't exist|browserType\.launch|install playwright|Please run the following command/i.test(msg);
+  console.error('\nCOULD NOT RUN — this check did not execute, so it is neither a pass nor a fail.');
+  console.error(missing
+    ? "  Playwright's browser is missing. Install it with:  npx playwright install chromium-headless-shell"
+    : '  The browser failed to launch.');
+  console.error('  ' + msg.split('\n')[0]);
+  console.error("\n  Graef's page has NOT been checked. Do not read this as safe.");
+  process.exit(CANNOT_RUN);
+}
+
 let snap, err = null;
 try {
   const page = await (await browser.newContext({ viewport: { width: 1280, height: 1000 } })).newPage();

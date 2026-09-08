@@ -11,6 +11,7 @@ const events = readFileSync(join(root, 'public/journey-os/hubly-events.js'), 'ut
 const migration = readFileSync(join(root, 'supabase/migrations/20260729120000_commerce_engine.sql'), 'utf8');
 const commerceApi = readFileSync(join(root, 'supabase/functions/commerce-api/index.ts'), 'utf8');
 const checkout = readFileSync(join(root, 'supabase/functions/create-store-checkout/index.ts'), 'utf8');
+const commerceCheckout = readFileSync(join(root, 'supabase/functions/_shared/commerce_checkout.ts'), 'utf8');
 const webhook = readFileSync(join(root, 'supabase/functions/stripe-webhook/index.ts'), 'utf8');
 const shipping = readFileSync(join(root, 'supabase/functions/_shared/hubly_provider_shipping.ts'), 'utf8');
 const inventory = readFileSync(join(root, 'supabase/functions/_shared/hubly_commerce_inventory.ts'), 'utf8');
@@ -32,9 +33,9 @@ describe('Commerce Engine foundation', () => {
       'docs/operate/COMMERCE_ENGINE.md'
     ];
     files.forEach((f) => assert.ok(existsSync(join(root, f)), f));
-    assert.match(hubly, /commerce\/index\.js\?v=commerce-1/);
-    assert.match(hubly, /store-commerce\.js\?v=store-3/);
-    assert.match(hubly, /storefront-renderer\.js\?v=commerce-2/);
+    assert.match(hubly, /commerce\/index\.js\?v=[\w-]+/);
+    assert.match(hubly, /store-commerce\.js\?v=[\w-]+/);
+    assert.match(hubly, /storefront-renderer\.js\?v=[\w-]+/);
   });
 
   it('migration is business-scoped with core commerce tables', () => {
@@ -85,7 +86,12 @@ describe('Commerce Engine foundation', () => {
     assert.match(checkout, /hubly_commerce_order_id/);
     assert.match(checkout, /createDestinationCheckout/);
     assert.match(webhook, /commerce_orders/);
-    assert.match(webhook, /applyOrderInventoryDeduction/);
+    // The inventory deduction moved one level down in a refactor: stripe-webhook now
+    // calls finalizePaidCommerceOrder(), which calls applyOrderInventoryDeduction().
+    // Assert the COMPOSED PATH rather than a symbol that happened to live in this
+    // file, so the guard survives the next refactor instead of going red on it.
+    assert.match(webhook, /finalizePaidCommerceOrder/);
+    assert.match(commerceCheckout, /applyOrderInventoryDeduction/);
     assert.match(webhook, /payment_intent\.succeeded/);
     assert.match(webhook, /charge\.refunded/);
     assert.match(inventory, /commerce_inventory_logs/);

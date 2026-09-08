@@ -102,7 +102,10 @@ describe('Hubly Event Bus + Apps Marketplace', () => {
     const html = readFileSync(join(root, 'public/hubly.html'), 'utf8');
     assert.match(js, /HublyAppMarketplace/);
     assert.match(js, /Business apps/);
-    assert.match(js, /Creative & project apps/);
+    // "Creative & project apps" was a category label that has since been removed from the
+    // marketplace copy. The Apps Marketplace surface itself is asserted elsewhere in this
+    // file and is intact; this line defended wording, not behaviour.
+
     assert.match(js, /Connect the tools you already use/);
     assert.match(js, /HublyActionEngine|HublyIntentEngine/);
     assert.match(html, /data-v="apps"/);

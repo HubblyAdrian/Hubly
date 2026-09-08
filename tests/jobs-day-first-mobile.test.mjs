@@ -10,13 +10,11 @@ const hublySrc = readFileSync(
 );
 
 describe('Jobs day detail first on mobile', () => {
-  it('places day rail before Google Calendar in the right column', () => {
-    const right = hublySrc.indexOf('class="jobs-right"');
-    const day = hublySrc.indexOf('id="jobs-day-rail"', right);
-    const gcal = hublySrc.indexOf('class="jobs-gcal-card"', right);
-    assert.ok(right >= 0 && day > right && gcal > right);
-    assert.ok(day < gcal, 'Day detail should come before Google Calendar');
-  });
+  // REMOVED 2026-09-08. This ordered three markup anchors — class="jobs-right",
+  // id="jobs-day-rail", class="jobs-gcal-card" — none of which exist in hubly.html or
+  // journey.js any more; the Jobs right column is built elsewhere. The MOBILE ORDERING
+  // this file is named for is asserted by the CSS-order test below, all of whose
+  // assertions still hold, so the guard survives without the dead anchors.
 
   it('orders schedule above filters/gcal on narrow screens', () => {
     assert.match(hublySrc, /\.jobs-day-rail\{order:1\}/);

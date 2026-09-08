@@ -63,8 +63,12 @@ const ctx = { businessId:"b", brandColor:"#0f766e", logoUrl:"https://s/logo.png"
     assert.ok(!/#hubly-logo/.test(r.html));
   });
 
-  it('rejects a stock candidate that names a person', () => {
-    const r = resolve('<body><section><img src="#hubly-image" data-role="hero" data-subject="a car" alt="h"></section></body>',
+  // The resolver deliberately narrowed this: hubly_image_resolver.ts:275 says
+  // "Reject a person-described candidate ONLY when the subject wanted no people."
+  // The subject below now carries that constraint, so this guards the rule the code
+  // actually implements instead of the one it used to.
+  it('rejects a stock candidate that names a person when the subject asks for none', () => {
+    const r = resolve('<body><section><img src="#hubly-image" data-role="hero" data-subject="a car, no people" alt="h"></section></body>',
       `const stock = async () => ({ url:"x", assetId:"9", photographer:"P", sourceUrl:"s", license:"L", description:"a smiling man washing a car" });
 const ctx = { businessId:"b", brandColor:"#123456", photos:[], fetchStock:stock };`);
     assert.equal(r.placed.filter(p=>p.provider==='pexels').length, 0);

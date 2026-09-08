@@ -44,11 +44,14 @@ test("intentional Home clears restore (goDash / leave editor / Create exit)", ()
 });
 
 test("switchV and website hub persist the active section", () => {
+  // switchV's signature gained an `opts` param, so anchor on the function NAME rather
+  // than its arity — the old anchor "function switchV(el)" sliced an empty string and the
+  // assertion below then failed against '' instead of against the real body.
   const switchV = html.slice(
-    html.indexOf("function switchV(el)"),
+    html.indexOf("function switchV("),
     html.indexOf("function mountEdChrome")
   );
-  assert.match(switchV, /persistOwnerAppView\(v\)/);
+  assert.match(switchV, /persistOwnerAppView\(v\b/);
 
   const hub = html.slice(
     html.indexOf("function switchWebsiteHubTab"),

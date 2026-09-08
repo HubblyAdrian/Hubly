@@ -188,8 +188,21 @@ export function extractByPattern(text: string): ExtractedFacts {
  *   - Rejects any name carrying a first-person/verb/connective token as a backstop.
  * "Full Detail $175" (no delimiter) is intentionally MISSED — the model gets it.
  */
+// THE DELIMITER IS OPTIONAL. Fixed 2026-09-08.
+//
+// This required a `:`, an em/en dash, or ` - ` between the name and the price, so
+// "Full Detail: $180" matched and "Full Detail $180" did not. The second is how people
+// actually write it — it is verbatim how Summit Auto Detail's owner wrote his prices
+// ("Express Wash $60, Full Detail $180, Ceramic Coating $600"), the message CLAUDE.md
+// records as the reason the page shipped priceless and Hubly then asked him for prices
+// he had already given.
+//
+// It is the same failure as the price scan that counted `$` and missed every priced
+// service without the symbol: a list of SHAPES that omits the most common one. Per the
+// standing rule, enumerate the harmless side — a name followed by whitespace and a `$`
+// is still a price, and JUNK_NAME_RE below is what rejects prose, not the delimiter.
 const PRICE_LINE_RE =
-  /([A-Za-z][A-Za-z'&/ -]{2,50}?)\s*(?::|—|–|\s-\s)\s*\$\s?([\d,]+(?:\.\d{2})?)/g;
+  /([A-Za-z][A-Za-z'&/ -]{2,50}?)\s*(?::|—|–|\s-\s)?\s*\$\s?([\d,]+(?:\.\d{2})?)/g;
 // A name is junk if it carries prose tokens no real service label contains.
 const JUNK_NAME_RE = /\b(?:i|i'm|im|we|our|you|your|us|charge[sd]?|charging|cost[s]?|price[sd]?|pricing|pay|paid|for|per|is|are|was|were|do|does|offer[s]?)\b/i;
 
@@ -212,6 +225,10 @@ export function extractPricedServices(text: string): PricedService[] {
     const name = m[1]
       .replace(/^(?:and|or|the|a|an|plus|also|with|for)\b\s*/i, "")  // drop a leading connective swept in
       .replace(/[,;:\-–—\s]+$/, "")
+      // "cap replacement from $340" -> "cap replacement". Now that the delimiter is
+      // optional these trailing connectives get swept into the name; a service called
+      // "cap replacement from" is a name no owner wrote.
+      .replace(/\s+(?:from|starting(?:\s+at)?|at|only|just)$/i, "")
       .trim();
     const price = Number(m[2].replace(/,/g, ""));
     if (!name || name.length < 3 || !isFinite(price) || price <= 0) continue;
