@@ -406,3 +406,69 @@ true for Graef with **0 products**. That resolves in his favour here. If another
 appears during the clone run, **it resolves toward keeping the tab** — the same asymmetry as never
 discarding a draft: losing something an owner wanted is unrecoverable in the moment, while an
 extra tab is one conversation away.
+
+
+---
+
+# SHIPPED 2026-09-08 — the front-door seed and reader. Verified by looking.
+
+**Scope: `scope='workspace'` only** — the `hcWorkspaces` rail in `platform-home.html`, where every
+signup lands. `scope='tab'` (hubly.html's 25 entries at `/app`) keeps its vocabulary because it
+costs nothing, but **nothing seeds it and nothing reads it**. The corpus backfill is parked; its
+loss table and 180 backups stay on disk.
+
+## The four verifications, in the order that matters
+
+| | test | result |
+| --- | --- | --- |
+| **V1** | a business with **ZERO places rows** — the state all 179 are in | **PASS.** `evergreen-yard-care` (created 2026-08-30, 0 rows): rail renders **Home + Website**, exactly as today. A genuine member of the 179, not a contrived clone |
+| **V2** | create through the **real front-door path**, `start_business_in_progress` | **PASS.** Seeds exactly `website / workspace / sort_order 10 / added_by system` |
+| **V3** | insert a `store` place and look | **PASS — and this is the only test that proves the reader READS.** Rail became **Home + Website + Store** |
+| **V4** | Graef's fingerprint, and his real rail | **PASS.** 162 text runs etc. all match; `graefs-autocare` has 0 places and is unaffected |
+
+> **V1 and V2 render an IDENTICAL rail** — Home + Website — because fail-open and the minimal seed
+> agree by design. So neither can distinguish a live reader from a dead one. **V3 is the
+> discriminating test**, and running only V1/V2 would have been a rehearsal that cannot fail.
+
+## Two of my own tests were wrong before the product was
+
+- **V2 first reported FAIL.** I read `business_places` in the *same statement* as the function
+  call, so the `AFTER INSERT` trigger's effects were not in that snapshot. Read separately:
+  seeded correctly. Same class as the `now()`-inside-one-transaction trigger test earlier.
+- **The reader nearly shipped dead.** My first version did a direct `from('business_places')
+  .select()`, but the table has RLS on and `revoke all from anon, authenticated` — it would have
+  been denied every time, left `hc.places` null, and failed open to the full rail: **a reader that
+  never reads, while looking exactly like Ruling 2 working correctly.** Caught before testing;
+  now goes through `get_public_business_places`, the security-definer RPC that already existed.
+
+## Ruling 2 as shipped
+
+`hasPlace()`'s **first line** is the fail-open branch, returning early — not a `||` default:
+
+```js
+function hasPlace(kind){
+  if(!hcPlacesKnown()) return true;   // no rows = UNKNOWN = the full current rail
+  …
+}
+```
+
+And the rail is **not awaited**: it draws from `hc.places = null` (UNKNOWN → full rail) and
+redraws when the read lands, so a slow or failed read shows an owner **more** than they should,
+never less.
+
+## The swallow got a counter
+
+`seed_business_places()` never fails a signup — it warns and lets the insert through. A
+`raise warning` goes to a log nobody reads, so **`scripts/check-places-seeded.mjs` counts
+businesses created after the trigger with no workspace place**. Currently: 1 created, 0 missed,
+179 predating (expected). The warning's wording was also corrected — it said "created without
+places" when the consequence under fail-open is the **full rail**.
+
+## Known gap, small
+
+`HC_RAIL_ICONS.store` and `.jobs` do not exist, so those entries fall back to the website icon.
+Visible in the V3 screenshot. Cosmetic, and it belongs with the writer.
+
+## Next, and deliberately not now
+
+**The writer** — the assistant adding a place when an owner asks. The reader is proven first.
