@@ -15132,6 +15132,12 @@ function applyBizMeta(meta){
   if(!meta||typeof meta!=='object')return;
   if(meta.logoUrl)S.logoUrl=meta.logoUrl;
   if(meta.bannerUrl)S.bannerUrl=meta.bannerUrl;
+  // THE BRAND BASELINE FOR THIS SESSION. Captured here because applyBizMeta is the
+  // LAST writer of S.logoUrl/S.bannerUrl on every load path (the column is assigned
+  // first, then meta overrides it). saveStorefront compares against this and OMITS a
+  // brand column the session never changed, so a stale tab cannot overwrite a logo
+  // set elsewhere — see the comment at resolveBrandCol.
+  try{S._loadedLogoUrl=S.logoUrl;S._loadedBannerUrl=S.bannerUrl;}catch(e){}
   if(meta.logoScale!=null){S.logoScale=Number(meta.logoScale)||1;try{applyLogoScale();}catch(e){}}
   if(meta.portfolioUrls)S.portfolioUrls=meta.portfolioUrls;
   if(meta.services&&meta.services.length)S.services=meta.services;
@@ -17098,6 +17104,28 @@ async function saveStorefront(opts){
       if(live==null||live==='')return null;
       return cleanHttps(col)||cleanHttps(prior)||null;
     };
+    /* DO NOT WRITE A BRAND IMAGE THIS SESSION NEVER TOUCHED.
+     *
+     * resolveBrandCol returns `live` whenever it is a valid https URL — and
+     * `live` is S.logoUrl, held in memory since the app loaded. So an editor tab
+     * opened BEFORE a logo was set somewhere else (by talking, or in another tab)
+     * wrote its stale copy back over the newer one on the next save of ANYTHING.
+     *
+     * Measured 2026-09-07 on a clone: set the logo by chat -> both homes correct
+     * -> change the FAQ title in an editor tab and save -> the chat's logo was
+     * gone from both. The owner was told "your logo is saved" and it was silently
+     * reverted by an unrelated edit, which is worse than the refusal this whole
+     * change replaced. Keeping the two HOMES in sync did not fix it: the overwrite
+     * comes from a stale CLIENT, not from the resolver picking the wrong home.
+     *
+     * So the column is omitted from the update unless this session actually
+     * changed it. Omitting leaves whatever is in the row — which is by definition
+     * fresher than what this tab is holding. Last-write-wins from a stale tab is
+     * the defect; not writing is the fix.
+     *
+     * This does NOT fix having two homes. That is one resolver both paths call —
+     * the #54 job, filed, not done. */
+    const brandUnchanged=(live,loaded)=>String(live||'')===String(loaded||'');
     const updates={
       name: document.getElementById('ed-name')?.value||S.biz,
       tagline: document.getElementById('ed-tag')?.value||null,
@@ -17115,8 +17143,10 @@ async function saveStorefront(opts){
       review_embed_code: S.reviewEmbedCode||null,
       payment_setting: S.paymentSetting||'later',
       deposit_message: S.depositMessage||null,
-      logo_url: resolveBrandCol(S.logoUrl,currentBusiness.logo_url,priorMeta?.logoUrl),
-      banner_url: resolveBrandCol(S.bannerUrl,currentBusiness.banner_url,priorMeta?.bannerUrl),
+      ...(brandUnchanged(S.logoUrl,S._loadedLogoUrl) ? {} :
+          { logo_url: resolveBrandCol(S.logoUrl,currentBusiness.logo_url,priorMeta?.logoUrl) }),
+      ...(brandUnchanged(S.bannerUrl,S._loadedBannerUrl) ? {} :
+          { banner_url: resolveBrandCol(S.bannerUrl,currentBusiness.banner_url,priorMeta?.bannerUrl) }),
       slug: newSlug,
       timezone: document.getElementById('ed-timezone')?.value||S.timezone||null,
       buffer_before_min: parseInt(document.getElementById('ed-buf-before')?.value)||0,
