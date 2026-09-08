@@ -236,6 +236,27 @@ if (pinMatch === null) {
        `      upgrade wearing a bug fix's clothes.`);
 }
 
+/* ── CHECK: EVERY CAPABILITY IS REACHABLE FROM SOME CONTEXT ────────────────────
+   A capability absent from CONTEXT_CAPABILITY_ALLOWLIST is filtered out of the
+   model's prompt AND blocked at dispatch — so it exists, type-checks, passes every
+   other invariant here, and does nothing. That is exactly how `places` shipped
+   invisible on 2026-09-08: the action was written, the RPC worked, this scanner
+   passed, and the model answered "that isn't live in the workspace".
+   A hardcoded allow-list that silently drops an entry needs a counter, not a note. */
+{
+  const reg = fs.readFileSync(path.join(ROOT, "supabase/functions/_shared/hubly_capability_registry.ts"), "utf8");
+  const declared = [...reg.matchAll(/^\s{4}name: "([a-z_]+)",$/gm)].map((m) => m[1]);
+  const convSrc = fs.readFileSync(CONVERSATION, "utf8");
+  const allowBlock = convSrc.match(/CONTEXT_CAPABILITY_ALLOWLIST[\s\S]*?\n\};/);
+  const allowed = new Set([...(allowBlock?.[0] ?? "").matchAll(/"([a-z_]+)"/g)].map((m) => m[1]));
+  const orphans = declared.filter((c) => !allowed.has(c));
+  console.log(`capabilities declared / reachable         : ${declared.length} / ${declared.length - orphans.length}`);
+  if (!declared.length) fail("could not parse any capability names — this check has stopped checking anything");
+  for (const c of orphans) {
+    fail(`capability "${c}" is in the registry but in NO context allowlist — the model can never invoke it.`);
+  }
+}
+
 if (failures) { console.error(`\n${failures} failure(s).`); process.exit(1); }
 console.log("\nOK — every create_business_document payload carries p_owner_id, every");
 console.log("action that reads the injected owner is on the list that injects it, and no");

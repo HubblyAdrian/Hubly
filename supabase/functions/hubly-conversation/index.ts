@@ -310,11 +310,30 @@ type ConversationContextName = "dashboard" | "customer" | "operate";
 // so a context is bounded structurally — never just by what the prompt
 // happened to omit.
 const CONTEXT_CAPABILITY_ALLOWLIST: Record<ConversationContextName, string[]> = {
-  dashboard: ["website", "online_presence", "business"],
+  // `places` (2026-09-08) is on BOTH owner contexts and deliberately NOT on
+  // `customer`: adding a room to a business's sidebar is an owner action, and a
+  // public visitor must never reach it. The RPC would refuse them anyway — it
+  // authorises by owner — but a capability a stranger can invoke is a capability
+  // whose refusal wording someone has to get right, and not offering it is simpler.
+  //
+  // This list is why the writer looked complete and did nothing: the action
+  // existed, the RPC worked, the invariant scanner passed, and the model still
+  // said "that isn't live in the workspace" because the capability was filtered
+  // out of its prompt. A hardcoded allow-list silently dropping an entry is the
+  // failure this file's own comments already record twice.
+  // `operations` (read-only) was found ORPHANED on 2026-09-08 by the new
+  // reachability check: shipped 2026-09-05 for #27, wired for owner injection,
+  // guarded by the scanner — and in NO context allowlist, so the model could never
+  // invoke it. Its own description tells the model when to use it, so the omission
+  // was clearly unintended. Added here; it is read-only ("it reports, it never
+  // accepts, declines, reschedules or messages anyone"), so the blast radius of
+  // turning it on is a model that can now answer a question it was already told to
+  // answer. FLAGGED rather than folded in silently — this is a behaviour change.
+  dashboard: ["website", "online_presence", "business", "places", "operations"],
   customer: ["booking"],
   // The authenticated owner operating their live business. First capability: storefront.
   // Booking-config / marketplace / services will join this same context later.
-  operate: ["storefront"],
+  operate: ["storefront", "places"],
 };
 
 
