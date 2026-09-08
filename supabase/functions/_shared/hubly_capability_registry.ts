@@ -183,6 +183,14 @@ function injectedOwnerUid(args: Record<string, unknown>): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
+/** Every RPC that authorises a CLAIMED business by p_owner_id. Keep in step with
+ *  scripts/check-owner-id-invariant.mjs, which asserts the same set statically. */
+const OWNER_AUTHORISED_RPCS = new Set([
+  "create_business_document",
+  "patch_business_in_progress",
+  "set_business_hours_in_progress",
+  "set_business_draft_services",
+]);
 async function callBusinessRpc(fn: string, payload: Record<string, unknown>): Promise<any> {
   // ── THE CLAIMED-OWNER INVARIANT ────────────────────────────────────────────
   //
@@ -200,12 +208,21 @@ async function callBusinessRpc(fn: string, payload: Record<string, unknown>): Pr
   // claim" — that a reader can see and disagree with. A rule that lives in one
   // place and fires at the call site is the only version of this that survives
   // the next writer, who will not have read the migration.
-  if (fn === "create_business_document" && !("p_owner_id" in payload)) {
+  //
+  // EXTENDED 2026-09-07 from one RPC to all FOUR that authorise this way. The
+  // guard and scripts/check-owner-id-invariant.mjs both covered only
+  // create_business_document, while patch_business_in_progress,
+  // set_business_hours_in_progress and set_business_draft_services enforce the
+  // same predicate — and four live call sites of patch_business_in_progress were
+  // missing the key. A rule enforced at one layer is not a rule; that is the
+  // lesson this comment already carried, and the codebase was standing inside it.
+  if (OWNER_AUTHORISED_RPCS.has(fn) && !("p_owner_id" in payload)) {
     throw new Error(
-      "create_business_document called without p_owner_id. A claimed business authorises by owner, " +
-      "not by draft token, so this write would fail with not_owner for every owner who has signed up. " +
-      "Pass the verified owner uid, or pass p_owner_id: null explicitly if this path genuinely only " +
-      "runs before claim (and say why). See docs/OPEN_FINDINGS.md #20.",
+      `${fn} called without p_owner_id. A claimed business authorises by owner, ` +
+      "not by draft token, so this write would fail (ok:false, or not_owner) for every owner who " +
+      "has signed up. Pass the verified owner uid, or pass p_owner_id: null explicitly if this path " +
+      "genuinely only runs before claim (and say why). See docs/OPEN_FINDINGS.md #20 and " +
+      "docs/OWNER_ID_SCANNER_GAP.md.",
     );
   }
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
@@ -2846,6 +2863,7 @@ export async function uploadDraftLogo(
     p_draft_token: draftToken,
     p_patch: { logo_url: uploaded.url },
     p_website_meta: aspect ? { logoAspect: Math.round(aspect * 1000) / 1000 } : null,
+    p_owner_id: ownerUid ?? null,  // already a parameter; it reached the re-render and not this patch
   });
   if (!r || r.ok !== true) {
     return { ok: false, real: false, summary: "The logo uploaded but couldn't be attached to the business — the draft may have already been claimed.", error: "rpc_failed" };
@@ -4372,6 +4390,10 @@ export async function uploadDraftHeroImage(
   draftToken: string,
   imageBase64: string,
   mediaType: string,
+  // Added 2026-09-07. Without it the patch below returned ok:false for every
+  // claimed owner — the same defect uploadDraftLogo already had a parameter for
+  // and still forgot to use on its own patch.
+  ownerUid?: string | null,
 ): Promise<CapabilityActionResult> {
   if (!draftId || !draftToken) {
     return { ok: false, real: false, summary: "No draft business exists yet to attach a hero image to.", error: "missing_draft" };
@@ -4384,6 +4406,7 @@ export async function uploadDraftHeroImage(
     p_draft_token: draftToken,
     p_patch: { banner_url: uploaded.url, header_mode: "banner" },
     p_website_meta: null,
+    p_owner_id: ownerUid ?? null,  // threaded from the client-triggered hero upload
   });
   if (!r || r.ok !== true) {
     return { ok: false, real: false, summary: "The image uploaded but couldn't be attached to the business — the draft may have already been claimed.", error: "rpc_failed" };
@@ -4775,10 +4798,19 @@ async function runFreeformGeneration(
     (gen as { shape?: { headlineAlignment?: string; markPosition?: string } }).shape ?? {};
   if (gshape.headlineAlignment || gshape.markPosition) {
     try {
+      // p_business_id was a TYPO. patch_business_in_progress takes
+      // (p_id, p_draft_token, p_patch, p_website_meta, p_owner_id) — there is no
+      // p_business_id, so PostgREST could not resolve the overload and this call
+      // failed for EVERY business, claimed or not, from the day it was written.
+      // The catch below only console.errors, and its message already said the
+      // decision was not recorded — so the symptom was visible and the cause was
+      // not. Found 2026-09-07 while auditing p_owner_id, not by the symptom.
       await callBusinessRpc("patch_business_in_progress", {
-        p_business_id: draftId,
+        p_id: draftId,
         p_draft_token: draftToken,
+        p_patch: {},
         p_website_meta: { chrome: gshape },
+        p_owner_id: ownerUid ?? null,
       });
     } catch (e) {
       console.error(`freeform-shape NOT STORED [${draftId}] — page is live and correct, the decision was not recorded: ${String((e as Error)?.message || e).slice(0, 160)}`);
@@ -5336,6 +5368,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_draft_token: draftToken,
             p_patch: {},
             p_website_meta: { chrome: merged },
+            p_owner_id: injectedOwnerUid(args),  // same verified uid this handler already passes to create_business_document
           });
           if (!r || r.ok !== true) {
             return { ok: false, real: false, summary: "The header change could not be saved — the draft may have already been claimed.", error: "rpc_failed" };
@@ -5976,6 +6009,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_draft_token: r.draft_token,
             p_patch: identityPatch,
             p_website_meta: { seoTitle: name },
+            p_owner_id: null,  // startDraft CREATES the row — pre-claim by construction, never a claimed business
           });
           const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
           // A grant, so whoever just built this can claim it later. NOT

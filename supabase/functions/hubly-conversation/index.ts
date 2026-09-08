@@ -1791,7 +1791,7 @@ Deno.serve(async (req) => {
       }
     } else if (directImageEdit) {
       actionName = "setHeroImage";
-      result = await uploadDraftHeroImage(draftBusiness.id, draftBusiness.draftToken, directImageEdit.imageBase64, directImageEdit.mediaType);
+      result = await uploadDraftHeroImage(draftBusiness.id, draftBusiness.draftToken, directImageEdit.imageBase64, directImageEdit.mediaType, await getOwnerUid());
     } else if (directDocumentImageEdit) {
       isDocumentAction = true;
       actionName = "patchDocument";

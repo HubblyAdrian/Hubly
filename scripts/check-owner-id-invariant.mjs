@@ -83,27 +83,53 @@ function objectAt(src, from) {
 let failures = 0;
 const fail = (msg) => { failures++; console.error("FAIL  " + msg); };
 
-/* ── CHECK 1 ─────────────────────────────────────────────────────────────────── */
+/* ── CHECK 1 ───────────────────────────────────────────────────────────────────
+   EXTENDED 2026-09-07 from one RPC to all FOUR that authorise a claimed business
+   by p_owner_id. This check and the runtime throw in callBusinessRpc both covered
+   create_business_document ONLY, while three other RPCs enforce the same
+   predicate — and four live call sites of patch_business_in_progress were missing
+   the key, so a claimed owner uploading a logo or changing their header wrote
+   nothing. A rule enforced at one layer is not a rule.
+   Keep this set in step with OWNER_AUTHORISED_RPCS in the registry. */
+const OWNER_AUTHORISED_RPCS = [
+  "create_business_document",
+  "patch_business_in_progress",
+  "set_business_hours_in_progress",
+  "set_business_draft_services",
+];
 let sites = 0;
+const perRpc = Object.fromEntries(OWNER_AUTHORISED_RPCS.map((r) => [r, 0]));
 for (const file of walk(path.join(ROOT, "supabase/functions"))) {
   const src = fs.readFileSync(file, "utf8");
-  const re = /callBusinessRpc\(\s*"create_business_document"\s*,\s*\{/g;
-  let m;
-  while ((m = re.exec(src))) {
-    sites++;
-    const obj = objectAt(src, m.index + m[0].length - 1);
-    const line = src.slice(0, m.index).split("\n").length;
-    const where = `${path.relative(ROOT, file)}:${line}`;
-    if (obj === null) { fail(`${where} — unbalanced payload literal, could not check`); continue; }
-    if (!/(^|[\s{,])p_owner_id\s*:/.test(obj)) {
-      fail(`${where} — create_business_document payload has no p_owner_id.\n` +
-           `      Pass the verified owner uid, or pass \`p_owner_id: null\` explicitly and\n` +
-           `      say in a comment why this path only ever runs before claim.`);
+  for (const rpc of OWNER_AUTHORISED_RPCS) {
+    const re = new RegExp(`callBusinessRpc\\(\\s*"${rpc}"\\s*,\\s*\\{`, "g");
+    let m;
+    while ((m = re.exec(src))) {
+      sites++; perRpc[rpc]++;
+      const obj = objectAt(src, m.index + m[0].length - 1);
+      const line = src.slice(0, m.index).split("\n").length;
+      const where = `${path.relative(ROOT, file)}:${line}`;
+      if (obj === null) { fail(`${where} — unbalanced ${rpc} payload literal, could not check`); continue; }
+      // Accept the SHORTHAND form too. Requiring a colon meant `{ …, p_owner_id }`
+      // read as missing — which sent me to add a second `p_owner_id:` beside an
+      // existing one and produced TS1117. A checker that misreads a valid form as
+      // a violation causes the defect it is meant to prevent.
+      if (!/(^|[\s{,])p_owner_id\s*[:,}]/.test(obj) && !/(^|[\s{,])p_owner_id\s*$/m.test(obj)) {
+        fail(`${where} — ${rpc} payload has no p_owner_id.\n` +
+             `      Pass the verified owner uid, or pass \`p_owner_id: null\` explicitly and\n` +
+             `      say in a comment why this path only ever runs before claim.`);
+      }
     }
   }
 }
-console.log(`create_business_document call sites checked : ${sites}`);
+console.log(`owner-authorised RPC call sites checked : ${sites}  ` +
+  OWNER_AUTHORISED_RPCS.map((r) => `${r}=${perRpc[r]}`).join("  "));
 if (!sites) fail("no call sites found at all — this check has stopped checking anything");
+for (const rpc of OWNER_AUTHORISED_RPCS) {
+  // A per-RPC zero means the pattern stopped matching that one — the failure mode
+  // where a check keeps passing because it quietly checks less than it used to.
+  if (!perRpc[rpc]) fail(`no ${rpc} call sites found — this check has stopped covering it`);
+}
 
 /* ── CHECK 2 ─────────────────────────────────────────────────────────────────── */
 const conv = fs.readFileSync(CONVERSATION, "utf8");

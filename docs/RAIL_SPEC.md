@@ -170,7 +170,7 @@ an owner finds an empty tab and concludes the product is broken.
 
 ---
 
-## 6. Day one — nobody wakes up with fewer tabs  ⚠️ REOPENED, see the end of this file
+## 6. Day one — ⚠️ RULED: OPTION B (seed by usage). See the ruling at the end of this file.
 
 **Backfill every existing business so the rendered result is byte-identical to today**, then
 change the surfaces to read `places`. Two deploys, in this order, never one.
@@ -348,3 +348,61 @@ Whichever is chosen:
 
 **This is Adrian's call. I have not picked one, and the spec's §6 stays marked reopened until he
 does.**
+
+
+---
+
+# §6 RULED — **OPTION B: SEED BY USAGE**
+
+**Adrian's call, made 2026-09-07.** The mechanism ships doing its job, not inert.
+
+## Why the objection I raised does not hold
+
+I wrote *"~170 owners lose visible tabs."* **That counted test rows.** The real population is
+**9 market businesses**, and only **4 have any content at all**, two of which are Adrian's own.
+**The announcement burden is roughly seven people, none of them using the tabs that would be
+removed.** Prohibition 4 is satisfied by telling those few — not by abandoning the plan.
+
+And **Bucket "keeping almost nothing" is the demo, not a cost.** He asks for a store, it appears.
+That *is* the mechanic. Starting sparse is what makes it visible.
+
+## THE LIST — every market business, and exactly what it loses
+
+Written **before** the run, so the announcement is a list rather than an apology.
+Seeded from: products / store flag / orders / bookings / jobs / customers / reviews /
+memberships / studio projects.
+
+| business | keeps | **loses** |
+| --- | --- | --- |
+| **graefs-autocare** | **Store** *(flag on)*, Bookings, Jobs, Customers, Reviews, Memberships, Studio | Revenue, Reports, Inbox, Pipeline, Media, Calendar, Quick Quote, Apps |
+| **aquaspeed** | Bookings *(6)* | Store, Jobs, Customers, Reviews, Memberships, Studio, Revenue, Reports, and the rest |
+| **bucket-mobile-detailing** | Bookings *(1)* | **Store**, Memberships, Revenue, Reports, Studio, Customers, Jobs, and the rest |
+| **lugnuts-regulators** | Bookings *(1)*, Customers *(1)* | Store, Revenue, Reports, Studio, Memberships, Reviews, and the rest |
+| **detailing-chemicals-equipment-courses** | — | everything beyond the shell |
+| **devdetailing661** | — | everything beyond the shell |
+| **mobile-auto-detailing-in-los-angeles** | — | everything beyond the shell |
+| **modern-landscaping-business** | — | everything beyond the shell |
+| **window-washing** | — | everything beyond the shell |
+
+**4 of 9 have any content.** Five are empty shells that have never taken a booking — for them
+Option B removes tabs nobody has ever opened.
+
+**Graef keeps Store** under every option: `storeOs.settings.enabled` is `true`. He asked for it
+once, whatever the product count says.
+
+## Conditions, unchanged
+
+1. **Clone first.** The backfill touches 179 rows; it runs on a clone and is verified there.
+2. **`check-graefs-page.mjs --slug graefs-autocare` is the gate**, before and after, no `--update`.
+3. **The announcement is this table** — each of the ~7 owners is told which tabs went and that
+   asking brings them back. Prohibition 4 is satisfied by naming them, not by silence.
+4. **Test businesses are seeded the same way but announced to nobody** — they have no owners to
+   tell, and they remain the corpus. **None is deleted.**
+
+## The one thing to decide during the build, not before
+
+The signals above are **proxies for "asked for it"**, and one is ambiguous: `storeOs.enabled` is
+true for Graef with **0 products**. That resolves in his favour here. If another ambiguous case
+appears during the clone run, **it resolves toward keeping the tab** — the same asymmetry as never
+discarding a draft: losing something an owner wanted is unrecoverable in the moment, while an
+extra tab is one conversation away.
