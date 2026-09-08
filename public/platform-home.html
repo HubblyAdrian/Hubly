@@ -2150,12 +2150,21 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // is done the moment a build starts (the conversation turn returned); the final
   // step ticks when the document is stored. Completed steps sit ABOVE the current
   // one, which carries the spinner (the reference had that inverted).
+  // Labels only — the KEYS must keep matching the server's stage values
+  // ('creating' | 'photos' | 'booking' | 'finalizing', updateDocumentBuildStage
+  // in hubly_capability_registry.ts), or hcStepIndex stops resolving and every
+  // build sits on step 2 forever.
+  //
+  // 'Creating your website' was step 2 while the header already said 'Building
+  // your website' — the same sentence twice, which reads as the card repeating
+  // itself rather than reporting a stage. And 'photographs' is nobody's word
+  // for this.
   var HC_BUILD_STEPS = [
     { key: 'understanding', label: 'Understanding your business' },
-    { key: 'creating',      label: 'Creating your website' },
-    { key: 'photos',        label: 'Adding your photographs' },
-    { key: 'booking',       label: 'Connecting booking' },
-    { key: 'finalizing',    label: 'Finalizing design' }
+    { key: 'creating',      label: 'Writing your pages' },
+    { key: 'photos',        label: 'Adding your photos' },
+    { key: 'booking',       label: 'Setting up booking' },
+    { key: 'finalizing',    label: 'Finishing touches' }
   ];
   function hcStepIndex(stage){
     var keys = HC_BUILD_STEPS.map(function(s){ return s.key; });
