@@ -66,3 +66,69 @@ body.draftBusiness.id && body.draftBusiness.slug &&
 **Verification when it is built:** the same clone, the same two requests, both returning `ok:true`
 with the logo actually on the record — and the editor path re-checked, because a fix that makes
 the chat work and breaks the panel has moved the defect rather than closed it.
+
+
+---
+
+# FIXED AND VERIFIED — 2026-09-07
+
+## Where the authorisation check lives — before the branch, not inside it
+
+`hubly-conversation/index.ts`, in the block that builds `draftBusiness`, which every branch reads.
+The predicate is now:
+
+```
+_draftIdsPresent && (_draftTok || _verifiedOwnerOfDraft)
+```
+
+`_verifiedOwnerOfDraft` is computed **only** when ids are present and there is no token, and it is
+two server-side steps, **neither client-supplied**:
+
+1. `getOwnerUid()` → `resolveOwnerUid()` resolves the caller's `Authorization` JWT against
+   `/auth/v1/user`. A client cannot assert a uid; a publishable key returns null (not a JWT).
+2. `ownsBusiness(id, uid)` re-reads `businesses.owner_id` **through the service role** and compares
+   it to that verified uid.
+
+**Presence of a uid is explicitly not the test.** `getOwnerUid` moved above the predicate to make
+this possible; the ownership read runs only on the claimed path, so anonymous and unclaimed-draft
+traffic pays nothing.
+
+## The second cause, which the predicate fix alone did not solve
+
+After widening the gate the hero reached the write and still failed. Measured the RPC directly:
+
+| `p_draft_token` | result |
+| --- | --- |
+| `NULL` + correct owner | **`ok: true`** |
+| `''` (what the code sent) | **`ERROR 22P02: invalid input syntax for type uuid`** |
+
+An empty string **aborts the whole call before any authorisation runs** — which is why the caller
+reported "the draft may have already been claimed" for a business that is simply claimed. Fixed as
+a class: **all 31** `p_draft_token: draftToken` sites now send `draftToken || null`.
+
+## The four verifications, on a clone in Graef's exact state
+
+| # | test | result |
+| --- | --- | --- |
+| 1 | **Logo via chat** | `setLogo ok:true, real:true` — *"Your logo is saved."* Record carries `logo-1788833256712.png` |
+| 2 | **Hero via chat** | `setHeroImage ok:true, real:true` — *"Done — that's your new header image."* Record carries `hero-1788833261930.png` |
+| 3 | **Logo via the editor panel** | **still works** — column and `meta.logoUrl` both updated by `saveStorefront` |
+| 4 | **A business the owner does NOT own** | **refused.** Logo: *"I couldn't attach that logo — this needs a draft in progress, or you signed in as the owner of this business."* Hero: **HTTP 400**. **And Graef's real record was re-read afterwards: untouched**, still his July assets |
+
+**Gate:** `check-graefs-page.mjs --slug graefs-autocare` → **PASS**, 162 text runs / 8 links /
+8 services / 5 why cards / 2 trust pills / 2 membership cards / 2 reviews / 2 social icons.
+Clone deleted; zero remain.
+
+## A NEW finding, seen while running test 3 — not fixed
+
+When the editor loaded, `S.logoUrl` was the **old** logo, not the one the chat had just written.
+The editor resolves via `resolveBrandCol(S.logoUrl, currentBusiness.logo_url, priorMeta?.logoUrl)`
+and prefers **`meta.logoUrl`**; the chat's `patch_business_in_progress` writes the **`logo_url`
+column**. So:
+
+> **A logo set by talking does not appear in the editor, and the next editor save writes the stale
+> `meta.logoUrl` back over the column — silently undoing it.**
+
+Same two-homes shape as services (`meta.service_catalog` vs the `services` table) and the shadowed
+`meta.logoUrl` from the image migration. **Not fixed here** — it is a separate change and this one
+was scoped to the upload paths. Filed so it is not rediscovered by an owner.
