@@ -665,12 +665,13 @@ export async function buildBusiness360(admin: Admin, businessId: string) {
     .select("dna,updated_at")
     .eq("business_id", businessId)
     .maybeSingle();
-  const { data: timeline } = await admin
-    .from("business_timeline_events")
-    .select("id,kind,title,body,occurred_at")
-    .eq("business_id", businessId)
-    .order("occurred_at", { ascending: false })
-    .limit(30);
+  // business_timeline_events was DROPPED 2026-09-08. It held 0 rows across 0 businesses,
+  // was never written by anything, and this read selected a column `body` that did not
+  // exist on it — so `timeline` was empty or erroring for the table's entire life, feeding
+  // a payload key of an edge function no client calls. The real event stream is the
+  // DERIVED view public.business_events (migration 20260908230000), read through
+  // get_business_events(). Nothing here needs it; the key is gone rather than left as an
+  // empty array that looks like a working feature.
   const { data: customers } = await admin
     .from("customers")
     .select("id,name,email,phone,created_at")
@@ -716,7 +717,6 @@ export async function buildBusiness360(admin: Admin, businessId: string) {
       public_path: biz.slug ? `/${biz.slug}` : null,
     },
     crm: customers || [],
-    timeline: timeline || [],
     payments: payments || [],
     connections: {
       stripe: summary.stripe_account,

@@ -380,11 +380,18 @@ Deno.serve(async (req) => {
         ? `${booking.customer_name} \u2022 ${money(paidCents)} paid`
         : `From ${booking.customer_name}`,
       bodyHtml: ownerBody,
-      ctaText: 'Open Hubly Dashboard',
-      // Was the marketing homepage: an owner tapping this from their phone
-      // landed on the public site and had to navigate in. /app is the app shell,
-      // which handles the auth redirect itself.
-      ctaHref: appBaseUrl() + '/app',
+      ctaText: 'Open Hubly',
+      // 2026-09-08: repointed from /app to the front door. This was the RECORDED
+      // DEPRECATION CONDITION — /app was the target only because the front door could not
+      // show a booking. It can now: the booking arrives as a card in the home stream
+      // (business_events, migration 20260908230000). The old shell dies by disuse rather
+      // than by migration, which is the whole point of writing the condition down instead
+      // of scheduling a cutover.
+      //
+      // Still a one-tap link straight to the thing, per the notification standard: the
+      // front door handles the auth redirect itself, and the booking is the first card an
+      // owner sees on arrival.
+      ctaHref: appBaseUrl() + '/',
     });
 
     // ---- Notify the customer ----

@@ -341,6 +341,16 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
 @keyframes hcToastIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translate(-50%,0)}}
 /* SETTINGS — a popout, never a tab. What genuinely isn't conversational; business facts
    (hours, services, area) stay in chat, never duplicated here as a second source. */
+.hc-event-card{border:1px solid var(--hc-line,#e6e0d8);border-radius:14px;padding:14px 16px;background:#fff;max-width:none}
+.hc-event-card.is-new{border-color:#d9632d;box-shadow:0 2px 10px rgba(217,99,45,.10)}
+.hc-event-head{font-weight:700;font-size:15px;margin-bottom:2px}
+.hc-event-sub{font-size:12px;color:#6b7280;margin-bottom:10px}
+.hc-event-fields{display:flex;flex-direction:column;gap:5px}
+.hc-event-row{display:flex;gap:12px;font-size:13px;line-height:1.4}
+.hc-event-k{flex:0 0 92px;color:#6b7280}
+.hc-event-v{flex:1;min-width:0;color:#111;word-break:break-word}
+.hc-event-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.hc-event-acts a.hc-arrival-act{text-decoration:none;display:inline-flex;align-items:center}
 .hc-set-ov{position:fixed;inset:0;z-index:1000;background:rgba(15,17,23,.42);display:flex;align-items:center;justify-content:center;padding:24px}
 .hc-set{background:var(--bg,#fff);color:var(--ink,#111);width:min(520px,94vw);max-height:88vh;overflow:auto;border-radius:18px;
   box-shadow:0 30px 80px -20px rgba(0,0,0,.5);border:1px solid var(--line,#e5e7eb)}
@@ -4216,11 +4226,188 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // shown only while its gap is open) and their action RUNS — clicking one starts the real
   // conversational task. When there are no gaps, Home says nothing more: silence is a feature.
   // (Deliberately NO activity recap — bookings/customers/revenue are zero for every business.)
+  // ── THE EVENT STREAM ───────────────────────────────────────────────────────────
+  //
+  // Every figure on a card is a FIELD FROM A ROW. Nothing here is decoration and nothing
+  // computes its own number: the card, the panel and anything the assistant says about a
+  // booking all come from get_business_events(), which reads the DERIVED view
+  // public.business_events. A view cannot drift from the rows it is made of, which is why
+  // the stream is not a written table (migration 20260908230000 carries the argument).
+  var hcEvents = { list: [], loaded: false, channel: null, marking: false };
+
+  async function hcLoadEvents(businessId){
+    if(!businessId) return [];
+    try{
+      var c = await authGetClient();
+      var uid = null;
+      try{ var u = await c.auth.getUser(); uid = u && u.data && u.data.user && u.data.user.id; }catch(e){}
+      if(!uid) return [];
+      var r = await c.rpc('get_business_events', { p_business_id: businessId, p_owner_id: uid, p_limit: 30 });
+      if(r && r.error){ console.error('[events] read failed', r.error.message); return []; }
+      hcEvents.list = Array.isArray(r && r.data) ? r.data : [];
+      hcEvents.loaded = true;
+      return hcEvents.list;
+    }catch(e){ console.error('[events] threw', e); return []; }
+  }
+
+  function hcMoney(n){
+    var v = Number(n);
+    if(!isFinite(v) || v <= 0) return null;   // never render a price we do not have
+    return '$' + (Math.round(v * 100) / 100).toFixed(2).replace(/\.00$/, '');
+  }
+  function hcWhen(ev){
+    var d = ev.event_date ? String(ev.event_date) : '';
+    var t = ev.event_time ? String(ev.event_time).slice(0,5) : '';
+    if(!d && !t) return null;
+    var day = d ? new Date(d + 'T00:00:00').toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' }) : '';
+    return [day, t].filter(Boolean).join(' at ');
+  }
+  // Every line is a field. A field we do not have produces NO LINE — never a placeholder,
+  // never a dash, never "not specified". That is the whole discipline of this card.
+  function hcEventFields(ev){
+    return [
+      ['When', hcWhen(ev)],
+      ['Service', ev.service_name || null],
+      ['Price', hcMoney(ev.amount)],
+      ['Customer', ev.customer_name || null],
+      ['Phone', ev.customer_phone || null],
+      ['Email', ev.customer_email || null],
+      ['Address', ev.address || null],
+      ['Vehicle', ev.vehicle || null],
+      ['Their note', ev.notes || null],
+      ['Status', ev.status || null],
+    ].filter(function(r){ return r[1]; });
+  }
+
+  function hcRenderEventCard(ev, thread){
+    var wrap = document.createElement('div');
+    wrap.className = 'hc-msg hubly hc-event-card' + (ev.is_new ? ' is-new' : '');
+    var head = document.createElement('div'); head.className = 'hc-event-head';
+    head.textContent = (ev.is_new ? 'New booking' : 'Booking') +
+      (ev.customer_name ? (' from ' + ev.customer_name) : '');
+    wrap.appendChild(head);
+    var when = document.createElement('div'); when.className = 'hc-event-sub';
+    when.textContent = 'Came in ' + new Date(ev.occurred_at).toLocaleString();
+    wrap.appendChild(when);
+    var dl = document.createElement('div'); dl.className = 'hc-event-fields';
+    hcEventFields(ev).slice(0, 5).forEach(function(row){
+      var line = document.createElement('div'); line.className = 'hc-event-row';
+      var k = document.createElement('span'); k.className = 'hc-event-k'; k.textContent = row[0];
+      var v = document.createElement('span'); v.className = 'hc-event-v'; v.textContent = row[1];
+      line.appendChild(k); line.appendChild(v); dl.appendChild(line);
+    });
+    wrap.appendChild(dl);
+    var acts = document.createElement('div'); acts.className = 'hc-event-acts';
+    var det = document.createElement('button'); det.type='button'; det.className='hc-arrival-act';
+    det.textContent = 'View details';
+    det.addEventListener('click', function(){ hcOpenEventPanel(ev); });
+    acts.appendChild(det);
+    // A tel: link is a real capability that works on the device the owner is holding.
+    // "Message customer" is deliberately NOT here: it acts on the outside world and has
+    // not been proved end to end, and an unproved send is the defect we spent today removing.
+    if(ev.customer_phone){
+      var call = document.createElement('a'); call.className='hc-arrival-act';
+      call.href = 'tel:' + String(ev.customer_phone).replace(/[^0-9+]/g,'');
+      call.textContent = 'Call ' + ev.customer_phone;
+      acts.appendChild(call);
+    }
+    wrap.appendChild(acts);
+    thread.appendChild(wrap);
+  }
+
+  // THE PANEL IS THE SAME ROWS, EXPANDED. It is handed the event object the card was
+  // built from, so it cannot be more confident than the card — there is no second read
+  // and therefore no way for the two to disagree.
+  function hcOpenEventPanel(ev){
+    var ov = document.createElement('div'); ov.className = 'hc-set-ov';
+    var rows = hcEventFields(ev).map(function(r){
+      return '<div class="hc-event-row"><span class="hc-event-k">'+hcEsc(r[0])+'</span><span class="hc-event-v">'+hcEsc(r[1])+'</span></div>';
+    }).join('');
+    ov.innerHTML = '<div class="hc-set" role="dialog" aria-label="Booking detail">'+
+      '<div class="hc-set-hd"><h2>Booking</h2><button type="button" class="hc-set-x" aria-label="Close">&times;</button></div>'+
+      '<div class="hc-set-note">Came in '+hcEsc(new Date(ev.occurred_at).toLocaleString())+'.</div>'+
+      '<div class="hc-event-fields">'+rows+'</div>'+
+    '</div>';
+    document.body.appendChild(ov);
+    function close(){ try{ ov.remove(); }catch(e){} }
+    ov.querySelector('.hc-set-x').addEventListener('click', close);
+    ov.addEventListener('click', function(e){ if(e.target === ov) close(); });
+  }
+
+  // ADVANCE THE MARKER ONLY WHEN THE OWNER ACTUALLY SAW IT.
+  //   - after render, never on load: a slow render or a closed tab would mark a booking read
+  //   - not while the document is hidden: a card painting in a background tab is not a
+  //     booking anyone saw
+  //   - never backwards; greatest() is enforced in SQL, not trusted to the client
+  async function hcMarkEventsSeen(businessId, list){
+    if(!businessId || !list || !list.length) return;
+    if(document.visibilityState !== 'visible') return;
+    if(hcEvents.marking) return;
+    hcEvents.marking = true;
+    try{
+      var newest = list.reduce(function(a, e){ var t = new Date(e.occurred_at).getTime(); return t > a ? t : a; }, 0);
+      if(!newest) return;
+      var c = await authGetClient();
+      var u = await c.auth.getUser();
+      var uid = u && u.data && u.data.user && u.data.user.id;
+      if(!uid) return;
+      await c.rpc('mark_business_events_seen', {
+        p_business_id: businessId, p_owner_id: uid, p_seen_at: new Date(newest).toISOString()
+      });
+    }catch(e){ console.error('[events] mark seen failed', e); }
+    finally{ hcEvents.marking = false; }
+  }
+
+  // LIVE ARRIVAL. Realtime already publishes booking_requests and jobs. The socket is a
+  // SIGNAL THAT SOMETHING CHANGED, never a source of truth: on an insert we re-query the
+  // same RPC, so a live card and an on-open card are built from identical rows.
+  function hcSubscribeEvents(businessId){
+    if(!businessId) return;
+    try{
+      if(hcEvents.channel){ try{ hcEvents.channel.unsubscribe(); }catch(e){} hcEvents.channel = null; }
+      authGetClient().then(function(c){
+        if(!c || !c.channel) return;
+        var ch = c.channel('events:' + businessId)
+          .on('postgres_changes', { event:'INSERT', schema:'public', table:'booking_requests', filter:'business_id=eq.'+businessId }, function(){ hcOnEventSignal(businessId); })
+          .on('postgres_changes', { event:'INSERT', schema:'public', table:'jobs', filter:'business_id=eq.'+businessId }, function(){ hcOnEventSignal(businessId); })
+          .subscribe();
+        hcEvents.channel = ch;
+      });
+    }catch(e){ console.error('[events] subscribe failed', e); }
+  }
+  async function hcOnEventSignal(businessId){
+    if(hc.mode !== 'home') return;               // do not redraw a screen they are not on
+    var before = hcEvents.list.length;
+    var list = await hcLoadEvents(businessId);
+    if(list.length > before) hcRenderHome();     // one reader, one render path
+  }
+
+  function hcEsc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(ch){
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]; }); }
+
   async function hcRenderHome(){
     var thread = hcThreadBody(); if(!thread) return;
     thread.innerHTML = '';
     var biz = hc.draftBusiness || {};
     hcAppendMessage('hubly', 'Welcome back — this is ' + (biz.name || 'your site') + '. What would you like to do?');
+    // THE STREAM. Real events, newest first, before anything advisory — what actually
+    // happened outranks what we think they should do next.
+    try{
+      if(biz.id && hc.draftClaimed){
+        var evs = hcEvents.loaded ? hcEvents.list : await hcLoadEvents(biz.id);
+        if(evs && evs.length){
+          var fresh = evs.filter(function(e){ return e.is_new; });
+          if(fresh.length){
+            hcAppendMessage('hubly', fresh.length === 1
+              ? 'One new booking came in.'
+              : fresh.length + ' new bookings came in.');
+          }
+          evs.slice(0, 5).forEach(function(e){ hcRenderEventCard(e, thread); });
+          hcMarkEventsSeen(biz.id, evs);
+        }
+        hcSubscribeEvents(biz.id);
+      }
+    }catch(e){ console.error('[events] render failed', e); }
     // The old conversation stays REACHABLE, not in their face.
     if(hc.messages && hc.messages.length){
       var seeWrap = document.createElement('div'); seeWrap.className = 'hc-msg hubly hc-arrival-actions';
