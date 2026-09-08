@@ -17096,6 +17096,12 @@ async function saveStorefront(opts){
     // Also never wipe previously published https gallery URLs when host fails.
     const cleanHttps=(u)=>(typeof u==='string'&&/^https?:\/\//i.test(u))?u:null;
     // Prefer live S https URLs after host; if owner cleared (null/''), write null — do not resurrect.
+    // Declared HERE, above its first use. It previously sat 50 lines below and the
+    // refresh block called it from the temporal dead zone: a ReferenceError on every
+    // save, swallowed by the refresh block's own try/catch, so the fix silently never
+    // ran and the row still looked half-right. A catch that hides the failure of the
+    // thing it wraps is the same silent-failure defect this change exists to close.
+    const brandUnchanged=(live,loaded)=>String(live||'')===String(loaded||'');
     /* REFRESH THE BRAND IMAGES THIS SESSION DID NOT CHANGE, BEFORE BUILDING ANYTHING.
      *
      * Omitting the logo_url COLUMN was not enough. buildPersistableBizMeta writes the
@@ -17117,7 +17123,11 @@ async function saveStorefront(opts){
           if(brandUnchanged(S.bannerUrl,S._loadedBannerUrl)&&fresh.banner_url){ S.bannerUrl=fresh.banner_url; S._loadedBannerUrl=fresh.banner_url; currentBusiness.banner_url=fresh.banner_url; }
         }
       }
-    }catch(e){ console.warn('brand refresh before save failed — writing this tab\'s values',e); }
+    }catch(e){
+      // LOUD, not silent. This swallowed a ReferenceError once already.
+      console.error('BRAND REFRESH FAILED before save — this tab may overwrite a newer logo/banner:',e);
+      try{ if(typeof toast==='function') toast("Couldn't check for a newer logo before saving — reload before changing your logo."); }catch(_e){}
+    }
     const priorMeta=typeof parseBizMeta==='function'?parseBizMeta(currentBusiness?.meta):null;
     syncBookingBrandFromSiteMedia();
     let publishMeta=buildPersistableBizMeta();
@@ -17147,7 +17157,6 @@ async function saveStorefront(opts){
      *
      * This does NOT fix having two homes. That is one resolver both paths call —
      * the #54 job, filed, not done. */
-    const brandUnchanged=(live,loaded)=>String(live||'')===String(loaded||'');
     const updates={
       name: document.getElementById('ed-name')?.value||S.biz,
       tagline: document.getElementById('ed-tag')?.value||null,
