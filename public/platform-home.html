@@ -4274,17 +4274,34 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       ['Email', ev.customer_email || null],
       ['Address', ev.address || null],
       ['Vehicle', ev.vehicle || null],
-      ['Their note', ev.notes || null],
+      [ev.kind === 'chat.asked' ? 'They asked' : 'Their note', ev.notes || null],
       ['Status', ev.status || null],
     ].filter(function(r){ return r[1]; });
   }
 
+  // EACH KIND GETS ITS OWN WORDS. They are never added together: "someone asked about
+  // Saturday and didn't book" and "someone got halfway through booking a Full Detail" are
+  // different levels of intent and an owner acts on them differently. A single count that
+  // meant both would mean neither.
+  function hcEventHead(ev){
+    var who = ev.customer_name ? (' from ' + ev.customer_name) : '';
+    if(ev.kind === 'chat.asked'){
+      return ev.customer_name
+        ? (ev.customer_name + ' asked on your site and didn\u2019t book')
+        : 'Someone asked on your site and didn\u2019t book';
+    }
+    if(ev.kind === 'booking.abandoned'){
+      var svc = ev.service_name ? (' booking ' + ev.service_name) : ' booking';
+      return (ev.customer_name ? ev.customer_name : 'Someone') + ' got partway through' + svc + ' and stopped';
+    }
+    return (ev.is_new ? 'New booking' : 'Booking') + who;
+  }
+
   function hcRenderEventCard(ev, thread){
     var wrap = document.createElement('div');
-    wrap.className = 'hc-msg hubly hc-event-card' + (ev.is_new ? ' is-new' : '');
+    wrap.className = 'hc-msg hubly hc-event-card hc-ev-' + String(ev.kind || '').replace(/[^a-z]/g,'') + (ev.is_new ? ' is-new' : '');
     var head = document.createElement('div'); head.className = 'hc-event-head';
-    head.textContent = (ev.is_new ? 'New booking' : 'Booking') +
-      (ev.customer_name ? (' from ' + ev.customer_name) : '');
+    head.textContent = hcEventHead(ev);
     wrap.appendChild(head);
     var when = document.createElement('div'); when.className = 'hc-event-sub';
     when.textContent = 'Came in ' + new Date(ev.occurred_at).toLocaleString();
@@ -4312,6 +4329,14 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       acts.appendChild(call);
     }
     wrap.appendChild(acts);
+    // NO CONTACT MEANS SAY SO, not offer an action that cannot work. A "Reply" button on a
+    // person who left no way to reach them is a control that reports success without an
+    // effect — the thing this whole screen exists to stop.
+    if(!ev.customer_phone && !ev.customer_email && (ev.kind === 'chat.asked' || ev.kind === 'booking.abandoned')){
+      var none = document.createElement('div'); none.className = 'hc-event-sub';
+      none.textContent = 'They didn\u2019t leave a phone or email, so there\u2019s no way to reach them from here.';
+      wrap.appendChild(none);
+    }
     thread.appendChild(wrap);
   }
 
@@ -4396,12 +4421,21 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       if(biz.id && hc.draftClaimed){
         var evs = hcEvents.loaded ? hcEvents.list : await hcLoadEvents(biz.id);
         if(evs && evs.length){
+          // COUNTED SEPARATELY, SAID SEPARATELY. Three kinds, three sentences, never one
+          // total — a blended number would mean neither thing and an owner would act on it
+          // wrongly. Each sentence is omitted entirely when its count is zero; silence is
+          // the correct output for a kind that did not happen.
           var fresh = evs.filter(function(e){ return e.is_new; });
-          if(fresh.length){
-            hcAppendMessage('hubly', fresh.length === 1
-              ? 'One new booking came in.'
-              : fresh.length + ' new bookings came in.');
-          }
+          var nBook = fresh.filter(function(e){ return e.kind === 'booking.created'; }).length;
+          var nAsk  = fresh.filter(function(e){ return e.kind === 'chat.asked'; }).length;
+          var nAbn  = fresh.filter(function(e){ return e.kind === 'booking.abandoned'; }).length;
+          if(nBook) hcAppendMessage('hubly', nBook === 1 ? 'One new booking came in.' : nBook + ' new bookings came in.');
+          if(nAsk)  hcAppendMessage('hubly', nAsk === 1
+            ? 'One person asked on your site and didn\u2019t book.'
+            : nAsk + ' people asked on your site and didn\u2019t book.');
+          if(nAbn)  hcAppendMessage('hubly', nAbn === 1
+            ? 'One person started booking and stopped.'
+            : nAbn + ' people started booking and stopped.');
           evs.slice(0, 5).forEach(function(e){ hcRenderEventCard(e, thread); });
           hcMarkEventsSeen(biz.id, evs);
         }
