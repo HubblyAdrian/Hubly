@@ -2846,8 +2846,13 @@ export async function uploadDraftLogo(
   mediaType: string,
   ownerUid?: string | null,
 ): Promise<CapabilityActionResult> {
-  if (!draftId || !draftToken) {
-    return { ok: false, real: false, summary: "No draft business exists yet to attach a logo to.", error: "missing_draft" };
+  // A CLAIMED business has no draft token — it authorises by OWNER instead.
+  // `ownerUid` here is not client-supplied: hubly-conversation resolved it from
+  // the caller's JWT and checked it against businesses.owner_id for this row
+  // before it built draftBusiness at all. Requiring the token told every claimed
+  // owner "No draft business exists yet" about their own live site.
+  if (!draftId || (!draftToken && !ownerUid)) {
+    return { ok: false, real: false, summary: "I couldn't attach that logo — this needs a draft in progress, or you signed in as the owner of this business.", error: "missing_credential" };
   }
   const uploaded = await uploadImageToStorage(draftId, imageBase64, mediaType, "logo");
   if (!uploaded.ok) return uploaded.result;
@@ -3106,8 +3111,13 @@ export async function uploadDraftPhoto(
   mediaType: string,
   ownerUid?: string | null,
 ): Promise<CapabilityActionResult> {
-  if (!draftId || !draftToken) {
-    return { ok: false, real: false, summary: "No draft business exists yet to attach a photo to.", error: "missing_draft" };
+  // A CLAIMED business has no draft token — it authorises by OWNER instead.
+  // `ownerUid` here is not client-supplied: hubly-conversation resolved it from
+  // the caller's JWT and checked it against businesses.owner_id for this row
+  // before it built draftBusiness at all. Requiring the token told every claimed
+  // owner "No draft business exists yet" about their own live site.
+  if (!draftId || (!draftToken && !ownerUid)) {
+    return { ok: false, real: false, summary: "I couldn't attach that photo — this needs a draft in progress, or you signed in as the owner of this business.", error: "missing_credential" };
   }
   const uploaded = await uploadImageToStorage(draftId, imageBase64, mediaType, "photo");
   if (!uploaded.ok) return uploaded.result;
@@ -4395,8 +4405,13 @@ export async function uploadDraftHeroImage(
   // and still forgot to use on its own patch.
   ownerUid?: string | null,
 ): Promise<CapabilityActionResult> {
-  if (!draftId || !draftToken) {
-    return { ok: false, real: false, summary: "No draft business exists yet to attach a hero image to.", error: "missing_draft" };
+  // A CLAIMED business has no draft token — it authorises by OWNER instead.
+  // `ownerUid` here is not client-supplied: hubly-conversation resolved it from
+  // the caller's JWT and checked it against businesses.owner_id for this row
+  // before it built draftBusiness at all. Requiring the token told every claimed
+  // owner "No draft business exists yet" about their own live site.
+  if (!draftId || (!draftToken && !ownerUid)) {
+    return { ok: false, real: false, summary: "I couldn't attach that hero image — this needs a draft in progress, or you signed in as the owner of this business.", error: "missing_credential" };
   }
   const uploaded = await uploadImageToStorage(draftId, imageBase64, mediaType, "hero");
   if (!uploaded.ok) return uploaded.result;

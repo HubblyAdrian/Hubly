@@ -1025,20 +1025,6 @@ Deno.serve(async (req) => {
   // else here: the client echoes back exactly what it was given last turn,
   // this function never persists it. draftToken never reaches the model —
   // it's structural context, same treatment as businessId for booking below.
-  let draftBusiness: { id: string; slug: string; draftToken: string; url: string } | null =
-    body?.draftBusiness &&
-    typeof body.draftBusiness === "object" &&
-    body.draftBusiness.id &&
-    body.draftBusiness.draftToken &&
-    body.draftBusiness.slug
-      ? {
-          id: String(body.draftBusiness.id),
-          slug: String(body.draftBusiness.slug),
-          draftToken: String(body.draftBusiness.draftToken),
-          url: String(body.draftBusiness.url || `https://${body.draftBusiness.slug}.myhubly.app`),
-        }
-      : null;
-
   // The verified owner of a CLAIMED business, from the caller's JWT — the authority
   // that lets facts stated in chat reach the record after claim (the draft-token
   // writers refuse a claimed row; the record RPCs authorise by owner_id = this uid
@@ -1047,11 +1033,58 @@ Deno.serve(async (req) => {
   // actually needs an owner — an anonymous visitor (the hot path) never triggers
   // it, because every guard short-circuits on the draft token first. Latency in
   // this flow is a product problem, so the anon path pays nothing.
+  //
+  // MOVED ABOVE draftBusiness on 2026-09-07: the predicate below now needs it.
   let _ownerUidCache: string | null | undefined;
   const getOwnerUid = async (): Promise<string | null> => {
     if (_ownerUidCache === undefined) _ownerUidCache = await resolveOwnerUid();
     return _ownerUidCache;
   };
+
+  // ── THE DRAFT-BUSINESS AUTHORISATION PREDICATE ─────────────────────────────
+  //
+  // WAS: `id && draftToken && slug`. A CLAIMED business has no draft_token (null
+  // for 9 of 34 claimed rows, including every real market business), so this
+  // resolved to null for them and two owner-facing paths died on it — the logo
+  // upload replied "there isn't a business draft to put it on" and the hero image
+  // returned HTTP 400 no_draft_to_edit. Reproduced by clicking on a clone of a
+  // real record, 2026-09-07; see docs/CLAIMED_OWNER_UPLOAD_DEFECT.md.
+  //
+  // NOW: a valid draft token, OR AN OWNER THE SERVER VERIFIED AND WHO ACTUALLY
+  // OWNS THIS ROW. Both halves matter and neither is client-supplied:
+  //
+  //   1. getOwnerUid() -> resolveOwnerUid() resolves the caller's JWT against
+  //      /auth/v1/user. A client cannot assert a uid; a publishable key returns
+  //      null because it is not a JWT.
+  //   2. ownsBusiness(id, uid) re-reads businesses.owner_id THROUGH THE SERVICE
+  //      ROLE and compares. Naming someone else's business id proves nothing.
+  //
+  // Presence of a uid is NOT sufficient and must never become the test — that is
+  // the #20 family, and this predicate sits in the file where it was just closed.
+  // Ownership is strictly stronger than a draft token, and every RPC downstream
+  // already accepts either (owner_id is null -> token, else -> p_owner_id).
+  //
+  // The ownership read costs one request and runs ONLY when ids are present and
+  // there is no token — the anonymous and unclaimed-draft paths still pay nothing.
+  const _rawDraft = body?.draftBusiness && typeof body.draftBusiness === "object"
+    ? (body.draftBusiness as Record<string, unknown>)
+    : null;
+  const _draftIdsPresent = !!(_rawDraft && _rawDraft.id && _rawDraft.slug);
+  const _draftTok = _draftIdsPresent && _rawDraft!.draftToken ? String(_rawDraft!.draftToken) : "";
+  let _verifiedOwnerOfDraft = false;
+  if (_draftIdsPresent && !_draftTok) {
+    const uid = await getOwnerUid();
+    _verifiedOwnerOfDraft = !!uid && (await ownsBusiness(String(_rawDraft!.id), uid));
+  }
+  let draftBusiness: { id: string; slug: string; draftToken: string; url: string } | null =
+    _draftIdsPresent && (_draftTok || _verifiedOwnerOfDraft)
+      ? {
+          id: String(_rawDraft!.id),
+          slug: String(_rawDraft!.slug),
+          draftToken: _draftTok,
+          url: String(_rawDraft!.url || `https://${String(_rawDraft!.slug)}.myhubly.app`),
+        }
+      : null;
 
   // Entry Intent is Patch Zero — applied as the floor, before whatever the
   // client's own accumulated understanding merges on top. This ordering
