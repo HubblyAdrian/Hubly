@@ -170,7 +170,7 @@ an owner finds an empty tab and concludes the product is broken.
 
 ---
 
-## 6. Day one — nobody wakes up with fewer tabs
+## 6. Day one — nobody wakes up with fewer tabs  ⚠️ REOPENED, see the end of this file
 
 **Backfill every existing business so the rendered result is byte-identical to today**, then
 change the surfaces to read `places`. Two deploys, in this order, never one.
@@ -250,3 +250,101 @@ matrix, now blocking at a new scope. Two honest options, and the spec picks the 
 - **Assumes nothing about the editor rail's 14 static buttons** beyond that they must be rendered
   from `places` for surface 3. That is a rewrite of `hubly.html:11660–11693` and should be its own
   change, verified by clicking, not folded into the backfill.
+
+---
+
+# §6 REOPENED — THE BACKFILL IS A DECISION, NOT A DEFAULT
+
+§6 above says *"reproduces today byte-for-byte."* **That is the safe move and it may be the wrong
+goal**, and it is not mine to pick. Adrian's stated requirement is that an owner should **not**
+have a Store tab unless they asked for it. A byte-identical backfill leaves all 179 businesses
+with every tab and the mechanism ships **inert** — the removal then becomes a second, riskier pass
+later, which is the same work with more steps at a worse moment.
+
+*(179, not 178 — `photography-website`, a test business, was created 2026-09-08 during this
+session.)*
+
+## What each business actually USES — measured, not estimated
+
+| signal | businesses (of 179) |
+| --- | --- |
+| any `commerce_products` | **1** |
+| `storeOs.settings.enabled` | **3** |
+| any `commerce_orders` | **1** |
+| any `booking_requests` | **8** |
+| any `jobs` | **2** |
+| any `customers` | **6** |
+| any manual reviews | **1** |
+| any memberships | **2** |
+| any studio project | **3** |
+
+**Almost nothing is used by almost anyone.** That is the fact that makes this a real decision
+rather than a formality.
+
+## The two named businesses
+
+| | **Graef** (`graefs-autocare`, market) | **Bucket** (`bucket-mobile-detailing`, market) |
+| --- | --- | --- |
+| products | 0 | 0 |
+| `storeOs.enabled` | **true** | false |
+| orders | 0 | 0 |
+| bookings | **11** | **1** |
+| jobs | **2** | 0 |
+| customers | **4** | 0 |
+| reviews | **2** | 0 |
+| memberships | **2** | 0 |
+| studio projects | **4** | 0 |
+
+---
+
+## OPTION A — reproduce today
+
+**Seed every business with everything it currently renders.**
+
+- **Graef keeps:** all 19 rail entries incl. Store, Revenue, Reports, Studio, Memberships; his 4 page sections.
+- **Bucket keeps:** all 19 rail entries incl. Store, Memberships, Revenue, Reports; his sections.
+- **All 179:** unchanged. Zero visible difference on day one.
+
+| | |
+| --- | --- |
+| **for** | Zero risk of taking something away that someone was using. The Graef fingerprint passes trivially. Ships without a support conversation. |
+| **against** | **The mechanism ships inert** — `hasPlace()` returns true everywhere, so nothing is gated and nothing is proven. It does **not** meet the stated requirement; a Store tab still appears for 176 businesses that have never had a product. **The removal still has to happen**, later, as a second migration with no fresh memory of why — and that is the pass that carries the real risk, moved to a worse moment. |
+
+## OPTION B — seed only what is used
+
+**Seed from the usage signals above; everything else is absent until asked for.**
+
+- **Graef gets:** Store *(he has `storeOs.enabled: true` — he keeps it under any honest reading of "asked for it")*, Memberships, Reviews, Studio, plus the booking/jobs/customers surfaces his 11 bookings and 4 customers justify. **He loses:** Revenue, Reports, and anything else he has never touched.
+- **Bucket gets:** the booking surface (1 booking) and little else. **He loses:** Store, Memberships, Revenue, Reports, Studio.
+- **~170 businesses:** lose almost every tab, because they use almost nothing.
+
+| | |
+| --- | --- |
+| **for** | Meets the requirement on day one. The mechanism ships **doing its job** — `hasPlace()` is load-bearing immediately, so a bug in it is visible now rather than after a second migration. Against Graef's bar — *"all the buttons work"* — **fewer buttons that all work is arguably better**, and it removes exactly the tabs where today's defects live. |
+| **against** | **~170 owners lose tabs they can currently see**, without asking. Prohibition 4 says the interface may not change shape silently, so this needs an announcement per business, which we have no channel for. `storeOs.enabled` is true for Graef with **0 products** — so "uses it" is already ambiguous for the one signal that matters most. And a usage signal is a proxy: a business that has never had a booking may still be about to take one, and Revenue is where they would look. |
+
+## The middle option, stated because it exists
+
+**Option C — seed by usage, but never remove; only stop granting.** Existing businesses keep what
+they render today (Option A), and **new businesses from the day of the migration get Option B**.
+The mechanism is live and load-bearing for everyone created after the cutover; nobody loses a tab;
+the corpus converges without a removal pass. **Cost:** two populations for as long as the old ones
+live, and the 176 stale Store tabs stay until each owner is handled individually.
+
+---
+
+## What is NOT in doubt
+
+Whichever is chosen:
+
+1. **Clone first.** The backfill touches 179 rows and gets the same treatment as everything else
+   today — run on a clone, verify, then the corpus.
+2. **`check-graefs-page.mjs --slug graefs-autocare` is the gate**, before and after, no `--update`
+   in between.
+3. **Any removal is announced** — prohibition 4. If Option B or C removes a tab, the owner is told
+   which and why, or it does not ship.
+4. **`store` for Graef survives every option.** `storeOs.enabled` is true; he asked for it once,
+   whatever the product count says.
+
+**This is Adrian's call. I have not picked one, and the spec's §6 stays marked reopened until he
+does.**
