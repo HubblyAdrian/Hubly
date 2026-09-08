@@ -41,10 +41,30 @@ function roleOf(m: { role?: string }): "customer" | "assistant" {
   return String(m?.role || "").toLowerCase() === "assistant" ? "assistant" : "customer";
 }
 
+// ONLY WHAT A PERSON ACTUALLY SAID, AND ONLY UNDER THE RIGHT NAME.
+//
+// The engine's history also carries role:"system" turns — capability results threaded
+// back for the model to read ("CAPABILITY RESULT for booking.getAvailability: {...}").
+// The first draft of this file mapped every non-assistant role to "customer" and stored
+// one, so a machine's JSON was recorded as the visitor's words. Caught on the first live
+// test. That is not cosmetic: the chat-lead slice reports the FIRST customer message as
+// "what they asked", so the owner would have read machine output as his customer's
+// question — a record that misrepresents who said what, which is the same defect as any
+// other unearned claim, pointed at the transcript.
+function isRealPersonTurn(m: { role?: string; content?: string }): boolean {
+  const role = String(m?.role || "").toLowerCase();
+  if (role !== "user" && role !== "customer" && role !== "assistant") return false;
+  // Belt and braces: a capability result threaded back under a user role must not slip
+  // through on the strength of its role alone.
+  return !/^\s*CAPABILITY RESULT\b/i.test(String(m?.content || ""));
+}
+
 export async function persistVisitorTurn(admin: Admin, t: VisitorTurn): Promise<VisitorTurnResult> {
   const businessId = String(t.businessId || "").trim();
   if (!businessId) return { ok: false, conversationId: null, wrote: 0, error: "no_business_id" };
-  const msgs = Array.isArray(t.messages) ? t.messages.filter((m) => String(m?.content || "").trim()) : [];
+  const msgs = Array.isArray(t.messages)
+    ? t.messages.filter((m) => String(m?.content || "").trim() && isRealPersonTurn(m))
+    : [];
   if (!msgs.length) return { ok: true, conversationId: t.conversationId || null, wrote: 0 };
 
   try {
