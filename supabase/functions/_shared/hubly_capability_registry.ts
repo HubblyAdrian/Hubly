@@ -5040,7 +5040,15 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           // loadOperationalState re-checking that the uid owns THIS business.
           // `context` is never consulted — it is caller-declared, and
           // scripts/check-owner-id-invariant.mjs check 3 fails the build on it.
-          const businessId = String((args as Record<string, unknown>)?.businessId || "").trim();
+          // args.draftId, NOT args.businessId. The engine injects the execution target
+          // under `draftId` for everything on DRAFT_INJECTED_ACTIONS (businessId is the
+          // name the OTHER branch uses, for booking and storefront). This read was
+          // `businessId` from the day operations shipped (2026-09-05) until 2026-09-08,
+          // so the guard below fired on every single call and the owner was told "no
+          // business is connected to this conversation" while signed in and looking at
+          // it. Identical to the bug places.add had the day before. Both are now held
+          // by scripts/check-draft-arg-name.mjs.
+          const businessId = String((args as Record<string, unknown>)?.draftId || "").trim();
           const ownerUid = injectedOwnerUid(args as Record<string, unknown>);
           if (!businessId) {
             return { ok: false, real: false, summary: "No business was specified.", error: "missing_business_id" };

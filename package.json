@@ -60,7 +60,12 @@
     "check:builder-epic12": "node scripts/check-builder-epic12.mjs",
     "check:gcal-blocks-not-jobs": "node scripts/check-google-calendar-blocks-not-jobs.mjs",
     "check:customer-journey-os": "node scripts/check-customer-journey-os.mjs",
-    "check:capabilities": "node scripts/check-capability-reachable.mjs"
+    "check:capabilities": "node scripts/check-capability-reachable.mjs",
+    "check:owner-id": "node scripts/check-owner-id-invariant.mjs",
+    "check:stripe-mode": "node scripts/check-stripe-mode-filter.mjs",
+    "check:customer-identity": "node scripts/check-customer-identity-invariant.mjs",
+    "check:places-seeded": "node scripts/check-places-seeded.mjs",
+    "check:draft-arg-name": "node scripts/check-draft-arg-name.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
