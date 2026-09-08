@@ -132,6 +132,28 @@ if (meta.website && Array.isArray(meta.website.manualReviews)) {
 }
 row.meta = JSON.stringify(meta);
 
+// ── THE BUSINESS'S OWN CONTACT DETAILS GO TO A SINK. ALWAYS. ─────────────────
+//
+// STANDING RULE, paid for on 2026-09-08: a clone of Graef carried his REAL email
+// (austinjgraef@gmail.com) and phone. Testing the public booking chat on it drove a
+// conversation to "You're booked" — one more message and booking-notify would have
+// emailed a real customer a fake $85 appointment on a Saturday. It was caught by
+// noticing mid-test, which is not a control.
+//
+// So the scrub happens HERE, at creation, not before the risky step — because
+// "before the risky step" requires remembering which step is risky, and the risky
+// step is whichever one someone tries next. A clone that cannot reach a real person
+// is safe under every future test, including the ones nobody has thought of.
+//
+// .invalid is reserved by RFC 2606 and can never resolve, so a misdirected send
+// fails at the sender rather than reaching a stranger.
+const SINK_EMAIL = 'sink@clone.invalid';
+const SINK_PHONE = '555-000-0000';
+const contactScrubbed = [];
+for (const [col, sink] of [['email', SINK_EMAIL], ['phone', SINK_PHONE], ['sms_number', SINK_PHONE]]) {
+  if (col in row && row[col]) { contactScrubbed.push(`${col}: ${String(row[col]).slice(0, 3)}…`); row[col] = sink; }
+}
+
 // ── what the clone must still carry, asserted before writing ──────────────────
 const w = meta.website || {};
 const checks = [
@@ -159,6 +181,8 @@ console.log(`   ${customFlags.length === 4 ? '✓' : '✗'} custom* flags carrie
 console.log(`   ${w.ourStory === '' ? '✓' : '✗'} ourStory still EMPTY                     ${JSON.stringify(w.ourStory)}`);
 if (bad || customFlags.length !== 4) { console.error('\nFATAL: the clone would not carry his content. Not writing.'); process.exit(1); }
 
+console.log(`\n━━ contact details sent to a sink (so this clone can never reach a real person): ${contactScrubbed.length}`);
+console.log(`   ${contactScrubbed.join(', ') || '(none present on the source row)'} -> ${SINK_EMAIL} / ${SINK_PHONE}`);
 console.log(`\n━━ redacted from meta.pipeline.manual (privacy, shape preserved): ${redactedFields.length} fields`);
 console.log(`   ${redactedFields.join(', ')}`);
 console.log(`━━ reviewer names replaced with "Reviewer N"; review QUOTES kept (they are page content).`);

@@ -12347,8 +12347,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <!-- Hero AI bar (Phase 4B) — same Hubly Conversation customer
                  context as the floating bubble, not a second chat system.
                  Submitting opens/continues the shared #ws-chat-panel. -->
-            <form class="ws-hero-ai-bar" id="ws-hero-ai-bar" onsubmit="event.preventDefault();ccHeroSubmit();">
-              <input type="text" id="ws-hero-ai-input" class="ws-hero-ai-input" placeholder="What can we help you with?" aria-label="Ask a question or start booking" autocomplete="off">
+            <form class="ws-hero-ai-bar" id="ws-hero-ai-bar" onsubmit="event.preventDefault();ccHeroSubmit(this.querySelector('.ws-hero-ai-input'));">
+              <input type="text" id="ws-hero-ai-input" class="ws-hero-ai-input" placeholder="What can we help you with?" aria-label="Ask a question or start booking" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();ccHeroSubmit(this);}">
               <button type="submit" class="ws-hero-ai-submit" aria-label="Send">→</button>
             </form>
             <div class="ws-hero-ai-powered">⚡ Powered by Hubly</div>
@@ -16845,8 +16845,15 @@ function ccHeroInit(){
 // Real customer words, real first turn -- no synthetic seed here (unlike
 // ccStartFromService/ccStartGeneric), since the hero bar's whole point is
 // the customer already typed something specific.
-function ccHeroSubmit(){
-  const input=wsPageEl('ws-hero-ai-input');
+// K5 (2026-09-08): a visitor pressing Enter lost their message silently — the most
+// natural gesture in a text box, and it produced no reply, no panel and no error.
+// Measured on a clone as an anonymous visitor: the arrow button worked, Enter did not.
+// Fixed two ways at once, because the cause was ambiguous and the cost of being wrong
+// is a lost customer: the input now handles Enter itself, and this reads the element it
+// was invoked FROM rather than by id — so a second copy of the hero in the DOM can
+// never make it read an empty box and return early.
+function ccHeroSubmit(el){
+  const input=(el && el.tagName==='INPUT') ? el : wsPageEl('ws-hero-ai-input');
   const text=input?.value||'';
   if(!text.trim())return;
   input.value='';

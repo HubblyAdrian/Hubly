@@ -1840,7 +1840,11 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     //                  simply a page. Half-gated editing (looks live, then blocks)
     //                  was the whole class of bug this removes.
     var editable = false;
-    try{ editable = !!(hc.draftClaimed && hcIsAuthed()); }catch(e){}
+    // hc.hasDocument === false means the CLASSIC archetype path: the inline editor
+    // has nowhere to write, so the affordance is not offered at all rather than
+    // painting a save that never lands. Unknown (null) keeps the previous
+    // behaviour — this gate removes a lie, it must not invent a new lockout.
+    try{ editable = !!(hc.draftClaimed && hcIsAuthed() && hc.hasDocument !== false); }catch(e){}
     var q = url + (url.indexOf('?') === -1 ? '?' : '&') + '_r=' + Date.now() + '&hcEdit=1';
     return editable ? q + '&hcEditable=1' : q;
   }
@@ -3927,11 +3931,42 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       return true;
     }catch(e){ return false; }
   }
+  // DOES THIS BUSINESS RENDER FROM A DOCUMENT, OR THE CLASSIC ARCHETYPE PATH?
+  //
+  // Measured 2026-09-08: 11 claimed businesses (incl. all four market ones) have NO
+  // business_documents row. On those, the canvas click-to-edit repainted, offered an
+  // Undo, and wrote NOTHING anywhere — a save the owner was shown that never happened.
+  // The affordance is therefore gated on this, and resolved BEFORE the canvas mounts so
+  // the interface never changes shape underneath them (prohibition 4).
+  //
+  // null = not yet known, true/false = answered. Read through the public RPC, which is
+  // the only route to that table since its anon SELECT policy was dropped.
+  async function hcLoadHasDocument(slug){
+    hc.hasDocument = null;
+    if(!slug) return null;
+    try{
+      var r = await fetch(SUPA_URL + '/rest/v1/rpc/get_public_business_document', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', apikey: HUBLY_PUBLISHABLE_KEY, authorization: 'Bearer ' + HUBLY_PUBLISHABLE_KEY },
+        body: JSON.stringify({ p_slug: slug, p_tag: 'website' })
+      });
+      if(!r.ok){ hc.hasDocument = null; return null; }
+      var rows = await r.json();
+      var row = Array.isArray(rows) ? rows[0] : rows;
+      hc.hasDocument = !!(row && row.rendered_html);
+    }catch(e){ hc.hasDocument = null; }
+    return hc.hasDocument;
+  }
+
   // Bring one owned business INTO the builder — the same end state as building it.
   function hcOpenOwnedBusiness(biz){
     hc.draftBusiness = { id: biz.id, slug: biz.slug, name: biz.name, draftToken: biz.draftToken || null, url: biz.url };
     hc.draftClaimed = true;
     hc.active = true;
+    // Settle the edit affordance BEFORE anything renders. Not awaited elsewhere on
+    // purpose: this is the one path a claimed owner enters by, and a canvas that
+    // gains or loses click-to-edit a second after it paints is a shape change.
+    hcLoadHasDocument(biz.slug).then(function(){ try{ hcRenderCanvas(); }catch(e){} });
     // Load this business's places, then re-render the rail. Deliberately NOT awaited:
     // the rail draws immediately from hc.places = null, which hasPlace() reads as
     // UNKNOWN and therefore renders the full current rail — so a slow or failed read
@@ -4733,11 +4768,26 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     if(frame && !frame.getAttribute('src') && hc.draftBusiness){
       frame.setAttribute('src', hcBust(hc.draftBusiness.url));
     }
+    // CLASSIC PATH: say plainly what is and is not editable rather than leaving a
+    // missing affordance to be discovered. "details yes, headline no" — stated, not
+    // smoothed over. Said once per session; a repeated line becomes a banner.
+    if(hc.hasDocument === false && !hc._saidClassicScope){
+      hc._saidClassicScope = true;
+      hcAppendMessage('hubly',
+        "Your site was built by hand, so I can't edit the page text or layout from here — clicking the page won't change it, and I've turned that off rather than have it look like it saved. " +
+        "What you CAN change, and it goes straight to your live site: your phone, email and address, your hours, and your services and prices — all under Edit details.");
+      return;
+    }
     if(r && r.failed){
       // Rule 6, pointed at a background task: it did not happen, so say so once. The
       // editor works; the section arrows are what is missing, and naming that is more
       // use than "something went wrong".
-      hcAppendMessage('hubly', (r.reply) || (r.timedOut
+      // K3: on the CLASSIC path this failure is permanent, not "just now" — there is no
+      // document to upgrade and there never will be without a rebuild. Document
+      // businesses keep the original transient wording, which is true for them.
+      hcAppendMessage('hubly', (r.reply) || (hc.hasDocument === false
+        ? "Your site was built by hand rather than generated, so moving whole sections isn't something I can do on it — that isn't a temporary problem and reopening won't change it. Your services, hours and contact details are all editable under Edit details."
+        : r.timedOut
         ? "Your page took too long to update just now — everything still works, but moving whole sections won't be available until it does. Reopening the editor will try again."
         : "I couldn't update your page's structure just now — everything still works, but moving whole sections won't be available until it does."));
     }
@@ -4917,8 +4967,14 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       // Said once, here, rather than as a dead colour control the owner clicks and nothing
       // happens. Naming the honest route (a rebuild, by talking) is the whole point — a
       // missing control that explains itself is not a broken one.
+      // K2: the second sentence used to invite a rebuild in the chat. On the CLASSIC
+      // path the classic-site gate refuses exactly that, so the panel was pointing at a
+      // door that is now shut — two untrue things aimed at each other. Document
+      // businesses keep the original line, where the invitation is still honest.
       '<div class="hc-dsg-note">Sizes move in steps that fit the design your page was built with, so nothing can end up broken. ' +
-      'Colours aren’t here yet — changing those properly means rebuilding the page, which you can ask me to do in the chat.</div>'+
+      (hc.hasDocument === false
+        ? 'Colours aren’t here yet, and this page was built by hand rather than generated, so I can’t restyle it from here either. Your services, hours and contact details are editable under Edit details.'
+        : 'Colours aren’t here yet — changing those properly means rebuilding the page, which you can ask me to do in the chat.') + '</div>'+
     '</div>';
     document.body.appendChild(ov);
     ov.querySelector('.hc-set-x').addEventListener('click', hcCloseDesign);
