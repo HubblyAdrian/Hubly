@@ -4865,17 +4865,15 @@ export async function runDocumentGeneration(
   ownerUid?: string | null,
 ): Promise<CapabilityActionResult> {
   const sw = stopwatch();
-          // A VALID DRAFT TOKEN, OR A SERVER-VERIFIED OWNER OF THIS ROW. Widened
-          // 2026-09-08 to match the draft predicate (hubly-conversation/index.ts:1093,
-          // b0f26fe) and the six sibling guards that already accepted an owner. These
-          // four were left behind, and a claimed business usually has draft_token NULL
-          // (9 of 34; 4 of them market), so the engine injected draftToken:"" and this
-          // refused every signed-in owner with "there isn't a draft site here to edit".
-          // Presence of a uid is NOT the test, at any layer: draftId only reaches this
-          // handler when draftBusiness resolved (valid token, or ownsBusiness() re-read
-          // through the service role against a uid resolved from the JWT via
-          // /auth/v1/user), and the RPC below re-checks owner_id = p_owner_id in SQL.
-          if (!draftId || (!draftToken && !ownerUid)) {
+          // REVERTED 2026-09-08, hours after it shipped. The widening was right about
+          // AUTHORISATION and wrong about CONSEQUENCE: it let newPage run on a business with
+          // no business_documents row, and newPage replaced a rich classic page (8 services,
+          // gallery, reviews, why-cards, memberships) with a ONE-SCREEN STUB while replying
+          // "Here's a completely new page" — a false green over destroyed content. The nine
+          // null-token businesses are all classic-path; four are market customers.
+          // Locked out is survivable, demolished is not. Restored to the token-only guard
+          // until the no-document gate lands. See docs/CLAIMED_OWNER_EDIT_LOCKOUT.md.
+          if (!draftId || !draftToken) {
             return { ok: false, real: false, summary: "No draft business exists yet to generate a page for — call business.startDraft first.", error: "missing_draft" };
           }
           if (!brief) {
@@ -5186,17 +5184,15 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const brief = String(args?.brief || "").trim();
           const confirm = (args as any)?.confirm === true;
           const ownerUid = injectedOwnerUid(args);
-          // A VALID DRAFT TOKEN, OR A SERVER-VERIFIED OWNER OF THIS ROW. Widened
-          // 2026-09-08 to match the draft predicate (hubly-conversation/index.ts:1093,
-          // b0f26fe) and the six sibling guards that already accepted an owner. These
-          // four were left behind, and a claimed business usually has draft_token NULL
-          // (9 of 34; 4 of them market), so the engine injected draftToken:"" and this
-          // refused every signed-in owner with "there isn't a draft site here to edit".
-          // Presence of a uid is NOT the test, at any layer: draftId only reaches this
-          // handler when draftBusiness resolved (valid token, or ownsBusiness() re-read
-          // through the service role against a uid resolved from the JWT via
-          // /auth/v1/user), and the RPC below re-checks owner_id = p_owner_id in SQL.
-          if (!draftId || (!draftToken && !ownerUid)) {
+          // REVERTED 2026-09-08, hours after it shipped. The widening was right about
+          // AUTHORISATION and wrong about CONSEQUENCE: it let newPage run on a business with
+          // no business_documents row, and newPage replaced a rich classic page (8 services,
+          // gallery, reviews, why-cards, memberships) with a ONE-SCREEN STUB while replying
+          // "Here's a completely new page" — a false green over destroyed content. The nine
+          // null-token businesses are all classic-path; four are market customers.
+          // Locked out is survivable, demolished is not. Restored to the token-only guard
+          // until the no-document gate lands. See docs/CLAIMED_OWNER_EDIT_LOCKOUT.md.
+          if (!draftId || !draftToken) {
             return { ok: false, real: false, summary: "No draft business exists yet.", error: "missing_draft" };
           }
           const latest = await selectLatestBusinessDocument(draftId, "website");
@@ -5288,17 +5284,15 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const draftToken = String((args as any)?.draftToken || "").trim();
           const instruction = String(args?.instruction || "").trim();
           const ownerUid = injectedOwnerUid(args);
-          // A VALID DRAFT TOKEN, OR A SERVER-VERIFIED OWNER OF THIS ROW. Widened
-          // 2026-09-08 to match the draft predicate (hubly-conversation/index.ts:1093,
-          // b0f26fe) and the six sibling guards that already accepted an owner. These
-          // four were left behind, and a claimed business usually has draft_token NULL
-          // (9 of 34; 4 of them market), so the engine injected draftToken:"" and this
-          // refused every signed-in owner with "there isn't a draft site here to edit".
-          // Presence of a uid is NOT the test, at any layer: draftId only reaches this
-          // handler when draftBusiness resolved (valid token, or ownsBusiness() re-read
-          // through the service role against a uid resolved from the JWT via
-          // /auth/v1/user), and the RPC below re-checks owner_id = p_owner_id in SQL.
-          if (!draftId || (!draftToken && !ownerUid)) {
+          // REVERTED 2026-09-08, hours after it shipped. The widening was right about
+          // AUTHORISATION and wrong about CONSEQUENCE: it let newPage run on a business with
+          // no business_documents row, and newPage replaced a rich classic page (8 services,
+          // gallery, reviews, why-cards, memberships) with a ONE-SCREEN STUB while replying
+          // "Here's a completely new page" — a false green over destroyed content. The nine
+          // null-token businesses are all classic-path; four are market customers.
+          // Locked out is survivable, demolished is not. Restored to the token-only guard
+          // until the no-document gate lands. See docs/CLAIMED_OWNER_EDIT_LOCKOUT.md.
+          if (!draftId || !draftToken) {
             return { ok: false, real: false, summary: "No draft business exists yet — call business.startDraft and generateDocument first.", error: "missing_draft" };
           }
           if (!instruction) {
@@ -5407,17 +5401,15 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const draftId = String(args?.draftId || "").trim();
           const draftToken = String((args as any)?.draftToken || "").trim();
           const ownerUid = injectedOwnerUid(args);
-          // A VALID DRAFT TOKEN, OR A SERVER-VERIFIED OWNER OF THIS ROW. Widened
-          // 2026-09-08 to match the draft predicate (hubly-conversation/index.ts:1093,
-          // b0f26fe) and the six sibling guards that already accepted an owner. These
-          // four were left behind, and a claimed business usually has draft_token NULL
-          // (9 of 34; 4 of them market), so the engine injected draftToken:"" and this
-          // refused every signed-in owner with "there isn't a draft site here to edit".
-          // Presence of a uid is NOT the test, at any layer: draftId only reaches this
-          // handler when draftBusiness resolved (valid token, or ownsBusiness() re-read
-          // through the service role against a uid resolved from the JWT via
-          // /auth/v1/user), and the RPC below re-checks owner_id = p_owner_id in SQL.
-          if (!draftId || (!draftToken && !ownerUid)) {
+          // REVERTED 2026-09-08, hours after it shipped. The widening was right about
+          // AUTHORISATION and wrong about CONSEQUENCE: it let newPage run on a business with
+          // no business_documents row, and newPage replaced a rich classic page (8 services,
+          // gallery, reviews, why-cards, memberships) with a ONE-SCREEN STUB while replying
+          // "Here's a completely new page" — a false green over destroyed content. The nine
+          // null-token businesses are all classic-path; four are market customers.
+          // Locked out is survivable, demolished is not. Restored to the token-only guard
+          // until the no-document gate lands. See docs/CLAIMED_OWNER_EDIT_LOCKOUT.md.
+          if (!draftId || !draftToken) {
             return { ok: false, real: false, summary: "No draft business exists yet to restyle.", error: "missing_draft" };
           }
           // Validated against the same enums the renderer reads, here rather
