@@ -988,7 +988,14 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   (it moves the store out of the page, it does not grant it); `projects` is **decorative**
   (`hasBusinessCapability('projects')` returns `true` unconditionally); `hubly_pro` is
   **decorative** — **zero reads anywhere**, while the real plan field is the `businesses.tier`
-  column, and **the two disagree on 32 rows** (`tier='starter'` with `hubly_pro:true`);
+  column, and **the two disagree on 32 rows** (`tier='starter'` with `hubly_pro:true`) — and
+  2026-09-07 the label was OBSERVED rather than traced: `evergreen-yard-care` with
+  `hubly_pro:true` and `tier:'starter'` shows **"Free plan"** while Graef's clone with
+  `hubly_pro:true` and `tier:'pro'` shows **"Pro plan"**, so with the flag held constant the
+  label follows `tier`. `hubly_pro` is further measured to be a **denormalised copy of "has a
+  `marketplace_providers` row"** — true for all 34 that have one, absent for all 145 that don't,
+  zero exceptions — written by a trigger on `provider_kind`, never by a product decision. It is
+  RULED OUT of the places model (`docs/HUBLY_PRO_TRACE.md`);
   `website` picks the builder's default surface; `marketplace` is directory membership.
   Meanwhile the editor's Builder rail is **14 static buttons with no gate at all**, and the one
   composed rail (`hcWorkspaces`) composes from `hc.draftClaimed`, not from capabilities.
@@ -1165,6 +1172,28 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   session, it is recorded as UNTESTED — never as working and never as broken. The cost asymmetry
   is the argument: a wrong prediction costs one click to correct, while a wrong finding gets
   planned around, and both of today's wrong findings were about to change what we built.
+
+- **THE PLACES MECHANISM is specified before any rail code (`docs/RAIL_SPEC.md`), and it keeps
+  THREE AXES APART: plan (`businesses.tier`, a column — what a business is ENTITLED to), places
+  (`businesses.places`, a new ordered jsonb list — what it has ASKED FOR), and content (meta,
+  services, products — what is IN it).** Collapsing any two is how two systems that disagree get
+  built, which is precisely what `hubly_pro` vs `tier` already is on 32 rows. A place is
+  `{id,type,scope,order,visible,config,added_at,added_by}`; **`scope` is a field, so a TAB in the
+  rail and a SECTION on the page are the same kind of entry**. One predicate `hasPlace(biz,type)`
+  is read at all five Store surfaces including the `/store` route, which today checks only the
+  URL path; an ungated `/store` redirects to the homepage. One registry action `places.add`, one
+  security-definer RPC taking `p_owner_id` (five live writers already lack it — this one does
+  not join them), and **the announcement is emitted by the WRITER**, carrying `created` and
+  `empty`, because only the writer knows whether it created, found or moved — `servicesTruth`'s
+  rule at a new scope. Day one is a backfill that reproduces today byte-for-byte, verified by
+  the Graef fingerprint, run on a clone first. **The load-bearing prerequisite: `SECTION_DEFS`
+  (`hubly.html:50388`) must be seeded from `places` — until then nothing can be added to a
+  classic renderer, which is Graef and every record-rendered site.**
+  **The shape survives "add me a reviews section":** same call, same RPC, same predicate, same
+  announcement. It exposes one real gap rather than an artefact — the assistant can create a
+  reviews section and has no action that writes a review — and the spec resolves it by adding the
+  place and STATING the limit in the announcement, rather than refusing (the owner already has
+  reviews; the section would render them).
 
 ## The anchor-pattern discipline (the through-line)
 
