@@ -240,3 +240,146 @@ the model honouring the confirm handshake.
 
 Whatever shape is chosen needs a red-proof both ways — the deliberate second business still
 works, and the route-around is blocked.
+
+---
+
+# G — does the new editor write where his live page reads? (2026-09-08)
+
+**Outcome 3 of the three: not visible to anyone. The editor has no write path for a
+business shaped like Graef's.**
+
+The editor DOES open. It rendered his full classic site in the canvas — services,
+gallery, reviews, about, hero, why-cards. Clicking the headline opened an inline editor
+with Cancel/Save. Typed "TESTING 12345", saved. The canvas repainted with it and an
+Undo control appeared in the toolbar.
+
+Then, loaded `graef-g-clone.myhubly.app` in a separate tab — a different origin, so a
+genuine stranger: `localStorage` empty, no `sb-*-auth-token`, no cookies (all verified
+in that tab before reading the page). **A stranger sees "GRAEF'S AUTOCARE".** The change
+is not there.
+
+And it is not there because it was never written anywhere:
+
+| location | contains "TESTING 12345" |
+|---|---|
+| `business_documents` | no rows at all |
+| `businesses.name` | no |
+| `businesses.tagline` | no |
+| `businesses.gen_hero_headline` | no |
+| `businesses.about` | no |
+| `businesses.meta` | no |
+
+The owner canvas was an **optimistic paint** — the iframe repaints at the click and the
+parent skips the reload on "success". So the editor shows a save that never happened, to
+the owner, with an Undo button for it.
+
+**G2 — the two paths.** The save wrote nowhere at all, so there is no "other home" to
+name. The public page renders the classic archetype from `businesses.meta` via
+`get_public_business`; the editor's inline text save targets the document path, and for a
+business with no document the write has no destination and no error is surfaced.
+
+## The chrome finding, same shape
+
+`website.setChrome` DOES write: `meta.website.chrome = {logoPlacement:"centre",
+logoScale:"lg"}`. But `public/hubly.html` — the classic renderer serving all of these
+businesses — contains **zero** references to `website.chrome` or `websiteMetaOf`. Only
+`hubly_document.ts` reads it. Measured on the live page: logo `left 292 -> 292`,
+`centreX 323 -> 323`, width `61 -> 61`, against a page centre of 960. Nothing moved, and
+the reply was "Saved — I'll use that when I build the page."
+
+---
+
+# H — the ruling, and what shipped (2026-09-08)
+
+## H3 — recovery is one step, and it works
+
+Proved before anything else went out. On a clone: with a document row present, an
+anonymous visitor gets the document and the classic page is gone. Deleted the document
+row, reloaded anonymously:
+
+| | after deleting the document row |
+|---|---|
+| session | anonymous confirmed (no auth token, no cookies) |
+| images | 137 |
+| headings | 103 |
+| links | 29 |
+| Our Services / Gallery / Reviews / Membership | all present |
+| "GRAEF'S AUTOCARE" | present |
+
+**`delete from business_documents where business_id = ...` restores the classic site
+intact.** That is the one-step recovery if this ever fires on a real account.
+
+Honest note on method: the destructive rebuild could not be re-run through the assistant
+after the revert, and I would not print a live draft token to force it. The document row
+used here was inserted by hand and LABELLED as a stand-in ("H3 RECOVERY TEST STUB"), not
+a generated page. What that proves is exactly the recovery step — that removing the
+document row returns the classic render — which is the question H3 asks. It does not
+re-prove the destruction, which was already measured directly earlier the same day.
+
+## H2 then H1 — what production is running
+
+**First, the revert, deployed immediately** (`db20c23`): the four guards restored to
+`!draftId || !draftToken`. That returned the nine to the morning's locked-out state
+rather than leaving a destructive path live while a better fix was built.
+
+**Then the gate, deployed** (H1). A claimed business with no `business_documents` row
+cannot run `generateDocument`, `newPage`, `patchDocument` or `setChrome`.
+
+**Why not `draft_token` as the proxy — measured, not assumed:**
+
+| | has doc | no doc |
+|---|---|---|
+| has token | 158 | **12** |
+| null token | 0 | **10** |
+
+12 businesses have no document but DO have a token, so the proxy would have covered less
+than half the exposed population. And gating on "no document" alone would break signup —
+an unclaimed draft has no document and must be able to generate its first page. The
+condition is therefore **claimed AND no document**: 11 businesses.
+
+**Verified by clicking, as the signed-in owner, on a clone in exactly the at-risk shape
+the revert does NOT cover (claimed, has a token, no document):**
+
+- rebuild -> *"I can't rebuild this page from here — it was built by hand, and replacing
+  it would give you less than what's already there. Your live site is unchanged at
+  graef-g-clone.myhubly.app."*
+- logo/header -> *"I couldn't change that from here — this site was built by hand, so the
+  header is live and unchanged at graef-g-clone.myhubly.app."*
+- headline -> *"I couldn't change that headline from here — this site was built by hand
+  rather than generated, so it's still unchanged at graef-g-clone.myhubly.app."*
+
+None reports success. None denies the site exists. None names a control. The read half is
+untouched and was re-checked in the same session: *"You have no bookings on record right
+now."*
+
+## H5 — the class, not the incident
+
+> **A safety check that measures what the SYSTEM OVERWRITES rather than what the USER
+> LOSES will fail precisely on the users who have the most to lose — because those are
+> the ones whose value lives outside the system's own model of itself.**
+
+`newPage` has a `confirm` parameter and a confirmation step. The step asked "is there a
+document to overwrite?" For a classic business the answer is no, so it read "nothing to
+lose" and stayed silent — while what was lost was the whole live site. The richest
+business in the corpus was the MOST exposed, for exactly the reason the check could not
+see him: his content was hand-built, so none of it was in the table the check consulted.
+
+This is the third time the same shape has appeared here: the freeform anchor count
+(counted headings, missed `<li><span>` services), the price scan (counted `$`, missed
+priced services without the symbol), and now this. Each measured the representation the
+system happens to store rather than the thing that matters. Same family as CLAUDE.md's
+"ENUMERATE THE HARMLESS SIDE — never the valuable one."
+
+Enforced by `scripts/check-destructive-confirm.mjs`, wired into `npm test`, red-proved by
+deleting the gate from `setChrome` (exit 1, "consulting 3 (must be 4)"), restored
+byte-identical.
+
+## Still open
+
+- **H4 proper** — the confirmation logic itself still asks "is there a document to
+  overwrite". The gate now stands in front of it for classic businesses, but the
+  confirmation has not been rewritten to measure a live page in general. Filed, not done.
+- **E3's startDraft confirm handshake** — ruled, deferred behind this.
+- **The editor's silent no-op** — the inline text editor paints a save that never
+  persisted, for every classic-path business, with an Undo for a change that did not
+  happen. Not fixed; it is a false green of the same family as everything else here.

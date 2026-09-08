@@ -1152,6 +1152,50 @@ export type LatestBusinessDocument =
   | { version: number; format: "ast"; document: HublyDocument; renderedHtml: string | null }
   | { version: number; format: "html"; brief: FreeformBrief; renderedHtml: string };
 
+/**
+ * THE CLASSIC-SITE GATE (2026-09-08).
+ *
+ * A business with an owner and NO business_documents row renders from the CLASSIC
+ * archetype path. The website write actions cannot edit that page — they can only
+ * REPLACE it with a generated one, and on 2026-09-08 that is exactly what happened:
+ * a clone of a real customer's site carrying 8 services, a gallery, reviews,
+ * why-cards, memberships and 137 images became a one-screen stub, while the reply
+ * said "Here's a completely new page". A lockout turned into a demolition.
+ *
+ * WHY THIS CONDITION AND NOT draft_token. Measured, not assumed: 12 businesses have
+ * no document but DO have a token, so a draft_token proxy would have covered less
+ * than half of the exposed population. The real condition is the document row.
+ *
+ * WHY `owner_id is not null` IS PART OF IT. An UNCLAIMED draft also has no document
+ * — that is the normal state of a brand-new signup, and it MUST still be able to
+ * generate its first page. Gating on "no document" alone would break signup. Only a
+ * CLAIMED business with no document has a live hand-built page to lose.
+ *
+ * Read actions are deliberately untouched: operations.read and the injected
+ * operational state were measured the same day and are honest.
+ */
+async function refuseIfClassicSite(draftId: string): Promise<CapabilityActionResult | null> {
+  const biz = await selectOne("businesses", "id", draftId, "owner_id,slug");
+  if (!biz || !String((biz as any)?.owner_id || "").trim()) return null;   // unclaimed draft: normal path
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (latest) return null;                                                 // has a document: normal path
+  const slug = String((biz as any)?.slug || "").trim();
+  return {
+    ok: false,
+    real: false,
+    error: "classic_site_not_editable",
+    // NOT a false green and NOT a denial that the site exists — the two failure modes
+    // this whole day was spent finding. It says what is true, says the site is fine,
+    // and names no control it cannot see.
+    summary:
+      "This site was built by hand rather than generated, so I can't rewrite or restyle it from here — " +
+      "anything I built would replace it with far less than what is on it now. " +
+      (slug ? `It is live and unchanged at ${slug}.myhubly.app. ` : "It is live and unchanged. ") +
+      "Say this plainly to the owner, do not claim anything was changed, and do not suggest rebuilding. " +
+      "You can still read their bookings, customers and activity, and answer questions about the site.",
+  };
+}
+
 async function selectLatestBusinessDocument(businessId: string, tag: string): Promise<LatestBusinessDocument | null> {
   const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
   // A missing key now throws rather than returning empty-handed: an absent
@@ -4876,6 +4920,11 @@ export async function runDocumentGeneration(
           if (!draftId || !draftToken) {
             return { ok: false, real: false, summary: "No draft business exists yet to generate a page for — call business.startDraft first.", error: "missing_draft" };
           }
+          // THE CLASSIC-SITE GATE — see refuseIfClassicSite(). A claimed business with
+          // no document has a live hand-built page that this action would REPLACE, not edit.
+          const classicBlock = await refuseIfClassicSite(draftId);
+          if (classicBlock) return classicBlock;
+
           if (!brief) {
             return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
           }
@@ -5195,6 +5244,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!draftId || !draftToken) {
             return { ok: false, real: false, summary: "No draft business exists yet.", error: "missing_draft" };
           }
+          // THE CLASSIC-SITE GATE — see refuseIfClassicSite(). A claimed business with
+          // no document has a live hand-built page that this action would REPLACE, not edit.
+          const classicBlock = await refuseIfClassicSite(draftId);
+          if (classicBlock) return classicBlock;
+
           const latest = await selectLatestBusinessDocument(draftId, "website");
           // No page yet is a perfectly good starting point — there is simply
           // nothing to lose, so the confirmation step below has nothing to say
@@ -5295,6 +5349,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!draftId || !draftToken) {
             return { ok: false, real: false, summary: "No draft business exists yet — call business.startDraft and generateDocument first.", error: "missing_draft" };
           }
+          // THE CLASSIC-SITE GATE — see refuseIfClassicSite(). A claimed business with
+          // no document has a live hand-built page that this action would REPLACE, not edit.
+          const classicBlock = await refuseIfClassicSite(draftId);
+          if (classicBlock) return classicBlock;
+
           if (!instruction) {
             return { ok: false, real: false, summary: "No edit instruction was given.", error: "missing_instruction" };
           }
@@ -5412,6 +5471,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!draftId || !draftToken) {
             return { ok: false, real: false, summary: "No draft business exists yet to restyle.", error: "missing_draft" };
           }
+          // THE CLASSIC-SITE GATE — see refuseIfClassicSite(). A claimed business with
+          // no document has a live hand-built page that this action would REPLACE, not edit.
+          const classicBlock = await refuseIfClassicSite(draftId);
+          if (classicBlock) return classicBlock;
+
           // Validated against the same enums the renderer reads, here rather
           // than trusting the argsSchema: the schema is a prompt, not a gate.
           const chrome: Record<string, unknown> = {};
