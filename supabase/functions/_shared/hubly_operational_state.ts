@@ -287,6 +287,21 @@ export const SLICES: SliceDef[] = [
         .select("loaded_day,visitor_hash,referrer,is_owner_preview")
         .eq("business_id", businessId)
         .eq("is_owner_preview", false)
+        // EXCLUDE BOTS. Measured 2026-09-08 across the whole corpus: of 135 page_loads
+        // rows, 54 were device_class='bot' and 49 were owner previews — only 32 were real
+        // visits. Filtering owner previews alone would have reported 86 "people", of which
+        // 63% were crawlers, link unfurlers and uptime pingers.
+        //
+        // That is a subtler fabrication than a sparkline: a REAL number describing
+        // something other than what it says. "Four people looked at your page" is a claim
+        // about humans, and it has to be one.
+        //
+        // Honest limit: device_class is classified from the user-agent at write time
+        // (PREVIEW_BOT / GENERIC_BOT in page-view/index.ts), so a crawler presenting a
+        // browser UA is still counted. It catches the named ones — googlebot, bingbot,
+        // slackbot, facebookexternalhit, curl, headless, puppeteer and the rest — which is
+        // the bulk of it, not all of it.
+        .neq("device_class", "bot")
         .gte("loaded_day", since);
       const rows = Array.isArray(data) ? data : [];
       if (!rows.length) return [];
