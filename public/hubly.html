@@ -17505,8 +17505,20 @@ function hcStripPlaceholders(root){
 }
 
 // Unclaimed drafts must not be indexed. Deliberately NOT applied to claimed
-// businesses — those are real sites whose owners want to be found, and a
+// MARKET businesses — those are real sites whose owners want to be found, and a
 // blanket noindex would quietly deindex every customer we have.
+//
+// account_kind==='test' is noindexed too, claimed or not. 22 test businesses
+// carry an owner_id, so the !owner_id test alone never fired for them and they
+// were publicly reachable AND indexable on *.myhubly.app with INVENTED content —
+// "Pike & Holloway Tree Service", "Copper Kettle Bakehouse". A customer googling
+// Hubly could find fake competitors under our own domain, and page_loads already
+// holds one Google referral to a test business (adrians-lawn-service, 2026-09-02).
+//
+// The field IS available here: get_public_business returns to_jsonb(b) minus
+// draft_token, so all 56 columns including account_kind reach the client. Checked
+// against the LIVE RPC before writing this, not read off the migration — if it
+// were absent, this line would silently never fire and look correct.
 function hcNoIndex(){
   try{
     if(document.querySelector('meta[name="robots"][data-hc-noindex]')) return;
@@ -17820,7 +17832,7 @@ async function loadPublicProfile(slug,opts){
       document.documentElement.classList.add('hubly-public-site');
       document.documentElement.setAttribute('data-theme','day');
     }catch(e){}
-    if(!data.owner_id) hcNoIndex();
+    if(!data.owner_id || data.account_kind==='test') hcNoIndex();
     return;
   }
   try{
@@ -17897,7 +17909,7 @@ async function loadPublicProfile(slug,opts){
       // a genuine translation pipeline, not an hour's work (see KNOWN_ISSUES).
       // A dead control is worse than no control, so it is removed on this view.
       try{ var lf=document.getElementById('lang-btn-float'); if(lf) lf.style.display='none'; }catch(e){}
-      if(!data.owner_id) hcNoIndex();
+      if(!data.owner_id || data.account_kind==='test') hcNoIndex();
       showP('p-hubly-document');
       try{wireHublyDocumentReserved();}catch(e){console.warn('wireHublyDocumentReserved failed',e);}
       try{wireHublyDocumentClickToEdit();}catch(e){}
