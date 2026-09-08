@@ -208,6 +208,105 @@ export const SLICES: SliceDef[] = [
     ].filter(Boolean).join(" "),
   },
   {
+    // CHAT LEADS — DELIBERATELY SEPARATE FROM "leads" BELOW, NOT MERGED INTO IT.
+    //
+    // "Filled in half a booking form" and "asked a question and left" are different
+    // signals with different confidence. A single count that means both means neither —
+    // the same defect class as a number whose denominator is unstated. So they stay
+    // distinct here AND in the words the assistant uses: "two people started booking and
+    // stopped" is a different sentence from "one person asked about Saturday".
+    //
+    // A conversation that never became a booking surfaces REGARDLESS of age, timestamped,
+    // for the owner to judge. The 30-minute idle threshold below decides only whether it
+    // is flagged as NEEDING ACTION — it is not a hiding mechanism. In home services
+    // response speed is most of conversion: someone who asked an hour ago has already
+    // called the next detailer.
+    key: "chat_leads",
+    title: "PEOPLE WHO ASKED ON YOUR SITE AND DID NOT BOOK",
+    emptyLine: "PEOPLE WHO ASKED AND DID NOT BOOK: none on record.",
+    read: async (admin, businessId) => {
+      const { data: convs } = await admin
+        .from("chatbot_conversations")
+        .select("id,started_at,customer_name,customer_phone,customer_email,resulted_in_booking")
+        .eq("business_id", businessId)
+        .eq("resulted_in_booking", false)
+        .order("started_at", { ascending: false })
+        .limit(MAX_ROWS);
+      const rows = Array.isArray(convs) ? convs : [];
+      if (!rows.length) return [];
+      const out: Record<string, unknown>[] = [];
+      for (const c of rows) {
+        // What they ASKED is the first thing they said — the most useful single line
+        // for deciding whether to call back. Bodies older than 90 days are gone by
+        // retention, so an old conversation legitimately has no question text; say
+        // that rather than implying they asked nothing.
+        const { data: msgs } = await admin
+          .from("chatbot_messages")
+          .select("role,content,created_at")
+          .eq("conversation_id", c.id)
+          .order("created_at", { ascending: true });
+        const list = Array.isArray(msgs) ? msgs : [];
+        const firstAsk = list.find((m: any) => m.role === "customer");
+        const last = list.length ? list[list.length - 1] : null;
+        const lastAt = last?.created_at ? new Date(String(last.created_at)).getTime() : null;
+        const idleMin = lastAt ? Math.floor((Date.now() - lastAt) / 60000) : null;
+        out.push({
+          asked: firstAsk?.content ? String(firstAsk.content) : null,
+          transcript_aged_out: list.length === 0,
+          started_at: c.started_at,
+          last_activity: last?.created_at ?? null,
+          idle_minutes: idleMin,
+          needs_action: idleMin !== null && idleMin >= 30,
+          customer_name: c.customer_name,
+          customer_phone: c.customer_phone,
+          customer_email: c.customer_email,
+        });
+      }
+      return out;
+    },
+    line: (r) => [
+      `${String(r.customer_name || "someone").trim()} asked: ` +
+        (r.asked ? `"${String(r.asked).slice(0, 140)}"` : (r.transcript_aged_out ? "(what they asked is past our 90-day retention)" : "(no question recorded)")),
+      `· ${String(r.started_at ?? "").slice(0, 10) || "unknown"}`,
+      r.idle_minutes === null ? null : (r.needs_action ? "· NEEDS A REPLY (quiet 30+ min)" : `· still live (quiet ${r.idle_minutes} min)`),
+      `· ${contact(r)}`,
+      isTestRow(r) ? "· [TEST ROW — written by our own harness, not a real customer]" : null,
+    ].filter(Boolean).join(" "),
+  },
+  {
+    // PAGE TRAFFIC. The rows already existed (page_loads); nothing read them, so a quiet
+    // day could only ever report the one thing that did not happen. Owner previews are
+    // excluded — the owner looking at his own site is not a visitor.
+    key: "traffic",
+    title: "PEOPLE WHO LOOKED AT YOUR PAGE",
+    emptyLine: "PEOPLE WHO LOOKED AT YOUR PAGE: none on record.",
+    read: async (admin, businessId) => {
+      const since = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
+      const { data } = await admin
+        .from("page_loads")
+        .select("loaded_day,visitor_hash,referrer,is_owner_preview")
+        .eq("business_id", businessId)
+        .eq("is_owner_preview", false)
+        .gte("loaded_day", since);
+      const rows = Array.isArray(data) ? data : [];
+      if (!rows.length) return [];
+      const byDay = new Map<string, Set<string>>();
+      for (const r of rows) {
+        const d = String(r.loaded_day || "").slice(0, 10);
+        if (!d) continue;
+        if (!byDay.has(d)) byDay.set(d, new Set());
+        // No visitor_hash means we cannot tell two loads apart; count the row rather
+        // than collapsing distinct people into one. Stated, not silently deduped.
+        byDay.get(d)!.add(String(r.visitor_hash || `row:${r.loaded_day}:${Math.random()}`));
+      }
+      return [...byDay.entries()]
+        .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+        .slice(0, MAX_ROWS)
+        .map(([day, set]) => ({ day, people: set.size }));
+    },
+    line: (r) => `${String(r.day)} — ${Number(r.people)} ${Number(r.people) === 1 ? "person" : "people"}`,
+  },
+  {
     key: "leads",
     title: "RECENT LEADS (started a booking and did not finish)",
     emptyLine: "RECENT LEADS: none on record.",
@@ -317,6 +416,18 @@ export function buildOperationalStateBlock(state: OperationalState): string {
   L.push("estimate, do not say \"a few\" or \"several\", and never invent a customer, a date or an");
   L.push("amount. A row marked [TEST ROW] was written by our own verification harness — if you");
   L.push("mention it at all, say so; never present it as a real customer.");
+  L.push("");
+  L.push("TWO DIFFERENT KINDS OF LEAD, AND THEY MUST NOT BE ADDED TOGETHER. \"Started a booking");
+  L.push("and stopped\" (RECENT LEADS) is a person who filled in part of the form. \"Asked on your");
+  L.push("site and did not book\" (PEOPLE WHO ASKED) is a person who typed a question in the chat.");
+  L.push("Different signals, different confidence. Say them as separate sentences — \"two people");
+  L.push("started booking and stopped\" is not the same news as \"one person asked about Saturday\"");
+  L.push("— and never report a single combined count, which would mean neither one.");
+  L.push("");
+  L.push("A CHAT LEAD MARKED \"NEEDS A REPLY\" has been quiet 30+ minutes. That flag is about");
+  L.push("urgency ONLY. One that is still live is not less real and must not be omitted; one whose");
+  L.push("question is past our 90-day retention still happened — say the question is not kept");
+  L.push("rather than implying they asked nothing.");
   L.push("");
   L.push("WHEN TO USE IT. If there is anything here the owner has not already been told about in");
   L.push("this conversation, LEAD WITH IT in plain words — who, what, when, how much, and how to");

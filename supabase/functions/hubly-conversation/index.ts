@@ -88,6 +88,7 @@ import {
   mergeCustomerUnderstandingPatch,
   isEmptyCustomerUnderstandingPatch,
 } from "../_shared/hubly_customer_understanding.ts";
+import { persistVisitorTurn } from "../_shared/visitor_conversation.ts";
 
 // Experience 1's opening line is fixed, not model-generated — this is the
 // first thing anyone ever sees from Hubly, too important to leave to
@@ -1210,6 +1211,9 @@ Deno.serve(async (req) => {
   // browser renders its confirmation card from this alone, never from the
   // model's own reply text.
   let bookingConfirmation: unknown = null;
+  // Returned to the client so the NEXT turn appends to the same conversation row
+  // instead of starting a new one on every message.
+  let visitorConversationId: string | null = null;
   // The claim grant for a business created THIS turn. Curated onto the response
   // exactly like bookingConfirmation, and for the same reason: `raw` stays
   // server-side. This is the ONLY draft field that leaves — never draftToken,
@@ -2387,12 +2391,31 @@ Deno.serve(async (req) => {
       // the person actually saw as Hubly's voice (on a build turn that's the
       // narration in interimMessages, not this reply field, which is the
       // exhausted-rounds fallback). See platform-home.html hcPersist.
+      // PERSIST THE VISITOR'S CONVERSATION (customer context only). Until 2026-09-08 the
+      // concierge stored nothing: someone could ask "can you detail a truck this Saturday",
+      // get a real answer, and leave no trace — so an abandoned chat was invisible and the
+      // owner lost a customer he never knew he had. Best-effort and never awaited into the
+      // reply path in a way that could fail it: the person's answer matters more than our
+      // record of it. A failure is logged, not thrown, and never reported as success.
+      if (context === "customer" && businessId) {
+        try {
+          const persisted = await persistVisitorTurn(createAdminClient(), {
+            businessId,
+            conversationId: body?.conversationId ? String(body.conversationId) : null,
+            messages: history as Array<{ role?: string; content?: string }>,
+            resultedInBooking: !!bookingConfirmation,
+          });
+          if (!persisted.ok) console.error("[visitor-conversation] not stored:", persisted.error);
+          else visitorConversationId = persisted.conversationId;
+        } catch (e) { console.error("[visitor-conversation] threw:", String(e)); }
+      }
       return jsonRes({
         ok: true,
         reply: finalReply,
         messages: history,
         actions,
         interimMessages: deduped.interim,
+        ...(visitorConversationId ? { conversationId: visitorConversationId } : {}),
         ...(concepts.length ? { concepts } : {}),
         ...(decision?.askInspiration === true ? { askInspiration: true } : {}),
         ...(decision?.askLogo === true ? { askLogo: true } : {}),

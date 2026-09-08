@@ -8369,6 +8369,7 @@ body.mkt-chat-open .mkt-back-top{display:none!important;}
 .ws-chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--ws-border,#e2e8f0);}
 .ws-chat-input{flex:1;padding:10px 12px;border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-btn-radius,999px);font:inherit;font-size:13px;background:var(--ws-bg,#fff);color:var(--ws-text,#0f172a);min-width:0;}
 .ws-chat-input:disabled{opacity:.6;}
+.ws-chat-privacy{padding:0 12px 6px;font-size:11px;line-height:1.35;color:var(--ws-muted,#6b7280);opacity:.85}
 .ws-chat-send{padding:10px 16px;border:none;border-radius:var(--ws-btn-radius,999px);background:var(--ws-accent,#1a3a6e);color:#fff;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0;}
 .ws-chat-send:disabled{opacity:.6;cursor:default;}
 .ed-ws-preview .ws-chat-widget,
@@ -12453,6 +12454,12 @@ document.addEventListener('DOMContentLoaded', function() {
         <button type="button" class="ws-chat-panel-close" onclick="wsChatToggle(false)" aria-label="Close chat">×</button>
       </div>
       <div class="ws-chat-log" id="ws-chat-log"></div>
+      <!-- The visitor is told their message is kept and the business reads it. We spend
+           every day refusing to let the product tell an OWNER something untrue; the person
+           on the other side of the same conversation is owed the same. Stated before they
+           type, not buried in a policy, and worded so it reads as normal rather than as a
+           warning — it is how a business's contact form has always worked. -->
+      <div class="ws-chat-privacy" id="ws-chat-privacy">Your message is shared with this business so they can reply.</div>
       <div class="ws-chat-input-row">
         <input type="text" id="ws-chat-input" class="ws-chat-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')wsChatSend()">
         <button type="button" id="ws-chat-send-btn" class="ws-chat-send" onclick="wsChatSend()">Send</button>
@@ -16574,6 +16581,9 @@ async function ccCall(userText,entryIntent){
         businessId:currentBusiness?.id||null,
         messages:st.messages,
         understanding:st.understanding,
+        // Sent so the server appends to the SAME stored conversation instead of
+        // starting a new row every message. Server-issued, never invented here.
+        conversationId:st.conversationId||null,
       },(entryIntent&&!st.started)?{entryIntent:entryIntent}:{})),
     });
     let data=null;
@@ -16586,6 +16596,7 @@ async function ccCall(userText,entryIntent){
       return {ok:false,error:st.error};
     }
     st.started=true;
+    if(data.conversationId)st.conversationId=String(data.conversationId);
     if(Array.isArray(data.messages))st.messages=data.messages;
     if(data.understanding&&data.understanding.patch&&typeof data.understanding.patch==='object'){
       st.understanding=Object.assign({},st.understanding,data.understanding.patch);
