@@ -378,6 +378,12 @@ const SELECTION_INJECTED_ACTIONS = new Set([
  * to this conversation."
  */
 const DRAFT_INJECTED_ACTIONS = new Set([
+  // places.add (2026-09-08). It reads injectedOwnerUid and writes through
+  // add_business_place, which authorises by owner and refuses a null uid — so
+  // without this entry every add would be refused on a claimed business, which is
+  // every business that has a sidebar. Caught by check-owner-id-invariant.mjs
+  // BEFORE it shipped, on the same commit that added the action.
+  "places.add",
   "business.updateDraft",
   "business.setServices",
   "website.generateDocument",

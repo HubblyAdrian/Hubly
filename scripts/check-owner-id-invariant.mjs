@@ -96,6 +96,7 @@ const OWNER_AUTHORISED_RPCS = [
   "patch_business_in_progress",
   "set_business_hours_in_progress",
   "set_business_draft_services",
+  "add_business_place",
 ];
 let sites = 0;
 const perRpc = Object.fromEntries(OWNER_AUTHORISED_RPCS.map((r) => [r, 0]));

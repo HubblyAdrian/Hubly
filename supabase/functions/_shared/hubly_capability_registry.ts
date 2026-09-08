@@ -197,6 +197,10 @@ const OWNER_AUTHORISED_RPCS = new Set([
   "patch_business_in_progress",
   "set_business_hours_in_progress",
   "set_business_draft_services",
+  // Added with the writer itself, not after someone forgot: add_business_place's
+  // p_owner_id has NO default in SQL, so an omission fails at the call — and this
+  // set plus check-owner-id-invariant.mjs make it fail at build time instead.
+  "add_business_place",
 ]);
 async function callBusinessRpc(fn: string, payload: Record<string, unknown>): Promise<any> {
   // ── THE CLAIMED-OWNER INVARIANT ────────────────────────────────────────────
@@ -6271,6 +6275,84 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
               // writes a 'patch' version). Same split as uploadDraftPhoto.
               ...(isFreeform ? {} : { recordChange: ["services"] }),
             },
+          };
+        },
+      },
+    ],
+  },
+  {
+    name: "places",
+    description:
+      "Add a place to this business's sidebar — a Store, a Jobs room. A place is a ROOM the " +
+      "owner has asked for; it is not content and it is not a plan. Adding one puts it in the " +
+      "sidebar and nothing else: an empty Store is still empty, and you must say so.\n\n" +
+      "OFFER, DO NOT ASSUME. Never call this because you inferred an intent. If someone mentions " +
+      "selling something, OFFER — \"I can add a Store to your sidebar, want me to?\" — and call " +
+      "this only after they say yes. A tab that appears because the assistant guessed is a " +
+      "change to their product they did not ask for.",
+    actions: [
+      {
+        name: "add",
+        description:
+          "Add a place, AFTER the owner has agreed to an explicit offer. Returns which of three " +
+          "things actually happened — created, re-enabled, or they already had it — and you must " +
+          "report THAT, not that you added it. Claiming to have added something they already had " +
+          "is the same defect as any other unearned confirmation.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            kind: { type: "string", description: "The place to add. Today: 'store' or 'jobs'." },
+            businessId: { type: "string", description: "Supplied by the system; put any placeholder." },
+          },
+          required: ["kind"],
+        },
+        handler: async (args) => {
+          const businessId = String((args as Record<string, unknown>)?.businessId || "").trim();
+          const ownerUid = injectedOwnerUid(args as Record<string, unknown>);
+          const kind = String((args as Record<string, unknown>)?.kind || "").trim().toLowerCase();
+          if (!businessId) {
+            return { ok: false, real: false, error: "missing_business", summary: "No business to add that to." };
+          }
+          if (!ownerUid) {
+            return {
+              ok: false, real: false, error: "not_signed_in",
+              summary: "Only the signed-in owner of this business can change its sidebar. Say that plainly.",
+            };
+          }
+          if (!kind) return { ok: false, real: false, error: "no_kind", summary: "Which place should I add?" };
+
+          const r = await callBusinessRpc("add_business_place", {
+            p_id: businessId,
+            p_owner_id: ownerUid,
+            p_kind: kind,
+            p_scope: "workspace",
+          });
+
+          if (!r || r.ok !== true) {
+            const err = String((r && r.error) || "save_failed");
+            if (err === "not_owner") {
+              return { ok: false, real: false, error: err, summary: "That isn't your business, so I can't change its sidebar." };
+            }
+            if (err === "unknown_place") {
+              return { ok: false, real: false, error: err, summary: `I don't have a "${kind}" to add. I can add a Store or a Jobs room.` };
+            }
+            return { ok: false, real: false, error: err, summary: `I couldn't add ${kind} to your sidebar — nothing was changed.` };
+          }
+
+          // THE ANNOUNCEMENT IS COMPOSED FROM WHAT THE WRITE DID, by the writer.
+          // Three outcomes, three sentences, and they are not interchangeable: a
+          // writer that always reports success is indistinguishable from one that
+          // works. Same seam as servicesTruth.
+          const label = kind.charAt(0).toUpperCase() + kind.slice(1);
+          const outcome = String(r.outcome || "");
+          const summary =
+            outcome === "created"    ? `Got it — I've added ${label} to your sidebar. It's empty for now.`
+            : outcome === "re-enabled" ? `${label} is back in your sidebar, right where it was.`
+            : outcome === "already"    ? `You've already got ${label} — it's in your sidebar now.`
+            : `${label} is in your sidebar.`;
+          return {
+            ok: true, real: true, summary,
+            raw: { event: "place.added", kind, scope: "workspace", outcome, created: outcome === "created" },
           };
         },
       },
