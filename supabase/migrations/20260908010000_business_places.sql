@@ -45,13 +45,29 @@ create table if not exists public.business_places (
                  'opportunities','photo-projects','pipeline','projects','quotes',
                  'reports','reviews','store','studio',
                  -- sections — SECTION_DEFS, public/hubly.html:50388
-                 'portfolio','services','about','story'
+                 'portfolio','services','about','story',
+                 -- workspaces — hcWorkspaces ids, public/platform-home.html:3985.
+                 -- 'website' exists ONLY here: it is not a hubly.html data-v.
+                 'website'
                )),
 
   -- WHERE it appears. A tab in the rail and a section on the page are the SAME
   -- kind of entry; only this field differs. That is the whole reason one
   -- mechanism can serve "add me a store" and "add me a reviews section".
-  scope        text not null check (scope in ('tab','section')),
+  -- THREE SCOPES, because there are two shells and they are different products.
+  --   workspace = the hcWorkspaces rail in platform-home.html — the FRONT DOOR,
+  --               where every signup lands. This is the only scope with a seed
+  --               and a reader.
+  --   tab       = hubly.html's 25 data-v entries at /app. Vocabulary kept because
+  --               it costs nothing, but NOTHING seeds or reads it: /app is a
+  --               deprecation target (see the condition at the end of this file).
+  --   section   = a band on the public page.
+  --
+  -- `jobs` and `store` exist in BOTH shells with different meanings, which is the
+  -- whole argument for separating them: one scope would have had one rail
+  -- rendering the other's rows — the same-name-different-meaning defect this
+  -- codebase has spent a week digging out of meta.
+  scope        text not null check (scope in ('workspace','tab','section')),
 
   -- NAMED sort_order, NOT `position`. `position` is a SQL keyword (the
   -- position(x in y) function) and Postgres will accept it as a column but it
@@ -171,3 +187,19 @@ grant execute on function public.get_public_business_places(text) to anon, authe
 -- must not treat "the table allowed it" as "this combination is valid". The
 -- catalogue in code decides which kinds are legal in which scope; the CHECK only
 -- decides which kinds exist at all.
+
+-- ── THE /app DEPRECATION CONDITION, as a checkable pair rather than an intention ──
+--
+--  FACT 1 (true today): /app is the destination of every booking notification
+--    (supabase/functions/booking-notify/index.ts:387, `ctaHref: appBaseUrl() + '/app'`)
+--    and of the OAuth returns (google-calendar-oauth-callback, adobe-oauth-callback),
+--    BECAUSE platform-home cannot show a booking. platform-home links to /app zero
+--    times; an owner reaches it only through those notifications or by typing it.
+--
+--  FACT 2 (contingent on FACT 1 changing): WHEN the front door shows bookings, the
+--    notification CTA repoints to '/' and the main door into /app closes by disuse.
+--
+--  The second is checkable, not aspirational: it names the feature that closes the
+--  door (bookings on the home screen) and the exact line that changes when it does.
+--  Until FACT 1 is false, /app is live and owner-reachable and must not be broken —
+--  it is simply not where new investment goes.

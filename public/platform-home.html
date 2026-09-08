@@ -3932,6 +3932,13 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     hc.draftBusiness = { id: biz.id, slug: biz.slug, name: biz.name, draftToken: biz.draftToken || null, url: biz.url };
     hc.draftClaimed = true;
     hc.active = true;
+    // Load this business's places, then re-render the rail. Deliberately NOT awaited:
+    // the rail draws immediately from hc.places = null, which hasPlace() reads as
+    // UNKNOWN and therefore renders the full current rail — so a slow or failed read
+    // shows an owner MORE than they should, never less. When it lands, the rail
+    // redraws with the real answer.
+    hc.places = null;
+    hcLoadPlaces(biz.slug).then(function(){ try{ hcRenderRail(); }catch(e){} });
     // Clear whatever was in the thread first — chiefly the picker's "which site?"
     // prompt, which must not sit above the restored conversation.
     var tb0 = hcThreadBody(); if(tb0) tb0.innerHTML = '';
@@ -3982,15 +3989,76 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // provider) and Storefront are ONE line each when those flags land on the business row,
   // AND they appear only once they have something to show — we never render a workspace
   // with nothing behind it (there is no Bookings tab because there are no bookings).
+  /* Reads through get_public_business_places(slug), a SECURITY DEFINER function.
+   *
+   * NOT a direct table select: business_places has RLS on and `revoke all from
+   * anon, authenticated`, so a client select is denied. It would have returned an
+   * error every time, left hc.places null, and failed open to the full rail — a
+   * reader that never reads while LOOKING like Ruling 2 working correctly. Caught
+   * before testing, which is the only reason it is not a bug.
+   *
+   * A failure still leaves hc.places null = UNKNOWN = the full rail. That is the
+   * safe direction and the same reason the rail is not awaited. */
+  async function hcLoadPlaces(slug){
+    try{
+      var c = await authGetClient();
+      var res = await c.rpc('get_public_business_places', { p_slug: slug });
+      if(res && !res.error && Array.isArray(res.data)) hc.places = res.data;
+      else hc.places = null;
+    }catch(e){ hc.places = null; }
+  }
+
+  /* THE WORKSPACE RAIL, driven by business_places.
+   *
+   * hc.places is the rows for this business, scope='workspace', loaded alongside
+   * the business (null until that read completes or if it fails).
+   *
+   * ── RULING 2: NO ROWS MEANS EVERYTHING. AN EXPLICIT BRANCH, NOT A FALLBACK ──
+   *
+   * A business with ZERO places rows gets the FULL current rail — true for every
+   * kind, never false. That is:
+   *   - all 179 businesses that predate the seed trigger and are waiting on a
+   *     backfill that is parked,
+   *   - any business whose seed trigger swallowed a failure
+   *     (scripts/check-places-seeded.mjs counts those),
+   *   - any turn where the places read has not returned or errored.
+   *
+   * Getting this backwards signs an owner into an empty product with no way to ask
+   * for anything back, and it lands on whoever we missed — by definition the case
+   * nobody thought about. So it is written as its own branch that returns early,
+   * not as a `|| default` that happens to produce the right answer today.
+   *
+   * ABSENT and OFF are both "do not render", and they are different states:
+   * absent = never had it ("I've added Store"), visible=false = had it and turned
+   * it off ("I've turned Store back on"). Only rendering is decided here. */
+  function hcPlacesKnown(){
+    return Array.isArray(hc.places) && hc.places.length > 0;
+  }
+  function hasPlace(kind){
+    // THE FAIL-OPEN BRANCH. Deliberately first, deliberately explicit.
+    if(!hcPlacesKnown()) return true;
+    for(var i=0;i<hc.places.length;i++){
+      var p = hc.places[i];
+      if(p && p.kind === kind && p.scope === 'workspace') return p.visible !== false;
+    }
+    return false;
+  }
   function hcWorkspaces(){
     var ws = [];
     var biz = hc.draftBusiness;
-    if(biz && hc.draftClaimed){
+    if(biz && hc.draftClaimed && hasPlace('website')){
       ws.push({ id:'website', label:'Website', icon:HC_RAIL_ICONS.website });
     }
-    // Future, gated on real flags AND real data (kept as the seam, not built):
-    //   if(biz && biz.marketplaceProvider && jobsCount>0) ws.push({ id:'jobs',  label:'Jobs',  icon:... });
-    //   if(biz && biz.storefront)                         ws.push({ id:'store', label:'Store', icon:... });
+    // The seam this file already carried, now real. Each is one line and needs
+    // only its icon and a place row — which is what the assistant will write when
+    // an owner asks. The WRITER is deliberately not built yet: the reader is
+    // proven first.
+    if(biz && hc.draftClaimed && hcPlacesKnown() && hasPlace('store')){
+      ws.push({ id:'store', label:'Store', icon:HC_RAIL_ICONS.store || HC_RAIL_ICONS.website });
+    }
+    if(biz && hc.draftClaimed && hcPlacesKnown() && hasPlace('jobs')){
+      ws.push({ id:'jobs', label:'Jobs', icon:HC_RAIL_ICONS.jobs || HC_RAIL_ICONS.website });
+    }
     return ws;
   }
   // hc.mode is the current surface: 'home' (default) or a workspace id.
