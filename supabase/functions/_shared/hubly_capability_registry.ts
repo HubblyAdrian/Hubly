@@ -4865,7 +4865,17 @@ export async function runDocumentGeneration(
   ownerUid?: string | null,
 ): Promise<CapabilityActionResult> {
   const sw = stopwatch();
-          if (!draftId || !draftToken) {
+          // A VALID DRAFT TOKEN, OR A SERVER-VERIFIED OWNER OF THIS ROW. Widened
+          // 2026-09-08 to match the draft predicate (hubly-conversation/index.ts:1093,
+          // b0f26fe) and the six sibling guards that already accepted an owner. These
+          // four were left behind, and a claimed business usually has draft_token NULL
+          // (9 of 34; 4 of them market), so the engine injected draftToken:"" and this
+          // refused every signed-in owner with "there isn't a draft site here to edit".
+          // Presence of a uid is NOT the test, at any layer: draftId only reaches this
+          // handler when draftBusiness resolved (valid token, or ownsBusiness() re-read
+          // through the service role against a uid resolved from the JWT via
+          // /auth/v1/user), and the RPC below re-checks owner_id = p_owner_id in SQL.
+          if (!draftId || (!draftToken && !ownerUid)) {
             return { ok: false, real: false, summary: "No draft business exists yet to generate a page for — call business.startDraft first.", error: "missing_draft" };
           }
           if (!brief) {
@@ -5175,7 +5185,18 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const draftToken = String((args as any)?.draftToken || "").trim();
           const brief = String(args?.brief || "").trim();
           const confirm = (args as any)?.confirm === true;
-          if (!draftId || !draftToken) {
+          const ownerUid = injectedOwnerUid(args);
+          // A VALID DRAFT TOKEN, OR A SERVER-VERIFIED OWNER OF THIS ROW. Widened
+          // 2026-09-08 to match the draft predicate (hubly-conversation/index.ts:1093,
+          // b0f26fe) and the six sibling guards that already accepted an owner. These
+          // four were left behind, and a claimed business usually has draft_token NULL
+          // (9 of 34; 4 of them market), so the engine injected draftToken:"" and this
+          // refused every signed-in owner with "there isn't a draft site here to edit".
+          // Presence of a uid is NOT the test, at any layer: draftId only reaches this
+          // handler when draftBusiness resolved (valid token, or ownsBusiness() re-read
+          // through the service role against a uid resolved from the JWT via
+          // /auth/v1/user), and the RPC below re-checks owner_id = p_owner_id in SQL.
+          if (!draftId || (!draftToken && !ownerUid)) {
             return { ok: false, real: false, summary: "No draft business exists yet.", error: "missing_draft" };
           }
           const latest = await selectLatestBusinessDocument(draftId, "website");
@@ -5266,7 +5287,18 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const draftId = String(args?.draftId || "").trim();
           const draftToken = String((args as any)?.draftToken || "").trim();
           const instruction = String(args?.instruction || "").trim();
-          if (!draftId || !draftToken) {
+          const ownerUid = injectedOwnerUid(args);
+          // A VALID DRAFT TOKEN, OR A SERVER-VERIFIED OWNER OF THIS ROW. Widened
+          // 2026-09-08 to match the draft predicate (hubly-conversation/index.ts:1093,
+          // b0f26fe) and the six sibling guards that already accepted an owner. These
+          // four were left behind, and a claimed business usually has draft_token NULL
+          // (9 of 34; 4 of them market), so the engine injected draftToken:"" and this
+          // refused every signed-in owner with "there isn't a draft site here to edit".
+          // Presence of a uid is NOT the test, at any layer: draftId only reaches this
+          // handler when draftBusiness resolved (valid token, or ownsBusiness() re-read
+          // through the service role against a uid resolved from the JWT via
+          // /auth/v1/user), and the RPC below re-checks owner_id = p_owner_id in SQL.
+          if (!draftId || (!draftToken && !ownerUid)) {
             return { ok: false, real: false, summary: "No draft business exists yet — call business.startDraft and generateDocument first.", error: "missing_draft" };
           }
           if (!instruction) {
@@ -5374,7 +5406,18 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         handler: async (args) => {
           const draftId = String(args?.draftId || "").trim();
           const draftToken = String((args as any)?.draftToken || "").trim();
-          if (!draftId || !draftToken) {
+          const ownerUid = injectedOwnerUid(args);
+          // A VALID DRAFT TOKEN, OR A SERVER-VERIFIED OWNER OF THIS ROW. Widened
+          // 2026-09-08 to match the draft predicate (hubly-conversation/index.ts:1093,
+          // b0f26fe) and the six sibling guards that already accepted an owner. These
+          // four were left behind, and a claimed business usually has draft_token NULL
+          // (9 of 34; 4 of them market), so the engine injected draftToken:"" and this
+          // refused every signed-in owner with "there isn't a draft site here to edit".
+          // Presence of a uid is NOT the test, at any layer: draftId only reaches this
+          // handler when draftBusiness resolved (valid token, or ownsBusiness() re-read
+          // through the service role against a uid resolved from the JWT via
+          // /auth/v1/user), and the RPC below re-checks owner_id = p_owner_id in SQL.
+          if (!draftId || (!draftToken && !ownerUid)) {
             return { ok: false, real: false, summary: "No draft business exists yet to restyle.", error: "missing_draft" };
           }
           // Validated against the same enums the renderer reads, here rather

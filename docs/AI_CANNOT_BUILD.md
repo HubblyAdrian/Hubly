@@ -11,7 +11,10 @@ Measured 2026-09-07, read-only.
 
 They need different fixes and must not be conflated:
 
-- **Does the AI have an ACTION to write it?** (the registry: 5 capabilities, 16 actions)
+- **Does the AI have an ACTION to write it?** (the registry: **7 capabilities, 28 actions**
+  as of 2026-09-08 — `places`, `operations` and `storefront` since this was written. Counted
+  structurally by `scripts/check-draft-arg-name.mjs`'s parser, not by eye. None of the
+  fourteen below is covered by any of the twelve added actions; the list is unchanged.)
 - **Does the GENERATOR have a CONCEPT of it?** `generateFreeformPage` prompts from
   `buildBusinessRecordBlock(record)` (`hubly_capability_registry.ts:316`), and `BusinessRecord`
   (`:285`) has exactly **18 fields**: services, photos, reviews, hours, hoursNote, areaCities,
@@ -74,6 +77,11 @@ every layer**: no action, no record field, no reserved element, and no way to ad
 the classic renderer (`SECTION_DEFS`, `hubly.html:50388`, five fixed types). The gate is one
 predicate on top of a producer that cannot make the thing being gated.
 
-**Graef is the proof.** He is the richest business in the corpus *because he entered by hand
-exactly the twelve things the generator cannot conceive of.* Every one of them is a request some
-other owner made and did not get.
+**Graef is the proof — of the gap, not necessarily of its cause.** He is the richest business in
+the corpus, and every one of the twelve is a request some other owner made and did not get.
+But the causal claim that he hand-built *because* the generator cannot conceive of these things
+is now a HYPOTHESIS, not a finding: `graefs-autocare` is one of the nine businesses in
+`docs/CLAIMED_OWNER_EDIT_LOCKOUT.md` whose `draft_token` is null, so until 2026-09-08 the
+assistant refused his four general editing actions outright. Whether he built by hand because
+the generator lacked the concepts, or because the assistant refused him at all, or both, is not
+established. Do not repeat it as a finding — that is how a scar note becomes folklore.

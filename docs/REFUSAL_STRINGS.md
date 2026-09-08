@@ -137,3 +137,28 @@ choice, and it is always the choice that blames the owner:
 name, `_ownerToken` (storefront), is read inside the shared helper `sfOwnerCtx` rather
 than in any handler's own literal, so the checker structurally cannot see it. It is
 correct today; nothing would report it if it stopped being.
+
+---
+
+# The hours missing door (filed 2026-09-08)
+
+Same shape as `operations` and as the four features found dark on 2026-08-31: the capability
+exists and has no entry point.
+
+`set_business_hours_in_progress` is a real, owner-authorised RPC (it is in
+`OWNER_AUTHORISED_RPCS` and `check-owner-id-invariant.mjs` counts 2 live call sites, at
+`hubly_capability_registry.ts:1013` and `:4362`). Hours are also a field on `BusinessRecord`,
+so the generator knows what they are.
+
+**But no capability ACTION writes hours.** The 28 actions are: `operations.read`;
+`website.{analyze, generateDocument, newPage, patchDocument, setChrome, setDesignKnob,
+restyleElement}`; `online_presence.{analyze_facebook, analyze_instagram,
+analyze_google_business}`; `booking.{getAvailability, create}`; `business.{startDraft,
+updateDraft, setServices}`; `places.add`; and 11 storefront actions. None of them sets hours.
+
+So an owner who says "we're open 8 to 6 weekdays" cannot have the assistant write it, while the
+server-side path to write it has existed the whole time and is called from two other places.
+`AI_CANNOT_BUILD.md` lists hours under "no action, but the record knows" and calls it the
+cheapest fix — this is why: it needs a door, not a feature. It will bite the same way
+`operations` did (three days dead, reported to the owner as a missing capability) until it has
+one.
