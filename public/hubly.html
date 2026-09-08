@@ -17096,6 +17096,28 @@ async function saveStorefront(opts){
     // Also never wipe previously published https gallery URLs when host fails.
     const cleanHttps=(u)=>(typeof u==='string'&&/^https?:\/\//i.test(u))?u:null;
     // Prefer live S https URLs after host; if owner cleared (null/''), write null — do not resurrect.
+    /* REFRESH THE BRAND IMAGES THIS SESSION DID NOT CHANGE, BEFORE BUILDING ANYTHING.
+     *
+     * Omitting the logo_url COLUMN was not enough. buildPersistableBizMeta writes the
+     * whole meta object, including meta.logoUrl from the same stale S.logoUrl — so the
+     * first attempt kept the column correct and reverted meta, and the public page
+     * renders from meta. The revert moved rather than closed. Measured on a clone, and
+     * only visible because step 3 reads BOTH homes.
+     *
+     * One extra select on save, on the path a person waits for anyway. If this session
+     * did not touch a brand image, adopt whatever the row holds now — it is by
+     * definition fresher than what this tab loaded. If it did touch it, this tab's
+     * value is the newest and is written as before. */
+    try{
+      if(currentBusiness?.id && (brandUnchanged(S.logoUrl,S._loadedLogoUrl) || brandUnchanged(S.bannerUrl,S._loadedBannerUrl))){
+        const dbc=await waitForDb();
+        const {data:fresh}=await dbc.from('businesses').select('logo_url,banner_url').eq('id',currentBusiness.id).maybeSingle();
+        if(fresh){
+          if(brandUnchanged(S.logoUrl,S._loadedLogoUrl)&&fresh.logo_url){ S.logoUrl=fresh.logo_url; S._loadedLogoUrl=fresh.logo_url; currentBusiness.logo_url=fresh.logo_url; }
+          if(brandUnchanged(S.bannerUrl,S._loadedBannerUrl)&&fresh.banner_url){ S.bannerUrl=fresh.banner_url; S._loadedBannerUrl=fresh.banner_url; currentBusiness.banner_url=fresh.banner_url; }
+        }
+      }
+    }catch(e){ console.warn('brand refresh before save failed — writing this tab\'s values',e); }
     const priorMeta=typeof parseBizMeta==='function'?parseBizMeta(currentBusiness?.meta):null;
     syncBookingBrandFromSiteMedia();
     let publishMeta=buildPersistableBizMeta();
