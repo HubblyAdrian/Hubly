@@ -132,3 +132,57 @@ column**. So:
 Same two-homes shape as services (`meta.service_catalog` vs the `services` table) and the shadowed
 `meta.logoUrl` from the image migration. **Not fixed here** — it is a separate change and this one
 was scoped to the upload paths. Filed so it is not rediscovered by an owner.
+
+
+---
+
+# THE TWO-HOMES TRAP — CLOSED, verified by the sequence
+
+The upload fix was a trap without this: the owner heard *"your logo is saved"* and the next
+editor save silently restored the old one. **A confirmation followed by a quiet revert is worse
+than the refusal it replaced.**
+
+## It took three attempts, and only step 3 ever showed the truth
+
+| attempt | what it fixed | what step 3 said |
+| --- | --- | --- |
+| 1. RPC mirrors `logo_url`/`banner_url` into `meta` | the two homes agree at write time | **still reverted** — the overwrite comes from a stale CLIENT, not from the resolver choosing the wrong home |
+| 2. Omit the brand COLUMN when the session never changed it | column survives | **revert moved to `meta`** — `buildPersistableBizMeta` writes the whole meta from the same stale `S.logoUrl`, and the public page renders from meta |
+| 3. Re-read the row before the save and adopt what this session did not change | both | **PASS** |
+
+**Writing both homes and checking the row proved nothing**, exactly as predicted. Each time, the
+row looked half-right and would have read as progress if step 3 had checked only the home that
+was fixed.
+
+## And attempt 3 silently did nothing at first
+
+`brandUnchanged` was declared **50 lines below** the refresh block that called it — a
+`ReferenceError` from the temporal dead zone on every save, **swallowed by the refresh block's own
+`try/catch`.** The row looked exactly as it had after attempt 2. Declaration hoisted; the catch is
+now `console.error` plus a toast naming the consequence.
+
+> **A catch that hides the failure of the thing it wraps is the same silent-failure defect the
+> change exists to close** — written an hour after recording that rule.
+
+## The verified sequence
+
+1. Logo set **by chat** → `setLogo ok:true`
+2. **Unrelated** editor save (FAQ title) in the same already-loaded tab
+3. Read back:
+
+```
+column_logo         .../logo-1788836286097.png    column_has_chat_logo: true
+meta_logo           .../logo-1788836286097.png    meta_has_chat_logo:   true
+homes_in_sync       true
+unrelated_saved     "FAQ (unrelated edit)"
+```
+
+**Gate:** `check-graefs-page.mjs --slug graefs-autocare` → **PASS**. Clone deleted, 0 remain,
+179 businesses intact.
+
+## STILL FILED, NOT DONE
+
+Neither change fixes **having** two homes. `businesses.logo_url` and `meta.logoUrl` are still the
+same fact stored twice, kept in step by an RPC mirror and a pre-save refresh. **The real fix is
+one resolver both paths call — the #54 job, same shape as `meta.service_catalog` vs the `services`
+table.** Recorded here so this is not mistaken for closed.

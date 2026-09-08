@@ -1222,6 +1222,24 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   built: accept a draft token OR a verified owner uid, since ownership is strictly stronger and
   every RPC already accepts either.
 
+- **A CONFIRMATION FOLLOWED BY A QUIET REVERT IS WORSE THAN A REFUSAL — and closing it took three
+  attempts, each of which looked half-right.** Fixing the claimed-owner logo upload created the
+  trap: the owner heard "your logo is saved" and the next unrelated editor save restored the old
+  one. (1) Mirroring the column into `meta` at the RPC made the two homes agree and **did not**
+  stop it — the overwrite comes from a STALE CLIENT holding `S.logoUrl` since page load, not from
+  a resolver picking the wrong home. (2) Omitting the brand COLUMN when the session never changed
+  it kept the column and **moved the revert into `meta`**, which is what the public page renders
+  from. (3) Re-reading the row before the save and adopting what this session did not change
+  finally held. **Each intermediate state read as progress if you checked only the home you had
+  just fixed** — the test is: set it by chat, save something UNRELATED in the editor, then reload
+  and read BOTH homes.
+- **AND MY OWN `try/catch` SILENTLY SWALLOWED THE FIX.** `brandUnchanged` was declared 50 lines
+  below the block that called it, so every save threw a `ReferenceError` from the temporal dead
+  zone into the refresh block's own catch, and the row looked exactly as it had before the fix.
+  **A catch that hides the failure of the thing it wraps is the same silent-failure defect the
+  change exists to close** — and I wrote one an hour after recording the rule. Catches around a
+  correctness step must be loud: name the consequence, and tell the owner when it matters.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped
