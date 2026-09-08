@@ -6286,10 +6286,13 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
       "Add a place to this business's sidebar — a Store, a Jobs room. A place is a ROOM the " +
       "owner has asked for; it is not content and it is not a plan. Adding one puts it in the " +
       "sidebar and nothing else: an empty Store is still empty, and you must say so.\n\n" +
-      "OFFER, DO NOT ASSUME. Never call this because you inferred an intent. If someone mentions " +
-      "selling something, OFFER — \"I can add a Store to your sidebar, want me to?\" — and call " +
-      "this only after they say yes. A tab that appears because the assistant guessed is a " +
-      "change to their product they did not ask for.",
+      "WHEN TO CALL IT — two cases, and the difference is whether they ASKED.\n" +
+      "  • They asked directly (\"add a store\", \"can I get a store in my sidebar\") — CALL IT NOW. " +
+      "Do not offer something they already requested; that reads as not listening.\n" +
+      "  • You only INFERRED it (they mentioned selling something, or asked about products) — " +
+      "OFFER first: \"I can add a Store to your sidebar, want me to?\" — and call it on a yes.\n" +
+      "A tab that appears because the assistant guessed is a change to their product they did not " +
+      "ask for. A direct request that gets an offer back is a turn wasted asking what they just said.",
     actions: [
       {
         name: "add",
@@ -6302,12 +6305,18 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           type: "object",
           properties: {
             kind: { type: "string", description: "The place to add. Today: 'store' or 'jobs'." },
-            businessId: { type: "string", description: "Supplied by the system; put any placeholder." },
+            draftId: { type: "string", description: "Supplied by the system before this runs; put any placeholder." },
           },
           required: ["kind"],
         },
         handler: async (args) => {
-          const businessId = String((args as Record<string, unknown>)?.businessId || "").trim();
+          // draftId, NOT businessId: the engine injects `draftId` for every action on
+          // DRAFT_INJECTED_ACTIONS (hubly-conversation, dispatchArgs.draftId). Reading a
+          // key nobody injects gets an empty string and a refusal that reads to the owner
+          // as "I couldn't add that" — exactly what W1 did once the model had correctly
+          // decided to call the action. The other four handlers in this file that take a
+          // business all read draftId; I invented a fifth name.
+          const businessId = String((args as Record<string, unknown>)?.draftId || "").trim();
           const ownerUid = injectedOwnerUid(args as Record<string, unknown>);
           const kind = String((args as Record<string, unknown>)?.kind || "").trim().toLowerCase();
           if (!businessId) {

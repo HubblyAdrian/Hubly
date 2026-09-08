@@ -472,3 +472,58 @@ Visible in the V3 screenshot. Cosmetic, and it belongs with the writer.
 ## Next, and deliberately not now
 
 **The writer** — the assistant adding a place when an owner asks. The reader is proven first.
+
+
+---
+
+# THE WRITER — shipped and verified by doing it, 2026-09-08
+
+## W1–W5, all through the chat as an owner
+
+| | test | result |
+| --- | --- | --- |
+| **W2** *(run first — the one that can fail)* | ask for something already present | **PASS.** *"You've already got Store — it's in your sidebar now."* It does **not** claim to have added it |
+| **W1** | ask for a store → tab appears → **reload** | **PASS.** *"Store is in your sidebar now. It's empty for now…"* Rail after reload: **Home · Website · Store** |
+| **W3** | turn it off, ask again | **PASS.** *"Store is back in your sidebar, right where it was."* |
+| **W4** | a business the owner does **not** own | **PASS.** Refused — and `graefs-autocare`'s places re-read afterwards: **still 0** |
+| **W5** | Graef's fingerprint and rail | **PASS.** 162 text runs etc.; 0 places rows, unaffected |
+
+The row shows `added_by: 'assistant'` for Store and `'system'` for the seeded Website — the
+distinction the announcement and any future audit need.
+
+## Three things were wrong before this worked, and none was the RPC
+
+The RPC was correct from the first run: `created` / `already` / `re-enabled` / `not_owner` /
+`unknown_place`, all distinguishable, verified directly before touching the model.
+
+1. **`CONTEXT_CAPABILITY_ALLOWLIST` did not contain `places`.** The action existed, the RPC
+   worked, every invariant passed, and the model answered *"that isn't live in the workspace."*
+   **A hardcoded allow-list silently dropping an entry, for the third time this file records.**
+   Now counted: `check-owner-id-invariant.mjs` asserts every registry capability appears in some
+   context. **On its first run it found a pre-existing orphan — `operations`, shipped 2026-09-05,
+   wired, guarded, and unreachable ever since.**
+2. **My own "offer, don't assume" wording caused a refusal.** *"Call this only after they say
+   yes"* made the model treat a **direct request** as needing an offer first. Split in two: they
+   asked → act; you inferred → offer. *"A direct request that gets an offer back is a turn wasted
+   asking what they just said."*
+3. **The handler read `args.businessId`; the engine injects `args.draftId`.** The other four
+   handlers that take a business all read `draftId` — I invented a fifth name, got an empty
+   string, and the owner saw *"I couldn't add that."*
+
+> **Every one of the three was invisible to type-checking and to the RPC-level test.** Only asking
+> for a store in the chat found them.
+
+## The offer wording, as shipped
+
+> **They asked directly** ("add a store", "can I get a store in my sidebar") — **call it now.**
+> Do not offer something they already requested; that reads as not listening.
+> **You only inferred it** (they mentioned selling something) — **offer first:** *"I can add a
+> Store to your sidebar, want me to?"* — and call it on a yes.
+
+## Icons
+
+`store` and `jobs` now have their own 24×24 / 1.7-stroke glyphs, and the `|| HC_RAIL_ICONS.website`
+fallbacks are gone — a future missing icon fails visibly rather than silently borrowing one.
+
+**Screen 3 is real:** an owner asks for a store, it appears in the sidebar, and it is still there
+after a reload.
