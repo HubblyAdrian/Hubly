@@ -185,6 +185,13 @@ function injectedOwnerUid(args: Record<string, unknown>): string | null {
 
 /** Every RPC that authorises a CLAIMED business by p_owner_id. Keep in step with
  *  scripts/check-owner-id-invariant.mjs, which asserts the same set statically. */
+/* WHY EVERY p_draft_token IS `draftToken || null`.
+ * The parameter is typed `uuid`. An empty string is not one: Postgres raises
+ * 22P02 (invalid input syntax for type uuid) and the WHOLE call aborts before any
+ * authorisation branch runs — so a claimed business, which legitimately has no
+ * token, produced a generic "the draft may have already been claimed" instead of
+ * writing. Measured 2026-09-07: p_draft_token NULL with the right owner returns
+ * ok:true; '' errors. All 31 sites send null. */
 const OWNER_AUTHORISED_RPCS = new Set([
   "create_business_document",
   "patch_business_in_progress",
@@ -500,7 +507,7 @@ async function syncFreeformFacts(
 
     const saved = await callBusinessRpc("create_business_document", {
       p_business_id: draftId,
-      p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+      p_draft_token: draftToken || null,
       p_tag: "website",
       p_document: latest.brief,
       p_rendered_html: html,
@@ -686,7 +693,7 @@ export async function rebuildDocumentFromRecord(
     const html = renderHublyDocument(gen.document, renderContextFor(draftId, bizRow));
     const saved = await callBusinessRpc("create_business_document", {
       p_business_id: draftId,
-      p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+      p_draft_token: draftToken || null,
       p_tag: "website",
       p_document: gen.document,
       p_rendered_html: html,
@@ -954,7 +961,7 @@ export async function applyExtractedFacts(
   if (Object.keys(patch).length) {
     const r = await callBusinessRpc("patch_business_in_progress", {
       p_id: draftId,
-      p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+      p_draft_token: draftToken || null,
       p_patch: patch,
       p_website_meta: null,
       p_owner_id,
@@ -1001,7 +1008,7 @@ export async function applyExtractedFacts(
     if (!Array.isArray(existingHours) || existingHours.length === 0) {
       const r = await callBusinessRpc("set_business_hours_in_progress", {
         p_id: draftId,
-        p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+        p_draft_token: draftToken || null,
         p_hours: facts.hours,
         p_owner_id,
       });
@@ -1505,7 +1512,7 @@ export async function applyDirectDocumentPatch(
   const html = renderHublyDocument(patchResult.document, renderContextFor(draftId, bizRow));
   const r = await callBusinessRpc("create_business_document", {
     p_business_id: draftId,
-    p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+    p_draft_token: draftToken || null,
     p_tag: "website",
     p_document: patchResult.document,
     p_rendered_html: html,
@@ -1691,7 +1698,7 @@ export async function applyOwnerStyleEdit(
     return { ok: false, real: false, error: r.error, summary: said[r.error || ""] || "That didn't change — nothing was saved." };
   }
   const saved = await callBusinessRpc("create_business_document", {
-    p_business_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_tag: "website",
+    p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
     p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "style-edit"),
     p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
   });
@@ -1806,7 +1813,7 @@ export async function applyOwnerSectionMove(
     return { ok: false, real: false, error: r.error, summary: said[r.error || ""] || "That section didn't move — nothing was saved." };
   }
   const saved = await callBusinessRpc("create_business_document", {
-    p_business_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_tag: "website",
+    p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
     p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "section-move"),
     p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
   });
@@ -1865,7 +1872,7 @@ export async function applyOwnerNodeMove(
     return { ok: false, real: false, error: r.error, summary: said[r.error || ""] || "Didn't move" };
   }
   const saved = await callBusinessRpc("create_business_document", {
-    p_business_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_tag: "website",
+    p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
     p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "node-move"),
     p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
   });
@@ -1891,7 +1898,7 @@ export async function applyOwnerNodeDelete(
   const r = deleteFreeformNode(latest.renderedHtml, addr);
   if (!r.ok) return { ok: false, real: false, error: r.error, summary: r.error === "not_movable" ? "Can't remove that" : "Didn't remove" };
   const saved = await callBusinessRpc("create_business_document", {
-    p_business_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_tag: "website",
+    p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
     p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "node-delete"),
     p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
   });
@@ -1936,7 +1943,7 @@ export async function applyDirectFreeformEdit(
 
   const r = await callBusinessRpc("create_business_document", {
     p_business_id: draftId,
-    p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+    p_draft_token: draftToken || null,
     p_tag: "website",
     // The brief, unchanged. An owner edit does not rewrite the brief.
     p_document: latest.brief,
@@ -2740,7 +2747,7 @@ export async function applyFreeformInstruction(
 
   const r = await callBusinessRpc("create_business_document", {
     p_business_id: draftId,
-    p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+    p_draft_token: draftToken || null,
     p_tag: "website",
     p_document: latest.brief,
     p_rendered_html: html,
@@ -2865,7 +2872,7 @@ export async function uploadDraftLogo(
   const aspect = uploaded.dims ? uploaded.dims.width / uploaded.dims.height : null;
   const r = await callBusinessRpc("patch_business_in_progress", {
     p_id: draftId,
-    p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+    p_draft_token: draftToken || null,
     p_patch: { logo_url: uploaded.url },
     p_website_meta: aspect ? { logoAspect: Math.round(aspect * 1000) / 1000 } : null,
     p_owner_id: ownerUid ?? null,  // already a parameter; it reached the re-render and not this patch
@@ -2941,7 +2948,7 @@ async function rerenderLatestDocument(
     const html = renderHublyDocument(latest.document, renderContextFor(businessId, bizRow));
     const saved = await callBusinessRpc("create_business_document", {
       p_business_id: businessId,
-      p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+      p_draft_token: draftToken || null,
       p_tag: tag,
       p_document: latest.document,
       p_rendered_html: html,
@@ -3084,7 +3091,7 @@ async function applyOwnerPhotoToFreeform(draftId: string, draftToken: string, im
   const r = await placeOwnerPhotoInFreeform(draftId, imageUrl, latest);
   if ((r.status === "placed" || r.status === "swapped") && r.html) {
     const saved = await callBusinessRpc("create_business_document", {
-      p_business_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_tag: "website",
+      p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
       p_document: latest.brief, p_rendered_html: r.html, p_created_by: "patch", p_format: "html",
       // The function is called applyOWNERPhotoToFreeform and had no owner in it: a
       // claimed owner's work photo stored, never reached the page, and the reply
@@ -3887,7 +3894,7 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
   const r = placeServicesInFreeform(latest.renderedHtml, services) as ServicesPlacement & { html: string };
   if (r.changed && r.html) {
     const saved = await callBusinessRpc("create_business_document", {
-      p_business_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_tag: "website",
+      p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
       p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "services"), p_created_by: "patch", p_format: "html",
       p_owner_id: ownerUid || null,
     });
@@ -3969,7 +3976,7 @@ export async function applyContactHoursToFreeform(draftId: string, draftToken: s
 
   if (html !== latest.renderedHtml) {
     const saved = await callBusinessRpc("create_business_document", {
-      p_business_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_tag: "website",
+      p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
       p_document: latest.brief, p_rendered_html: stripEditorChrome(html, "contact-hours"), p_created_by: "patch", p_format: "html",
       p_owner_id: ownerUid || null,
     });
@@ -4116,7 +4123,7 @@ export async function restampFreeformPage(
   const knobbed = stampDesignKnobs(wired.html);
 
   const saved = await callBusinessRpc("create_business_document", {
-    p_business_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_tag: "website",
+    p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
     p_document: latest.brief, p_rendered_html: knobbed.html,
     // 'patch', not 'restamp': create_business_document validates created_by against
     // ('ai','user','patch') and rejects anything else with invalid_created_by. Found by
@@ -4219,7 +4226,7 @@ export async function applyOwnerDesignEdit(
     return { ok: false, real: false, error: "no_change", summary: "That's already how it's set." };
   }
   const saved = await callBusinessRpc("create_business_document", {
-    p_business_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_tag: "website",
+    p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
     p_document: latest.brief, p_rendered_html: stripEditorChrome(nextHtml, "design-knob"),
     p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
   });
@@ -4294,7 +4301,7 @@ async function removeServiceCard(draftId: string, draftToken: string, ownerUid: 
   }
   const out = latest.renderedHtml.slice(0, bounds.start) + latest.renderedHtml.slice(bounds.end);
   const saved = await callBusinessRpc("create_business_document", {
-    p_business_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_tag: "website",
+    p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
     p_document: latest.brief, p_rendered_html: stripEditorChrome(out, "remove-service"), p_created_by: "patch", p_format: "html",
     p_owner_id: ownerUid || null,
   });
@@ -4336,7 +4343,7 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
     if (edit.email !== undefined) patch.email = edit.email || "";
     if (edit.address !== undefined) patch.address = edit.address || "";
     if (!Object.keys(patch).length) return { ok: false, real: false, error: "nothing", summary: "Nothing to change." };
-    const r = await callBusinessRpc("patch_business_in_progress", { p_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_patch: patch, p_owner_id: ownerUid });
+    const r = await callBusinessRpc("patch_business_in_progress", { p_id: draftId, p_draft_token: draftToken || null, p_patch: patch, p_owner_id: ownerUid });
     if (!r || r.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "That didn't save — try again." };
     const droppedContact = rpcDroppedKeys(r, Object.keys(patch));
     if (droppedContact.length) {
@@ -4348,11 +4355,11 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
 
   if (edit.kind === "hours") {
     if (Array.isArray(edit.rows) && edit.rows.length) {
-      const r = await callBusinessRpc("set_business_hours_in_progress", { p_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_hours: edit.rows, p_owner_id: ownerUid });
+      const r = await callBusinessRpc("set_business_hours_in_progress", { p_id: draftId, p_draft_token: draftToken || null, p_hours: edit.rows, p_owner_id: ownerUid });
       if (!r || r.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "Your hours didn't save — try again." };
     }
     if (edit.note !== undefined) {
-      const r = await callBusinessRpc("patch_business_in_progress", { p_id: draftId, p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call p_patch: { hours_note: edit.note || "" }, p_owner_id: ownerUid });
+      const r = await callBusinessRpc("patch_business_in_progress", { p_id: draftId, p_draft_token: draftToken || null, p_patch: { hours_note: edit.note || "" }, p_owner_id: ownerUid });
       if (!r || r.ok !== true) return { ok: false, real: false, error: "save_failed", summary: "Your hours note didn't save — try again." };
       // The panel's Note field went through the SAME dropped column as the chat path,
       // so this form has been reporting "Saved." over a write that never happened for
@@ -4418,7 +4425,7 @@ export async function uploadDraftHeroImage(
 
   const r = await callBusinessRpc("patch_business_in_progress", {
     p_id: draftId,
-    p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+    p_draft_token: draftToken || null,
     p_patch: { banner_url: uploaded.url, header_mode: "banner" },
     p_website_meta: null,
     p_owner_id: ownerUid ?? null,  // threaded from the client-triggered hero upload
@@ -4785,7 +4792,7 @@ async function runFreeformGeneration(
 
   const r = await callBusinessRpc("create_business_document", {
     p_business_id: draftId,
-    p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+    p_draft_token: draftToken || null,
     p_tag: "website",
     p_document: gen.brief,
     p_rendered_html: gen.html,
@@ -4822,7 +4829,7 @@ async function runFreeformGeneration(
       // not. Found 2026-09-07 while auditing p_owner_id, not by the symptom.
       await callBusinessRpc("patch_business_in_progress", {
         p_id: draftId,
-        p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+        p_draft_token: draftToken || null,
         p_patch: {},
         p_website_meta: { chrome: gshape },
         p_owner_id: ownerUid ?? null,
@@ -4977,7 +4984,7 @@ export async function runDocumentGeneration(
 
           const r = await callBusinessRpc("create_business_document", {
             p_business_id: draftId,
-            p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+            p_draft_token: draftToken || null,
             p_tag: "website",
             p_document: genResult.document,
             p_rendered_html: html,
@@ -5201,7 +5208,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
 
           const saved = await callBusinessRpc("create_business_document", {
             p_business_id: draftId,
-            p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+            p_draft_token: draftToken || null,
             p_tag: "website",
             p_document: gen.brief,
             p_rendered_html: html,
@@ -5309,7 +5316,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const html = renderHublyDocument(patchResult.document, renderContextFor(draftId, bizRow));
           const r = await callBusinessRpc("create_business_document", {
             p_business_id: draftId,
-            p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+            p_draft_token: draftToken || null,
             p_tag: "website",
             p_document: patchResult.document,
             p_rendered_html: html,
@@ -5380,7 +5387,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const merged = { ...(existing && typeof existing === "object" ? existing : {}), ...chrome };
           const r = await callBusinessRpc("patch_business_in_progress", {
             p_id: draftId,
-            p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+            p_draft_token: draftToken || null,
             p_patch: {},
             p_website_meta: { chrome: merged },
             p_owner_id: injectedOwnerUid(args),  // same verified uid this handler already passes to create_business_document
@@ -6131,7 +6138,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (seoTitle) websiteMeta.seoTitle = seoTitle;
           const r = await callBusinessRpc("patch_business_in_progress", {
             p_id: draftId,
-            p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+            p_draft_token: draftToken || null,
             p_patch: patch,
             p_website_meta: Object.keys(websiteMeta).length ? websiteMeta : null,
             p_owner_id: ownerUid,
@@ -6229,7 +6236,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           }
           const r = await callBusinessRpc("set_business_draft_services", {
             p_id: draftId,
-            p_draft_token: draftToken || null,  // '' is not a uuid — 22P02 kills the whole call
+            p_draft_token: draftToken || null,
             p_services: services,
             p_owner_id: ownerUid,
           });
