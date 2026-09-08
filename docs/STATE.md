@@ -1195,6 +1195,33 @@ two-row proof, deployed to 6); and the Stripe API version pinned in the repo at
   place and STATING the limit in the announcement, rather than refusing (the owner already has
   reviews; the section would render them).
 
+- **A CHECKER THAT MISREADS A VALID FORM AS A VIOLATION CAUSES THE DEFECT IT EXISTS TO PREVENT.**
+  `check-owner-id-invariant.mjs` tested `/p_owner_id\s*:/` — requiring a colon — so a payload
+  using the valid SHORTHAND `{ …, p_owner_id }` read as missing. Acting on that, I inserted a
+  second `p_owner_id:` beside an existing one and produced two TS1117 duplicate-key errors in the
+  file the checker guards. **A false positive is not the safe direction for a checker**: it is
+  acted on, and the action is a change to code that was already correct. When writing one, list
+  the VALID forms and make sure each passes, the same way an invariant must be proven able to
+  fail before it is trusted.
+- **NEVER READ AN EXIT CODE THROUGH A PIPE.** `node script.mjs 2>&1 | head` reports `head`'s
+  status, not node's, so a script that correctly exits 1 looks like a pass. This has now produced
+  a wrong "EXIT=0" twice in one day — on the CHECK-4 anchor and again on
+  `check-owner-id-invariant.mjs`, which was in fact exiting 1 the whole time. Run the command bare
+  (`cmd >/dev/null 2>&1; echo $?`) when the exit code is the thing being checked, and treat any
+  exit code read through a pipeline as unmeasured.
+- **A CLAIMED OWNER CANNOT UPLOAD A LOGO OR A HERO IMAGE BY TALKING — observed on a clone of
+  Graef's record, 2026-09-07.** The logo returns *"I can't attach the logo yet because there isn't
+  a business draft to put it on"*; the hero returns **HTTP 400 `no_draft_to_edit`** with no reply
+  at all. **One cause:** `hubly-conversation/index.ts:1030` nulls `draftBusiness` unless
+  `draftToken` is truthy, and a claimed business has none — the comment above it still calls it
+  *"the real, UNCLAIMED businesses row"*. Live for all four real market businesses
+  (`graefs-autocare`, `bucket-mobile-detailing`, `aquaspeed`, `devdetailing661`).
+  **And the editor's own Logo & brand panel WORKS**, because it writes `logo_url` with a direct
+  `from('businesses').update()` under RLS and never touches the RPC — so **the owner's experience
+  depends on which button they press.** Fix designed in `docs/CLAIMED_OWNER_UPLOAD_DEFECT.md`, not
+  built: accept a draft token OR a verified owner uid, since ownership is strictly stronger and
+  every RPC already accepts either.
+
 ## The anchor-pattern discipline (the through-line)
 
 A freeform page has no async update path, so any fact a later change must touch is stamped
