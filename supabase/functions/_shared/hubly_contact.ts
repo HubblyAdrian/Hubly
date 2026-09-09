@@ -22,6 +22,8 @@
 
 /** Digits-only comparison key: strip non-digits, drop a leading US 1, last 10.
  *  Mirrors public/hubly.html phoneDigits. Never displayed. */
+import { pickDonorSection, cleanClonedOpen } from "./hubly_services_block.ts";
+
 export function phoneDigitsKey(raw: string): string {
   let d = String(raw || "").replace(/\D/g, "");
   if (d.length === 11 && d.charAt(0) === "1") d = d.slice(1);
@@ -460,10 +462,32 @@ export function placeContactHoursInFreeform(
     const facts: ContactBlockFacts = { ...missing };
     if (wantHoursInBlock) facts.hoursLines = lines;
     if (wantNoteInBlock) facts.hoursNote = note;
-    const block = renderContactHoursBlock(facts);
+    let block = renderContactHoursBlock(facts);
     if (block) {
-      const at = insertionPoint(out);
-      out = out.slice(0, at) + block + contactHoursBlockCss(record.accent || undefined) + out.slice(at);
+      // SAME LATENT BUG AS THE SERVICES BLOCK, FIXED THE SAME WAY. This block has
+      // `color: inherit` and no background of its own, so it reads correctly only on a
+      // page whose ground is a flat colour. It happens to be live on two such pages —
+      // which is why nobody had seen it fail. On a page whose ground is a gradient or an
+      // image it inherits the body's text colour and lands wherever the gradient is
+      // darkest. Clone a real content section's shell instead of composing one: the
+      // page already contains sections proved readable on its own ground.
+      const donor = pickDonorSection(out);
+      let at: number;
+      let css: string;
+      if (donor) {
+        const openTag = cleanClonedOpen(donor.open).replace(/^<section/i, `<section data-hubly-contact-block`);
+        const headOpen = cleanClonedOpen(donor.headingOpen);
+        // Re-shell the composed block: keep its inner rows, take the page's wrapper.
+        const inner = block.replace(/^<section\b[^>]*>/i, "").replace(/<\/section>\s*$/i, "")
+          .replace(/^<h2>([\s\S]*?)<\/h2>/i, (_m, t) => `${headOpen}${t}</${donor.headingTag}>`);
+        block = `${openTag}${inner}</section>`;
+        at = donor.insertAt;
+        css = contactHoursLayoutCss();
+      } else {
+        at = insertionPoint(out);
+        css = contactHoursBlockCss(record.accent || undefined);
+      }
+      out = out.slice(0, at) + block + css + out.slice(at);
       if (facts.phone) inserted.push("phone");
       if (facts.email) inserted.push("email");
       if (facts.address) inserted.push("address");
@@ -504,6 +528,23 @@ export function rederiveContactBlockHeading(html: string): string {
  *  inherited (font/color: inherit) so it matches the page; palette borrows the
  *  known accent for one rule and falls back to currentColor. Self-contained so it
  *  cannot collapse a page's grid. */
+/** LAYOUT ONLY — no colours, no background, no border. Used when the block is wrapped in
+ *  a cloned section, which brings the page's own ground and type with it. */
+export function contactHoursLayoutCss(): string {
+  return (
+    "\n<style data-hubly-ch-css>" +
+    "[data-hubly-contact-block] dl{margin:18px 0 20px;padding:0;display:grid;gap:6px}" +
+    "[data-hubly-contact-block] dl>div{display:flex;justify-content:space-between;gap:24px;max-width:420px}" +
+    "[data-hubly-contact-block] dt{font-weight:600;margin:0}" +
+    "[data-hubly-contact-block] dd{margin:0;text-align:right}" +
+    "[data-hubly-contact-block] .hubly-ch-note{margin:0 0 20px}" +
+    "[data-hubly-contact-block] .hubly-ch-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}" +
+    "[data-hubly-contact-block] .hubly-ch-list a{color:inherit;text-decoration:none}" +
+    "[data-hubly-contact-block] address{font-style:normal}" +
+    "</style>"
+  );
+}
+
 export function contactHoursBlockCss(accent?: string): string {
   const a = String(accent || "").trim();
   const rule = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(a) ? a : "currentColor";

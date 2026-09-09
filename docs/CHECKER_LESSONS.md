@@ -352,3 +352,47 @@ and the first owner to type a price would have been lied to about it.
 **So the discipline is not "test the writer", it is "test the page".** A write path that
 reports success is a claim; the rendered output is the fact. Where the two can disagree,
 only one of them is allowed to reach a sentence an owner reads.
+
+---
+
+## Lesson 12 — a contrast check that reads CSS is measuring a form, and mine was wrong in both directions
+
+2026-09-09. We insert server-built blocks into pages the model designed. The first
+services block inherited `color` from `body` and painted no background of its own, so on
+a page whose ground is a radial gradient it landed dark-on-dark: factually perfect,
+visually invisible, and passing every check that existed.
+
+I wrote a contrast check. It read `getComputedStyle().backgroundColor`, walked up the
+ancestors for the first non-transparent one, and computed a WCAG ratio.
+
+**It reported 14.3:1 for the block that was unreadable** — it walked straight past a
+`background-image: radial-gradient(...)` because the element's `backgroundColor` was
+transparent. **And 1.33:1 for a contact block that looks perfect** — it read a
+transparent background as black.
+
+Wrong in both directions on the same night. That is worse than being wrong once: a
+number that errs both ways cannot even be trusted as a conservative bound. And the
+instinct to "add background-image handling" is the exact failure the rule warns about —
+it makes a longer list of the things the check remembers to look at, and the next page
+will use something else. Opacity, blend modes, a `::before` overlay, an image.
+
+**The pixels are the fact. Everything upstream of them is a form.** So the check now
+screenshots the region and reads the rendered bytes (`scripts/lib/pixel-contrast.mjs`).
+
+It took three more attempts to get even that right, and each error was caught by looking:
+
+1. `element.screenshot()` renders an element with no background on a TRANSPARENT ground,
+   and transparent decodes as black — 1.25:1 for a block that is plainly readable. Fixed
+   by clipping the PAGE to the element's box, which captures what is actually behind it.
+2. Darkest-5% vs lightest-5% over a whole section fails when the text is under 5% of the
+   pixels — a cloned section carries the page's own generous padding, so the 5th
+   percentile is still background. Fixed by clipping tight around each text element,
+   where the true min and max ARE the ink and the ground.
+3. And once it was measuring correctly it found a defect I had introduced myself:
+   `.hubly-sv-desc { opacity: .85 }` — our own dimming pushed the description below AA
+   on pages whose pair was already marginal. Three of the first five failures were that
+   one line.
+
+**The screenshot beat the metric four times in one night.** That is the whole argument
+for looking at the thing, and for treating any measurement that disagrees with a picture
+as guilty until proven otherwise.
