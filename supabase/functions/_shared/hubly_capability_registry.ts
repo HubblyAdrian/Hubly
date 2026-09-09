@@ -6503,7 +6503,22 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_client_ip: String((args as Record<string, unknown>)?._clientIp || "") || null,
           });
           if (!r || r.ok !== true) {
-            return { ok: false, real: false, summary: "The business record could not be created right now.", error: r?.error || "rpc_unreachable" };
+            // DISTINGUISH THE REFUSALS, because they need different things said.
+            // "Right now" invited a retry that CANNOT work for up to an hour, and never
+            // said why — the same defect as "try again in a moment" during a quota
+            // outage, which platform-home already refuses to say. A rate limit is
+            // temporary and self-clearing, so say that and say roughly when; anything
+            // else is a real fault and a retry is worth attempting.
+            if (r?.error === "rate_limited") {
+              return {
+                ok: false, real: false, error: "rate_limited",
+                summary: "REFUSED — too many new sites have been started from this internet connection in the last hour, so this one was not created. " +
+                  "Tell them plainly: you've hit a limit on new sites from their connection, it is temporary, and it clears within the hour. " +
+                  "It is NOT their fault and nothing they typed caused it. Do not invite them to try again immediately — that will fail. " +
+                  "Do not invent a number of sites, a countdown, or an exact time; 'within the hour' is all we actually know.",
+              };
+            }
+            return { ok: false, real: false, summary: "The site draft could not be created — this is a fault on our side, not anything they did. Say so plainly and that trying again in a moment is worth it.", error: r?.error || "rpc_unreachable" };
           }
           if (nameUnset && r?.id) {
             // Best-effort: a failed flag must never fail the signup. Under-recording it

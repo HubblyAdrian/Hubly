@@ -677,3 +677,64 @@ So, two rules:
    tested is "a refusal gets recorded", the test has to cause a refusal. If reaching the
    real trigger is impossible, say which part is unproved and why — never substitute a
    hand-made input at the midpoint and call the whole chain verified.
+
+---
+
+## Lesson 23 — a guard written against the wrong grammar cannot go red
+
+The unawaited-builder guard (Lesson 22's permanent form) was written to split source into
+statements at paren depth 0. It passed on a file with two deliberately planted violations
+sitting in plain sight.
+
+The reason is specific and general at once. Almost every edge function is one expression:
+
+    Deno.serve(async (req) => { ... the entire function ... });
+
+Paren depth is never 0 inside that body, so a depth-0 splitter yields ONE statement per
+file — the whole file. That statement contains an `await` somewhere, so it read as
+"consumed", and every real violation in the codebase was invisible. The check was not
+passing; it was not running, which is Lesson 9 in a new costume, and it took a planted
+violation to reveal it.
+
+The fix was a bracket STACK: a `;` ends a statement when the innermost open bracket is a
+block `{` or nothing, which is true at any nesting depth inside an arrow body.
+
+Then the corrected version produced FALSE positives, and the second bug is the mirror of
+the first: it cut a statement at every `{`, which splits object literals, severing
+`.update({ ... })` from the `.then()` on the following line and reporting correct
+fire-and-forget code as a silent write. A brace only ends a statement when it is a BLOCK
+brace — when we are already in statement position.
+
+Two rules fall out:
+
+1. **Plant a violation before believing a static check.** A source-scanning guard has no
+   natural failure, so its green state is indistinguishable from its broken state. This one
+   was written, run, and reported green while blind to the entire codebase.
+2. **When a check parses code, it is a parser, and it will be wrong about the grammar it
+   simplified.** Both bugs here were grammar assumptions — that paren depth returns to zero,
+   and that a brace means a block. Test it against the real shapes in the repo, not against
+   the shape you had in mind, and expect the first correction to introduce the opposite error.
+
+## Lesson 24 — find a way to make the real thing fail, before accepting an inference
+
+The endpoint-failure writer behind the outage alert had been reported as proved, then found
+dead (Lesson 22). Fixed, it was still only *inferred* to work: the same code shape as a
+writer that WAS proved, in the same file. The honest report said so.
+
+"Wait for the next real outage" is a bad plan for the thing whose only job is catching
+outages. So the question is whether the real trigger can be reached safely, and the answer
+was yes on the second attempt.
+
+- **Attempt 1 — oversized input.** 1.5MB of repeated characters, expecting a context-length
+  400. It returned 200: a long run of one character tokenizes very efficiently, so it fit.
+  Scaling it up was rejected on purpose — if the oversized request SUCCEEDS, we are billed
+  for a million input tokens of the scarce resource we are protecting.
+- **Attempt 2 — invalid message shape.** `content` as an object rather than a string.
+  Rejected before any token is read or generated, costs nothing, cannot touch a visitor,
+  and throws into the SAME catch block a quota exhaustion reaches. Two rows appeared in
+  endpoint_failures with the right function and context. Proved.
+
+The transferable form: **an error path is reachable by many errors, not just the famous
+one.** When the dramatic trigger is expensive or destructive to reproduce, look for the
+cheapest input that lands in the same handler. And state precisely what remains unproved —
+here, `upstream_status`, which only a genuine provider HTTP error can populate.

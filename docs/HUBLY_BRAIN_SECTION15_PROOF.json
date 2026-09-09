@@ -4,7 +4,7 @@
   "title": "Platform Extensibility",
   "status": "pass",
   "passed": true,
-  "provenAt": "2026-09-09T20:35:14.145Z",
+  "provenAt": "2026-09-09T20:46:29.072Z",
   "summary": "Hubly grows by registering Feature Manifests — experts, builders, industries, capabilities, knowledge, integrations, and workflows — without modifying Hubly Brain. Validation, version compatibility, clean unregister, and Mission Control inventory are proven.",
   "proofs": {
     "featureManifest": true,
@@ -82,98 +82,98 @@
     },
     "registrationLogs": [
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "register",
         "kind": "expert",
         "id": "expert.seo_expert",
         "detail": "SEO Expert@1.0.0"
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "register",
         "kind": "builder_module",
         "id": "builder.scheduling_builder",
         "detail": "milestone=1.5"
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "register",
         "kind": "industry_dna",
         "id": "industry.pool_cleaning",
         "detail": "pool cleaning"
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "register",
         "kind": "knowledge_source",
         "id": "knowledge.google_business_profile",
         "detail": "read"
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "register",
         "kind": "capability",
         "id": "capability.maps_travel",
         "detail": "read_maps"
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "register",
         "kind": "integration",
         "id": "integration.mock_quickbooks",
         "detail": "oauth2"
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "register",
         "kind": "workflow",
         "id": "workflow.new_review_followup",
         "detail": "review.created"
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "register",
         "kind": "expert",
         "id": "expert.seo_expert",
         "detail": "SEO Expert@1.0.0"
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "register",
         "kind": "builder_module",
         "id": "builder.scheduling_builder",
         "detail": "milestone=1.5"
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "register",
         "kind": "industry_dna",
         "id": "industry.pool_cleaning",
         "detail": "pool cleaning"
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "register",
         "kind": "knowledge_source",
         "id": "knowledge.google_business_profile",
         "detail": "read"
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "register",
         "kind": "capability",
         "id": "capability.maps_travel",
         "detail": "read_maps"
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "register",
         "kind": "integration",
         "id": "integration.mock_quickbooks",
         "detail": "oauth2"
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "register",
         "kind": "workflow",
         "id": "workflow.new_review_followup",
@@ -182,7 +182,7 @@
     ],
     "validationLogs": [
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "validate",
         "kind": "expert",
         "id": "expert.seo_expert",
@@ -192,7 +192,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "validate",
         "kind": "builder_module",
         "id": "builder.scheduling_builder",
@@ -202,7 +202,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "validate",
         "kind": "industry_dna",
         "id": "industry.pool_cleaning",
@@ -212,7 +212,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "validate",
         "kind": "knowledge_source",
         "id": "knowledge.google_business_profile",
@@ -222,7 +222,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "validate",
         "kind": "capability",
         "id": "capability.maps_travel",
@@ -232,7 +232,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "validate",
         "kind": "integration",
         "id": "integration.mock_quickbooks",
@@ -242,7 +242,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "validate",
         "kind": "workflow",
         "id": "workflow.new_review_followup",
@@ -252,7 +252,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "validate_reject",
         "kind": "expert",
         "id": "?",
@@ -262,7 +262,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "validate_reject",
         "kind": "expert",
         "id": "expert.too_new",
@@ -272,7 +272,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.143Z",
+        "at": "2026-09-09T20:46:29.070Z",
         "event": "validate_reject",
         "kind": "expert",
         "id": "expert.too_new_expert",
@@ -282,7 +282,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "validate",
         "kind": "expert",
         "id": "expert.seo_expert",
@@ -292,7 +292,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "validate",
         "kind": "builder_module",
         "id": "builder.scheduling_builder",
@@ -302,7 +302,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "validate",
         "kind": "industry_dna",
         "id": "industry.pool_cleaning",
@@ -312,7 +312,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "validate",
         "kind": "knowledge_source",
         "id": "knowledge.google_business_profile",
@@ -322,7 +322,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "validate",
         "kind": "capability",
         "id": "capability.maps_travel",
@@ -332,7 +332,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "validate",
         "kind": "integration",
         "id": "integration.mock_quickbooks",
@@ -342,7 +342,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "validate",
         "kind": "workflow",
         "id": "workflow.new_review_followup",
@@ -352,7 +352,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "validate_reject",
         "kind": "expert",
         "id": "?",
@@ -362,7 +362,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.072Z",
         "event": "validate_reject",
         "kind": "expert",
         "id": "expert.too_new",
@@ -372,7 +372,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.072Z",
         "event": "validate_reject",
         "kind": "expert",
         "id": "expert.too_new_expert",
@@ -384,7 +384,7 @@
     ],
     "compatibilityChecks": [
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "compat_check",
         "kind": "expert",
         "id": "expert.seo_expert",
@@ -395,7 +395,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "compat_check",
         "kind": "builder_module",
         "id": "builder.scheduling_builder",
@@ -406,7 +406,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "compat_check",
         "kind": "industry_dna",
         "id": "industry.pool_cleaning",
@@ -417,7 +417,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "compat_check",
         "kind": "knowledge_source",
         "id": "knowledge.google_business_profile",
@@ -428,7 +428,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "compat_check",
         "kind": "capability",
         "id": "capability.maps_travel",
@@ -439,7 +439,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "compat_check",
         "kind": "integration",
         "id": "integration.mock_quickbooks",
@@ -450,7 +450,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "compat_check",
         "kind": "workflow",
         "id": "workflow.new_review_followup",
@@ -461,7 +461,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.071Z",
         "event": "compat_check",
         "kind": "expert",
         "id": "",
@@ -471,7 +471,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.072Z",
         "event": "compat_check",
         "kind": "expert",
         "id": "expert.too_new",
@@ -482,7 +482,7 @@
         }
       },
       {
-        "at": "2026-09-09T20:35:14.144Z",
+        "at": "2026-09-09T20:46:29.072Z",
         "event": "compat_check",
         "kind": "expert",
         "id": "expert.too_new_expert",

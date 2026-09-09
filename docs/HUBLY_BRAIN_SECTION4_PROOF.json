@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-09-09T20:35:12.341Z",
+  "checkedAt": "2026-09-09T20:46:27.276Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -272,7 +272,7 @@
     "timing": [
       {
         "expertId": "experience_director",
-        "executionTimeMs": 4
+        "executionTimeMs": 3
       },
       {
         "expertId": "research",
@@ -288,7 +288,7 @@
       },
       {
         "expertId": "critic",
-        "executionTimeMs": 0
+        "executionTimeMs": 1
       }
     ],
     "failures": [
@@ -1604,7 +1604,7 @@
         {
           "expertName": "Critic",
           "expertId": "critic",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "reasoning": [
             {
               "reason": "Experts agree enough to proceed without overwhelming the owner.",
@@ -1649,7 +1649,7 @@
         {
           "expertName": "Builder Expert",
           "expertId": "builder",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "reasoning": [
             {
               "reason": "Classified as Business Change toward Understand Owner Request.",
@@ -1664,7 +1664,7 @@
           "output": {
             "type": "Builder Intent",
             "builderIntent": {
-              "intentId": "bint_mtuk52rs_gf6080",
+              "intentId": "bint_mtukjjk0_yegbbv",
               "version": "1.0.0",
               "originalRequest": "I'm starting a pressure washing company.",
               "intentCategory": "Business Strategy",
@@ -1695,7 +1695,7 @@
                   "confidence": 81
                 }
               ],
-              "timestamp": "2026-09-09T20:35:12.328Z",
+              "timestamp": "2026-09-09T20:46:27.264Z",
               "applied": false,
               "changePlanGenerated": false
             },
@@ -1708,7 +1708,7 @@
         {
           "expertName": "Experience Director",
           "expertId": "experience_director",
-          "executionTimeMs": 4,
+          "executionTimeMs": 3,
           "reasoning": [
             {
               "reason": "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
@@ -1937,7 +1937,7 @@
           "changedFromPrevious": "Creative Director produced Creative Plan; Critic advanced that into Quality Report (confidence 84 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "outputType": "Quality Report",
           "retries": 0
         },
@@ -1963,7 +1963,7 @@
           "changedFromPrevious": "Critic produced Quality Report; Builder Expert advanced that into Builder Intent (confidence 87 → 81).",
           "confidence": 81,
           "status": "ok",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "outputType": "Builder Intent",
           "retries": 0
         },
@@ -1990,7 +1990,7 @@
           "changedFromPrevious": "Builder Expert produced Builder Intent; Experience Director advanced that into Experience Review (confidence 81 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 4,
+          "executionTimeMs": 3,
           "outputType": "Experience Review",
           "retries": 0
         }
