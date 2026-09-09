@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-09-09T01:01:23.377Z",
+  "checkedAt": "2026-09-09T01:28:10.365Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -280,7 +280,7 @@
       },
       {
         "expertId": "strategy",
-        "executionTimeMs": 1
+        "executionTimeMs": 0
       },
       {
         "expertId": "creative_director",
@@ -288,7 +288,7 @@
       },
       {
         "expertId": "critic",
-        "executionTimeMs": 0
+        "executionTimeMs": 1
       }
     ],
     "failures": [
@@ -621,7 +621,7 @@
         {
           "expertName": "Strategy Expert",
           "expertId": "strategy",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "reasoning": [
             {
               "reason": "I'm positioning around visible proof and clear next step instead of generic price competition. Strategy used Business DNA website/pricing evidence (read-only).",
@@ -1604,7 +1604,7 @@
         {
           "expertName": "Critic",
           "expertId": "critic",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "reasoning": [
             {
               "reason": "Experts agree enough to proceed without overwhelming the owner.",
@@ -1664,7 +1664,7 @@
           "output": {
             "type": "Builder Intent",
             "builderIntent": {
-              "intentId": "bint_mtte7jfp_gay2xp",
+              "intentId": "bint_mttf5ze9_dbpzta",
               "version": "1.0.0",
               "originalRequest": "I'm starting a pressure washing company.",
               "intentCategory": "Business Strategy",
@@ -1695,7 +1695,7 @@
                   "confidence": 81
                 }
               ],
-              "timestamp": "2026-09-09T01:01:23.365Z",
+              "timestamp": "2026-09-09T01:28:10.353Z",
               "applied": false,
               "changePlanGenerated": false
             },
@@ -1888,7 +1888,7 @@
           "changedFromPrevious": "Research Expert produced Research Report; Strategy Expert advanced that into Business Strategy (confidence 90 → 88).",
           "confidence": 88,
           "status": "ok",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "outputType": "Business Strategy",
           "retries": 0
         },
@@ -1937,7 +1937,7 @@
           "changedFromPrevious": "Creative Director produced Creative Plan; Critic advanced that into Quality Report (confidence 84 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "outputType": "Quality Report",
           "retries": 0
         },
