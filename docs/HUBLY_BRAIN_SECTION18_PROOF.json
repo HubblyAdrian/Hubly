@@ -3,7 +3,7 @@
   "name": "Founder Acceptance & Brain Certification",
   "title": "Founder Acceptance & Brain Certification",
   "passed": true,
-  "checkedAt": "2026-09-09T17:03:49.695Z",
+  "checkedAt": "2026-09-09T17:09:17.492Z",
   "version": "1.0.0",
   "proofs": {
     "scenarios": [
@@ -176,7 +176,7 @@
       "validationSuitesOk": true,
       "documentationOk": true,
       "certified": true,
-      "checkedAt": "2026-09-09T17:03:49.684Z"
+      "checkedAt": "2026-09-09T17:09:17.480Z"
     },
     "certificate": {
       "title": "Milestone 1 Completion Certificate",
@@ -204,7 +204,7 @@
       "founderBenchmarkCount": 10
     },
     "documentationOk": true,
-    "primaryExecutionId": "flt_mtucl8pq_f1ufbf",
+    "primaryExecutionId": "flt_mtucs9n6_0zj1fd",
     "certificatePath": "docs/releases/MILESTONE1_CERTIFIED.md"
   },
   "failures": null
