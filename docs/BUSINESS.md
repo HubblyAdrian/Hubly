@@ -686,3 +686,25 @@ for the itemised checklist, and STATE for the framing).
   His 8 services and 2 memberships exist ONLY in `meta` — while both the AI writer
   (`business.setServices`) and the panel writer (`applyOwnerRecordEdit` kind `service`) address
   the empty `services` TABLE. That is #54, measured. See `docs/GRAEF_COVERAGE_MATRIX.md`.
+
+## OPEN — a name edit ADDS a wordmark, it never overwrites the eyebrow (recorded 2026-09-09, NOT built)
+
+**Adrian's ruling. Real, unbuilt, and it fires on the flow we just shipped.**
+
+An unnamed build now renders an honest eyebrow — "Aviation Pilot · Los Angeles" — and no
+wordmark. Our positional labeller (`hubly_document_labels.ts`) stamps `data-hc="business.name"`
+on the FIRST editable text leaf in the header band, which is now that eyebrow.
+
+So the first time anyone gives a name to a site that was built unnamed, a write to
+`business.name` overwrites "Aviation Pilot · Los Angeles" instead of adding a wordmark
+beside it. The eyebrow is trade and place — both true before the name, both still true
+after it. Losing it to gain a name is a straight downgrade.
+
+**The rule: a name edit ADDS a wordmark; it never overwrites the eyebrow.** Which means the
+unnamed page needs a marked, empty name slot stamped AT BUILD TIME — the anchor discipline
+(`markServiceAnchorsInFreeform` is the precedent) — rather than a later pass trying to
+recognise which header element ought to become the name. Re-finding it by shape afterwards
+is a matcher per shape, and the model invents a new header every build.
+
+Not built. It becomes urgent the moment an owner answers the name question on a draft that
+was built without one, which is the path shipped 2026-09-09.
