@@ -196,3 +196,45 @@ The corollary, which is what lesson 7 adds: this applies to *data* as much as to
 populated column nobody reads is the same defect as a deployed function nobody calls — and
 it is more dangerous, because the column will happily be read one day by something that does
 not know what it means.
+
+---
+
+## Lesson 9 — a harness measuring the product is subject to every rule the product is
+
+Written 2026-09-08, during the home-screen rebuild. The harness in question is
+`scripts/shot-owner-home.mjs`. In one sitting it produced three false readings, and each
+one is a rule we already enforce on Hubly, turned back on our own instrument.
+
+**1. Every assertion passed on a completely blank screenshot.**
+`.hc-app` is revealed by an `.is-active` class that sets *both* `display` and `opacity`.
+The harness set `style.display = 'flex'` and left `opacity:0`. Every element then had a
+real, non-zero bounding rect — sidebar 260px, four cards, panel 380px, composer in place —
+and the picture was an empty cream field with one chip floating in the corner. **A rect is
+non-zero at opacity 0.** The fix was not a better selector; it was adding the question a
+person asks first, and which no rect can answer: *is it painted?* That check now runs
+before the others at every width.
+
+This is the 2026-09-02 editor lesson exactly ("invisible in every number collected and
+obvious in one screenshot") — except the number here was collected by a harness written
+that same hour to catch that class of defect.
+
+**2. The label burned into the proof was itself clipping the product.**
+The "SIMULATED CLAIMED STATE" banner is `position:fixed; bottom:0`, and it painted over
+the bottom 26px of every frame — which on a phone is exactly where the bottom bar, the
+composer and the record sheet's Call button live. It read as a clipped sheet. It cost a
+CSS "fix" (`height:82vh` in place of `max-height`) that was reverted once the measurement
+disagreed with the picture, and a red-proof that would not go red — the tell that the
+defect was never there. **A proof that occludes the thing it is proving is not a proof.**
+The banner now insets the app instead of covering it; the label sits beside the product.
+
+**3. The clipping assertion measured the wrong box.**
+Written to catch defect 2, it compared the last element against the *scroller's* rect. But
+the scroller was the thing overflowing, and the box with `overflow:hidden` was its parent.
+The element was inside the scroller and outside the panel, so the check passed on visibly
+cut-off content. **Measure against the box that clips, not the box that scrolls** — and
+the way this was caught is the only reason it was caught: the red-proof did not go red.
+
+The general rule: **a check that will not go red is not passing, it is not running.** Two
+of these three survived a green run and died at the red-proof. Run the red-proof even when
+the check is obviously correct, and especially when you wrote it in the same breath as the
+fix.

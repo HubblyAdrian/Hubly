@@ -67,7 +67,9 @@
     "check:places-seeded": "node scripts/check-places-seeded.mjs",
     "check:draft-arg-name": "node scripts/check-draft-arg-name.mjs",
     "check:destructive-confirm": "node scripts/check-destructive-confirm.mjs",
-    "check:draft-token": "node scripts/check-draft-token-truthiness.mjs"
+    "check:draft-token": "node scripts/check-draft-token-truthiness.mjs",
+    "check:home-promises": "node scripts/check-home-promises.mjs",
+    "shot:owner-home": "node scripts/shot-owner-home.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

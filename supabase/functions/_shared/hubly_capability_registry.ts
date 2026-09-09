@@ -1188,8 +1188,10 @@ async function refuseIfClassicSite(draftId: string): Promise<CapabilityActionRes
     // this whole day was spent finding. It says what is true, says the site is fine,
     // and names no control it cannot see.
     summary:
-      "This site was built by hand rather than generated, so I can't rewrite or restyle it from here — " +
-      "anything I built would replace it with far less than what is on it now. " +
+      // NOT "built by hand". That is our word for our data model (no business_documents
+      // row), it is not a fact about the owner, and the model repeats it to him verbatim.
+      "I can't change the page text or layout from here — that's edited in Edit details. " +
+      "Anything I built from here would replace the page with far less than what is on it now. " +
       (slug ? `It is live and unchanged at ${slug}.myhubly.app. ` : "It is live and unchanged. ") +
       "Say this plainly to the owner, do not claim anything was changed, and do not suggest rebuilding. " +
       "You can still read their bookings, customers and activity, and answer questions about the site.",

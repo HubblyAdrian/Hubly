@@ -275,9 +275,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 /* HOME (default): the conversation IS the screen — a comfortable centred column, the way
    an owner arrives and returns. The site is not shown here; you are talking to Hubly. */
 .hc-app.hc-claimed[data-mode="home"] .hc-app-left{flex:1 1 auto;min-width:0}
-.hc-app.hc-claimed[data-mode="home"] .hc-thread-inner{max-width:760px;margin-left:auto;margin-right:auto;width:100%}
+.hc-app.hc-claimed[data-mode="home"] .hc-thread-inner{max-width:720px;margin-left:auto;margin-right:auto;width:100%}
 .hc-app.hc-claimed[data-mode="home"] .hc-input-bar{display:flex;justify-content:center}
-.hc-app.hc-claimed[data-mode="home"] .hc-input-bar .ask-wrap{max-width:760px;width:100%}
+.hc-app.hc-claimed[data-mode="home"] .hc-input-bar .ask-wrap{max-width:720px;width:100%}
 .hc-app.hc-claimed[data-mode="home"] .hc-app-right{display:none}
 /* WEBSITE: the site is the large canvas; chat becomes a narrow assistant panel beside it.
    Fixed proportions (no draggable divider until asked). */
@@ -296,35 +296,183 @@ body.hc-active .footer,body.hc-active .hero{display:none}
    the header to the foot: destinations at the top, settings gear at the bottom. It reads
    as a rail meeting a real header, not a strip floating below a transparent nav — which
    is why the header goes solid when claimed (below). */
-.hc-rail{display:none;flex:0 0 72px;flex-direction:column;align-items:center;justify-content:space-between;
-  padding:16px 0 14px;background:var(--panel);border-right:1px solid var(--line);z-index:2;
+/* ── THE SIDEBAR. 260px, dark, full height. ────────────────────────────────────
+   Was a 72px pale strip with 9px labels and the business name wrapped over four
+   cramped lines — the worst thing on the screen. It is a place now: wordmark at the
+   top, nav as icon PLUS label with the active one lit, and the business block at the
+   foot so an owner can always see whose hub this is. */
+.hc-rail{display:none;flex:0 0 260px;flex-direction:column;align-items:stretch;justify-content:flex-start;
+  padding:22px 14px 16px;background:var(--sidebar,#0f2a22);color:#fff;z-index:2;height:100%;box-sizing:border-box;
   animation:hcRailArrive .5s cubic-bezier(.22,.61,.36,1) both}
 .hc-app.hc-claimed .hc-rail{display:flex}
-/* Make the header a REAL slim header once claimed: solid ground + a hairline, so the rail
-   sits under something, not floating. The wordmark and account button stay where they are. */
-body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(--line)}
-@keyframes hcRailArrive{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
-.hc-rail-biz{width:100%;padding:8px 4px 2px;text-align:center;font-size:9px;line-height:1.25;color:var(--ink-3,#8a909c);word-break:break-word}
-.hc-rail-biz b{display:block;font-size:10px;font-weight:750;color:var(--ink-2,#4a5160);margin-bottom:1px}
-.hc-idw{display:flex;align-items:center;gap:12px;margin:0 0 4px}
-.hc-idw-mark{width:40px;height:40px;border-radius:11px;object-fit:cover;flex-shrink:0;background:var(--brand,#d9632d)}
-.hc-idw-mono{width:40px;height:40px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;letter-spacing:-.02em}
+.hc-rail-mark{display:flex;align-items:center;gap:8px;padding:2px 10px 22px;font-size:26px;font-weight:800;letter-spacing:-.03em;color:#fff}
+.hc-rail-mark i{font-style:normal;color:var(--brand-400,#f0b429)}
+.hc-rail-tabs{display:flex;flex-direction:column;gap:4px;width:100%;align-items:stretch}
+.hc-rail-tab{width:100%;min-height:48px;border:0;border-radius:12px;background:transparent;cursor:pointer;
+  display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px;padding:0 14px;
+  color:rgba(255,255,255,.74);font:inherit;transition:background .15s ease,color .15s ease}
+.hc-rail-tab svg{width:20px;height:20px;flex-shrink:0}
+.hc-rail-lbl{font-size:15px;font-weight:650;letter-spacing:-.01em;line-height:1;text-align:left}
+.hc-rail-tab:hover{background:rgba(255,255,255,.07);color:#fff}
+.hc-rail-tab.is-on{background:rgba(255,255,255,.10);color:#fff}
+.hc-rail-tab.is-on .hc-rail-lbl{font-weight:750}
+.hc-rail-spacer{flex:1 1 auto;min-height:12px}
+/* The business block. Logo tile, name in bold, city beneath — readable, not wrapped
+   into a column 72px wide. No placeholder tile when there is no logo: initials on the
+   brand colour, because a grey square implies a logo exists. */
+.hc-rail-biz{display:flex;align-items:center;gap:11px;width:100%;padding:12px 10px;border-radius:14px;
+  background:rgba(255,255,255,.06);box-sizing:border-box}
+.hc-rail-biz[hidden]{display:none}
+.hc-rail-biz-mark{width:38px;height:38px;border-radius:10px;object-fit:cover;flex-shrink:0;background:#fff}
+.hc-rail-biz-mono{width:38px;height:38px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:14px;color:#fff;letter-spacing:-.02em}
+.hc-rail-biz-txt{min-width:0}
+.hc-rail-biz-nm{font-size:14px;font-weight:750;color:#fff;line-height:1.2;word-break:break-word}
+.hc-rail-biz-city{font-size:12px;color:rgba(255,255,255,.62);margin-top:2px}
+.hc-rail-gear{width:100%;min-height:44px;border:0;border-radius:12px;background:transparent;cursor:pointer;margin-top:4px;
+  color:rgba(255,255,255,.74);display:flex;align-items:center;gap:14px;padding:0 14px;font:inherit;transition:background .15s ease}
+.hc-rail-gear:hover{background:rgba(255,255,255,.07);color:#fff}
+.hc-rail-gear svg{width:20px;height:20px}
+.hc-rail-gear .hc-rail-lbl{font-size:15px;font-weight:650}
+
+/* ── THE RECORD PANEL. 380px on the right. ────────────────────────────────────
+   Replaces the centred modal, which overlapped the card it came from and clipped its
+   own content. Opening it NARROWS the stream instead of covering it. Whatever is in
+   here is what the conversation is about. */
+.hc-panel{display:none;flex:0 0 380px;min-width:0;flex-direction:column;background:var(--panel,#fff);
+  border-left:1px solid var(--line);overflow:hidden}
+.hc-app.hc-panel-open .hc-panel{display:flex;animation:hcCanvasArrive .34s cubic-bezier(.22,.61,.36,1) both}
+.hc-panel-hd{display:flex;align-items:center;gap:10px;padding:18px 18px 12px;border-bottom:1px solid var(--line)}
+.hc-panel-hd h2{margin:0;font-size:16px;font-weight:750;letter-spacing:-.01em;flex:1}
+.hc-panel-back,.hc-panel-x{border:0;background:transparent;cursor:pointer;color:var(--ink-3,#8a909c);
+  width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:19px;line-height:1}
+.hc-panel-back:hover,.hc-panel-x:hover{background:rgba(0,0,0,.05);color:var(--ink)}
+.hc-panel-back[hidden]{display:none}   /* display:flex above beats [hidden] */
+.hc-panel-body{flex:1;min-height:0;overflow-y:auto;padding:16px 18px 24px}
+@media (max-width:900px){
+  /* Tablet portrait and phone: a record is a SHEET over the chat, never a 380px column
+     squeezed into 768px. Same back step, same title. */
+  .hc-panel{position:fixed;left:0;right:0;bottom:0;top:auto;max-height:82vh;flex:none;
+    border-left:0;border-top:1px solid var(--line);border-radius:18px 18px 0 0;z-index:70;
+    box-shadow:0 -18px 44px rgba(0,0,0,.18)}
+  .hc-panel-body{padding-bottom:calc(28px + env(safe-area-inset-bottom,0px))}
+  .hc-app.hc-panel-open .hc-panel{animation:hcSheetUp .3s cubic-bezier(.22,.61,.36,1) both}
+  @keyframes hcSheetUp{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+}
+@media (max-width:900px){
+  /* The claimed shell NEVER goes column: the older max-width:860px rule stacks the
+     panes, which made the 260px sidebar full-bleed on tablet portrait. */
+  .hc-app.hc-claimed{flex-direction:row}
+  .hc-app.hc-claimed .hc-rail{display:none}
+}
+.hc-bottom{display:none}
+@media (max-width:900px){
+  .hc-app.hc-claimed .hc-bottom{display:flex;position:absolute;left:0;right:0;bottom:0;z-index:5;
+    align-items:stretch;background:var(--panel,#fff);border-top:1px solid var(--line);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));box-sizing:border-box}
+  .hc-btab{flex:1 1 0;min-width:0;border:0;background:transparent;cursor:pointer;font:inherit;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    padding:6px 2px;border-radius:12px;color:var(--ink-3,#8a909c);min-height:52px}
+  .hc-btab svg{width:21px;height:21px}
+  .hc-btab .hc-rail-lbl{font-size:11px;font-weight:650;line-height:1}
+  .hc-btab.is-on{color:var(--brand-700,#8a3f1c);background:var(--brand-50,rgba(217,99,45,.09))}
+  /* The composer clears the bar; a send button under a tab bar is not reachable. */
+  .hc-app.hc-claimed .hc-input-bar{padding-bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+  /* One navigation at a time: the Chat/Site toggle was for the draft shell. */
+  .hc-app.hc-claimed .hc-mobile-tabs{display:none}
+}
+
+/* ── THE CLAIMED SHELL IS FULL HEIGHT. ────────────────────────────────────────
+   Unclaimed, .hc-app sits under the marketing header. Claimed, the sidebar IS the
+   header: it runs floor to ceiling and carries the wordmark, so the app starts at 0
+   and the floating nav is pushed off the sidebar and reduced to the account chip. */
+.hc-app.hc-claimed{top:0}
+body.hc-shell-claimed .nav{left:260px;background:transparent;border-bottom-color:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;justify-content:flex-end;pointer-events:none}
+body.hc-shell-claimed .nav > a{display:none}          /* the rail carries the mark now */
+body.hc-shell-claimed .nav > *{pointer-events:auto}
+/* The header floats over the app, so an opening panel would slide underneath the
+   account chip — the chip sat between the panel's title and its close button. The
+   chip gets out of the way for the same reason the stream does. */
+body.hc-panel-open.hc-shell-claimed .nav{right:380px}
+@media (max-width:900px){ body.hc-panel-open.hc-shell-claimed .nav{right:0} }
+/* Phone and tablet portrait: the sidebar is gone, so the header carries the wordmark
+   again — at the far LEFT. flex-end is a desktop rule (chip only, over the stream);
+   inherited here it jammed the wordmark and the chip into each other in the corner. */
+@media (max-width:900px){ body.hc-shell-claimed .nav{left:0;justify-content:space-between}
+  body.hc-shell-claimed .nav > a{display:block} }
+
+/* THE ACCOUNT CHIP. Was a pill reading "Signed in" — a status nobody needs twice, in
+   the one corner every product puts the account. Avatar, name, chevron; it opens the
+   same account menu it always did. */
+.nav-signin.is-chip{gap:9px;padding:6px 12px 6px 6px;border-color:var(--line);background:rgba(255,255,255,.72);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.nav-signin.is-chip .hc-chip-av{width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;color:#fff;background:var(--brand,#d9632d);flex-shrink:0;letter-spacing:-.02em}
+.nav-signin.is-chip .hc-chip-nm{font-size:14px;font-weight:650;color:var(--ink);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav-signin.is-chip .hc-chip-cv{width:14px;height:14px;flex-shrink:0;display:block;color:var(--ink-3,#8a909c)}
+.nav-signin.is-chip svg.hc-chip-cv{display:block}     /* .is-authed hides svg; the chevron is exempt */
+@media (max-width:520px){ .nav-signin.is-chip .hc-chip-nm{display:none} }
+
+/* ── THE GREETING BLOCK. Permanent furniture — it never moves and never disappears.
+   Logo, "Good morning, Bruce", the business name. A hub that doesn't say hello isn't a
+   hub. The mark is the REAL logo whenever the record has one; initials on the brand
+   colour are the fallback, never a grey square implying a photo we don't hold. */
+.hc-idw{display:flex;align-items:center;gap:16px;background:transparent;border:0;padding:0;box-shadow:none;max-width:none}
+.hc-idw-mark{width:56px;height:56px;border-radius:14px;object-fit:contain;background:#fff;flex-shrink:0;
+  border:1px solid var(--line);padding:4px;box-sizing:border-box}
+.hc-idw-mono{width:56px;height:56px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:800;color:#fff;letter-spacing:-.02em}
 .hc-idw-txt{min-width:0}
-.hc-idw-hi{font-size:17px;font-weight:750;letter-spacing:-.01em;line-height:1.2}
-.hc-idw-sub{font-size:12px;color:var(--ink-3,#8a909c);margin-top:1px}
-.hc-rail-tabs{display:flex;flex-direction:column;gap:8px;width:100%;align-items:center}
-.hc-rail-tab{width:56px;min-height:56px;border:0;border-radius:15px;background:transparent;cursor:pointer;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink-500,#6b7280);
-  font:inherit;transition:background .15s ease,color .15s ease}
-.hc-rail-tab svg{width:22px;height:22px}
-.hc-rail-lbl{font-size:9px;font-weight:700;letter-spacing:.02em;line-height:1;text-align:center}
-.hc-rail-tab:hover{background:rgba(0,0,0,.045)}
-.hc-rail-tab.is-on{background:rgba(217,99,45,.12);color:var(--brand-700,#8a3f1c)}
-.hc-rail-gear{width:46px;height:46px;border:0;border-radius:13px;background:transparent;cursor:pointer;
-  color:var(--ink-400,#8a8f98);display:flex;align-items:center;justify-content:center;transition:background .15s ease}
-.hc-rail-gear:hover{background:rgba(0,0,0,.06);color:var(--ink-700,#374151)}
-/* v1 keeps the phone on its Chat/Site toggle — a one-item bottom bar isn't earned yet. */
-@media (max-width:760px){ .hc-app.hc-claimed .hc-rail{display:none} }
+.hc-idw-hi{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.12;color:var(--ink)}
+.hc-idw-sub{font-size:15px;color:var(--ink-2,#5b616e);margin-top:3px}
+/* The news line sits directly under the greeting and is the ONLY thing on this screen
+   that changes shape day to day. Quiet is a legitimate state; it is not an empty one. */
+.hc-news{font-size:16px;line-height:1.5;color:var(--ink-2,#5b616e);max-width:none;background:transparent;border:0;padding:0;box-shadow:none;margin-top:-8px}
+
+/* ── THE FOUR ACTION CARDS. Permanent furniture. Counts appear on a card only once
+   there is something to count — never a zero, because "0 jobs today" is a worse
+   sentence than no sentence. */
+.hc-acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:none;background:transparent;border:0;padding:0;box-shadow:none}
+.hc-act{display:flex;align-items:center;gap:12px;text-align:left;padding:15px 16px;border:1px solid var(--line);
+  border-radius:14px;background:var(--panel,#fff);cursor:pointer;font:inherit;color:var(--ink);
+  transition:border-color .15s ease,box-shadow .15s ease,transform .12s ease}
+.hc-act:hover{border-color:var(--brand-600,#d9632d);box-shadow:0 8px 22px -14px rgba(217,99,45,.5)}
+.hc-act:active{transform:translateY(1px)}
+.hc-act-ic{width:38px;height:38px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  background:var(--brand-50,rgba(217,99,45,.09));color:var(--brand-700,#8a3f1c)}
+.hc-act-ic svg{width:19px;height:19px}
+.hc-act-tx{min-width:0;display:flex;flex-direction:column;gap:2px}
+/* display:block is not optional here. As inline spans the count ran straight into the
+   label — "View my schedule3 jobs today" — which no rect assertion notices and which is
+   the first thing a person sees. */
+.hc-act-nm{display:block;font-size:15px;font-weight:700;letter-spacing:-.01em;line-height:1.3}
+.hc-act-ct{display:block;font-size:13px;color:var(--ink-2,#5b616e);line-height:1.3}
+
+/* ── SUGGESTED QUESTIONS. Generated, never a hardcoded list: each one names the
+   capability behind it and does not render when that capability is absent for this
+   business. Four hardcoded strings is how "Set your hours" happened. */
+.hc-suggs{display:flex;flex-wrap:wrap;gap:9px;max-width:none;background:transparent;border:0;padding:0;box-shadow:none}
+.hc-sugg{border:1px solid var(--line);background:var(--panel,#fff);color:var(--ink-2,#5b616e);border-radius:999px;
+  padding:9px 15px;font:inherit;font-size:14px;cursor:pointer;transition:border-color .15s ease,color .15s ease}
+.hc-sugg:hover{border-color:var(--brand-600,#d9632d);color:var(--brand-700,#8a3f1c)}
+
+/* ── TABLET AND PHONE. The phone is the primary device: an owner in a van, one hand,
+   in sunlight. No sidebar there — the places live in a bottom bar (prohibition 5, max
+   four) and the greeting plus news must be legible without scrolling. */
+@media (max-width:900px){
+  .hc-app.hc-claimed{top:var(--nav-h)}
+  .hc-idw-hi{font-size:26px}
+  .hc-acts{gap:10px}
+  .hc-idw{gap:13px}
+  .hc-idw-mark,.hc-idw-mono{width:46px;height:46px;border-radius:12px}
+  .hc-idw-hi{font-size:23px}
+  .hc-idw-sub{font-size:14px}
+  .hc-news{font-size:15px}
+  .hc-acts{grid-template-columns:1fr}
+  .hc-act{padding:13px 14px}
+  /* Room for the bottom bar so the last card is never trapped under it. */
+  .hc-app.hc-claimed .hc-thread-inner{padding-bottom:14px}
+}
 
 /* THE ARRIVAL lives in the CHAT now (two Hubly lines + these actions), so the biggest
    region stays the conversation and the live editable site fills the right column. */
@@ -1136,7 +1284,12 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
        gear at the foot — a popout, never a tab. Desktop sidebar for v1; the phone
        keeps its Chat/Site toggle (a real bottom bar for one tab is not yet earned). -->
   <div class="hc-rail" id="hcRail" hidden aria-label="Your Hubly">
+    <!-- The wordmark lives HERE once claimed, not in the header. The rail is full-height
+         in this state, so a mark in the floating header would sit beside it and read as a
+         second one. `body.hc-shell-claimed` moves the header out of the way. -->
+    <div class="hc-rail-mark" aria-hidden="true">hub<i>ly</i></div>
     <div class="hc-rail-tabs" id="hcRailTabs" role="tablist"></div>
+    <div class="hc-rail-spacer"></div>
     <!-- WHOSE BUSINESS THIS IS. Restored 2026-09-08: the screen read as a chatroom because
          nothing on it said whose place it was — correct content, no sense of place.
          Name and location only, both real columns; no placeholder when either is absent. -->
@@ -1182,6 +1335,23 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     <div class="hc-canvas-bar" id="hcCanvasBar" hidden></div>
     <div class="hc-canvas-body" id="hcCanvas"></div>
   </div>
+  <!-- THE RECORD PANEL. A job, a lead, a customer, an order opens HERE — never a modal
+       over the card it came from. Whatever is in this panel is what the conversation is
+       about, so it must sit BESIDE the composer, not on top of it. One panel, with a
+       back step (hcPanel.stack): a shallow stack, never tabs. -->
+  <aside class="hc-panel" id="hcPanel" aria-label="Record" hidden>
+    <div class="hc-panel-hd">
+      <button type="button" class="hc-panel-back" id="hcPanelBack" aria-label="Back" hidden>&#8592;</button>
+      <h2 id="hcPanelTitle">Record</h2>
+      <button type="button" class="hc-panel-x" id="hcPanelX" aria-label="Close">&times;</button>
+    </div>
+    <div class="hc-panel-body" id="hcPanelBody"></div>
+  </aside>
+  <!-- MOBILE PLACES. Prohibition 5: the phone shows the SAME earned places as the
+       sidebar, in the SAME order, capped at four. It is not a different navigation and it
+       is not a subset chosen by "smart" signals — it is the desktop list, truncated at the
+       cap, so a place never appears in one and not the other. -->
+  <nav class="hc-bottom" id="hcBottom" hidden aria-label="Your Hubly"></nav>
   <!-- The one attach input the composer button opens. Images + PDFs; routed by what
        Hubly asked for (see hcHandleIncomingFile). The older per-kind inputs below remain
        only for the logo dropzone card and the photo picker they were already wired to. -->
@@ -4156,6 +4326,26 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     Array.prototype.forEach.call(host.querySelectorAll('.hc-rail-tab'), function(b){
       b.addEventListener('click', function(){ hcOpenWorkspace(b.getAttribute('data-tab')); });
     });
+    hcRenderBottomBar(dests);
+  }
+  // ONE SOURCE, TWO SURFACES. The bottom bar is handed the sidebar's own list so the two
+  // can never disagree about which places this business has earned; the only difference
+  // is the cap, which is a mobile-only rule (prohibition 5) and not a different opinion
+  // about the places. Positions are the list's positions — never reordered here.
+  var HC_MOBILE_PLACE_CAP = 4;
+  function hcRenderBottomBar(dests){
+    var bar = document.getElementById('hcBottom'); if(!bar) return;
+    if(!hc.draftClaimed || !dests || !dests.length){ bar.hidden = true; bar.innerHTML = ''; return; }
+    bar.hidden = false;
+    bar.innerHTML = dests.slice(0, HC_MOBILE_PLACE_CAP).map(function(t){
+      var on = (t.id === hc.mode);
+      return '<button type="button" class="hc-btab' + (on ? ' is-on' : '') + '" data-tab="' + t.id + '"'
+        + ' aria-current="' + (on ? 'page' : 'false') + '">'
+        + t.icon + '<span class="hc-rail-lbl">' + t.label + '</span></button>';
+    }).join('');
+    Array.prototype.forEach.call(bar.querySelectorAll('.hc-btab'), function(b){
+      b.addEventListener('click', function(){ hcOpenWorkspace(b.getAttribute('data-tab')); });
+    });
   }
   // THE MODE SWITCH — generic. Every workspace is entered the same way; a new one is a
   // new case here, nothing else. `filter` is carried so a chat action can open a
@@ -4368,23 +4558,98 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     thread.appendChild(wrap);
   }
 
-  // THE PANEL IS THE SAME ROWS, EXPANDED. It is handed the event object the card was
+  // ═══ THE RECORD PANEL ══════════════════════════════════════════════════════
+  // Was a centred modal. It opened ON TOP of the card it came from, overlapped it,
+  // clipped its own last row (the Follow-up line was cut off), and its title was the
+  // hardcoded word "Booking" — which it also showed over a chat lead, calling a person
+  // who never booked a booking.
+  //
+  // It is a panel now: it sits to the right and NARROWS the stream instead of covering
+  // it, because whatever is in the panel is what the conversation is about and the
+  // composer has to stay reachable while it's open. One panel, one shallow back stack.
+  var hcPanel = { stack: [] };
+  function hcPanelEls(){
+    return {
+      app:  document.getElementById('hcApp'),
+      el:   document.getElementById('hcPanel'),
+      ttl:  document.getElementById('hcPanelTitle'),
+      body: document.getElementById('hcPanelBody'),
+      back: document.getElementById('hcPanelBack')
+    };
+  }
+  function hcClosePanel(){
+    var e = hcPanelEls(); if(!e.el) return;
+    hcPanel.stack = [];
+    e.el.hidden = true;
+    if(e.app) e.app.classList.remove('hc-panel-open');
+    try{ document.body.classList.remove('hc-panel-open'); }catch(_){}
+    if(e.body) e.body.innerHTML = '';
+  }
+  // push=false replaces the panel's contents; push=true keeps the previous entry so the
+  // back arrow returns to it. A stack, deliberately, and not tabs: two tabs in a 380px
+  // column is a second navigation nobody asked for.
+  function hcOpenPanel(title, render, push){
+    var e = hcPanelEls(); if(!e.el || !e.body) return;
+    if(push !== true) hcPanel.stack = [];
+    hcPanel.stack.push({ title: title, render: render });
+    hcPanelPaint();
+  }
+  function hcPanelPaint(){
+    var e = hcPanelEls(); if(!e.el || !e.body) return;
+    var top = hcPanel.stack[hcPanel.stack.length - 1];
+    if(!top){ hcClosePanel(); return; }
+    e.el.hidden = false;
+    if(e.app) e.app.classList.add('hc-panel-open');
+    try{ document.body.classList.add('hc-panel-open'); }catch(_){}
+    e.ttl.textContent = top.title;
+    e.body.innerHTML = '';
+    try{ top.render(e.body); }catch(err){ console.error('[panel] render failed', err); }
+    if(e.back) e.back.hidden = hcPanel.stack.length < 2;
+    try{ e.el.scrollTop = 0; e.body.scrollTop = 0; }catch(_){}
+  }
+  function hcPanelBackStep(){
+    if(hcPanel.stack.length < 2){ hcClosePanel(); return; }
+    hcPanel.stack.pop(); hcPanelPaint();
+  }
+
+  // THE TITLE COMES FROM THE EVENT KIND, never a literal. A lead who asked a question
+  // and left is not a booking, and a panel that calls it one is telling the owner
+  // something that did not happen.
+  function hcEventPanelTitle(ev){
+    var k = String((ev && ev.kind) || '');
+    if(k === 'chat.asked') return 'Lead from your site';
+    if(k === 'booking.abandoned') return 'Unfinished booking';
+    if(k === 'booking.created') return 'Booking';
+    return 'Record';
+  }
+  // The panel is the same rows, expanded. It is handed the event object the card was
   // built from, so it cannot be more confident than the card — there is no second read
   // and therefore no way for the two to disagree.
   function hcOpenEventPanel(ev){
-    var ov = document.createElement('div'); ov.className = 'hc-set-ov';
-    var rows = hcEventFields(ev).map(function(r){
-      return '<div class="hc-event-row"><span class="hc-event-k">'+hcEsc(r[0])+'</span><span class="hc-event-v">'+hcEsc(r[1])+'</span></div>';
-    }).join('');
-    ov.innerHTML = '<div class="hc-set" role="dialog" aria-label="Booking detail">'+
-      '<div class="hc-set-hd"><h2>Booking</h2><button type="button" class="hc-set-x" aria-label="Close">&times;</button></div>'+
-      '<div class="hc-set-note">Came in '+hcEsc(new Date(ev.occurred_at).toLocaleString())+'.</div>'+
-      '<div class="hc-event-fields">'+rows+'</div>'+
-    '</div>';
-    document.body.appendChild(ov);
-    function close(){ try{ ov.remove(); }catch(e){} }
-    ov.querySelector('.hc-set-x').addEventListener('click', close);
-    ov.addEventListener('click', function(e){ if(e.target === ov) close(); });
+    hcOpenPanel(hcEventPanelTitle(ev), function(body){
+      var sub = document.createElement('div'); sub.className = 'hc-event-sub';
+      sub.textContent = 'Came in ' + new Date(ev.occurred_at).toLocaleString();
+      body.appendChild(sub);
+      var dl = document.createElement('div'); dl.className = 'hc-event-fields';
+      hcEventFields(ev).forEach(function(row){
+        var line = document.createElement('div'); line.className = 'hc-event-row';
+        var k = document.createElement('span'); k.className = 'hc-event-k'; k.textContent = row[0];
+        var v = document.createElement('span'); v.className = 'hc-event-v'; v.textContent = row[1];
+        line.appendChild(k); line.appendChild(v); dl.appendChild(line);
+      });
+      body.appendChild(dl);
+      if(ev.customer_phone){
+        var acts = document.createElement('div'); acts.className = 'hc-event-acts';
+        var call = document.createElement('a'); call.className = 'hc-arrival-act';
+        call.href = 'tel:' + String(ev.customer_phone).replace(/[^0-9+]/g,'');
+        call.textContent = 'Call ' + ev.customer_phone;
+        acts.appendChild(call); body.appendChild(acts);
+      }else if(!ev.customer_email){
+        var none = document.createElement('div'); none.className = 'hc-event-sub';
+        none.textContent = 'They didn’t leave a phone or email, so there’s no way to reach them from here.';
+        body.appendChild(none);
+      }
+    });
   }
 
   // ADVANCE THE MARKER ONLY WHEN THE OWNER ACTUALLY SAW IT.
@@ -4479,7 +4744,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   // its own brand colour rather than a generic placeholder mark — a placeholder implies a
   // logo exists. The greeting uses the owner's first name only when we have one; with no
   // name it greets without one rather than inventing "there".
-  var hcIdentity = { loaded: false, logoUrl: null, brandColor: null, city: null, state: null, owner: null };
+  var hcIdentity = { loaded: false, logoUrl: null, brandColor: null, city: null, state: null, owner: null, email: null };
 
   async function hcLoadIdentity(biz){
     hcIdentity.loaded = false;
@@ -4507,9 +4772,11 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
           if(/^[a-z]{2,}$/i.test(lp.split(' ')[0] || '')) nm = lp;
         }
         hcIdentity.owner = nm ? String(nm).trim().split(/\s+/)[0].replace(/^./, function(ch){ return ch.toUpperCase(); }) : null;
+        hcIdentity.email = (u && u.data && u.data.user && u.data.user.email) || null;
       }catch(e){}
       hcIdentity.loaded = true;
     }catch(e){}
+    try{ hcReflectAuthState(); }catch(e){}   // the chip's name only exists once this ran
     return hcIdentity;
   }
 
@@ -4558,7 +4825,25 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     var place = [hcIdentity.city, hcIdentity.state].filter(Boolean).join(', ');
     if(!name && !place){ el.hidden = true; el.innerHTML = ''; return; }
     el.hidden = false;
-    el.innerHTML = (name ? '<b>' + hcEsc(name) + '</b>' : '') + (place ? hcEsc(place) : '');
+    el.innerHTML = '';
+    // The logo tile is the REAL logo when the record holds one. When it doesn't, initials
+    // on the brand colour — never an empty grey square, which reads as a photo that
+    // failed to load and implies we have one.
+    var mark;
+    if(hcIdentity.logoUrl){
+      mark = document.createElement('img'); mark.className = 'hc-rail-biz-mark';
+      mark.src = hcIdentity.logoUrl; mark.alt = '';
+      mark.setAttribute('aria-hidden','true');
+    }else{
+      mark = document.createElement('div'); mark.className = 'hc-rail-biz-mono';
+      mark.style.background = hcIdentity.brandColor || 'var(--brand,#d9632d)';
+      mark.textContent = hcInitials(name); mark.setAttribute('aria-hidden','true');
+    }
+    el.appendChild(mark);
+    var txt = document.createElement('div'); txt.className = 'hc-rail-biz-txt';
+    if(name){ var n = document.createElement('div'); n.className = 'hc-rail-biz-nm'; n.textContent = name; txt.appendChild(n); }
+    if(place){ var c = document.createElement('div'); c.className = 'hc-rail-biz-city'; c.textContent = place; txt.appendChild(c); }
+    el.appendChild(txt);
   }
 
   // Elapsed time in the words a person uses. Never a fabricated precision.
@@ -4651,6 +4936,172 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     return out;
   }
 
+  // ═══ THE PROMISE REGISTRY ══════════════════════════════════════════════════
+  // Every action card and every suggested question on this screen is GENERATED from
+  // this list. Nothing on Home is a hardcoded string, because a hardcoded string
+  // outlives the feature it promised: "Set your hours" sat in the gaps panel offering
+  // an owner a fix no capability could make, and it was found by clicking, not by
+  // reading. So each promise names the server capability behind it (`cap`) and the
+  // state it needs (`needs`), and it does not render when either is missing.
+  //
+  // `cap` is not decoration. scripts/check-home-promises.mjs parses these entries and
+  // fails if a named action is absent from hubly_capability_registry.ts — so deleting a
+  // capability breaks the build rather than leaving a dead promise on the front door.
+  //
+  // ORDER IS FIXED AND NEVER REORDERS. Positions are stable (prohibition 5): a card
+  // that cannot render leaves its slot to the next one down, and the rest do not shift
+  // around by frequency, recency or any other "smart" signal.
+  var HC_ACT_ICONS = {
+    schedule: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+    leads:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a8 8 0 1 1-3.1-6.3"/><path d="M8 11h8M8 15h5"/></svg>',
+    bookings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16v13H4z"/><path d="M9 12l2 2 4-4"/><path d="M8 3v4M16 3v4"/></svg>',
+    sales:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/></svg>',
+    website:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>'
+  };
+  // ctx.has(id) answers "does this business have that place/entitlement", from the SAME
+  // source the sidebar reads — so a card can never offer a room the sidebar doesn't show.
+  function hcPromiseCtx(biz){
+    var ws = {}; try{ hcWorkspaces().forEach(function(w){ ws[w.id] = true; }); }catch(e){}
+    return {
+      biz: biz || {},
+      has: function(id){ return !!ws[id]; },
+      counts: hcHomeCounts
+    };
+  }
+  var HC_HOME_PROMISES = [
+    // ── CARDS ────────────────────────────────────────────────────────────────
+    { kind:'card', id:'schedule', label:'View my schedule', icon:'schedule',
+      cap:'operations.read', slice:'jobs', countKey:'jobsToday',
+      // A count only once there is something to count. Never "0 jobs today".
+      count:function(n){ return n === 1 ? '1 job today' : n + ' jobs today'; },
+      needs:function(){ return true; },
+      ask:'Show me my schedule.' },
+    { kind:'card', id:'leads', label:'See who asked and didn’t book', icon:'leads',
+      // NOT "See my customers". There is no customers slice in operational state and no
+      // capability that reads the customers table, so a card by that name would open on
+      // an answer we cannot give. This is the list we DO hold, named for what it is.
+      cap:'operations.read', slice:'chat_leads', countKey:'openLeads',
+      count:function(n){ return n === 1 ? '1 waiting' : n + ' waiting'; },
+      needs:function(){ return true; },
+      ask:'Who asked on my site and didn’t book?' },
+    { kind:'card', id:'bookings', label:'Check my bookings', icon:'bookings',
+      cap:'operations.read', slice:'bookings', countKey:'openBookings',
+      count:function(n){ return n === 1 ? '1 to confirm' : n + ' to confirm'; },
+      needs:function(){ return true; },
+      // NOT "this week" — the q-week chip already asks exactly that, and a card and a chip
+      // that send the identical sentence are one promise wearing two hats.
+      ask:'Show me my bookings.' },
+    { kind:'card', id:'sales', label:'Check my sales', icon:'sales',
+      // Only for a business with a store. operations.read's money slice is STORE ORDERS;
+      // a service business has no revenue total anywhere, so this card on Graef's home
+      // would open onto "none on record" and read as "you have sold nothing".
+      cap:'operations.read', slice:'orders',
+      needs:function(ctx){ return ctx.has('store'); },
+      ask:'How are my store sales doing?' },
+    { kind:'card', id:'website', label:'Edit my website', icon:'website',
+      // A workspace, not a question: the editor takes the CENTRE. Records go in the
+      // panel; rooms take the canvas.
+      cap:'website.patchDocument',
+      needs:function(ctx){ return ctx.has('website'); },
+      open:'website' },
+
+    // ── SUGGESTED QUESTIONS ──────────────────────────────────────────────────
+    { kind:'chip', id:'q-week', label:'Show me my bookings this week',
+      cap:'operations.read', slice:'bookings', needs:function(){ return true; } },
+    { kind:'chip', id:'q-leads', label:'Who asked about my services this week?',
+      cap:'operations.read', slice:'chat_leads', needs:function(){ return true; } },
+    { kind:'chip', id:'q-service', label:'Add a new service to my website',
+      cap:'business.setServices', needs:function(){ return true; } },
+    { kind:'chip', id:'q-photos', label:'Add photos of my own work',
+      cap:'website.patchDocument', needs:function(ctx){ return ctx.has('website'); } },
+    { kind:'chip', id:'q-traffic', label:'How many people visited my site?',
+      cap:'operations.read', slice:'traffic', needs:function(){ return true; } }
+    // DELIBERATELY ABSENT, and each one is a finding rather than an oversight:
+    //   "See my customers"              — no capability reads the customers table.
+    //   "What are my most popular services?" — would be a count over a truncated row
+    //        list (MAX_ROWS), i.e. a statistic with no denominator. Worse than silent.
+    //   "Help me create a promotion"    — nothing in the registry creates one.
+  ];
+
+  // Counts for the cards. A count is rendered ONLY when the query succeeded and returned
+  // more than zero: a failed read and an empty table are different things, and neither is
+  // "0 jobs today". On any error the card simply carries no count line.
+  var hcHomeCounts = {};
+  async function hcLoadHomeCounts(biz){
+    hcHomeCounts = {};
+    if(!biz || !biz.id || !hc.draftClaimed) return hcHomeCounts;
+    try{
+      var c = await authGetClient();
+      var today = new Date(); var iso = today.getFullYear() + '-' +
+        String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+      var r = await Promise.all([
+        c.from('jobs').select('id', { count:'exact', head:true }).eq('business_id', biz.id).eq('scheduled_date', iso),
+        c.from('booking_requests').select('id', { count:'exact', head:true }).eq('business_id', biz.id).eq('status','pending'),
+        c.from('chatbot_conversations').select('id', { count:'exact', head:true }).eq('business_id', biz.id).eq('resulted_in_booking', false)
+      ]);
+      if(!r[0].error && r[0].count > 0) hcHomeCounts.jobsToday = r[0].count;
+      if(!r[1].error && r[1].count > 0) hcHomeCounts.openBookings = r[1].count;
+      if(!r[2].error && r[2].count > 0) hcHomeCounts.openLeads = r[2].count;
+    }catch(e){ /* no counts; the cards render without them */ }
+    return hcHomeCounts;
+  }
+
+  function hcAskHubly(text){
+    var inp = document.getElementById('hcInput'); if(!inp) return;
+    inp.value = text; hcSend(inp);
+  }
+
+  // PERMANENT FURNITURE. The card row is always here — only WHICH cards fill it is
+  // computed, and it fills top-down from the registry so positions never shuffle.
+  function hcRenderActionCards(biz, thread){
+    var ctx = hcPromiseCtx(biz);
+    var list = HC_HOME_PROMISES.filter(function(p){
+      if(p.kind !== 'card') return false;
+      try{ return p.needs(ctx); }catch(e){ return false; }
+    }).slice(0, 4);
+    if(!list.length) return;
+    var wrap = document.createElement('div'); wrap.className = 'hc-msg hubly hc-acts';
+    list.forEach(function(p){
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'hc-act';
+      b.setAttribute('data-promise', p.id);
+      var ic = document.createElement('span'); ic.className = 'hc-act-ic';
+      ic.innerHTML = HC_ACT_ICONS[p.icon] || ''; ic.setAttribute('aria-hidden','true');
+      var tx = document.createElement('span'); tx.className = 'hc-act-tx';
+      var nm = document.createElement('span'); nm.className = 'hc-act-nm'; nm.textContent = p.label;
+      tx.appendChild(nm);
+      var n = p.countKey ? ctx.counts[p.countKey] : 0;
+      if(p.count && n > 0){
+        var ct = document.createElement('span'); ct.className = 'hc-act-ct'; ct.textContent = p.count(n);
+        tx.appendChild(ct);
+      }
+      b.appendChild(ic); b.appendChild(tx);
+      b.addEventListener('click', function(){
+        if(p.open) hcOpenWorkspace(p.open);
+        else if(p.ask) hcAskHubly(p.ask);
+      });
+      wrap.appendChild(b);
+    });
+    thread.appendChild(wrap);
+  }
+
+  function hcRenderSuggestions(biz, thread){
+    var ctx = hcPromiseCtx(biz);
+    var list = HC_HOME_PROMISES.filter(function(p){
+      if(p.kind !== 'chip') return false;
+      try{ return p.needs(ctx); }catch(e){ return false; }
+    }).slice(0, 4);
+    if(!list.length) return;
+    var wrap = document.createElement('div'); wrap.className = 'hc-msg hubly hc-suggs';
+    list.forEach(function(p){
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'hc-sugg';
+      b.setAttribute('data-promise', p.id);
+      b.textContent = p.label;
+      b.addEventListener('click', function(){ hcAskHubly(p.label); });
+      wrap.appendChild(b);
+    });
+    thread.appendChild(wrap);
+  }
+
   async function hcRenderHome(){
     var thread = hcThreadBody(); if(!thread) return;
     thread.innerHTML = '';
@@ -4669,10 +5120,24 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     await hcLoadIdentity(biz);
     hcRenderIdentity(biz, thread);
     hcRenderRailBiz(biz);
+    await hcLoadHomeCounts(biz);
+    // THE NEWS LINE. One line under the greeting, and the only thing on this screen that
+    // changes shape day to day. It is NOT a chat bubble: a bubble says "Hubly just said
+    // this to you", and the state of the business is not a remark. Rendered as a line so
+    // the permanent furniture around it stays recognisably permanent.
+    //
     // Then only what no CARD will say. One event is owned by its card — repeating it as a
     // sentence is the same news twice, and an owner reading it in two registers skims both.
     var greetLines = await hcBuildGreeting(biz);
-    greetLines.forEach(function(line){ hcAppendMessage('hubly', line); });
+    if(greetLines.length){
+      var news = document.createElement('div'); news.className = 'hc-msg hubly hc-news';
+      news.textContent = greetLines.join(' ');
+      thread.appendChild(news);
+    }
+    // FURNITURE BEFORE NEWS-IN-CARDS. The four things an owner can always do sit directly
+    // under the greeting, in the same place every single day, whether or not anything
+    // happened. That constancy is the point: a hub you have to re-read to use is a feed.
+    hcRenderActionCards(biz, thread);
     // THE STREAM. Real events, newest first, before anything advisory — what actually
     // happened outranks what we think they should do next.
     try{
@@ -4700,6 +5165,8 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
         hcSubscribeEvents(biz.id);
       }
     }catch(e){ console.error('[events] render failed', e); }
+    // Generated from the promise registry — never a fixed list of four strings.
+    hcRenderSuggestions(biz, thread);
     // The old conversation stays REACHABLE, not in their face.
     if(hc.messages && hc.messages.length){
       var seeWrap = document.createElement('div'); seeWrap.className = 'hc-msg hubly hc-arrival-actions';
@@ -5246,6 +5713,25 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
 
   // Run the upgrade, then mount — and mount WHATEVER happens. The only outcome that
   // is not allowed here is a canvas that never arrives.
+  // ONE STRING FOR THE CLASSIC-PAGE LIMIT, IN ONE PLACE.
+  //
+  // It used to say the site was "built by hand". That is OUR word for OUR data model —
+  // it means "no business_documents row" — and Graef did not build his site by hand; he
+  // typed into Hubly like everyone else. Telling him otherwise is Hubly narrating its
+  // own storage back at the owner as if it were a fact about him, and it is wrong on
+  // its face. Three separate places said it, in three different wordings.
+  //
+  // What it says now is only the two things that are true and useful: where the text is
+  // edited, and that the live site is untouched. The URL is the business's real slug —
+  // never a placeholder, and omitted entirely when we do not have one.
+  function hcClassicScopeLine(lead){
+    var biz = hc.draftBusiness || {};
+    var host = String(biz.url || '').replace(/^https?:\/\//i,'').replace(/\/$/,'')
+      || (biz.slug ? (biz.slug + '.myhubly.app') : '');
+    return (lead ? (lead + ' ') : '')
+      + 'I can\u2019t change the page text from here \u2014 that\u2019s edited in Edit details'
+      + (host ? (', and your live site is unchanged at ' + host + '.') : ', and your live site is unchanged.');
+  }
   async function hcRunPageUpgradeThenMount(){
     var r = null;
     try{ r = await hcUpgradePageIfNeeded(); }catch(e){ r = { failed: true }; }
@@ -5259,9 +5745,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     // smoothed over. Said once per session; a repeated line becomes a banner.
     if(hc.hasDocument === false && !hc._saidClassicScope){
       hc._saidClassicScope = true;
-      hcAppendMessage('hubly',
-        "Your site was built by hand, so I can't edit the page text or layout from here — clicking the page won't change it, and I've turned that off rather than have it look like it saved. " +
-        "What you CAN change, and it goes straight to your live site: your phone, email and address, your hours, and your services and prices — all under Edit details.");
+      hcAppendMessage('hubly', hcClassicScopeLine());
       return;
     }
     if(r && r.failed){
@@ -5272,7 +5756,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       // document to upgrade and there never will be without a rebuild. Document
       // businesses keep the original transient wording, which is true for them.
       hcAppendMessage('hubly', (r.reply) || (hc.hasDocument === false
-        ? "Your site was built by hand rather than generated, so moving whole sections isn't something I can do on it — that isn't a temporary problem and reopening won't change it. Your services, hours and contact details are all editable under Edit details."
+        ? hcClassicScopeLine('Moving whole sections isn\u2019t something I can do on this page, and that isn\u2019t a temporary problem \u2014 reopening won\u2019t change it.')
         : r.timedOut
         ? "Your page took too long to update just now — everything still works, but moving whole sections won't be available until it does. Reopening the editor will try again."
         : "I couldn't update your page's structure just now — everything still works, but moving whole sections won't be available until it does."));
@@ -5459,7 +5943,7 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       // businesses keep the original line, where the invitation is still honest.
       '<div class="hc-dsg-note">Sizes move in steps that fit the design your page was built with, so nothing can end up broken. ' +
       (hc.hasDocument === false
-        ? 'Colours aren’t here yet, and this page was built by hand rather than generated, so I can’t restyle it from here either. Your services, hours and contact details are editable under Edit details.'
+        ? 'Colours aren\u2019t here yet, and I can\u2019t restyle this page from here either. ' + hcClassicScopeLine()
         : 'Colours aren’t here yet — changing those properly means rebuilding the page, which you can ask me to do in the chat.') + '</div>'+
     '</div>';
     document.body.appendChild(ov);
@@ -5974,7 +6458,6 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       // Real, persisted session. Now it's safe to declare success.
       hcAuthTrace('verify-ok', 'session persisted · draftInMemory=' + (!!hc.draftBusiness));
       authClearPending();
-      btn.textContent = 'Signed in';
       hcReflectAuthState();                 // visible confirmation (the header never changed before)
       await hcAfterAuth();
     }catch(e){
@@ -6064,8 +6547,35 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   function hcReflectAuthState(){
     var btn = document.getElementById('navSignin');
     if(!btn) return;
-    if(hcIsAuthed()){ btn.classList.add('is-authed'); btn.textContent = 'Signed in'; }
-    else { btn.classList.remove('is-authed'); btn.textContent = 'Log in or sign up'; }
+    if(hcIsAuthed()){
+      // THE ACCOUNT CHIP, not a "Signed in" pill. "Signed in" is a status the owner
+      // already knows — the whole screen is their business — sitting in the one corner
+      // every product reserves for the account. Avatar, name, chevron; same menu.
+      // The name is whatever hcLoadIdentity could establish and NOTHING else: no name
+      // on the record means initials from the email, and no email means no text at all.
+      // We do not invent a display name to fill the chip out.
+      btn.classList.add('is-authed'); btn.classList.add('is-chip');
+      var nm = hcIdentity.owner || '';
+      var em = hcIdentity.email || '';
+      var seed = nm || em.split('@')[0] || '';
+      btn.innerHTML = '';
+      var av = document.createElement('span'); av.className = 'hc-chip-av'; av.setAttribute('aria-hidden','true');
+      av.textContent = seed ? seed.trim().charAt(0).toUpperCase() : '\u2022';
+      btn.appendChild(av);
+      var label = nm || em;
+      if(label){
+        var t = document.createElement('span'); t.className = 'hc-chip-nm'; t.textContent = label;
+        btn.appendChild(t);
+      }
+      var cv = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      cv.setAttribute('class','hc-chip-cv'); cv.setAttribute('viewBox','0 0 24 24');
+      cv.setAttribute('fill','none'); cv.setAttribute('stroke','currentColor'); cv.setAttribute('stroke-width','2.2');
+      var pth = document.createElementNS('http://www.w3.org/2000/svg','path');
+      pth.setAttribute('d','M6 9l6 6 6-6'); pth.setAttribute('stroke-linecap','round'); pth.setAttribute('stroke-linejoin','round');
+      cv.appendChild(pth); btn.appendChild(cv);
+      btn.setAttribute('aria-label', label ? ('Account: ' + label) : 'Account');
+    }
+    else { btn.classList.remove('is-authed'); btn.classList.remove('is-chip'); btn.textContent = 'Log in or sign up'; }
   }
   // Is there ANY stored session, even an expired one? An expired access token
   // usually still has a live refresh token beside it, so "expired" is NOT the
@@ -6305,6 +6815,10 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     if(navSignin) navSignin.addEventListener('click', authOpen);
     var railGear = document.getElementById('hcRailGear');
     if(railGear) railGear.addEventListener('click', function(e){ e.stopPropagation(); hcOpenSettings(); });
+    var pX = document.getElementById('hcPanelX');
+    if(pX) pX.addEventListener('click', hcClosePanel);
+    var pB = document.getElementById('hcPanelBack');
+    if(pB) pB.addEventListener('click', hcPanelBackStep);
     authEl('authClose').addEventListener('click', authClose);
     try{ authEl('authMaybeLater').addEventListener('click', authClose); }catch(e){}
     authOv.addEventListener('click', function(e){ if(e.target === authOv) authClose(); });
