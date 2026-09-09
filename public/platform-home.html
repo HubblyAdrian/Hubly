@@ -4275,22 +4275,56 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     }
     return false;
   }
+  /* A PLACE ONLY RENDERS ONCE IT HAS SOMEWHERE TO GO.
+   *
+   * business_places is now populated (55 rows, 34 businesses, 2026-09-09), and the
+   * earning rule has already granted Graef `planner`, `jobs` and `customers` from his
+   * own history. But hcOpenWorkspace() has a surface for exactly ONE kind — `website`.
+   * Every other id sets data-mode and mounts nothing, so the canvas stays hidden and
+   * the owner is left looking at the Home conversation under a different tab, with no
+   * sign anything happened.
+   *
+   * That is a control that reports success without an effect, and putting one in front
+   * of four market owners is the "Set your hours" defect with a tab instead of a chip.
+   *
+   * So the DATA and the SURFACE are separated. The row is written the moment the signal
+   * is real — that is the earning rule and it is already true — and the rail renders it
+   * only when this set says a surface exists. Each surface that ships adds one entry
+   * here and its already-earned rows light up for every business at once. No second
+   * migration, no re-derivation, and no window where a tab leads nowhere. */
+  var HC_PLACE_SURFACES = {
+    website: { label:'Website', icon:HC_RAIL_ICONS.website },
+    // planner   — pending: the owner's day (jobs, blocks, tasks in one list)
+    // jobs      — pending: the jobs list
+    // customers — pending: the customer list
+    // leads     — pending: the unbooked-lead list
+    // store     — pending: the storefront workspace
+  };
   function hcWorkspaces(){
     var ws = [];
     var biz = hc.draftBusiness;
-    if(biz && hc.draftClaimed && hasPlace('website')){
-      ws.push({ id:'website', label:'Website', icon:HC_RAIL_ICONS.website });
+    if(!biz || !hc.draftClaimed) return ws;
+    // FAIL OPEN, UNCHANGED. No rows for this business still means "show everything we
+    // have a surface for" — the safe direction, and the reason a read failure or a
+    // business the backfill never reached is survivable. It is decided per business:
+    // hc.places is loaded per slug, so one business's rows never speak for another's.
+    if(!hcPlacesKnown()){
+      Object.keys(HC_PLACE_SURFACES).forEach(function(kind){
+        var s = HC_PLACE_SURFACES[kind];
+        ws.push({ id:kind, label:s.label, icon:s.icon });
+      });
+      return ws;
     }
-    // The seam this file already carried, now real. Each is one line and needs
-    // only its icon and a place row — which is what the assistant will write when
-    // an owner asks. The WRITER is deliberately not built yet: the reader is
-    // proven first.
-    if(biz && hc.draftClaimed && hcPlacesKnown() && hasPlace('store')){
-      ws.push({ id:'store', label:'Store', icon:HC_RAIL_ICONS.store });
-    }
-    if(biz && hc.draftClaimed && hcPlacesKnown() && hasPlace('jobs')){
-      ws.push({ id:'jobs', label:'Jobs', icon:HC_RAIL_ICONS.jobs });
-    }
+    // ORDER IS THE ROW'S OWN sort_order, and it never reshuffles by frequency, recency
+    // or any other "smart" signal (prohibition 5). A place that cannot render yet still
+    // holds its number, so nothing moves when its surface arrives.
+    hc.places.slice()
+      .filter(function(p){ return p && p.scope === 'workspace' && p.visible !== false && HC_PLACE_SURFACES[p.kind]; })
+      .sort(function(a, b){ return (a.sort_order || 0) - (b.sort_order || 0); })
+      .forEach(function(p){
+        var s = HC_PLACE_SURFACES[p.kind];
+        ws.push({ id:p.kind, label:s.label, icon:s.icon });
+      });
     return ws;
   }
   // hc.mode is the current surface: 'home' (default) or a workspace id.
