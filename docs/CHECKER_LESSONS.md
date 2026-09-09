@@ -313,3 +313,42 @@ The temptation there is to weaken the assertion until the proof passes, and that
 backwards. **When a red-proof will not go red, the fixture is the first suspect, not the
 assertion** — the check that is hardest to break on purpose is usually the one worth
 keeping.
+
+---
+
+## Lesson 11 — a truth string may not claim a value is on the page unless the value is in the bytes
+
+**THE RULE.** A truth-composing function may not tell an owner that a value is on their
+page unless that value has been verified present **in the rendered output**. Not that the
+writer returned `ok`. Not that the write path was entered. Present in the bytes that ship.
+
+Written 2026-09-09, from a defect that nearly shipped *inside the fix for a different one*.
+
+The guess-row inserter overwrote a placeholder row with a real service. On the row shape a
+generated page most often has — a title and a blurb, with **no price element** — the name
+landed, the price had nowhere to go, and the function returned `ok: true`. `servicesTruth`
+composes its read-back from that result, so an owner who had just typed "1st Flight, 250"
+would have been told:
+
+> *"1st Flight $250 is on your page now."*
+
+about a page with no `250` anywhere in it.
+
+That is the same fabrication class as a green checkmark nobody earned, an invented business
+hour, and a count over a truncated list — and it appeared in the fix for the "we can't find
+your services section" defect, written by someone (me) who had spent the day removing
+exactly this.
+
+**It survived only because the check asserted the price was VISIBLE, not that the function
+returned ok.** The assertion was one line:
+
+```js
+t("(b) THE PRICE LANDS", /250/.test(h), "ok was reported but no price reached the page");
+```
+
+Had the check asserted `r.ok === true`, it would have passed, the fix would have shipped,
+and the first owner to type a price would have been lied to about it.
+
+**So the discipline is not "test the writer", it is "test the page".** A write path that
+reports success is a claim; the rendered output is the fact. Where the two can disagree,
+only one of them is allowed to reach a sentence an owner reads.
