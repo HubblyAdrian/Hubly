@@ -191,9 +191,17 @@ Say `make it Ridgeline's Detail & Wash`.
 
 # PART 4 — The services block, the awkward way  *(~15 min)*
 
-This part needs **two different businesses**. Ask me for the slugs if you don't have
-them handy — one whose services area is placeholder rows, one with no services area at
-all.
+This part needs **two different businesses**, both `test` accounts, both already set up
+for it:
+
+| for | slug |
+|---|---|
+| step 15 — services area made of **placeholder rows** | `sunday-field-bakery` |
+| step 16 — **no services area at all** | `weekly-lawn-care-and-seasonal-cleanups` |
+
+You'll need to be signed in as their owner to talk to them. If you'd rather use your own
+account, any page you've built that shows services will do for 15; for 16 you need one
+with no services section, and those two are the ones I've verified.
 
 ### 15. A page whose services area is placeholders
 On that business, add a service with a price: `add Paint Correction at 275`.
