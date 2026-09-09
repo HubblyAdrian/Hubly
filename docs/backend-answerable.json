@@ -1,0 +1,502 @@
+{
+ "_": "Machine-readable form of docs/BACKEND_ANSWERABLE.md. THE RULING: anything Hubly stores about a business, its owner must be able to ask about. bucket 'owner' means a slice in hubly_operational_state.ts MUST read it; scripts/check-backend-answerable.mjs fails the build otherwise. bucket 'internal' means deliberately never surfaced \u2014 add a reason. A table in neither is unclassified and also fails: a new owner-facing table with no reader is the eighth missing door, prevented instead of discovered.",
+ "tables": {
+  "addons": {
+   "bucket": "internal",
+   "reason": "marketplace add-ons, a separate product surface"
+  },
+  "adobe_lightroom_connections": {
+   "bucket": "internal",
+   "reason": "OAuth / connection plumbing"
+  },
+  "adobe_oauth_states": {
+   "bucket": "internal",
+   "reason": "OAuth / connection plumbing"
+  },
+  "ask_hubly_activity_feed": {
+   "bucket": "internal",
+   "reason": "Ask Hubly, legacy"
+  },
+  "ask_hubly_ai_actions": {
+   "bucket": "internal",
+   "reason": "Ask Hubly, legacy"
+  },
+  "ask_hubly_conversations": {
+   "bucket": "internal",
+   "reason": "Ask Hubly, legacy"
+  },
+  "ask_hubly_insights": {
+   "bucket": "internal",
+   "reason": "Ask Hubly, legacy"
+  },
+  "ask_hubly_messages": {
+   "bucket": "internal",
+   "reason": "Ask Hubly, legacy"
+  },
+  "booking_requests": {
+   "bucket": "owner"
+  },
+  "business_conversations": {
+   "bucket": "internal",
+   "reason": "the owner's own thread with Hubly \u2014 already reachable on its own surface"
+  },
+  "business_dna": {
+   "bucket": "internal",
+   "reason": "derived understanding, not a stated fact"
+  },
+  "business_documents": {
+   "bucket": "owner"
+  },
+  "business_event_reads": {
+   "bucket": "internal",
+   "reason": "per-owner read marker; plumbing behind is_new"
+  },
+  "business_memories": {
+   "bucket": "internal",
+   "reason": "derived understanding, not a stated fact"
+  },
+  "business_memory_changes": {
+   "bucket": "internal",
+   "reason": "audit of the above"
+  },
+  "business_places": {
+   "bucket": "owner"
+  },
+  "business_table_config": {
+   "bucket": "internal",
+   "reason": "UI column preferences"
+  },
+  "businesses": {
+   "bucket": "owner"
+  },
+  "campaign_goals": {
+   "bucket": "internal",
+   "reason": "campaign reference data, not about any one business"
+  },
+  "campaign_industries": {
+   "bucket": "internal",
+   "reason": "campaign reference data, not about any one business"
+  },
+  "campaign_plans": {
+   "bucket": "internal",
+   "reason": "campaign reference data, not about any one business"
+  },
+  "campaign_playbook_assets": {
+   "bucket": "internal",
+   "reason": "campaign reference data, not about any one business"
+  },
+  "campaign_playbooks": {
+   "bucket": "internal",
+   "reason": "campaign reference data, not about any one business"
+  },
+  "campaign_seasonal_calendar": {
+   "bucket": "internal",
+   "reason": "campaign reference data, not about any one business"
+  },
+  "campaign_triggers": {
+   "bucket": "internal",
+   "reason": "campaign reference data, not about any one business"
+  },
+  "capture_miss_events": {
+   "bucket": "internal",
+   "reason": "our own instrumentation"
+  },
+  "chatbot_conversations": {
+   "bucket": "owner"
+  },
+  "chatbot_messages": {
+   "bucket": "owner"
+  },
+  "commerce_bundle_products": {
+   "bucket": "internal",
+   "reason": "store scaffolding: empty and unreachable"
+  },
+  "commerce_bundles": {
+   "bucket": "internal",
+   "reason": "store scaffolding: empty and unreachable"
+  },
+  "commerce_cart_items": {
+   "bucket": "internal",
+   "reason": "store scaffolding: empty and unreachable"
+  },
+  "commerce_carts": {
+   "bucket": "internal",
+   "reason": "store scaffolding: empty and unreachable"
+  },
+  "commerce_collection_products": {
+   "bucket": "internal",
+   "reason": "join table between collections and products; both sides are readable through the catalogue slice"
+  },
+  "commerce_collections": {
+   "bucket": "owner"
+  },
+  "commerce_discounts": {
+   "bucket": "internal",
+   "reason": "store scaffolding: empty and unreachable"
+  },
+  "commerce_documents": {
+   "bucket": "internal",
+   "reason": "store scaffolding: empty and unreachable"
+  },
+  "commerce_gift_cards": {
+   "bucket": "internal",
+   "reason": "store scaffolding: empty and unreachable"
+  },
+  "commerce_inventory_logs": {
+   "bucket": "internal",
+   "reason": "store scaffolding: empty and unreachable"
+  },
+  "commerce_merchandising_recs": {
+   "bucket": "internal",
+   "reason": "store scaffolding: empty and unreachable"
+  },
+  "commerce_order_items": {
+   "bucket": "owner"
+  },
+  "commerce_orders": {
+   "bucket": "owner"
+  },
+  "commerce_product_images": {
+   "bucket": "internal",
+   "reason": "store scaffolding: empty and unreachable"
+  },
+  "commerce_product_variants": {
+   "bucket": "owner"
+  },
+  "commerce_products": {
+   "bucket": "owner"
+  },
+  "commerce_shipping_profiles": {
+   "bucket": "internal",
+   "reason": "store scaffolding: empty and unreachable"
+  },
+  "commerce_store_settings": {
+   "bucket": "owner"
+  },
+  "customer_memories": {
+   "bucket": "internal",
+   "reason": "derived, and customer-side; see docs/CUSTOMER_DIRECTION.md"
+  },
+  "customer_profiles": {
+   "bucket": "internal",
+   "reason": "empty; customer-side identity, gated in CUSTOMER_DIRECTION.md"
+  },
+  "customers": {
+   "bucket": "owner"
+  },
+  "document_build_jobs": {
+   "bucket": "internal",
+   "reason": "build queue plumbing"
+  },
+  "document_vocabulary_rejections": {
+   "bucket": "internal",
+   "reason": "our own instrumentation"
+  },
+  "draft_claims": {
+   "bucket": "internal",
+   "reason": "claim plumbing"
+  },
+  "draft_creation_events": {
+   "bucket": "internal",
+   "reason": "our own instrumentation"
+  },
+  "gallery_items": {
+   "bucket": "owner"
+  },
+  "google_calendar_connections": {
+   "bucket": "internal",
+   "reason": "OAuth / connection plumbing"
+  },
+  "google_calendar_events": {
+   "bucket": "owner"
+  },
+  "google_calendar_oauth_states": {
+   "bucket": "internal",
+   "reason": "OAuth / connection plumbing"
+  },
+  "hubly_app_connections": {
+   "bucket": "internal",
+   "reason": "OAuth / connection plumbing"
+  },
+  "hubly_brain_executions": {
+   "bucket": "internal",
+   "reason": "our own instrumentation"
+  },
+  "hubly_conversation_memories": {
+   "bucket": "internal",
+   "reason": "derived"
+  },
+  "hubly_execution_runs": {
+   "bucket": "internal",
+   "reason": "our own instrumentation"
+  },
+  "hubly_reasoning_events": {
+   "bucket": "internal",
+   "reason": "our own instrumentation"
+  },
+  "image_slot_probe": {
+   "bucket": "internal",
+   "reason": "our own instrumentation"
+  },
+  "jobs": {
+   "bucket": "owner"
+  },
+  "marketplace_bookings": {
+   "bucket": "internal",
+   "reason": "marketplace, a separate product surface"
+  },
+  "marketplace_conversations": {
+   "bucket": "internal",
+   "reason": "marketplace, a separate product surface"
+  },
+  "marketplace_customers": {
+   "bucket": "internal",
+   "reason": "marketplace, a separate product surface"
+  },
+  "marketplace_messages": {
+   "bucket": "internal",
+   "reason": "marketplace, a separate product surface"
+  },
+  "marketplace_ops_flags": {
+   "bucket": "internal",
+   "reason": "marketplace, a separate product surface"
+  },
+  "marketplace_ops_notes": {
+   "bucket": "internal",
+   "reason": "marketplace, a separate product surface"
+  },
+  "marketplace_providers": {
+   "bucket": "internal",
+   "reason": "marketplace, a separate product surface"
+  },
+  "marketplace_requests": {
+   "bucket": "internal",
+   "reason": "marketplace, a separate product surface"
+  },
+  "memberships": {
+   "bucket": "owner"
+  },
+  "notification_deliveries": {
+   "bucket": "owner"
+  },
+  "page_loads": {
+   "bucket": "owner"
+  },
+  "photography_project_activity": {
+   "bucket": "internal",
+   "reason": "the photography vertical, dead"
+  },
+  "photography_project_contracts": {
+   "bucket": "internal",
+   "reason": "the photography vertical, dead"
+  },
+  "photography_project_deliverables": {
+   "bucket": "internal",
+   "reason": "the photography vertical, dead"
+  },
+  "photography_project_galleries": {
+   "bucket": "internal",
+   "reason": "the photography vertical, dead"
+  },
+  "photography_project_invoices": {
+   "bucket": "internal",
+   "reason": "the photography vertical, dead"
+  },
+  "photography_project_lightroom": {
+   "bucket": "internal",
+   "reason": "the photography vertical, dead"
+  },
+  "photography_project_marketing": {
+   "bucket": "internal",
+   "reason": "the photography vertical, dead"
+  },
+  "photography_project_questionnaires": {
+   "bucket": "internal",
+   "reason": "the photography vertical, dead"
+  },
+  "photography_project_team": {
+   "bucket": "internal",
+   "reason": "the photography vertical, dead"
+  },
+  "photography_project_timeline": {
+   "bucket": "internal",
+   "reason": "the photography vertical, dead"
+  },
+  "photography_project_workspaces": {
+   "bucket": "internal",
+   "reason": "the photography vertical, dead"
+  },
+  "photography_projects": {
+   "bucket": "internal",
+   "reason": "the photography vertical, dead"
+  },
+  "placed_images": {
+   "bucket": "owner"
+  },
+  "planner_fallback_events": {
+   "bucket": "internal",
+   "reason": "our own instrumentation"
+  },
+  "portal_access_tokens": {
+   "bucket": "internal",
+   "reason": "tokens"
+  },
+  "portfolio_photos": {
+   "bucket": "owner"
+  },
+  "postbuild_fallback_events": {
+   "bucket": "internal",
+   "reason": "our own instrumentation"
+  },
+  "price_extraction_miss_events": {
+   "bucket": "internal",
+   "reason": "our own instrumentation"
+  },
+  "rebuild_outcome_events": {
+   "bucket": "internal",
+   "reason": "our own instrumentation"
+  },
+  "recurring_schedules": {
+   "bucket": "owner"
+  },
+  "review_submissions": {
+   "bucket": "owner"
+  },
+  "service_photos": {
+   "bucket": "owner"
+  },
+  "services": {
+   "bucket": "owner"
+  },
+  "settings_ai": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_api_keys": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_audit_logs": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_billing": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_branding": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_business": {
+   "bucket": "internal",
+   "reason": "0 rows and every column duplicates businesses \u2014 dead, should be dropped rather than read"
+  },
+  "settings_business_hours": {
+   "bucket": "owner"
+  },
+  "settings_integrations": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_notifications": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_oauth_tokens": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_organization": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_permissions": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_roles": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_security": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_subscriptions": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "settings_team_members": {
+   "bucket": "internal",
+   "reason": "settings scaffolding: 0 rows, no live reader"
+  },
+  "stripe_connect_accounts": {
+   "bucket": "owner"
+  },
+  "studio_analytics_snapshots": {
+   "bucket": "internal",
+   "reason": "Studio, a dead product surface"
+  },
+  "studio_assets": {
+   "bucket": "internal",
+   "reason": "Studio, a dead product surface"
+  },
+  "studio_brand_kit": {
+   "bucket": "internal",
+   "reason": "Studio, a dead product surface"
+  },
+  "studio_project_exports": {
+   "bucket": "internal",
+   "reason": "Studio, a dead product surface"
+  },
+  "studio_project_pages": {
+   "bucket": "internal",
+   "reason": "Studio, a dead product surface"
+  },
+  "studio_project_versions": {
+   "bucket": "internal",
+   "reason": "Studio, a dead product surface"
+  },
+  "studio_projects": {
+   "bucket": "internal",
+   "reason": "Studio, a dead product surface"
+  },
+  "studio_publish_queue": {
+   "bucket": "internal",
+   "reason": "Studio, a dead product surface"
+  },
+  "studio_settings": {
+   "bucket": "internal",
+   "reason": "Studio, a dead product surface"
+  },
+  "studio_social_accounts": {
+   "bucket": "internal",
+   "reason": "Studio, a dead product surface"
+  },
+  "studio_templates": {
+   "bucket": "internal",
+   "reason": "Studio, a dead product surface"
+  },
+  "user_table_preferences": {
+   "bucket": "internal",
+   "reason": "UI column preferences"
+  },
+  "website_pages": {
+   "bucket": "internal",
+   "reason": "Studio, a dead product surface"
+  },
+  "workspace_memories": {
+   "bucket": "internal",
+   "reason": "derived"
+  },
+  "workspace_memory_changes": {
+   "bucket": "internal",
+   "reason": "audit of the above"
+  },
+  "zip_centroids": {
+   "bucket": "internal",
+   "reason": "reference data, not about any business"
+  }
+ }
+}

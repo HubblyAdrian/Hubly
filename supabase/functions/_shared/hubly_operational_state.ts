@@ -58,6 +58,18 @@ export type OperationalSlice = {
   /** Printed verbatim when there are no rows. Must be honest and calm. */
   emptyLine: string;
   rows: OperationalRow[];
+  /** How many there REALLY are, when the rows are a capped page of a longer list.
+   *  Undefined means "not countable here", which is not the same as "this is all". */
+  total?: number;
+  /** The rows ARE the computed answer (a GROUP BY over every row). Never re-derive. */
+  aggregate?: boolean;
+  /** Not printed in the every-turn block, but readable via operations.read(slice).
+   *  The block is prepended to EVERY owner turn, so a slice nobody asks about daily
+   *  costs context on every single one. These are named in the block as available. */
+  onDemand?: boolean;
+  /** A fact about the slice ITSELF that the rows cannot carry — most usefully, what
+   *  the slice could NOT account for. Printed after the rows, verbatim. */
+  note?: string;
   /** Set when the read itself failed — distinct from "there are none". */
   error?: string;
 };
@@ -107,9 +119,41 @@ type SliceDef = {
   key: string;
   title: string;
   emptyLine: string;
-  read: (admin: Admin, businessId: string) => Promise<OperationalRow[]>;
+  /** Rows, and — when the slice is capped — how many there really are.
+   *
+   *  `total` is the whole point of this shape. "You have 40 customers" when the cap
+   *  is 40 is a lie wearing a number, and the model cannot tell a full page from a
+   *  truncated one by looking at it. A slice that can be truncated MUST report the
+   *  real total so the block can say "showing 8 of 41". */
+  read: (admin: Admin, businessId: string, ownerUid: string) => Promise<{ rows: OperationalRow[]; total?: number; note?: string }>;
   /** One row, rendered for the model as DATA. Never prose, never a guess. */
   line: (r: OperationalRow) => string;
+  /** See OperationalSlice.onDemand. */
+  onDemand?: boolean;
+  /** An AGGREGATE slice already IS the answer — computed by a GROUP BY over every
+   *  row in SQL, never by the model counting what it was handed. Nothing to truncate,
+   *  and the model must not re-derive it. */
+  aggregate?: boolean;
+};
+
+/** Call a SECURITY DEFINER reader. Every aggregate lives in SQL for one reason:
+ *  "what are my most popular services?" was answerable and WRONG, because the model
+ *  would have ranked a list truncated at MAX_ROWS and said it with full confidence. */
+async function rpc(admin: Admin, fn: string, args: Record<string, unknown>): Promise<OperationalRow[]> {
+  const { data, error } = await admin.rpc(fn, args);
+  if (error) throw new Error(`${fn}: ${error.message}`);
+  if (data == null) return [];
+  return Array.isArray(data) ? data : [data as OperationalRow];
+}
+
+const dollars = (v: unknown): string | null => {
+  const n = Number(v);
+  return Number.isFinite(n) && n !== 0 ? `$${n.toFixed(2).replace(/\.00$/, "")}` : null;
+};
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const hhmm = (t: unknown): string | null => {
+  const v = String(t ?? "").trim();
+  return v ? v.slice(0, 5) : null;
 };
 
 const money = (cents: unknown): string | null => {
@@ -136,14 +180,14 @@ export const SLICES: SliceDef[] = [
     title: "BOOKINGS",
     emptyLine: "BOOKINGS: none on record. Do not say they have bookings, and do not estimate a number.",
     read: async (admin, businessId) => {
-      const { data } = await admin
+      const { data, count } = await admin
         .from("booking_requests")
-        .select("id,customer_name,customer_phone,customer_email,service_name,requested_date,requested_time,address,status,amount_due_cents,amount_required_cents,notes,created_at")
+        .select("id,customer_name,customer_phone,customer_email,service_name,requested_date,requested_time,address,status,amount_due_cents,amount_required_cents,notes,created_at", { count: "exact" })
         .eq("business_id", businessId)
         .neq("status", "abandoned")
         .order("created_at", { ascending: false })
         .limit(MAX_ROWS);
-      return Array.isArray(data) ? data : [];
+      return { rows: Array.isArray(data) ? data : [], total: count ?? undefined };
     },
     line: (r) => {
       const price = money(r.amount_due_cents) ?? money(r.amount_required_cents);
@@ -160,17 +204,22 @@ export const SLICES: SliceDef[] = [
   },
   {
     key: "jobs",
-    title: "UPCOMING JOBS",
-    emptyLine: "UPCOMING JOBS: none on record. Do not describe a schedule they do not have.",
+    title: "JOBS (recent and upcoming)",
+    emptyLine: "JOBS: none on record. Do not describe a schedule they do not have.",
     read: async (admin, businessId) => {
-      const { data } = await admin
+      const { data, count } = await admin
         .from("jobs")
-        .select("id,customer_name,service_name,scheduled_date,scheduled_time,address,status,amount,phone,email,notes,duration_hours")
+        .select("id,customer_name,service_name,scheduled_date,scheduled_time,address,status,amount,phone,email,notes,duration_hours", { count: "exact" })
         .eq("business_id", businessId)
-        .gte("scheduled_date", todayISO())
-        .order("scheduled_date", { ascending: true })
+        // NO scheduled_date >= today. That filter made "what did I make last month"
+        // unanswerable IN PRINCIPLE rather than merely incomplete — the reader could
+        // not look backwards at all. Past and future are both real questions. Recent
+        // first: a job last week is as real as one next week, and the sales aggregate
+        // does the arithmetic in SQL rather than from this page.
+        .gte("scheduled_date", new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10))
+        .order("scheduled_date", { ascending: false })
         .limit(MAX_ROWS);
-      return Array.isArray(data) ? data : [];
+      return { rows: Array.isArray(data) ? data : [], total: count ?? undefined };
     },
     line: (r) => {
       const amt = Number(r.amount);
@@ -189,13 +238,13 @@ export const SLICES: SliceDef[] = [
     title: "STORE ORDERS",
     emptyLine: "STORE ORDERS: none on record. Nobody has bought anything through the store yet — say that plainly if asked, and never imply a sale.",
     read: async (admin, businessId) => {
-      const { data } = await admin
+      const { data, count } = await admin
         .from("commerce_orders")
-        .select("id,order_number,status,fulfillment,total_cents,currency,customer_name,customer_email,customer_phone,paid_at,created_at")
+        .select("id,order_number,status,fulfillment,total_cents,currency,customer_name,customer_email,customer_phone,paid_at,created_at", { count: "exact" })
         .eq("business_id", businessId)
         .order("created_at", { ascending: false })
         .limit(MAX_ROWS);
-      return Array.isArray(data) ? data : [];
+      return { rows: Array.isArray(data) ? data : [], total: count ?? undefined };
     },
     line: (r) => [
       `${String(r.customer_name || "someone").trim()} — ${money(r.total_cents) ?? "no total on record"}`,
@@ -233,7 +282,7 @@ export const SLICES: SliceDef[] = [
         .order("started_at", { ascending: false })
         .limit(MAX_ROWS);
       const rows = Array.isArray(convs) ? convs : [];
-      if (!rows.length) return [];
+      if (!rows.length) return { rows: [], total: 0 };
       const out: Record<string, unknown>[] = [];
       for (const c of rows) {
         // What they ASKED is the first thing they said — the most useful single line
@@ -262,7 +311,7 @@ export const SLICES: SliceDef[] = [
           customer_email: c.customer_email,
         });
       }
-      return out;
+      return { rows: out, total: rows.length };
     },
     line: (r) => [
       `${String(r.customer_name || "someone").trim()} asked: ` +
@@ -282,7 +331,7 @@ export const SLICES: SliceDef[] = [
     emptyLine: "PEOPLE WHO LOOKED AT YOUR PAGE: none on record.",
     read: async (admin, businessId) => {
       const since = new Date(Date.now() - 14 * 86400000).toISOString().slice(0, 10);
-      const { data } = await admin
+      const { data, count } = await admin
         .from("page_loads")
         .select("loaded_day,visitor_hash,referrer,is_owner_preview")
         .eq("business_id", businessId)
@@ -304,7 +353,7 @@ export const SLICES: SliceDef[] = [
         .neq("device_class", "bot")
         .gte("loaded_day", since);
       const rows = Array.isArray(data) ? data : [];
-      if (!rows.length) return [];
+      if (!rows.length) return { rows: [], total: 0 };
       const byDay = new Map<string, Set<string>>();
       for (const r of rows) {
         const d = String(r.loaded_day || "").slice(0, 10);
@@ -314,26 +363,233 @@ export const SLICES: SliceDef[] = [
         // than collapsing distinct people into one. Stated, not silently deduped.
         byDay.get(d)!.add(String(r.visitor_hash || `row:${r.loaded_day}:${Math.random()}`));
       }
-      return [...byDay.entries()]
-        .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-        .slice(0, MAX_ROWS)
-        .map(([day, set]) => ({ day, people: set.size }));
+      const days = [...byDay.entries()].sort((a, b) => (a[0] < b[0] ? 1 : -1));
+      return {
+        rows: days.slice(0, MAX_ROWS).map(([day, set]) => ({ day, people: set.size })),
+        total: days.length,
+      };
     },
     line: (r) => `${String(r.day)} — ${Number(r.people)} ${Number(r.people) === 1 ? "person" : "people"}`,
+  },
+  // ═══ ANYTHING HUBLY STORES, ITS OWNER CAN ASK ABOUT ═══════════════════════════
+  // Everything below reads through a SECURITY DEFINER function that re-checks
+  // ownership, and every AGGREGATE is a GROUP BY over every row in SQL. See
+  // supabase/migrations/20260909040000_owner_answerable_readers.sql and
+  // docs/BACKEND_ANSWERABLE.md.
+  {
+    // WHO HIS PEOPLE ARE. A home-service business IS its customer list, and Hubly
+    // held 17 of them across 6 businesses while showing an owner none of it.
+    //
+    // IDENTITY IS THE HARD PART AND IT IS SETTLED IN SQL: rows fold on normalised
+    // phone, then email, and NAME IS NEVER A MATCH KEY — two people called John Smith
+    // are not one customer, and one person entered twice is not two. A row with
+    // neither phone nor email folds onto nothing and stands alone; where the data
+    // cannot tell, it shows what exists rather than guessing.
+    key: "customers",
+    title: "CUSTOMERS",
+    emptyLine: "CUSTOMERS: none on record. Do not describe customers they do not have, and do not estimate a number.",
+    read: async (admin, businessId, ownerUid) => {
+      const [rows, total, unlinked] = await Promise.all([
+        rpc(admin, "get_business_customers", { p_business_id: businessId, p_owner_id: ownerUid, p_limit: MAX_ROWS }),
+        rpc(admin, "get_business_customer_count", { p_business_id: businessId, p_owner_id: ownerUid }),
+        rpc(admin, "get_business_unlinked_jobs", { p_business_id: businessId, p_owner_id: ownerUid }),
+      ]);
+      const n = Number((total[0] as Record<string, unknown>)?.get_business_customer_count ?? total[0] ?? 0);
+      const u = Number((unlinked[0] as Record<string, unknown>)?.get_business_unlinked_jobs ?? unlinked[0] ?? 0);
+      return {
+        rows, total: Number.isFinite(n) ? n : undefined,
+        note: u > 0
+          ? `${u} job${u === 1 ? " is" : "s are"} recorded with no customer id and no phone or email, so ${u === 1 ? "it is" : "they are"} not counted against anyone above. Do not attribute ${u === 1 ? "it" : "them"} by name — two people can share one.`
+          : undefined,
+      };
+    },
+    line: (r) => [
+      String(r.name || "unnamed customer").trim(),
+      contact(r),
+      r.vehicle ? `· ${String(r.vehicle)}` : null,
+      // "no job LINKED", not "never had a job": a job that carries no id and no contact
+      // detail cannot be attributed to anyone, and saying they never came is a claim.
+      r.last_seen ? `· last seen ${String(r.last_seen)}${r.last_service ? ` for ${String(r.last_service)}` : ""}` : "· no job linked to this record",
+      Number(r.visits) > 1 ? `· ${Number(r.visits)} jobs` : null,
+      Number(r.total_billed) > 0 ? `· ${dollars(r.total_billed)} billed` : null,
+      // Said out loud: this row is two rows that share a phone or an email.
+      Number(r.merged_rows) > 1 ? `· [${Number(r.merged_rows)} records for this person, matched on contact details]` : null,
+      isTestRow(r) ? "· [TEST ROW — written by our own harness, not a real customer]" : null,
+    ].filter(Boolean).join(" "),
+  },
+  {
+    // WHAT HE EARNED — from jobs AND orders, past and future.
+    //
+    // "Check my sales" read commerce_orders only, so it was blank for every business
+    // without a Store while jobs.amount sat there holding the money. And the jobs
+    // reader filtered scheduled_date >= today, so looking backwards was impossible
+    // rather than incomplete. Both fixed, and the arithmetic is a GROUP BY in SQL —
+    // never the model adding up a page of rows it was handed.
+    key: "sales",
+    title: "SALES",
+    emptyLine: "SALES: nothing earned on record — no jobs and no orders with an amount. Say that plainly; never estimate.",
+    aggregate: true,
+    read: async (admin, businessId, ownerUid) => ({
+      rows: await rpc(admin, "get_business_sales", {
+        p_business_id: businessId, p_owner_id: ownerUid, p_from: null, p_to: null,
+      }),
+    }),
+    line: (r) => {
+      const what = String(r.source) === "orders" ? "store orders" : "jobs";
+      return [
+        `${what}: ${Number(r.n)} on record, ${dollars(r.gross) ?? "$0"} total`,
+        Number(r.paid_gross) > 0 ? `· ${dollars(r.paid_gross)} paid` : null,
+        Number(r.unpaid_gross) > 0 ? `· ${dollars(r.unpaid_gross)} not marked paid` : null,
+        "(computed over EVERY row, all time — this is the real total, not a sample)",
+      ].filter(Boolean).join(" ");
+    },
+  },
+  {
+    // WHICH SERVICE SELLS MOST. The promise that was answerable and wrong.
+    key: "service_stats",
+    title: "HOW EACH SERVICE HAS SOLD",
+    emptyLine: "HOW EACH SERVICE HAS SOLD: no jobs or bookings on record to count.",
+    aggregate: true,
+    read: async (admin, businessId, ownerUid) => ({
+      rows: await rpc(admin, "get_business_service_stats", {
+        p_business_id: businessId, p_owner_id: ownerUid, p_from: null, p_to: null,
+      }),
+    }),
+    line: (r) => [
+      `${String(r.service_name)} — booked ${Number(r.times_booked)} time${Number(r.times_booked) === 1 ? "" : "s"}`,
+      Number(r.gross) > 0 ? `· ${dollars(r.gross)} from jobs` : null,
+      r.last_on ? `· most recently ${String(r.last_on)}` : null,
+    ].filter(Boolean).join(" "),
+  },
+  {
+    // WHAT HE CHARGES. 253 rows across every claimed business — changeable by talking,
+    // and until now not askable.
+    key: "services",
+    title: "SERVICES ON RECORD (what the booking flow and the page price from)",
+    emptyLine: "SERVICES ON RECORD: none. If their page shows services, those are text on the page and not records — say so rather than saying they have no services.",
+    read: async (admin, businessId, ownerUid) => ({
+      rows: await rpc(admin, "get_business_services", { p_business_id: businessId, p_owner_id: ownerUid }),
+    }),
+    line: (r) => [
+      String(r.name || "unnamed"),
+      Number(r.price) > 0 ? `· ${dollars(r.price)}` : "· no price on record",
+      Number(r.duration_hours) > 0 ? `· ${Number(r.duration_hours)}h` : null,
+      r.description ? "· has a description" : "· no description",
+    ].filter(Boolean).join(" "),
+  },
+  {
+    // WHEN HE IS OPEN. Two stores, and they barely overlap — settings_business_hours
+    // (23 businesses) and businesses.meta.hours (10, and it is the one a classic page
+    // renders from). A reader built on the first alone would have told Graef "no hours
+    // on record" while his own page showed them. Both are read; a disagreement between
+    // them is stated, never quietly resolved.
+    key: "hours",
+    title: "OPENING HOURS",
+    emptyLine: "OPENING HOURS: none on record. Never invent hours — on 2026-08-27 seven pages shipped with hours nobody had supplied.",
+    read: async (admin, businessId, ownerUid) => ({
+      rows: await rpc(admin, "get_business_hours", { p_business_id: businessId, p_owner_id: ownerUid }),
+    }),
+    line: (r) => {
+      const day = DAYS[Number(r.weekday)] ?? `day ${r.weekday}`;
+      if (r.closed === true) return `${day} — closed`;
+      const o = hhmm(r.open_time), c = hhmm(r.close_time);
+      const span = o && c ? `${o}–${c}` : (o ? `opens ${o}` : (c ? `closes ${c}` : "no times on record"));
+      return `${day} — ${span}` + (r.conflicts === true ? " · [the two stored copies of this day DISAGREE — say so and ask which is right]" : "");
+    },
+  },
+  {
+    // DID THE CUSTOMER ACTUALLY GET IT. Delivery is best-effort by design, which makes
+    // it MORE important that a failure is askable, not less: a notification that
+    // silently failed is a promise the product broke without telling anyone.
+    key: "notifications",
+    title: "NOTIFICATIONS WE TRIED TO SEND",
+    emptyLine: "NOTIFICATIONS: none attempted on record. That means none were sent — not that they were sent and we lost the record.",
+    read: async (admin, businessId, ownerUid) => {
+      const [rows, stats] = await Promise.all([
+        rpc(admin, "get_business_notifications", { p_business_id: businessId, p_owner_id: ownerUid, p_limit: MAX_ROWS }),
+        rpc(admin, "get_business_notification_stats", { p_business_id: businessId, p_owner_id: ownerUid }),
+      ]);
+      const total = stats.reduce((a, r) => a + Number((r as Record<string, unknown>).n ?? 0), 0);
+      return { rows, total };
+    },
+    line: (r) => [
+      `${String(r.subject_type || "something")} → ${String(r.recipient_role || "someone")}`,
+      r.recipient ? `(${String(r.recipient)})` : null,
+      `by ${String(r.channel || "unknown channel")}`,
+      `· ${String(r.status || "status unknown")}`,
+      r.error ? `· FAILED: ${String(r.error).slice(0, 120)}` : null,
+      r.attempted_at ? `· ${String(r.attempted_at).slice(0, 16).replace("T", " ")}` : null,
+    ].filter(Boolean).join(" "),
+  },
+  {
+    // WHAT IS A RECORD AND WHAT IS JUST TEXT ON THE PAGE.
+    //
+    // This exists because of a question about Graef's memberships, and the answer was
+    // bigger than memberships: his live page shows 8 services, 2 membership cards and
+    // 2 reviews, and his records hold ONE service and nothing else — no memberships,
+    // no reviews, no photos, no site versions, no rooms. All of it is text he typed.
+    //
+    // That distinction is invisible from the page and decides what every record-reading
+    // feature can actually do for him, so it is askable.
+    key: "page_records",
+    title: "WHAT IS A RECORD (vs text typed onto the page)",
+    emptyLine: "PAGE RECORDS: could not be counted.",
+    onDemand: true,
+    aggregate: true,
+    read: async (admin, businessId, ownerUid) => ({
+      rows: await rpc(admin, "get_business_page_records", { p_business_id: businessId, p_owner_id: ownerUid }),
+    }),
+    line: (r) => {
+      const n = Number(r.n);
+      const label = String(r.kind).replace(/_/g, " ");
+      return n === 0
+        ? `${label}: 0 records. If their page shows these, they are TEXT on the page, not records — say exactly that if asked; do not say they "have" them.`
+        : `${label}: ${n}${r.sample ? ` (e.g. ${String(r.sample)})` : ""}`;
+    },
+  },
+  {
+    // THE STORE, IF THERE IS ONE.
+    key: "catalogue",
+    title: "STORE CATALOGUE",
+    emptyLine: "STORE CATALOGUE: nothing on record — no products, variants or collections.",
+    onDemand: true,
+    read: async (admin, businessId, ownerUid) => ({
+      rows: await rpc(admin, "get_business_catalogue", { p_business_id: businessId, p_owner_id: ownerUid }),
+    }),
+    line: (r) => [String(r.kind), String(r.name || "unnamed"), r.detail ? `· ${String(r.detail)}` : null,
+                  r.extra ? `· ${String(r.extra)}` : null].filter(Boolean).join(" "),
+  },
+  {
+    // CAN HE GET PAID. Two rows exist in the whole corpus; "am I set up to take
+    // payments" deserves the real flags rather than an inference from the UI.
+    key: "payments",
+    title: "TAKING PAYMENTS (Stripe)",
+    emptyLine: "TAKING PAYMENTS: no Stripe account connected on record. They cannot be paid through Hubly yet — say so plainly.",
+    onDemand: true,
+    read: async (admin, businessId, ownerUid) => ({
+      rows: await rpc(admin, "get_business_payments", { p_business_id: businessId, p_owner_id: ownerUid }),
+    }),
+    line: (r) => [
+      `${String(r.mode || "unknown mode")} account`,
+      r.charges_enabled === true ? "· can take charges" : "· CANNOT take charges yet",
+      r.payouts_enabled === true ? "· payouts on" : "· payouts NOT on",
+      r.details_submitted === true ? "· details submitted" : "· details still needed",
+      r.last_error ? `· last error: ${String(r.last_error).slice(0, 120)}` : null,
+    ].filter(Boolean).join(" "),
   },
   {
     key: "leads",
     title: "RECENT LEADS (started a booking and did not finish)",
     emptyLine: "RECENT LEADS: none on record.",
     read: async (admin, businessId) => {
-      const { data } = await admin
+      const { data, count } = await admin
         .from("booking_requests")
-        .select("id,customer_name,customer_phone,customer_email,service_name,requested_date,requested_time,notes,created_at")
+        .select("id,customer_name,customer_phone,customer_email,service_name,requested_date,requested_time,notes,created_at", { count: "exact" })
         .eq("business_id", businessId)
         .eq("status", "abandoned")
         .order("created_at", { ascending: false })
         .limit(MAX_ROWS);
-      return Array.isArray(data) ? data : [];
+      return { rows: Array.isArray(data) ? data : [], total: count ?? undefined };
     },
     line: (r) => [
       `${String(r.customer_name || "someone").trim()} — ${String(r.service_name || "a service").trim()}`,
@@ -385,13 +641,18 @@ export async function loadOperationalState(
   const slices: OperationalSlice[] = await Promise.all(
     wanted.map(async (def) => {
       try {
-        const rows = await def.read(admin, businessId);
-        return { key: def.key, title: def.title, emptyLine: def.emptyLine, rows };
+        const got = await def.read(admin, businessId, ownerUid);
+        return {
+          key: def.key, title: def.title, emptyLine: def.emptyLine,
+          rows: got.rows, total: got.total, note: got.note,
+          aggregate: def.aggregate === true, onDemand: def.onDemand === true,
+        };
       } catch (e) {
         // A failed read is NOT "none". Saying "no bookings" when the query broke is
         // the same defect as a green checkmark nobody earned.
         return {
           key: def.key, title: def.title, emptyLine: def.emptyLine, rows: [] as OperationalRow[],
+          aggregate: def.aggregate === true, onDemand: def.onDemand === true,
           error: String((e as Error)?.message || e).slice(0, 200),
         };
       }
@@ -454,7 +715,13 @@ export function buildOperationalStateBlock(state: OperationalState): string {
   L.push("they ask for that, say plainly that you can't do it yet rather than implying you did.");
   L.push("");
 
+  const onDemand = state.slices.filter((x) => x.onDemand).map((x) => x.key);
   for (const s of state.slices) {
+    // NOT PRINTED, BUT NOT HIDDEN. This block is prepended to every owner turn, so a
+    // slice nobody asks about daily would cost context on all of them. It is named
+    // below instead — the model must know it can be asked for, or "can I ask about my
+    // memberships" gets answered by a model that does not know it can look.
+    if (s.onDemand) continue;
     if (s.error) {
       L.push(`${s.title}: could not be read this turn (${s.error}). Say you could not check rather than saying there are none.`);
       L.push("");
@@ -465,8 +732,25 @@ export function buildOperationalStateBlock(state: OperationalState): string {
       L.push("");
       continue;
     }
-    L.push(`${s.title} (${s.rows.length}${s.rows.length === MAX_ROWS ? ", most recent" : ""}):`);
+    // "SHOWING 8 OF 41", NEVER A BARE 8. The model cannot tell a full list from a
+    // truncated one by looking at it, and a count it infers from a capped page is the
+    // "most popular services" defect in another costume. An aggregate says so instead:
+    // it was computed over every row and must not be recounted from these lines.
+    const more = typeof s.total === "number" && s.total > s.rows.length;
+    L.push(
+      s.aggregate
+        ? `${s.title} — computed over EVERY row in the database, not from a sample. State these figures as given; do not re-count them:`
+        : `${s.title} (${more ? `showing ${s.rows.length} of ${s.total}, most recent first — DO NOT state ${s.rows.length} as the total` : String(s.rows.length)}):`,
+    );
     for (const r of s.rows) L.push(`- ${renderRow(s.key, r)}`);
+    if (s.note) L.push(`  NOTE: ${s.note}`);
+    L.push("");
+  }
+  if (onDemand.length) {
+    L.push(`ALSO READABLE, ON REQUEST: ${onDemand.join(", ")}. These are not printed every turn to keep this block short.`);
+    L.push("If the owner asks about any of them, call operations.read with that slice name and answer from what comes back.");
+    L.push("Never answer from memory or from the page: \"page_records\" in particular is the difference between a membership");
+    L.push("they HAVE and a membership card someone typed onto their website, and only the record can tell you which.");
     L.push("");
   }
   return L.join("\n").trimEnd();

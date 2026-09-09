@@ -406,6 +406,14 @@ const DRAFT_INJECTED_ACTIONS = new Set([
   "places.add",
   "business.updateDraft",
   "business.setServices",
+  // business.setHours (2026-09-08). Reads injectedOwnerUid and writes through
+  // set_business_hours, which authorises by owner and returns -1 for a null uid — so
+  // without this entry every hours write would be refused on a claimed business, which
+  // is every business that HAS hours to set. Caught by check-owner-id-invariant.mjs on
+  // the same commit that added the action, exactly as places.add was. The suggestion
+  // "Set your hours" was removed for having no writer; a writer that silently refuses
+  // for every real owner would have been worse than none.
+  "business.setHours",
   "website.generateDocument",
   "website.patchDocument",
   "website.newPage",

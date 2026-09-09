@@ -238,3 +238,35 @@ The general rule: **a check that will not go red is not passing, it is not runni
 of these three survived a green run and died at the red-proof. Run the red-proof even when
 the check is obviously correct, and especially when you wrote it in the same breath as the
 fix.
+
+---
+
+## Lesson 10 — the checker that catches your own new work is the one that paid for itself
+
+2026-09-08. Three separate checks caught three real defects in code written that hour,
+and none of the three would have been found by reading it.
+
+**`check-owner-id-invariant.mjs` caught `business.setHours` before it shipped.** The new
+capability read the injected owner uid and was not in `DRAFT_INJECTED_ACTIONS`, so it
+would have seen `null` and had every write refused — on a claimed business, which is
+every business that has hours to set. The suggestion "Set your hours" had been *removed*
+days earlier for having no writer; a writer that silently refuses for every real owner
+would have been worse than none, and it would have looked fine in review. This is the
+second time that exact check has caught the exact same shape on the commit that
+introduced it (`places.add` was the first).
+
+**`check-backend-answerable.mjs` caught repo/production drift on its first green run.**
+Three SQL functions had been applied to the database from a scratchpad file and never
+added to the migration. The checker resolves a slice's tables *through* the function
+bodies in `supabase/migrations/`, so a function that exists only in production is
+unresolvable — and it said so, by name, rather than passing.
+
+**And a red-proof that would not go red found a bug in a check, twice.** Once here (a
+clipping assertion measuring the scroller instead of the clipping box) and once in the
+hours work. A check that will not go red is not passing, it is not running — and the
+only way to know is to break the thing on purpose.
+
+The general form, and it is the argument for writing the check before the fix rather
+than after: **the code most likely to contain the defect a checker guards is the code
+being written in the same session as the checker.** Every one of these was found on the
+commit that created it, not weeks later by Adrian clicking.

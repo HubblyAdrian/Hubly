@@ -57,13 +57,13 @@ const HOOK = `
     stubs: function(){
       hcBuildGreeting = async function(){ return window.__hcNews || []; };
       hcSubscribeEvents = function(){};
-      hcMarkEventsSeen = function(){};
       hcThreadScrollToEnd = function(){};
       hcSend = function(inp){ window.__lastAsk = inp && inp.value; if(inp) inp.value = ''; };
       hcOpenWorkspace = function(id){ hc.mode = id; };
-      authGetClient = async function(){ return { rpc: async function(){ return { data: null }; },
+      window.__rpcCalls = [];
+      authGetClient = async function(){ return { rpc: async function(n, a){ window.__rpcCalls.push({ n: n, a: a }); return { data: null }; },
         from: function(){ return { select: function(){ return { eq: function(){ return this; }, neq: function(){ return this; }, then: function(r){ return r({ count: 0, error: null }); } }; } }; },
-        auth: { getUser: async function(){ return { data: { user: null } }; } } }; };
+        auth: { getUser: async function(){ return { data: { user: { id: '00000000-0000-0000-0000-0000000000aa', email: 'owner@example.com' } } }; } } }; };
     }
   };
 `;
@@ -202,6 +202,16 @@ for (const v of VIEWS) {
   if (!m.composer) fail('no composer');
   else if (Math.round(m.composer.bottom) > m.innerH + 1) fail('composer is below the viewport');
   if (!m.chip) fail('no account chip');
+  // IS THE READ MARKER ACTUALLY REACHED? business_event_reads had 0 rows the day the
+  // event stream shipped, and "nobody has looked yet" and "the writer is never called"
+  // are indistinguishable from the database. This distinguishes them: render home and
+  // assert the client issues the RPC. The function itself was proved separately by
+  // calling it and reading the row back.
+  if (v.id === 'desktop') {
+    const rpcs = await page.evaluate(() => (window.__rpcCalls || []).map(c => c.n));
+    if (!rpcs.includes('mark_business_events_seen'))
+      fail(`rendering home never called mark_business_events_seen (called: ${rpcs.join(', ') || 'nothing'})`);
+  }
   // A NAV ITEM WITHOUT ITS WORD IS A GUESS. Icons alone were the old 72px rail's problem
   // on desktop; the bottom bar must not reproduce it on the device that matters most.
   if (v.w <= 900) {
@@ -388,6 +398,13 @@ for (const v of VIEWS) {
       }
       return out;
     });
+    // NO TWO PROMISES MAY SEND THE SAME SENTENCE. A card and a chip that ask the
+    // identical thing are one promise wearing two hats, and it happened three times
+    // while assembling this registry by hand — each caught by reading the output, which
+    // is exactly the kind of thing that stops being read.
+    const sent = rows.map(r => r.sent).filter(Boolean);
+    const dupes = sent.filter((x, i) => sent.indexOf(x) !== i);
+    for (const d of [...new Set(dupes)]) failures.push(`two promises send the same message: "${d}"`);
     console.log('\n  ── the eight promises, clicked ──');
     for (const r of rows) {
       console.log(`  ${r.id.padEnd(10)} ${r.modeAfter !== r.modeBefore ? 'opens workspace "' + r.modeAfter + '"' : 'asks: "' + (r.sent || '(nothing captured)') + '"'}`);

@@ -69,7 +69,9 @@
     "check:destructive-confirm": "node scripts/check-destructive-confirm.mjs",
     "check:draft-token": "node scripts/check-draft-token-truthiness.mjs",
     "check:home-promises": "node scripts/check-home-promises.mjs",
-    "shot:owner-home": "node scripts/shot-owner-home.mjs"
+    "shot:owner-home": "node scripts/shot-owner-home.mjs",
+    "check:answerable": "node scripts/check-backend-answerable.mjs",
+    "check:answerable-live": "node scripts/check-backend-answerable.mjs --live"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

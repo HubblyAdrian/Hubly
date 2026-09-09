@@ -6424,6 +6424,106 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         },
       },
       {
+        // THE WRITER FOR HOURS. The suggestion "Set your hours" was removed on
+        // 2026-09-08 because no capability wrote them — a promise offering an owner a
+        // fix he could not make. It comes back with this, and not before.
+        //
+        // IT WRITES BOTH STORES, because there are two: settings_business_hours (23
+        // businesses) and businesses.meta.hours (10, and the one a CLASSIC page renders
+        // from). Writing only the table would report success and change nothing the
+        // owner or his customers can see. set_business_hours does both in one call.
+        name: "setHours",
+        description:
+          "Set the business's opening hours for one or more weekdays. Writes the real record AND the shape the live page renders from. " +
+          "ONLY pass hours the owner stated IN THIS MESSAGE — never carry a time over from earlier in the conversation, never assume " +
+          "'normal business hours', and never fill a day they did not mention. A weekday you omit is left exactly as it was, so a partial " +
+          "statement ('we open at 8 on Saturdays now') changes Saturday and nothing else. If they asked to set hours without saying what " +
+          "they are, ASK — do not invent them. Seven pages shipped with invented hours on 2026-08-27 and that is the rule this carries.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: {
+              type: "string",
+              description: "Automatically supplied by the system before this runs — put any placeholder here.",
+            },
+            hours: {
+              type: "array",
+              description:
+                "One entry per weekday the owner stated. Each: { weekday (0=Sunday … 6=Saturday), open (\"HH:MM\", 24h), close (\"HH:MM\"), closed (true if they said they are shut that day) }. " +
+                "Omit open/close when closed is true. Include ONLY days stated in this message.",
+              items: {},
+            } as any,
+          },
+          required: ["hours"],
+        },
+        handler: async (args) => {
+          const draftId = String((args as any)?.draftId || "").trim();
+          const draftToken = String((args as any)?.draftToken || "").trim();
+          const ownerUid = injectedOwnerUid(args);
+          const userMessage = String((args as any)?._userMessage || "");
+          if (!draftId || (!draftToken && !ownerUid)) {
+            return { ok: false, real: false, summary: "No business is connected to this conversation.", error: "missing_draft" };
+          }
+          if (!ownerUid) {
+            return {
+              ok: false, real: false, error: "not_signed_in",
+              summary: "Only the signed-in owner can set opening hours. Say that plainly; do not claim anything was saved.",
+            };
+          }
+          const list = Array.isArray((args as any)?.hours) ? (args as any).hours : [];
+          const clean = list
+            .filter((h: any) => h && Number.isInteger(Number(h.weekday)) && Number(h.weekday) >= 0 && Number(h.weekday) <= 6)
+            .map((h: any) => ({
+              weekday: Number(h.weekday),
+              open: typeof h.open === "string" ? h.open.trim() : null,
+              close: typeof h.close === "string" ? h.close.trim() : null,
+              closed: h.closed === true,
+            }))
+            .filter((h: any) => h.closed || h.open || h.close);
+          if (!clean.length) {
+            return {
+              ok: false, real: false, error: "needs_value",
+              summary: "No usable hours were given. Ask the owner what times they open and close, and write nothing until they say.",
+            };
+          }
+          // GROUNDED IN THIS MESSAGE. The same rule as every other fact write: a time
+          // that is not in what they just said cannot be written, whatever it looked
+          // like earlier in the transcript. This is the phone-number failure of
+          // 2026-09-01 pointed at a different column.
+          if (userMessage) {
+            const digits = userMessage.replace(/[^0-9]/g, "");
+            const saidSomeTime = /\b\d{1,2}\s*(?::\s*\d{2})?\s*(?:am|pm)\b/i.test(userMessage)
+              || /\b\d{1,2}:\d{2}\b/.test(userMessage)
+              || /\b(?:closed|shut|open all day|24\/7|by appointment)\b/i.test(userMessage);
+            if (!saidSomeTime && digits.length === 0) {
+              return {
+                ok: false, real: false, error: "needs_value",
+                summary: "They asked about hours without stating any in this message. ASK what times they open and close — do not reuse times from earlier in the chat and do not assume.",
+              };
+            }
+          }
+          const r = await callBusinessRpc("set_business_hours", {
+            p_business_id: draftId, p_owner_id: ownerUid, p_hours: clean,
+          });
+          const n = Number((r as any)?.set_business_hours ?? r ?? -2);
+          if (n === -1) {
+            return { ok: false, real: false, error: "not_owner", summary: "That business's hours are not writable by the signed-in account. Say so plainly." };
+          }
+          if (!Number.isFinite(n) || n < 0) {
+            return { ok: false, real: false, error: "rpc_failed", summary: "The hours could not be saved just now. Say they were NOT saved — never that they were." };
+          }
+          const DAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+          const said = clean.map((h: any) => h.closed
+            ? `${DAY[h.weekday]}: closed`
+            : `${DAY[h.weekday]}: ${h.open ?? "?"}–${h.close ?? "?"}`).join(", ");
+          return {
+            ok: true, real: true,
+            summary: `Real update — saved and live on the page: ${said}. Days not listed were left unchanged. Read this back exactly; do not add a day they did not state.`,
+            raw: { written: clean.length, days: clean.map((h: any) => h.weekday) },
+          };
+        },
+      },
+      {
         name: "setServices",
         description:
           "Writes the real services list — the live site's Services section renders these for real, immediately. Pass the COMPLETE current list every time (replaces what's there, same convention as everything else here) — never just the newly-mentioned one.",
