@@ -1405,11 +1405,21 @@ function renderChromeHeader(root: HublyDocumentNode, ctx: RenderContext): string
   // generated page gets. Validated against the same storage origins as any
   // other asset so a logo_url cannot smuggle in an arbitrary remote image.
   const logo = (ctx.businessLogoUrl || "").trim();
+  // NO NAME MEANS NO MARK. Both stand-ins here are built out of the name — the
+  // monogram is its initials, the logo's alt text is the name itself — so with no
+  // name there is nothing honest to draw. monogram("") used to return "•", which is
+  // still a brand mark for a business that has none. Same rule the generator prompt
+  // now carries: an honest gap beats a plausible invention. (The freeform path is
+  // where "LOS ANGELES AVIATION PILOT" shipped on 2026-09-09; this is the classic
+  // renderer's copy of the same defect, fixed at the same time so the sibling does
+  // not sit here waiting for its own bug report.)
+  const named = name.trim().length > 0;
   const mark = v.shape !== "monogram"
-    ? `<img class="hd-logo" src="${escAttr(logo)}" alt="${escAttr(name)}">`
-    : `<span class="hd-monogram">${escHtml(monogram(name))}</span>`;
-  const brandName = v.suppressName ? "" : `<span class="hd-brand-name">${escHtml(name)}</span>`;
-  const brand = `<a class="hd-brand" href="#hd-top">${mark}${brandName}</a>`;
+    ? `<img class="hd-logo" src="${escAttr(logo)}" alt="${escAttr(named ? name : "")}">`
+    : named ? `<span class="hd-monogram">${escHtml(monogram(name))}</span>` : "";
+  const brandName = (v.suppressName || !named) ? "" : `<span class="hd-brand-name">${escHtml(name)}</span>`;
+  // With neither a mark nor a name the anchor is an empty tap target, so drop it.
+  const brand = (mark || brandName) ? `<a class="hd-brand" href="#hd-top">${mark}${brandName}</a>` : "";
 
   const cls = [
     "hd-chrome-header",

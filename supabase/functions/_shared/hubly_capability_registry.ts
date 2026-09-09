@@ -313,6 +313,15 @@ import {
 const OPERATIONAL_SLICE_KEYS: string[] = OPERATIONAL_SLICES.map((s) => s.key);
 
 export type BusinessRecord = {
+  // THE NAME, AND THE FACT OF ITS ABSENCE. Neither was in this record before
+  // 2026-09-09, so the generator only ever met a name inside the prose brief —
+  // and when there was none, four standing instructions telling it to put the
+  // business name in the header won, and it constructed one. See nameUnset.
+  name: string | null;
+  // TRUE means nobody has given this business a name yet. It is a FACT, not a
+  // missing field, and the page must render an honest gap rather than a
+  // plausible invention.
+  nameUnset: boolean;
   services: { name: string; price: number | null; description: string | null; duration_hours: number | null; includes: unknown; is_popular: boolean | null }[];
   photos: { url: string; kind: string; caption?: string | null }[];
   reviews: { customer_name: string | null; service_name: string | null; stars: number | null; quote: string | null }[];
@@ -1094,7 +1103,7 @@ async function loadBusinessRecord(businessId: string): Promise<BusinessRecord> {
   // useful negative constraint for the prompt, so reading them bought nothing
   // and cost two queries on every generation.
   const [biz, services, portfolio, reviews, hours] = await Promise.all([
-    selectOne("businesses", "id", businessId, "city,state,phone,email,address,logo_url,business_type,about,tagline,service_area_cities,travel_radius_miles,years_in_business,hours_note"),
+    selectOne("businesses", "id", businessId, "name,name_unset,city,state,phone,email,address,logo_url,business_type,about,tagline,service_area_cities,travel_radius_miles,years_in_business,hours_note"),
     selectMany("services", "business_id", businessId, "name,price,description,duration_hours,includes,is_popular", "sort_order.asc"),
     selectMany("portfolio_photos", "business_id", businessId, "url", "sort_order.asc"),
     selectMany("review_submissions", "business_id", businessId, "customer_name,service_name,stars,quote,status"),
@@ -1108,6 +1117,11 @@ async function loadBusinessRecord(businessId: string): Promise<BusinessRecord> {
   const areaCities = Array.isArray(rawCities) ? rawCities.filter((c: unknown) => typeof c === "string") : [];
 
   return {
+    name: (typeof biz?.name === "string" && biz.name.trim()) ? biz.name.trim() : null,
+    // Believe the column, but do not need it: a null name IS an unnamed business
+    // whatever the flag says. The flag is the explicit signal; the null is the
+    // fallback, so an unset flag can never resurrect the invention.
+    nameUnset: biz?.name_unset === true || !(typeof biz?.name === "string" && biz.name.trim()),
     services: services.map((x: any) => ({ name: x.name, price: x.price ?? null, description: x.description ?? null, duration_hours: x.duration_hours ?? null, includes: x.includes ?? null, is_popular: x.is_popular ?? null })),
     photos,
     // Only approved reviews. An unmoderated quote is exactly the kind of thing
@@ -2302,6 +2316,10 @@ export async function generateFreeformPage(
     "PEOPLE: decide per subject whether a person belongs. For people-facing work — a barber at the chair, a detailer's hands on a panel, a roofer up on a roof — a real person in frame reads as a real shop, and you should write the subject WITH the person in it. For object or result shots — a finished roofline, a coated wheel, a tray of bread — add \"no people\" so the photo stays on the thing. Do NOT default to empty rooms: an empty barber chair is the sterile stock look that makes a page read as machine-made. When you want no people, the words \"no people\" must be in the data-subject; when a person belongs, leave them out and the photo may include people.\n" +
     (hasLogo
       ? '- THE LOGO: this business has uploaded a logo. Use <img src="#hubly-logo" alt="LOGO"> for the brand mark, placed wherever the design calls for it. Do NOT draw a monogram or initials — the real logo exists and must be used.\n'
+      : record.nameUnset
+      // NO LOGO AND NO NAME. Both of the usual stand-ins are built out of a name,
+      // so with no name there is nothing to draw and the correct output is nothing.
+      ? "- No logo is on file AND THIS BUSINESS HAS NO NAME YET, so there is NO brand mark on this page: no wordmark, no monogram, no initials, no lettermark. Do not invent a name to letter one with. The header carries the trade and the place instead (an eyebrow like PILOT · LOS ANGELES), which is true, and the page reads correctly without a wordmark.\n"
       : "- No logo is on file, so a clean typographic wordmark or monogram, placed wherever the design calls for it, is correct.\n") +
     (photoCount > 0
       ? `- This business has ${photoCount} of its OWN photo(s). Give it a section that shows its work (role="gallery" or "work") so those real photos are used.\n`
@@ -2326,8 +2344,28 @@ export async function generateFreeformPage(
     "- USE CONTRACTIONS — WRITE THE WAY THE OWNER TALKS. it's, you're, we'll, don't, here's, that's, we've, you'll. Formal uncontracted prose ('if it is urgent', 'ask what is on the shelf') is the loudest remaining sign a machine wrote this — nobody speaks that way. Uncontracted forms ONLY where the emphasis genuinely calls for it ('we do not charge for a callout'), which is rare.\n" +
     "- THE HERO HEADLINE IS ONE SENTENCE WORTH SAYING about this business — what it is, what it's for, or what someone gets by coming in. It is NOT the services list read back ('Weekly bouquets, wedding flowers, and workshops' is inventory, not a reason to walk in). The business name is ONE legitimate option among several, NOT the default — lead with the name only when the name genuinely is the strongest thing to say; otherwise say the thing. (The services get their own section further down.)\n" +
     "- NUMBER THINGS ONLY WHEN THE ORDER IS REAL. Do not badge a set of offerings 01 / 02 / 03, and do not add CSS counters to a card grid — a list of what a place offers is not a sequence; nothing happens first. Number ONLY a genuinely ordered process (how booking works, step 1 then 2 then 3) where the reader actually needs the order.\n\n" +
+    (record.nameUnset
+      // THIS BUSINESS HAS NO NAME. Stated before every instruction below that assumes
+      // one, because those instructions are what it has to beat. On 2026-09-09 a page
+      // shipped with the wordmark "LOS ANGELES AVIATION PILOT" and an "LA" monogram for
+      // an owner who gave no name — trade plus place, the exact construction that is
+      // banned at the record level. The record was correct (name null, name_unset true)
+      // and the brief said "Do not invent a business name" in as many words; the model
+      // overrode both, because a brief is one line of content against four standing
+      // system instructions telling it the name goes in the nav, the hero and the
+      // footer. It even flagged its own invention (data-hubly-guess="provisional site
+      // identity") and we rendered it as the name anyway. So the rule lives HERE now,
+      // in the system prompt, where the instructions it must beat live.
+      ? "THIS BUSINESS HAS NO NAME YET, AND YOU MUST NOT INVENT ONE. This is the single most important rule on this page, and it OVERRIDES every instruction below about where the business name goes.\n" +
+        "- Write NO business name anywhere: not in the nav, not in the hero, not in the footer, not in an announcement bar, not in <title>, not in alt text, and not as a monogram or initials.\n" +
+        "- NEVER CONSTRUCT ONE. Not from the trade, not from the city, not from both, not from the owner's own name, not with an adjective attached. \"Los Angeles Aviation Pilot\", \"LA Aviation\", \"Elite Detailing\" are all constructions — a name is a name because a person chose it, and nobody has.\n" +
+        "- Marking an invented name as a guess does NOT make it allowed. data-hubly-guess is for a tagline you proposed, never for the business's identity.\n" +
+        "- What goes there instead: the TRADE and the PLACE, which are true — an eyebrow or kicker like \"PILOT · LOS ANGELES\". <title> is the trade and the place too. Design the page so it reads correctly with no wordmark at all; that is a normal design problem and you are good at it.\n" +
+        "- The owner is being asked for their name right now, and it will be added the moment they give it. An honest gap they can fill beats a plausible name they did not choose.\n\n"
+      : "") +
     "How the brand mark and navigation appear is entirely yours to decide: a top nav bar is ONE option, not a requirement. A full-bleed hero with the business name set in the headline, a slim side rail, a minimal footer-only nav, or something else the trade suggests are all equally available. The only things that must be true: the brand is identifiable somewhere, and booking is reachable. Two different trades should not open with the same shape.\n\n" +
-    "THE BUSINESS NAME IS NEVER TRUNCATED, ELLIPSISED OR CLIPPED — anywhere it appears (nav wordmark, hero headline, footer, announcement bar). This is a hard rule: someone who sees their own name cut off will not trust the page. Size the type for a LONG name, not a short one — a name may be forty characters or contain a long single word, and it must still fit or WRAP, never overflow its container. So: keep hero headline maximums modest (a clamp topping out around 64–80px is plenty; do NOT reach 100px+ where a long word overflows its column), let the name wrap (do not force it onto one line with white-space:nowrap), and never put text-overflow:ellipsis, a fixed height, or an overflow:hidden container around the name that could cut it. A name that wraps to two lines is fine; a name with a letter missing is a trust failure.\n\n" +
+    (record.nameUnset ? "" :
+    "THE BUSINESS NAME IS NEVER TRUNCATED, ELLIPSISED OR CLIPPED — anywhere it appears (nav wordmark, hero headline, footer, announcement bar). This is a hard rule: someone who sees their own name cut off will not trust the page. Size the type for a LONG name, not a short one — a name may be forty characters or contain a long single word, and it must still fit or WRAP, never overflow its container. So: keep hero headline maximums modest (a clamp topping out around 64–80px is plenty; do NOT reach 100px+ where a long word overflows its column), let the name wrap (do not force it onto one line with white-space:nowrap), and never put text-overflow:ellipsis, a fixed height, or an overflow:hidden container around the name that could cut it. A name that wraps to two lines is fine; a name with a letter missing is a trust failure.\n\n") +
     "THIS PAGE MUST WORK ON A PHONE — most local-business visitors are on one. Two hard rules:\n" +
     "1. FULL-HEIGHT SECTIONS USE svh, NOT bare vh. A hero or section sized to fill the screen must use svh (the small viewport height) so it does not JUMP as the mobile address bar shows and hides — bare 100vh does exactly that. Write BOTH, the vh line first as a fallback for older browsers, then svh: e.g. `min-height: 100vh; min-height: 100svh;`. Never a bare `min-height:100vh` on its own for a full-height block.\n" +
     "2. HERO PHOTOGRAPHS STAY FULL-BLEED AND LANDSCAPE ON MOBILE. The stock photos are landscape (roughly 1200×627). On a phone, never squeeze a hero photo into a tall narrow portrait box with indents — object-fit:cover then shows a thin vertical SLICE of the image, which looks broken. In your mobile layout, give the hero image the full column width and keep a landscape-ish shape (an aspect-ratio around 3/2 or 16/9, or a bounded height like 240–300px) so the whole photograph reads as a photograph. This applies to the hero image specifically; smaller in-content images can be shaped however suits.\n" +
