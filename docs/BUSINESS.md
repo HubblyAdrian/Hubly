@@ -537,6 +537,31 @@ legacy product data to reconcile (#55). The Store for Bucket can be designed aga
 but his *services* stay broken until #54 is decided.
 
 
+## COST — what a signup actually costs us (2026-09-09)
+
+**Established: measured, but with an unknown denominator — read the caveat.**
+
+On 2026-09-09 the OpenAI account ran out of quota twice in one afternoon. The second
+time was caused by a measurement of the signup build rate: **roughly 35 signups (each
+one a full site generation) exhausted a top-up Adrian had just applied.** The exact
+top-up amount is not known to me, so the honest statement is a ratio without its
+denominator: ~35 first-turn signups drained whatever was added, not "a signup costs $X".
+Somebody should read the real number off the OpenAI dashboard and replace this line.
+
+Two consequences that are certain regardless of the amount:
+
+- **A synthetic test of the signup path is not free, and at 40 runs it is not cheap.**
+  Any future build-rate measurement needs a sample size agreed in advance against a
+  budget. This is why the endpoint alert is designed to read real failures rather than
+  probe on a schedule — a probe spends the scarce thing continuously.
+- **One OpenAI account backs 17 edge functions**, including the customer chat on every
+  live business site. Exhausting it does not just stop signup; it stops conversational
+  booking for every customer of every Hubly business. The booking WIZARD survives (it
+  writes straight to booking_requests through PostgREST, no model), so a customer who
+  reaches the form can still book — but the conversation that gets most of them there
+  cannot happen. Measured by reading the call paths on 2026-09-09, not by observing a
+  customer during the window.
+
 ## WHAT HAS NEVER HAPPENED YET
 
 *The honest zeros. These say what Hubly is and is not today, and every one should be easy

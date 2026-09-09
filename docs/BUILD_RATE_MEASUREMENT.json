@@ -1,0 +1,12 @@
+{
+  "measured_at": "2026-09-09T19:20:24.273Z",
+  "runs_per_case": 1,
+  "complete": false,
+  "results": [
+    {
+      "case": "UNNAMED",
+      "run": 1,
+      "aborted": true
+    }
+  ]
+}
