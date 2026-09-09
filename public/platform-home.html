@@ -4483,7 +4483,11 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       var who = e.customer_name ? e.customer_name : 'Someone';
       // "hasn't booked", not "didn't book" — they still might, and that is the reason
       // he is being told at all.
-      return who + (q ? (' asked about ' + q) : ' asked on your site') +
+      // QUOTE the question rather than splicing it after "asked about" — their words are
+      // usually a whole sentence ("do you do ceramic coating on a lifted truck?"), and
+      // "asked about do you do…" is slot-filled broken grammar, which CLAUDE.md names as a
+      // tell that a line was assembled rather than written.
+      return who + (q ? (' asked \u201c' + q + '\u201d') : ' asked on your site') +
              (when ? (' ' + when) : '') + " and hasn\u2019t booked.";
     }
     function abandonedLine(e){
@@ -4550,13 +4554,13 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
           var nBook = fresh.filter(function(e){ return e.kind === 'booking.created'; }).length;
           var nAsk  = fresh.filter(function(e){ return e.kind === 'chat.asked'; }).length;
           var nAbn  = fresh.filter(function(e){ return e.kind === 'booking.abandoned'; }).length;
+          // The greeting above already named the single most actionable item. Repeating it
+          // here as a count is the same news twice, and an owner reading the same thing in
+          // two registers learns to skim both. A count line is only worth saying when there
+          // is MORE than the one the greeting already spoke about.
           if(nBook) hcAppendMessage('hubly', nBook === 1 ? 'One new booking came in.' : nBook + ' new bookings came in.');
-          if(nAsk)  hcAppendMessage('hubly', nAsk === 1
-            ? 'One person asked on your site and didn\u2019t book.'
-            : nAsk + ' people asked on your site and didn\u2019t book.');
-          if(nAbn)  hcAppendMessage('hubly', nAbn === 1
-            ? 'One person started booking and stopped.'
-            : nAbn + ' people started booking and stopped.');
+          if(nAsk > 1) hcAppendMessage('hubly', nAsk + ' people asked on your site and didn\u2019t book.');
+          if(nAbn > 1) hcAppendMessage('hubly', nAbn + ' people started booking and stopped.');
           evs.slice(0, 5).forEach(function(e){ hcRenderEventCard(e, thread); });
           hcMarkEventsSeen(biz.id, evs);
         }
