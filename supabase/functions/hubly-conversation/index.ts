@@ -640,7 +640,7 @@ function composeServicesTruth(placement: ServicesPlacementLike, url: string): st
     // section to clone an entry into (noSection) — then, and only then, the rebuild
     // offer, with its cost named up front.
     if (placement.noSection) return `I saved those to your record, but ${rebuildLastResort(placement)}`;
-    return `I saved those to your record, but couldn't place them on the page — say so plainly rather than claiming they're showing.`;
+    return `I've saved those to your record, but I couldn't get them onto the page, so they aren't showing yet. Want me to add them to your services area?`;
   }
   if (placement.status === "no_prices") {
     // Names are on the page; no prices were given. Let the model ask for them —

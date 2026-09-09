@@ -3215,10 +3215,10 @@ export async function uploadDraftPhoto(
         ? `That's on your page now — in the ${placement.where || "page"}, in place of the stock photo that was there. If you'd rather keep the old one, just say so.`
         : `That's on your page now, in the ${placement.where || "work section"}.`)
     : placement.status === "no_slot"
-      ? `Real photo saved to the business. There's no open spot for it on the page as it's built — do NOT claim it is showing; offer to rebuild the page around it, and if they say yes that is a deliberate rebuild they chose.`
+      ? `I've saved that photo. There's no open spot for it on the page as it's built, so it isn't showing yet — I can rebuild the page around it if you'd like.`
       : (placement.status === "placed" || placement.status === "swapped")
-        ? `Real photo saved to the business. The page was updated but the image did not end up in the saved HTML — say it is saved and NOT showing; do not claim it is on the page.`
-        : `Real photo saved to the business, but I couldn't place it on the page just now — say that plainly and offer to rebuild the page around it.`;
+        ? `I've saved that photo, but it didn't make it onto the page — it isn't showing yet. I can try again, or rebuild the page around it.`
+        : `I've saved that photo, but I couldn't place it on the page just now, so it isn't showing. I can try again, or rebuild the page around it.`;
 
   return {
     ok: true,
@@ -3836,7 +3836,14 @@ function allGuessServiceRows(html: string): { index: number; length: number; tag
     /data-hubly-guess="[^"]*servic/i.test(block) ||
     /(?:id|class|aria-labelledby|aria-label)="[^"]*servic/i.test(block.slice(0, 4000)) ||
     /(?:id|class|aria-labelledby)="[^"]*servic/i.test(openTag);
-  const candidates = sections.filter((sec) => looksServices(html.slice(sec.start, sec.end), (/<section\b[^>]*>/i.exec(html.slice(sec.start, sec.end)) || [""])[0]));
+  // (b) THE STAMP WINS OUTRIGHT. data-hubly-section="services" is a FACT — written
+  // either by the generator that emitted the section or from an evidence match against
+  // the services on record, never from a heuristic. When it is present there is nothing
+  // to infer, no tie to break, and no other candidate to consider.
+  const stamped = sections.filter((sec) => /<section\b[^>]*\bdata-hubly-section="services"/i.test(html.slice(sec.start, Math.min(sec.end, sec.start + 400))));
+  const candidates = stamped.length === 1
+    ? stamped
+    : sections.filter((sec) => looksServices(html.slice(sec.start, sec.end), (/<section\b[^>]*>/i.exec(html.slice(sec.start, sec.end)) || [""])[0]));
   if (!candidates.length) return [];
   const itemRe = /<([a-z0-9]+)\b[^>]*\bdata-hc="section\.\d+\.item\.\d+\.title"[^>]*>([\s\S]*?)<\/\1>/gi;
   let best: { index: number; length: number; tag: string; text: string }[] = [];
@@ -7256,8 +7263,8 @@ HUBLY_CAPABILITY_REGISTRY.push({
           // RECORD changed, not that a customer's view of the store changed. Nothing here
           // reads the storefront back.
           return { ok: true, real: true, summary: visible
-            ? `"${found.item.name}" is set to visible on the record. Say it is set to show; do not claim you have seen it live on the store.`
-            : `"${found.item.name}" is set to hidden on the record. Say it is set to hide; do not claim you have seen the store.`,
+            ? `"${found.item.name}" is set to show on the store.`
+            : `"${found.item.name}" is set to hide on the store.`,
             raw: { id: found.item.id } };
         }
         return { ok: false, real: false, summary: "I couldn't change that just now.", error: r.json?.error || `http_${r.status}` };

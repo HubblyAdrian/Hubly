@@ -73,7 +73,8 @@
     "check:answerable": "node scripts/check-backend-answerable.mjs",
     "check:answerable-live": "node scripts/check-backend-answerable.mjs --live",
     "shot:owner-rooms": "node scripts/shot-owner-rooms.mjs",
-    "check:guess-rows": "node scripts/check-guess-row-insert.mjs"
+    "check:guess-rows": "node scripts/check-guess-row-insert.mjs",
+    "check:no-directives": "node scripts/check-no-directives-to-owners.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
