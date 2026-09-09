@@ -1,3 +1,16 @@
+> ## ⛔ READ FIRST — `supabase db push` IS UNSAFE ON THIS PROJECT
+>
+> The migration ledger diverged on 2026-08-23. **Thirty migrations are applied to the
+> database and unrecorded in `supabase_migrations`**, so `db push` tries to re-run all
+> thirty. One of them sets `account_kind = 'real'` — a value the constraint now rejects —
+> and that rejection is the only reason a re-run stopped where it did on 2026-09-08.
+> That is luck, not safety: the database and the repo disagree about what reality is.
+>
+> **Until the ledger is repaired, apply SQL with `supabase db query --linked -f <file>`
+> and keep the migration file in sync by hand.** Repair is the next thing scheduled:
+> establish which thirty, whether each is already applied, and what a repaired ledger
+> looks like — reported before anything is changed.
+
 # Checks that report a result they did not establish
 
 One class, three instances in a single day (2026-09-08). Kept together because the fix is
