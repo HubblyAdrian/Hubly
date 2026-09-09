@@ -283,3 +283,33 @@ The general form, and it is the argument for writing the check before the fix ra
 than after: **the code most likely to contain the defect a checker guards is the code
 being written in the same session as the checker.** Every one of these was found on the
 commit that created it, not weeks later by Adrian clicking.
+
+---
+
+## Lesson 11 — the false green can arrive through the test fixture
+
+2026-09-09, during the places backfill. Two of these in one sitting, neither in product
+code.
+
+**A foreign key made a trigger test look like a trigger failure.** The claim-time seed
+trigger was tested by claiming an unclaimed draft: `update businesses set owner_id =
+'00000000-…-aa'`. Nothing happened — no place row, no error visible in the output — and
+the obvious reading was "the trigger did not fire". It had never run: `businesses.owner_id`
+has a foreign key to `auth.users`, the fake uuid violated it, and the whole `do` block
+rolled back. **A silent no-op from a rolled-back fixture is indistinguishable from a
+feature that does not work**, and the instinct it should produce is the same one the
+`row_now: 0` CTE artifact produced the day before: when a test shows nothing, ask whether
+the test ran before concluding the thing is broken. Re-run with a real owner uid: the
+trigger fired correctly on the first try.
+
+**And a red-proof that would not go red, because the fixture was wrong rather than the
+check.** The new assertion is "no claimed business has zero workspace places". Proving it
+by deleting one business's `website` row did not go red — that business also had a
+`customers` row, so it still had a workspace place. The check was right: *at least one*
+row is exactly what unlocks `hcPlacesKnown()` and lets a rail respond to anything.
+Re-proved on a business that had only the floor row: exit 1.
+
+The temptation there is to weaken the assertion until the proof passes, and that is
+backwards. **When a red-proof will not go red, the fixture is the first suspect, not the
+assertion** — the check that is hardest to break on purpose is usually the one worth
+keeping.

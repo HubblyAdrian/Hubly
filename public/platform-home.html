@@ -283,6 +283,52 @@ body.hc-active .footer,body.hc-active .hero{display:none}
    Fixed proportions (no draggable divider until asked). */
 .hc-app.hc-claimed[data-mode="website"] .hc-app-left{flex:0 0 380px;min-width:0;border-right:1px solid var(--line)}
 .hc-app.hc-claimed[data-mode="website"] .hc-app-right{display:flex;flex:1 1 auto;min-width:0;animation:hcCanvasArrive .5s cubic-bezier(.22,.61,.36,1) both}
+/* ── THE WORKSPACES TAKE THE CENTRE. Same shape as Website: the conversation narrows
+   to a 380px column and the room fills the rest. Records still open in the panel on
+   the right — a workspace is a place, a record is a thing, and they are not the same
+   surface (see hcOpenPanel). */
+.hc-app.hc-claimed[data-mode="planner"] .hc-app-left,
+.hc-app.hc-claimed[data-mode="jobs"] .hc-app-left,
+.hc-app.hc-claimed[data-mode="customers"] .hc-app-left{flex:0 0 380px;min-width:0;border-right:1px solid var(--line)}
+.hc-app.hc-claimed[data-mode="planner"] .hc-app-right,
+.hc-app.hc-claimed[data-mode="jobs"] .hc-app-right,
+.hc-app.hc-claimed[data-mode="customers"] .hc-app-right{display:flex;flex:1 1 auto;min-width:0;animation:hcCanvasArrive .45s cubic-bezier(.22,.61,.36,1) both}
+@media (max-width:900px){
+  /* On a phone the room is the whole screen; the conversation is a tap away on the bar. */
+  .hc-app.hc-claimed[data-mode="planner"] .hc-app-left,
+  .hc-app.hc-claimed[data-mode="jobs"] .hc-app-left,
+  .hc-app.hc-claimed[data-mode="customers"] .hc-app-left{display:none}
+}
+
+/* ── A ROOM ─────────────────────────────────────────────────────────────────── */
+/* Top padding clears the floating account chip: the header sits over the app, and a
+   room heading starting under it reads as though the chip were part of the room. */
+.hc-room{flex:1;min-height:0;overflow-y:auto;padding:calc(var(--nav-h) + 14px) clamp(18px,3vw,34px) 30px;box-sizing:border-box}
+@media (max-width:900px){ .hc-room{padding-top:18px} }
+.hc-room-hd{display:flex;align-items:baseline;gap:12px;margin:0 0 4px}
+.hc-room-hd h2{margin:0;font-size:23px;font-weight:800;letter-spacing:-.02em}
+.hc-room-count{font-size:14px;color:var(--ink-2,#5b616e)}
+.hc-room-sub{font-size:14px;color:var(--ink-2,#5b616e);margin:0 0 18px}
+.hc-room-group{margin:22px 0 8px;font-size:12px;font-weight:750;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3,#8a909c)}
+.hc-row{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:13px 14px;margin-bottom:8px;
+  border:1px solid var(--line);border-radius:13px;background:var(--panel,#fff);cursor:pointer;font:inherit;color:var(--ink);
+  transition:border-color .15s ease,box-shadow .15s ease}
+.hc-row:hover{border-color:var(--brand-600,#d9632d);box-shadow:0 8px 22px -14px rgba(217,99,45,.5)}
+.hc-row-when{flex:0 0 82px;font-size:13px;font-weight:750;color:var(--ink-2,#5b616e);font-variant-numeric:tabular-nums}
+.hc-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hc-row-t{display:block;font-size:15px;font-weight:700;letter-spacing:-.01em;line-height:1.3}
+.hc-row-s{display:block;font-size:13px;color:var(--ink-2,#5b616e);line-height:1.35}
+.hc-row-tail{flex:0 0 auto;font-size:13px;color:var(--ink-2,#5b616e);text-align:right}
+.hc-row.is-block{background:#f7f7f8;border-style:dashed}
+.hc-row.is-block .hc-row-t{color:var(--ink-2,#5b616e)}
+/* A CONFLICT IS THE HIGHEST-VALUE THING THIS SCREEN CAN SAY. Two things at 2pm is
+   worth more than everything else on the page put together. */
+.hc-row.is-clash{border-color:#c2410c;box-shadow:inset 3px 0 0 #c2410c}
+.hc-clash-note{font-size:13px;font-weight:650;color:#9a3412;margin:-2px 0 10px 96px}
+/* An empty room says something true. Never an empty table with headers. */
+.hc-room-empty{border:1px dashed var(--line);border-radius:14px;padding:26px 22px;background:var(--panel,#fff)}
+.hc-room-empty h3{margin:0 0 6px;font-size:16px;font-weight:750}
+.hc-room-empty p{margin:0;font-size:14px;color:var(--ink-2,#5b616e);line-height:1.55}
 @keyframes hcCanvasArrive{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
 /* Asked not to be moved: appear, don't slide. */
 @media (prefers-reduced-motion:reduce){
@@ -4208,6 +4254,8 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
   //
   // Icons kept inline so the rail needs no asset load.
   var HC_RAIL_ICONS = {
+    planner: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4M8 14h3M8 17.5h6"/></svg>',
+    customers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c1.3-3.2 3.8-4.8 6.5-4.8s5.2 1.6 6.5 4.8"/><path d="M16.5 5.4a2.9 2.9 0 0 1 0 5.2M18 20c-.3-1.7-1-3.1-2-4.2"/></svg>',
     home:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
     website: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><circle cx="6" cy="6.5" r=".6" fill="currentColor"/><circle cx="8" cy="6.5" r=".6" fill="currentColor"/></svg>',
     // Store and Jobs had no icon, so both fell back to the website one and a new
@@ -4293,12 +4341,12 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
    * here and its already-earned rows light up for every business at once. No second
    * migration, no re-derivation, and no window where a tab leads nowhere. */
   var HC_PLACE_SURFACES = {
-    website: { label:'Website', icon:HC_RAIL_ICONS.website },
-    // planner   — pending: the owner's day (jobs, blocks, tasks in one list)
-    // jobs      — pending: the jobs list
-    // customers — pending: the customer list
-    // leads     — pending: the unbooked-lead list
-    // store     — pending: the storefront workspace
+    website:   { label:'Website',   icon:HC_RAIL_ICONS.website },
+    planner:   { label:'Planner',   icon:HC_RAIL_ICONS.planner },
+    jobs:      { label:'Jobs',      icon:HC_RAIL_ICONS.jobs },
+    customers: { label:'Customers', icon:HC_RAIL_ICONS.customers },
+    // leads — pending: the unbooked-lead list
+    // store — pending: the storefront workspace
   };
   function hcWorkspaces(){
     var ws = [];
@@ -4417,6 +4465,288 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     var want = hcModeFromUrl();
     if(want !== hc.mode) hcOpenWorkspace(want, null, true);
   });
+  // ═══ THE ROOMS ════════════════════════════════════════════════════════════════
+  // Planner, Jobs and Customers. All three are lists over slices that already exist,
+  // which is why they cost so much less than the planner logic itself.
+  //
+  // A WORKSPACE TAKES THE CENTRE; A RECORD OPENS IN THE PANEL. Clicking a job here does
+  // not navigate — it puts that job in the right-hand panel, beside the composer, so the
+  // conversation is about the thing you are looking at.
+  //
+  // AN EMPTY ROOM SAYS SOMETHING TRUE. Never an empty table with column headers: a
+  // grid of nothing is the same lie as a chart with no data behind it, and this owner
+  // spots it faster than most.
+  async function hcOwnerUid(){
+    try{
+      var c = await authGetClient();
+      var u = await c.auth.getUser();
+      return (u && u.data && u.data.user && u.data.user.id) || null;
+    }catch(e){ return null; }
+  }
+  function hcRoomShell(title, count, sub){
+    var el = document.createElement('div'); el.className = 'hc-room';
+    var hd = document.createElement('div'); hd.className = 'hc-room-hd';
+    var h = document.createElement('h2'); h.textContent = title; hd.appendChild(h);
+    if(count != null){
+      var c = document.createElement('span'); c.className = 'hc-room-count';
+      c.textContent = count; hd.appendChild(c);
+    }
+    el.appendChild(hd);
+    if(sub){ var sb = document.createElement('p'); sb.className = 'hc-room-sub'; sb.textContent = sub; el.appendChild(sb); }
+    return el;
+  }
+  function hcRoomEmpty(room, head, body){
+    var e = document.createElement('div'); e.className = 'hc-room-empty';
+    var h = document.createElement('h3'); h.textContent = head;
+    var p = document.createElement('p'); p.textContent = body;
+    e.appendChild(h); e.appendChild(p); room.appendChild(e);
+  }
+  function hcRoomRow(opts){
+    var b = document.createElement('button'); b.type = 'button';
+    b.className = 'hc-row' + (opts.block ? ' is-block' : '') + (opts.clash ? ' is-clash' : '');
+    if(opts.when != null){
+      var w = document.createElement('span'); w.className = 'hc-row-when'; w.textContent = opts.when; b.appendChild(w);
+    }
+    var m = document.createElement('span'); m.className = 'hc-row-main';
+    var t = document.createElement('span'); t.className = 'hc-row-t'; t.textContent = opts.title; m.appendChild(t);
+    if(opts.sub){ var sx = document.createElement('span'); sx.className = 'hc-row-s'; sx.textContent = opts.sub; m.appendChild(sx); }
+    b.appendChild(m);
+    if(opts.tail){ var tl = document.createElement('span'); tl.className = 'hc-row-tail'; tl.textContent = opts.tail; b.appendChild(tl); }
+    if(opts.onOpen) b.addEventListener('click', opts.onOpen);
+    return b;
+  }
+  function hcHm(t){ var v = String(t || '').slice(0,5); return v || null; }
+  function hcDayLabel(d){
+    if(!d) return 'No date';
+    var today = new Date(); var iso = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+    var t = new Date(today.getTime() + 864e5);
+    var tomorrow = t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+    if(d === iso) return 'Today';
+    if(d === tomorrow) return 'Tomorrow';
+    return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+  }
+  // TWO THINGS AT 2PM IS THE MOST USEFUL THING A CALENDAR CAN TELL AN OWNER, and nothing
+  // in this product said it before. Computed from start + duration, the same arithmetic
+  // the availability engine uses — so what the planner calls a clash is what the booking
+  // widget already treats as busy.
+  function hcMarkClashes(items){
+    var withTime = items.filter(function(x){ return x.startMin != null; });
+    withTime.forEach(function(a){
+      withTime.forEach(function(b){
+        if(a === b) return;
+        if(a.startMin < b.endMin && b.startMin < a.endMin){ a.clash = true; b.clash = true; }
+      });
+    });
+    return items;
+  }
+  function hcJobToItem(j){
+    var startMin = null, endMin = null;
+    var hm = hcHm(j.scheduled_time);
+    if(hm){
+      var parts = hm.split(':');
+      startMin = Number(parts[0]) * 60 + Number(parts[1] || 0);
+      var dur = Number(j.duration_hours);
+      endMin = startMin + (isFinite(dur) && dur > 0 ? Math.round(dur * 60) : 120);
+    }
+    return { row: j, startMin: startMin, endMin: endMin, clash: false };
+  }
+  async function hcLoadJobs(businessId, fromISO, toISO){
+    var c = await authGetClient();
+    var q = c.from('jobs')
+      .select('id,customer_name,service_name,scheduled_date,scheduled_time,duration_hours,amount,status,phone,email,address,vehicle,notes,is_block,paid')
+      .eq('business_id', businessId);
+    if(fromISO) q = q.gte('scheduled_date', fromISO);
+    if(toISO) q = q.lte('scheduled_date', toISO);
+    var r = await q.order('scheduled_date', { ascending:true }).order('scheduled_time', { ascending:true });
+    if(r && r.error) throw new Error(r.error.message);
+    return Array.isArray(r && r.data) ? r.data : [];
+  }
+  function hcJobPanel(j){
+    hcOpenPanel(j.is_block ? 'Blocked time' : 'Job', function(body){
+      var rows = [
+        ['When', [hcDayLabel(j.scheduled_date), hcHm(j.scheduled_time)].filter(Boolean).join(' at ') || null],
+        ['Length', Number(j.duration_hours) > 0 ? Number(j.duration_hours) + (Number(j.duration_hours) === 1 ? ' hour' : ' hours') : null],
+        [j.is_block ? 'Reason' : 'Service', j.service_name || null],
+        ['Customer', j.is_block ? null : (j.customer_name || null)],
+        ['Phone', j.phone || null], ['Email', j.email || null],
+        ['Address', j.address || null], ['Vehicle', j.vehicle || null],
+        ['Price', (Number(j.amount) > 0 ? '$' + Number(j.amount) : null)],
+        ['Paid', j.paid === true ? 'Yes' : (Number(j.amount) > 0 ? 'Not yet' : null)],
+        ['Status', j.status || null],
+        ['Notes', j.notes || null]
+      ].filter(function(r){ return r[1]; });
+      var dl = document.createElement('div'); dl.className = 'hc-event-fields';
+      rows.forEach(function(r){
+        var line = document.createElement('div'); line.className = 'hc-event-row';
+        var k = document.createElement('span'); k.className = 'hc-event-k'; k.textContent = r[0];
+        var v = document.createElement('span'); v.className = 'hc-event-v'; v.textContent = r[1];
+        line.appendChild(k); line.appendChild(v); dl.appendChild(line);
+      });
+      body.appendChild(dl);
+      if(j.phone && !j.is_block){
+        var acts = document.createElement('div'); acts.className = 'hc-event-acts';
+        var call = document.createElement('a'); call.className = 'hc-arrival-act';
+        call.href = 'tel:' + String(j.phone).replace(/[^0-9+]/g,'');
+        call.textContent = 'Call ' + j.phone; acts.appendChild(call); body.appendChild(acts);
+      }
+    });
+  }
+
+  // ── PLANNER: the owner's day. ───────────────────────────────────────────────
+  // Today and tomorrow, jobs and blocked time in ONE list, because a detailer does not
+  // keep his jobs and his errands in separate apps and asking him to is why he uses
+  // neither. Tasks join this list when the tasks tables exist; the union is the point,
+  // so the shape is built for it rather than retrofitted.
+  async function hcRenderPlanner(canvas, biz){
+    var today = new Date();
+    var iso = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+    var from = iso(today), to = iso(new Date(today.getTime() + 864e5));
+    var jobs;
+    try{ jobs = await hcLoadJobs(biz.id, from, to); }
+    catch(e){
+      var room0 = hcRoomShell('Your day', null, null);
+      hcRoomEmpty(room0, 'I couldn’t read your schedule just now',
+        'That’s a problem reaching your records, not an empty day — don’t plan around it. Try again in a moment.');
+      canvas.appendChild(room0); return;
+    }
+    var room = hcRoomShell('Your day', null, null);
+    if(!jobs.length){
+      hcRoomEmpty(room, 'Nothing booked today or tomorrow',
+        'When a customer books, it lands here. You can also tell me things directly — "add tomorrow 12 to 3, Leslie, detailing" — and I’ll put it on the day.');
+      canvas.appendChild(room); return;
+    }
+    [from, to].forEach(function(day){
+      var dayJobs = jobs.filter(function(j){ return String(j.scheduled_date) === day; });
+      var g = document.createElement('div'); g.className = 'hc-room-group';
+      g.textContent = hcDayLabel(day) + (dayJobs.length ? '' : ' — nothing booked');
+      room.appendChild(g);
+      if(!dayJobs.length) return;
+      var items = hcMarkClashes(dayJobs.map(hcJobToItem));
+      var clashed = false;
+      items.forEach(function(it){
+        var j = it.row;
+        room.appendChild(hcRoomRow({
+          when: hcHm(j.scheduled_time) || '—',
+          title: j.is_block ? (j.service_name || 'Blocked time') : (j.customer_name || 'Someone'),
+          sub: j.is_block ? 'Blocked — not a customer' : (j.service_name || null),
+          tail: (!j.is_block && Number(j.amount) > 0) ? ('$' + Number(j.amount)) : null,
+          block: j.is_block === true, clash: it.clash,
+          onOpen: function(){ hcJobPanel(j); }
+        }));
+        if(it.clash) clashed = true;
+      });
+      if(clashed){
+        var n = document.createElement('div'); n.className = 'hc-clash-note';
+        n.textContent = 'Two of these overlap. Ask me to move one and I’ll find the next free slot.';
+        room.appendChild(n);
+      }
+    });
+    canvas.appendChild(room);
+  }
+
+  // ── JOBS: everything, recent first. ─────────────────────────────────────────
+  async function hcRenderJobs(canvas, biz){
+    var jobs;
+    try{ jobs = await hcLoadJobs(biz.id, null, null); }
+    catch(e){
+      var r0 = hcRoomShell('Jobs', null, null);
+      hcRoomEmpty(r0, 'I couldn’t read your jobs just now', 'That’s a read failure, not an empty list. Try again in a moment.');
+      canvas.appendChild(r0); return;
+    }
+    var work = jobs.filter(function(j){ return !j.is_block; });
+    var room = hcRoomShell('Jobs', work.length ? (work.length + (work.length === 1 ? ' job' : ' jobs')) : null, null);
+    if(!work.length){
+      hcRoomEmpty(room, 'No jobs yet',
+        'A job appears here when someone books, or when you tell me to add one. Nothing is hidden — there simply aren’t any on record.');
+      canvas.appendChild(room); return;
+    }
+    work.slice().reverse().forEach(function(j){
+      room.appendChild(hcRoomRow({
+        when: j.scheduled_date ? String(j.scheduled_date).slice(5) : '—',
+        title: j.customer_name || 'Someone',
+        sub: [j.service_name, hcHm(j.scheduled_time)].filter(Boolean).join(' · ') || null,
+        tail: Number(j.amount) > 0 ? ('$' + Number(j.amount) + (j.paid ? ' paid' : '')) : (j.status || null),
+        onOpen: function(){ hcJobPanel(j); }
+      }));
+    });
+    canvas.appendChild(room);
+  }
+
+  // ── CUSTOMERS: the folded list, straight off get_business_customers. ────────
+  // Same reader the assistant uses, so the room and the answer can never disagree.
+  async function hcRenderCustomers(canvas, biz){
+    var uid = await hcOwnerUid();
+    var rows = null;
+    try{
+      var c = await authGetClient();
+      var r = await c.rpc('get_business_customers', { p_business_id: biz.id, p_owner_id: uid, p_limit: 200 });
+      if(r && r.error) throw new Error(r.error.message);
+      rows = Array.isArray(r && r.data) ? r.data : [];
+    }catch(e){
+      var r0 = hcRoomShell('Customers', null, null);
+      hcRoomEmpty(r0, 'I couldn’t read your customers just now', 'That’s a read failure, not an empty list. Try again in a moment.');
+      canvas.appendChild(r0); return;
+    }
+    var room = hcRoomShell('Customers', rows.length ? (rows.length + (rows.length === 1 ? ' person' : ' people')) : null, null);
+    if(!rows.length){
+      hcRoomEmpty(room, 'No customers on record yet',
+        'Someone becomes a customer when they book, or when you tell me about them. Two records that share a phone or email are shown as one person here — never matched on name alone.');
+      canvas.appendChild(room); return;
+    }
+    rows.forEach(function(cu){
+      var contact = [cu.phone, cu.email].filter(Boolean).join(' · ') || 'no contact on record';
+      room.appendChild(hcRoomRow({
+        title: cu.name || 'Unnamed',
+        sub: contact + (Number(cu.merged_rows) > 1 ? '  —  ' + Number(cu.merged_rows) + ' records matched on contact details' : ''),
+        tail: cu.last_seen ? ('last seen ' + String(cu.last_seen)) : 'no job linked',
+        onOpen: function(){ hcCustomerPanel(cu, biz); }
+      }));
+    });
+    canvas.appendChild(room);
+  }
+  function hcCustomerPanel(cu, biz){
+    hcOpenPanel('Customer', function(body){
+      var rows = [
+        ['Name', cu.name || null], ['Phone', cu.phone || null], ['Email', cu.email || null],
+        ['Vehicle', cu.vehicle || null],
+        ['Last seen', cu.last_seen ? (String(cu.last_seen) + (cu.last_service ? ' — ' + cu.last_service : '')) : null],
+        ['Jobs', Number(cu.visits) > 0 ? String(cu.visits) : null],
+        ['Billed', Number(cu.total_billed) > 0 ? ('$' + Number(cu.total_billed)) : null],
+        ['Records', Number(cu.merged_rows) > 1 ? (Number(cu.merged_rows) + ' matched on contact details') : null]
+      ].filter(function(r){ return r[1]; });
+      var dl = document.createElement('div'); dl.className = 'hc-event-fields';
+      rows.forEach(function(r){
+        var line = document.createElement('div'); line.className = 'hc-event-row';
+        var k = document.createElement('span'); k.className='hc-event-k'; k.textContent = r[0];
+        var v = document.createElement('span'); v.className='hc-event-v'; v.textContent = r[1];
+        line.appendChild(k); line.appendChild(v); dl.appendChild(line);
+      });
+      body.appendChild(dl);
+      if(!cu.phone && !cu.email){
+        var n = document.createElement('div'); n.className='hc-event-sub';
+        n.textContent = 'No phone or email on record, so there’s no way to reach them from here.';
+        body.appendChild(n);
+      }else if(cu.phone){
+        var acts = document.createElement('div'); acts.className='hc-event-acts';
+        var call = document.createElement('a'); call.className='hc-arrival-act';
+        call.href = 'tel:' + String(cu.phone).replace(/[^0-9+]/g,'');
+        call.textContent = 'Call ' + cu.phone; acts.appendChild(call); body.appendChild(acts);
+      }
+    });
+  }
+  // ONE ENTRY POINT for the three rooms, so hcOpenWorkspace stays a switch and not a
+  // second implementation of each.
+  var HC_ROOMS = { planner: hcRenderPlanner, jobs: hcRenderJobs, customers: hcRenderCustomers };
+  async function hcRenderRoom(id){
+    var canvas = document.getElementById('hcCanvas'); if(!canvas) return;
+    var biz = hc.draftBusiness;
+    canvas.innerHTML = '';
+    if(!biz || !biz.id || !hc.draftClaimed) return;
+    var fn = HC_ROOMS[id]; if(!fn) return;
+    try{ await fn(canvas, biz); }
+    catch(e){ console.error('[room] ' + id + ' failed', e); }
+  }
+
   function hcOpenWorkspace(id, filter, fromUrl){
     if(!id) id = 'home';
     var changed = (hc.mode !== id);
@@ -4428,6 +4758,11 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     hcRenderRail();
     // Home needs no canvas (the conversation is the screen). A workspace with a canvas
     // renders it lazily on entry — today only Website, which mounts the live site iframe.
+    if(HC_ROOMS[id]){
+      // A room is the CENTRE. The panel is left alone deliberately: if a record is open,
+      // it stays open while the owner moves rooms — the conversation is still about it.
+      hcRenderRoom(id);
+    }
     if(id === 'website'){
       // Hold the canvas only when there is something to wait for — an owner whose page
       // was already upgraded this session mounts immediately, as before.
@@ -5008,19 +5343,21 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     //    2026-09-08: schedule (jobs), customers (folded on contact, never name),
     //    sales (jobs AND orders, any period, past included), website (a room).
     { kind:'card', id:'schedule', label:'View my schedule', icon:'schedule',
-      cap:'operations.read', slice:'jobs', countKey:'jobsToday',
+      cap:'operations.read', slice:'jobs', countKey:'jobsToday', place:'planner',
       // A count only once there is something to count. Never "0 jobs today".
       count:function(n){ return n === 1 ? '1 job today' : n + ' jobs today'; },
-      needs:function(){ return true; },
-      ask:'Show me my schedule.' },
+      // Gated on the PLACE, not on nothing: a card must never open a room the rail does
+      // not show. One rule, both surfaces.
+      needs:function(ctx){ return ctx.has('planner'); },
+      open:'planner' },
     { kind:'card', id:'customers', label:'See my customers', icon:'customers',
       // REAL AS OF 2026-09-08. It did not render before because nothing read the
       // customers table; get_business_customers does now, folding on phone then email
       // and never on name.
-      cap:'operations.read', slice:'customers', countKey:'customerCount',
+      cap:'operations.read', slice:'customers', countKey:'customerCount', place:'customers',
       count:function(n){ return n === 1 ? '1 on record' : n + ' on record'; },
-      needs:function(){ return true; },
-      ask:'Show me my customers.' },
+      needs:function(ctx){ return ctx.has('customers'); },
+      open:'customers' },
     { kind:'card', id:'sales', label:'Check my sales', icon:'sales',
       // NO LONGER STORE-ONLY. It read commerce_orders, so it was blank for every
       // business without a Store while jobs.amount held the money he actually earned.

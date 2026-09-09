@@ -15749,7 +15749,10 @@ function mapJobRow(j){
     vehicleColor: j.vehicle_color,
     reviewRequestedAt: j.review_requested_at||null,
     durationHours: j.duration_hours!=null?Number(j.duration_hours):null,
-    isBlock: j.customer_name==='Blocked',
+    // A REAL COLUMN as of 2026-09-09. Was `j.customer_name==='Blocked'` — a magic
+    // string in a person's name column, which put blocked time into the customer
+    // fold and the unattributed-jobs count. Zero legacy rows, so no fallback.
+    isBlock: j.is_block === true,
     googleEventId: j.google_event_id||null,
     hublyJobId: j.hubly_job_id||j.id,
     lastSyncedAt: j.last_synced_at||null,
@@ -44660,6 +44663,7 @@ async function submitBlockTime(){
     const payload={
       business_id: currentBusiness.id,
       customer_name: 'Blocked',
+      is_block: true,
       service_name: reason||'Time blocked',
       scheduled_date: date,
       scheduled_time: time,

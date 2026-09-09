@@ -71,7 +71,8 @@
     "check:home-promises": "node scripts/check-home-promises.mjs",
     "shot:owner-home": "node scripts/shot-owner-home.mjs",
     "check:answerable": "node scripts/check-backend-answerable.mjs",
-    "check:answerable-live": "node scripts/check-backend-answerable.mjs --live"
+    "check:answerable-live": "node scripts/check-backend-answerable.mjs --live",
+    "shot:owner-rooms": "node scripts/shot-owner-rooms.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

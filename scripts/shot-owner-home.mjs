@@ -47,6 +47,7 @@ const HOOK = `
     events: hcEvents,
     counts: function(c){ hcHomeCounts = c; },
     renderRail: hcRenderRail,
+    openWorkspace: function(id){ return hcOpenWorkspace(id); },
     renderHome: hcRenderHome,
     openEventPanel: hcOpenEventPanel,
     reflectAuth: hcReflectAuthState,
