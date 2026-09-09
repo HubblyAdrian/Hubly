@@ -478,6 +478,9 @@
    "bucket": "internal",
    "reason": "Studio, a dead product surface"
   },
+  "tasks": {
+   "bucket": "owner"
+  },
   "user_table_preferences": {
    "bucket": "internal",
    "reason": "UI column preferences"

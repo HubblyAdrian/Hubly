@@ -578,6 +578,27 @@ export const SLICES: SliceDef[] = [
     ].filter(Boolean).join(" "),
   },
   {
+    // HIS TASKS. The third thing in his day, alongside jobs and blocked time — and
+    // askable for the same reason everything else here is: Hubly stores it, so he can
+    // ask about it. An undated task is not overdue, it simply has no day; nothing here
+    // may describe one as late.
+    key: "tasks",
+    title: "TASKS (open)",
+    emptyLine: "TASKS: none open. Do not invent one, and do not suggest he must be forgetting something.",
+    read: async (admin, businessId, ownerUid) => ({
+      rows: await rpc(admin, "get_business_tasks", {
+        p_business_id: businessId, p_owner_id: ownerUid, p_from: null, p_to: null,
+      }),
+    }),
+    line: (r) => [
+      `[${String(r.band)}] ${String(r.title)}`,
+      r.due_date ? `· ${String(r.due_date)}${r.due_time ? " " + String(r.due_time).slice(0,5) : ""}` : "· no day set (not overdue — it just has no day)",
+      r.lane === "personal" ? "· personal" : null,
+      r.band_source === "owner" ? "· band set by him" : (r.band_reason ? `· proposed because ${String(r.band_reason)}` : null),
+      Number(r.roll_count) > 0 ? `· moved ${Number(r.roll_count)} time${Number(r.roll_count) === 1 ? "" : "s"} already` : null,
+    ].filter(Boolean).join(" "),
+  },
+  {
     key: "leads",
     title: "RECENT LEADS (started a booking and did not finish)",
     emptyLine: "RECENT LEADS: none on record.",

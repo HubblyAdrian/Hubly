@@ -6424,6 +6424,152 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         },
       },
       {
+        // ═══ CAPTURE. THE MOST IMPORTANT MECHANIC IN THE PLANNER. ═══════════════
+        //
+        // ONE BOX. NO FORM. NO REQUIRED FIELDS. NO INTERROGATION. An owner with ADHD who
+        // has to answer three questions to capture a thought has already lost the
+        // thought — he is holding a polisher. Take what you are given, write it, and ask
+        // about the rest only if and when it matters.
+        //
+        //   "add tomorrow 12 to 3, Leslie Ammons, detailing"  -> kind job
+        //   "dentist appointment Thursday 2 to 4"             -> kind block
+        //   "remind me to order glass cleaner"                -> kind task, lane work
+        //   "gym at 6"                                        -> kind task, lane personal
+        //
+        // YOU do the parsing, with the whole message in hand. There is no regex behind
+        // this and there must not be: "12 to 3", "noon till three", "a couple of hours
+        // Thursday morning" and "Tues 9-11" are the same intent in four shapes, and a
+        // list of the shapes we have already seen undercounts every single time.
+        name: "capture",
+        description:
+          "Capture ONE thing the owner just said into his day: a job, blocked time, or a task. This is the fast path — write it from what he gave you and do NOT ask for anything he did not mention.\n\n" +
+          "WHICH KIND:\n" +
+          "  job    — a customer's appointment. Someone is being served.\n" +
+          "  block  — time he is not available (dentist, school run, van service). NOT a customer, and it must never be written as one.\n" +
+          "  task   — something to do, with or without a time. 'Order glass cleaner', 'send invoice', 'gym at 6'.\n\n" +
+          "LANE (tasks only): 'personal' for anything that is his life rather than the business — gym, dentist, kids. 'work' otherwise. Hubly holding personal items is deliberate; it is what makes this a planner and not a job board.\n\n" +
+          "BAND (tasks only) — one question decides it: can he move this himself without telling anyone? No -> A. Yes but it matters -> B. Yes and nothing happens -> C. Deciding what matters is the expensive step and the one he struggles with, so PROPOSE a band with a short reason and let him override. A job is always A: a customer chose that time.\n\n" +
+          "DURATION: pass durationMinutes when he gave a span ('12 to 3' = 180). When he did NOT, omit it — the system applies 2 hours and tells you it assumed. You must then say so in your reply, in his words: \"I've put aside 2 hours — tell me if it's longer.\" Never let an assumed length pass silently; it blocks two hours of his day.\n\n" +
+          "CUSTOMER NAME on a job: pass customerName exactly as he said it. The system looks for existing people and hands back candidates — it never picks. If it returns candidates you must ASK which one before writing, and pass customerId once he says.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: { type: "string", description: "Supplied by the system; put any placeholder here." },
+            kind: { type: "string", enum: ["job", "block", "task"], description: "job, block or task." },
+            title: { type: "string", description: "The service for a job, the reason for a block, the thing to do for a task. His words." },
+            date: { type: "string", description: "YYYY-MM-DD, resolved from what he said ('tomorrow', 'Thursday'). Omit for a task with no day — an undated task is fine and must not be chased." },
+            start: { type: "string", description: "HH:MM, 24h. Omit if he did not give a time." },
+            durationMinutes: { type: "number", description: "Only when he stated a span or an end time. Omit otherwise — do NOT guess." },
+            customerName: { type: "string", description: "Job only. Exactly as he said it." },
+            customerId: { type: "string", description: "Job only, and ONLY after he confirmed which existing person he meant." },
+            amount: { type: "number", description: "Only if he said a price." },
+            band: { type: "string", enum: ["A", "B", "C"], description: "Task only. Your proposal." },
+            bandReason: { type: "string", description: "Task only. One short clause — why that band." },
+            lane: { type: "string", enum: ["work", "personal"], description: "Task only." },
+            notes: { type: "string", description: "Anything else he said that does not fit a field." },
+          },
+          required: ["kind", "title"],
+        },
+        handler: async (args) => {
+          const a = args as Record<string, unknown>;
+          // args.draftId, spelled out: check-draft-arg-name.mjs reads the SOURCE for this
+          // exact expression, and an alias hides it. The check is the reason
+          // operations.read spent three days telling signed-in owners no business was
+          // connected — it is not a formality.
+          const businessId = String((args as Record<string, unknown>)?.draftId || "").trim();
+          const ownerUid = injectedOwnerUid(a);
+          if (!businessId) return { ok: false, real: false, error: "missing_draft", summary: "No business is connected to this conversation." };
+          if (!ownerUid) {
+            return { ok: false, real: false, error: "not_signed_in",
+              summary: "Only the signed-in owner can add to their day. Say that plainly; do not claim anything was saved." };
+          }
+          const kind = String(a?.kind || "").trim();
+          const title = String(a?.title || "").trim();
+          if (!title) return { ok: false, real: false, error: "no_title", summary: "Nothing to add — ask what he wants on the day." };
+
+          // ── IDENTITY: LOOK, REPORT, NEVER PICK. ───────────────────────────────
+          const customerName = String(a?.customerName || "").trim();
+          const customerId = String(a?.customerId || "").trim();
+          if (kind === "job" && customerName && !customerId) {
+            const cands = await callBusinessRpc("find_customer_candidates", {
+              p_business_id: businessId, p_owner_id: ownerUid, p_name: customerName,
+            });
+            const list = Array.isArray(cands) ? cands : [];
+            if (list.length === 1) {
+              const c = list[0] as Record<string, unknown>;
+              const bits = [c.phone, c.email].filter(Boolean).join(" · ");
+              return {
+                ok: false, real: false, error: "confirm_customer",
+                summary: `One person on record matches "${customerName}": ${c.name}${bits ? ` (${bits})` : ""}` +
+                  `${c.last_seen ? `, last seen ${c.last_seen}` : ", no jobs on record"}. ` +
+                  `ASK whether that is who he means. If yes, call capture again with customerId "${c.id}". ` +
+                  `If it is someone else with the same name, call again with customerName only and no customerId, and a NEW person will be created. Nothing has been written yet.`,
+                raw: { candidates: list },
+              };
+            }
+            if (list.length > 1) {
+              const lines = list.slice(0, 5).map((c: Record<string, unknown>) =>
+                `- ${c.name}${c.phone ? ` (${c.phone})` : ""}${c.last_seen ? `, last seen ${c.last_seen}` : ""} [id ${c.id}]`).join("\n");
+              return {
+                ok: false, real: false, error: "which_customer",
+                summary: `${list.length} people on record match "${customerName}". ASK which one — never guess, two people can share a name:\n${lines}\n` +
+                  `Call capture again with the customerId he picks, or with customerName only to create a new person. Nothing has been written yet.`,
+                raw: { candidates: list },
+              };
+            }
+            // none — fall through and create
+          }
+
+          const r = await callBusinessRpc("capture_planner_item", {
+            p_business_id: businessId, p_owner_id: ownerUid,
+            p_kind: kind, p_title: title,
+            p_date: a?.date ? String(a.date) : null,
+            p_start: a?.start ? String(a.start) : null,
+            p_duration_minutes: typeof a?.durationMinutes === "number" ? Math.round(a.durationMinutes) : null,
+            p_customer_id: customerId || null,
+            p_customer_name: customerName || null,
+            p_amount: typeof a?.amount === "number" ? a.amount : null,
+            p_band: a?.band ? String(a.band) : "B",
+            p_band_reason: a?.bandReason ? String(a.bandReason) : null,
+            p_lane: a?.lane ? String(a.lane) : "work",
+            p_notes: a?.notes ? String(a.notes) : null,
+          });
+          const res = (r || {}) as Record<string, unknown>;
+          if (res.ok !== true) {
+            const why = String(res.error || "unknown");
+            const msg = why === "needs_date"
+              ? "A job or blocked time needs a day. Ask which day — and do not assume today."
+              : why === "not_owner"
+              ? "That business is not writable by the signed-in account. Say so plainly."
+              : "It could not be saved just now. Say it was NOT saved — never that it was.";
+            return { ok: false, real: false, error: why, summary: msg };
+          }
+
+          // ── THE READ-BACK IS COMPOSED FROM WHAT ACTUALLY HAPPENED. ────────────
+          const assumed = res.assumed_duration === true;
+          const mins = Number(res.duration_minutes || 0);
+          const hrs = mins / 60;
+          const parts: string[] = [];
+          if (kind === "task") {
+            parts.push(`Real update — task saved: "${res.title}"` +
+              `${res.due_date ? ` for ${res.due_date}` : " with no day on it, which is fine"}` +
+              `${res.band ? `, band ${res.band}` : ""}${res.lane === "personal" ? ", personal" : ""}.`);
+            parts.push("Read it back in one short sentence. Do not ask him for a date, a priority or anything else he did not mention.");
+          } else {
+            parts.push(`Real update — ${kind === "block" ? "blocked time" : "job"} saved: "${res.title}"` +
+              ` on ${res.date}${res.start ? ` at ${String(res.start).slice(0, 5)}` : ""}.`);
+            if (assumed) {
+              parts.push(`He did NOT say how long, so ${hrs === 1 ? "1 hour" : `${hrs} hours`} was set aside and the calendar is now busy for that long. ` +
+                `YOU MUST SAY THIS BACK — "I've put aside ${hrs === 1 ? "an hour" : `${hrs} hours`}, tell me if it's longer" — because it blocks that much of his day.`);
+            } else {
+              parts.push(`Length ${hrs === 1 ? "1 hour" : `${hrs} hours`}, as he said. The calendar is busy for that window.`);
+            }
+            if (kind === "block") parts.push("This is NOT a customer and must never be described as one.");
+          }
+          return { ok: true, real: true, summary: parts.join(" "), raw: res };
+        },
+      },
+      {
         // THE WRITER FOR HOURS. The suggestion "Set your hours" was removed on
         // 2026-09-08 because no capability wrote them — a promise offering an owner a
         // fix he could not make. It comes back with this, and not before.

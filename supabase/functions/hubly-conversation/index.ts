@@ -414,6 +414,10 @@ const DRAFT_INJECTED_ACTIONS = new Set([
   // "Set your hours" was removed for having no writer; a writer that silently refuses
   // for every real owner would have been worse than none.
   "business.setHours",
+  // business.capture (2026-09-09). Reads injectedOwnerUid and writes through
+  // capture_planner_item, which refuses a null uid. Without this every capture would be
+  // refused on a claimed business — which is every business that has a day to plan.
+  "business.capture",
   "website.generateDocument",
   "website.patchDocument",
   "website.newPage",

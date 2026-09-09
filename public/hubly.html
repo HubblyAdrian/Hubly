@@ -44655,14 +44655,18 @@ async function submitBlockTime(){
   const reason=document.getElementById('bt-reason').value.trim();
   if(!date){toast('Select a date');return}
   if(!time){toast('Select a start time');return}
-  const job={id:Date.now(),customer:'Blocked',service:reason||'Time blocked',date,time,
+  const job={id:Date.now(),customer:'',service:reason||'Time blocked',date,time,
     address:'',amount:'',notes:reason,status:'scheduled',fromBooking:false,
     phone:'',email:'',vehicle:'',vehicleColor:'',isBlock:true,durationHours:duration};
   S.jobs.push(job);
   if(currentBusiness){
     const payload={
       business_id: currentBusiness.id,
-      customer_name: 'Blocked',
+      // NOT customer_name:'Blocked'. A name column seeded with a fake person is
+      // eventually read by something that treats it as one — three readers already had
+      // to exclude blocks by hand. is_block carries the meaning; the label comes from
+      // service_name (the reason he typed), and blocks render from that.
+      customer_name: null,
       is_block: true,
       service_name: reason||'Time blocked',
       scheduled_date: date,
