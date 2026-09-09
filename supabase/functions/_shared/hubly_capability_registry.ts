@@ -3248,6 +3248,7 @@ type ServicesPlacement = {
   inserted?: string[];                           // names added as a NEW entry cloned from a sibling
   descNeeded?: string[];                         // inserted into a section that carries a blurb per entry, but no description was given — ask for one
   noSection?: boolean;                           // true only when there is no services section to insert into (the sole rebuild case)
+  replacedGuessRows?: number;                    // placeholder rows overwritten with a real service this pass
   lostEdits?: number;                            // when noSection: how many owner edits a rebuild would lose (named before the yes)
   where?: string;                                // "services section" | "page"
   changed?: boolean;
@@ -3769,14 +3770,175 @@ function placeServiceDescription(html: string, name: string, descText: string): 
   }
   return html.slice(0, bounds.start) + entry + html.slice(bounds.end);
 }
+/** The services section's PLACEHOLDER entries — the generator's own invented rows,
+ *  which carry data-hubly-guess and no data-hubly-service.
+ *
+ *  DELIBERATELY SEPARATE FROM allServiceAnchors(). That function's return value means
+ *  "a real service, on record, stamped at build or patch time", and its one caller
+ *  plus six other readers of the attribute all depend on that meaning — the delete
+ *  guard in removeServiceCard counts anchors in a slice to prove a cut takes exactly
+ *  one service. Widening it would quietly change what all of them believe.
+ *
+ *  WHY NOT MATCH THE ATTRIBUTE'S VALUE: because it is model prose. Counted across the
+ *  corpus, data-hubly-guess carries 25+ distinct values — "editable service row",
+ *  "suggested service card", "suggested service description", "service description",
+ *  "suggested services intro" — and the generator invents new phrasings every build.
+ *  A list of the ones we have seen is a list of FORMS, and it undercounts every time.
+ *
+ *  So the section is found structurally and its entries are found by OUR OWN labels:
+ *  data-hc="section.N.item.M.title" is stamped by the labelling pass, is deterministic,
+ *  and is present on 115 of the 120 affected pages. The other 5 fall through to the
+ *  honest handoff, which is the correct outcome rather than a guess. */
+function allGuessServiceRows(html: string): { index: number; length: number; tag: string; text: string }[] {
+  // Locate the services section. Same signals servicesWhereLabel() already ships with,
+  // so the two can never disagree about which section is the services one.
+  const sections: { start: number; end: number }[] = [];
+  const secRe = /<section\b[^>]*>/gi;
+  let sm: RegExpExecArray | null;
+  while ((sm = secRe.exec(html))) {
+    const close = html.indexOf("</section>", sm.index);
+    if (close > 0) sections.push({ start: sm.index, end: close + 10 });
+  }
+  // WHICH SECTION IS THE SERVICES SECTION — measured, not assumed.
+  //
+  // My first version of this matched a fixed list of class names and heading words. It
+  // found the section on 61 of the 120 real pages. That is the "enumerate the harmless
+  // side" failure happening inside the very function whose comment warns about it: the
+  // LA page's services section is `<section id="services">` with no class at all, its
+  // heading is "Start with the detail your car needs today.", and its grid class is
+  // "service-grid" — three forms, none on the list.
+  //
+  // Measured across all 120 affected pages:
+  //     fixed class/heading list ............ 61/120
+  //     "servic" in a structural attribute .. 64/120
+  //     "servic" in a data-hubly-guess value  62/120
+  //     either of the last two .............. 72/120   <- shipped
+  //     ceiling (any section with 2+ items) . 115/120
+  //
+  // The gap between 72 and 115 is NOT a better regex waiting to be written. It is that
+  // a page has several sections of labelled items — services, process steps, why-choose —
+  // and nothing on the page says which is which. Picking wrong would overwrite a process
+  // step with a service name, which is worse than refusing. See STATE/OPEN: the durable
+  // fix is a build-time section stamp, exactly as CLAUDE.md already requires.
+  const looksServices = (block: string, openTag: string) =>
+    /data-hubly-guess="[^"]*servic/i.test(block) ||
+    /(?:id|class|aria-labelledby|aria-label)="[^"]*servic/i.test(block.slice(0, 4000)) ||
+    /(?:id|class|aria-labelledby)="[^"]*servic/i.test(openTag);
+  const candidates = sections.filter((sec) => looksServices(html.slice(sec.start, sec.end), (/<section\b[^>]*>/i.exec(html.slice(sec.start, sec.end)) || [""])[0]));
+  if (!candidates.length) return [];
+  const itemRe = /<([a-z0-9]+)\b[^>]*\bdata-hc="section\.\d+\.item\.\d+\.title"[^>]*>([\s\S]*?)<\/\1>/gi;
+  let best: { index: number; length: number; tag: string; text: string }[] = [];
+  let bestTied = false;
+  for (const sec of candidates) {
+    const block = html.slice(sec.start, sec.end);
+    const found: { index: number; length: number; tag: string; text: string }[] = [];
+    itemRe.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = itemRe.exec(block))) {
+      if (/data-hubly-service=/i.test(m[0])) continue;   // never overwrite a real service
+      found.push({ index: sec.start + m.index, length: m[0].length, tag: m[1].toLowerCase(), text: stripElementText(m[2]) });
+    }
+    if (found.length > best.length) { best = found; bestTied = false; }
+    else if (found.length === best.length && found.length > 0) { bestTied = true; }
+  }
+  // TWO SECTIONS EQUALLY LOOK LIKE THE SERVICES ONE. Refuse rather than pick: writing a
+  // service name over a process step is a worse outcome than the honest handoff.
+  if (bestTied) return [];
+  return best;
+}
 /** Add a service that isn't on the page by CLONING an existing entry in the same
  *  section — the shape-agnostic alternative to a destructive rebuild (the rebuild
  *  offer's whole reason for existing was that we had no way to add one). Returns the
  *  new HTML on success, or a reason: `no_section` (no service entry to clone — the
  *  ONLY case a rebuild is genuinely the answer). */
-export function insertServiceIntoFreeform(html: string, name: string, price?: number, description?: string): { ok: boolean; html?: string; kind?: string; single?: boolean; reason?: string; hadDesc?: boolean; labeled?: boolean } {
+/** Overwrite ONE placeholder row with a real service: its name, its price, its blurb.
+ *  The row keeps the page's own markup and design — we never author an entry — and comes
+ *  out stamped data-hubly-service with data-hubly-guess removed, so this business is on
+ *  the normal path from here and never needs the fallback again.
+ *
+ *  Replacing rather than appending is the whole point: "Use this row for the primary work
+ *  the company wants to be known for" is copy addressed to the OWNER sitting on a page his
+ *  CUSTOMERS read, and it should not survive the arrival of the real thing. */
+function replaceGuessServiceRow(
+  html: string,
+  row: { index: number; length: number; tag: string; text: string },
+  name: string, price?: number, description?: string,
+): { ok: boolean; html?: string; kind?: string; reason?: string; hadDesc?: boolean; replacedGuess?: boolean } {
+  const bounds = findServiceEntryBounds(html, row.index, row.length, row.tag);
+  if (!bounds) return { ok: false, reason: "no_entry" };
+  const entryHtml = html.slice(bounds.start, bounds.end);
+  const hadDesc = entryHasDescription(entryHtml);
+  const priceStr = typeof price === "number" ? fmtServicePrice(price) : null;
+  // buildClonedServiceEntry rewrites the name, price and blurb of an entry while keeping
+  // its structure — exactly what is wanted here, with the entry being replaced acting as
+  // its own template.
+  // THE ANCHOR GOES ON THE NAME ELEMENT, NOT THE ENTRY CONTAINER. This is the whole
+  // convention markServiceAnchorsInFreeform follows, and buildClonedServiceEntry relies
+  // on it to find and rewrite the visible name. Stamping the outer <div> instead — which
+  // is what the first version of this did — left the placeholder's title text on the
+  // page under a real service's anchor ("Aviation services" priced at $250), AND left
+  // the row looking unconsumed, so the second service overwrote the first one's row
+  // instead of taking the next placeholder. Both defects, one cause; the red-proof
+  // caught them before this ran anywhere near a real page.
+  const anchorAt = row.index - bounds.start;               // the title element, entry-relative
+  let out = entryHtml;
+  if (anchorAt >= 0 && anchorAt < out.length && !/data-hubly-service=/i.test(out.slice(anchorAt, anchorAt + row.length))) {
+    out = out.slice(0, anchorAt)
+      + out.slice(anchorAt).replace(/^<([a-z0-9]+)/i, (_m, p1) => `<${p1} data-hubly-service="${String(name).replace(/"/g, "")}"`);
+  }
+  out = buildClonedServiceEntry(out, name, priceStr, description);
+  // The guess marks are the placeholder's own claim to be invented. The row is real now.
+  out = out.replace(/\s+data-hubly-guess="[^"]*"/gi, "");
+  return {
+    ok: true, kind: "guess-row", hadDesc, replacedGuess: true,
+    html: html.slice(0, bounds.start) + out + html.slice(bounds.end),
+  };
+}
+export function insertServiceIntoFreeform(html: string, name: string, price?: number, description?: string, useGuessRows?: boolean): { ok: boolean; html?: string; kind?: string; single?: boolean; reason?: string; hadDesc?: boolean; labeled?: boolean; replacedGuess?: boolean } {
   const anchors = allServiceAnchors(html);
-  if (!anchors.length) return { ok: false, reason: "no_section" };
+  // ── FALLBACK ORDER (a) → (b) → (c). ────────────────────────────────────────
+  // (a) Real anchors exist: current behaviour, byte for byte. 9 of the 10 pages that
+  //     work today carry BOTH real anchors and leftover guess rows, so "prefer a guess
+  //     row" as a global rule would have changed what those 9 do. `useGuessRows` is
+  //     therefore decided ONCE per placement pass by the caller, from whether the page
+  //     had any real anchor before the pass began — never re-decided mid-pass as our
+  //     own stamps appear.
+  // (b) No real anchors at pass start: the guess rows ARE the section. Replace them in
+  //     order — first real service over the first placeholder — so the instructional
+  //     copy comes off as the owner fills it in.
+  // (c) Neither: the honest handoff, and only then.
+  if (useGuessRows === true) {
+    const guessRows = allGuessServiceRows(html);
+    if (guessRows.length) {
+      const rep = replaceGuessServiceRow(html, guessRows[0], name, price, description);
+      // A PRICE THAT DOES NOT LAND IS A PRICE WE LIED ABOUT. The placeholder rows on a
+      // generated page are often title + blurb with NO price element (the aviation page
+      // is exactly that shape), and buildClonedServiceEntry can only fill a slot that
+      // exists — so the name landed, the price vanished, and the result still said ok.
+      // servicesTruth would then have composed "1st Flight $250 is on your page now"
+      // about a page with no 250 on it.
+      //
+      // placeOneServicePrice already knows how to INJECT a price where a page has no
+      // slot for one; now that the row carries an anchor it can find it. Reuse that
+      // rather than authoring a second price-writing path.
+      if (rep.ok && rep.html && typeof price === "number" && !new RegExp(`data-hubly-price="${String(name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`, "i").test(rep.html)) {
+        const withPrice = placeOneServicePrice(rep.html, name, price);
+        if (withPrice.placed) return { ...rep, html: withPrice.html };
+        // Could not place it even by injection: say so, don't claim it.
+        return { ...rep, ok: false, reason: "price_not_placed" };
+      }
+      return rep;
+    }
+    // Guess rows exhausted this pass — fall through and append beside what we stamped.
+  }
+  if (!anchors.length) {
+    if (useGuessRows !== true && allGuessServiceRows(html).length) {
+      // Reachable only if a caller forgot the flag. Say which case this is rather than
+      // reporting "no section" about a page that visibly has one.
+      return { ok: false, reason: "guess_rows_not_enabled" };
+    }
+    return { ok: false, reason: "no_section" };
+  }
   const first = anchors[0];
   const last = anchors[anchors.length - 1];
   const tmpl = findServiceEntryBounds(html, first.index, first.length, first.tag);
@@ -3836,6 +3998,9 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   // "anchor=0 legacy=0" on a turn that added four services. Now every placement is
   // accounted for, and the legacy count can still be watched dying out on its own.
   const paths = { anchor: 0, legacy: 0, inserted: 0 };
+  // Countable, like every other placement path — so "how many owners came off the
+  // placeholder page" is a number we can read rather than a claim.
+  let replacedGuessRows = 0;
   // RETROACTIVE ANCHOR STAMP (patch-time). The generation-time pass
   // (markServiceAnchorsInFreeform in generateFreeformPage) can only stamp anchors
   // for services known when the page is BUILT — but the record is empty at that
@@ -3851,6 +4016,12 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   // already anchored) — which is exactly why it is safe to run on a hand-edited
   // (created_by='patch') page: it adds an attribute, it never destroys an edit.
   const svcNames = services.map((s) => String(s?.name || "").trim()).filter(Boolean);
+  // DECIDED ONCE, BEFORE ANY STAMP. Whether this page had a real anchor when the pass
+  // began is what separates "a working page, leave it alone" from "a page built entirely
+  // out of placeholders". Re-deciding after the retro stamp would let our own marks flip
+  // the branch mid-pass, and the 9 pages carrying BOTH real anchors and leftover guess
+  // rows must keep behaving exactly as they do today.
+  const useGuessRows = allServiceAnchors(out).length === 0;
   const retroStamp = markServiceAnchorsInFreeform(out, svcNames);
   out = retroStamp.html;
   const retroAnchored = retroStamp.marked;
@@ -3858,9 +4029,10 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   // destructive rebuild. Only when there is genuinely no section to clone into does
   // it fall through to `missing` + `noSection` (the sole legitimate rebuild case).
   const tryInsert = (name: string, price: number | undefined, description?: string): boolean => {
-    const ins = insertServiceIntoFreeform(out, name, price, description);
+    const ins = insertServiceIntoFreeform(out, name, price, description, useGuessRows);
     if (ins.ok && ins.html) {
       out = ins.html; inserted.push(name); insertedAny = true; paths.inserted++;
+      if (ins.replacedGuess) replacedGuessRows++;
       // The section carries a blurb per entry but the owner gave none — Hubly should
       // ask for a one-line description (the page is telling us one belongs).
       if (ins.hadDesc && !(description && description.trim())) descNeeded.push(name);
@@ -3907,7 +4079,7 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   // and carry the count out so the countable row records it — never ship it silently.
   const leakedAttrText = countLeakedAttrText(out);
   if (leakedAttrText > 0) console.error(`freeform services placement LEAKED ${leakedAttrText} data-hubly- marker(s) into visible text — a replacement string mangled markup`);
-  return { status, placed, missing, inserted, descNeeded, noSection, retroAnchored, leakedAttrText, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
+  return { status, placed, missing, inserted, descNeeded, noSection, retroAnchored, leakedAttrText, replacedGuessRows, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
 }
 /** Stamp a stable data-hubly-service ANCHOR on each service-name element at
  *  GENERATION time — whatever its shape (<h3>, <dt>, <li><span>, a table cell).
