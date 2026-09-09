@@ -4,7 +4,7 @@
   "passed": true,
   "version": "1.0.0",
   "owner": "hubly_brain",
-  "checkedAt": "2026-09-08T23:03:58.538Z",
+  "checkedAt": "2026-09-09T00:18:08.025Z",
   "proofs": [
     "Conversation Intelligence exists",
     "Goal / Project / Topic fields exist",
@@ -69,68 +69,68 @@
     "activeTopic": "Website",
     "pendingDecisions": [
       {
-        "id": "pd_mtta0jlj_typs9d",
+        "id": "pd_mttcnwue_za76ox",
         "text": "Approve homepage",
         "status": "pending",
-        "at": "2026-09-08T23:03:58.519Z",
+        "at": "2026-09-09T00:18:08.006Z",
         "threadId": null
       },
       {
-        "id": "pd_mtta0jlj_kd9xko",
+        "id": "pd_mttcnwue_cseygk",
         "text": "Connect Stripe",
         "status": "pending",
-        "at": "2026-09-08T23:03:58.519Z",
+        "at": "2026-09-09T00:18:08.006Z",
         "threadId": null
       },
       {
-        "id": "pd_mtta0jlj_gsuh2o",
+        "id": "pd_mttcnwue_755pcx",
         "text": "Publish website",
         "status": "pending",
-        "at": "2026-09-08T23:03:58.519Z",
+        "at": "2026-09-09T00:18:08.006Z",
         "threadId": null
       }
     ],
     "deferredIdeas": [
       {
-        "id": "def_mtta0jlj_5tgeud",
+        "id": "def_mttcnwuf_0dvl36",
         "idea": "Memberships",
         "status": "deferred",
-        "at": "2026-09-08T23:03:58.519Z",
+        "at": "2026-09-09T00:18:08.007Z",
         "revisitHint": "Revisit when customer volume supports recurring revenue",
         "context": "I want memberships later."
       }
     ],
     "commitments": [
       {
-        "id": "cmt_mtta0jlk_diajwx",
+        "id": "cmt_mttcnwug_p41nuy",
         "promise": "Remind owner tomorrow",
-        "dueAt": "2026-09-09T23:03:58.520Z",
+        "dueAt": "2026-09-10T00:18:08.008Z",
         "status": "open",
-        "at": "2026-09-08T23:03:58.520Z"
+        "at": "2026-09-09T00:18:08.008Z"
       }
     ],
     "openQuestions": [
       {
-        "id": "oq_mtta0jlj_e4w1t7",
+        "id": "oq_mttcnwuf_emok3w",
         "question": "Should recurring mowing be your primary package?",
         "status": "open",
-        "at": "2026-09-08T23:03:58.519Z"
+        "at": "2026-09-09T00:18:08.007Z"
       }
     ],
     "followUpQueue": [
       {
-        "id": "fu_mtta0jlk_x6hxj0",
+        "id": "fu_mttcnwug_03833n",
         "type": "reminder",
         "text": "Remind owner tomorrow",
-        "dueAt": "2026-09-09T23:03:58.520Z",
+        "dueAt": "2026-09-10T00:18:08.008Z",
         "status": "queued",
-        "at": "2026-09-08T23:03:58.520Z"
+        "at": "2026-09-09T00:18:08.008Z"
       }
     ],
     "emotionalContext": {
       "state": "neutral",
       "confidence": 55,
-      "updatedAt": "2026-09-08T23:03:58.519Z"
+      "updatedAt": "2026-09-09T00:18:08.006Z"
     },
     "aiContext": {
       "experts": [
@@ -156,11 +156,11 @@
         }
       ],
       "phase": "experts_complete",
-      "updatedAt": "2026-09-08T23:03:58.519Z"
+      "updatedAt": "2026-09-09T00:18:08.007Z"
     },
     "threads": [
       {
-        "threadId": "thr_mtta0jlj_loiecc",
+        "threadId": "thr_mttcnwuf_bf8ge8",
         "name": "Website Redesign",
         "status": "active",
         "children": [
@@ -177,7 +177,7 @@
             "status": "active"
           }
         ],
-        "updatedAt": "2026-09-08T23:03:58.519Z"
+        "updatedAt": "2026-09-09T00:18:08.007Z"
       }
     ],
     "retrieval": [
@@ -228,7 +228,7 @@
     "demo": {
       "conversation1": {
         "project": "Website Redesign",
-        "threadId": "thr_mtta0jlj_loiecc"
+        "threadId": "thr_mttcnwuf_bf8ge8"
       },
       "conversation2": {
         "deferred": [

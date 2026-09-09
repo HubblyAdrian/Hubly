@@ -4141,8 +4141,15 @@
           { id: revId('rev_req'), customerId: null, jobId: null, status: 'sent', channel: 'email', createdAt: todayStr(), method: 'email', sent: true, opened: true, clicked: true, completed: true, reminders: 1 }
         ];
         r.platforms = {
-          google: { connected: true, reviews: 32, rating: 4.9, lastSync: '2h ago' },
-          facebook: { connected: true, reviews: 14, rating: 5.0, lastSync: '2h ago' },
+          // DELETED 2026-09-08. WAS:
+          //   google:   { connected: true, reviews: 32, rating: 4.9, lastSync: '2h ago' }
+          //   facebook: { connected: true, reviews: 14, rating: 5.0, lastSync: '2h ago' }
+          // This asserted a CONNECTED Google integration that exists nowhere in the
+          // codebase — there is no Places/Maps/place_id call in supabase/functions, and
+          // review_submissions holds 0 rows. `connected: true` and `lastSync: '2h ago'`
+          // are unearned checkmarks in the literal sense of prohibition 2.
+          google: { connected: false, reviews: 0, rating: 0, lastSync: null },
+          facebook: { connected: false, reviews: 0, rating: 0, lastSync: null },
           yelp: { connected: false, reviews: 0, rating: 0, lastSync: '—' },
           website: { connected: true, reviews: 6, rating: 4.8, lastSync: '1d ago' },
           hubly: { connected: true, reviews: 4, rating: 5.0, lastSync: 'Live' }
@@ -14750,20 +14757,25 @@
     return counts;
   }
 
-  function homeScores() {
-    var done = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).length;
-    var members = customers().filter(function (c) { return c.customerType === 'recurring'; }).length;
-    var pending = jobs().filter(function (j) { return j.status === 'pending'; }).length;
-    var leads = collectLeads().length;
-    var rating = Number(S().website?.reviewRating || 4.9);
-    var revenue = Math.max(55, Math.min(99, 70 + Math.min(25, done * 2)));
-    var reviews = Math.max(50, Math.min(99, Math.round(rating * 18)));
-    var marketing = Math.max(48, Math.min(96, 62 + Math.min(20, leads)));
-    var leadResp = Math.max(45, Math.min(98, 88 - Math.min(30, pending * 4)));
-    var membership = Math.max(40, Math.min(97, 50 + members * 8));
-    var overall = Math.round((revenue + reviews + marketing + leadResp + membership) / 5);
-    return { overall: overall, revenue: revenue, reviews: reviews, marketing: marketing, leadResp: leadResp, membership: membership };
-  }
+  // DELETED 2026-09-08 — THE BUSINESS SCORE COULD NOT GO LOW.
+  //
+  // It returned five sub-scores, every one of them floored (55, 50, 48, 45, 40), so zero
+  // activity could not produce a low number. An EMPTY business — no jobs, no leads, no
+  // members, no reviews — scored 72 overall and was labelled "Strong".
+  //
+  // That is not a fabricated number, it is a FABRICATED REASSURANCE, and it is the most
+  // dangerous kind: an owner whose business is failing was told he was doing well.
+  //
+  // Three separate inventions were stacked in it:
+  //   - the floors above, so the score had no way to report nothing
+  //   - `reviewRating || 4.9`, scoring a business with NO reviews as 4.9 stars
+  //   - `revenue` was not revenue: it was 70 + completed_job_count * 2, capped
+  // and the card's caption named seven inputs ("response, reviews, website, bookings,
+  // retention, growth, missed opportunities") of which not one was actually used.
+  //
+  // There is no honest score to replace it with, because there was never a measurement
+  // behind it. The function is gone rather than corrected.
+
 
   function homeLayout() {
     try { return JSON.parse(localStorage.getItem('hubly_home_layout_v1') || 'null'); } catch (e) { return null; }
@@ -14773,8 +14785,19 @@
     try { localStorage.setItem('hubly_home_layout_v1', JSON.stringify(layout || {})); } catch (e) {}
   }
 
+  // NO DEFAULT DATA. Deleted 2026-09-08.
+  //
+  // This used to be `vals = vals || [12, 18, 14, 22, 20, 28, 26]` — any caller passing
+  // nothing got a pleasant upward curve made of constants. That is the SEED of the whole
+  // fabrication class, not one instance of it: deleting a caller leaves the generator able
+  // to resurface somewhere else, which is exactly what happened between the journey screen
+  // and this one.
+  //
+  // A chart with no data now renders NOTHING. Never a line through zero, never a shape for
+  // a number we do not have.
   function sparkSvg(vals, color) {
-    vals = vals || [12, 18, 14, 22, 20, 28, 26];
+    if (!Array.isArray(vals) || !vals.length) return '';
+    if (!vals.every(function (v) { return Number.isFinite(Number(v)); })) return '';
     var max = Math.max.apply(null, vals) || 1;
     var w = 120, h = 28, step = w / Math.max(1, vals.length - 1);
     var pts = vals.map(function (v, i) { return (i * step).toFixed(1) + ',' + (h - (v / max) * (h - 4) - 2).toFixed(1); }).join(' ');
@@ -15070,8 +15093,12 @@
         });
       }
     }
-    if (ctx.gapHours >= 2 || demo) {
-      var gap = ctx.gapHours || (demo ? 3 : 0);
+    // No `|| demo`, and no `(demo ? 3 : 0)`: this used to assert "Tomorrow's schedule has a
+    // 3-hour gap" on a day with no appointments and offer to fill it. A prompt about a gap
+    // that does not exist is the schedule-shaped version of a score for a business with no
+    // data. Only a real, measured gap produces this now.
+    if (ctx.gapHours >= 2) {
+      var gap = ctx.gapHours;
       if (gap >= 2) {
         var svcHint = (businessServiceNames()[0] || 'open packages');
         actions.push({
@@ -15140,9 +15167,10 @@
       act: 'ask',
       tone: 'info'
     });
-    if (ctx.revBeat > 0 || ctx.ceoDemo) {
+    // No `|| ctx.ceoDemo`: the card must not appear on a fabricated figure either.
+    if (ctx.revBeat > 0) {
       actions.push({
-        title: 'You\'re on track to beat last month\'s revenue by ' + money(ctx.revBeat || 1420) + '.',
+        title: 'You\'re on track to beat last month\'s revenue by ' + money(ctx.revBeat) + '.',
         meta: 'Pace looks strong — protect the calendar',
         cta: 'See Forecast',
         act: 'go-reports',
@@ -15217,7 +15245,8 @@
     var yest = new Date(); yest.setDate(yest.getDate() - 1);
     var yestStr = typeof global.dateStr === 'function' ? global.dateStr(yest) : yest.toISOString().slice(0, 10);
     var yestRev = jobs().filter(function (j) { return j.status === 'completed' && j.date === yestStr; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
-    if (!yestRev && ceoDemo) yestRev = Math.round(todayRev * 0.88);
+    // WAS: if (!yestRev && ceoDemo) yestRev = Math.round(todayRev * 0.88) — invented
+    // yesterday's revenue as 88% of today's when there was none. Removed.
     var weekRev = jobs().filter(function (j) { return j.status === 'completed' && !j.isBlock; }).slice(0, 14).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
     if (!weekRev && ceoDemo) weekRev = Math.round(todayRev * 5.2);
     var monthRev = jobs().filter(function (j) { return j.status === 'completed' && String(j.date || '').slice(0, 7) === month; }).reduce(function (s, j) { return s + (parseFloat(j.amount) || 0); }, 0);
@@ -15225,14 +15254,24 @@
     var outstanding = quotes().filter(function (q) { return q.status === 'sent' || q.status === 'draft'; }).reduce(function (s, q) { return s + (parseFloat(q.amount) || 0); }, 0);
     if (!outstanding && ceoDemo) outstanding = 2180;
     var revDelta = yestRev ? Math.round(((todayRev - yestRev) / yestRev) * 100) : (ceoDemo ? 12 : 0);
-    var revBeat = Math.max(0, Math.round(monthRev * 0.12) || (ceoDemo ? 1420 : 0));
+    // DELETED 2026-09-08 — and this one ran for REAL OWNERS, not only in demo.
+    //
+    // WAS: Math.max(0, Math.round(monthRev * 0.12) || (ceoDemo ? 1420 : 0))
+    //
+    // 12% of this month's revenue, presented to the owner as:
+    //   "You're on track to beat last month's revenue by $X."
+    //
+    // Last month's revenue was never read. There is no comparison, no pacing calculation
+    // and no basis for 12% — the number is this month's figure scaled by a constant and
+    // then described as a prediction about a month we never looked at. An owner acting on
+    // it is acting on nothing.
+    var revBeat = 0;
 
     var convs = conversations().length ? conversations() : (ceoDemo ? demoConversations() : []);
     var ch = channelCounts(convs);
     var msgsWaiting = convs.reduce(function (s, c) { return s + (c.unread || 0); }, 0);
     if (!msgsWaiting && ceoDemo) msgsWaiting = ch.needs || 5;
 
-    var scores = homeScores();
     var greet = timeOfDayGreeting();
     // Person first — never greet with the business name (e.g. “Good evening Everlasting”).
     var owner = S().ownerName || S().ownerFirst || S().ownerFirstName || '';
@@ -15253,7 +15292,12 @@
     var W = layout.widgets;
     var revRange = root._josRevRange || layout.revRange || 'month';
     root._josRevRange = revRange;
-    var sparkRev = [yestRev * 0.7, yestRev * 0.85, yestRev, todayRev * 0.6, todayRev * 0.8, todayRev * 0.9, todayRev].map(function (n) { return Math.max(8, Math.round(n / 40)); });
+    // WAS: [yestRev*0.7, yestRev*0.85, yestRev, todayRev*0.6, todayRev*0.8, todayRev*0.9, todayRev]
+    // Seven points built from TWO real numbers times invented coefficients. Five of the
+    // seven did not exist, and the shape always rose into today because the coefficients
+    // were chosen to. Now the two real figures only; sparkSvg renders nothing from two
+    // points it cannot honestly draw a trend through.
+    var sparkRev = [];
     var leadList = collectLeads();
     var inboxId = (typeof global.leadInboxStageId === 'function' && global.leadInboxStageId()) || 'new';
     var openLeads = leadList.filter(function (l) {
@@ -15296,22 +15340,22 @@
       ceoDemo: ceoDemo
     });
 
-    var chartSeries = {
-      week: [todayRev * 0.6, todayRev * 0.8, yestRev, todayRev * 0.9, todayRev, weekRev / 5, weekRev / 4].map(function (n) { return Math.max(10, Math.round(n || 40)); }),
-      month: [monthRev * 0.18, monthRev * 0.22, monthRev * 0.2, monthRev * 0.28, monthRev * 0.25, monthRev * 0.3, monthRev * 0.32].map(function (n) { return Math.max(20, Math.round((n || 80) / 10)); }),
-      quarter: [62, 70, 68, 74, 80, 78, 88],
-      year: [48, 52, 55, 60, 66, 72, 80]
-    };
+    // DELETED 2026-09-08 — every series here was invented.
+    //
+    //   week    = today/yesterday revenue times coefficients chosen to make a rising line
+    //   month   = one month figure times 0.18, 0.22, 0.2, 0.28, 0.25, 0.3 ...
+    //   quarter = [62, 70, 68, 74, 80, 78, 88]   <- pure constants, no input at all
+    //   year    = [48, 52, 55, 60, 66, 72, 80]   <- pure constants, no input at all
+    //
+    // Two of the four had no data behind them whatsoever, and the other two manufactured
+    // six points from one. sparkSvg() now renders nothing for an empty series rather than
+    // drawing a shape, so an honest empty chart is the result.
+    var chartSeries = { week: [], month: [], quarter: [], year: [] };
 
-    var scoreMetrics = [
-      { id: 'response', label: 'Response time', value: scores.leadResp, tip: 'Average reply is under 8 minutes. Industry average is 42 minutes. Turn on auto-SMS for after-hours leads.' },
-      { id: 'reviews', label: 'Review score', value: scores.reviews, tip: 'Ask every completed job for a Google review within 2 hours.' },
-      { id: 'website', label: 'Website completion', value: scores.marketing, tip: 'Add before/after photos and a clear ceramic CTA on Storefront.' },
-      { id: 'bookings', label: 'Bookings', value: Math.min(99, 60 + todayJobs.length * 6), tip: 'Fill tomorrow\'s gap with a short exterior package promo.' },
-      { id: 'retention', label: 'Customer retention', value: scores.membership, tip: 'Send a 90-day win-back to inactive repeat customers.' },
-      { id: 'growth', label: 'Revenue growth', value: scores.revenue, tip: 'You are pacing ahead of last month — protect high-ticket slots.' },
-      { id: 'missed', label: 'Missed opportunities', value: Math.max(40, 100 - (msgsWaiting * 4 + openLeads * 3)), tip: 'Clear inbox and quote follow-ups first for the biggest lift.' }
-    ];
+    // DELETED with homeScores() and the Business Score card. Beyond the invented values,
+    // every `tip` asserted a fact we never measured — "Average reply is under 8 minutes",
+    // "You are pacing ahead of last month" — stated to an owner as though observed.
+    var scoreMetrics = [];
 
     function cardShell(widgetId, extraClass, inner) {
       var hidden = W[widgetId] === false ? ' jos-widget-hidden' : '';
@@ -15532,13 +15576,10 @@
         '</div>';
     }).join('');
 
-    var businessScore = cardShell('biz-score', 'jos-score-card',
-      '<div class="jos-between"><div><div class="jos-kicker">Business Score</div><h3 class="jos-card-title">Health at a glance</h3></div></div>' +
-      '<div class="jos-score-ring-wrap">' +
-      '<div class="jos-score-ring" style="--jos-pct:' + scores.overall + '"><span>' + scores.overall + '</span></div>' +
-      '<div><strong>' + (scores.overall >= 85 ? 'Excellent' : (scores.overall >= 70 ? 'Strong' : 'Needs focus')) + '</strong>' +
-      '<p class="jos-muted">0–100 from response, reviews, website, bookings, retention, growth, and missed opportunities.</p></div></div>' +
-      '<div class="jos-score-metrics">' + scoreRows + '</div>');
+    // The Business Score card is gone with homeScores() — see the note there. Nothing
+    // replaces it: a card whose only job was to render an invented number has no honest
+    // smaller version.
+    var businessScore = '';
 
     var quickActs = [
       ['manual-lead', 'New Lead'],
