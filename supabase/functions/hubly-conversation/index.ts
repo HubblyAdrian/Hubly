@@ -1240,7 +1240,9 @@ Deno.serve(async (req) => {
         actions.some((a) => a && a.capability === cap && a.capabilityAction === act && a.ok);
       const startDraftCall = actions.find((a) => a && a.capability === "business" && a.capabilityAction === "startDraft" && a.ok);
       const nameGiven = String((startDraftCall?.args as Record<string, unknown> | undefined)?.name || "").trim();
-      void createAdminClient().rpc("record_first_turn", {
+      // A failed write here must not fail the signup — but it must not be SILENT either.
+      // The whole point of this table is that things which fail quietly cannot be counted.
+      Promise.resolve(createAdminClient().rpc("record_first_turn", {
         p_conversation_key: conversationKey || `anon-${crypto.randomUUID()}`,
         p_said: latestUserMessage || "",
         p_reply: visibleReply || "",
@@ -1249,8 +1251,10 @@ Deno.serve(async (req) => {
         p_named: nameGiven.length > 0,
         p_business_id: draftBusiness?.id ?? null,
         p_is_synthetic: isSynthetic,
-      });
-    } catch { /* counting a signup must never fail a signup */ }
+      })).then(({ error }: { error: unknown }) => {
+        if (error) console.error("[first-turn] not recorded:", JSON.stringify(error));
+      }).catch((e: unknown) => console.error("[first-turn] threw:", String(e)));
+    } catch (e) { console.error("[first-turn] sync threw:", String(e)); }
   };
 
   // A DRAFT ON A LATER TURN closes the loop on the sentence that opened the conversation.
@@ -1259,11 +1263,13 @@ Deno.serve(async (req) => {
   const resolveFirstTurn = (businessId: string) => {
     if (isFirstTurn || !conversationKey) return;
     try {
-      void createAdminClient().rpc("resolve_first_turn_draft", {
+      Promise.resolve(createAdminClient().rpc("resolve_first_turn_draft", {
         p_conversation_key: conversationKey,
         p_business_id: businessId,
-      });
-    } catch { /* same rule */ }
+      })).then(({ error }: { error: unknown }) => {
+        if (error) console.error("[first-turn] not resolved:", JSON.stringify(error));
+      }).catch((e: unknown) => console.error("[first-turn] resolve threw:", String(e)));
+    } catch (e) { console.error("[first-turn] resolve sync threw:", String(e)); }
   };
   // Patches emitted across internal capability rounds within this one request
   // accumulate into a single consolidated patch for the response — the client
@@ -2544,7 +2550,11 @@ Deno.serve(async (req) => {
           else visitorConversationId = persisted.conversationId;
         } catch (e) { console.error("[visitor-conversation] threw:", String(e)); }
       }
-      recordFirstTurn(finalReply);
+      // WHAT A PERSON ACTUALLY SEES, not just `reply`. On a build turn `reply` is often
+      // empty and the words are in the interim messages — store that empty string and the
+      // read-time question "was this a menu / did it ask for a name" has nothing to read.
+      // Exactly the trap that made the harness detector fall back to a JSON dump.
+      recordFirstTurn([finalReply, ...(deduped.interim || [])].filter(Boolean).join("  "));
       if (draftBusiness?.id) resolveFirstTurn(draftBusiness.id);
       return jsonRes({
         ok: true,
@@ -2594,15 +2604,23 @@ Deno.serve(async (req) => {
     try {
       const status = typeof (err as { status?: unknown })?.status === "number"
         ? (err as { status: number }).status : null;
-      void createAdminClient().rpc("record_endpoint_failure", {
+      // NOT `void`. A supabase-js query builder is LAZY — the request fires when .then() is
+      // called, so `void client.rpc(...)` builds a request and never sends it. This line
+      // was written that way and was DEAD: the outage alert was proved on 2026-09-09 with
+      // rows inserted by hand in SQL, so nothing ever exercised the path that writes them,
+      // and a real refusal would have recorded nothing. Proving a pipeline by seeding its
+      // output is the same error as a screenshot of hand-set state.
+      Promise.resolve(createAdminClient().rpc("record_endpoint_failure", {
         p_fn: "hubly-conversation",
         p_detail: String((err as { message?: unknown })?.message ?? err).slice(0, 300),
         p_upstream_status: status,
         // Same outage, different victim: an owner who cannot sign up, or a customer who
         // cannot talk to a live business site. Worth telling apart in the alert.
         p_context: failureContext,
-      });
-    } catch { /* never let recording a failure become a failure */ }
+      })).then(({ error }: { error: unknown }) => {
+        if (error) console.error("[endpoint-failure] not recorded:", JSON.stringify(error));
+      }).catch((e: unknown) => console.error("[endpoint-failure] threw:", String(e)));
+    } catch (e) { console.error("[endpoint-failure] sync threw:", String(e)); }
     // The message, not the stack. A 502 with no detail is a bug you debug by
     // guessing; this one cost a round of bisecting-by-deploy to find. Message
     // only, and only the first 300 characters -- an exception string can carry

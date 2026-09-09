@@ -624,3 +624,56 @@ ask" passes and we break the person who told us their name in their first senten
 
 Report **per shape, not as one aggregate.** If the ask survives four shapes and dies on
 two, that names what to fix. One number would not.
+
+---
+
+## Lesson 21 — never bake a judgement into a write
+
+The first-turn counter stores what the visitor said and what Hubly said back, and decides
+nothing. Whether the reply was a menu, whether it asked for a name — those are read-time
+questions, computed in SQL when someone asks.
+
+The reason is asymmetric and total. **A detector in a write path poisons the data
+permanently:** a wrong regex writes a wrong boolean, the text it judged is gone, and no
+later insight can recover the truth. **A detector in a read path can be corrected any
+time** — the raw rows are still there, so a better question can be asked of the same data
+tomorrow.
+
+This was not theoretical. On 2026-09-09 a detector deciding `asked = true` at the moment of
+writing matched our OWN instruction text out of a capability result and would have reported
+success on the exact failure that had just been watched happening in a browser. That
+detector was in a check, so killing the run cost one signup. The same detector in a write
+path would have cost the dataset.
+
+The general form: **store what happened; decide what it means when you are asked.** The
+storage cost of the raw text is trivial next to the cost of a number nobody can re-derive.
+
+## Lesson 22 — `void builder` is not "fire and forget", it is "never fire"
+
+Three writes were shipped as:
+
+    void createAdminClient().rpc("record_endpoint_failure", { ... });
+
+A supabase-js query builder is **lazy**: it constructs a request and sends it when `.then()`
+is called. `void` evaluates the expression and discards it without ever calling `.then()`,
+so the request is built and never sent. All three were dead code that type-checked, linted,
+deployed, and did nothing.
+
+Two of them mattered. One was the first-turn counter, caught within minutes because a
+proof looked for the row and found none. **The other was the endpoint-failure writer behind
+the outage alert — and that one had been reported as proved.**
+
+It was "proved" by inserting five rows in SQL and watching the cron email arrive. That
+tested the alert's read path perfectly and never touched the write path at all. Seeding a
+pipeline's output and confirming the output appears is the same error as a screenshot of
+hand-set state: it renders as evidence and it is a picture of something else.
+
+So, two rules:
+
+1. **Never `void` a lazy builder.** If a write is genuinely fire-and-forget, still attach
+   `.then()` — and log the error rather than discarding it, because a write that fails
+   silently cannot be counted, which defeats the purpose of writing it.
+2. **Prove a pipeline end to end, from the event that triggers it.** If the thing being
+   tested is "a refusal gets recorded", the test has to cause a refusal. If reaching the
+   real trigger is impossible, say which part is unproved and why — never substitute a
+   hand-made input at the midpoint and call the whole chain verified.
