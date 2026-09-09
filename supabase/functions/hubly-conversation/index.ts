@@ -414,6 +414,9 @@ const DRAFT_INJECTED_ACTIONS = new Set([
   // "Set your hours" was removed for having no writer; a writer that silently refuses
   // for every real owner would have been worse than none.
   "business.setHours",
+  // addServicesSection writes to the live page through create_business_document and
+  // authorises by owner; without the injection every add is refused on a claimed site.
+  "business.addServicesSection",
   // business.capture (2026-09-09). Reads injectedOwnerUid and writes through
   // capture_planner_item, which refuses a null uid. Without this every capture would be
   // refused on a claimed business — which is every business that has a day to plan.
@@ -639,7 +642,20 @@ function composeServicesTruth(placement: ServicesPlacementLike, url: string): st
     // Nothing landed. The ONLY reason a service can't be added is that there is no
     // section to clone an entry into (noSection) — then, and only then, the rebuild
     // offer, with its cost named up front.
-    if (placement.noSection) return `I saved those to your record, but ${rebuildLastResort(placement)}`;
+    // THE SPLICE, FIXED. This was `"...but " + rebuildLastResort(placement)` and
+    // rebuildLastResort returns a sentence starting with a capital, so an owner read
+    // "but Your page doesn't have..." — two independently-written fragments glued at an
+    // interpolation, the third instance of assembled prose reaching a real person.
+    //
+    // AND THE ANSWER CHANGED. "The only way is to rebuild the whole page from scratch"
+    // was an enormous response to "here are my prices", and on the signup path it read
+    // as the product being broken. There is a small answer now: add the area.
+    if (placement.noSection) {
+      const names = (placement.missing || []).slice(0, 3);
+      const withPrices = (placement.placed || []).length ? [] : names;
+      const what = withPrices.length ? andList(withPrices) : "them";
+      return `I've saved those to your record. Your page doesn't have a services area yet — want me to add one with ${what} in it?`;
+    }
     return `I've saved those to your record, but I couldn't get them onto the page, so they aren't showing yet. Want me to add them to your services area?`;
   }
   if (placement.status === "no_prices") {

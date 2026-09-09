@@ -37,6 +37,7 @@
 // here. New capabilities (booking, crm, marketing, ...) get added as they're
 // actually built, per "build on demand," not stubbed in speculatively.
 
+import { addServicesBlock } from "./hubly_services_block.ts";
 import { HublyAI, extractJson } from "./hubly_ai.ts";
 import { issueDraftGrant } from "./draft_grant.ts";
 import {
@@ -6873,6 +6874,99 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             ok: true, real: true,
             summary: `Real update — saved and live on the page: ${said}. Days not listed were left unchanged. Read this back exactly; do not add a day they did not state.`,
             raw: { written: clean.length, days: clean.map((h: any) => h.weekday) },
+          };
+        },
+      },
+      {
+        // ADD A SERVICES AREA to a page that has none — the small answer that replaces
+        // "the only way is to rebuild the whole page from scratch". 38 of 120 generated
+        // pages have no services section and no placeholder rows, and until now their
+        // owners were offered a full regenerate for typing their prices.
+        //
+        // Only call this after the owner has SAID YES to being offered it. It is not a
+        // silent fixer: adding a section changes what their customers see.
+        name: "addServicesSection",
+        description:
+          "Add a services area to the live page when it has none, containing the owner's REAL services. Only call this after they have agreed to it — the reply that offers it says what will go in. " +
+          "Pass every service that should appear, with the prices they gave. NEVER pass a service or a price they did not state: this writes to a page their customers read. " +
+          "If the page already has a services area this refuses and says so — use the normal services path instead.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: { type: "string", description: "Supplied by the system; put any placeholder here." },
+            services: {
+              type: "array",
+              description: "The real services to put in the new area. Each: { name (required), price (number, omit if not stated), description (one line, optional) }.",
+              items: {},
+            } as any,
+          },
+          required: ["services"],
+        },
+        handler: async (args) => {
+          const draftId = String((args as Record<string, unknown>)?.draftId || "").trim();
+          const draftToken = String((args as any)?.draftToken || "").trim();
+          const ownerUid = injectedOwnerUid(args);
+          const userMessage = String((args as any)?._userMessage || "");
+          if (!draftId || (!draftToken && !ownerUid)) {
+            return { ok: false, real: false, error: "missing_draft", summary: "No business is connected to this conversation." };
+          }
+          const classicBlock = await refuseIfClassicSite(draftId);
+          if (classicBlock) return classicBlock;
+
+          const list = Array.isArray((args as any)?.services) ? (args as any).services : [];
+          let clean = list
+            .filter((x: any) => x && typeof x.name === "string" && x.name.trim())
+            .map((x: any) => ({
+              name: String(x.name).trim(),
+              price: typeof x.price === "number" && Number.isFinite(x.price) ? x.price : undefined,
+              description: typeof x.description === "string" && x.description.trim() ? x.description.trim() : undefined,
+            }));
+          if (!clean.length) {
+            return { ok: false, real: false, error: "needs_value", summary: "No services were given, so there is nothing to put in the area. Ask what should go in it." };
+          }
+          // GROUNDED, same rule as every other fact write: reconcile against the record
+          // so a service lifted from earlier in the transcript cannot be written to a
+          // page a customer reads.
+          if (userMessage) {
+            const existingRows = await selectMany("services", "business_id", draftId, "name,price");
+            const existing = (Array.isArray(existingRows) ? existingRows : []).map((r: any) => ({ name: String(r?.name || ""), price: r?.price != null ? Number(r.price) : undefined }));
+            const rec = reconcileServices(clean, existing, userMessage);
+            if (rec.droppedLift.length && !rec.changed) {
+              return { ok: false, real: false, error: "needs_value",
+                summary: "Nothing in this message names a service to add. Ask what should go in the area rather than reusing one from earlier." };
+            }
+            if (rec.allowed.length) clean = rec.allowed.map((x) => ({ name: x.name, price: typeof x.price === "number" ? x.price : undefined, description: (x as any).description }));
+          }
+
+          const latest = await selectLatestBusinessDocument(draftId, "website");
+          if (!latest || latest.format !== "html") {
+            return { ok: false, real: false, error: "not_freeform", summary: "This page is not one I can add a section to." };
+          }
+          const bizRow = await selectOne("businesses", "id", draftId, "brand_color,slug");
+          const r = addServicesBlock(latest.renderedHtml, clean, String((bizRow as any)?.brand_color || ""));
+          if (r.via === "anchor") {
+            return { ok: false, real: false, error: "already_has_services",
+              summary: "That page already has a services area, so a second one would be wrong. Add the services the normal way instead." };
+          }
+          if (!r.changed) {
+            return { ok: false, real: false, error: "not_placed", summary: "I couldn't add the area to the page just now. It has NOT been added." };
+          }
+          const saved = await callBusinessRpc("create_business_document", {
+            p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
+            p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "add-services-section"),
+            p_created_by: "patch", p_format: "html", p_owner_id: ownerUid || null,
+          });
+          if (!saved || saved.ok !== true) {
+            return { ok: false, real: false, error: "save_failed", summary: "The area was built but could not be saved, so it is NOT on the page." };
+          }
+          const url = `https://${(bizRow as any)?.slug}.${HUBLY_DOMAIN}`;
+          const named = r.inserted.join(", ");
+          return {
+            ok: true, real: true,
+            // Owner-facing: this becomes the reply. No directives (see
+            // scripts/check-no-directives-to-owners.mjs).
+            summary: `Added a services area to ${url} with ${named} in it.`,
+            raw: { url, inserted: r.inserted, via: r.via },
           };
         },
       },
