@@ -935,6 +935,10 @@ Deno.serve(async (req) => {
   // see it. The alert wants to know whether an outage hit an owner signing up or a
   // customer on a live business site, and that distinction is lost if this is not hoisted.
   let failureContext = "owner";
+  // DECLARED BY OUR HARNESSES, never sniffed from a missing Origin. A heuristic here is
+  // wrong in the flattering direction on the day it matters; an unmarked harness should
+  // show up as a visible bug, not as a quietly better number.
+  const isSynthetic = (req.headers.get("x-hubly-synthetic") || "").trim() === "1";
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return jsonRes({ ok: false, error: "POST required" }, 405);
 
@@ -944,6 +948,17 @@ Deno.serve(async (req) => {
   } catch {
     body = {};
   }
+
+  // THE FIRST TURN, AND WHAT MARKS IT. A first turn is one that arrived with no draft —
+  // exactly the population no existing table can see, because a turn that creates nothing
+  // writes nothing (no businesses row, and hcFlushPersist buffers until a draft exists).
+  // Read here, before anything downstream can set draftBusiness.
+  const isFirstTurn = !(body?.draftBusiness && typeof body.draftBusiness === "object" && (body.draftBusiness as { id?: unknown }).id);
+  // Issued by the client and echoed on every turn, so a draft created on a LATER turn can
+  // be joined back to the sentence that opened the conversation. Declared, not matched on
+  // text: "can you build me a site" -> "what kind of business is it?" is CORRECT and looks
+  // identical to a menu failure until that join exists.
+  const conversationKey = String(body?.conversationKey || "").trim().slice(0, 64);
 
   const incoming: HublyMessage[] = Array.isArray(body?.messages) ? body.messages : [];
   // A structured DIRECT EDIT (the manual form, click-to-edit, an image/doc patch)
@@ -1205,6 +1220,51 @@ Deno.serve(async (req) => {
     }
   }
   const actions: Array<{ capability: string; capabilityAction: string; args: unknown; ok: boolean; real: boolean }> = [];
+
+  // ONE ROW PER FIRST TURN — the counter that replaces buying snapshots with quota.
+  //
+  // FACTS ONLY. What ran, and the two texts. Nothing here decides whether the reply was a
+  // menu or whether a name was asked: those are read-time questions. A detector in a WRITE
+  // path poisons the data permanently — a wrong regex writes a wrong boolean and the truth
+  // is gone — while one in a read path can be corrected any time. On 2026-09-09 a detector
+  // deciding "asked = true" at write time cost a full run and would have reported success
+  // on the exact failure Adrian had just watched happen.
+  //
+  // Best effort, never awaited into the response.
+  const recordFirstTurn = (visibleReply: string) => {
+    if (!isFirstTurn) return;
+    try {
+      // Read off the actions actually dispatched this turn — the same record the response
+      // carries — rather than a second source that could disagree with it.
+      const ran = (cap: string, act: string) =>
+        actions.some((a) => a && a.capability === cap && a.capabilityAction === act && a.ok);
+      const startDraftCall = actions.find((a) => a && a.capability === "business" && a.capabilityAction === "startDraft" && a.ok);
+      const nameGiven = String((startDraftCall?.args as Record<string, unknown> | undefined)?.name || "").trim();
+      void createAdminClient().rpc("record_first_turn", {
+        p_conversation_key: conversationKey || `anon-${crypto.randomUUID()}`,
+        p_said: latestUserMessage || "",
+        p_reply: visibleReply || "",
+        p_drafted: ran("business", "startDraft"),
+        p_built: ran("website", "generateDocument"),
+        p_named: nameGiven.length > 0,
+        p_business_id: draftBusiness?.id ?? null,
+        p_is_synthetic: isSynthetic,
+      });
+    } catch { /* counting a signup must never fail a signup */ }
+  };
+
+  // A DRAFT ON A LATER TURN closes the loop on the sentence that opened the conversation.
+  // Without it, "can you build me a site" -> "what kind of business is it?" (correct) is
+  // indistinguishable from a menu (the failure), because both create nothing on turn one.
+  const resolveFirstTurn = (businessId: string) => {
+    if (isFirstTurn || !conversationKey) return;
+    try {
+      void createAdminClient().rpc("resolve_first_turn_draft", {
+        p_conversation_key: conversationKey,
+        p_business_id: businessId,
+      });
+    } catch { /* same rule */ }
+  };
   // Patches emitted across internal capability rounds within this one request
   // accumulate into a single consolidated patch for the response — the client
   // only sees one round-trip per call, so it should only see one patch too.
@@ -2484,6 +2544,8 @@ Deno.serve(async (req) => {
           else visitorConversationId = persisted.conversationId;
         } catch (e) { console.error("[visitor-conversation] threw:", String(e)); }
       }
+      recordFirstTurn(finalReply);
+      if (draftBusiness?.id) resolveFirstTurn(draftBusiness.id);
       return jsonRes({
         ok: true,
         reply: finalReply,
@@ -2508,6 +2570,8 @@ Deno.serve(async (req) => {
     // Exhausted capability rounds without a final natural-language reply —
     // stop honestly instead of looping forever.
     const exhaustedReply = "I've gathered what I can for now — what would you like to do next?";
+    recordFirstTurn(exhaustedReply);
+    if (draftBusiness?.id) resolveFirstTurn(draftBusiness.id);
     return jsonRes({
       ok: true,
       reply: exhaustedReply,

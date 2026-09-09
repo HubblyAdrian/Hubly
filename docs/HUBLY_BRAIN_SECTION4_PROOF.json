@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-09-09T20:24:06.440Z",
+  "checkedAt": "2026-09-09T20:29:29.226Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -272,7 +272,7 @@
     "timing": [
       {
         "expertId": "experience_director",
-        "executionTimeMs": 3
+        "executionTimeMs": 4
       },
       {
         "expertId": "research",
@@ -1649,7 +1649,7 @@
         {
           "expertName": "Builder Expert",
           "expertId": "builder",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "reasoning": [
             {
               "reason": "Classified as Business Change toward Understand Owner Request.",
@@ -1664,7 +1664,7 @@
           "output": {
             "type": "Builder Intent",
             "builderIntent": {
-              "intentId": "bint_mtujqsyk_7ner4t",
+              "intentId": "bint_mtujxq0t_uz7kjd",
               "version": "1.0.0",
               "originalRequest": "I'm starting a pressure washing company.",
               "intentCategory": "Business Strategy",
@@ -1695,7 +1695,7 @@
                   "confidence": 81
                 }
               ],
-              "timestamp": "2026-09-09T20:24:06.428Z",
+              "timestamp": "2026-09-09T20:29:29.213Z",
               "applied": false,
               "changePlanGenerated": false
             },
@@ -1708,7 +1708,7 @@
         {
           "expertName": "Experience Director",
           "expertId": "experience_director",
-          "executionTimeMs": 3,
+          "executionTimeMs": 4,
           "reasoning": [
             {
               "reason": "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
@@ -1963,7 +1963,7 @@
           "changedFromPrevious": "Critic produced Quality Report; Builder Expert advanced that into Builder Intent (confidence 87 → 81).",
           "confidence": 81,
           "status": "ok",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "outputType": "Builder Intent",
           "retries": 0
         },
@@ -1990,7 +1990,7 @@
           "changedFromPrevious": "Builder Expert produced Builder Intent; Experience Director advanced that into Experience Review (confidence 81 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 3,
+          "executionTimeMs": 4,
           "outputType": "Experience Review",
           "retries": 0
         }

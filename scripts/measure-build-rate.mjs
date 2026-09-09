@@ -50,7 +50,13 @@ function sql(q) {
 async function say(text) {
   const res = await fetch(FN, {
     method: "POST",
-    headers: { "content-type": "application/json", apikey: KEY, authorization: `Bearer ${KEY}` },
+    headers: {
+      "content-type": "application/json", apikey: KEY, authorization: `Bearer ${KEY}`,
+      // OUR HARNESSES DECLARE THEMSELVES. Never sniffed server-side from a missing Origin:
+      // a heuristic there is wrong in the flattering direction on the day it matters, and
+      // an unmarked harness must show up as a visible bug rather than a better number.
+      "x-hubly-synthetic": "1",
+    },
     body: JSON.stringify({ messages: [{ role: "user", content: text }], understanding: {}, draftBusiness: null }),
   });
   let body = null;

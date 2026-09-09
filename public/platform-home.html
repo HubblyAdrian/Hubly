@@ -1499,6 +1499,17 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
   // selection: what the owner has clicked on their page, mirrored from the canvas — the
   // chip in the composer, and the scope of whatever they type next. null when nothing
   // is selected, which is the normal state.
+  // ONE KEY PER CONVERSATION, sent on every turn. It is what lets the server join a draft
+  // created on a LATER turn back to the sentence that OPENED the conversation — the split
+  // between "asked a fair question, then built" and "never built at all", which are
+  // identical on turn one. Declared by us rather than matched on message text: a text
+  // match is a heuristic, and this exists precisely to stop us counting a category we
+  // cannot interpret. Not an identity: random per conversation, never stored server-side
+  // against a person, and it carries nothing about who they are.
+  var hcConvoKey = (function(){
+    try { return (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + '-' + Math.random().toString(36).slice(2)); }
+    catch(e){ return String(Date.now()) + '-' + Math.random().toString(36).slice(2); }
+  })();
   var hc = { messages: [], understanding: {}, draftBusiness: null, canvasStage: 'empty', active: false, busy: false, buildCount: 0, claimCardShown: false, pendingPersist: [], _persistTimer: null, pendingCapture: null, accountOfferShown: false, accountOfferHeld: false, photoOfferShown: false, postBuildTurns: 0, selection: null };
 
   // ONE price-list photo offer per conversation. The model reliably repeats the canned
@@ -2715,7 +2726,7 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     fetch(SUPA_URL + '/functions/v1/hubly-conversation', {
       method: 'POST',
       headers: { 'content-type':'application/json', 'apikey': SUPA_ANON_KEY, 'authorization': 'Bearer ' + (at || SUPA_ANON_KEY) },
-      body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, event: 'post_build' }),
+      body: JSON.stringify({ messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, conversationKey: hcConvoKey, event: 'post_build' }),
       signal: ctrl ? ctrl.signal : undefined
     }).then(function(r){ return r.json(); }).then(function(data){
       if(!data || data.ok !== true || !data.reply || hcIsFallbackReply(data.reply)){ finish(null, true); return; }
@@ -2980,7 +2991,7 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
         'authorization': 'Bearer ' + (at || SUPA_ANON_KEY)
       },
       body: JSON.stringify(Object.assign(
-        { messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, logoUpload: logoUploadForThisCall, photoUpload: photoUploadForThisCall,
+        { messages: hc.messages, understanding: hc.understanding, draftBusiness: hc.draftBusiness, conversationKey: hcConvoKey, logoUpload: logoUploadForThisCall, photoUpload: photoUploadForThisCall,
           // THE CHIP RIDES THE TURN. Sent only when the owner actually has something
           // selected AND the site is theirs — a selection is only meaningful inside
           // the claimed editor, and the server re-checks ownership anyway rather than
