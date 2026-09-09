@@ -6473,7 +6473,12 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             try {
               await callBusinessRpc("set_business_name_unset", {
                 p_id: r.id, p_draft_token: r.draft_token || null,
-                p_owner_id: injectedOwnerUid(args) || null, p_value: true,
+                // NOT injectedOwnerUid: startDraft is deliberately absent from
+                // DRAFT_INJECTED_ACTIONS because it CREATES the draft — there is nothing
+                // to inject yet. A brand-new draft authorises by its token, and reaching
+                // for the owner here made the checker flag startDraft as reading an
+                // injection it can never receive.
+                p_owner_id: null, p_value: true,
               });
             } catch (_e) { /* the draft stands either way */ }
           }
