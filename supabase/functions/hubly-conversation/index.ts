@@ -593,6 +593,8 @@ type ServicesPlacementLike = {
   where?: string;
   detail?: string;
   paths?: { anchor: number; legacy: number; inserted: number };
+  verifiedPlaced?: { name: string; price?: number }[];
+  unverified?: { name: string; price?: number }[];
   retroAnchored?: number;
   leakedAttrText?: number;
 };
@@ -619,7 +621,13 @@ function rebuildLastResort(placement: ServicesPlacementLike): string {
   return `Your page doesn't have a services section to add them to. The only way to add them is to rebuild the whole page${editCost}. If you want that, say so and I'll show you exactly what it would replace before doing it.`;
 }
 function composeServicesTruth(placement: ServicesPlacementLike, url: string): string {
-  const priced = (placement.placed || []).filter((p) => typeof p.price === "number");
+  // READ THE VERIFIED LIST, NOT THE REPORTED ONE (Lesson 11). `placed` is what the
+  // writers said; `verifiedPlaced` is what is in the bytes that were saved. The price
+  // bug lived exactly here: a row with no price element took the name and dropped the
+  // price, the writer still said ok, and this sentence would have quoted the price back.
+  const truthful = placement.verifiedPlaced || placement.placed || [];
+  const priced = truthful.filter((p) => typeof p.price === "number");
+  const dropped = (placement.unverified || []).filter((p) => typeof p.price === "number");
   const wherePhrase = placement.where === "services section" ? "in the services section" : "on your page";
   const missing = placement.missing || [];
   const inserted = new Set(placement.inserted || []);
@@ -651,7 +659,14 @@ function composeServicesTruth(placement: ServicesPlacementLike, url: string): st
   // section). When it is the generic "on your page", appending it duplicates the
   // "on your page now" we just said ("…on your page now, on your page.") — so drop it.
   const whereClause = placement.where === "services section" ? `, ${wherePhrase}` : "";
-  const landedLine = `${readback} ${priced.length === 1 ? "is" : "are"} on your page now${whereClause}.${addedClause}`;
+  // Anything a writer claimed and the bytes did not confirm is SAID, not swallowed.
+  const droppedClause = dropped.length
+    ? ` ${andList(dropped.map((d) => d.name))} ${dropped.length === 1 ? "is" : "are"} saved to your record but ${dropped.length === 1 ? "isn't" : "aren't"} showing on the page — say that plainly.`
+    : "";
+  if (!priced.length && dropped.length) {
+    return `I saved those to your record, but ${andList(dropped.map((d) => d.name))} ${dropped.length === 1 ? "is" : "are"} not showing on the page. Say that plainly — do not say the price is on the page.`;
+  }
+  const landedLine = `${readback} ${priced.length === 1 ? "is" : "are"} on your page now${whereClause}.${addedClause}${droppedClause}`;
   if (placement.status === "partial" && missing.length) {
     // A service the page has no cloneable entry for (rare). Say so honestly — no
     // rebuild bait (a rebuild wouldn't obviously help place one service, and it

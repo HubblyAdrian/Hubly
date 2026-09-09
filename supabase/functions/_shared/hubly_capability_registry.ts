@@ -3064,7 +3064,10 @@ async function rerenderLatestDocument(
  *
  * Returns the outcome AND, on a hit, the new HTML for the caller to persist.
  */
-type FreeformPlacement = { status: "placed" | "swapped" | "no_slot" | "failed"; where?: string; replacedAlt?: string; html?: string; detail?: string };
+type FreeformPlacement = { status: "placed" | "swapped" | "no_slot" | "failed"; where?: string; replacedAlt?: string; html?: string; detail?: string;
+  /** The uploaded URL was found in the HTML that was actually SAVED. A status says where
+   *  we tried to put it; this says it is in the bytes that ship (Lesson 11). */
+  verified?: boolean };
 
 /** Human name for a slot role — for telling the owner WHERE their photo landed. */
 function slotWhere(role: string): string {
@@ -3149,6 +3152,7 @@ async function applyOwnerPhotoToFreeform(draftId: string, draftToken: string, im
       p_owner_id: ownerUid || null,
     });
     if (!saved || saved.ok !== true) return { status: "failed", detail: "save" };
+    const verified = typeof r.html === "string" && r.html.includes(imageUrl);
     // Provenance: record the customer placement (best-effort).
     try {
       const url = (Deno.env.get("SUPABASE_URL") || "").trim();
@@ -3157,6 +3161,7 @@ async function applyOwnerPhotoToFreeform(draftId: string, draftToken: string, im
         body: JSON.stringify({ business_id: draftId, provider: "customer", image_url: imageUrl, slot: r.where || "page", role: "work", alt: "Owner's own work" }),
       }).catch(() => {});
     } catch (_e) { /* provenance must not fail the placement */ }
+    return { ...r, verified };
   }
   return r;
 }
@@ -3198,7 +3203,10 @@ export async function uploadDraftPhoto(
   let placement: FreeformPlacement = { status: "no_slot" };
   try { placement = await applyOwnerPhotoToFreeform(draftId, draftToken, uploaded.url, ownerUid); }
   catch (e) { placement = { status: "failed", detail: String((e as Error)?.message || e).slice(0, 120) }; }
-  const landed = placement.status === "placed" || placement.status === "swapped";
+  // VERIFIED IN THE BYTES, not from a status (Lesson 11). applyOwnerPhotoToFreeform
+  // reports where it *tried* to put the photo; `verified` is whether the uploaded URL is
+  // actually in the HTML that was saved. Only that earns "it's on your page now".
+  const landed = (placement.status === "placed" || placement.status === "swapped") && placement.verified === true;
 
   // The summary IS the owner-facing truth (see the dispatch: the reply is composed
   // from it). Say what happened AND where — never "it's on your page" unless it is.
@@ -3208,7 +3216,9 @@ export async function uploadDraftPhoto(
         : `That's on your page now, in the ${placement.where || "work section"}.`)
     : placement.status === "no_slot"
       ? `Real photo saved to the business. There's no open spot for it on the page as it's built — do NOT claim it is showing; offer to rebuild the page around it, and if they say yes that is a deliberate rebuild they chose.`
-      : `Real photo saved to the business, but I couldn't place it on the page just now — say that plainly and offer to rebuild the page around it.`;
+      : (placement.status === "placed" || placement.status === "swapped")
+        ? `Real photo saved to the business. The page was updated but the image did not end up in the saved HTML — say it is saved and NOT showing; do not claim it is on the page.`
+        : `Real photo saved to the business, but I couldn't place it on the page just now — say that plainly and offer to rebuild the page around it.`;
 
   return {
     ok: true,
@@ -3249,6 +3259,8 @@ type ServicesPlacement = {
   descNeeded?: string[];                         // inserted into a section that carries a blurb per entry, but no description was given — ask for one
   noSection?: boolean;                           // true only when there is no services section to insert into (the sole rebuild case)
   replacedGuessRows?: number;                    // placeholder rows overwritten with a real service this pass
+  verifiedPlaced?: { name: string; price?: number }[];   // present in the SAVED bytes, not merely reported (Lesson 11)
+  unverified?: { name: string; price?: number }[];       // a writer said it landed and it is not in the bytes
   lostEdits?: number;                            // when noSection: how many owner edits a rebuild would lose (named before the yes)
   where?: string;                                // "services section" | "page"
   changed?: boolean;
@@ -4079,7 +4091,18 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   // and carry the count out so the countable row records it — never ship it silently.
   const leakedAttrText = countLeakedAttrText(out);
   if (leakedAttrText > 0) console.error(`freeform services placement LEAKED ${leakedAttrText} data-hubly- marker(s) into visible text — a replacement string mangled markup`);
-  return { status, placed, missing, inserted, descNeeded, noSection, retroAnchored, leakedAttrText, replacedGuessRows, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
+  // LESSON 11, AT THE ONE PLACE THAT HOLDS THE BYTES. `placed` is what each writer
+  // REPORTED. `verifiedPlaced` is the subset whose name AND price are actually in the
+  // HTML about to be saved. composeServicesTruth reads the verified list, so
+  // "1st Flight $250 is on your page now" cannot be said about a page with no 250 in it.
+  const verifiedPlaced = placed.filter((pl) => {
+    if (!out.includes(pl.name)) return false;
+    if (typeof pl.price !== "number") return true;
+    const money = fmtServicePrice(pl.price);
+    return out.includes(money) || out.includes(String(pl.price));
+  });
+  const unverified = placed.filter((pl) => !verifiedPlaced.includes(pl));
+  return { status, placed, verifiedPlaced, unverified, missing, inserted, descNeeded, noSection, retroAnchored, leakedAttrText, replacedGuessRows, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
 }
 /** Stamp a stable data-hubly-service ANCHOR on each service-name element at
  *  GENERATION time — whatever its shape (<h3>, <dt>, <li><span>, a table cell).
@@ -4659,8 +4682,13 @@ export async function uploadDraftHeroImage(
   return {
     ok: true,
     real: true,
-    summary: `Real hero image uploaded and live — ${siteUrl} now shows it.`,
-    humanNote: "Done — that's your new header image.",
+    // DOWNGRADED 2026-09-09 (Lesson 11). This said "live — now shows it" while doing
+    // nothing but patching banner_url on the RECORD. rerenderLatestDocument returns
+    // not_applicable for a freeform page — the model wrote the header as part of the
+    // page, there is no tree to redraw — so on every modern generated page this claim
+    // was false and the owner would go and look. Claim the write, not the page.
+    summary: `Real hero image saved to the business record. It is NOT on the generated page: that page's header was written as part of the page itself, so a saved banner does not appear there. Say the image is saved and that the page still shows its original header — do not say it is live or showing.`,
+    humanNote: "Saved that as your header image on the record.",
     raw: { id: r.id, slug: r.slug, url: siteUrl, bannerUrl: uploaded.url },
   };
 }
@@ -6920,7 +6948,17 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           return {
             ok: true,
             real: true,
-            summary: `Real update — ${url} now shows ${r.count} real service${r.count === 1 ? "" : "s"}.`,
+            // SPLIT 2026-09-09 (Lesson 11). This read r.count — rows the RPC wrote to the
+            // RECORD — to make a claim about the PAGE. Two different systems, one sentence.
+            // If placement failed entirely it still said the page showed them.
+            summary: (() => {
+              const saved = `Saved ${r.count} service${r.count === 1 ? "" : "s"} to their record.`;
+              if (!isFreeform) return `${saved} The page is rebuilt separately from the record, so do NOT say they are showing yet.`;
+              const landed = (placement.placed || []).length;
+              if (landed === 0) return `${saved} NONE of them reached the page — say that plainly and do not claim anything is showing.`;
+              if (landed < r.count) return `${saved} ${landed} of them reached the page; the rest did not — name what landed and say the others are saved but not showing.`;
+              return `${saved} All ${landed} are on the page at ${url}.`;
+            })(),
             raw: {
               id: r.id, slug: r.slug, url, count: r.count,
               // The truthful placement result — hubly-conversation reads this to
@@ -7214,7 +7252,13 @@ HUBLY_CAPABILITY_REGISTRY.push({
         };
         const r = await callCommerceApi(ctx.ownerToken, "PATCH", `/products/${found.item.id}`, patch);
         if (r.status === 200 && r.json?.product) {
-          return { ok: true, real: true, summary: visible ? `"${found.item.name}" is now live on the store.` : `"${found.item.name}" is now hidden from customers.`, raw: { id: found.item.id } };
+          // DOWNGRADED 2026-09-09 (Lesson 11): the update RPC returning ok is evidence the
+          // RECORD changed, not that a customer's view of the store changed. Nothing here
+          // reads the storefront back.
+          return { ok: true, real: true, summary: visible
+            ? `"${found.item.name}" is set to visible on the record. Say it is set to show; do not claim you have seen it live on the store.`
+            : `"${found.item.name}" is set to hidden on the record. Say it is set to hide; do not claim you have seen the store.`,
+            raw: { id: found.item.id } };
         }
         return { ok: false, real: false, summary: "I couldn't change that just now.", error: r.json?.error || `http_${r.status}` };
       },
