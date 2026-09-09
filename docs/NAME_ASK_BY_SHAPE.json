@@ -1,0 +1,124 @@
+{
+  "measured_at": "2026-09-09T20:07:12.613Z",
+  "complete": true,
+  "results": [
+    {
+      "shape": "NEED",
+      "said": "Im an aviation pilot in Los Angeles I need a website",
+      "mustAsk": true,
+      "askedForName": true,
+      "built": true,
+      "recordName": null,
+      "slug": "site-8e10e6",
+      "reply": "What’s the business called? For a pilot, trust has to come through before anything clever does, so I’m giving this a clean, composed look with a serious first impression. Los Angeles matters here too — it should feel polished enough for private aviation, charter support, instruction, or consulting w",
+      "pass": false,
+      "failures": [
+        "NEED — brand_color is the column default #1a3a6e, so no palette was chosen and every trade gets the same navy page",
+        "NEED — the brief says this business is unnamed and instructs against inventing one, but the page renders an identity in <div trade-mark>: \"Aviation Pilot · Los Angeles\""
+      ]
+    },
+    {
+      "shape": "ASK-BUILD",
+      "said": "can you build me a site",
+      "mustAsk": true,
+      "askedForName": false,
+      "built": false,
+      "recordName": null,
+      "slug": "site-8e10e6",
+      "reply": "Yes — what kind of business is it? Yes — what kind of business is it?",
+      "pass": false,
+      "failures": [
+        "ASK-BUILD — brand_color is the column default #1a3a6e, so no palette was chosen and every trade gets the same navy page",
+        "ASK-BUILD — no draft grant was issued, so this draft can never be claimed",
+        "ASK-BUILD — did not ask what the business is called",
+        "ASK-BUILD — the brief says this business is unnamed and instructs against inventing one, but the page renders an identity in <div trade-mark>: \"Aviation Pilot · Los Angeles\""
+      ]
+    },
+    {
+      "shape": "BARE-TRADE",
+      "said": "i do lawn care",
+      "mustAsk": true,
+      "askedForName": true,
+      "built": true,
+      "recordName": null,
+      "slug": "site-8d91ad",
+      "reply": "What’s it called? Lawn care needs to feel reliable before anything else: clean yards, steady scheduling, and no drama. I’m giving this a simple, trustworthy feel so a homeowner can tell quickly what you do and why they should reach out. Since I don’t have your name yet, I’ll keep the wording honest ",
+      "pass": false,
+      "failures": [
+        "BARE-TRADE — the brief says this business is unnamed and instructs against inventing one, but the page renders an identity in <div trade-place>: \"Lawn Care\""
+      ]
+    },
+    {
+      "shape": "TRADE-PLACE",
+      "said": "I do mobile detailing in los angeles",
+      "mustAsk": true,
+      "askedForName": true,
+      "built": true,
+      "recordName": null,
+      "slug": "site-3cc4c6",
+      "reply": "Mobile detailing has to look spotless before anyone reads much, so I’m giving this a crisp, high-contrast feel that fits clean cars and quick trust. People in LA are choosing convenience, so the page should make the mobile part obvious right away. I’m keeping the wording direct and polished, with en",
+      "pass": false,
+      "failures": [
+        "TRADE-PLACE — the brief says this business is unnamed and instructs against inventing one, but the page renders an identity in <div trade-mark>: \"Mobile Detailing · Los Angeles\""
+      ]
+    },
+    {
+      "shape": "PROSE",
+      "said": "Im looking to make a storefront to sell detailing chemicals",
+      "mustAsk": true,
+      "askedForName": false,
+      "built": false,
+      "recordName": null,
+      "slug": "site-3cc4c6",
+      "reply": "I can help shape the storefront, but I can’t add it to your workspace until you’re signed in as the owner. I can help shape the storefront, but I can’t add it to your workspace until you’re signed in as the owner.",
+      "pass": false,
+      "failures": [
+        "PROSE — no draft grant was issued, so this draft can never be claimed",
+        "PROSE — did not ask what the business is called",
+        "PROSE — the brief says this business is unnamed and instructs against inventing one, but the page renders an identity in <div trade-mark>: \"Mobile Detailing · Los Angeles\""
+      ]
+    },
+    {
+      "shape": "FIRST-PERSON",
+      "said": "I'm a nail tech",
+      "mustAsk": true,
+      "askedForName": false,
+      "built": false,
+      "recordName": null,
+      "slug": "site-3cc4c6",
+      "reply": "Nice — nails are all about trust, taste, and showing the work. Tell me what you want help with first: getting more bookings, building your online presence, or tightening up your service menu? Nice — nails are all about trust, taste, and showing the work. Tell me what you want help with first: gettin",
+      "pass": false,
+      "failures": [
+        "FIRST-PERSON — no draft grant was issued, so this draft can never be claimed",
+        "FIRST-PERSON — did not ask what the business is called",
+        "FIRST-PERSON — the brief says this business is unnamed and instructs against inventing one, but the page renders an identity in <div trade-mark>: \"Mobile Detailing · Los Angeles\""
+      ]
+    },
+    {
+      "shape": "EXTRACT",
+      "said": "I run Ridgeline Detail, mobile detailing in LA",
+      "mustAsk": false,
+      "askedForName": false,
+      "built": false,
+      "recordName": "Ridgeline Detail",
+      "slug": "ridgeline-detail",
+      "reply": "Nice — Ridgeline Detail, mobile detailing in LA. Want me to build out your site, tighten up your service/pricing offer, or help you get more booked jobs? Nice — Ridgeline Detail, mobile detailing in LA. Want me to build out your site, tighten up your service/pricing offer, or help you get more booke",
+      "pass": false,
+      "failures": [
+        "EXTRACT — no document build was dispatched; signup produced a row, not a site"
+      ]
+    },
+    {
+      "shape": "MIDDLE",
+      "said": "I do detailing, people just call it Ridgeline",
+      "mustAsk": false,
+      "askedForName": false,
+      "built": true,
+      "recordName": "Ridgeline",
+      "slug": "ridgeline",
+      "reply": "The page is being built now — it should appear in about a minute. Detailing needs to look clean before anyone reads a word, so I’m giving Ridgeline a sharp, high-contrast feel that fits the work. The first impression should say careful, polished, and worth trusting with someone’s vehicle. I’ll keep ",
+      "pass": true,
+      "failures": []
+    }
+  ]
+}

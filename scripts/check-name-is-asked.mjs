@@ -32,7 +32,7 @@
  *
  * Exit: 0 PASS · 1 FAIL · 2 CANNOT RUN (never reported as either)
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -114,11 +114,81 @@ function printPrice(drafts) {
     `  so this is roughly ${(drafts / 35 * 100).toFixed(0)}% of a top-up. Drafts are deleted afterwards; quota is not refunded.\n`);
 }
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ASSERT AT THE LAYER THE HUMAN SEES.
+//
+// This check used to read the reply JSON and stop. On 2026-09-09 that passed while the
+// page carried the wordmark "LOS ANGELES AVIATION PILOT": the record was clean, the
+// brief said "Do not invent a business name", and the invention existed only in the
+// rendered HTML. Reading the reply and not the page is the same mistake as reading the
+// CSS and not the pixels, and the return value and not the bytes — three times in one
+// day. So every ASK case now waits for the real document and asserts against it.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** The generated page, once it exists. Builds take 100-150s, so this polls. */
+async function waitForDocument(businessId, maxMs = 240000) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < maxMs) {
+    const rows = sql(`select coalesce(rendered_html,'') as html, coalesce(document::text,'') as doc
+                      from business_documents where business_id='${businessId}'
+                      order by created_at desc limit 1`);
+    const r = rows[0];
+    if (r && String(r.html || "").length > 500) return { html: String(r.html), doc: String(r.doc || "") };
+    await new Promise((z) => setTimeout(z, 5000));
+  }
+  return null;
+}
+
+/** Elements that present the business's IDENTITY, as opposed to describing it.
+ *  Deliberately not "anywhere the words appear": an eyebrow reading PILOT · LOS ANGELES
+ *  is TRUE and allowed, and banning the words outright would red-flag the correct page. */
+function identityElements(html) {
+  const out = [];
+  const title = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(html);
+  if (title) out.push({ where: "<title>", tag: title[0], text: title[1].trim() });
+  // Class-named identity slots the generator actually produces, plus our own label.
+  const re = /<([a-z0-9]+)([^>]*(?:class="[^"]*(?:brand-name|brandname|wordmark|logotype|logo-text|monogram|lettermark)[^"]*"|data-hc="business\.name")[^>]*)>([\s\S]{0,300}?)<\/\1>/gi;
+  for (const m of html.matchAll(re)) {
+    out.push({ where: `<${m[1]} ${(/class="([^"]*)"/i.exec(m[2]) || [, "data-hc=business.name"])[1]}>`,
+               tag: `<${m[1]}${m[2]}>`, text: m[3].replace(/<[^>]*>/g, "").trim() });
+  }
+  return out;
+}
+
+/** A NAME is contiguous; a DESCRIPTOR is separated. "Los Angeles Aviation Pilot" reads
+ *  as an identity, "PILOT · LOS ANGELES" does not, and the separator is the difference.
+ *  Narrow on purpose — it discriminates the failure that shipped without red-flagging
+ *  the eyebrow the fix explicitly asks for. */
+function constructedIdentity(text, trade, place) {
+  const t = " " + text.toLowerCase().replace(/\s+/g, " ").trim() + " ";
+  for (const tr of trade) {
+    for (const pl of place) {
+      if (new RegExp(`\\b${pl}\\s+${tr}\\b`).test(t)) return `"${pl} ${tr}" (place + trade, contiguous)`;
+      if (new RegExp(`\\b${tr}\\s+${pl}\\b`).test(t)) return `"${tr} ${pl}" (trade + place, contiguous)`;
+    }
+  }
+  return null;
+}
+
 const fails = [];
 const created = [];
+// PER-SHAPE, NOT ONE AGGREGATE. If the ask survives four shapes and dies on two, that
+// tells us what to fix; a single pass/fail would not. Flushed after every case, because
+// the run that teaches you most is the one that dies before the end (Lesson 16) — and
+// this one costs eight signups, so losing it costs real money.
+const results = [];
+// Rows already attributed to an earlier case, so a case that creates nothing owns nothing.
+const seenBefore = new Set();
+const OUT = join(ROOT, "docs/NAME_ASK_BY_SHAPE.json");
+function flush(done) {
+  try {
+    writeFileSync(OUT, JSON.stringify({ measured_at: new Date().toISOString(), complete: !!done, results }, null, 2));
+  } catch { /* reporting must not break the run */ }
+}
 
 async function run() {
-  printPrice(3);
+  printPrice(8);
   let health;
   try { health = await say("hello"); }
   catch (e) { bailIfCannotRun(e); console.error("CANNOT RUN — the conversation endpoint is unreachable: " + e.message); process.exit(2); }
@@ -135,8 +205,39 @@ async function run() {
     process.exit(2);
   }
 
+  // A RULE PROVED ON ONE PHRASING IS NOT PROVED.
+  //
+  // This check went green on "I do mobile detailing in los angeles" and the rule then
+  // failed on the second sentence a real person typed: "Im an aviation pilot in Los
+  // Angeles I need a website" got the packages-and-prices question and no name ask at
+  // all. One sentence is not a rule; it is an anecdote that passed.
+  //
+  // So the ASK side spans SHAPES, not wordings — how people actually open. `trade` and
+  // `place` are the words a construction would be assembled FROM, and drive the
+  // constructed-identity assertions against the rendered page.
   const CASES = [
-    { id: "ASK", say: "I do mobile detailing in los angeles", mustAsk: true, banned: /mobile detailing in los angeles|detailing (business|company|services)/i },
+    // The shape that failed on 2026-09-09: a stated NEED, not a described job.
+    { id: "NEED", say: "Im an aviation pilot in Los Angeles I need a website", mustAsk: true,
+      trade: ["aviation", "pilot"], place: ["los angeles", "la"] },
+    // A request with no trade in it at all. NOT a mustAsk case: with nothing to build
+    // from, asking what kind of business it is IS the right answer (763 makes a
+    // DESCRIPTION of the work the go-ahead, and this is not one). Kept because the shape
+    // is common and we still want to see what it does — asserted only on not inventing.
+    { id: "ASK-BUILD", say: "can you build me a site", mustAsk: false, expectNoDraft: true, trade: [], place: [] },
+    // A trade with no place — nothing to pair it with, which is its own temptation.
+    { id: "BARE-TRADE", say: "i do lawn care", mustAsk: true, trade: ["lawn care", "lawn"], place: [] },
+    // The one that already passes. Kept, because a fix that breaks it is not a fix.
+    { id: "TRADE-PLACE", say: "I do mobile detailing in los angeles", mustAsk: true,
+      trade: ["mobile detailing", "detailing"], place: ["los angeles", "la"] },
+    // Prose with no assertion verb. The extraction-gate scar says this is the shape we
+    // undercount, and it carries the two highest-value facts we capture.
+    { id: "PROSE", say: "Im looking to make a storefront to sell detailing chemicals", mustAsk: true,
+      trade: ["detailing chemicals", "detailing"], place: [] },
+    // The shortest real opener on record.
+    { id: "FIRST-PERSON", say: "I'm a nail tech", mustAsk: true, trade: ["nail tech", "nails", "nail"], place: [] },
+
+    // THE OTHER SIDE OF THE RULE. Without these, "always ask" passes — and that breaks
+    // the person who told us their name in their first sentence.
     { id: "EXTRACT", say: "I run Ridgeline Detail, mobile detailing in LA", mustAsk: false, expectName: /ridgeline detail/i },
     // THE AWKWARD MIDDLE, and it is extraction: they said the word, Hubly reads it.
     // Nothing is assembled. Asserted rather than reported, because an untested side of
@@ -145,10 +246,30 @@ async function run() {
   ];
 
   for (const c of CASES) {
+    const caseStarted = new Date(Date.now() - 3000).toISOString();
     let r;
     try { r = await say(c.say); }
     catch (e) { bailIfCannotRun(e); fails.push(`${c.id} — endpoint error: ${e.message}`); continue; }
-    const reply = String(r.reply || r.message || JSON.stringify(r)).slice(0, 900);
+    // WHAT A PERSON ACTUALLY SEES — never a JSON dump.
+    //
+    // This line used to fall back to JSON.stringify(r) when `reply` was empty, which it
+    // is on a build turn. That dump contains the CAPABILITY RESULTS, and the startDraft
+    // summary literally contains the words "ask what the business is called" — our own
+    // instruction to the model. So ASKS_FOR_NAME matched OUR text and reported that the
+    // model had asked, on every ASK case, whether or not it had. A guaranteed false
+    // green, caught on case 1 of a run that costs eight signups.
+    //
+    // So: only the text the client renders. reply, the interim messages it shows, and the
+    // last assistant turn — and explicitly never a system/capability message.
+    const visible = [
+      String(r.reply || ""),
+      ...(Array.isArray(r.interimMessages) ? r.interimMessages.map((m) => String(m || "")) : []),
+      ...(Array.isArray(r.messages)
+        ? r.messages.filter((m) => m && m.role === "assistant").slice(-1).map((m) => String(m.content || ""))
+        : []),
+    ].filter(Boolean);
+    const reply = visible.join("  ").slice(0, 1200);
+    if (!reply.trim()) fails.push(`${c.id} — the turn produced no visible text at all; a person would see silence`);
     const grantSeen = !!r.draftGrant;
     // THE BUILD, ASSERTED IN-BAND. document_build_jobs is written asynchronously, so
     // reading it the instant the response lands made this check FLAKY — it failed three
@@ -157,11 +278,17 @@ async function run() {
     const capResults = (r.messages || []).filter((m) => m && m.role === "system").map((m) => String(m.content || ""));
     const generateRan = capResults.some((c) => /CAPABILITY RESULT for website\.generateDocument/i.test(c));
     const asked = ASKS_FOR_NAME.test(reply);
+    // THE ROW THIS CASE CREATED — or nothing. This used to be "newest row since the run
+    // started", which quietly handed a case that created NO draft the PREVIOUS case's
+    // business: on 2026-09-09 three shapes were scored against another shape's page, and
+    // reported a missing draft grant and a foreign wordmark. A case owns a row only if
+    // that row did not exist before the case began.
     const rows = sql(`select b.id, b.name, b.slug, b.created_at, b.brand_color, b.section_order is not null as has_sections,
       (select count(*) from document_build_jobs j where j.business_id=b.id) as build_jobs
-      from businesses b where b.created_at > '${started}' order by b.created_at desc limit 5`);
+      from businesses b where b.created_at > '${caseStarted}' order by b.created_at desc limit 5`);
     for (const row of rows) if (!created.find((x) => x.id === row.id)) created.push(row);
-    const mine = rows[0] || null;
+    const mine = rows.find((r) => !seenBefore.has(r.id)) || null;
+    for (const r of rows) seenBefore.add(r.id);
 
     console.log(`\n[${c.id}] "${c.say}"`);
     console.log(`   asked for a name : ${asked}`);
@@ -184,12 +311,78 @@ async function run() {
     if (mine && !grantSeen) fails.push(`${c.id} — no draft grant was issued, so this draft can never be claimed`);
     if (c.mustAsk) {
       if (!asked) fails.push(`${c.id} — did not ask what the business is called`);
-      if (mine && c.banned.test(String(mine.name || ""))) fails.push(`${c.id} — created a business named ${JSON.stringify(mine.name)}, which is a constructed description, not a name`);
-      if (mine && c.banned.test(String(mine.slug || ""))) fails.push(`${c.id} — minted the slug "${mine.slug}" from a constructed name`);
+      // The RECORD-level construction check, from the same trade/place words the page
+      // check uses. A slug is written once and is permanent, so it matters most.
+      if (mine) {
+        const recHit = constructedIdentity(String(mine.name || ""), c.trade, c.place);
+        if (recHit) fails.push(`${c.id} — created a business named ${JSON.stringify(mine.name)}: ${recHit} is a description of a job, not a name`);
+        const slugWords = String(mine.slug || "").replace(/-/g, " ");
+        const slugHit = constructedIdentity(slugWords, c.trade, c.place);
+        if (slugHit) fails.push(`${c.id} — minted the permanent slug "${mine.slug}" from a constructed name: ${slugHit}`);
+        for (const tr of c.trade) {
+          if (new RegExp(`\\b${tr.replace(/\s+/g, "[ -]")}\\b`, "i").test(slugWords)) {
+            fails.push(`${c.id} — the slug "${mine.slug}" carries the trade "${tr}"; an unnamed draft gets site-<hex> and nothing else`);
+            break;
+          }
+        }
+      }
       // The build still happens — it just happens unnamed. A draft with no row at all
       // would mean the ask replaced the build, which is the trade we refused to make.
       if (!mine) fails.push(`${c.id} — no draft was created at all; the ask must ride INSIDE the build, not replace it`);
       else if (mine.name !== null) fails.push(`${c.id} — created a draft named ${JSON.stringify(mine.name)}; it should be unnamed until they answer`);
+
+      // ── THE PAGE, WHICH IS WHERE THE FAILURE LIVED ──────────────────────────────
+      if (mine && mine.name === null) {
+        const page = await waitForDocument(mine.id);
+        if (!page) {
+          fails.push(`${c.id} — no page was rendered within 4 minutes, so nothing could be checked on it`);
+        } else {
+          const ids = identityElements(page.html);
+
+          // 1. NO CONSTRUCTED NAME, IN ANY IDENTITY SLOT.
+          for (const el of ids) {
+            const hit = constructedIdentity(el.text, c.trade, c.place);
+            if (hit) fails.push(`${c.id} — the page names the business ${hit} in ${el.where}: ${JSON.stringify(el.text.slice(0, 70))}`);
+          }
+
+          // 2. THE PAGE MUST AGREE WITH ITS OWN BRIEF. The brief is the instruction and
+          //    the page is the result; they may never contradict each other. This is the
+          //    assertion that would have caught 2026-09-09 with nobody knowing what to
+          //    look for — the brief said "unnamed" and "Do not invent a business name",
+          //    and the wordmark said otherwise.
+          const briefSaysUnnamed = /unnamed|no business name|do not invent a business name|has not (?:yet )?provided a business name/i.test(page.doc);
+          if (briefSaysUnnamed) {
+            for (const el of ids) {
+              if (el.where === "<title>") continue;   // the title is trade + place by instruction
+              // A NAME IS CONTIGUOUS; A DESCRIPTOR IS SEPARATED. "Aviation Pilot · Los
+              // Angeles" is the eyebrow the fix asks for and must pass; "Los Angeles
+              // Aviation Pilot" is the invention that shipped and must fail. Banning all
+              // text here fails the correct page, which this check did on its first run.
+              const hit = constructedIdentity(el.text, c.trade, c.place);
+              if (hit) {
+                fails.push(`${c.id} — the brief says this business is unnamed and instructs against inventing one, but the page renders ${hit} as its identity in ${el.where}: ${JSON.stringify(el.text.slice(0, 70))}`);
+              }
+            }
+          }
+
+          // 3. NO data-hubly-guess ON AN IDENTITY ELEMENT, EVER.
+          //    The wordmark that shipped carried data-hubly-guess="provisional site
+          //    identity". The model MARKED ITS OWN INVENTION and we rendered it as the
+          //    business's name. Second time in one day the flag was raised and ignored
+          //    (the first: guess service rows reaching customers on a live market page).
+          //    A guess may be a proposed tagline; it may never be who the business IS.
+          for (const el of ids) {
+            const g = /data-hubly-guess="([^"]*)"/i.exec(el.tag);
+            if (g) fails.push(`${c.id} — an identity element in ${el.where} is flagged data-hubly-guess="${g[1]}" and rendered anyway; the model said it invented this and nothing listened`);
+          }
+
+          console.log(`   page identity    : ${ids.length ? ids.map((e) => `${e.where}=${JSON.stringify(e.text.slice(0, 40))}`).join("  ") : "none — no wordmark, no monogram"}`);
+        }
+      }
+    } else if (c.expectNoDraft) {
+      // Nothing to build from. The only failures here are inventing a business anyway,
+      // or answering with a menu instead of the one question that unblocks the build.
+      if (mine) fails.push(`${c.id} — created ${JSON.stringify(mine.name)} (${mine.slug}) from a message that names no business at all`);
     } else {
       if (asked) fails.push(`${c.id} — asked for a name the person had already given`);
       if (!mine) fails.push(`${c.id} — gave a name and no business was created`);
@@ -199,7 +392,19 @@ async function run() {
         if (String(mine.name || "").length > 40) fails.push(`${c.id} — name ${JSON.stringify(mine.name)} looks constructed, not extracted`);
       }
     }
+
+    const mine_fails = fails.filter((f) => f.startsWith(`${c.id} —`));
+    results.push({
+      shape: c.id, said: c.say, mustAsk: !!c.mustAsk,
+      askedForName: asked, built: generateRan,
+      recordName: mine ? mine.name : null, slug: mine ? mine.slug : null,
+      reply: reply.replace(/\s+/g, " ").slice(0, 300),
+      pass: mine_fails.length === 0, failures: mine_fails,
+    });
+    flush(false);
+    console.log(`   VERDICT          : ${mine_fails.length === 0 ? "pass" : `FAIL (${mine_fails.length})`}`);
   }
+  flush(true);
 }
 
 let cleanupNote = "";
@@ -215,6 +420,22 @@ finally {
 }
 
 console.log(`\n${cleanupNote}`);
+
+console.log("\nBY SHAPE — does the rule survive how people actually open?");
+console.log("  " + "shape".padEnd(14) + "asked".padEnd(8) + "built".padEnd(8) + "verdict");
+for (const r of results) {
+  console.log("  " + r.shape.padEnd(14) +
+    (r.mustAsk ? (r.askedForName ? "yes" : "NO") : (r.askedForName ? "WRONGLY" : "n/a")).padEnd(8) +
+    (r.built ? "yes" : "NO").padEnd(8) +
+    (r.pass ? "pass" : "FAIL"));
+}
+const askShapes = results.filter((r) => r.mustAsk);
+if (askShapes.length) {
+  const askedOk = askShapes.filter((r) => r.askedForName).length;
+  console.log(`\n  the name was asked on ${askedOk} of ${askShapes.length} ASK shapes; built on ${results.filter((r) => r.built).length} of ${results.length} overall.`);
+}
+console.log(`  per-shape detail: ${OUT}`);
+
 if (fails.length) {
   console.error(`\nFAIL — ${fails.length}:`);
   for (const f of fails) console.error("  " + f);

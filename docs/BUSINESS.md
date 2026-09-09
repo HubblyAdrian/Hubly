@@ -562,6 +562,32 @@ Two consequences that are certain regardless of the amount:
   cannot happen. Measured by reading the call paths on 2026-09-09, not by observing a
   customer during the window.
 
+## OPEN — the guess signal is produced and discarded (recorded 2026-09-09, NOT built)
+
+**Established: measured twice, in one day, on live output.**
+
+The page generator marks its own inventions with `data-hubly-guess="a few words naming
+what it is"`. It does this reliably and it is the expensive half of the problem — the
+model is honestly separating what it knows from what it proposed. **Nothing downstream
+listens.** Twice on 2026-09-09:
+
+1. `data-hubly-guess` service rows — the model's placeholder copy, addressed to the owner
+   — reaching customers on a live MARKET page.
+2. A wordmark reading "LOS ANGELES AVIATION PILOT" for an owner who gave no name, carrying
+   `data-hubly-guess="provisional site identity"`, rendered as the business's own name
+   (site-b53347). The record was correct and the brief said "Do not invent a business
+   name" in as many words.
+
+**The narrow rule is now asserted** in `scripts/check-name-is-asked.mjs`: no identity
+element — wordmark, monogram, brand name, `<title>` — may carry `data-hubly-guess`.
+
+**The general rule is agreed and deliberately NOT built:** *anything the model flags as a
+guess must never render as the business's own claim, anywhere.* That is a statement about
+the whole generator and it needs its own pass — a decision, per guess kind, between
+rendering it as a visible suggestion the owner can accept, holding it back until they
+confirm, and dropping it. Do not do this piecemeal; a per-defect patch here is how the
+same bug gets fixed twice and stays live in a third place. Adrian's ruling, 2026-09-09.
+
 ## WHAT HAS NEVER HAPPENED YET
 
 *The honest zeros. These say what Hubly is and is not today, and every one should be easy

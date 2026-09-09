@@ -541,3 +541,86 @@ exit is a branch around every guarantee the normal path makes.** `process.exit` 
 rate limit. In each case the skipped code is invisible at the point you wrote the exit,
 because it is somewhere else and unchanged. Ask what the normal path does after the point
 you are leaving, every time you leave early.
+
+---
+
+## Lesson 18 — when the model marks its own invention, that mark is evidence, and throwing it away is a choice
+
+The wordmark that shipped on 2026-09-09 read "LOS ANGELES AVIATION PILOT" for an owner
+who had given no name. The record was correct — `name` null, `name_unset` true. The brief
+was correct, and said so in as many words: *"Build a first website for an unnamed aviation
+pilot… Do not invent a business name."* And the element itself carried the model's own
+flag:
+
+    <p class="brand-name" data-hubly-guess="provisional site identity">Los Angeles Aviation Pilot</p>
+
+**The model told us it made this up, and we rendered it as the business's name.**
+
+That is the second time in one day. The first was `data-hubly-guess` service rows — the
+model's placeholder copy, addressed to the owner — shipping to customers on a live market
+page. Same attribute, same disease: the generator is being honest about the boundary
+between what it knows and what it proposed, and nothing downstream is listening.
+
+The specific rule is now asserted: no identity element — wordmark, monogram, brand name,
+`<title>` — may carry `data-hubly-guess`. A guess may be a proposed tagline; it may never
+be who the business *is*.
+
+The general rule is bigger than names and is **recorded, not built**: *anything the model
+flags as a guess must never render as the business's own claim, anywhere.* That is a
+statement about the whole generator and it deserves its own pass. What makes it urgent is
+that the marking already works — the expensive part is done, the model reliably tells us
+what it invented, and the cheap part (acting on it) is the part that is missing. We are
+discarding a signal we asked for and got.
+
+The transferable form: **a system that reports its own uncertainty has done the hard
+half. Ignoring the report is not a gap in the model, it is a defect in the consumer.**
+
+## Lesson 19 — assert at the layer the human sees
+
+Three times in one day, a check passed while the thing it described was broken, and each
+time for the same reason: it asserted one layer below the failure.
+
+1. The contrast check read the CSS and not the rendered pixels. It reported 14.3:1 on
+   unreadable text.
+2. A truth string reported what a function returned and not what reached the page bytes.
+3. The name check read the reply JSON and not the rendered HTML — so it went green on the
+   exact build whose wordmark invented a business name, because the record was clean, the
+   reply was fine, and the invention existed only in the page.
+
+Each layer was a reasonable place to look, and each was one step short of where a person
+would notice. A check that reads the input to a rendering step is testing the input, and
+the defect lives in the output.
+
+So: **find the layer the human actually experiences, and assert there.** Pixels, not CSS.
+Bytes, not return values. The rendered page, not the API response. It is slower and it
+needs the artifact to exist first — the name check now waits up to four minutes for a real
+build before it can say anything — and that cost is the price of an assertion that means
+what it says.
+
+The companion rule, which is what makes this affordable: **assert positionally, not by
+recognising content.** Banning the words "los angeles" and "aviation" anywhere on the page
+would red-flag the eyebrow "PILOT · LOS ANGELES", which is true and is exactly what the
+fix asks for. What separates the two is not the words but the slot they sit in and whether
+they are contiguous — a name is contiguous, a descriptor is separated. Assert the slot.
+
+## Lesson 20 — a rule proved on one phrasing is not proved
+
+The name check went green on "I do mobile detailing in los angeles". The rule then failed
+on the second sentence a real person typed: "Im an aviation pilot in Los Angeles I need a
+website" got the packages-and-prices question and no name ask at all.
+
+One sentence is not a rule. It is an anecdote that passed.
+
+This is the enumeration problem again, and it has now cost us five times (anchors, prices,
+hours, the extraction gate twice): a list written from the shapes we have already seen
+always undercounts, because the next real input arrives wearing a form nobody listed. The
+difference here is that the *check* was the list.
+
+So a behavioural rule is tested across SHAPES, not wordings — how people actually open,
+not synonyms of one opener: a stated need, a bare request with no trade, a trade with no
+place, a trade with a place, prose with no assertion verb, a three-word first-person
+opener. And both sides of the rule, always: without the EXTRACT and MIDDLE cases, "always
+ask" passes and we break the person who told us their name in their first sentence.
+
+Report **per shape, not as one aggregate.** If the ask survives four shapes and dies on
+two, that names what to fix. One number would not.
