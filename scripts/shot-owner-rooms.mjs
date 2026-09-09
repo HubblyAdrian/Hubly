@@ -59,7 +59,11 @@ const HOOK = `
     seedRooms: function(jobs, customers){
       authGetClient = async function(){
         return {
-          rpc: async function(n){ return n === 'get_business_customers' ? { data: customers } : { data: null }; },
+          rpc: async function(n){
+            if (n === 'get_business_customers') return { data: customers };
+            if (n === 'get_business_tasks') return { data: window.__seedTasks || [] };
+            return { data: null };
+          },
           from: function(t){
             var q = { select:function(){ return q; }, eq:function(){ return q; }, gte:function(){ return q; },
                       lte:function(){ return q; }, order:function(){ return q; },
@@ -133,6 +137,13 @@ const CUSTOMERS = [
     last_seen:null, last_service:null, visits:0, total_billed:0, merged_rows:1 }
 ];
 
+const TASKS = [
+  { id:'t1', title:'Order glass cleaner', due_date:null, due_time:null, band:'C',
+    band_source:'proposed', band_reason:'nothing breaks if it slips', lane:'work', status:'open', roll_count:0, notes:null },
+  { id:'t2', title:'Gym', due_date:TODAY, due_time:'18:00:00', band:'C',
+    band_source:'owner', band_reason:null, lane:'personal', status:'open', roll_count:2, notes:null }
+];
+
 const VIEWS = [
   { id:'desktop', w:1440, h:900, label:'Desktop · 1440×900' },
   { id:'phone',   w:390,  h:844, label:'Phone · 390×844' }
@@ -151,7 +162,8 @@ for (const v of VIEWS) {
   if (!await page.evaluate(() => !!window.__hcHarness)) {
     console.error('CANNOT RUN — hook did not install'); await browser.close(); server.close(); process.exit(2);
   }
-  await page.evaluate(({ jobs, customers }) => {
+  await page.evaluate(({ jobs, customers, tasks }) => {
+    window.__seedTasks = tasks;
     const H = window.__hcHarness;
     H.stubs(); H.forceAuthed(); H.loadIdentity(); H.loadEvents([]); H.loadCounts({});
     Object.assign(H.identity, { loaded:true, logoUrl:null, brandColor:'#1f6f4a', city:'Lehi', state:'UT', owner:'Bruce', email:'owner@example.com' });
@@ -172,7 +184,7 @@ for (const v of VIEWS) {
     app.hidden = false; app.removeAttribute('aria-hidden'); app.classList.add('is-active');
     document.body.classList.add('hc-active');
     H.reflectAuth(); H.renderRail();
-  }, { jobs: JOBS, customers: CUSTOMERS });
+  }, { jobs: JOBS, customers: CUSTOMERS, tasks: TASKS });
   await page.waitForTimeout(250);
 
   const tabs = await page.evaluate(() => [...document.querySelectorAll('.hc-rail-tab')].map(b => b.textContent.trim()));
@@ -227,6 +239,8 @@ for (const v of VIEWS) {
     if (chip) failures.push(`${v.id}/${room}: the account chip overlaps the room heading`);
     console.log(`  ${room.padEnd(10)} rows=${m.nRows} clashes=${m.clashes} blocks=${m.blocks}${m.emptyText ? ' empty="' + m.emptyText + '"' : ''}`);
     if (room === 'planner') {
+      // THE UNION IS THE POINT: 3 timed things + 2 tasks in ONE list.
+      if (m.nRows !== 5) failures.push(`${v.id}/planner: expected 3 jobs/blocks AND 2 tasks in one list, got ${m.nRows} rows`);
       if (m.clashes !== 2) failures.push(`${v.id}/planner: expected 2 rows marked as clashing (12–15 vs 14–16), got ${m.clashes}`);
       if (m.blocks !== 1) failures.push(`${v.id}/planner: expected the dentist appointment to render as a block, got ${m.blocks}`);
     }

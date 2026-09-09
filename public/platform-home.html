@@ -4601,8 +4601,21 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     var today = new Date();
     var iso = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
     var from = iso(today), to = iso(new Date(today.getTime() + 864e5));
-    var jobs;
-    try{ jobs = await hcLoadJobs(biz.id, from, to); }
+    var jobs, tasks = [];
+    try{
+      jobs = await hcLoadJobs(biz.id, from, to);
+      // TASKS JOIN THE SAME LIST. The union is the point: the 8:00 Full Detail sits
+      // beside "order glass cleaner" and "gym", because a detailer does not keep his
+      // jobs and his errands in separate apps and asking him to is why he uses neither.
+      // A task read failure is NOT fatal to the day — the jobs still show, and the
+      // absence is stated rather than passed off as an empty list.
+      try{
+        var uid = await hcOwnerUid();
+        var c2 = await authGetClient();
+        var tr = await c2.rpc('get_business_tasks', { p_business_id: biz.id, p_owner_id: uid, p_from: null, p_to: to });
+        if(tr && !tr.error && Array.isArray(tr.data)) tasks = tr.data;
+      }catch(_){ tasks = null; }
+    }
     catch(e){
       var room0 = hcRoomShell('Your day', null, null);
       hcRoomEmpty(room0, 'I couldn’t read your schedule just now',
@@ -4610,9 +4623,10 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
       canvas.appendChild(room0); return;
     }
     var room = hcRoomShell('Your day', null, null);
-    if(!jobs.length){
+    var openTasks = Array.isArray(tasks) ? tasks : [];
+    if(!jobs.length && !openTasks.length){
       hcRoomEmpty(room, 'Nothing booked today or tomorrow',
-        'When a customer books, it lands here. You can also tell me things directly — "add tomorrow 12 to 3, Leslie, detailing" — and I’ll put it on the day.');
+        'When a customer books, it lands here. You can also tell me things directly — "add tomorrow 12 to 3, Leslie, detailing", "dentist Thursday 2 to 4", "remind me to order glass cleaner" — and I’ll put them on the day.');
       canvas.appendChild(room); return;
     }
     [from, to].forEach(function(day){
@@ -4641,7 +4655,51 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
         room.appendChild(n);
       }
     });
+    // ── THE SAME LIST. Tasks after the timed things, banded, with undated ones last.
+    // An undated task has not failed to happen — it simply has no day, and nothing here
+    // may render it as late.
+    if(tasks === null){
+      var w = document.createElement('div'); w.className = 'hc-room-group';
+      w.textContent = 'Your tasks couldn’t be read just now — that’s a read failure, not an empty list';
+      room.appendChild(w);
+    }else if(openTasks.length){
+      var g2 = document.createElement('div'); g2.className = 'hc-room-group';
+      g2.textContent = 'To do';
+      room.appendChild(g2);
+      openTasks.forEach(function(t){
+        room.appendChild(hcRoomRow({
+          when: t.due_time ? String(t.due_time).slice(0,5) : (t.band ? t.band : '—'),
+          title: t.title,
+          sub: [ t.lane === 'personal' ? 'Personal' : null,
+                 t.band_source === 'owner' ? ('Band ' + t.band + ' — you set this') : (t.band_reason ? ('Band ' + t.band + ' — ' + t.band_reason) : ('Band ' + t.band)),
+                 Number(t.roll_count) > 0 ? ('moved ' + t.roll_count + (Number(t.roll_count) === 1 ? ' time' : ' times') + ' already') : null,
+                 (!t.due_date ? 'no day set' : null)
+               ].filter(Boolean).join(' · '),
+          onOpen: function(){ hcTaskPanel(t); }
+        }));
+      });
+    }
     canvas.appendChild(room);
+  }
+  function hcTaskPanel(t){
+    hcOpenPanel('Task', function(body){
+      var rows = [
+        ['What', t.title],
+        ['When', t.due_date ? (hcDayLabel(t.due_date) + (t.due_time ? ' at ' + String(t.due_time).slice(0,5) : '')) : 'No day set — not overdue, just undated'],
+        ['Band', t.band + (t.band_source === 'owner' ? ' (you set this)' : (t.band_reason ? ' — ' + t.band_reason : ''))],
+        ['Lane', t.lane === 'personal' ? 'Personal' : 'Work'],
+        ['Moved', Number(t.roll_count) > 0 ? (t.roll_count + (Number(t.roll_count) === 1 ? ' time' : ' times')) : null],
+        ['Notes', t.notes || null]
+      ].filter(function(r){ return r[1]; });
+      var dl = document.createElement('div'); dl.className = 'hc-event-fields';
+      rows.forEach(function(r){
+        var line = document.createElement('div'); line.className = 'hc-event-row';
+        var k = document.createElement('span'); k.className='hc-event-k'; k.textContent = r[0];
+        var v = document.createElement('span'); v.className='hc-event-v'; v.textContent = r[1];
+        line.appendChild(k); line.appendChild(v); dl.appendChild(line);
+      });
+      body.appendChild(dl);
+    });
   }
 
   // ── JOBS: everything, recent first. ─────────────────────────────────────────
