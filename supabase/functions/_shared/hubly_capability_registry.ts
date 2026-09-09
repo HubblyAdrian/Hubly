@@ -4917,13 +4917,24 @@ export async function runDocumentGeneration(
           // null-token businesses are all classic-path; four are market customers.
           // Locked out is survivable, demolished is not. Restored to the token-only guard
           // until the no-document gate lands. See docs/CLAIMED_OWNER_EDIT_LOCKOUT.md.
-          if (!draftId || !draftToken) {
+          // ORDER MATTERS. The classic-site gate runs BEFORE the credential check.
+          // Found by check-draft-token-truthiness.mjs on its first run: with the credential
+          // guard first, a CLAIMED business whose draft_token is null (draftToken "") returned
+          // "No draft business exists yet" and the honest handoff below never ran — for exactly
+          // the 9 businesses it was written for, Graef among them.
+          if (!draftId) {
             return { ok: false, real: false, summary: "No draft business exists yet to generate a page for — call business.startDraft first.", error: "missing_draft" };
           }
           // THE CLASSIC-SITE GATE — see refuseIfClassicSite(). A claimed business with
           // no document has a live hand-built page that this action would REPLACE, not edit.
           const classicBlock = await refuseIfClassicSite(draftId);
           if (classicBlock) return classicBlock;
+          // EITHER credential. draftToken is "" for an ownership-resolved claimed business, so
+          // testing it alone refuses the owners it exists to protect. Held by
+          // scripts/check-draft-token-truthiness.mjs.
+          if (!draftToken && !ownerUid) {
+            return { ok: false, real: false, summary: "No draft business exists yet to generate a page for — call business.startDraft first.", error: "missing_draft" };
+          }
 
           if (!brief) {
             return { ok: false, real: false, summary: "No brief was given to generate from.", error: "missing_brief" };
@@ -5241,13 +5252,24 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           // null-token businesses are all classic-path; four are market customers.
           // Locked out is survivable, demolished is not. Restored to the token-only guard
           // until the no-document gate lands. See docs/CLAIMED_OWNER_EDIT_LOCKOUT.md.
-          if (!draftId || !draftToken) {
+          // ORDER MATTERS. The classic-site gate runs BEFORE the credential check.
+          // Found by check-draft-token-truthiness.mjs on its first run: with the credential
+          // guard first, a CLAIMED business whose draft_token is null (draftToken "") returned
+          // "No draft business exists yet" and the honest handoff below never ran — for exactly
+          // the 9 businesses it was written for, Graef among them.
+          if (!draftId) {
             return { ok: false, real: false, summary: "No draft business exists yet.", error: "missing_draft" };
           }
           // THE CLASSIC-SITE GATE — see refuseIfClassicSite(). A claimed business with
           // no document has a live hand-built page that this action would REPLACE, not edit.
           const classicBlock = await refuseIfClassicSite(draftId);
           if (classicBlock) return classicBlock;
+          // EITHER credential. draftToken is "" for an ownership-resolved claimed business, so
+          // testing it alone refuses the owners it exists to protect. Held by
+          // scripts/check-draft-token-truthiness.mjs.
+          if (!draftToken && !ownerUid) {
+            return { ok: false, real: false, summary: "No draft business exists yet.", error: "missing_draft" };
+          }
 
           const latest = await selectLatestBusinessDocument(draftId, "website");
           // No page yet is a perfectly good starting point — there is simply
@@ -5346,13 +5368,24 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           // null-token businesses are all classic-path; four are market customers.
           // Locked out is survivable, demolished is not. Restored to the token-only guard
           // until the no-document gate lands. See docs/CLAIMED_OWNER_EDIT_LOCKOUT.md.
-          if (!draftId || !draftToken) {
+          // ORDER MATTERS. The classic-site gate runs BEFORE the credential check.
+          // Found by check-draft-token-truthiness.mjs on its first run: with the credential
+          // guard first, a CLAIMED business whose draft_token is null (draftToken "") returned
+          // "No draft business exists yet" and the honest handoff below never ran — for exactly
+          // the 9 businesses it was written for, Graef among them.
+          if (!draftId) {
             return { ok: false, real: false, summary: "No draft business exists yet — call business.startDraft and generateDocument first.", error: "missing_draft" };
           }
           // THE CLASSIC-SITE GATE — see refuseIfClassicSite(). A claimed business with
           // no document has a live hand-built page that this action would REPLACE, not edit.
           const classicBlock = await refuseIfClassicSite(draftId);
           if (classicBlock) return classicBlock;
+          // EITHER credential. draftToken is "" for an ownership-resolved claimed business, so
+          // testing it alone refuses the owners it exists to protect. Held by
+          // scripts/check-draft-token-truthiness.mjs.
+          if (!draftToken && !ownerUid) {
+            return { ok: false, real: false, summary: "No draft business exists yet — call business.startDraft and generateDocument first.", error: "missing_draft" };
+          }
 
           if (!instruction) {
             return { ok: false, real: false, summary: "No edit instruction was given.", error: "missing_instruction" };
@@ -5468,13 +5501,24 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           // null-token businesses are all classic-path; four are market customers.
           // Locked out is survivable, demolished is not. Restored to the token-only guard
           // until the no-document gate lands. See docs/CLAIMED_OWNER_EDIT_LOCKOUT.md.
-          if (!draftId || !draftToken) {
+          // ORDER MATTERS. The classic-site gate runs BEFORE the credential check.
+          // Found by check-draft-token-truthiness.mjs on its first run: with the credential
+          // guard first, a CLAIMED business whose draft_token is null (draftToken "") returned
+          // "No draft business exists yet" and the honest handoff below never ran — for exactly
+          // the 9 businesses it was written for, Graef among them.
+          if (!draftId) {
             return { ok: false, real: false, summary: "No draft business exists yet to restyle.", error: "missing_draft" };
           }
           // THE CLASSIC-SITE GATE — see refuseIfClassicSite(). A claimed business with
           // no document has a live hand-built page that this action would REPLACE, not edit.
           const classicBlock = await refuseIfClassicSite(draftId);
           if (classicBlock) return classicBlock;
+          // EITHER credential. draftToken is "" for an ownership-resolved claimed business, so
+          // testing it alone refuses the owners it exists to protect. Held by
+          // scripts/check-draft-token-truthiness.mjs.
+          if (!draftToken && !ownerUid) {
+            return { ok: false, real: false, summary: "No draft business exists yet to restyle.", error: "missing_draft" };
+          }
 
           // Validated against the same enums the renderer reads, here rather
           // than trusting the argsSchema: the schema is a prompt, not a gate.

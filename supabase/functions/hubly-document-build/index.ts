@@ -117,7 +117,11 @@ Deno.serve(async (req) => {
   // this field could already write as service_role.
   const ownerUid = body?.ownerUid ? String(body.ownerUid).trim() || null : null;
 
-  if (!draftId || !draftToken || !brief) {
+  // draftToken OR a verified owner. A CLAIMED business resolved by ownership carries "" as
+  // its token, so testing it alone failed the build for exactly those owners — with
+  // "missing_input", which reads like a caller bug rather than an authorisation one.
+  // Held by scripts/check-draft-token-truthiness.mjs.
+  if (!draftId || (!draftToken && !ownerUid) || !brief) {
     await finishDocumentBuildJob(jobId, "failed", "missing_input");
     return json({ ok: false, error: "missing_input" }, 400);
   }
