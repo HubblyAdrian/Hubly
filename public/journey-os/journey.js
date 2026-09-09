@@ -2126,7 +2126,7 @@
     });
     if (!os.business || typeof os.business !== 'object') {
       os.business = {
-        name: st.businessName || st.biz || 'Your business',
+        name: st.businessName || st.biz || '',
         address: '',
         city: (String(st.city || '').split(',')[0] || '').trim(),
         region: '',

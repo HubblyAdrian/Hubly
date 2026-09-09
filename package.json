@@ -76,7 +76,8 @@
     "check:guess-rows": "node scripts/check-guess-row-insert.mjs",
     "check:no-directives": "node scripts/check-no-directives-to-owners.mjs",
     "check:services-block": "node scripts/check-services-block.mjs",
-    "check:block-legibility": "node scripts/check-block-legibility.mjs"
+    "check:block-legibility": "node scripts/check-block-legibility.mjs",
+    "check:name": "node scripts/check-name-is-asked.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

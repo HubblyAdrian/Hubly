@@ -6387,17 +6387,20 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             name: {
               type: "string",
               description:
-                "The business's real name, exactly as they said it. ASK for it before calling this " +
-                "— one question, after you have reflected back what you understood, never as an opener.\n\n" +
-                "You may DERIVE a name only when it is specific enough to be one: 'Mobile Dog Grooming in " +
-                "Lehi' and 'Lehi Wedding Photography' are real names because they carry a trade AND a place. " +
-                "'Aviation Business', 'Detailing Company', 'Landscaping Services' are CATEGORIES wearing a " +
-                "name's clothes — never pass one. When you have no trade specificity or no location, ASK.\n\n" +
-                "The clause that used to sit here — 'only ask if you cannot derive anything meaningful' — " +
-                "guaranteed it never asked, because deriving always beats asking. That is how " +
-                "aviation-business.myhubly.app was minted for a real person, and the name became their " +
-                "permanent address. If they will not give a name, pass unnamed: true instead of inventing one.",
-            },
+                "The business's real name, EXACTLY as they said it — nothing else is ever acceptable here.\n\n" +
+                "THERE ARE TWO CASES AND NO THIRD.\n" +
+                "  EXTRACT — they stated a name. \"I run Ridgeline Detail.\" \"It's called Graef's Autocare.\" " +
+                "\"people just call it Ridgeline.\" Take the words they used. That is reading, not deciding.\n" +
+                "  OMIT — everything else. Leave this out entirely and pass unnamed: true.\n\n" +
+                "NEVER CONSTRUCT A NAME. Not from the trade, not from the trade and the city, not from the trade " +
+                "and the owner, not from anything. 'Mobile Detailing in Los Angeles', 'Lehi Wedding Photography', " +
+                "'Aviation Business' are all CONSTRUCTIONS — descriptions of a job, cut to different widths. A name " +
+                "is a name because A PERSON CHOSE IT, and no amount of narrowing turns a description into a choice.\n\n" +
+                "This is not a judgement call and confidence is not a licence. If you are assembling words into a " +
+                "name, stop: omit it and pass unnamed: true. The build still happens immediately — you ask what it " +
+                "is called in the SAME reply, while the page builds. The rule used to say 'derive one specific " +
+                "enough to be a name', and on the first sentence anyone typed at it — 'I do mobile detailing in los " +
+                "angeles' — it minted that as both the name and the permanent web address of a real person.",            },
             unnamed: {
               type: "boolean",
               description:
@@ -6440,20 +6443,13 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         },
         handler: async (args) => {
           const name = String(args?.name || "").trim();
-          if (!name) {
-            // Reached only if the model passed nothing at all. The RPC needs a
-            // name for the slug so it cannot be silently defaulted — but the fix
-            // is to derive one, never to fall back to a placeholder.
-            return {
-              ok: false,
-              real: false,
-              summary:
-                "Derive a name from what they told you (their trade and town is enough, e.g. " +
-                "'Mobile Dog Grooming in Lehi') and call this again. Do not use a generic " +
-                "placeholder, and do not stop to ask unless you truly have nothing to work from.",
-              error: "derive_name_and_retry",
-            };
-          }
+          // NO EARLY RETURN. A missing name changes ONE thing — the slug, decided inside
+          // start_business_in_progress — and nothing else. The branch that used to sit
+          // here returned before the palette, the section order, the identity patch, the
+          // draft grant and the build, so an unnamed signup got a navy skeleton it could
+          // not even claim. A parallel path inherits none of the original's guards, and
+          // the guards are invisible in the diff because they are the code you did not
+          // write. There is one path now.
           const businessType = String(args?.businessType || "").trim() || undefined;
           // MARKED, NOT FAKED. When the owner would not give a name, the record says so
           // and the site can say so — an honest gap they close in one sentence, never a
@@ -6527,7 +6523,24 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           return {
             ok: true,
             real: true,
-            summary: `Real business created and live at ${url} — this is a real, visitable site, not a mockup.`,
+            // THE ASK RIDES ON THE CAPABILITY RESULT, not on a general prompt line.
+            // The prompt already says to ask inside the build turn, and it worked on one
+            // run and not the next — because it competes with the strongest instruction
+            // in the whole prompt ("before the build there is exactly one thing you do:
+            // build"). A capability result is read in the same breath as composing the
+            // reply, and it only says this for the case it applies to.
+            summary: r.name_unset === true
+              ? `Real business created and live at ${url} — a real, visitable site, not a mockup. It has NO NAME yet and the address is temporary. ` +
+                // Do NOT write anything here that can be read as "stop now". This string used to end
+                // "one short question, nothing else", and the model obeyed it literally: on the unnamed
+                // path website.generateDocument fired 4 times in 8 runs, so half of all unnamed signups
+                // got a database row and no page. Named signups built 4/4 because they never see this
+                // branch. The mandatory call goes FIRST; the question is scoped to the reply TEXT.
+                `You are NOT finished. Call website.generateDocument now, in this same turn, exactly as you would for a named business — ` +
+                `a business row with no generated page is an empty skeleton, which is worse than no signup at all. ` +
+                `Then, in the reply text, ask what the business is called: one short question. ` +
+                `Do not invent a name, do not describe the address, and never wait for the name before building.`
+              : `Real business created and live at ${url} — this is a real, visitable site, not a mockup.`,
             raw: { id: r.id, slug: r.slug, draftToken: r.draft_token, url, draftGrant },
           };
         },

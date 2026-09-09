@@ -401,3 +401,105 @@ of it.
 **The screenshot beat the metric four times in one night.** That is the whole argument
 for looking at the thing, and for treating any measurement that disagrees with a picture
 as guilty until proven otherwise.
+
+---
+
+## Lesson 13 — an instruction inside a refusal branch is invisible to every test of the path that succeeds
+
+2026-09-09. Ruling 3 said: never construct a business name, ask instead. Three
+instructions were found telling the model otherwise and two were fixed. The fix still
+failed on the first sentence anyone typed at it.
+
+The one that survived was in `business.startDraft`'s **no-name branch** — the code path
+that runs *only when the model has correctly declined to invent a name*:
+
+> *"**Derive a name** from what they told you (their trade and town is enough, e.g.
+> 'Mobile Dog Grooming in Lehi')… **do not stop to ask** unless you truly have nothing to
+> work from."*
+
+Read the shape of that. It cannot fire on the happy path. It fires **exactly and only**
+when the new rule is being obeyed — so every test of a working signup passes while the
+fix is dead, and the failure appears only for the behaviour you were trying to create.
+
+Three general points fall out of it:
+
+1. **Grepping the prompt is not enough.** Instructions live in argument schemas, in
+   handler refusals, and in the summary strings a refusal hands back — all of which are
+   prompt, and none of which reads like prompt.
+2. **When you change a rule, search the branches that the NEW behaviour reaches**, not
+   the ones the old behaviour reached. The old code never took that branch, which is
+   precisely why it had been sitting there unexamined.
+3. **This is why the check drives the live endpoint.** A source-text assertion that the
+   two known instructions were deleted would have gone green. Only sending
+   "I do mobile detailing in los angeles" at the deployed function and reading the row it
+   created could have found the third.
+
+And the corollary that made the fix trustworthy: **test both sides of a two-way rule.**
+Checking only "it asks when no name was given" turns the fix into "always ask", which
+breaks the person who told you their name in their first sentence. ASK, EXTRACT, and the
+awkward middle are all asserted.
+
+---
+
+## Lesson 14 — a parallel path inherits none of the original's guards, and the guards are invisible in the diff because they are the code you did not write
+
+Asked to let signup proceed without a business name, I wrote a second function
+(`start_business_unnamed`) beside `start_business_in_progress`, and an early return in the
+`startDraft` handler that took the new path when `name` was empty. Both halves looked
+correct in isolation, and both were correct about the one thing I was thinking about: a
+row got created, with a `site-<hex>` slug, and no invented name.
+
+What shipped was a generic template — "YOUR BUSINESS", "Quality service that comes to
+you", navy-on-white, no photo. Worse than the bug it replaced.
+
+The cause is the shape, not the code. Everything the original path does AFTER the row is
+created — the palette, `section_order`, the identity patch, the draft grant that makes the
+draft claimable, and the dispatch of the document build — sat below my early return. I did
+not delete any of it. I never saw it. **A diff shows the lines you wrote; it cannot show
+the lines you routed around.** Reviewing my own change, there was nothing on screen to
+notice: the new function was complete and the new branch was complete, and the twelve
+things they both skipped were somewhere else entirely, unchanged and therefore invisible.
+
+The rate limit makes the point sharpest. `start_business_in_progress` refuses more than 10
+drafts per IP per hour. My copy had no such clause — not because I decided the limit was
+wrong, but because I was never in a position to have an opinion about it. A parallel path
+does not inherit a guard; it silently opts out of every guard at once, and each one is a
+decision you are recorded as having made without knowing you made it.
+
+So:
+
+1. **A variant is a nullable field, not a second function.** The correct fix here was one
+   function whose `name` is nullable — the unnamed path is the named path with the name
+   slot empty. Fewer paths is the fix; a new path is the defect.
+2. **When you must fork, enumerate what the original does after the point you diverge**,
+   line by line, and say for each one whether the fork needs it. The list is the review.
+   Without it you are reviewing half a change.
+3. **Assert the whole outcome, not the thing you changed.** My check asserted the name and
+   the slug — the two things I was thinking about — and went green while the page was a
+   template. Extended to assert that a build job was dispatched, the brand colour is not
+   the column default, `section_order` was set, and a draft grant was issued, it goes red
+   on all four. Everything downstream of your change is inside the blast radius, so it is
+   inside the assertion.
+
+## Lesson 15 — a detector that misses by one character reports the model's behaviour as zero
+
+Measuring how often the new name question actually fires, my script reported `askedName
+0/4` on both messages. I had a manual probe from ten minutes earlier whose reply read
+`"I've started the site for your mobile detailing business in Los Angeles. What's the
+business called?"` — the exact behaviour being measured, scored as absent.
+
+The detector was `/what.{0,15}\bcalled\b/i`. Between "what" and "called" sits `'s the
+business ` — sixteen characters. Off by one.
+
+This is Lesson 12 again (a check that reads a form is measuring the form, not the thing),
+but the failure mode is different and worse: Lesson 12's contrast metric was wrong in a
+way that produced absurd numbers, and absurd numbers get investigated. `0/4` is not
+absurd. It is a clean, plausible, actionable finding, and I was one step from reporting
+"the model never asks for the name" — sending a whole diagnosis, and Adrian's next
+decision, down a path that did not exist.
+
+The rule: **when a measurement of model behaviour comes back at zero, print the raw
+output before you believe it.** A regex over free text is a hypothesis about phrasing, and
+the model's job is to vary phrasing. If the number will be reported to a person, the
+sample it was computed from is part of the report — one printed reply would have cost
+nothing and caught this instantly. Counting is cheap; counting the wrong thing is not.

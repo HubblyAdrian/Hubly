@@ -5226,7 +5226,7 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
       mark = document.createElement('img');
       mark.className = 'hc-idw-mark';
       mark.src = hcIdentity.logoUrl;
-      mark.alt = (biz.name || 'Your business') + ' logo';
+      mark.alt = biz.name ? (biz.name + ' logo') : '';
     }else{
       // No logo on the record. Initials on the brand colour — honest about what we have.
       mark = document.createElement('div');

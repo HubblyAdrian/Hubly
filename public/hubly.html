@@ -15370,7 +15370,7 @@ function populateEditorFromState(){
     if(z){z.classList.add('has-img');z.innerHTML=`<img src="${S.bannerUrl}" style="max-height:60px;width:100%;object-fit:cover;border-radius:5px;"><p style="font-size:9px;margin-top:3px;color:var(--ink-3)">Click to change</p>`;}
   }
   try{syncShareImagePreview();}catch(e){}
-  const nb=document.getElementById('nav-biz');if(nb)nb.textContent=S.biz||'Your Business';
+  const nb=document.getElementById('nav-biz');if(nb)nb.textContent=S.biz|| '';
   try{syncBizChromeAvatars();}catch(e){}
   if(S.bgColor)applyBgColor(S.bgColor);
   syncProfileBgUI();
@@ -19651,7 +19651,7 @@ function matchCatalogServicesFromHints(hints){
   return picked.slice(0,5);
 }
 function buildCreativeDirectorServiceLead(analysis, matched){
-  const bpName=(getActiveBlueprint()?.identity?.name)||'your business';
+  const bpName=(getActiveBlueprint()?.identity?.name)|| '';
   const hints=(analysis?.suggested_service_hints||[]).filter(Boolean);
   const parts=[];
   if(matched.length&&hints.length){
@@ -20908,7 +20908,7 @@ function isArchitectSlug(name){
 function isArchitectUpdateChrome(experience){
   const url=document.getElementById('is-architect-url');
   const pct=document.getElementById('is-architect-pct');
-  const biz=S.biz||experience?.industryLabel||'Your business';
+  const biz=S.biz||experience?.industryLabel|| '';
   if(url)url.textContent=isArchitectSlug(biz);
   const total=Math.max(1,(experience?.stages||[]).length);
   const done=(experience?.completedStageIds||[]).length;
@@ -20989,7 +20989,7 @@ function isCreativeRenderPreview(experience){
   const el=document.getElementById('is-creative-preview');
   if(!el||!experience)return;
   const live=experience.live||{};
-  const biz=S.biz||experience.industryLabel||'Your business';
+  const biz=S.biz||experience.industryLabel|| '';
   isArchitectUpdateChrome(experience);
   if(live.mode==='concepts'){
     const dirs=experience.directions||[];
@@ -21014,7 +21014,7 @@ function isCreativeApplyStage(experience,stage){
   if(!experience.live)experience.live={chips:[],surfaces:{},theme:experience.chosenDirection||'minimal',packages:[],nav:[],mode:'site'};
   const live=experience.live;
   live.mode='site';
-  const biz=S.biz||experience.industryLabel||'Your business';
+  const biz=S.biz||experience.industryLabel|| '';
   const area=S.city||S._is?.discovery?.facts?.area?.value||'';
   live.theme=experience.chosenDirection||live.theme||'minimal';
   if(stage.id==='structure'||stage.surface==='website'){
@@ -21613,7 +21613,7 @@ function isRevealShowTimeCapsule(){
   if(!stage)return;
   const vision=(c.originalVision||[]).slice(0,3).map(l=>`<li>${escPeHtml(typeof l==='string'?l:(l.text||''))}</li>`).join('');
   stage.innerHTML=`<h3>${escPeHtml(c.label)}</h3>
-    <p>The origin story of <strong>${escPeHtml(c.businessName||'your business')}</strong>.</p>
+    <p>The origin story of <strong>${escPeHtml(c.businessName||'')}</strong>.</p>
     <div class="is-reveal-why"><strong>First conversation</strong>${escPeHtml(c.firstConversation||'The idea you typed at the front door.')}</div>
     <div class="is-reveal-why"><strong>First brand</strong>${escPeHtml(c.firstBrand||'')}</div>
     <div class="is-reveal-why"><strong>First strategy</strong>${escPeHtml(c.firstStrategy||'')}</div>
@@ -21624,7 +21624,7 @@ function isRevealRenderReadyCards(creativeExperience){
   const stage=document.getElementById('is-reveal-stage');
   if(!stage)return;
   const live=creativeExperience?.live||{};
-  const biz=S.biz||live.heroTitle||'Your business';
+  const biz=S.biz||live.heroTitle|| '';
   const theme=live.theme==='friendly'?'is-friendly':'is-premium';
   const cards=[
     {id:'website',label:'Website',viz:`<div class="viz ${theme}"><div class="bar"></div><div class="bar short"></div><span class="cta-chip">${escPeHtml(live.cta||'Book now')}</span></div>`},
@@ -21711,7 +21711,7 @@ const HUBLY_DELAYED_ACCOUNT = (function(){
   function buildOwnershipCertificate(ctx){
     const owner=ctx.ownerName||ctx.firstName||(ctx.email?String(ctx.email).split('@')[0]:null)||'You';
     const pretty=String(owner).replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).trim();
-    return{owner:pretty,business:ctx.businessName||ctx.biz||'Your Business',created:'Today',version:'1.0'};
+    return{owner:pretty,business:ctx.businessName||ctx.biz||'',created:'Today',version:'1.0'};
   }
   function orchestrateDelayedAccount(ctx){
     const certificate=buildOwnershipCertificate(ctx);
@@ -21880,7 +21880,7 @@ async function isDelayedAccountCompleteSave(opts){
 
 function isShowFounderMoment(){
   const flow=S._is?.delayedAccount;
-  const biz=S.biz||flow?.certificate?.business||'Your Business';
+  const biz=S.biz||flow?.certificate?.business|| '';
   const headline=document.getElementById('is-founder-headline');
   const bizEl=document.getElementById('is-founder-biz');
   const closing=document.getElementById('is-founder-closing');
@@ -22006,7 +22006,7 @@ const HUBLY_BUSINESS_LAUNCH = (function(){
     const owner=ctx.ownerName||ctx.firstName||(ctx.email?String(ctx.email).split('@')[0]:null)||'You';
     const pretty=String(owner).replace(/[._-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase()).trim();
     return{
-      businessName:ctx.businessName||ctx.biz||'Your Business',owner:pretty,
+      businessName:ctx.businessName||ctx.biz||'',owner:pretty,
       launchDate:ctx.launchDate||new Date().toISOString().slice(0,10),version:'1.0',
       firstStrategy:ctx.firstStrategy||ctx.story||'Trust-first local brand',
       positioning:ctx.positioning||'Premium & Reliable',
@@ -22451,7 +22451,7 @@ const HUBLY_BUSINESS_HOME = (function(){
     return{
       version:'1.0.0',label:'Business Home',notADashboard:true,thirtySecondRule:true,
       industryKey,stageKey,workspaceKey,brief:buildMorningBrief(ctx),focus,health:buildBusinessHealth(ctx),
-      website:{title:'Live Website',businessName:ctx.businessName||ctx.biz||'Your Business',previewLabel:'Live preview',alive:true,actions:WEBSITE_ACTIONS.map(a=>({...a})),recent:ctx.recentImprovement||'Homepage trust signals refreshed.',ask:'Improve this website.',why:'Your site is the front door — it should feel alive, not like a screenshot.'},
+      website:{title:'Live Website',businessName:ctx.businessName||ctx.biz||'',previewLabel:'Live preview',alive:true,actions:WEBSITE_ACTIONS.map(a=>({...a})),recent:ctx.recentImprovement||'Homepage trust signals refreshed.',ask:'Improve this website.',why:'Your site is the front door — it should feel alive, not like a screenshot.'},
       todayBusiness:{...todayPack,industryKey,ask:"What should I do with today's business?"},
       timeline:buildBusinessTimeline(ctx),growth,workspace,
       sectionOrder:orderByWorkspace[workspaceKey]||orderByWorkspace.balanced,
@@ -22676,9 +22676,9 @@ function isHomeAsk(text){
   else if(/improve|build|would you do/i.test(q))reply=`I'd start with Today's Focus: ${flow?.focus?.action||''} Then: ${flow?.focus?.nextStep||''}`;
   else if(/explain/i.test(q))reply=`Here's the story: ${flow?.brief?.review||''} Focus: ${flow?.focus?.action||''} Health: ${flow?.health?.overall??''}.`;
   else if(/website|site|edit with hubly/i.test(q)){
-    reply=`Your live site for ${flow?.website?.businessName||'your business'} should feel alive. Open Creative Workspace to create together — conversation first.`;
+    reply=`Your live site for ${flow?.website?.businessName||''} should feel alive. Open Creative Workspace to create together — conversation first.`;
   }
-  else reply=`Got it — still one continuous conversation. For ${flow?.industryKey?.replace(/_/g,' ')||'your business'}, I'd focus on: ${flow?.focus?.action||''}`;
+  else reply=`Got it — still one continuous conversation. For ${flow?.industryKey?.replace(/_/g,' ')|| ''}, I'd focus on: ${flow?.focus?.action||''}`;
   S._is.homeAskThread.push({role:'hubly',text:reply});
   isHomeRenderAskThread();
   try{persistInstantSiteDraft();}catch(e){}
@@ -22782,7 +22782,7 @@ const HUBLY_CREATIVE_WORKSPACE = (function(){
     return{current:{id:cur.id,label:cur.label,feel:cur.feel},alternative:{id:alt.id,label:alt.label,feel:alt.feel},reasoning:`${alt.label} shifts the business toward ${alt.feel.toLowerCase()} without rebuilding from scratch.`,recommendation:`Try ${alt.label} if you want ${alt.feel.split(',')[0].toLowerCase()}; keep ${cur.label} if the current voice already converts.`};
   }
   function buildPlaygrounds(ctx){
-    const key=resolveKey(ctx);const biz=ctx.businessName||ctx.biz||'Your Business';
+    const key=resolveKey(ctx);const biz=ctx.businessName||ctx.biz||'';
     return{intro:PLAYGROUND_INTRO,cta:'Explore Ideas',concepts:PLAYGROUND_CONCEPTS.map(c=>({...c,homepagePreview:`${c.label} homepage for ${biz}`,industryFit:key,why:c.why})),mixPrompt:'Mix the typography from Concept A with the layout from Concept C.'};
   }
   function interpretCreativeIntent(message,ctx){
@@ -22813,7 +22813,7 @@ const HUBLY_CREATIVE_WORKSPACE = (function(){
     const suggestions=buildAiSuggestions(ctx);
     const playgrounds=buildPlaygrounds(ctx);
     const compare=buildCompareAlternative(direction.id,ctx.compareTo||'minimal');
-    const biz=ctx.businessName||ctx.biz||'Your Business';
+    const biz=ctx.businessName||ctx.biz||'';
     return{
       version:'1.0.0',label:'Creative Workspace',notAnEditor:true,conversationFirst:true,liveEditing:true,mobileConversationFirst:true,
       industryKey,businessName:biz,direction,directions:CREATIVE_DIRECTIONS.map(d=>({...d})),starters:CONVERSATION_STARTERS.slice(),
@@ -22858,7 +22858,7 @@ function isCwUpdatePreview(change, directionId){
   const changeEl=document.getElementById('is-cw-preview-change');
   const biz=document.getElementById('is-cw-preview-biz');
   const flow=S._is?.creativeWorkspace;
-  if(biz)biz.textContent=flow?.businessName||S.biz||'Your Business';
+  if(biz)biz.textContent=flow?.businessName||S.biz|| '';
   if(changeEl)changeEl.textContent=change||flow?.livePreview?.directionLabel||'Live updates as we create.';
   if(stage){
     stage.classList.add('is-updating');
@@ -25250,7 +25250,7 @@ function isRenderPkgPreview(){
     }).join('');
   }
   const draft=(S._is?.pkgDraft||[]).filter(p=>p&&(p.name||p.price||p.desc));
-  const biz=S.biz||'Your business';
+  const biz=S.biz|| '';
   const trade=(typeof tradeLabelForPackages==='function'?tradeLabelForPackages():'packages');
   const prompt=typeof HublyBookingFrames!=='undefined'?(HublyBookingFrames.get(S.businessType)?.servicePrompt||'Choose a package'):'Choose a package';
   const cards=draft.length?draft.map(p=>{
@@ -26408,7 +26408,7 @@ function isLocalCreativeDirectorBrief(){
   const svc=(S.services||S.editorSvcs||[]).find(s=>s&&s.popular)||(S.services||S.editorSvcs||[])[0];
   return {
     headline:'How I designed this',
-    intro:`Here's my creative direction for ${S.biz||'your business'} — based on who you are, not a template.`,
+    intro:`Here's my creative direction for ${S.biz|| ''} — based on who you are, not a template.`,
     rationales:[
       {title:'Who you\'re speaking to',detail:`I noticed you're targeting ${ideal}. Every screen is written for them.`},
       {title:'Color & presence',detail:`I'm using ${accent} so the brand feels intentional and trustworthy.`},
@@ -28170,7 +28170,7 @@ function cdHandlePhotos(input){
   }).finally(()=>{input.value='';});
 }
 function cdRenderPreview(){
-  const brand=S.biz||'Your business';
+  const brand=S.biz|| '';
   const h1=S.website?.heroHeadline||'Waiting on your story…';
   const sub=S.website?.heroSub||S.tag||(S.about?String(S.about).split(/\.|\n/)[0]:'')||'Hubly listens first, then designs.';
   const mood=CD_MOODS.find(m=>m.id===(S._cd?.mood||'dusk'))||CD_MOODS[0];
@@ -29451,7 +29451,7 @@ async function finishOnboardingLaunch(){
   const sucUrl=document.getElementById('suc-url');
   if(sucUrl)sucUrl.textContent=publicProfileUrl(S.slug);
   try{
-    const bizName=S.biz||'Your Business';
+    const bizName=S.biz|| '';
     const navBiz=document.getElementById('nav-biz');
     if(navBiz)navBiz.textContent=bizName.split(' ').slice(0,2).join(' ');
     try{syncBizChromeAvatars({name:bizName,logoUrl:S.logoUrl||null});}catch(e){}
@@ -29968,7 +29968,7 @@ function updatePrev(){
     if(lbl)lbl.innerHTML='<div class="live-dot"></div>Live profile preview';
   }
   renderPhonePreview('ph-',{
-    biz:g('ob-biz')?.value?.trim()||'Your Business',
+    biz:g('ob-biz')?.value?.trim()|| '',
     tag:g('ob-tag')?.value?.trim()||'',
     phone:g('ob-phone')?.value?.trim()||'',
     city:g('ob-city')?.value?.trim()||'',
@@ -31048,15 +31048,19 @@ async function persistHostedBrandFields(){
   }catch(e){console.warn('persistHostedBrandFields',e);}
 }
 function bizInitials(name){
+  // NO NAME MEANS NO MONOGRAM. This returned 'HB' for a business whose name is null —
+  // a plausible-looking mark for a business that has not been named, which is the same
+  // defect as printing "Your Business" one function over. An honest gap is the header
+  // showing the nav and no name at all; the caller must handle '' by rendering nothing.
   const parts=String(name||'').trim().split(/\s+/).filter(Boolean);
-  if(!parts.length)return 'HB';
-  if(parts.length===1)return parts[0].replace(/[^A-Za-z0-9]/g,'').slice(0,2).toUpperCase()||'HB';
+  if(!parts.length)return '';
+  if(parts.length===1)return parts[0].replace(/[^A-Za-z0-9]/g,'').slice(0,2).toUpperCase();
   const letters=parts.map(w=>w.replace(/[^A-Za-z0-9]/g,'').charAt(0)).filter(Boolean);
-  return (letters.join('')||'HB').slice(0,2).toUpperCase();
+  return letters.join('').slice(0,2).toUpperCase();
 }
 function syncBizChromeAvatars(opts){
   const logoUrl=(opts&&opts.logoUrl!==undefined)?opts.logoUrl:(S.logoUrl||null);
-  const init=bizInitials(opts?.name||S.biz||currentBusiness?.name||'Your Business');
+  const init=bizInitials(opts?.name||S.biz||currentBusiness?.name|| '');
   const badge=document.getElementById('nav-badge');
   const ava=document.getElementById('top-ava');
   if(logoUrl){
@@ -32855,7 +32859,7 @@ function renderPkgHubPreview(){
   const esc=(typeof escPeHtml==='function'?escPeHtml:(s)=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'));
   let accent='#0f766e';
   try{if(typeof getAccentColor==='function')accent=getAccentColor()||accent;}catch(e){}
-  const biz=S.biz||'Your Business';
+  const biz=S.biz|| '';
   const list=(S.editorSvcs||[]).filter(s=>s&&s.name);
   const d=(typeof blueprintSectionDefaults==='function'?blueprintSectionDefaults():null)||{};
   let pkgTitle=d.servicesTitle||(S.website&&S.website.servicesTitle)||'';
@@ -33300,14 +33304,14 @@ function getBookingLandingFields(mode){
   const isOb=mode==='ob';
   if(isOb){
     return{
-      biz:document.getElementById('ob-biz')?.value?.trim()||S.biz||currentBusiness?.name||'Your Business',
+      biz:document.getElementById('ob-biz')?.value?.trim()||S.biz||currentBusiness?.name|| '',
       phone:document.getElementById('ob-phone')?.value?.trim()||S.phone||'',
       city:document.getElementById('ob-city')?.value?.trim()||S.city||'',
       email:document.getElementById('ob-email')?.value?.trim()||S.email||'',
     };
   }
   return{
-    biz:(typeof getEditorBizName==='function'?getEditorBizName():'')||S.biz||currentBusiness?.name||'Your Business',
+    biz:(typeof getEditorBizName==='function'?getEditorBizName():'')||S.biz||currentBusiness?.name|| '',
     phone:S.phone||document.getElementById('ed-phone')?.value||'',
     city:S.city||document.getElementById('ed-city')?.value||'',
     email:S.email||document.getElementById('ed-email')?.value||'',
@@ -34120,7 +34124,7 @@ function renderEdBookingPhonePreview(){
   const metaEl=document.getElementById('edbk-land-meta');
   const grid=document.getElementById('edbk-land-services');
   if(!bannerEl&&!grid)return;
-  const biz=S.biz||document.getElementById('ed-name')?.value||'Your Business';
+  const biz=S.biz||document.getElementById('ed-name')?.value|| '';
   const phone=S.phone||document.getElementById('ed-phone')?.value||'';
   const city=S.city||document.getElementById('ed-city')?.value||'';
   const email=S.email||document.getElementById('ed-email')?.value||'';
@@ -34158,7 +34162,7 @@ function renderEdProfileCanvas(){
   const svcEl=document.getElementById('ed-canvas-services-body');
   const portEl=document.getElementById('ed-canvas-portfolio-body');
   if(!idEl)return;
-  const biz=document.getElementById('ed-name')?.value||S.biz||'Your Business';
+  const biz=document.getElementById('ed-name')?.value||S.biz|| '';
   const tag=document.getElementById('ed-tag')?.value||S.tag||'';
   const phone=document.getElementById('ed-phone')?.value||S.phone||'';
   const city=document.getElementById('ed-city')?.value||S.city||'';
@@ -34193,7 +34197,7 @@ function renderEdBookingCanvas(){
   const payEl=document.getElementById('ed-bk-canvas-payment');
   const addEl=document.getElementById('ed-bk-canvas-addons');
   if(!heroEl)return;
-  const biz=S.biz||document.getElementById('ed-name')?.value||'Your Business';
+  const biz=S.biz||document.getElementById('ed-name')?.value|| '';
   const accent=getAccentColor();
   const bannerUrl=getBkBanner();
   const logoUrl=getBkLogo();
@@ -34244,7 +34248,7 @@ function renderEdDesktopProfile(){
   const themeId=typeof getWebsiteThemeId==='function'?getWebsiteThemeId():'classic';
   const html=(src&&src.innerHTML&&src.innerHTML.trim())?src.innerHTML:'';
   if(!html){
-    const biz=(typeof getEditorBizName==='function'?getEditorBizName():(S.biz||'Your business'))||'Your business';
+    const biz=(typeof getEditorBizName==='function'?getEditorBizName():(S.biz|| ''))|| '';
     previewContainer.innerHTML=`<div class="ws-site ws-theme-${themeId}" style="background:#0a0a0a;color:#fff;min-height:420px;padding:48px 28px;box-sizing:border-box;">
       <div class="ws-page" style="display:flex;flex-direction:column;gap:12px;">
         <strong style="font-size:28px;letter-spacing:-.02em;">${escPeHtml(biz)}</strong>
@@ -34913,7 +34917,7 @@ function commitWsPeInlineValue(pe,text,target,node){
   }
   if(pe==='biz-name'){
     if(!text||(typeof isPlaceholderBizName==='function'&&isPlaceholderBizName(text))){
-      if(node)node.textContent=S.biz||'Your business';
+      if(node)node.textContent=S.biz|| '';
       return;
     }
     liveWsPeBizName(text);
@@ -35477,7 +35481,7 @@ function handleWsPeClick(type,el){
   if(type==='footer-cta'){
     ensureWebsiteCopy();
     const layoutId=getWebsiteLayoutId();
-    const biz=getEditorBizName()||S.biz||'your business';
+    const biz=getEditorBizName()||S.biz|| '';
     const def=layoutId==='neon-nights'?'Ready when you are.':(layoutId==='chrome-velocity'?"LET'S GET TO WORK.":`Book with ${biz}`);
     const val=S.website.footerCtaTitle||def;
     showWsPePop(el,`<div class="ws-pe-pop-lbl">Banner text</div>
@@ -37230,7 +37234,7 @@ function ensureWebsiteCopy(){
   if(!S.website||typeof S.website!=='object')S.website={};
   ensureMembershipOffers();
   const w=S.website;
-  const biz=(isEditorViewOpen()?getEditorBizName():(S.biz||'').trim())||'Your Business';
+  const biz=(isEditorViewOpen()?getEditorBizName():(S.biz||'').trim())|| '';
   const defaults=['Your Business','Your Business Name',''];
   if(!w.customHeroHeadline){
     const cur=(w.heroHeadline||'').trim();
@@ -37624,7 +37628,7 @@ function edAiCycleHeroPhoto(){
 }
 function edAiRewriteHeadline(){
   ensureWebsiteCopy();
-  const biz=getEditorBizName()||S.biz||'Your Business';
+  const biz=getEditorBizName()||S.biz|| '';
   const city=S.city||'your area';
   const trade=(getActiveBlueprint()?.identity?.name)||'local service';
   const options=[
@@ -39728,7 +39732,7 @@ function renderWebsite(prefix){
   const siteEl=document.getElementById('p-storefront');
   if(!prefix&&siteEl)siteEl.style.setProperty('--ws-accent',accent);
   applyWsCtaInk(accent);
-  const biz=getEditorBizName()||S.biz||'Your Business';
+  const biz=getEditorBizName()||S.biz|| '';
   const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
   const w=S.website;
   const layoutIdEarly=getWebsiteLayoutId();
@@ -40360,7 +40364,7 @@ async function generateWebsiteWithAI(btn){
 }
 function generateWebsiteCopyLocal(){
   ensureWebsiteCopy();
-  const biz=S.biz||'Your Business';
+  const biz=S.biz|| '';
   const bp=getActiveBlueprint();
   const name=(bp?.identity?.name)||'local service';
   const expect=(bp?.customerExpectations||[])[0]||'a clear, trustworthy first impression';
@@ -40899,7 +40903,7 @@ function syncStorefront(){
   applyWebsiteSeo();
   renderBookingLanding('pub');
   syncBookingHeaderBrand();
-  const bkConsent=document.getElementById('bk-biz-consent');if(bkConsent)bkConsent.textContent=S.biz||'Your Business';
+  const bkConsent=document.getElementById('bk-biz-consent');if(bkConsent)bkConsent.textContent=S.biz|| '';
   try{syncDashSiteLink();}catch(e){
     const dashUrl=document.getElementById('dash-profile-url');
     if(dashUrl)dashUrl.textContent=publicProfileUrl(S.slug||'your-business');
@@ -40909,7 +40913,7 @@ function syncStorefront(){
   if(isEditorViewOpen())renderWebsitePreview();
 }
 function syncBookingHeaderBrand(){
-  const biz=S.biz||'Your Business';
+  const biz=S.biz|| '';
   const bkName=document.getElementById('bk-biz-name');
   if(bkName)bkName.textContent=biz;
   const logo=document.getElementById('bk-biz-logo');
@@ -47896,7 +47900,7 @@ function openInvoiceDownload(jobId){
   const j=(S.jobs||[]).find(x=>String(x.id)===String(jobId));
   if(!j)return;
   if(j.paid){showReceipt(jobId);return;}
-  const biz=escapeHtml(S.biz||'Your Business');
+  const biz=escapeHtml(S.biz|| '');
   const phone=escapeHtml(S.phone||'');
   const city=escapeHtml(S.city||'');
   const rows=[
@@ -48208,7 +48212,7 @@ function closeReceiptModal(){
 }
 function receiptMessageText(j){
   if(!j)return '';
-  const biz=S.biz||'Your business';
+  const biz=S.biz|| '';
   const paidOn=j.paidAt||fmtDateLong(dateStr(new Date()));
   return [
     `Receipt from ${biz}`,
@@ -48251,7 +48255,7 @@ async function shareReceiptMessage(){
   toast(t('shareUnavailableCopied'));
 }
 function receiptHtmlForPrint(j){
-  const biz=escapeHtml(S.biz||'Your Business');
+  const biz=escapeHtml(S.biz|| '');
   const phone=escapeHtml(S.phone||'');
   const city=escapeHtml(S.city||'');
   const paidOn=escapeHtml(j.paidAt||fmtDateLong(dateStr(new Date())));
@@ -49362,7 +49366,7 @@ function updateDashGreeting(){
   const first=String(owner||'').trim().split(/\s+/)[0];
   if(line1)line1.textContent=first?`${dashGreetingWord()} ${first}.`:dashGreetingWord();
   if(line2){
-    line2.textContent=shortBiz||biz||'Your business';
+    line2.textContent=shortBiz||biz|| '';
     line2.title=biz||'';
   }
   if(ready)ready.textContent='Your business is ready.';
@@ -49384,7 +49388,7 @@ function updateDashGreeting(){
 
 /** Hubly v3 Operate Home — website hero + one recommendation. */
 function renderOperateHome(){
-  const biz=dashGreetingBiz()||S.biz||'Your Business';
+  const biz=dashGreetingBiz()||S.biz|| '';
   const title=document.getElementById('dash-site-preview-title');
   const sub=document.getElementById('dash-site-preview-sub');
   if(title)title.textContent=biz;
