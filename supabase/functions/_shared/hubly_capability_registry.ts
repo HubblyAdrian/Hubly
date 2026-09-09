@@ -5883,6 +5883,94 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
       "Real availability and real booking creation. Execution target depends on channel: a Marketplace consumer booking a matched provider reuses the production Marketplace booking engine as-is (marketplace_bookings); a business's own website visitor becomes a real Hubly Job (jobs/customers, Calendar, Google Calendar) through the same operations createJob() already performs. No calendar or provider logic is duplicated here either way — this only wraps what already exists, per channel.",
     actions: [
       {
+        // ── RECORD WHO WE ARE TALKING TO ────────────────────────────────────────────
+        //
+        // Anyone who completes a booking gives a phone number, because the form requires
+        // it. So the ONLY visitors who vanish untraceable are the ones who did not book —
+        // precisely the ones worth pursuing. Before 2026-09-08 the owner's lead card could
+        // only say "there's no way to reach them from here."
+        //
+        // CONSENT IS THE ACTION, NOT AN INFERENCE. consented_to_followup is set true ONLY
+        // here, and this runs only when the visitor has just given their details in reply
+        // to being asked why we want them. A phone number appearing somewhere in the
+        // transcript is NOT consent, and must never set this flag — the owner's card
+        // renders "They agreed to be contacted", and that line has to be true.
+        name: "recordContact",
+        description:
+          "Record the name and contact details this visitor has JUST given you, in this message, in " +
+          "reply to your asking so the business can follow up. Call it only then. Never call it for a " +
+          "number that merely appeared earlier in the conversation, never for details you inferred, and " +
+          "never before they have answered — it records that they agreed to be contacted, and that has " +
+          "to be true. If they decline or ignore the ask, do not call this and do not ask again.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            name: { type: "string", description: "What they said their name is. Omit if they did not say." },
+            phone: { type: "string", description: "The number they just gave. Omit if they did not give one." },
+            email: { type: "string", description: "The email they just gave. Omit if they did not give one." },
+          },
+          required: [],
+        },
+        handler: async (args) => {
+          const a = args as Record<string, unknown>;
+          const conversationId = String(a?.conversationId || "").trim();
+          const businessId = String(a?.businessId || "").trim();
+          const said = String(a?._userMessage || "");
+          if (!conversationId || !businessId) {
+            return { ok: false, real: false, error: "no_conversation", summary: "There is no stored conversation to attach these details to." };
+          }
+          // GROUNDED IN THIS MESSAGE. Same rule as the owner-side fact writer: a value the
+          // model produced that the person did not just type is refused, not written. Here
+          // it also protects the consent flag — details lifted from earlier in the
+          // transcript would record an agreement that never happened.
+          const digits = (v: string) => v.replace(/\D/g, "");
+          const saidDigits = digits(said);
+          const name = String(a?.name || "").trim();
+          const phone = String(a?.phone || "").trim();
+          const email = String(a?.email || "").trim();
+          const patch: Record<string, unknown> = {};
+          const refused: string[] = [];
+          if (name) {
+            if (said.toLowerCase().includes(name.toLowerCase())) patch.customer_name = name;
+            else refused.push("name");
+          }
+          if (phone) {
+            const d = digits(phone);
+            if (d.length >= 7 && saidDigits.includes(d)) patch.customer_phone = phone;
+            else refused.push("phone");
+          }
+          if (email) {
+            if (said.toLowerCase().includes(email.toLowerCase())) patch.customer_email = email;
+            else refused.push("email");
+          }
+          if (!Object.keys(patch).length) {
+            return {
+              ok: false, real: false, error: "not_grounded",
+              summary: "Nothing was saved: those details are not in what they just said. Ask them, do not guess" +
+                       (refused.length ? (" (refused: " + refused.join(", ") + ")") : "") + ".",
+            };
+          }
+          patch.consented_to_followup = true;
+          const admin = adminClient();
+          const { data: owned } = await admin.from("chatbot_conversations")
+            .select("id").eq("id", conversationId).eq("business_id", businessId).maybeSingle();
+          if (!owned) {
+            return { ok: false, real: false, error: "not_this_business", summary: "That conversation does not belong to this business." };
+          }
+          const { error } = await admin.from("chatbot_conversations").update(patch).eq("id", conversationId);
+          if (error) {
+            return { ok: false, real: false, error: "save_failed", summary: "Their details could not be saved — do not tell them they were." };
+          }
+          const kept = Object.keys(patch).filter((k) => k !== "consented_to_followup")
+            .map((k) => k.replace("customer_", "")).join(" and ");
+          return {
+            ok: true, real: true,
+            summary: "Saved their " + kept + ". Thank them briefly and carry on helping — do not ask again." +
+                     (refused.length ? (" Not saved, because it was not in their message: " + refused.join(", ") + ".") : ""),
+          };
+        },
+      },
+      {
         name: "getAvailability",
         description:
           "Real bookable time slots for this business, computed from their actual schedule, connected calendar, and business hours. Returns real slots or an honest reason none exist yet — never invented times.",

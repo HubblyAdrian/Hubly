@@ -4307,9 +4307,11 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   function hcEventHead(ev){
     var who = ev.customer_name ? (' from ' + ev.customer_name) : '';
     if(ev.kind === 'chat.asked'){
+      // Once they have given a name, use it — a named lead reads as a person to call back,
+      // which is the whole point of having asked.
       return ev.customer_name
-        ? (ev.customer_name + ' asked on your site and didn\u2019t book')
-        : 'Someone asked on your site and didn\u2019t book';
+        ? (ev.customer_name + ' asked on your site and hasn\u2019t booked')
+        : 'Someone asked on your site and hasn\u2019t booked';
     }
     if(ev.kind === 'booking.abandoned'){
       var svc = ev.service_name ? (' booking ' + ev.service_name) : ' booking';
@@ -4350,6 +4352,11 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       acts.appendChild(call);
     }
     wrap.appendChild(acts);
+    // A LEAD HE CAN ACT ON. When the visitor gave a number, the chat lead gets the same
+    // treatment as a booking: their name, the number, and a Call button — not a note about
+    // a stranger. The Call button above is already rendered from customer_phone, so this
+    // only handles the case where there is still nothing.
+    //
     // NO CONTACT MEANS SAY SO, not offer an action that cannot work. A "Reply" button on a
     // person who left no way to reach them is a control that reports success without an
     // effect — the thing this whole screen exists to stop.

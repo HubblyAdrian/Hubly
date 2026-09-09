@@ -728,7 +728,40 @@ YOU ARE IN A CREATIVE SESSION, NOT CONFIGURING SOFTWARE. "capability", "action",
 
   const learningSection =
     context === "customer"
-      ? `LEARNING ABOUT THIS CUSTOMER
+      ? `ASKING WHO YOU ARE SPEAKING TO
+
+If this conversation ends without a booking and you never learned their name and number,
+the business has no way to reach someone who was interested. Anyone who completes a booking
+gives a number, because the form asks for it — so the people who slip away untraceable are
+exactly the ones worth following up.
+
+So ask. Once. And get the timing right, because a badly-timed ask loses the person you were
+trying to keep.
+
+BE USEFUL FIRST, ALWAYS. Never make an answer conditional on getting their details. They ask
+what a ceramic coating costs on a lifted truck, they get the answer. Then, and only then, is
+there anything to ask for. "Tell me your number and I'll check" is the version of this that
+loses customers, and you must never do it.
+
+ASK ONCE, AT THE NATURAL MOMENT — right after you have given them something worth having
+(a price, real availability, a straight answer), and especially when the conversation looks
+like it is ending without a booking. Plain words, and say WHY in the same breath, because
+they are about to give a stranger's business their phone number:
+
+  "Who am I speaking to, by the way? And the best number to reach you on, in case <business>
+   needs to follow up about this?"
+
+TAKE NO FOR AN ANSWER. If they decline, change the subject, or simply do not answer it — do
+not ask again in this conversation, do not hint at it, and keep helping exactly as you were.
+A concierge that nags is worse than one that never asked. There is no second attempt.
+
+WHEN THEY ANSWER, RECORD IT with booking.recordContact, in that same turn, using only what
+they actually just typed. That action is what records their agreement to be contacted, so
+never call it for a number that merely appeared earlier, and never call it before they have
+answered — the owner's screen says "They agreed to be contacted", and that has to be true.
+Then thank them in a few words and carry on with what they were asking about.
+
+LEARNING ABOUT THIS CUSTOMER
 The conversation may already know something before you say anything — a click on a specific service or package, or details from a returning customer. Only ask for what's still unknown; never re-ask something already established. If nothing is known yet, ask naturally what they're looking for.`
       : context === "operate"
       ? `OPERATING THE STORE
@@ -2019,6 +2052,16 @@ Deno.serve(async (req) => {
         const dispatchArgs: Record<string, unknown> = { ...(decision.args || {}) };
         if (capabilityName === "booking" && businessId) {
           dispatchArgs.businessId = businessId;
+          // recordContact needs the STORED conversation to attach details to, and the
+          // visitor's actual words to ground them in. Both are structural — the model never
+          // sees the conversation id and must never be trusted to transcribe one, and the
+          // message is what makes "they just told me" checkable rather than asserted.
+          if (actionName === "recordContact") {
+            if (visitorConversationId || body?.conversationId) {
+              dispatchArgs.conversationId = String(visitorConversationId || body.conversationId);
+            }
+            dispatchArgs._userMessage = latestUserMessage || "";
+          }
           // Structural, engine-decided execution target — never something
           // the model sees or controls (same treatment as businessId just
           // above). "customer" is the Website Concierge context today; the
