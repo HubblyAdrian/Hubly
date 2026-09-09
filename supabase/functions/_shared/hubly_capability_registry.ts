@@ -6509,6 +6509,17 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             // outage, which platform-home already refuses to say. A rate limit is
             // temporary and self-clearing, so say that and say roughly when; anything
             // else is a real fault and a retry is worth attempting.
+            // TWO REFUSALS, AND THEY MUST NOT BLUR. Per-IP is about their connection and
+            // clears within the hour. AT CAPACITY is not about them at all — it is us,
+            // and saying "your connection" there would blame a visitor for our ceiling.
+            if (r?.error === "at_capacity") {
+              return {
+                ok: false, real: false, error: "at_capacity",
+                summary: "REFUSED — HUBLY is at capacity for new sites this hour. This is on our side and has nothing to do with them, their connection, or anything they typed. " +
+                  "Say that plainly: we are at capacity right now, it is temporary, and it is our limit not theirs. Do not apologise at length, do not invent a queue position, " +
+                  "a wait time or a number of sites, and do not tell them to try again immediately — it will fail. Offer to keep talking about their business in the meantime.",
+              };
+            }
             if (r?.error === "rate_limited") {
               return {
                 ok: false, real: false, error: "rate_limited",

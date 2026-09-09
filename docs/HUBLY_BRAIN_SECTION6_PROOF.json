@@ -2,7 +2,7 @@
   "section": 6,
   "title": "Workspace Memory",
   "passed": true,
-  "checkedAt": "2026-09-09T20:46:27.344Z",
+  "checkedAt": "2026-09-09T20:51:21.543Z",
   "version": "1.0.0",
   "architectureSummary": {
     "module": "supabase/functions/_shared/hubly_brain_workspace_memory.ts",
@@ -97,7 +97,7 @@
       "changelog": [],
       "versionHistory": [],
       "factMeta": {},
-      "updatedAt": "2026-09-09T20:46:27.341Z"
+      "updatedAt": "2026-09-09T20:51:21.540Z"
     },
     "workspaceAfter": {
       "memoryVersion": 4,
@@ -130,8 +130,8 @@
       },
       "aiSuggestions": [
         {
-          "id": "wsai_mtukjjm7_uow96x",
-          "at": "2026-09-09T20:46:27.343Z",
+          "id": "wsai_mtukpume_bf1f0d",
+          "at": "2026-09-09T20:51:21.542Z",
           "suggestion": "Move Calendar next to Jobs for field days",
           "status": "suggested",
           "reason": "Owner often asks about schedule after jobs",
@@ -144,47 +144,47 @@
           "importance": "high",
           "confidence": 93,
           "source": "user",
-          "lastVerified": "2026-09-09T20:46:27.343Z"
+          "lastVerified": "2026-09-09T20:51:21.542Z"
         },
         "pinnedActions": {
           "importance": "high",
           "confidence": 92,
           "source": "user",
-          "lastVerified": "2026-09-09T20:46:27.343Z"
+          "lastVerified": "2026-09-09T20:51:21.542Z"
         },
         "favoritePages": {
           "importance": "medium",
           "confidence": 90,
           "source": "user",
-          "lastVerified": "2026-09-09T20:46:27.343Z"
+          "lastVerified": "2026-09-09T20:51:21.542Z"
         },
         "aiSuggestions": {
           "importance": "low",
           "confidence": 70,
           "source": "ai_inference",
-          "lastVerified": "2026-09-09T20:46:27.343Z"
+          "lastVerified": "2026-09-09T20:51:21.542Z"
         }
       },
       "changelogLength": 4,
       "versionHistory": [
         {
           "version": 1,
-          "at": "2026-09-09T20:46:27.343Z",
+          "at": "2026-09-09T20:51:21.542Z",
           "summary": "Owner workspace: Hide the Marketing tools for now."
         },
         {
           "version": 2,
-          "at": "2026-09-09T20:46:27.343Z",
+          "at": "2026-09-09T20:51:21.542Z",
           "summary": "Owner workspace: Pin Create Quote."
         },
         {
           "version": 3,
-          "at": "2026-09-09T20:46:27.343Z",
+          "at": "2026-09-09T20:51:21.542Z",
           "summary": "Owner workspace: Favorite the calendar page."
         },
         {
           "version": 4,
-          "at": "2026-09-09T20:46:27.343Z",
+          "at": "2026-09-09T20:51:21.542Z",
           "summary": "AI workspace suggestion suggested"
         }
       ]
@@ -208,8 +208,8 @@
     ],
     "changeLog": [
       {
-        "id": "wschg_mtukjjm6_nem8on",
-        "at": "2026-09-09T20:46:27.342Z",
+        "id": "wschg_mtukpumd_etb2s0",
+        "at": "2026-09-09T20:51:21.541Z",
         "path": "workingStyle.density",
         "previous": "comfortable",
         "next": "compact",
@@ -221,8 +221,8 @@
         "memoryVersion": 1
       },
       {
-        "id": "wschg_mtukjjm6_9e3n5o",
-        "at": "2026-09-09T20:46:27.342Z",
+        "id": "wschg_mtukpumd_oby7uw",
+        "at": "2026-09-09T20:51:21.541Z",
         "path": "dashboardLayout",
         "previous": [
           "today",
@@ -253,8 +253,8 @@
       }
     ],
     "timestamps": [
-      "2026-09-09T20:46:27.342Z",
-      "2026-09-09T20:46:27.342Z"
+      "2026-09-09T20:51:21.541Z",
+      "2026-09-09T20:51:21.541Z"
     ],
     "expertResponsible": [
       {
@@ -284,7 +284,7 @@
       },
       {
         "q": "Why did we hide Marketing?",
-        "answer": "Hidden tools: marketing. We hid them because: Owner asked to hide marketing (2026-09-09T20:46:27.343Z, hubly_brain).",
+        "answer": "Hidden tools: marketing. We hid them because: Owner asked to hide marketing (2026-09-09T20:51:21.542Z, hubly_brain).",
         "fromWorkspaceMemory": true,
         "usedChatHistory": false,
         "paths": [
@@ -293,8 +293,8 @@
         ],
         "changes": [
           {
-            "id": "wschg_mtukjjm7_czcp3b",
-            "at": "2026-09-09T20:46:27.343Z",
+            "id": "wschg_mtukpume_nsnyei",
+            "at": "2026-09-09T20:51:21.542Z",
             "path": "hiddenModules",
             "previous": [],
             "next": [
@@ -335,13 +335,13 @@
         "importance": "medium",
         "confidence": 80,
         "source": "user",
-        "lastVerified": "2026-09-09T20:46:27.342Z"
+        "lastVerified": "2026-09-09T20:51:21.541Z"
       },
       {
         "importance": "high",
         "confidence": 88,
         "source": "user",
-        "lastVerified": "2026-09-09T20:46:27.342Z"
+        "lastVerified": "2026-09-09T20:51:21.541Z"
       }
     ],
     "separationFromBusinessMemory": {
