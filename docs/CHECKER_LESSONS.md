@@ -146,3 +146,53 @@ conversation, which already converts a cold anonymous visitor into a booking.
 Direction only. `docs/CUSTOMER_DIRECTION.md` is explicitly not a roadmap, nothing in it is
 scheduled, and its §5 lists what must not be built yet. This entry records the RULE, which
 binds now, not the work, which does not exist.
+
+## 7. A number can be accurate and still be a lie about what it counts
+
+Found 2026-09-08 and the subtlest defect of the day.
+
+The traffic slice reported *"Four people looked at your page yesterday."* The integer was
+correct. The query was correct. `page_loads` genuinely held those rows. And the sentence was
+false, because the rows were not people.
+
+Measured across the whole corpus: of 135 `page_loads` rows, **54 were `device_class='bot'`**
+and 49 were owner previews — only 32 were real visits. The slice filtered owner previews and
+not bots, so **63% of what it called "people" were crawlers, link unfurlers and uptime
+pingers.** On 2026-09-05 it would have said **43 people against a real 9** — wrong by 4.8x.
+
+> **A fabricated sparkline is visibly fake. A real integer describing the wrong population
+> has nothing about it to notice.**
+
+That is why this class is worse than the drawn-shape class it sits next to. Nobody reviewing
+"43" asks what a page load is. The defence is not scepticism about the number; it is naming
+the population in the same breath as the count — *distinct non-bot, non-owner `visitor_hash`
+per day* — so that a mismatch between the label and the filter becomes visible in the code
+rather than only in the sentence.
+
+Same family as CLAUDE.md's "when a heuristic reports N things have X, it is still counting a
+FORM, not the fact — state which form". This is that rule applied to a population instead of
+a shape.
+
+## 8. The recurring defect is not missing code — it is code nobody connected
+
+Counted on 2026-09-08. In one day, **six** things were found already built, already correct,
+and simply never wired to anything:
+
+| built and unused | how it surfaced |
+|---|---|
+| `operations` capability | shipped 2026-09-05, absent from `CONTEXT_CAPABILITY_ALLOWLIST`, dead until found |
+| `places` capability | unreachable for the whole session that built it, same cause |
+| `set_business_hours_in_progress` | a real owner-authorised RPC with 2 call sites and **no capability action** — hours still cannot be set by talking |
+| `chatbot_conversations` / `chatbot_messages` | correct schema, written by a legacy function, never written by the concierge — so visitor conversations were discarded |
+| `business_timeline_events` | correct-ish shape, 0 rows, never written, and its only reader selected a column that did not exist |
+| `page_loads.device_class` | a working bot classifier writing `'bot'` on every row, **never read by anything** — see lesson 7 |
+
+The instinct this should produce is the one CLAUDE.md already states and which keeps paying:
+**when something does not work, the first hypothesis is that the capability exists and only
+its entry point is missing.** Rebuilding what is already there is the more expensive mistake,
+and it buries the real one-line fix under a new system.
+
+The corollary, which is what lesson 7 adds: this applies to *data* as much as to features. A
+populated column nobody reads is the same defect as a deployed function nobody calls — and
+it is more dangerous, because the column will happily be read one day by something that does
+not know what it means.
