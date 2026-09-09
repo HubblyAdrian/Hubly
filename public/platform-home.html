@@ -304,6 +304,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
    sits under something, not floating. The wordmark and account button stay where they are. */
 body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(--line)}
 @keyframes hcRailArrive{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+.hc-rail-biz{width:100%;padding:8px 4px 2px;text-align:center;font-size:9px;line-height:1.25;color:var(--ink-3,#8a909c);word-break:break-word}
+.hc-rail-biz b{display:block;font-size:10px;font-weight:750;color:var(--ink-2,#4a5160);margin-bottom:1px}
+.hc-idw{display:flex;align-items:center;gap:12px;margin:0 0 4px}
+.hc-idw-mark{width:40px;height:40px;border-radius:11px;object-fit:cover;flex-shrink:0;background:var(--brand,#d9632d)}
+.hc-idw-mono{width:40px;height:40px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;letter-spacing:-.02em}
+.hc-idw-txt{min-width:0}
+.hc-idw-hi{font-size:17px;font-weight:750;letter-spacing:-.01em;line-height:1.2}
+.hc-idw-sub{font-size:12px;color:var(--ink-3,#8a909c);margin-top:1px}
 .hc-rail-tabs{display:flex;flex-direction:column;gap:8px;width:100%;align-items:center}
 .hc-rail-tab{width:56px;min-height:56px;border:0;border-radius:15px;background:transparent;cursor:pointer;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--ink-500,#6b7280);
@@ -1129,6 +1137,10 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
        keeps its Chat/Site toggle (a real bottom bar for one tab is not yet earned). -->
   <div class="hc-rail" id="hcRail" hidden aria-label="Your Hubly">
     <div class="hc-rail-tabs" id="hcRailTabs" role="tablist"></div>
+    <!-- WHOSE BUSINESS THIS IS. Restored 2026-09-08: the screen read as a chatroom because
+         nothing on it said whose place it was — correct content, no sense of place.
+         Name and location only, both real columns; no placeholder when either is absent. -->
+    <div class="hc-rail-biz" id="hcRailBiz" hidden></div>
     <button type="button" class="hc-rail-gear" id="hcRailGear" aria-label="Settings" title="Settings">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
@@ -4275,6 +4287,15 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
       ['Address', ev.address || null],
       ['Vehicle', ev.vehicle || null],
       [ev.kind === 'chat.asked' ? 'They asked' : 'Their note', ev.notes || null],
+      // What the rows honestly hold, and only that. Each is dropped when absent, so a
+      // sparse conversation produces a short card rather than a padded one.
+      //
+      // NOT HERE, deliberately: which page they were on. chatbot_conversations has no page
+      // or referrer column and no join key to page_loads, so there is no honest way to say
+      // it. A field invented to fill the card out is the card lying about its own depth.
+      ['Also asked', ev.other_asks || null],
+      ['Messages', (Number(ev.message_count) > 1 ? String(ev.message_count) + ' from them' : null)],
+      ['Follow-up', ev.consented === true ? 'They agreed to be contacted' : null],
       ['Status', ev.status || null],
     ].filter(function(r){ return r[1]; });
   }
@@ -4442,6 +4463,97 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     }catch(e){ return false; }
   }
 
+  // ── WHOSE PLACE THIS IS ───────────────────────────────────────────────────────
+  //
+  // The screen read as a chatroom because nothing on it said whose business it was.
+  // Identity is most of the difference between a stream and a hub.
+  //
+  // Everything here is a real column. If a business has NO LOGO we show its initials on
+  // its own brand colour rather than a generic placeholder mark — a placeholder implies a
+  // logo exists. The greeting uses the owner's first name only when we have one; with no
+  // name it greets without one rather than inventing "there".
+  var hcIdentity = { loaded: false, logoUrl: null, brandColor: null, city: null, state: null, owner: null };
+
+  async function hcLoadIdentity(biz){
+    hcIdentity.loaded = false;
+    if(!biz || !biz.slug) return hcIdentity;
+    try{
+      var c = await authGetClient();
+      var r = await c.rpc('get_public_business', { p_slug: biz.slug });
+      var row = Array.isArray(r && r.data) ? r.data[0] : (r && r.data);
+      if(row){
+        var meta = {};
+        try{ meta = typeof row.meta === 'string' ? JSON.parse(row.meta) : (row.meta || {}); }catch(e){ meta = {}; }
+        hcIdentity.logoUrl = meta.logoUrl || null;
+        hcIdentity.brandColor = row.brand_color || meta.brandColor || null;
+        hcIdentity.city = row.city || null;
+        hcIdentity.state = row.state || null;
+      }
+      try{
+        var u = await c.auth.getUser();
+        var m = u && u.data && u.data.user && u.data.user.user_metadata;
+        var nm = (m && (m.full_name || m.name)) || '';
+        // An email local-part is not a name. Only use it when it looks like one.
+        if(!nm){
+          var em = (u && u.data && u.data.user && u.data.user.email) || '';
+          var lp = String(em).split('@')[0].replace(/[._-]+/g, ' ').trim();
+          if(/^[a-z]{2,}$/i.test(lp.split(' ')[0] || '')) nm = lp;
+        }
+        hcIdentity.owner = nm ? String(nm).trim().split(/\s+/)[0].replace(/^./, function(ch){ return ch.toUpperCase(); }) : null;
+      }catch(e){}
+      hcIdentity.loaded = true;
+    }catch(e){}
+    return hcIdentity;
+  }
+
+  function hcInitials(name){
+    var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    if(!parts.length) return '?';
+    return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+  }
+  function hcTimeGreeting(){
+    var h = new Date().getHours();
+    return h < 12 ? 'Good morning' : (h < 18 ? 'Good afternoon' : 'Good evening');
+  }
+
+  // The identity block: brand mark, greeting by name, business name beneath.
+  function hcRenderIdentity(biz, thread){
+    var wrap = document.createElement('div');
+    wrap.className = 'hc-msg hubly hc-idw';
+    var mark;
+    if(hcIdentity.logoUrl){
+      mark = document.createElement('img');
+      mark.className = 'hc-idw-mark';
+      mark.src = hcIdentity.logoUrl;
+      mark.alt = (biz.name || 'Your business') + ' logo';
+    }else{
+      // No logo on the record. Initials on the brand colour — honest about what we have.
+      mark = document.createElement('div');
+      mark.className = 'hc-idw-mono';
+      mark.style.background = hcIdentity.brandColor || 'var(--brand,#d9632d)';
+      mark.textContent = hcInitials(biz.name);
+      mark.setAttribute('aria-hidden', 'true');
+    }
+    var txt = document.createElement('div'); txt.className = 'hc-idw-txt';
+    var hi = document.createElement('div'); hi.className = 'hc-idw-hi';
+    hi.textContent = hcTimeGreeting() + (hcIdentity.owner ? (', ' + hcIdentity.owner) : '') + '.';
+    var sub = document.createElement('div'); sub.className = 'hc-idw-sub';
+    sub.textContent = biz.name || '';
+    txt.appendChild(hi); txt.appendChild(sub);
+    wrap.appendChild(mark); wrap.appendChild(txt);
+    thread.appendChild(wrap);
+  }
+
+  // Business name + location in the rail footer.
+  function hcRenderRailBiz(biz){
+    var el = document.getElementById('hcRailBiz'); if(!el) return;
+    var name = (biz && biz.name) || '';
+    var place = [hcIdentity.city, hcIdentity.state].filter(Boolean).join(', ');
+    if(!name && !place){ el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.innerHTML = (name ? '<b>' + hcEsc(name) + '</b>' : '') + (place ? hcEsc(place) : '');
+  }
+
   // Elapsed time in the words a person uses. Never a fabricated precision.
   function hcAgo(iso){
     var t = new Date(iso).getTime();
@@ -4500,9 +4612,14 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
              " and didn\u2019t finish" + contact;
     }
 
-    if(lead) out.push(chatLine(lead));
-    else if(stale) out.push(abandonedLine(stale));
-    else if(live) out.push(chatLine(live));
+    // OWNERSHIP: a card owns an individual event. The greeting narrates an event ONLY when
+    // no card will — i.e. when it is beyond the 5 the stream renders. Otherwise the same
+    // chat lead was appearing three times: greeting, summary line, and card.
+    var carded = evs.slice(0, 5);
+    function hasCard(e){ return !!e && carded.indexOf(e) !== -1; }
+    if(lead && !hasCard(lead)) out.push(chatLine(lead));
+    else if(stale && !hasCard(stale)) out.push(abandonedLine(stale));
+    else if(live && !hasCard(live)) out.push(chatLine(live));
 
     // 4. Page views. Real people only — bots and owner previews are excluded by the reader.
     if(out.length < 2 && ops && ops.people > 0){
@@ -4514,6 +4631,9 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     // STATE 2 — genuinely nothing. Say so, and point at the one thing that matters.
     // NOT "live" and NOT "right now": both imply a reachability check we do not perform.
     // "is at" is the address; "set up to" is the configuration. Both are facts about rows.
+    // State 2 is "genuinely nothing" — not "everything already has a card". If any event
+    // exists, the cards are the news and the greeting stays quiet.
+    if(!out.length && evs.length) return out;
     if(!out.length){
       var addr = biz.slug ? (biz.slug + '.myhubly.app') : null;
       var bookable = await hcHasServices(biz.id);
@@ -4538,6 +4658,12 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
     //
     // Nothing here draws a shape for a number we do not have. No score, no trend, no
     // percentage, no reviews (not readable at all — no Google integration exists).
+    // Identity first: the brand mark, the greeting by name, the business name.
+    await hcLoadIdentity(biz);
+    hcRenderIdentity(biz, thread);
+    hcRenderRailBiz(biz);
+    // Then only what no CARD will say. One event is owned by its card — repeating it as a
+    // sentence is the same news twice, and an owner reading it in two registers skims both.
     var greetLines = await hcBuildGreeting(biz);
     greetLines.forEach(function(line){ hcAppendMessage('hubly', line); });
     // THE STREAM. Real events, newest first, before anything advisory — what actually
@@ -4591,7 +4717,14 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
           // honestly (the consent-to-replace offer is designed-but-unbuilt — OPEN_FINDINGS #9).
           var needs = [];
           if(!g.own_photos) needs.push({ text:'Add photos of your own work', why:'the site is showing stock photos right now, and your real work is the biggest upgrade', start:'I want to add photos of my own work.' });
-          if(!g.has_hours) needs.push({ text:'Set your hours', why:'so customers know when you’re open before they call', start:'I want to add my opening hours.' });
+          // "Set your hours" REMOVED 2026-09-08. Clicked it on a real business: the reply is
+          // "I can't add opening hours as a real business field yet." set_business_hours_in_progress
+          // exists as an RPC with two call sites, but NO capability action writes hours, so the
+          // suggestion offered an owner a fix he cannot make — the exact pattern removed from the
+          // Design panel this morning, reappearing in the panel that replaced it.
+          //
+          // A suggestion is a promise. It comes back when an action writes hours, not before.
+          // Filed as a missing door in docs/CHECKER_LESSONS.md lesson 8.
           if(!g.has_phone) needs.push({ text:'Add a phone number', why:'it is the fastest way for a customer to reach you', start:'I want to add my phone number.' });
           if(g.services_no_desc > 0) needs.push({ text:'Write descriptions for your services', why:'', start:'Write short descriptions for my services.' });
           if(needs.length){

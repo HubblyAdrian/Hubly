@@ -1386,7 +1386,15 @@ Deno.serve(async (req) => {
   // drifted to. A retry that quietly produces something different is not a
   // retry.
   let buildResumed: { jobId: string; expectedBy: string | null } | null = null;
-  if (draftBusiness?.id && draftBusiness?.draftToken && DOCUMENT_GENERATION_ENABLED) {
+  // A VALID DRAFT TOKEN, OR A SERVER-VERIFIED OWNER. Widened 2026-09-08 (second pass).
+  // Three more siblings of the class fixed earlier today: a CLAIMED business usually has
+  // draft_token NULL (9 of 34; 4 of them market, Graef among them), so the predicate
+  // resolves it by ownership and sets draftToken to "". Every `&& draftBusiness.draftToken`
+  // was therefore false for exactly the owners we care about — and these fail SILENTLY,
+  // falling through with no branch taken and no error, which is worse than a refusal.
+  // Found by clicking the "Add photos of your own work" suggestion and asking where the
+  // photo would go.
+  if (draftBusiness?.id && (draftBusiness?.draftToken || await getOwnerUid()) && DOCUMENT_GENERATION_ENABLED) {
     const explicitRetry = body?.retryBuild === true;
     const job = await latestDocumentBuildJob(draftBusiness.id, "website");
     const stalled = !!job && job.status === "running" && job.expiredAt;
@@ -1491,7 +1499,15 @@ Deno.serve(async (req) => {
     body?.photoUpload && typeof body.photoUpload === "object" && typeof body.photoUpload.imageBase64 === "string"
       ? { imageBase64: body.photoUpload.imageBase64, mediaType: String(body.photoUpload.mediaType || "image/jpeg") }
       : null;
-  if (photoUpload && draftBusiness?.id && draftBusiness?.draftToken) {
+  // A VALID DRAFT TOKEN, OR A SERVER-VERIFIED OWNER. Widened 2026-09-08 (second pass).
+  // Three more siblings of the class fixed earlier today: a CLAIMED business usually has
+  // draft_token NULL (9 of 34; 4 of them market, Graef among them), so the predicate
+  // resolves it by ownership and sets draftToken to "". Every `&& draftBusiness.draftToken`
+  // was therefore false for exactly the owners we care about — and these fail SILENTLY,
+  // falling through with no branch taken and no error, which is worse than a refusal.
+  // Found by clicking the "Add photos of your own work" suggestion and asking where the
+  // photo would go.
+  if (photoUpload && draftBusiness?.id && (draftBusiness?.draftToken || await getOwnerUid())) {
     const photoResult = await uploadDraftPhoto(
       draftBusiness.id,
       draftBusiness.draftToken,
@@ -2323,7 +2339,15 @@ Deno.serve(async (req) => {
       }
 
       let rebuildSkippedNote = "";
-      if (recordChanges.size && draftBusiness?.id && draftBusiness?.draftToken) {
+  // A VALID DRAFT TOKEN, OR A SERVER-VERIFIED OWNER. Widened 2026-09-08 (second pass).
+  // Three more siblings of the class fixed earlier today: a CLAIMED business usually has
+  // draft_token NULL (9 of 34; 4 of them market, Graef among them), so the predicate
+  // resolves it by ownership and sets draftToken to "". Every `&& draftBusiness.draftToken`
+  // was therefore false for exactly the owners we care about — and these fail SILENTLY,
+  // falling through with no branch taken and no error, which is worse than a refusal.
+  // Found by clicking the "Add photos of your own work" suggestion and asking where the
+  // photo would go.
+      if (recordChanges.size && draftBusiness?.id && (draftBusiness?.draftToken || await getOwnerUid())) {
         const changes = [...recordChanges] as RecordChange[];
         const contentful = changes.some((c) => c !== "cosmetic");
         const ownerEdited = contentful ? await documentHasOwnerEdits(draftBusiness.id) : false;
