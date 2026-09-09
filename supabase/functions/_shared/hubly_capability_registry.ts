@@ -38,6 +38,7 @@
 // actually built, per "build on demand," not stubbed in speculatively.
 
 import { addServicesBlock } from "./hubly_services_block.ts";
+import { photoReply, servicesAreaAddedReply } from "./hubly_owner_replies.ts";
 import { HublyAI, extractJson } from "./hubly_ai.ts";
 import { issueDraftGrant } from "./draft_grant.ts";
 import {
@@ -3211,15 +3212,10 @@ export async function uploadDraftPhoto(
 
   // The summary IS the owner-facing truth (see the dispatch: the reply is composed
   // from it). Say what happened AND where — never "it's on your page" unless it is.
-  const summary = landed
-    ? (placement.status === "swapped"
-        ? `That's on your page now — in the ${placement.where || "page"}, in place of the stock photo that was there. If you'd rather keep the old one, just say so.`
-        : `That's on your page now, in the ${placement.where || "work section"}.`)
-    : placement.status === "no_slot"
-      ? `I've saved that photo. There's no open spot for it on the page as it's built, so it isn't showing yet — I can rebuild the page around it if you'd like.`
-      : (placement.status === "placed" || placement.status === "swapped")
-        ? `I've saved that photo, but it didn't make it onto the page — it isn't showing yet. I can try again, or rebuild the page around it.`
-        : `I've saved that photo, but I couldn't place it on the page just now, so it isn't showing. I can try again, or rebuild the page around it.`;
+  // The summary IS the owner-facing reply (photoTruth -> primaryReply), so the sentence
+  // is not written here — it lives in hubly_owner_replies.ts with every other string an
+  // owner reads verbatim, and check-no-directives-to-owners.mjs asserts that.
+  const summary = photoReply({ status: placement.status, where: placement.where, verified: placement.verified });
 
   return {
     ok: true,
@@ -6975,7 +6971,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             // on that. restyleElement needs a click-selection on the page, and there is
             // no path that removes or restyles this block from a chat message. Promising
             // a fix we cannot perform is the defect this whole day was spent removing.
-            summary: `Added a services area to ${url} with ${named} in it. Tell them it's there and to have a look at their page.`,
+            summary: servicesAreaAddedReply(url, r.inserted),
             raw: { url, inserted: r.inserted, via: r.via },
           };
         },
