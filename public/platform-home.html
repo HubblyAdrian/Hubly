@@ -4410,11 +4410,132 @@ body.hc-shell-claimed .nav{background:var(--panel);border-bottom:1px solid var(-
   function hcEsc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(ch){
     return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[ch]; }); }
 
+  // Page views, read through operations.read's traffic slice — the ONE reader. Bots and
+  // owner previews are excluded there, not here: measured 2026-09-08, 54 of 135 page_loads
+  // rows were device_class='bot'. "N people looked at your page" is a claim about humans.
+  async function hcLoadTraffic(businessId){
+    try{
+      var c = await authGetClient();
+      var u = await c.auth.getUser();
+      var uid = u && u.data && u.data.user && u.data.user.id;
+      if(!uid) return null;
+      var r = await c.rpc('get_business_traffic', { p_business_id: businessId, p_owner_id: uid });
+      if(r && r.error) return null;
+      var rows = Array.isArray(r && r.data) ? r.data : [];
+      if(!rows.length) return null;
+      var top = rows[0];
+      var today = new Date().toISOString().slice(0,10);
+      var y = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+      var when = top.day === today ? 'today' : (top.day === y ? 'yesterday' : ('on ' + top.day));
+      return { people: Number(top.people) || 0, when: when };
+    }catch(e){ return null; }
+  }
+  // At least one bookable service. Drives whether the greeting may say "set up to take
+  // bookings" — a site with no services cannot take one, and saying it could would be the
+  // false-green defect inside the greeting itself.
+  async function hcHasServices(businessId){
+    try{
+      var c = await authGetClient();
+      var r = await c.rpc('get_my_site_gaps', { p_business_id: businessId });
+      var g = r && r.data;
+      return !!(g && Number(g.services) > 0);
+    }catch(e){ return false; }
+  }
+
+  // Elapsed time in the words a person uses. Never a fabricated precision.
+  function hcAgo(iso){
+    var t = new Date(iso).getTime();
+    if(!isFinite(t)) return null;
+    var mins = Math.floor((Date.now() - t) / 60000);
+    if(mins < 1) return 'just now';
+    if(mins < 60) return mins + (mins === 1 ? ' minute ago' : ' minutes ago');
+    var hrs = Math.floor(mins / 60);
+    if(hrs < 24) return hrs + (hrs === 1 ? ' hour ago' : ' hours ago');
+    var days = Math.floor(hrs / 24);
+    return days === 1 ? 'yesterday' : days + ' days ago';
+  }
+  function hcTrim(q, n){
+    q = String(q || '').replace(/\s+/g, ' ').trim();
+    if(!q) return null;
+    return q.length > n ? q.slice(0, n - 1).replace(/[\s,;:.!?-]+$/, '') + '\u2026' : q;
+  }
+
+  // THE GREETING, BUILT FROM ROWS. Returns 0-2 sentences. Empty array = say nothing.
+  async function hcBuildGreeting(biz){
+    var out = [];
+    if(!biz || !biz.id || !hc.draftClaimed) return out;
+    var evs = hcEvents.loaded ? hcEvents.list : await hcLoadEvents(biz.id);
+    evs = Array.isArray(evs) ? evs : [];
+    var chats = evs.filter(function(e){ return e.kind === 'chat.asked'; });
+    var abandoned = evs.filter(function(e){ return e.kind === 'booking.abandoned'; });
+    var ops = await hcLoadTraffic(biz.id);
+
+    // 1. A chat lead quiet 30+ minutes. Most winnable, most perishable.
+    // 2. An abandoned booking form. They were filling it in — higher intent than a question.
+    // 3. A chat lead still live.
+    var lead = chats.find(function(e){ return e.needs_action; }) || null;
+    var stale = abandoned[0] || null;
+    var live = chats.find(function(e){ return !e.needs_action; }) || null;
+
+    function chatLine(e){
+      var q = hcTrim(e.notes, 60);
+      var when = hcAgo(e.occurred_at);
+      var who = e.customer_name ? e.customer_name : 'Someone';
+      // "hasn't booked", not "didn't book" — they still might, and that is the reason
+      // he is being told at all.
+      return who + (q ? (' asked about ' + q) : ' asked on your site') +
+             (when ? (' ' + when) : '') + " and hasn\u2019t booked.";
+    }
+    function abandonedLine(e){
+      var when = hcAgo(e.occurred_at);
+      var who = e.customer_name ? e.customer_name : 'Someone';
+      var svc = e.service_name ? (' a ' + e.service_name) : '';
+      var contact = e.customer_phone ? ' \u2014 they left a phone number.' : '.';
+      // Past tense here: they stopped, and the form is not still open.
+      return who + ' started booking' + svc + (when ? (' ' + when) : '') +
+             " and didn\u2019t finish" + contact;
+    }
+
+    if(lead) out.push(chatLine(lead));
+    else if(stale) out.push(abandonedLine(stale));
+    else if(live) out.push(chatLine(live));
+
+    // 4. Page views. Real people only — bots and owner previews are excluded by the reader.
+    if(out.length < 2 && ops && ops.people > 0){
+      out.push(ops.people === 1
+        ? ('One person looked at your page ' + ops.when + '.')
+        : (ops.people + ' people looked at your page ' + ops.when + '.'));
+    }
+
+    // STATE 2 — genuinely nothing. Say so, and point at the one thing that matters.
+    // NOT "live" and NOT "right now": both imply a reachability check we do not perform.
+    // "is at" is the address; "set up to" is the configuration. Both are facts about rows.
+    if(!out.length){
+      var addr = biz.slug ? (biz.slug + '.myhubly.app') : null;
+      var bookable = await hcHasServices(biz.id);
+      if(addr && bookable) out.push("Nothing\u2019s come in yet. Your site is at " + addr + " and it\u2019s set up to take bookings.");
+      else if(addr) out.push("Nothing\u2019s come in yet. Your site is at " + addr + " \u2014 adding your services and prices is what makes it bookable.");
+      else out.push("Nothing\u2019s come in yet.");
+    }
+    return out;
+  }
+
   async function hcRenderHome(){
     var thread = hcThreadBody(); if(!thread) return;
     thread.innerHTML = '';
     var biz = hc.draftBusiness || {};
-    hcAppendMessage('hubly', 'Welcome back — this is ' + (biz.name || 'your site') + '. What would you like to do?');
+    // ── THE GREETING (L0). Computed from rows; see docs/L0_GREETING_COPY.md. ──────
+    //
+    // Most actionable first, absence IMPLIED rather than announced. A greeting that opens
+    // with a negative every quiet morning trains an owner to skip it, and buries the one
+    // person he could still win. Ordering: unanswered chat lead > abandoned form > live
+    // chat lead > page views. At most two clauses, and a clause whose rows are empty is
+    // dropped rather than filled.
+    //
+    // Nothing here draws a shape for a number we do not have. No score, no trend, no
+    // percentage, no reviews (not readable at all — no Google integration exists).
+    var greetLines = await hcBuildGreeting(biz);
+    greetLines.forEach(function(line){ hcAppendMessage('hubly', line); });
     // THE STREAM. Real events, newest first, before anything advisory — what actually
     // happened outranks what we think they should do next.
     try{

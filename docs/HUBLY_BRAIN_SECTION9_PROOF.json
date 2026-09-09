@@ -4,7 +4,7 @@
   "passed": true,
   "version": "1.0.0",
   "owner": "hubly_brain",
-  "checkedAt": "2026-09-09T00:18:07.966Z",
+  "checkedAt": "2026-09-09T00:42:13.915Z",
   "proofs": [
     "AI Decision Engine module exists",
     "Decision Object type exists",
@@ -63,7 +63,7 @@
   "evidence": {
     "decisionObjects": [
       {
-        "decisionId": "dec_mttcnwsq_34tqhd",
+        "decisionId": "dec_mttdiwhy_5fobnj",
         "recommendation": "Rewrite homepage — lead with proof, then packages, then a single Book CTA",
         "decisionScore": 83,
         "confidence": 90,
@@ -76,10 +76,10 @@
         "finalDecision": "recommend",
         "explanation": "I recommend \"Rewrite homepage — lead with proof, then packages, then a single Book CTA\" but I'm waiting for your approval before changing anything. Confidence 90%, Evidence Quality 78%, Business Alignment 100%, Customer Impact 72%, Experience Impact 75%, Risk medium, Requires Approval Yes, Overall Decision Score 83%.",
         "missingInfo": [],
-        "timestamp": "2026-09-09T00:18:07.946Z"
+        "timestamp": "2026-09-09T00:42:13.894Z"
       },
       {
-        "decisionId": "dec_mttcnwsq_7i1yvm",
+        "decisionId": "dec_mttdiwhz_z1q0jk",
         "recommendation": "Move Reviews Higher",
         "decisionScore": 88,
         "confidence": 96,
@@ -92,10 +92,10 @@
         "finalDecision": "proceed",
         "explanation": "I can proceed with \"Move Reviews Higher\" automatically. Confidence 96%, Evidence Quality 88%, Business Alignment 100%, Customer Impact 72%, Experience Impact 75%, Risk low, Requires Approval No, Overall Decision Score 88%.",
         "missingInfo": [],
-        "timestamp": "2026-09-09T00:18:07.946Z"
+        "timestamp": "2026-09-09T00:42:13.895Z"
       },
       {
-        "decisionId": "dec_mttcnwsq_tnfan6",
+        "decisionId": "dec_mttdiwhz_oornkc",
         "recommendation": "Rewrite homepage for luxury branding",
         "decisionScore": 52,
         "confidence": 68,
@@ -112,10 +112,10 @@
           "target_customer",
           "business_name"
         ],
-        "timestamp": "2026-09-09T00:18:07.946Z"
+        "timestamp": "2026-09-09T00:42:13.895Z"
       },
       {
-        "decisionId": "dec_mttcnwsq_1ynbrq",
+        "decisionId": "dec_mttdiwhz_zjvgao",
         "recommendation": "Change pricing to premium packages only",
         "decisionScore": 49,
         "confidence": 42,
@@ -128,10 +128,10 @@
         "finalDecision": "research_more",
         "explanation": "I want to research more before committing to \"Change pricing to premium packages only\" — evidence isn't strong enough yet. Confidence 42%, Evidence Quality 25%, Business Alignment 57%, Customer Impact 63%, Experience Impact 70%, Risk high, Requires Approval Yes, Overall Decision Score 49%.",
         "missingInfo": [],
-        "timestamp": "2026-09-09T00:18:07.946Z"
+        "timestamp": "2026-09-09T00:42:13.895Z"
       },
       {
-        "decisionId": "dec_mttcnwsq_mo3l0a",
+        "decisionId": "dec_mttdiwhz_k4ql4a",
         "recommendation": "Use Family-Owned Branding",
         "decisionScore": 83,
         "confidence": 88,
@@ -144,7 +144,7 @@
         "finalDecision": "recommend",
         "explanation": "I recommend \"Use Family-Owned Branding\" but I'm waiting for your approval before changing anything. Confidence 88%, Evidence Quality 88%, Business Alignment 100%, Customer Impact 68%, Experience Impact 70%, Risk medium, Requires Approval Yes, Overall Decision Score 83%.",
         "missingInfo": [],
-        "timestamp": "2026-09-09T00:18:07.946Z"
+        "timestamp": "2026-09-09T00:42:13.895Z"
       }
     ],
     "decisionScores": [
@@ -184,7 +184,7 @@
     ],
     "askVsProceed": {
       "proceed": {
-        "decisionId": "dec_mttcnwsq_7i1yvm",
+        "decisionId": "dec_mttdiwhz_z1q0jk",
         "recommendation": "Move Reviews Higher",
         "decisionScore": 88,
         "confidence": 96,
@@ -197,10 +197,10 @@
         "finalDecision": "proceed",
         "explanation": "I can proceed with \"Move Reviews Higher\" automatically. Confidence 96%, Evidence Quality 88%, Business Alignment 100%, Customer Impact 72%, Experience Impact 75%, Risk low, Requires Approval No, Overall Decision Score 88%.",
         "missingInfo": [],
-        "timestamp": "2026-09-09T00:18:07.946Z"
+        "timestamp": "2026-09-09T00:42:13.895Z"
       },
       "ask": {
-        "decisionId": "dec_mttcnwsq_tnfan6",
+        "decisionId": "dec_mttdiwhz_oornkc",
         "recommendation": "Rewrite homepage for luxury branding",
         "decisionScore": 52,
         "confidence": 68,
@@ -217,11 +217,11 @@
           "target_customer",
           "business_name"
         ],
-        "timestamp": "2026-09-09T00:18:07.946Z"
+        "timestamp": "2026-09-09T00:42:13.895Z"
       }
     },
     "researchMoreExample": {
-      "decisionId": "dec_mttcnwsq_1ynbrq",
+      "decisionId": "dec_mttdiwhz_zjvgao",
       "recommendation": "Change pricing to premium packages only",
       "decisionScore": 49,
       "confidence": 42,
@@ -234,43 +234,43 @@
       "finalDecision": "research_more",
       "explanation": "I want to research more before committing to \"Change pricing to premium packages only\" — evidence isn't strong enough yet. Confidence 42%, Evidence Quality 25%, Business Alignment 57%, Customer Impact 63%, Experience Impact 70%, Risk high, Requires Approval Yes, Overall Decision Score 49%.",
       "missingInfo": [],
-      "timestamp": "2026-09-09T00:18:07.946Z"
+      "timestamp": "2026-09-09T00:42:13.895Z"
     },
     "storedDecisionHistory": [
       {
-        "decisionId": "dec_mttcnwsq_34tqhd",
+        "decisionId": "dec_mttdiwhy_5fobnj",
         "recommendation": "Rewrite homepage — lead with proof, then packages, then a single Book CTA",
         "finalDecision": "recommend",
         "decisionScore": 83,
-        "timestamp": "2026-09-09T00:18:07.946Z"
+        "timestamp": "2026-09-09T00:42:13.894Z"
       },
       {
-        "decisionId": "dec_mttcnwsq_7i1yvm",
+        "decisionId": "dec_mttdiwhz_z1q0jk",
         "recommendation": "Move Reviews Higher",
         "finalDecision": "proceed",
         "decisionScore": 88,
-        "timestamp": "2026-09-09T00:18:07.946Z"
+        "timestamp": "2026-09-09T00:42:13.895Z"
       },
       {
-        "decisionId": "dec_mttcnwsq_tnfan6",
+        "decisionId": "dec_mttdiwhz_oornkc",
         "recommendation": "Rewrite homepage for luxury branding",
         "finalDecision": "ask",
         "decisionScore": 52,
-        "timestamp": "2026-09-09T00:18:07.946Z"
+        "timestamp": "2026-09-09T00:42:13.895Z"
       },
       {
-        "decisionId": "dec_mttcnwsq_1ynbrq",
+        "decisionId": "dec_mttdiwhz_zjvgao",
         "recommendation": "Change pricing to premium packages only",
         "finalDecision": "research_more",
         "decisionScore": 49,
-        "timestamp": "2026-09-09T00:18:07.946Z"
+        "timestamp": "2026-09-09T00:42:13.895Z"
       },
       {
-        "decisionId": "dec_mttcnwsq_mo3l0a",
+        "decisionId": "dec_mttdiwhz_k4ql4a",
         "recommendation": "Use Family-Owned Branding",
         "finalDecision": "recommend",
         "decisionScore": 83,
-        "timestamp": "2026-09-09T00:18:07.946Z"
+        "timestamp": "2026-09-09T00:42:13.895Z"
       }
     ],
     "whyDidntYou": {
@@ -278,12 +278,12 @@
       "fromStoredDecision": true,
       "regenerated": false,
       "answer": "I didn't make that change automatically because my Decision Engine routed to \"recommend\". I recommend \"Use Family-Owned Branding\" but I'm waiting for your approval before changing anything. Confidence 88%, Evidence Quality 88%, Business Alignment 100%, Customer Impact 68%, Experience Impact 70%, Risk medium, Requires Approval Yes, Overall Decision Score 83%.",
-      "decisionId": "dec_mttcnwsq_mo3l0a",
+      "decisionId": "dec_mttdiwhz_k4ql4a",
       "finalDecision": "recommend"
     },
     "demo": {
       "request": "Rewrite my homepage.",
-      "homepageDecisionId": "dec_mttcnwsq_34tqhd",
+      "homepageDecisionId": "dec_mttdiwhy_5fobnj",
       "think": {
         "finalDecision": "recommend",
         "decisionScore": 82,

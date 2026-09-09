@@ -13507,6 +13507,22 @@ function hcResolvePublicRoute(){
 window.addEventListener('popstate',()=>{
   if(typeof getSlugFromHost==='function'&&getSlugFromHost()){ hcResolvePublicRoute(); return; }
   const dest=pageForHublyPath(hublyPath())||'p-landing';
+  // THE DEMO FLAG DOES NOT LEAVE THE DEMO PATH. Closed 2026-09-08.
+  //
+  // S._ceoDemo was set on /hubly-ceo (secret key required) and cleared in exactly ONE
+  // place — startCreateDemoMode(), i.e. navigating to /create-demo. Nothing else reset it,
+  // so whoever held the key could open the demo, navigate to the dashboard in the same tab,
+  // and carry the flag onto a REAL business: allowDemoSeed() then returned true and demo
+  // fixtures — named people with phone numbers and emails — rendered over real data.
+  //
+  // Not reachable by a customer, and never was. But the person it could reach is the one
+  // who acts on what he sees, and a demo customer on a real screen is indistinguishable
+  // from a real one. So the flag is dropped the moment navigation leaves the demo path,
+  // rather than relying on the person to remember which mode the tab is in.
+  if(S._ceoDemo && !isCeoDemoPath()){
+    S._ceoDemo=false;
+    try{sessionStorage.removeItem('hubly_ceo_demo_ok');}catch(e){}
+  }
   if(S._ceoDemo||isCeoDemoAuthorized()){
     startCeoDemoMode();
     return;
@@ -13749,6 +13765,29 @@ function openOperateHome(opts){
         history.replaceState({page:'p-app'},'', '/app');
       }
       if(!wantRestore)document.title='Hubly · Home';
+    }
+  }catch(e){}
+  // ── THE DASHBOARD VIEW IS RETIRED. THE FRONT DOOR IS THE HOME. ──────────────────
+  //
+  // Deprecation step, 2026-09-08. Deliberately NOT a blanket /app redirect — jobs,
+  // calendar, leads, customers, chats and the rest are working surfaces the front door
+  // does not have yet, and removing them would cost more than the fabrications did.
+  // ONLY the dashboard view redirects.
+  //
+  // Why now: every booking email already in owners' inboxes points at /app, so an owner
+  // arriving from one landed on the card wall. booking-notify was repointed at / earlier
+  // today, but the emails already sent cannot be. This closes that path for the screen that
+  // was inventing things, and leaves every screen that was not.
+  //
+  // The front door shows the same information honestly: real booking, chat and abandoned-
+  // booking events from get_business_events, and gaps from real empty fields.
+  try{
+    var _persisted = (typeof readPersistedOwnerAppView === 'function') ? readPersistedOwnerAppView() : null;
+    var _target = wantRestore ? ((_persisted && _persisted.view) || 'dashboard') : 'dashboard';
+    if(_target === 'dashboard'){
+      // replace, not assign: an owner pressing Back should not bounce into the retired view.
+      location.replace('/');
+      return;
     }
   }catch(e){}
   if(wantRestore){

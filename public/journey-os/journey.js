@@ -49,7 +49,22 @@
   function S() { return global.S || {}; }
   function allowDemoSeed() {
     var st = S();
-    return !!(st && st._ceoDemo) || !!(global.__HUBLY_MAT__ || global.__HUBLY_ALLOW_DEMO_SEED__);
+    // DEFENCE AT THE GATE THE FIXTURES ACTUALLY READ. Added 2026-09-08.
+    //
+    // S._ceoDemo persists in memory and was cleared in only one place, so it could ride a
+    // navigation off /hubly-ceo onto a REAL business and seed demo people over real data.
+    // The popstate handler in hubly.html now drops it, but popstate only fires on
+    // back/forward — an in-app route change does not. So the flag is re-checked against the
+    // path HERE, at the point of use, which every navigation route has to pass through.
+    //
+    // A demo customer reaching a real screen is indistinguishable from a real one, so this
+    // is checked rather than trusted.
+    var onDemoPath = true;
+    try {
+      var p = (global.location && global.location.pathname) || '';
+      onDemoPath = p === '/hubly-ceo' || p === '/create-demo';
+    } catch (e) { onDemoPath = false; }
+    return (!!(st && st._ceoDemo) && onDemoPath) || !!(global.__HUBLY_MAT__ || global.__HUBLY_ALLOW_DEMO_SEED__);
   }
   function esc(v) {
     if (typeof global.escapeHtml === 'function') return global.escapeHtml(v);
