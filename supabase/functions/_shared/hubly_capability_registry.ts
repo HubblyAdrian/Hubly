@@ -6387,13 +6387,24 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             name: {
               type: "string",
               description:
-                "The business's real name if they gave one, exactly as given. If they have NOT " +
-                "given a name, DERIVE a descriptive one from what they actually said — " +
-                "'Mobile Dog Grooming in Lehi', 'Lehi Wedding Photography' — and pass that. " +
-                "NEVER invent a generic placeholder like 'Your Business', 'My Company' or " +
-                "'New Business': a site called Your Business is one nobody wants to keep, and " +
-                "four already exist in production because this was left vague. Only ask for a " +
-                "name if you genuinely cannot derive anything meaningful from what they said.",
+                "The business's real name, exactly as they said it. ASK for it before calling this " +
+                "— one question, after you have reflected back what you understood, never as an opener.\n\n" +
+                "You may DERIVE a name only when it is specific enough to be one: 'Mobile Dog Grooming in " +
+                "Lehi' and 'Lehi Wedding Photography' are real names because they carry a trade AND a place. " +
+                "'Aviation Business', 'Detailing Company', 'Landscaping Services' are CATEGORIES wearing a " +
+                "name's clothes — never pass one. When you have no trade specificity or no location, ASK.\n\n" +
+                "The clause that used to sit here — 'only ask if you cannot derive anything meaningful' — " +
+                "guaranteed it never asked, because deriving always beats asking. That is how " +
+                "aviation-business.myhubly.app was minted for a real person, and the name became their " +
+                "permanent address. If they will not give a name, pass unnamed: true instead of inventing one.",
+            },
+            unnamed: {
+              type: "boolean",
+              description:
+                "Set true ONLY when you asked what the business is called and they declined, ignored it, " +
+                "or gave something that is plainly not a name. The record is marked as having no name yet " +
+                "and the site says so, which is an honest gap they can close in one sentence — never a " +
+                "real-looking name they did not choose and cannot change.",
             },
             palette: {
               type: "string",
@@ -6444,12 +6455,27 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             };
           }
           const businessType = String(args?.businessType || "").trim() || undefined;
+          // MARKED, NOT FAKED. When the owner would not give a name, the record says so
+          // and the site can say so — an honest gap they close in one sentence, never a
+          // real-looking name they did not choose and (until today) could not change.
+          const nameUnset = (args as Record<string, unknown>)?.unnamed === true;
           const r = await callBusinessRpc("start_business_in_progress", {
             p_name: name,
             p_business_type: businessType || null,
           });
           if (!r || r.ok !== true) {
             return { ok: false, real: false, summary: "The business record could not be created right now.", error: r?.error || "rpc_unreachable" };
+          }
+          if (nameUnset && r?.id) {
+            // Best-effort: a failed flag must never fail the signup. Under-recording it
+            // means the site shows a name-shaped placeholder for longer, which is
+            // survivable; losing the draft is not.
+            try {
+              await callBusinessRpc("set_business_name_unset", {
+                p_id: r.id, p_draft_token: r.draft_token || null,
+                p_owner_id: injectedOwnerUid(args) || null, p_value: true,
+              });
+            } catch (_e) { /* the draft stands either way */ }
           }
           // Structural safety net, not reliance on the model remembering to
           // set seoTitle on the very same turn: businessType defaults to
@@ -6771,6 +6797,75 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             if (kind === "block") parts.push("This is NOT a customer and must never be described as one.");
           }
           return { ok: true, real: true, summary: parts.join(" "), raw: res };
+        },
+      },
+      {
+        // THE ADDRESS IS CHANGEABLE. Nothing in the product could write a slug: it was
+        // minted from the first name at startDraft and was permanent, so a category the
+        // model invented became a real person's web address with no way to change it.
+        //
+        // BEFORE CLAIM there is no ceremony — nobody has seen the URL, nothing links to
+        // it. AFTER CLAIM the old address stops working the moment this runs (there is no
+        // alias table; resolution is a single slug lookup), and that consequence is
+        // stated IN THE CONFIRM rather than after it.
+        name: "setAddress",
+        description:
+          "Change the business's web address (the myhubly.app subdomain). Use it when they ask for a different address, and after a NAME change on an unclaimed draft so the address follows the name.\\n\\n" +
+          "ALWAYS READ THE EXACT FINAL ADDRESS BACK BEFORE IT COMMITS. What they type is not what it becomes — \"Graef's Auto Detailing & Ceramic\" becomes graefs-auto-detailing-ceramic, and a typo they would want to catch survives verbatim. Call with confirmed:false first, say the exact address, then call again with confirmed:true once they agree.\\n\\n" +
+          "ON A CLAIMED SITE the old address STOPS WORKING immediately — anyone holding the old link will not reach them. Say that in the same breath as the offer, before they answer. Do not soften it and never say the old one keeps working.\\n\\n" +
+          "IF IT IS TAKEN, say so and OFFER the alternative as a choice. Never accept a numbered variant on their behalf.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: { type: "string", description: "Supplied by the system; put any placeholder here." },
+            address: { type: "string", description: "What they want it to be, in their words. It is normalised here." },
+            confirmed: { type: "boolean", description: "True only after they have heard the exact final address and, on a claimed site, that the old one stops working." },
+          },
+          required: ["address"],
+        },
+        handler: async (args) => {
+          const draftId = String((args as Record<string, unknown>)?.draftId || "").trim();
+          const draftToken = String((args as any)?.draftToken || "").trim();
+          const ownerUid = injectedOwnerUid(args);
+          if (!draftId || (!draftToken && !ownerUid)) {
+            return { ok: false, real: false, error: "missing_draft", summary: "No business is connected to this conversation." };
+          }
+          const want = String((args as any)?.address || "").trim();
+          if (!want) return { ok: false, real: false, error: "needs_value", summary: "Ask what they would like the address to be." };
+          const r = await callBusinessRpc("set_business_slug", {
+            p_business_id: draftId, p_owner_id: ownerUid, p_slug: want,
+            p_confirmed: (args as any)?.confirmed === true,
+          }) as Record<string, unknown> | null;
+          if (!r) return { ok: false, real: false, error: "rpc_failed", summary: "The address could not be changed just now. It has NOT changed." };
+          if (r.ok !== true) {
+            const why = String(r.error || "unknown");
+            if (why === "taken") {
+              return { ok: false, real: false, error: "taken",
+                summary: `${r.slug}.${HUBLY_DOMAIN} is already taken. Offer ${r.suggestion}.${HUBLY_DOMAIN} as an alternative and let them choose — do not take it on their behalf.` };
+            }
+            if (why === "needs_confirm") {
+              // THE CONSEQUENCE IS IN THE CONFIRM ITSELF.
+              return { ok: false, real: false, error: "needs_confirm",
+                summary: `Their site would move to ${r.slug}.${HUBLY_DOMAIN}. Their current address ${r.old_slug}.${HUBLY_DOMAIN} STOPS WORKING the moment it changes — anyone holding the old link will not reach them. Say exactly that, then ask if they want it. Call again with confirmed:true only if they say yes.` };
+            }
+            if (why === "not_a_slug") {
+              return { ok: false, real: false, error: "not_a_slug", summary: "That does not make a usable web address. Ask for something with letters or numbers in it." };
+            }
+            if (why === "not_owner") {
+              return { ok: false, real: false, error: "not_owner", summary: "That business's address is not changeable by the signed-in account." };
+            }
+            return { ok: false, real: false, error: why, summary: "The address could not be changed. It has NOT changed." };
+          }
+          if (r.unchanged === true) {
+            return { ok: true, real: true, summary: `That is already their address: ${r.slug}.${HUBLY_DOMAIN}.` };
+          }
+          return {
+            ok: true, real: true,
+            summary: r.was_claimed === true
+              ? `Their site is now at ${r.slug}.${HUBLY_DOMAIN}. The old address ${r.old_slug}.${HUBLY_DOMAIN} no longer works.`
+              : `Their site is now at ${r.slug}.${HUBLY_DOMAIN}.`,
+            raw: r,
+          };
         },
       },
       {
