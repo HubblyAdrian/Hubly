@@ -1061,8 +1061,17 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
   /* Both panes fill the area below the toggle; show exactly one at a time. */
   .hc-app-left, .hc-app.hc-has-draft .hc-app-left{ flex:1 1 auto; width:100%; min-width:0; min-height:0; border:0; }
   .hc-app-right, .hc-app.hc-has-draft .hc-app-right{ display:flex; flex:1 1 auto; width:100%; min-width:0; min-height:0; animation:none; }
-  .hc-app[data-mview="site"] .hc-app-left{ display:none; }
-  .hc-app:not([data-mview="site"]) .hc-app-right{ display:none; }
+  /* EXACTLY ONE PANE ON A PHONE — and !important is load-bearing here, not laziness.
+     These two rules are (0,3,0) and (0,2,1). The desktop layout rules they must beat are
+     MORE specific: `.hc-app.hc-has-draft:not(.hc-claimed) .hc-app-right` is (0,4,0), and
+     `.hc-app.hc-claimed[data-mode="website"] .hc-app-right` likewise. A media query adds
+     no specificity, so the desktop `display:flex` won and BOTH panes rendered — which on
+     a phone reads as the whole site drawn a second time, inline, under the chat column
+     (reported 2026-09-09 from a real handset). Raising specificity here would mean
+     mirroring every current and future desktop layout rule; the invariant is simpler than
+     that and belongs stated once: on a phone, one pane, whatever the desktop rules say. */
+  .hc-app[data-mview="site"] .hc-app-left{ display:none !important; }
+  .hc-app:not([data-mview="site"]) .hc-app-right{ display:none !important; }
   /* No site yet -> chat is the whole screen, no toggle, nothing to switch to. */
   .hc-app:not(.hc-has-draft) .hc-app-right{ display:none; }
 

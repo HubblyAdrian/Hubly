@@ -738,3 +738,37 @@ The transferable form: **an error path is reachable by many errors, not just the
 one.** When the dramatic trigger is expensive or destructive to reproduce, look for the
 cheapest input that lands in the same handler. And state precisely what remains unproved —
 here, `upstream_status`, which only a genuine provider HTTP error can populate.
+
+---
+
+## Lesson 25 — a harness changes the system it measures, and the second time it did so it blocked a real person
+
+Twice in one day a measuring instrument altered the thing it was measuring.
+
+**First, cheaply:** the build-rate script created 53 draft businesses. They were test rows
+and they were cleaned up, but while they existed they were 96% of the corpus, and any
+number computed over `businesses` during that window would have described our harness.
+
+**Then, expensively:** at 20:37 the product refused Adrian on his phone —
+*"I couldn't create the site draft right now"* — because the test scripts had already
+spent all ten of that hour's drafts on the shared address. A real person, on the walk that
+gates the release, was blocked by the instrument watching him.
+
+Neither was a bug in the harness. Both are the same property: **a harness that drives the
+real product consumes the real product's finite resources** — quota, rate-limit allowance,
+rows in the tables the metrics read, slugs in a unique namespace.
+
+So, before writing one:
+
+1. **List what it consumes**, not just what it costs. Quota was obvious; the per-IP
+   allowance was not, and it was the one that hurt.
+2. **Make it declare itself** so its own rows can be excluded — `x-hubly-synthetic` exists
+   for exactly this, and a declared flag beats sniffing (an unmarked harness should be a
+   visible bug, not a quietly better number).
+3. **Assume a real person may be behind the same key at the same moment.** On a shared
+   address — and mobile carriers put thousands behind one — "my traffic" and "their
+   traffic" are indistinguishable to any guard keyed on it.
+
+The reason this deserves writing down rather than remembering: the next harness will do it
+too. The one that blocked Adrian was written by someone who had spent the whole day being
+careful about exactly this class of mistake.

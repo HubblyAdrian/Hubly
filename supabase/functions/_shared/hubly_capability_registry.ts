@@ -6531,22 +6531,12 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             }
             return { ok: false, real: false, summary: "The site draft could not be created — this is a fault on our side, not anything they did. Say so plainly and that trying again in a moment is worth it.", error: r?.error || "rpc_unreachable" };
           }
-          if (nameUnset && r?.id) {
-            // Best-effort: a failed flag must never fail the signup. Under-recording it
-            // means the site shows a name-shaped placeholder for longer, which is
-            // survivable; losing the draft is not.
-            try {
-              await callBusinessRpc("set_business_name_unset", {
-                p_id: r.id, p_draft_token: r.draft_token || null,
-                // NOT injectedOwnerUid: startDraft is deliberately absent from
-                // DRAFT_INJECTED_ACTIONS because it CREATES the draft — there is nothing
-                // to inject yet. A brand-new draft authorises by its token, and reaching
-                // for the owner here made the checker flag startDraft as reading an
-                // injection it can never receive.
-                p_owner_id: null, p_value: true,
-              });
-            } catch (_e) { /* the draft stands either way */ }
-          }
+          // NO SECOND WRITE FOR "UNNAMED". businesses.name_unset is a GENERATED column —
+          // (name is null or btrim(name) = '') — so it follows the name and cannot
+          // disagree with it. It used to be a flag set here and cleared nowhere, which is
+          // exactly how site-0d4b70 came to hold 'James famous photography' while
+          // claiming to be unnamed. One fact, one source; nobody has to remember a fifth
+          // place to keep in step.
           // Structural safety net, not reliance on the model remembering to
           // set seoTitle on the very same turn: businessType defaults to
           // 'detailing' at the schema level, and the legacy blueprint
