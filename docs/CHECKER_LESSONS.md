@@ -503,3 +503,41 @@ output before you believe it.** A regex over free text is a hypothesis about phr
 the model's job is to vary phrasing. If the number will be reported to a person, the
 sample it was computed from is part of the report — one printed reply would have cost
 nothing and caught this instantly. Counting is cheap; counting the wrong thing is not.
+
+---
+
+## Lesson 16 — append each result as it lands, because the run that teaches you most is the one that dies before the end
+
+The build-rate script held every result in memory and wrote its artifact after the last
+run. The OpenAI account emptied on run ~33 of 40, the process exited, and all 33 results
+went with it — results that had already been paid for in the exact resource that ran out.
+Re-running them cost another top-up.
+
+The rule is not "handle errors". It is that **a measurement's output is due the moment the
+measurement exists, not when the batch completes.** Anything that runs N times against a
+resource that can be exhausted — quota, rate limit, a flaky endpoint — writes result n
+before starting n+1. The file is marked incomplete while it is, and the summary refuses to
+present a truncated sample as the answer, which is the CANNOT RUN discipline applied to a
+run that started fine and stopped early.
+
+The corollary is that partial data is worth having. Thirty-three runs cut short still
+answers "is it near 50%"; zero runs answers nothing. Discarding them to keep the artifact
+tidy is throwing away the expensive half of the work to protect the cheap half.
+
+## Lesson 17 — unwind through `finally`, because `process.exit` skips the cleanup
+
+The same abort orphaned 53 draft businesses. The worker called `process.exit(2)` on the
+outage, and `process.exit` does not run `finally` blocks — which is exactly where the
+script deleted the rows it had created. The cleanup was correct, tested, and never
+reached.
+
+`process.exitCode = 2` followed by a normal return does the same job and runs the
+unwinding. In a concurrent script the shape is: raise a flag, let the workers drain, let
+`main` return, let `finally` do its work, set the exit code last.
+
+The general form, and it is the same mistake as the parallel path in Lesson 14: **an early
+exit is a branch around every guarantee the normal path makes.** `process.exit` skips
+`finally`; `return` before a postcondition skips the assert; a second function skips the
+rate limit. In each case the skipped code is invisible at the point you wrote the exit,
+because it is somewhere else and unchanged. Ask what the normal path does after the point
+you are leaving, every time you leave early.

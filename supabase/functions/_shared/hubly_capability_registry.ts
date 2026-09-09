@@ -6458,6 +6458,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const r = await callBusinessRpc("start_business_in_progress", {
             p_name: name,
             p_business_type: businessType || null,
+            // The visitor's real address, injected by hubly-conversation from the inbound
+            // request. The RPC's own _caller_ip() sees this function's connection to
+            // PostgREST, not the browser, so without this the per-IP rate limit counts
+            // our own rotating egress address and caps nothing.
+            p_client_ip: String((args as Record<string, unknown>)?._clientIp || "") || null,
           });
           if (!r || r.ok !== true) {
             return { ok: false, real: false, summary: "The business record could not be created right now.", error: r?.error || "rpc_unreachable" };

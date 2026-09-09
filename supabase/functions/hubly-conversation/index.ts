@@ -933,6 +933,13 @@ Only invoke a capability when someone has actually given you something to act on
 }
 
 Deno.serve(async (req) => {
+  // Read once, at the edge, where the visitor's address actually is. See the injection
+  // for business.startDraft below for why the database cannot read this itself.
+  const clientIp = (req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || null;
+  // Declared out here on purpose: `context` below is inside the try, so the catch cannot
+  // see it. The alert wants to know whether an outage hit an owner signing up or a
+  // customer on a live business site, and that distinction is lost if this is not hoisted.
+  let failureContext = "owner";
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return jsonRes({ ok: false, error: "POST required" }, 405);
 
@@ -998,6 +1005,7 @@ Deno.serve(async (req) => {
   const context: ConversationContextName =
     body?.context === "customer" ? "customer" : body?.context === "operate" ? "operate" : "dashboard";
   const adapter = getUnderstandingAdapter(context);
+  failureContext = context === "customer" ? "customer" : "owner";  // for the catch, which cannot see `context`
 
   // The deterministic opening needs no model call at all, so it must never
   // be gated behind provider configuration — check for it before the
@@ -2099,6 +2107,23 @@ Deno.serve(async (req) => {
         if (SELECTION_INJECTED_ACTIONS.has(`${capabilityName}.${actionName}`) && selection) {
           dispatchArgs._selection = selection;
         }
+        // THE REAL CLIENT IP, INJECTED — because the database cannot see it.
+        // start_business_in_progress rate-limits to 10 drafts per IP per hour via
+        // _caller_ip(), which reads PostgREST's `request.headers`. Those are the headers
+        // of THIS function's connection to PostgREST, not the visitor's — so the guard was
+        // counting the edge runtime's own egress address, which rotates per invocation.
+        // Measured 2026-09-09: 52 drafts, 52 "distinct" IPs, max 3 each. The limit capped
+        // nothing, and a draft costs roughly a thirty-fifth of an OpenAI top-up, so a
+        // script could empty the account in minutes for free.
+        //
+        // The true address IS available here, on the inbound request, and it is NOT
+        // spoofable: two forged x-forwarded-for values sent through page-view left its
+        // visitor_hash unchanged, so the platform overwrites the header rather than
+        // appending to it and the first hop is the real client. Structural, like draftId —
+        // never a model argument, and redacted from the actions log below.
+        if (`${capabilityName}.${actionName}` === "business.startDraft") {
+          dispatchArgs._clientIp = clientIp;
+        }
         // Real page generation can run well past what a single request
         // should block on (confirmed live: 100-150+s, right at/over
         // Supabase's function timeout). generateDocument specifically runs
@@ -2254,7 +2279,8 @@ Deno.serve(async (req) => {
           args: (() => {
             if (!dispatchArgs.draftToken && !dispatchArgs._ownerToken && dispatchArgs._storefrontAst === undefined
                 && dispatchArgs.ownerUid === undefined && dispatchArgs._userMessage === undefined
-                && dispatchArgs._selection === undefined) return dispatchArgs;
+                && dispatchArgs._selection === undefined
+                && dispatchArgs._clientIp === undefined) return dispatchArgs;
             const a: Record<string, unknown> = { ...dispatchArgs };
             if (a.draftToken) a.draftToken = "[redacted]";
             if (a._ownerToken) a._ownerToken = "[redacted]";
@@ -2265,6 +2291,7 @@ Deno.serve(async (req) => {
             // long. Keep the NAME, because that is the one part worth reading back in a
             // log ("which element did this turn act on"), and drop the rest.
             if (a._selection !== undefined) a._selection = (a._selection as { name?: string })?.name || "[omitted]";
+            if (a._clientIp !== undefined) a._clientIp = "[redacted]";     // personal data, and this log is returned to the client
             return a;
           })(),
           ok: !!result.ok,
@@ -2500,6 +2527,23 @@ Deno.serve(async (req) => {
     });
   } catch (err) {
     console.error("hubly-conversation error:", err);
+    // AND WRITE IT DOWN. console.error goes to a log nobody is watching; on 2026-09-09
+    // the OpenAI account emptied twice and both times a test script was what noticed.
+    // This row is what the ops alert reads — no synthetic probe, no quota spent, and it
+    // counts the failures real people actually hit. Best-effort and never awaited into
+    // the response: a failure to record a failure must not change what the visitor sees.
+    try {
+      const status = typeof (err as { status?: unknown })?.status === "number"
+        ? (err as { status: number }).status : null;
+      void createAdminClient().rpc("record_endpoint_failure", {
+        p_fn: "hubly-conversation",
+        p_detail: String((err as { message?: unknown })?.message ?? err).slice(0, 300),
+        p_upstream_status: status,
+        // Same outage, different victim: an owner who cannot sign up, or a customer who
+        // cannot talk to a live business site. Worth telling apart in the alert.
+        p_context: failureContext,
+      });
+    } catch { /* never let recording a failure become a failure */ }
     // The message, not the stack. A 502 with no detail is a bug you debug by
     // guessing; this one cost a round of bisecting-by-deploy to find. Message
     // only, and only the first 300 characters -- an exception string can carry

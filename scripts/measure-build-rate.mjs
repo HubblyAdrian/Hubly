@@ -68,6 +68,24 @@ const CASES = [
   { id: "NAMED",   say: "I run Ridgeline Detail, mobile detailing in LA" },
 ];
 
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE PRICE, PRINTED BEFORE ANYTHING IS SPENT.
+//
+// This script drives the LIVE endpoint: every case creates a real business row and
+// generates a real website through the model. That is not free, and on 2026-09-09 it
+// stopped being theoretical — roughly 35 signups drained a full OpenAI top-up, twice
+// taking signup down for every visitor and every customer chat on every live business
+// site. This file used to run inside `npm test`, so an ordinary test run spent money.
+// It is opt-in now, and it says what it costs before it costs it.
+// ─────────────────────────────────────────────────────────────────────────────
+function printPrice(drafts) {
+  console.log(
+    `\n  THIS RUN WILL CREATE ${drafts} DRAFT BUSINESSES AND GENERATE ${drafts} WEBSITES.\n` +
+    `  Cost anchor (2026-09-09, denominator unknown): ~35 signups drained one full top-up,\n` +
+    `  so this is roughly ${(drafts / 35 * 100).toFixed(0)}% of a top-up. Drafts are deleted afterwards; quota is not refunded.\n`);
+}
+
 let cannotRun = null;
 const created = [];
 const results = [];
@@ -110,6 +128,7 @@ async function one(c, i) {
 }
 
 async function main() {
+  printPrice(N * CASES.length);
   for (const c of CASES) {
     const queue = Array.from({ length: N }, (_, i) => i + 1);
     const workers = Array.from({ length: CONCURRENCY }, async () => {

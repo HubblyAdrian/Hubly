@@ -96,10 +96,29 @@ function bailIfCannotRun(e) {
 
 const ASKS_FOR_NAME = /what(?:'s| is| do you| are you)?[^.?!]{0,40}\b(call(?:ed)?|name)\b|name (?:of|for) (?:the|your) business|what.{0,15}\bcalled\b/i;
 const started = new Date(Date.now() - 5000).toISOString();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// THE PRICE, PRINTED BEFORE ANYTHING IS SPENT.
+//
+// This script drives the LIVE endpoint: every case creates a real business row and
+// generates a real website through the model. That is not free, and on 2026-09-09 it
+// stopped being theoretical — roughly 35 signups drained a full OpenAI top-up, twice
+// taking signup down for every visitor and every customer chat on every live business
+// site. This file used to run inside `npm test`, so an ordinary test run spent money.
+// It is opt-in now, and it says what it costs before it costs it.
+// ─────────────────────────────────────────────────────────────────────────────
+function printPrice(drafts) {
+  console.log(
+    `\n  THIS RUN WILL CREATE ${drafts} DRAFT BUSINESSES AND GENERATE ${drafts} WEBSITES.\n` +
+    `  Cost anchor (2026-09-09, denominator unknown): ~35 signups drained one full top-up,\n` +
+    `  so this is roughly ${(drafts / 35 * 100).toFixed(0)}% of a top-up. Drafts are deleted afterwards; quota is not refunded.\n`);
+}
+
 const fails = [];
 const created = [];
 
 async function run() {
+  printPrice(3);
   let health;
   try { health = await say("hello"); }
   catch (e) { bailIfCannotRun(e); console.error("CANNOT RUN — the conversation endpoint is unreachable: " + e.message); process.exit(2); }

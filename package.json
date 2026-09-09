@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
+    "check:signup": "node scripts/check-name-is-asked.mjs",
+    "measure:build-rate": "node scripts/measure-build-rate.mjs",
     "deploy:generation": "supabase functions deploy hubly-conversation && supabase functions deploy hubly-document-build",
     "milestone1": "node scripts/milestone1.mjs",
     "milestone1:verbose": "MILESTONE1_VERBOSE=1 node scripts/milestone1.mjs",

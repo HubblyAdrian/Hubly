@@ -165,3 +165,9 @@ verify_jwt = false
 
 [functions.stripe-connect-connection]
 verify_jwt = false
+
+# Same server-to-server shape as booking-notify/signup-notify: pg_cron presents the
+# cron secret, the handler checks OUR key rather than a JWT. Nothing user-facing calls
+# this — it reads endpoint_failures and the draft count and emails the platform owner.
+[functions.ops-alert]
+verify_jwt = false
