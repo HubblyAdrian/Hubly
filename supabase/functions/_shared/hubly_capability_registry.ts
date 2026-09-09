@@ -6965,7 +6965,17 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             ok: true, real: true,
             // Owner-facing: this becomes the reply. No directives (see
             // scripts/check-no-directives-to-owners.mjs).
-            summary: `Added a services area to ${url} with ${named} in it.`,
+            // PUT A HUMAN EYE WHERE THE METRIC CANNOT REACH. 93 of 96 pages take the
+            // cloned section correctly; on 3 the clone loses a colour scoped to a
+            // wrapper we did not copy, and nothing detectable in the HTML separates
+            // those 3 from the 93 (two hypotheses tested; the better one flagged 86 of
+            // the 93 as well). So the owner is asked to look.
+            //
+            // NOT "tell me if it doesn't sit right and I'll change it" — nothing can act
+            // on that. restyleElement needs a click-selection on the page, and there is
+            // no path that removes or restyles this block from a chat message. Promising
+            // a fix we cannot perform is the defect this whole day was spent removing.
+            summary: `Added a services area to ${url} with ${named} in it. Tell them it's there and to have a look at their page.`,
             raw: { url, inserted: r.inserted, via: r.via },
           };
         },

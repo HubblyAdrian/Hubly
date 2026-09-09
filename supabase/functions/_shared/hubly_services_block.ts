@@ -66,11 +66,11 @@ function serviceRows(services: ServiceFact[], donor?: Donor | null): string {
         ? headOpen.replace(/^<h3/i, `<h3 data-hubly-service="${escAttr(name)}"`) + escText(name) + `</h3>`
         : `<h3 data-hubly-service="${escAttr(name)}">${escText(name)}</h3>`) +
       (price ? `<span class="hubly-sv-price" data-hubly-price="${escAttr(name)}">${escText(price)}</span>` : "") +
-      // NOT the donor's <p>. Cloning its classes took failures from 3 to 20: a page's
-      // body-copy class is very often a MUTED secondary style, low-contrast by design,
-      // and inheriting it is us choosing the page's least readable text for our own.
-      // The heading clone helps (colour is usually scoped to headings); the body clone
-      // hurts. Measured, not reasoned.
+      // NOT the donor's <p>, and this is part of the DONOR RULE rather than a tuning
+      // detail. A page's body-copy class is its most MUTED style — that is what body
+      // copy is for — so inheriting it means choosing the page's least readable text for
+      // our own. Cloning the donor's <h3> helps, because colour is usually scoped to
+      // headings; cloning its <p> took failures from 3 to 20. Measured, not reasoned.
       (desc ? `<p class="hubly-sv-desc" data-hubly-desc="${escAttr(name)}">${escText(desc)}</p>` : "") +
       `</div>`;
   }).join("");

@@ -388,10 +388,15 @@ It took three more attempts to get even that right, and each error was caught by
    pixels — a cloned section carries the page's own generous padding, so the 5th
    percentile is still background. Fixed by clipping tight around each text element,
    where the true min and max ARE the ink and the ground.
-3. And once it was measuring correctly it found a defect I had introduced myself:
+3. **Before blaming the page, check what we added to it.** Once it was measuring
+   correctly it found a defect I had introduced myself:
    `.hubly-sv-desc { opacity: .85 }` — our own dimming pushed the description below AA
    on pages whose pair was already marginal. Three of the first five failures were that
    one line.
+
+We dimmed our own text and then measured whether it was too dim. Every failure looked
+like a property of the owner's page until the line we wrote was removed from the middle
+of it.
 
 **The screenshot beat the metric four times in one night.** That is the whole argument
 for looking at the thing, and for treating any measurement that disagrees with a picture
