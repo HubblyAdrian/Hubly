@@ -1,0 +1,89 @@
+/**
+ * DRIVE THE REAL CLIENT. Not a hand-built fetch — the actual page, the actual composer.
+ *
+ * The fetch harness and the browser have now disagreed FOUR times about whether signup
+ * asks for the business name: the harness said yes 3/3, and three separate real-browser
+ * runs said no. A request-body diff said they were effectively identical, so I concluded
+ * the harness must be right and the browser runs were variance. Four disagreements says
+ * that conclusion was wrong and the difference is somewhere the diff did not look.
+ *
+ * This removes the whole class of question: no hand-built body, no guessed headers, no
+ * assumption about what the client sends — the client sends it. It also captures the real
+ * request off the network layer so it can be put side by side with the harness's.
+ *
+ * Usage: node scripts/walk-signup-in-browser.mjs "your sentence"
+ * Exit: 0 ran · 2 could not run
+ */
+import { chromium } from "playwright";
+import { writeFileSync } from "node:fs";
+
+const SAY = process.argv[2] || "Im an avation pilot I need a website";
+const SITE = process.env.HUBLY_SITE || "https://myhubly.app";
+
+console.log(`\n  THIS RUN WILL CREATE 1 DRAFT BUSINESS AND GENERATE 1 WEBSITE (~3% of a top-up).`);
+console.log(`  Driving the REAL client at ${SITE} — headless Chromium, real composer.\n`);
+
+const browser = await chromium.launch();
+// A clean context every time: no stored draft, no session — a stranger arriving cold.
+const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+const page = await ctx.newPage();
+
+const captured = [];
+page.on("request", (r) => {
+  if (r.url().includes("/functions/v1/hubly-conversation")) {
+    captured.push({ url: r.url(), method: r.method(), headers: r.headers(), body: r.postData() });
+  }
+});
+const consoleErrors = [];
+page.on("console", (m) => { if (m.type() === "error") consoleErrors.push(m.text().slice(0, 160)); });
+
+try {
+  await page.goto(SITE, { waitUntil: "domcontentloaded", timeout: 45000 });
+  const input = page.locator("#heroInput");
+  await input.waitFor({ state: "visible", timeout: 20000 });
+  await input.click();
+  await input.type(SAY, { delay: 25 });          // typed, not set — the way a person does it
+  await input.press("Enter");
+
+  // Wait for Hubly to actually say something back.
+  await page.waitForFunction(
+    () => document.querySelectorAll('[data-hc-msg], .hc-msg, .hc-bubble').length > 1,
+    null, { timeout: 120000 },
+  ).catch(() => {});
+  // WAIT FOR THE PAGE TO LAND AND THE POST-BUILD TURN TO FIRE. This is the part no
+  // previous harness ever saw: the build takes 100-150s, and only when the page appears
+  // does the client fire hcPostBuildTurn() — a SECOND model turn. The name question lives
+  // in the FIRST turn's narration; the second turn is what the owner is left looking at.
+  // Stopping at 20s measures the half of the conversation that was never in dispute.
+  await page.waitForTimeout(210000);
+
+  const shown = await page.evaluate(() => {
+    const out = [];
+    document.querySelectorAll('.hc-msg, .hc-bubble, [data-hc-msg]').forEach((el) => {
+      const t = (el.innerText || "").trim();
+      if (t) out.push(t);
+    });
+    return out;
+  });
+
+  console.log("WHAT A PERSON SEES ON SCREEN:");
+  shown.forEach((t, i) => console.log(`  [${i + 1}] ${t.replace(/\s+/g, " ").slice(0, 300)}`));
+
+  const all = shown.join("\n");
+  const asked = /what(?:'s| is| are| do)?[^.?!]{0,60}\b(call(?:ed)?|name)\b/i.test(all);
+  console.log(`\n  ASKED FOR THE BUSINESS NAME anywhere on screen: ${asked ? "YES" : "NO"}`);
+  const last = shown[shown.length - 1] || "";
+  const lastAsksName = /what(?:'s| is| are| do)?[^.?!]{0,60}\b(call(?:ed)?|name)\b/i.test(last);
+  const lastAsksPrice = /charge|price|book you for/i.test(last);
+  console.log(`  THE LAST THING THEY ARE LOOKING AT: ${lastAsksName ? "the name question" : lastAsksPrice ? "a SERVICES/PRICE question" : "neither"}`);
+  if (consoleErrors.length) console.log(`  console errors: ${consoleErrors.slice(0, 3).join(" | ")}`);
+
+  writeFileSync("/tmp/browser-request.json", JSON.stringify(captured, null, 2));
+  console.log(`  captured ${captured.length} hubly-conversation request(s) -> /tmp/browser-request.json`);
+  await page.screenshot({ path: "/tmp/browser-signup.png", fullPage: false });
+} catch (e) {
+  console.error("CANNOT RUN —", String(e).slice(0, 200));
+  await browser.close();
+  process.exit(2);
+}
+await browser.close();

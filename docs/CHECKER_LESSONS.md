@@ -829,3 +829,44 @@ directions tells you which is which.
 The corollary for cost specifically: a guard on a PROXY for the expensive thing (drafts,
 requests, rows) drifts away from the thing itself. Meter the expensive thing directly —
 here, tokens — and let the proxy be a curiosity.
+
+---
+
+## Lesson 28 — "was it asked" and "was it noticed" are different measurements, and only one of them is the product
+
+The fetch harness and a real browser disagreed FOUR times about whether signup asks for
+the business name. The harness said it asked, 3 of 3. Three separate real-browser runs, by
+the person walking the product, said it never asked and asked about pricing instead.
+
+I diffed the request bodies, found them effectively identical, and concluded the harness
+was right and the browser runs were variance. That conclusion was wrong, and four
+disagreements should have killed it long before the fourth.
+
+**Both were correct. They were measuring different things.**
+
+The model DID ask — the counter shows `asked=true` on the owner's own runs. But the
+question was the last sentence of a four-sentence design narration, and roughly two
+minutes later, when the page landed, the client fired a SECOND model turn
+(`event:"post_build"`) whose ask-gate read the services record and never looked at the
+name. So a louder, fresher question about pricing arrived on top of it, and that is what
+the owner was left looking at.
+
+A question buried at the tail of a paragraph and superseded two minutes later **has not
+been asked** in any sense the person experiences. The harness measured the API response;
+the product is what is on screen after everything has settled.
+
+Three things follow:
+
+1. **When a harness and a human disagree, the human is measuring the product.** The
+   harness is measuring an input to it. Reconcile toward the human, and do not spend an
+   evening improving the thing the harness can see.
+2. **Drive the real client.** Playwright loading the real page, typing into the real
+   composer, and reading the screen removes the entire class of "is my request shaped like
+   theirs" — the client sends it. It costs the same per run as the fetch harness.
+3. **Wait for the conversation to finish.** The first version of this browser check waited
+   20 seconds and passed, because the build takes 100-150s and the post-build turn had not
+   fired yet. It measured the half that was never in dispute. Waiting 210 seconds showed
+   both turns and the actual last thing on screen.
+
+The narrow fix was one gate reading one more field. The expensive part was four rounds of
+believing an instrument over a person.

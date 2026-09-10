@@ -1004,6 +1004,48 @@ Deno.serve(async (req) => {
     // failure this replaces: the gate read nothing and asked for prices the
     // owner had already given, on the very turn after they were saved.
     const postBuildId = body?.draftBusiness?.id ? String(body.draftBusiness.id) : "";
+
+    // THE NAME COMES FIRST HERE TOO — the same ordering, in the second place it has to hold.
+    //
+    // This gate read the SERVICES record and never looked at the name, so ~two minutes
+    // after the build it asked "what do people mainly book you for and what do you
+    // charge?" whatever else was outstanding. The model HAD asked for the name in the
+    // build reply — the counter shows ASKED=true on three separate real-browser runs — but
+    // that question was the last sentence of a four-sentence design narration, and then
+    // this louder, fresher question landed on top of it. The owner reported, correctly,
+    // that he was never asked his business name and was asked about pricing instead.
+    //
+    // That is why the harness and the browser disagreed four times without either being
+    // wrong: the harness measured whether it was ASKED, the browser measured whether it
+    // was NOTICED. A question buried at the tail of a paragraph and superseded two minutes
+    // later has not been asked in any sense the person experiences.
+    let pbAsk: string | null = null;
+    // Same shape as selectServicesForAsk above — the admin REST read this file already
+    // uses. UNKNOWN IS NOT UNNAMED: if the read fails we do NOT claim they have no name
+    // and demand one, we fall through to the services ask exactly as before.
+    let pbUnnamed = false;
+    if (postBuildId) {
+      try {
+        const u = (Deno.env.get("SUPABASE_URL") || "").trim();
+        if (u) {
+          const nr = await fetch(`${u}/rest/v1/businesses?select=name&id=eq.${postBuildId}`, { headers: adminHeaders() });
+          if (nr.ok) {
+            const rows = await nr.json();
+            if (Array.isArray(rows) && rows.length) {
+              pbUnnamed = !(typeof rows[0]?.name === "string" && String(rows[0].name).trim());
+            }
+          }
+        }
+      } catch { /* unknown stays not-unnamed */ }
+    }
+    if (pbUnnamed) {
+      const ask = "This business STILL HAS NO NAME, and the address depends on it — a name given now silently moves a placeholder URL nobody has seen, while a name given later moves one they have been looking at. " +
+        "So this turn asks for the NAME and nothing else: one short, plain question, on its own, not tacked onto anything. " +
+        "Do NOT ask about services or prices on this turn — they cost nothing by waiting and this does not. Do not invent a name, and do not describe the address.";
+      // Falls through to the same injection the services asks use — one path, not two.
+      pbAsk = ask;
+    }
+
     const svc = postBuildId ? await selectServicesForAsk(postBuildId) : { names: [], unpriced: [], known: false };
     const list = (xs: string[]) => xs.length <= 1 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1];
     let ask: string;
@@ -1023,7 +1065,7 @@ Deno.serve(async (req) => {
     }
     incoming.push({
       role: "user",
-      content: `[SYSTEM EVENT: the website just finished building and is now on screen. This is your first post-build turn — give your post-build first message NOW. ${ask} ONE plain question, NEVER a menu or bullet list, nothing about styling or accounts.]`,
+      content: `[SYSTEM EVENT: the website just finished building and is now on screen. This is your first post-build turn — give your post-build first message NOW. ${pbAsk ?? ask} ONE plain question, NEVER a menu or bullet list, nothing about styling or accounts.]`,
     });
   }
 
