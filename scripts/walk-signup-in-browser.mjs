@@ -100,7 +100,11 @@ try {
     await page.waitForTimeout(45000);
 
     const after = await page.evaluate(() => {
-      const f = document.querySelector("#hcCanvasFrameA");
+      // READ THE LIVE FRAME, NOT FRAME A. hcRefreshCanvasFrame loads the STANDBY frame and
+      // swaps `is-live`, so frame A is stale BY DESIGN after any refresh — reading it
+      // reported a stale src and stale content and made a broken run look fine.
+      const f = document.querySelector("#hcCanvasFrameA.is-live, #hcCanvasFrameB.is-live")
+             || document.querySelector("#hcCanvasFrameA");
       let inner = "";
       try { inner = f?.contentDocument?.body?.innerText?.slice(0, 400) || ""; } catch { inner = "(cross-origin — cannot read, which is normal)"; }
       const pill = document.querySelector("#hcAddressPill");

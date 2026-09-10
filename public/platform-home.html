@@ -3044,7 +3044,16 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
         // never on every turn, which would just flicker for no reason.
         var hadDraft = !!hc.draftBusiness;
         var touchedBusiness = Array.isArray(data.actions) && data.actions.some(function(a){ return a.capability === 'business'; });
+        // THE ADDRESS CAN CHANGE MID-CONVERSATION. Naming an unclaimed draft renames it,
+        // and the server now reports the new address. Adopting it silently is not enough:
+        // the address pill and the preview iframe are drawn by hcRenderCanvas, and the
+        // turn that renames only ever called hcRefreshCanvasFrame — which swaps the frame
+        // src and never redraws the pill. So the owner was told a new address in words
+        // while the bar above their site kept showing site-xxxxxx, and the preview kept
+        // loading an address that had stopped resolving. Detect the move and redraw.
+        var addressMoved = false;
         if(data.draftBusiness && data.draftBusiness.id && data.draftBusiness.url){
+          addressMoved = !!(hc.draftBusiness && hc.draftBusiness.url && hc.draftBusiness.url !== data.draftBusiness.url);
           hc.draftBusiness = data.draftBusiness;
         }
         // Exchange the claim grant the moment a draft appears, so whoever just
@@ -3109,6 +3118,10 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
           hcRenderCanvas();
           var hcAppEl = document.getElementById('hcApp');
           if(hcAppEl) hcAppEl.classList.add('hc-has-draft');
+        } else if(addressMoved && hc.draftBusiness){
+          // A FULL redraw, not a frame swap: the pill, the address bar and both frames all
+          // have to follow the new address, and hcRefreshCanvasFrame only moves one of them.
+          hcRenderCanvas();
         } else if(touchedBusiness && hc.draftBusiness){
           hcRefreshCanvasFrame();
         } else if(!hc.draftBusiness && data.askInspiration === true){
