@@ -2,7 +2,7 @@
   "section": 5,
   "title": "Business Memory",
   "passed": true,
-  "checkedAt": "2026-09-10T22:06:50.067Z",
+  "checkedAt": "2026-09-10T22:18:34.014Z",
   "version": "1.0.0",
   "architectureSummary": {
     "module": "supabase/functions/_shared/hubly_brain_memory.ts",
@@ -167,7 +167,7 @@
       "ownerName": null,
       "city": null,
       "previousConversations": null,
-      "updatedAt": "2026-09-10T22:06:50.063Z"
+      "updatedAt": "2026-09-10T22:18:34.011Z"
     },
     "memoryAfter": {
       "memoryVersion": 13,
@@ -209,7 +209,7 @@
       "strategyHistory": [
         {
           "version": 1,
-          "at": "2026-09-10T22:06:50.065Z",
+          "at": "2026-09-10T22:18:34.013Z",
           "positioning": "Commercial-first pressure washing for property managers and businesses",
           "homepageStrategy": "Proof-led commercial homepage",
           "pricingStrategy": "Commercial packages",
@@ -229,8 +229,8 @@
       },
       "aiHistory": [
         {
-          "id": "aihist_mtw2urip_gj33nl",
-          "at": "2026-09-10T22:06:50.065Z",
+          "id": "aihist_mtw39uot_sylcxb",
+          "at": "2026-09-10T22:18:34.013Z",
           "recommendation": "Lead homepage with commercial before/after gallery",
           "status": "approved",
           "reasoning": "Matches commercial positioning and trust needs",
@@ -239,8 +239,8 @@
           "edits": null
         },
         {
-          "id": "aihist_mtw2uriq_mbq0oc",
-          "at": "2026-09-10T22:06:50.066Z",
+          "id": "aihist_mtw39uot_d3hzki",
+          "at": "2026-09-10T22:18:34.013Z",
           "recommendation": "Use luxury gold palette and serif display",
           "status": "rejected",
           "reasoning": "Owner wants practical commercial branding, not luxury",
@@ -263,64 +263,64 @@
           "importance": "critical",
           "confidence": 95,
           "source": "user",
-          "lastVerified": "2026-09-10T22:06:50.065Z"
+          "lastVerified": "2026-09-10T22:18:34.012Z"
         },
         "business.businessStage": {
           "importance": "high",
           "confidence": 92,
           "source": "user",
-          "lastVerified": "2026-09-10T22:06:50.065Z"
+          "lastVerified": "2026-09-10T22:18:34.012Z"
         },
         "business.description": {
           "importance": "high",
           "confidence": 90,
           "source": "user",
-          "lastVerified": "2026-09-10T22:06:50.065Z"
+          "lastVerified": "2026-09-10T22:18:34.013Z"
         },
         "brand.positioning": {
           "importance": "high",
           "confidence": 88,
           "source": "user",
-          "lastVerified": "2026-09-10T22:06:50.065Z"
+          "lastVerified": "2026-09-10T22:18:34.013Z"
         },
         "brand.targetAudience": {
           "importance": "high",
           "confidence": 94,
           "source": "user",
-          "lastVerified": "2026-09-10T22:06:50.065Z"
+          "lastVerified": "2026-09-10T22:18:34.013Z"
         },
         "strategyHistory": {
           "importance": "high",
           "confidence": 86,
           "source": "ai_inference",
-          "lastVerified": "2026-09-10T22:06:50.065Z"
+          "lastVerified": "2026-09-10T22:18:34.013Z"
         }
       },
       "changelogLength": 13,
       "versionHistory": [
         {
           "version": 5,
-          "at": "2026-09-10T22:06:50.065Z",
+          "at": "2026-09-10T22:18:34.012Z",
           "summary": "Owner: I'm starting a pressure washing business."
         },
         {
           "version": 8,
-          "at": "2026-09-10T22:06:50.065Z",
+          "at": "2026-09-10T22:18:34.013Z",
           "summary": "Owner: Focus on commercial properties instead."
         },
         {
           "version": 9,
-          "at": "2026-09-10T22:06:50.065Z",
+          "at": "2026-09-10T22:18:34.013Z",
           "summary": "Strategy v1"
         },
         {
           "version": 11,
-          "at": "2026-09-10T22:06:50.065Z",
+          "at": "2026-09-10T22:18:34.013Z",
           "summary": "AI history approved"
         },
         {
           "version": 13,
-          "at": "2026-09-10T22:06:50.066Z",
+          "at": "2026-09-10T22:18:34.013Z",
           "summary": "AI history rejected"
         }
       ]
@@ -339,8 +339,8 @@
     ],
     "changeLog": [
       {
-        "id": "memchg_mtw2urio_8uzs4u",
-        "at": "2026-09-10T22:06:50.064Z",
+        "id": "memchg_mtw39uos_ycf4l8",
+        "at": "2026-09-10T22:18:34.012Z",
         "path": "owner.name",
         "previous": null,
         "next": "Alex",
@@ -352,8 +352,8 @@
         "memoryVersion": 1
       },
       {
-        "id": "memchg_mtw2urio_dfrdl9",
-        "at": "2026-09-10T22:06:50.064Z",
+        "id": "memchg_mtw39uos_366iej",
+        "at": "2026-09-10T22:18:34.012Z",
         "path": "owner.preferredName",
         "previous": null,
         "next": "Alex",
@@ -365,8 +365,8 @@
         "memoryVersion": 2
       },
       {
-        "id": "memchg_mtw2urio_mpmonf",
-        "at": "2026-09-10T22:06:50.064Z",
+        "id": "memchg_mtw39uos_14avj3",
+        "at": "2026-09-10T22:18:34.012Z",
         "path": "owner.role",
         "previous": null,
         "next": "owner",
@@ -378,8 +378,8 @@
         "memoryVersion": 3
       },
       {
-        "id": "memchg_mtw2urio_rv0jtz",
-        "at": "2026-09-10T22:06:50.064Z",
+        "id": "memchg_mtw39uos_whgz22",
+        "at": "2026-09-10T22:18:34.012Z",
         "path": "owner.preferredCommunicationStyle",
         "previous": null,
         "next": "conversational",
@@ -391,8 +391,8 @@
         "memoryVersion": 4
       },
       {
-        "id": "memchg_mtw2urio_nvas97",
-        "at": "2026-09-10T22:06:50.064Z",
+        "id": "memchg_mtw39uos_bbvhyc",
+        "at": "2026-09-10T22:18:34.012Z",
         "path": "business.name",
         "previous": null,
         "next": "SparkleWash",
@@ -404,8 +404,8 @@
         "memoryVersion": 5
       },
       {
-        "id": "memchg_mtw2urio_uzxu1p",
-        "at": "2026-09-10T22:06:50.064Z",
+        "id": "memchg_mtw39uos_t9024f",
+        "at": "2026-09-10T22:18:34.012Z",
         "path": "servicesBlock.current",
         "previous": [],
         "next": [
@@ -420,8 +420,8 @@
         "memoryVersion": 6
       },
       {
-        "id": "memchg_mtw2urio_6z4pwa",
-        "at": "2026-09-10T22:06:50.064Z",
+        "id": "memchg_mtw39uos_ytauai",
+        "at": "2026-09-10T22:18:34.012Z",
         "path": "goalsBlock.business",
         "previous": [],
         "next": [
@@ -435,8 +435,8 @@
         "memoryVersion": 7
       },
       {
-        "id": "memchg_mtw2urio_2sou4r",
-        "at": "2026-09-10T22:06:50.064Z",
+        "id": "memchg_mtw39uos_5kkf6b",
+        "at": "2026-09-10T22:18:34.012Z",
         "path": "goalsBlock.revenue",
         "previous": [],
         "next": [
@@ -450,8 +450,8 @@
         "memoryVersion": 8
       },
       {
-        "id": "memchg_mtw2urio_8cp7ao",
-        "at": "2026-09-10T22:06:50.064Z",
+        "id": "memchg_mtw39uos_lr34l8",
+        "at": "2026-09-10T22:18:34.012Z",
         "path": "websiteHistory.currentHeroHeadline",
         "previous": null,
         "next": "Clean properties. Clear pricing.",
@@ -463,14 +463,14 @@
         "memoryVersion": 9
       },
       {
-        "id": "memchg_mtw2urio_b6zme5",
-        "at": "2026-09-10T22:06:50.064Z",
+        "id": "memchg_mtw39uos_j5vftn",
+        "at": "2026-09-10T22:18:34.012Z",
         "path": "websiteHistory.versions",
         "previous": [],
         "next": [
           {
             "version": 1,
-            "at": "2026-09-10T22:06:50.064Z",
+            "at": "2026-09-10T22:18:34.012Z",
             "heroHeadline": "Clean properties. Clear pricing.",
             "packages": [
               "Driveway",
@@ -489,8 +489,8 @@
         "memoryVersion": 10
       },
       {
-        "id": "memchg_mtw2urio_4hnhvt",
-        "at": "2026-09-10T22:06:50.064Z",
+        "id": "memchg_mtw39uos_vt8pm6",
+        "at": "2026-09-10T22:18:34.012Z",
         "path": "connectedServices.stripe",
         "previous": null,
         "next": false,
@@ -502,8 +502,8 @@
         "memoryVersion": 11
       },
       {
-        "id": "memchg_mtw2urio_wx4yq9",
-        "at": "2026-09-10T22:06:50.064Z",
+        "id": "memchg_mtw39uos_fyhoz9",
+        "at": "2026-09-10T22:18:34.012Z",
         "path": "brand.personality",
         "previous": null,
         "next": "reliable and straightforward",
@@ -566,18 +566,18 @@
       }
     ],
     "timestamps": [
-      "2026-09-10T22:06:50.064Z",
-      "2026-09-10T22:06:50.064Z",
-      "2026-09-10T22:06:50.064Z",
-      "2026-09-10T22:06:50.064Z",
-      "2026-09-10T22:06:50.064Z",
-      "2026-09-10T22:06:50.064Z",
-      "2026-09-10T22:06:50.064Z",
-      "2026-09-10T22:06:50.064Z",
-      "2026-09-10T22:06:50.064Z",
-      "2026-09-10T22:06:50.064Z",
-      "2026-09-10T22:06:50.064Z",
-      "2026-09-10T22:06:50.064Z"
+      "2026-09-10T22:18:34.012Z",
+      "2026-09-10T22:18:34.012Z",
+      "2026-09-10T22:18:34.012Z",
+      "2026-09-10T22:18:34.012Z",
+      "2026-09-10T22:18:34.012Z",
+      "2026-09-10T22:18:34.012Z",
+      "2026-09-10T22:18:34.012Z",
+      "2026-09-10T22:18:34.012Z",
+      "2026-09-10T22:18:34.012Z",
+      "2026-09-10T22:18:34.012Z",
+      "2026-09-10T22:18:34.012Z",
+      "2026-09-10T22:18:34.012Z"
     ],
     "expertResponsible": [
       {
@@ -644,7 +644,7 @@
       },
       {
         "q": "Why did we change our positioning?",
-        "answer": "We changed positioning because: Positioning updated because owner shifted focus to commercial properties. Previous: \"Local pressure washing business building trust with clear packages and proof\". Now: \"Commercial-first pressure washing for property managers and businesses\". (Recorded 2026-09-10T22:06:50.065Z, suggested by hubly_brain, committed by Hubly Brain.)",
+        "answer": "We changed positioning because: Positioning updated because owner shifted focus to commercial properties. Previous: \"Local pressure washing business building trust with clear packages and proof\". Now: \"Commercial-first pressure washing for property managers and businesses\". (Recorded 2026-09-10T22:18:34.013Z, suggested by hubly_brain, committed by Hubly Brain.)",
         "fromMemory": true,
         "usedChatHistory": false,
         "paths": [
@@ -653,8 +653,8 @@
         ],
         "changes": [
           {
-            "id": "memchg_mtw2urip_x9psqm",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uos_3cflpt",
+            "at": "2026-09-10T22:18:34.012Z",
             "path": "brand.positioning",
             "previous": null,
             "next": "Local pressure washing business building trust with clear packages and proof",
@@ -666,8 +666,8 @@
             "memoryVersion": 4
           },
           {
-            "id": "memchg_mtw2urip_koiuo4",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uot_t9sn78",
+            "at": "2026-09-10T22:18:34.013Z",
             "path": "brand.positioning",
             "previous": "Local pressure washing business building trust with clear packages and proof",
             "next": "Commercial-first pressure washing for property managers and businesses",
@@ -691,8 +691,8 @@
         ],
         "changes": [
           {
-            "id": "memchg_mtw2urip_6bdf0m",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uos_w3h5bo",
+            "at": "2026-09-10T22:18:34.012Z",
             "path": "business.industry",
             "previous": null,
             "next": "pressure washing",
@@ -704,8 +704,8 @@
             "memoryVersion": 1
           },
           {
-            "id": "memchg_mtw2urip_8svqs2",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uos_9tb727",
+            "at": "2026-09-10T22:18:34.012Z",
             "path": "business.businessStage",
             "previous": null,
             "next": "starting",
@@ -717,8 +717,8 @@
             "memoryVersion": 2
           },
           {
-            "id": "memchg_mtw2urip_6mssqi",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uos_ltzlqu",
+            "at": "2026-09-10T22:18:34.012Z",
             "path": "business.description",
             "previous": null,
             "next": "I'm starting a pressure washing business.",
@@ -730,8 +730,8 @@
             "memoryVersion": 3
           },
           {
-            "id": "memchg_mtw2urip_x9psqm",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uos_3cflpt",
+            "at": "2026-09-10T22:18:34.012Z",
             "path": "brand.positioning",
             "previous": null,
             "next": "Local pressure washing business building trust with clear packages and proof",
@@ -743,8 +743,8 @@
             "memoryVersion": 4
           },
           {
-            "id": "memchg_mtw2urip_tcvcfa",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uos_vmb69t",
+            "at": "2026-09-10T22:18:34.012Z",
             "path": "brand.targetAudience",
             "previous": null,
             "next": "local residential customers",
@@ -756,8 +756,8 @@
             "memoryVersion": 5
           },
           {
-            "id": "memchg_mtw2urip_159hd2",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uot_mdsju0",
+            "at": "2026-09-10T22:18:34.013Z",
             "path": "brand.targetAudience",
             "previous": "local residential customers",
             "next": "commercial properties",
@@ -769,8 +769,8 @@
             "memoryVersion": 6
           },
           {
-            "id": "memchg_mtw2urip_koiuo4",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uot_t9sn78",
+            "at": "2026-09-10T22:18:34.013Z",
             "path": "brand.positioning",
             "previous": "Local pressure washing business building trust with clear packages and proof",
             "next": "Commercial-first pressure washing for property managers and businesses",
@@ -782,8 +782,8 @@
             "memoryVersion": 7
           },
           {
-            "id": "memchg_mtw2urip_6fe0yd",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uot_36sode",
+            "at": "2026-09-10T22:18:34.013Z",
             "path": "business.description",
             "previous": "I'm starting a pressure washing business.",
             "next": "Pressure washing business focused on commercial properties",
@@ -795,14 +795,14 @@
             "memoryVersion": 8
           },
           {
-            "id": "memchg_mtw2urip_n7jqyf",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uot_7c44g6",
+            "at": "2026-09-10T22:18:34.013Z",
             "path": "strategyHistory",
             "previous": [],
             "next": [
               {
                 "version": 1,
-                "at": "2026-09-10T22:06:50.065Z",
+                "at": "2026-09-10T22:18:34.013Z",
                 "positioning": "Commercial-first pressure washing for property managers and businesses",
                 "homepageStrategy": "Proof-led commercial homepage",
                 "pricingStrategy": "Commercial packages",
@@ -821,14 +821,14 @@
             "memoryVersion": 9
           },
           {
-            "id": "memchg_mtw2urip_l5t7tm",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uot_ad6n4q",
+            "at": "2026-09-10T22:18:34.013Z",
             "path": "aiHistory",
             "previous": [],
             "next": [
               {
-                "id": "aihist_mtw2urip_gj33nl",
-                "at": "2026-09-10T22:06:50.065Z",
+                "id": "aihist_mtw39uot_sylcxb",
+                "at": "2026-09-10T22:18:34.013Z",
                 "recommendation": "Lead homepage with commercial before/after gallery",
                 "status": "approved",
                 "reasoning": "Matches commercial positioning and trust needs",
@@ -845,13 +845,13 @@
             "memoryVersion": 10
           },
           {
-            "id": "memchg_mtw2urip_gv2383",
-            "at": "2026-09-10T22:06:50.065Z",
+            "id": "memchg_mtw39uot_tmkg34",
+            "at": "2026-09-10T22:18:34.013Z",
             "path": "websiteHistory.approvedAiChanges",
             "previous": [],
             "next": [
               {
-                "at": "2026-09-10T22:06:50.065Z",
+                "at": "2026-09-10T22:18:34.013Z",
                 "change": "Lead homepage with commercial before/after gallery",
                 "reason": "Matches commercial positioning and trust needs",
                 "expertId": "critic"
@@ -865,13 +865,13 @@
             "memoryVersion": 11
           },
           {
-            "id": "memchg_mtw2uriq_ypwh7d",
-            "at": "2026-09-10T22:06:50.066Z",
+            "id": "memchg_mtw39uot_r1z890",
+            "at": "2026-09-10T22:18:34.013Z",
             "path": "aiHistory",
             "previous": [
               {
-                "id": "aihist_mtw2urip_gj33nl",
-                "at": "2026-09-10T22:06:50.065Z",
+                "id": "aihist_mtw39uot_sylcxb",
+                "at": "2026-09-10T22:18:34.013Z",
                 "recommendation": "Lead homepage with commercial before/after gallery",
                 "status": "approved",
                 "reasoning": "Matches commercial positioning and trust needs",
@@ -882,8 +882,8 @@
             ],
             "next": [
               {
-                "id": "aihist_mtw2urip_gj33nl",
-                "at": "2026-09-10T22:06:50.065Z",
+                "id": "aihist_mtw39uot_sylcxb",
+                "at": "2026-09-10T22:18:34.013Z",
                 "recommendation": "Lead homepage with commercial before/after gallery",
                 "status": "approved",
                 "reasoning": "Matches commercial positioning and trust needs",
@@ -892,8 +892,8 @@
                 "edits": null
               },
               {
-                "id": "aihist_mtw2uriq_mbq0oc",
-                "at": "2026-09-10T22:06:50.066Z",
+                "id": "aihist_mtw39uot_d3hzki",
+                "at": "2026-09-10T22:18:34.013Z",
                 "recommendation": "Use luxury gold palette and serif display",
                 "status": "rejected",
                 "reasoning": "Owner wants practical commercial branding, not luxury",
@@ -910,13 +910,13 @@
             "memoryVersion": 12
           },
           {
-            "id": "memchg_mtw2uriq_xjboh0",
-            "at": "2026-09-10T22:06:50.066Z",
+            "id": "memchg_mtw39uot_hluge1",
+            "at": "2026-09-10T22:18:34.013Z",
             "path": "websiteHistory.rejectedAiChanges",
             "previous": [],
             "next": [
               {
-                "at": "2026-09-10T22:06:50.066Z",
+                "at": "2026-09-10T22:18:34.013Z",
                 "change": "Use luxury gold palette and serif display",
                 "reason": "Owner wants practical commercial branding, not luxury",
                 "expertId": "experience_director"
@@ -946,73 +946,73 @@
         "importance": "critical",
         "confidence": 99,
         "source": "user",
-        "lastVerified": "2026-09-10T22:06:50.064Z"
+        "lastVerified": "2026-09-10T22:18:34.012Z"
       },
       {
         "importance": "medium",
         "confidence": 90,
         "source": "user",
-        "lastVerified": "2026-09-10T22:06:50.064Z"
+        "lastVerified": "2026-09-10T22:18:34.012Z"
       },
       {
         "importance": "high",
         "confidence": 95,
         "source": "user",
-        "lastVerified": "2026-09-10T22:06:50.064Z"
+        "lastVerified": "2026-09-10T22:18:34.012Z"
       },
       {
         "importance": "medium",
         "confidence": 80,
         "source": "ai_inference",
-        "lastVerified": "2026-09-10T22:06:50.064Z"
+        "lastVerified": "2026-09-10T22:18:34.012Z"
       },
       {
         "importance": "critical",
         "confidence": 98,
         "source": "user",
-        "lastVerified": "2026-09-10T22:06:50.064Z"
+        "lastVerified": "2026-09-10T22:18:34.012Z"
       },
       {
         "importance": "high",
         "confidence": 85,
         "source": "user",
-        "lastVerified": "2026-09-10T22:06:50.064Z"
+        "lastVerified": "2026-09-10T22:18:34.012Z"
       },
       {
         "importance": "high",
         "confidence": 80,
         "source": "user",
-        "lastVerified": "2026-09-10T22:06:50.064Z"
+        "lastVerified": "2026-09-10T22:18:34.012Z"
       },
       {
         "importance": "high",
         "confidence": 75,
         "source": "user",
-        "lastVerified": "2026-09-10T22:06:50.064Z"
+        "lastVerified": "2026-09-10T22:18:34.012Z"
       },
       {
         "importance": "medium",
         "confidence": 78,
         "source": "ai_inference",
-        "lastVerified": "2026-09-10T22:06:50.064Z"
+        "lastVerified": "2026-09-10T22:18:34.012Z"
       },
       {
         "importance": "medium",
         "confidence": 80,
         "source": "ai_inference",
-        "lastVerified": "2026-09-10T22:06:50.064Z"
+        "lastVerified": "2026-09-10T22:18:34.012Z"
       },
       {
         "importance": "medium",
         "confidence": 100,
         "source": "external_integration",
-        "lastVerified": "2026-09-10T22:06:50.064Z"
+        "lastVerified": "2026-09-10T22:18:34.012Z"
       },
       {
         "importance": "medium",
         "confidence": 72,
         "source": "ai_inference",
-        "lastVerified": "2026-09-10T22:06:50.064Z"
+        "lastVerified": "2026-09-10T22:18:34.012Z"
       }
     ],
     "releaseGate": {

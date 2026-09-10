@@ -4322,7 +4322,14 @@ async function applyBusinessNameToFreeform(draftId: string, draftToken: string, 
     // sentence that "your page has manual edits, so I have not rebuilt it — want me to
     // rebuild?" (observed 2026-09-10). An automatic patch must never make the page look
     // hand-edited.
-    p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "name"), p_created_by: "name-sync", p_format: "html",
+    //
+    // AND IT MUST BE A VALUE THE COLUMN ACCEPTS. The first attempt used "name-sync",
+    // which violates business_documents_created_by_check (ai|user|patch|system) — so the
+    // insert failed, no second version was ever written, and the wordmark silently stopped
+    // landing at all. A fix for a cosmetic bug broke the feature underneath it, and it
+    // took a screenshot of a page with no name on it to notice. "system" is in the
+    // allowlist, is not counted by documentHasOwnerEdits, and is what this actually is.
+    p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "name"), p_created_by: "system", p_format: "html",
     p_owner_id: ownerUid || null,
   });
   if (!saved || saved.ok !== true) return { status: "failed" };
