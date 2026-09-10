@@ -1,3 +1,15 @@
+// NOT DEPLOYED. This function exists on disk and NOT in the cloud — confirmed against
+// `supabase functions list` on 2026-09-09 (52 deployed, 53 directories, and this is the
+// one). It reaches the model and has no credential check, so read as source it looks like
+// a third open door; it is not reachable by anyone, because it is not running.
+//
+// That difference is why an audit of the SOURCE TREE is not an audit of the ATTACK
+// SURFACE. Enumerating doors by reading files got the answer wrong in both directions on
+// the same day: this one was counted and does not exist, and hubly-document-build and
+// marketplace were missed. Check what is DEPLOYED.
+//
+// If this is ever deployed, it needs the credential check hubly-ai-status and
+// hubly-find-pro were given.
 // SCRATCH — delete after use.
 //
 // Exists only so an A/B/C comparison can hold the MODEL constant while varying

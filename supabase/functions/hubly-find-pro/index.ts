@@ -1,5 +1,6 @@
 // supabase/functions/hubly-find-pro/index.ts
 // Phase 7.8 — Customer Runtime entry: Hubly.findPro(prompt)
+import { requireSecretKey } from "../_shared/supabase_admin.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Hubly } from "../_shared/hubly_ai.ts";
 import { createUserClient } from "../_shared/supabase_admin.ts";
@@ -17,8 +18,29 @@ function jsonRes(body: unknown, status = 200) {
   });
 }
 
+
+// ── CLOSED 2026-09-09. This endpoint was reachable by anyone on the internet. ──────────
+// verify_jwt = false in config.toml AND no check in the handler, so the only thing
+// resembling authorisation here was a CORS header. One unauthenticated GET ran three
+// model calls (think + buildBusiness + findPro) — roughly a signup's worth of spend —
+// and wrote a hubly_brain_executions row, because that log write is not gated by the
+// persist:false flag this passes. It created no business rows; persist:false does hold.
+//
+// The invocation logs showed ZERO hits in 24 hours, so nothing had walked through it.
+// Unexploited is not the same as safe, and we now know exactly what one hit costs.
+// Service key only: this is a diagnostic surface, it has no anonymous audience.
+function opsAuthorised(req: Request): boolean {
+  let expected = "";
+  try { expected = requireSecretKey().key; } catch { return false; }
+  const bearer = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  const cron = (Deno.env.get("HUBLY_CRON_SECRET") || "").trim();
+  const header = (req.headers.get("x-hubly-cron-secret") || "").trim();
+  return (!!expected && bearer === expected) || (!!cron && (header === cron || bearer === cron));
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
+    if (!opsAuthorised(req)) return new Response(JSON.stringify({ ok: false, error: "unauthorised" }), { status: 401, headers: { ...CORS, "content-type": "application/json" } });
   if (req.method !== "POST") return jsonRes({ ok: false, error: "POST required" }, 405);
 
   try {

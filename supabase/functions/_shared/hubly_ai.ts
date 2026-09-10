@@ -31,6 +31,7 @@
  * Never import this from the browser; secrets stay in Deno.env.
  * Milestone 1: Expert Framework + think() pipeline. Edge features migrate to HublyAI.complete — never call providers directly.
  */
+import { createAdminClient } from "./supabase_admin.ts";
 
 import {
   businessMemoryKeys,
@@ -750,6 +751,42 @@ async function callClaude(opts: InternalCall): Promise<HublyAIResult> {
   };
 }
 
+
+/** ONE ROW PER PROVIDER CALL. The single funnel point — every model call in the product
+ *  passes through callOpenAI, so this is the only place that sees all of them.
+ *
+ *  Never awaited: one insert against a call that already takes 1-150 seconds is
+ *  unmeasurable, and metering must never be able to fail the thing it measures. NOT
+ *  `void builder` — a supabase-js builder is thenable, not a promise, and `void` builds a
+ *  request and never sends it (three writes shipped dead that way on 2026-09-09). */
+function meterModelCall(m: {
+  feature?: string; task?: string; provider: string; model?: string;
+  status: number | null; ok: boolean; attempt: number; latencyMs: number;
+  businessId?: string | null; usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | null;
+}): void {
+  try {
+    Promise.resolve(createAdminClient().rpc("record_model_call", {
+      // The provider layer cannot see which edge function called it; feature and task
+      // carry the meaning, and that is the axis cost actually varies along.
+      p_fn: null,
+      p_feature: m.feature ?? null,
+      p_task: m.task ?? null,
+      p_provider: m.provider,
+      p_model: m.model ?? null,
+      p_status: m.status,
+      p_ok: m.ok,
+      p_attempt: m.attempt,
+      p_prompt_tokens: m.usage?.prompt_tokens ?? null,
+      p_completion_tokens: m.usage?.completion_tokens ?? null,
+      p_total_tokens: m.usage?.total_tokens ?? null,
+      p_latency_ms: m.latencyMs,
+      p_business_id: m.businessId ?? null,
+    })).then(({ error }: { error: unknown }) => {
+      if (error) console.error("[meter] not recorded:", JSON.stringify(error));
+    }).catch((e: unknown) => console.error("[meter] threw:", String(e)));
+  } catch (e) { console.error("[meter] sync threw:", String(e)); }
+}
+
 async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
   const apiKey = env("OPENAI_API_KEY");
   if (!apiKey) {
@@ -799,7 +836,10 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
   let res!: Response;
   let lastStatus = 0;
   let lastBody = "";
+  const meterStarted = Date.now();
+  let attemptsUsed = 0;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    attemptsUsed = attempt;
     res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -813,6 +853,15 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
     lastStatus = res.status;
     lastBody = await res.text();
     console.error("HublyAI openai error", opts.feature, opts.task, res.status, `attempt ${attempt}/${MAX_ATTEMPTS}`, lastBody.slice(0, 400));
+    // A FAILED ATTEMPT IS STILL A CALL. Measured 2026-09-09 the retry loop looked
+    // harmless — 429/5xx are rejections, not completions — but "looked" is not a number,
+    // and now it is one: every attempt gets a row, so a bad window shows up as three rows
+    // against one request instead of hiding inside it.
+    meterModelCall({
+      feature: opts.feature, task: opts.task, provider: "openai", model: String(body.model || ""),
+      status: res.status, ok: false, attempt, latencyMs: Date.now() - meterStarted,
+      businessId: opts.businessId || null, usage: null,
+    });
 
     if (!RETRYABLE.has(res.status) || attempt === MAX_ATTEMPTS) break;
 
@@ -847,6 +896,15 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
   }
 
   const data = await res.json();
+  // THE COST, FROM THE PROVIDER'S OWN NUMBERS. usage comes back in the body, so it is
+  // free to record — and it is the whole difference between knowing how OFTEN we call the
+  // model and knowing how MUCH we spend. A one-line reply and a full page generation are
+  // both "one call".
+  meterModelCall({
+    feature: opts.feature, task: opts.task, provider: "openai", model: String(data?.model || body.model),
+    status: res.status, ok: true, attempt: attemptsUsed, latencyMs: Date.now() - meterStarted,
+    businessId: opts.businessId || null, usage: data?.usage || null,
+  });
   const text = String(data?.choices?.[0]?.message?.content || "").trim();
   // The finish reason. "length" means the output was cut off at the token cap —
   // a truncated answer, which a caller storing a document MUST be able to reject
