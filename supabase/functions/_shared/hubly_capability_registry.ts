@@ -4308,11 +4308,28 @@ export function markServiceAnchorsInFreeform(html: string, names: string[]): { h
  *  honest sentence rather than a promise. */
 async function applyBusinessNameToFreeform(draftId: string, draftToken: string, name: string, ownerUid?: string | null):
   Promise<{ status: "placed" | "no_anchor" | "not_freeform" | "failed" | "unchanged" }> {
+  // EVERY BRANCH SAYS WHICH ONE IT WAS.
+  //
+  // On 2026-09-10 the wordmark stopped landing and the only evidence was a page with no
+  // name on it: the anchor was stamped, the matcher was proved to match that exact HTML
+  // offline, and no second document version existed — so it either never ran or its save
+  // failed, and NOTHING recorded which. A write we intended and did not make left no
+  // trace at all, which is why an hour passed before anyone noticed.
+  const say = (status: string, detail = "") =>
+    console.log(`[name-placement] ${draftId} ${status}${detail ? " — " + detail : ""}`);
+
   const latest = await selectLatestBusinessDocument(draftId, "website");
-  if (!latest || latest.format !== "html") return { status: "not_freeform" };
+  if (!latest) { say("not_freeform", "no website document on this business"); return { status: "not_freeform" }; }
+  if (latest.format !== "html") { say("not_freeform", `format=${latest.format}`); return { status: "not_freeform" }; }
   const r = placeBusinessNameInFreeform(latest.renderedHtml, name);
-  if (!r.placed) return { status: "no_anchor" };
-  if (r.html === latest.renderedHtml) return { status: "unchanged" };
+  if (!r.placed) {
+    // Distinguish "no anchor was ever stamped" from "an anchor exists and we failed to use
+    // it" — they are different bugs and they were indistinguishable from the reply.
+    const stamped = /data-hubly-nameslot/i.test(latest.renderedHtml);
+    say("no_anchor", stamped ? "ANCHOR IS PRESENT but the matcher missed it — this is a matcher bug" : "no data-hubly-nameslot on this page");
+    return { status: "no_anchor" };
+  }
+  if (r.html === latest.renderedHtml) { say("unchanged", "placement produced identical html"); return { status: "unchanged" }; }
   const saved = await callBusinessRpc("create_business_document", {
     p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
     // NOT "patch" — documentHasOwnerEdits counts any version created_by "patch" as the
@@ -4332,7 +4349,11 @@ async function applyBusinessNameToFreeform(draftId: string, draftToken: string, 
     p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "name"), p_created_by: "system", p_format: "html",
     p_owner_id: ownerUid || null,
   });
-  if (!saved || saved.ok !== true) return { status: "failed" };
+  if (!saved || saved.ok !== true) {
+    say("failed", `create_business_document rejected the version: ${JSON.stringify(saved || null).slice(0, 160)}`);
+    return { status: "failed" };
+  }
+  say("placed");
   return { status: "placed" };
 }
 

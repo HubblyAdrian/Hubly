@@ -870,3 +870,56 @@ Three things follow:
 
 The narrow fix was one gate reading one more field. The expensive part was four rounds of
 believing an instrument over a person.
+
+---
+
+## Lesson 29 — before writing normalisation, grep for the one that exists
+
+"George's Window Cleaning Company" became george-s-window-cleaning-company, hours after
+Graef's Auto Detailing was fixed to graefs-auto-detailing. The fix was real and it was in
+`hubly_slugify`, which strips apostrophes before anything splits on them. The trigger that
+renames a draft when its name lands, written the same afternoon, carried its own inline
+`regexp_replace` and never called it.
+
+I created the duplicate. Not by ignoring the existing function — by not looking for it.
+Writing four lines of regex felt smaller than finding out what was already there, and the
+result was two normalisers an hour apart, one missing a fix the other already had.
+
+That is the third instance of the same shape in one day, alongside the two edit lanes and
+the two signup paths, and it is the shape CLAUDE.md already names: **Hubly has two of
+almost everything, so a defect written once is usually present twice.** The new part is
+that this time both copies were written by the same person on the same day.
+
+Normalisation is where it bites hardest, because a normaliser is small enough to feel
+cheap to rewrite and central enough that a divergence corrupts data rather than just
+behaving oddly — a slug is permanent, a person's web address.
+
+So: **slugify, escape, truncate, canonicalise, format a phone number, parse a price — grep
+first.** If one exists, call it. If it is wrong, fix it there, where every caller gets the
+fix. A second implementation is a promise to keep two things in step forever, and today is
+the evidence that nobody keeps that promise for even an hour.
+
+## Lesson 30 — a write you intended and did not make must leave a trace
+
+The wordmark stopped appearing on generated pages. The evidence available was: an anchor
+correctly stamped in the page, a matcher proved offline to match that exact HTML, and no
+second document version in the table. So the placement either never ran, or ran and its
+save was rejected — and **nothing anywhere recorded which**.
+
+The first cause was found: a CHECK constraint, `created_by IN ('ai','user','patch','system')`,
+rejecting a value introduced an hour earlier to fix a cosmetic bug. The insert failed, no
+version was written, and the feature underneath quietly stopped working. An hour passed.
+
+The system was not silent, and that is the uncomfortable part: the turn's reply degraded
+honestly to "the page itself still shows the old header for now", which is exactly what had
+happened. It was reported, in words, to the person, and neither of us read it as a failure
+report. **An honest degradation is not a signal if nobody is counting it.**
+
+So the rule has two halves:
+
+1. **Every branch of a write path says which branch it was**, by name, with the id — not one
+   generic failure. "No anchor" and "an anchor exists and the matcher missed it" are
+   different bugs and were indistinguishable from the outside.
+2. **A failed write is countable, not just visible.** The reply telling one person is not a
+   record. Ask of any write: if this silently stopped working, what row would appear? If
+   the answer is none, the next hour of it not working is free.
