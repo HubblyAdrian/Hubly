@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-09-10T21:32:13.036Z",
+  "checkedAt": "2026-09-10T21:44:25.978Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -288,7 +288,7 @@
       },
       {
         "expertId": "critic",
-        "executionTimeMs": 0
+        "executionTimeMs": 1
       }
     ],
     "failures": [
@@ -1604,7 +1604,7 @@
         {
           "expertName": "Critic",
           "expertId": "critic",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "reasoning": [
             {
               "reason": "Experts agree enough to proceed without overwhelming the owner.",
@@ -1664,7 +1664,7 @@
           "output": {
             "type": "Builder Intent",
             "builderIntent": {
-              "intentId": "bint_mtw1m8v4_31ezo2",
+              "intentId": "bint_mtw21yen_vd9coy",
               "version": "1.0.0",
               "originalRequest": "I'm starting a pressure washing company.",
               "intentCategory": "Business Strategy",
@@ -1695,7 +1695,7 @@
                   "confidence": 81
                 }
               ],
-              "timestamp": "2026-09-10T21:32:13.024Z",
+              "timestamp": "2026-09-10T21:44:25.967Z",
               "applied": false,
               "changePlanGenerated": false
             },
@@ -1937,7 +1937,7 @@
           "changedFromPrevious": "Creative Director produced Creative Plan; Critic advanced that into Quality Report (confidence 84 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "outputType": "Quality Report",
           "retries": 0
         },

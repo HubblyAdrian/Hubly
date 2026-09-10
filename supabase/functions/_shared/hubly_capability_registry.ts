@@ -6900,7 +6900,14 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             summary: changed.length
               ? `Real update applied — ${url} now reflects: ${changed.join(", ")}.` +
                 (namePlacement === "placed"
-                  ? ` Their business name is now ON the page — say it is showing, and that the trade-and-place line above it is still there.`
+                  // ORDER STATED FROM WHAT THE CODE DID, not from the model's picture of a
+                  // page it cannot see. placeBusinessNameInFreeform inserts the wordmark
+                  // BEFORE the anchor in document order, so the name renders ABOVE the
+                  // trade-and-place line and the eyebrow sits BELOW it. We know that
+                  // deterministically because we chose it. Left to describe the layout
+                  // itself the model said the Provo line was "still above it" — backwards,
+                  // and unverifiable by the one person it was addressed to (2026-09-10).
+                  ? ` Their business name is now ON the page, added ABOVE the trade-and-place line, which is still there BELOW it. Say exactly that ordering — name on top, trade and place underneath — and do not describe the page any further than this; you cannot see it.`
                   : namePlacement === "no_anchor" || namePlacement === "failed"
                   ? ` IMPORTANT: the name is SAVED but is NOT on the page — this page has no name slot, so its header still reads as it did. Tell them plainly: saved, and their page still shows the old header. Do NOT claim the page changed, do NOT offer to rebuild it, and do not explain why.`
                   : namePlacement === "not_freeform"

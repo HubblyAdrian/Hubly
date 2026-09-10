@@ -3919,7 +3919,19 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     // showing, and only back to the frame that asked -- the token never goes in
     // a URL and never leaves this origin pair.
     if(data.type === 'hcRequestDraftContext'){
-      if(hc.draftBusiness && data.slug === hc.draftBusiness.slug && event.source){
+      // THE ORIGIN IS THE IDENTITY CHECK. This used to also require
+      // data.slug === hc.draftBusiness.slug, which compared two copies of the one field we
+      // deliberately made MUTABLE: naming an unclaimed draft renames it. On 2026-09-10 the
+      // frame asked with its new slug while the parent still held the old one, the token
+      // was refused, and the owner's site went blank at the moment he named it.
+      //
+      // Swapping in a business id does not work here and it is worth saying why: the frame
+      // does not know its business id yet — resolving the business is what it needs the
+      // token FOR. What it does have is its origin, and the BROWSER guarantees that, while
+      // anything in the payload is just a string the sender chose. event.origin is already
+      // checked against this draft's own URL above, so only the frame actually showing this
+      // draft can be answered. The slug comparison added no security and one failure mode.
+      if(hc.draftBusiness && event.source){
         // Also tell the preview whether the visitor is signed in, so its click
         // handler can gate an edit behind sign-in (C) without reading our session.
         try{ event.source.postMessage({ type:'hcDraftContext', slug: hc.draftBusiness.slug, draftToken: hc.draftBusiness.draftToken || null, authed: hcIsAuthed() }, expectedOrigin); }catch(e){}

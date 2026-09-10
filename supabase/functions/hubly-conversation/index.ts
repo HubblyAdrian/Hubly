@@ -2350,7 +2350,15 @@ Deno.serve(async (req) => {
               }).catch(() => {});
             }
           } else if ((actionName === "updateDraft" || actionName === "setServices") && draftBusiness && raw.id) {
-            draftBusiness = { ...draftBusiness, url: String(raw.url || draftBusiness.url) };
+            // CARRY THE SLUG, NOT JUST THE URL. A name change renames an unclaimed draft
+            // (the slug_follows_name trigger), so after updateDraft both can be new. This
+            // line used to copy `url` alone, leaving the response self-inconsistent — new
+            // address, old slug — and the client threaded the stale slug onward.
+            draftBusiness = {
+              ...draftBusiness,
+              slug: String(raw.slug || draftBusiness.slug),
+              url: String(raw.url || draftBusiness.url),
+            };
           }
         }
 

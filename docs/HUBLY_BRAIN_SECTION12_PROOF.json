@@ -4,7 +4,7 @@
   "passed": true,
   "version": "1.5.0",
   "owner": "hubly_brain",
-  "checkedAt": "2026-09-10T21:32:13.412Z",
+  "checkedAt": "2026-09-10T21:44:26.358Z",
   "proofs": [
     "Hubly Mission Control module exists",
     "AI Replay / flight recorder exists",
@@ -202,14 +202,14 @@
       "note": "Epic 11 — Hubly Chat OS. One conversation. One personality. Conversation Canvas. Waiting for Approval/Apply. No apply.",
       "recent": [
         {
-          "id": "chatos_mtw1m95t_25vt69",
+          "id": "chatos_mtw21ypf_29tyrb",
           "status": "chat_os",
           "summary": "Hubly Chat OS: 2 route(s) · Website Redesign · canvas booking_simulation"
         }
       ],
       "intents": [
         {
-          "intentId": "bint_mtw1m95m_1v16ld",
+          "intentId": "bint_mtw21yp8_xq2289",
           "category": "Multiple Systems",
           "label": "Multi-System: Website + Booking",
           "goal": "Arrival Windows · Website Update",
@@ -231,8 +231,8 @@
       ],
       "changePlans": [
         {
-          "id": "cpl_mtw1m95r_jty0p4",
-          "intentId": "bint_mtw1m95m_1v16ld",
+          "id": "cpl_mtw21ypd_inc7wu",
+          "intentId": "bint_mtw21yp8_xq2289",
           "title": "Multi-System: Website + Booking",
           "builderType": "booking",
           "affectedSystems": [
@@ -259,9 +259,9 @@
       ],
       "previews": [
         {
-          "id": "prv_mtw1m95r_psabu6",
-          "changePlanId": "cpl_mtw1m95r_jty0p4",
-          "intentId": "bint_mtw1m95m_1v16ld",
+          "id": "prv_mtw21ypd_gyf4ds",
+          "changePlanId": "cpl_mtw21ypd_inc7wu",
+          "intentId": "bint_mtw21yp8_xq2289",
           "title": "Multi-System: Website + Booking",
           "headline": "Here's what I built.",
           "primarySurface": "booking",
@@ -283,9 +283,9 @@
       ],
       "collaborations": [
         {
-          "id": "collab_mtw1m95s_h2h7mx",
-          "previewId": "prv_mtw1m95r_psabu6",
-          "changePlanId": "cpl_mtw1m95r_jty0p4",
+          "id": "collab_mtw21ypd_6qh5vj",
+          "previewId": "prv_mtw21ypd_gyf4ds",
+          "changePlanId": "cpl_mtw21ypd_inc7wu",
           "phase": "recommending",
           "openingPrompt": "What do you think?",
           "iterations": 0,
@@ -305,10 +305,10 @@
       ],
       "versions": [
         {
-          "id": "bver_mtw1m95s_mpuhmg",
+          "id": "bver_mtw21ypd_hezbb8",
           "label": "v1.1",
           "status": "proposed",
-          "changePlanId": "cpl_mtw1m95r_jty0p4",
+          "changePlanId": "cpl_mtw21ypd_inc7wu",
           "surfaces": [
             "booking"
           ],
@@ -322,7 +322,7 @@
       "versionHistoryNote": "Current → History → Diff → Rollback availability → AI restore suggestions. Try it — you can always go back.",
       "creativeSessions": [
         {
-          "id": "csess_mtw1m95s_aoeg26",
+          "id": "csess_mtw21ype_6yclkq",
           "label": "Business Builder",
           "direction": "Modern Professional",
           "decisionCount": 1,
@@ -340,7 +340,7 @@
       ],
       "bookingIntelligence": [
         {
-          "id": "bintel_mtw1m95t_kyp3e3",
+          "id": "bintel_mtw21ype_7uyhup",
           "label": "Booking Intelligence Builder",
           "ruleCount": 1,
           "concepts": [
@@ -361,7 +361,7 @@
       "mediaIntelligence": [],
       "chatOs": [
         {
-          "id": "chatos_mtw1m95t_25vt69",
+          "id": "chatos_mtw21ypf_29tyrb",
           "label": "Hubly Chat OS",
           "channel": "typing",
           "voiceReady": true,
@@ -481,7 +481,7 @@
     ],
     "brainTimeline": [
       {
-        "at": "2026-09-10T21:32:13.398Z",
+        "at": "2026-09-10T21:44:26.344Z",
         "t": 0,
         "phase": "request",
         "detail": "Owner: I'm redesigning my website and I want arrival windows.",
@@ -490,7 +490,7 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.418Z",
+        "at": "2026-09-10T21:44:26.364Z",
         "t": 20,
         "phase": "hubly_brain",
         "detail": "Thinking…",
@@ -499,7 +499,7 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.448Z",
+        "at": "2026-09-10T21:44:26.394Z",
         "t": 50,
         "phase": "memory_loaded",
         "detail": "Loaded business_memory",
@@ -508,7 +508,7 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.478Z",
+        "at": "2026-09-10T21:44:26.424Z",
         "t": 80,
         "phase": "memory_loaded",
         "detail": "Loaded business_dna",
@@ -517,7 +517,7 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.508Z",
+        "at": "2026-09-10T21:44:26.454Z",
         "t": 110,
         "phase": "memory_loaded",
         "detail": "Loaded workspace_memory",
@@ -526,7 +526,7 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.538Z",
+        "at": "2026-09-10T21:44:26.484Z",
         "t": 140,
         "phase": "memory_loaded",
         "detail": "Loaded conversation_intelligence",
@@ -535,7 +535,7 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.578Z",
+        "at": "2026-09-10T21:44:26.524Z",
         "t": 180,
         "phase": "business_dna",
         "detail": "Business DNA loaded (8 facts)",
@@ -553,7 +553,7 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.628Z",
+        "at": "2026-09-10T21:44:26.574Z",
         "t": 230,
         "phase": "research",
         "detail": "research: finished",
@@ -564,7 +564,7 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.678Z",
+        "at": "2026-09-10T21:44:26.624Z",
         "t": 280,
         "phase": "strategy",
         "detail": "strategy: finished",
@@ -575,7 +575,7 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.728Z",
+        "at": "2026-09-10T21:44:26.674Z",
         "t": 330,
         "phase": "creative_director",
         "detail": "creative_director: finished",
@@ -586,7 +586,7 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.778Z",
+        "at": "2026-09-10T21:44:26.724Z",
         "t": 380,
         "phase": "critic",
         "detail": "critic: finished",
@@ -597,7 +597,7 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.788Z",
+        "at": "2026-09-10T21:44:26.734Z",
         "t": 390,
         "phase": "builder",
         "detail": "builder: finished",
@@ -608,7 +608,7 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.798Z",
+        "at": "2026-09-10T21:44:26.744Z",
         "t": 400,
         "phase": "experience_director",
         "detail": "experience_director: finished",
@@ -619,23 +619,23 @@
         }
       },
       {
-        "at": "2026-09-10T21:32:13.813Z",
+        "at": "2026-09-10T21:44:26.759Z",
         "t": 415,
         "phase": "reasoning",
         "detail": "Reasoning Object: industry_selection",
         "meta": {
-          "reasoningId": "rsn_mtw1m95q_tj8u1f",
+          "reasoningId": "rsn_mtw21ypc_fghlmg",
           "decision": "Focus on pressure washing",
           "confidence": 95
         }
       },
       {
-        "at": "2026-09-10T21:32:13.828Z",
+        "at": "2026-09-10T21:44:26.774Z",
         "t": 430,
         "phase": "reasoning",
         "detail": "Reasoning Object: brand_positioning",
         "meta": {
-          "reasoningId": "rsn_mtw1m95q_aqskai",
+          "reasoningId": "rsn_mtw21ypc_y2jewt",
           "decision": "pressure washing that earns trust with before/after proof before asking for a booking",
           "confidence": 88
         }
@@ -653,7 +653,7 @@
       "decisionObjectsRecorded": 1
     },
     "replay": {
-      "executionId": "flt_mtw1m95u_vedqba",
+      "executionId": "flt_mtw21ypf_d9e3x1",
       "stepCount": 33,
       "summary": {
         "request": "I'm redesigning my website and I want arrival windows.",
@@ -696,7 +696,7 @@
       },
       "steps": [
         {
-          "at": "2026-09-10T21:32:13.398Z",
+          "at": "2026-09-10T21:44:26.344Z",
           "t": 0,
           "phase": "request",
           "detail": "Owner: I'm redesigning my website and I want arrival windows.",
@@ -705,7 +705,7 @@
           }
         },
         {
-          "at": "2026-09-10T21:32:13.418Z",
+          "at": "2026-09-10T21:44:26.364Z",
           "t": 20,
           "phase": "hubly_brain",
           "detail": "Thinking…",
@@ -714,7 +714,7 @@
           }
         },
         {
-          "at": "2026-09-10T21:32:13.448Z",
+          "at": "2026-09-10T21:44:26.394Z",
           "t": 50,
           "phase": "memory_loaded",
           "detail": "Loaded business_memory",
@@ -723,7 +723,7 @@
           }
         },
         {
-          "at": "2026-09-10T21:32:13.478Z",
+          "at": "2026-09-10T21:44:26.424Z",
           "t": 80,
           "phase": "memory_loaded",
           "detail": "Loaded business_dna",
@@ -732,7 +732,7 @@
           }
         },
         {
-          "at": "2026-09-10T21:32:13.508Z",
+          "at": "2026-09-10T21:44:26.454Z",
           "t": 110,
           "phase": "memory_loaded",
           "detail": "Loaded workspace_memory",
@@ -741,7 +741,7 @@
           }
         },
         {
-          "at": "2026-09-10T21:32:13.538Z",
+          "at": "2026-09-10T21:44:26.484Z",
           "t": 140,
           "phase": "memory_loaded",
           "detail": "Loaded conversation_intelligence",
@@ -750,7 +750,7 @@
           }
         },
         {
-          "at": "2026-09-10T21:32:13.578Z",
+          "at": "2026-09-10T21:44:26.524Z",
           "t": 180,
           "phase": "business_dna",
           "detail": "Business DNA loaded (8 facts)",
@@ -768,7 +768,7 @@
           }
         },
         {
-          "at": "2026-09-10T21:32:13.628Z",
+          "at": "2026-09-10T21:44:26.574Z",
           "t": 230,
           "phase": "research",
           "detail": "research: finished",
@@ -779,7 +779,7 @@
           }
         },
         {
-          "at": "2026-09-10T21:32:13.678Z",
+          "at": "2026-09-10T21:44:26.624Z",
           "t": 280,
           "phase": "strategy",
           "detail": "strategy: finished",
@@ -790,7 +790,7 @@
           }
         },
         {
-          "at": "2026-09-10T21:32:13.728Z",
+          "at": "2026-09-10T21:44:26.674Z",
           "t": 330,
           "phase": "creative_director",
           "detail": "creative_director: finished",
@@ -801,7 +801,7 @@
           }
         },
         {
-          "at": "2026-09-10T21:32:13.778Z",
+          "at": "2026-09-10T21:44:26.724Z",
           "t": 380,
           "phase": "critic",
           "detail": "critic: finished",
@@ -812,7 +812,7 @@
           }
         },
         {
-          "at": "2026-09-10T21:32:13.788Z",
+          "at": "2026-09-10T21:44:26.734Z",
           "t": 390,
           "phase": "builder",
           "detail": "builder: finished",
@@ -825,7 +825,7 @@
       ]
     },
     "thinkFlight": {
-      "executionId": "flt_mtw1m95u_vedqba",
+      "executionId": "flt_mtw21ypf_d9e3x1",
       "memoriesLoaded": [
         "business_memory",
         "business_dna",
