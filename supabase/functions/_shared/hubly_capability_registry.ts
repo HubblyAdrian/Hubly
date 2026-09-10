@@ -2361,6 +2361,7 @@ export async function generateFreeformPage(
         "- NEVER CONSTRUCT ONE. Not from the trade, not from the city, not from both, not from the owner's own name, not with an adjective attached. \"Los Angeles Aviation Pilot\", \"LA Aviation\", \"Elite Detailing\" are all constructions — a name is a name because a person chose it, and nobody has.\n" +
         "- Marking an invented name as a guess does NOT make it allowed. data-hubly-guess is for a tagline you proposed, never for the business's identity.\n" +
         "- What goes there instead: the TRADE and the PLACE, which are true — an eyebrow or kicker like \"PILOT · LOS ANGELES\". <title> is the trade and the place too. Design the page so it reads correctly with no wordmark at all; that is a normal design problem and you are good at it.\n" +
+        "- PUT data-hubly-nameslot=\"\" ON THAT EYEBROW ELEMENT. One attribute, nothing else changes. It marks where the business's name will go the moment they give one, so their name can be added to this exact page without rebuilding it and without losing anything they have changed. If you leave it off, this page can never gain their name.\n" +
         "- The owner is being asked for their name right now, and it will be added the moment they give it. An honest gap they can fill beats a plausible name they did not choose.\n\n"
       : "") +
     "How the brand mark and navigation appear is entirely yours to decide: a top nav bar is ONE option, not a requirement. A full-bleed hero with the business name set in the headline, a slim side rail, a minimal footer-only nav, or something else the trade suggests are all equally available. The only things that must be true: the brand is identifiable somewhere, and booking is reachable. Two different trades should not open with the same shape.\n\n" +
@@ -2638,6 +2639,28 @@ export async function generateFreeformPage(
     .map((s: any) => String(s?.name || "").trim()).filter(Boolean);
   const svcMarked = markServiceAnchorsInFreeform(named, svcNames);
   if (svcMarked.marked > 0) console.log(`freeform [${businessId}] anchored ${svcMarked.marked} service name(s) for price patching`);
+
+  // THE NAME SLOT, stamped the same way and for the same reason. Without it, naming a
+  // business that was built unnamed has nowhere to write, and the only remaining options
+  // are re-recognising the header by shape (a matcher per shape, forbidden) or spending a
+  // whole generation to rebuild (~1/35 of a top-up, and it discards hand edits).
+  // Candidates are the text we ASKED the model to put there: the name if there is one,
+  // otherwise the eyebrow's trade-and-place forms. Cheap, and it runs before the page is
+  // ever stored, so every page built from here is patchable.
+  const nsTrade = String((record as any)?.businessType || "").replace(/_/g, " ").trim();
+  const nsCity = String((record as any)?.city || "").trim();
+  const nameSlotCandidates = [
+    String((record as any)?.name || "").trim(),
+    nsTrade && nsCity ? `${nsTrade} · ${nsCity}` : "",
+    nsTrade && nsCity ? `${nsTrade} — ${nsCity}` : "",
+    nsTrade && nsCity ? `${nsTrade}, ${nsCity}` : "",
+    nsTrade, nsCity,
+  ].filter(Boolean);
+  const nameSlot = markNameSlotInFreeform(svcMarked.html, nameSlotCandidates);
+  // A MISS IS COUNTABLE, NOT SILENT. If neither the generator's own attribute nor the
+  // text match found a slot, this page cannot be patched when a name arrives, and we
+  // should learn that from a log line rather than from an owner two days later.
+  console.log(`freeform [${businessId}] name slot ${nameSlot.marked ? "anchored" : "NOT FOUND — page will not be patchable when a name arrives"}`);
   // NO hours-anchor pass here. Recognizing the model's hours by markup shape —
   // at generation OR later — misfires (it stamped a footer list mixing address +
   // phone + "open daily", then a rewrite destroyed the address) and, even when it
@@ -2650,7 +2673,7 @@ export async function generateFreeformPage(
   // svh so they don't jump with the mobile address bar; ~10% of pages ship a bare
   // vh anyway. This adds the missing companion deterministically. Runs BEFORE the
   // runtime injection so it only repairs the model's stylesheet, not our widget.
-  const paired = pairViewportUnits(svcMarked.html);
+  const paired = pairViewportUnits(nameSlot.html);
   if (paired.added > 0) {
     console.log(`freeform [${businessId}] paired ${paired.added} bare-vh height(s) with an svh companion`);
   }
@@ -3578,9 +3601,6 @@ function findServiceEntryBounds(html: string, anchorIndex: number, anchorLen: nu
   const chosen = cands.find(repeats) || cands.find((e) => e.tag !== "div") || cands[0];
   return { start: chosen.start, end: chosen.end, kind: chosen.tag };
 }
-function escHtmlText(s: string): string {
-  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
 /** The DESCRIPTION element of an entry — the text-bearing leaf that carries neither
  *  the name nor the price anchor and holds no price token: the card's `<p>` blurb,
  *  the `<dd>` in a `<dt>/<dd>` pair. A list row has none (its second cell is the
@@ -4154,6 +4174,106 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
  *  element's OWN text (the page's words), so a later price change resolves to it
  *  however the model spells the name — closing the drift-duplication class at the
  *  source. Adds an attribute only; never reorders, rewrites, or regenerates. */
+
+/** THE NAME SLOT — stamped at build time, from text we already know.
+ *
+ *  An empty wordmark has no text to find, so it cannot be located the way a service name
+ *  is. But we do not need to find the wordmark; we need somewhere to PUT one, and the
+ *  EYEBROW is already sitting exactly there — "PHOTOGRAPHY", "PILOT · LOS ANGELES" — and
+ *  it is composed from trade and city, both of which we hold on the record. That is the
+ *  same class of known string as a service name, so this is markServiceAnchorsInFreeform's
+ *  mechanism pointed at a different element.
+ *
+ *  On a NAMED page the known text is simply the name, which makes that case trivial.
+ *
+ *  Measured 2026-09-09 over 162 stored pages: findable on 161. The one miss was a page
+ *  attached to the wrong business, not a matching failure. The unnamed case had N=2 at
+ *  that point, so the eyebrow half of this number cannot yet carry weight — which is why
+ *  the generator ALSO emits data-hubly-nameslot itself. Two independent routes; a page is
+ *  unpatchable only if both fail. */
+
+/** Where a wordmark BELONGS, which is not merely where the text appears.
+ *
+ *  findServiceNameElement cannot be reused here, and the reason is concrete: on a real
+ *  page (james-famous-photography, 2026-09-09) the string "Photography" occurs three
+ *  times as a leaf — <title>, the nav eyebrow, and the hero eyebrow — and that scorer
+ *  picks <title>, which would have inserted the business's name inside <head>. It also
+ *  PENALISES data-hc="hero...", which is right for a service name and exactly wrong here,
+ *  because an eyebrow is usually in the hero or the nav.
+ *
+ *  So: body only, never <title>, and prefer the element that is actually a brand line. */
+function findNameSlotElement(html: string, candidates: string[]): { index: number; length: number } | null {
+  const bodyAt = html.search(/<body\b/i);
+  const from = bodyAt >= 0 ? bodyAt : 0;
+  const wanted = candidates.map((c) => String(c || "").replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase()).filter(Boolean);
+  if (!wanted.length) return null;
+
+  const re = /<([a-z0-9]+)\b([^>]*)>([^<]*)<\/\1>/gi;
+  re.lastIndex = from;
+  let m: RegExpExecArray | null;
+  let best: { index: number; length: number } | null = null;
+  let bestScore = 0;
+  while ((m = re.exec(html))) {
+    const tag = m[1].toLowerCase();
+    if (tag === "title" || tag === "script" || tag === "style" || tag === "option") continue;
+    const text = m[3].replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+    if (!text || text.length > 60) continue;
+    const norm = text.replace(/[^a-z0-9]+/gi, " ").trim().toLowerCase();
+    const rank = wanted.indexOf(norm);
+    if (rank < 0) continue;
+
+    // An earlier candidate is a better description of what we asked for.
+    let score = 10 - rank;
+    // The element that IS the brand line, by the page's own naming.
+    if (/class="[^"]*(eyebrow|kicker|brand|logo|wordmark|tagline)/i.test(m[2])) score += 8;
+    // Near the top of the body is where a header lives.
+    if (m.index - from < (html.length - from) * 0.25) score += 4;
+    // A nav link is a destination, not an identity — "Portfolio" wearing business.name.
+    if (tag === "a") score -= 6;
+    if (score > bestScore) { bestScore = score; best = { index: m.index, length: m[0].length }; }
+  }
+  return best;
+}
+
+export function markNameSlotInFreeform(html: string, candidates: string[]): { html: string; marked: boolean } {
+  if (/data-hubly-nameslot/i.test(html)) return { html, marked: true };   // the generator emitted it
+  const el = findNameSlotElement(html, candidates);
+  if (!el) return { html, marked: false };
+  const open = html.slice(el.index, el.index + el.length);
+  const rebuilt = open.replace(/^<([a-z0-9]+)/i, (_m, p1) => `<${p1} data-hubly-nameslot=""`);
+  return { html: html.slice(0, el.index) + rebuilt + html.slice(el.index + el.length), marked: true };
+}
+
+/** Put the business's name on the page, next to the stamped slot.
+ *
+ *  AN INSERT, NEVER AN OVERWRITE. The slot is usually the eyebrow, and the eyebrow is
+ *  trade and place — both true before a name exists and both still true after it. Losing
+ *  it to gain a name is a straight downgrade (Adrian's ruling, 2026-09-09). So the
+ *  wordmark is added BEFORE the anchor and the anchor's own text is left alone.
+ *
+ *  The new element clones the anchor's tag and class list so it inherits the page's own
+ *  styling rather than arriving unstyled — the same reasoning as cloning a donor section
+ *  in hubly_services_block.ts. */
+export function placeBusinessNameInFreeform(html: string, name: string): { html: string; placed: boolean } {
+  const clean = String(name || "").trim();
+  if (!clean) return { html, placed: false };
+  if (/data-hubly-name=/i.test(html)) {
+    // Already placed: update that one element's text, nothing else.
+    const re = /(<([a-z0-9]+)\b[^>]*data-hubly-name=[^>]*>)([\s\S]*?)(<\/\2>)/i;
+    if (re.test(html)) return { html: html.replace(re, (_m, open, _tag, _old, close) => `${open}${escHtmlText(clean)}${close}`), placed: true };
+  }
+  const m = /<([a-z0-9]+)\b([^>]*data-hubly-nameslot=[^>]*)>/i.exec(html);
+  if (!m) return { html, placed: false };
+  const tag = m[1];
+  const cls = /class="([^"]*)"/i.exec(m[2]);
+  const wordmark = `<${tag} data-hubly-name=""${cls ? ` class="${cls[1]}"` : ""} style="font-weight:700;letter-spacing:normal;text-transform:none;opacity:1">${escHtmlText(clean)}</${tag}>`;
+  return { html: html.slice(0, m.index) + wordmark + html.slice(m.index), placed: true };
+}
+
+function escHtmlText(s: string): string {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 export function markServiceAnchorsInFreeform(html: string, names: string[]): { html: string; marked: number } {
   let out = html;
   let marked = 0;
@@ -4175,6 +4295,33 @@ export function markServiceAnchorsInFreeform(html: string, names: string[]): { h
 /** Run the placement and, on a change, persist a new version. Mirrors
  *  applyOwnerPhotoToFreeform: not_freeform on an AST page (the async rebuild
  *  handles those), otherwise a synchronous, targeted patch. */
+
+/** THE NAME ARRIVES: patch the page, never rebuild it.
+ *
+ *  Mirrors applyServicesToFreeform — read the latest document, place one element against
+ *  the build-time anchor, persist a new version. No generation, no lost hand edits, no
+ *  question for the owner to answer.
+ *
+ *  Returns a status the reply can be composed from, because what Hubly SAYS has to be
+ *  what actually happened: "placed" means their name is on the page now; "no_anchor"
+ *  means it is saved on the record and the page still shows the old header, which is the
+ *  honest sentence rather than a promise. */
+async function applyBusinessNameToFreeform(draftId: string, draftToken: string, name: string, ownerUid?: string | null):
+  Promise<{ status: "placed" | "no_anchor" | "not_freeform" | "failed" | "unchanged" }> {
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (!latest || latest.format !== "html") return { status: "not_freeform" };
+  const r = placeBusinessNameInFreeform(latest.renderedHtml, name);
+  if (!r.placed) return { status: "no_anchor" };
+  if (r.html === latest.renderedHtml) return { status: "unchanged" };
+  const saved = await callBusinessRpc("create_business_document", {
+    p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
+    p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "name"), p_created_by: "patch", p_format: "html",
+    p_owner_id: ownerUid || null,
+  });
+  if (!saved || saved.ok !== true) return { status: "failed" };
+  return { status: "placed" };
+}
+
 async function applyServicesToFreeform(draftId: string, draftToken: string, services: { name: string; price?: number; description?: string }[], ownerUid?: string | null): Promise<ServicesPlacement> {
   const latest = await selectLatestBusinessDocument(draftId, "website");
   if (!latest || latest.format !== "html") return { status: "not_freeform", placed: [], missing: services.map((s) => s.name) };
@@ -6700,6 +6847,30 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           }
           const url = `https://${r.slug}.${HUBLY_DOMAIN}`;
           const changed = Object.keys(patch).concat(layout ? ["layout"] : []);
+
+          // THE NAME REACHES THE PAGE, AS A CONSEQUENCE OF THE WRITE.
+          //
+          // Adrian named site-0d4b70 and the reply said "got it" while the page kept its
+          // old header, because nothing connected the record to the rendering. Like the
+          // slug, this is a consequence and not something the model may remember to do.
+          //
+          // It patches ONE element against the anchor stamped at build time. It never
+          // rebuilds: a rebuild costs a generation and discards the owner's edits to
+          // compensate for an anchor we failed to place, which is the wrong trade.
+          //
+          // AND THE RECORD ALWAYS WINS. A name must never fail to save because a page has
+          // nowhere to show it, so this runs AFTER the write succeeded and only decides
+          // what we may honestly SAY — placed, or saved-but-the-page-is-stale.
+          let namePlacement: string | null = null;
+          if (typeof (patch as Record<string, unknown>).name === "string" && String((patch as Record<string, unknown>).name).trim()) {
+            try {
+              const np = await applyBusinessNameToFreeform(draftId, draftToken, String((patch as Record<string, unknown>).name), ownerUid);
+              namePlacement = np.status;
+              if (np.status === "no_anchor") {
+                console.log(`freeform [${draftId}] name saved but NOT placed — no name slot on this page`);
+              }
+            } catch (e) { namePlacement = "failed"; console.error("[name-placement] threw:", String(e)); }
+          }
           // DECLARE THE CHANGE, or the page never learns about it.
           //
           // A Document stores its RENDERED html. updateDraft reported no
@@ -6723,8 +6894,18 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           return {
             ok: true,
             real: true,
+            // SAY WHAT ACTUALLY HAPPENED — the record and the page are two facts, and
+            // "got it" collapsed them into one. On 2026-09-09 a name was saved, the page
+            // kept its old header, and the reply claimed neither and implied both.
             summary: changed.length
-              ? `Real update applied — ${url} now reflects: ${changed.join(", ")}.`
+              ? `Real update applied — ${url} now reflects: ${changed.join(", ")}.` +
+                (namePlacement === "placed"
+                  ? ` Their business name is now ON the page — say it is showing, and that the trade-and-place line above it is still there.`
+                  : namePlacement === "no_anchor" || namePlacement === "failed"
+                  ? ` IMPORTANT: the name is SAVED but is NOT on the page — this page has no name slot, so its header still reads as it did. Tell them plainly: saved, and their page still shows the old header. Do NOT claim the page changed, do NOT offer to rebuild it, and do not explain why.`
+                  : namePlacement === "not_freeform"
+                  ? ` The name is saved; this page re-renders from the record on its own.`
+                  : "")
               : `No fields changed — nothing new was given to update.`,
             raw: { id: r.id, slug: r.slug, url, ...(recordChange.length ? { recordChange } : {}) },
           };

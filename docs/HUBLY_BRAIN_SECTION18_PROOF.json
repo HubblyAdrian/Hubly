@@ -3,7 +3,7 @@
   "name": "Founder Acceptance & Brain Certification",
   "title": "Founder Acceptance & Brain Certification",
   "passed": true,
-  "checkedAt": "2026-09-09T21:02:21.465Z",
+  "checkedAt": "2026-09-10T04:44:51.557Z",
   "version": "1.0.0",
   "proofs": {
     "scenarios": [
@@ -176,14 +176,14 @@
       "validationSuitesOk": true,
       "documentationOk": true,
       "certified": true,
-      "checkedAt": "2026-09-09T21:02:21.453Z"
+      "checkedAt": "2026-09-10T04:44:51.545Z"
     },
     "certificate": {
       "title": "Milestone 1 Completion Certificate",
       "product": "Hubly Brain",
       "version": "1.0",
       "status": "Certified",
-      "date": "2026-09-09",
+      "date": "2026-09-10",
       "release": "Milestone 1",
       "pr": "https://github.com/HubblyAdrian/Hubly/pull/196",
       "validationSuite": "npm run milestone1 · npm run check:section16 · npm run check:section18",
@@ -204,7 +204,7 @@
       "founderBenchmarkCount": 10
     },
     "documentationOk": true,
-    "primaryExecutionId": "flt_mtul3zqq_8kucdf",
+    "primaryExecutionId": "flt_mtv1mruq_ee4ozg",
     "certificatePath": "docs/releases/MILESTONE1_CERTIFIED.md"
   },
   "failures": null
