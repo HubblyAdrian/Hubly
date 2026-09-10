@@ -19,6 +19,13 @@
 -- regex writes a wrong boolean and the truth is gone; a detector in a read path can be
 -- corrected any time. On 2026-09-09 a detector deciding "asked = true" at write time cost
 -- a whole run and would have reported success on the exact failure Adrian had just watched.
+-- SCOPE, AND THE MISREADING TO AVOID (added 2026-09-10, see 20260910050000 for the
+-- COMMENT ON statements that carry this into the database itself):
+-- this table measures VOLUME AND RATE from real traffic. It records THIS turn only, so a
+-- later turn that supersedes what was said here is invisible to it. Deriving "asked_name"
+-- from `reply` means THE MODEL ASKED, never THE PERSON SAW A QUESTION — the two came apart
+-- the day after this shipped. For what a person is left looking at, drive the real client
+-- (scripts/walk-signup-in-browser.mjs). Neither instrument can do the other's job.
 create table if not exists public.first_turn_outcomes (
   id bigserial primary key,
 

@@ -1290,6 +1290,15 @@ Deno.serve(async (req) => {
   // deciding "asked = true" at write time cost a full run and would have reported success
   // on the exact failure Adrian had just watched happen.
   //
+  // WHAT THIS CAN AND CANNOT SEE — read this before trusting a number derived from it.
+  // It records THIS turn's reply. Later turns in the same conversation are not first
+  // turns and are not recorded, so anything that supersedes or buries what was said here
+  // is invisible. On 2026-09-10 this reported asked=true for a turn where the owner was
+  // never asked: the model did ask, at the tail of a long build narration, and the
+  // post_build turn overwrote it with a pricing question two minutes later. Both true.
+  // "The model asked" is not "the person saw a question" — for that, drive the real
+  // client (scripts/walk-signup-in-browser.mjs).
+  //
   // Best effort, never awaited into the response.
   const recordFirstTurn = (visibleReply: string) => {
     if (!isFirstTurn) return;

@@ -11,6 +11,14 @@
  * assumption about what the client sends — the client sends it. It also captures the real
  * request off the network layer so it can be put side by side with the harness's.
  *
+ * THE DIVISION OF LABOUR, stated so neither instrument gets asked to do the other's job:
+ *   first_turn_outcomes  — volume and rate, from real traffic, continuously, free.
+ *                          Records ONE turn; blind to anything that supersedes it.
+ *   this walker          — what a person is actually left looking at, one run at a time,
+ *                          at the price of a signup. Sees the whole conversation settle.
+ * Tonight proved both directions: the counter said the name was asked (true) while the
+ * owner was never asked (also true), and only driving the real client showed why.
+ *
  * Usage: node scripts/walk-signup-in-browser.mjs "your sentence"
  * Exit: 0 ran · 2 could not run
  */
