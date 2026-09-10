@@ -86,6 +86,38 @@ try {
   console.log(`  THE LAST THING THEY ARE LOOKING AT: ${lastAsksName ? "the name question" : lastAsksPrice ? "a SERVICES/PRICE question" : "neither"}`);
   if (consoleErrors.length) console.log(`  console errors: ${consoleErrors.slice(0, 3).join(" | ")}`);
 
+  // ── THE NAME TURN, AND THE SYMPTOM THAT MUST NOT SURVIVE ────────────────────────────
+  // Naming an unclaimed draft renames it (slug_follows_name). On 2026-09-10 that left the
+  // preview pointing at an address which had stopped resolving, so the owner's site went
+  // BLANK at the exact moment he named it. Answering the name question and then checking
+  // the preview is still rendering is the whole point of this run.
+  const NAME = process.env.HUBLY_TEST_NAME || "Bright & Clear Window Care";
+  const composer = page.locator("#hcInput");
+  if (await composer.count()) {
+    await composer.click();
+    await composer.type(NAME, { delay: 25 });
+    await composer.press("Enter");
+    await page.waitForTimeout(45000);
+
+    const after = await page.evaluate(() => {
+      const f = document.querySelector("#hcCanvasFrameA");
+      let inner = "";
+      try { inner = f?.contentDocument?.body?.innerText?.slice(0, 400) || ""; } catch { inner = "(cross-origin — cannot read, which is normal)"; }
+      const pill = document.querySelector("#hcAddressPill");
+      return { src: f?.getAttribute("src") || "", pill: (pill?.innerText || "").trim(), inner };
+    });
+    console.log(`\n  AFTER THE NAME TURN`);
+    console.log(`    address shown : ${after.pill}`);
+    console.log(`    preview src   : ${after.src.slice(0, 90)}`);
+    const blank = /isn.t live yet|still setting things up|Go to Hubly/i.test(after.inner);
+    console.log(`    preview state : ${blank ? "*** BLANK — the not-live gate (THE REGRESSION) ***" : "rendering the page"}`);
+    if (after.inner) console.log(`    preview text  : ${after.inner.replace(/\s+/g, " ").slice(0, 140)}`);
+    await page.screenshot({ path: "/tmp/after-name.png", fullPage: false });
+    console.log(`    screenshot    : /tmp/after-name.png`);
+  } else {
+    console.log("\n  (no #hcInput composer found — could not run the name turn)");
+  }
+
   writeFileSync("/tmp/browser-request.json", JSON.stringify(captured, null, 2));
   console.log(`  captured ${captured.length} hubly-conversation request(s) -> /tmp/browser-request.json`);
   await page.screenshot({ path: "/tmp/browser-signup.png", fullPage: false });

@@ -4315,7 +4315,14 @@ async function applyBusinessNameToFreeform(draftId: string, draftToken: string, 
   if (r.html === latest.renderedHtml) return { status: "unchanged" };
   const saved = await callBusinessRpc("create_business_document", {
     p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
-    p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "name"), p_created_by: "patch", p_format: "html",
+    // NOT "patch" — documentHasOwnerEdits counts any version created_by "patch" as the
+    // OWNER having hand-edited the page, and that gates the destructive rebuild offer.
+    // Placing the wordmark is OUR automatic consequence of a name write, not something
+    // they did, and marking it as theirs made Hubly tell a stranger who had typed one
+    // sentence that "your page has manual edits, so I have not rebuilt it — want me to
+    // rebuild?" (observed 2026-09-10). An automatic patch must never make the page look
+    // hand-edited.
+    p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "name"), p_created_by: "name-sync", p_format: "html",
     p_owner_id: ownerUid || null,
   });
   if (!saved || saved.ok !== true) return { status: "failed" };

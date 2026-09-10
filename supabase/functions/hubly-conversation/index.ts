@@ -1326,6 +1326,34 @@ Deno.serve(async (req) => {
     } catch (e) { console.error("[first-turn] sync threw:", String(e)); }
   };
 
+  /** Re-read this draft's slug and correct the outgoing draftBusiness if it moved. */
+  const syncDraftAddress = async (): Promise<void> => {
+    if (!draftBusiness?.id) return;
+    try {
+      const u = (Deno.env.get("SUPABASE_URL") || "").trim();
+      if (!u) return;
+      const r = await fetch(`${u}/rest/v1/businesses?select=slug&id=eq.${draftBusiness.id}`, { headers: adminHeaders() });
+      if (!r.ok) return;
+      const rows = await r.json();
+      const live = Array.isArray(rows) && rows.length ? String(rows[0]?.slug || "") : "";
+      if (live && live !== draftBusiness.slug) {
+        console.log(`draft ${draftBusiness.id} address moved ${draftBusiness.slug} -> ${live}`);
+        // Rebuild the URL by swapping the FIRST host label, rather than reaching for a
+        // domain constant: the draft's own url already carries whatever domain it was
+        // minted on, so this stays correct if that ever differs per environment.
+        let nextUrl = `https://${live}.myhubly.app`;
+        try {
+          const cur = new URL(draftBusiness.url);
+          const parts = cur.hostname.split(".");
+          parts[0] = live;
+          cur.hostname = parts.join(".");
+          nextUrl = cur.origin;
+        } catch { /* fall back to the default domain */ }
+        draftBusiness = { ...draftBusiness, slug: live, url: nextUrl };
+      }
+    } catch { /* the turn stands; the address just stays as it was */ }
+  };
+
   // A DRAFT ON A LATER TURN closes the loop on the sentence that opened the conversation.
   // Without it, "can you build me a site" -> "what kind of business is it?" (correct) is
   // indistinguishable from a menu (the failure), because both create nothing on turn one.
@@ -2631,6 +2659,20 @@ Deno.serve(async (req) => {
       // empty and the words are in the interim messages — store that empty string and the
       // read-time question "was this a menu / did it ask for a name" has nothing to read.
       // Exactly the trap that made the harness detector fall back to a JSON dump.
+      // THE RESPONSE CARRIES THE CURRENT ADDRESS, NOT A REMEMBERED ONE.
+      //
+      // Naming an unclaimed draft renames it (slug_follows_name), and the name can be
+      // written by SEVERAL paths — the updateDraft capability, or extraction flushing
+      // facts straight to patch_business_in_progress. Fixing the capability's return
+      // covered one of them; the walk was renamed by the other, so the client kept the
+      // placeholder, the address pill kept reading site-xxxxxx, and the preview kept
+      // pointing at an address that no longer resolves.
+      //
+      // So this stops being a thing each write path must remember to report. One read
+      // against the row we already have an id for, immediately before answering: if the
+      // address moved, the response says so. Any future path that renames a draft is
+      // correct here for free.
+      await syncDraftAddress();
       recordFirstTurn([finalReply, ...(deduped.interim || [])].filter(Boolean).join("  "));
       if (draftBusiness?.id) resolveFirstTurn(draftBusiness.id);
       return jsonRes({
@@ -2657,6 +2699,7 @@ Deno.serve(async (req) => {
     // Exhausted capability rounds without a final natural-language reply —
     // stop honestly instead of looping forever.
     const exhaustedReply = "I've gathered what I can for now — what would you like to do next?";
+    await syncDraftAddress();
     recordFirstTurn(exhaustedReply);
     if (draftBusiness?.id) resolveFirstTurn(draftBusiness.id);
     return jsonRes({
