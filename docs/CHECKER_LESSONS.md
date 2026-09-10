@@ -772,3 +772,60 @@ So, before writing one:
 The reason this deserves writing down rather than remembering: the next harness will do it
 too. The one that blocked Adrian was written by someone who had spent the whole day being
 careful about exactly this class of mistake.
+
+---
+
+## Lesson 26 — an instrument built to see failures must be wired on the failure path
+
+`first_turn_outcomes` exists for one reason: a first turn that creates no draft writes
+nothing anywhere, so it cannot be counted from any existing table. It was wired to the two
+SUCCESS returns.
+
+So a first turn that FAILED wrote no business row, no conversation row, and no counter row
+either. The instrument built to make invisible turns visible was blind to precisely the
+invisible turns. On the night it shipped, it recorded Adrian's session as one first turn
+instead of two, and would have reported the build rate as 100% instead of 50%.
+
+**A meter wired on the success path reads 100% forever, and looks healthy doing it.**
+
+This is the third instrument in one day with the same disease, and the repetition is the
+lesson rather than any one instance:
+
+- the **rate limit** counted our own egress IP, not the visitor's;
+- the **build-rate number** counted from `businesses`, a table only successful signups
+  reach, so menu turns were invisible and 50-of-50 read as 100%;
+- the **counter** counted only turns that succeeded.
+
+Each was well built and pointed at a population that excluded the failures. The general
+form: **when you build something to measure X, write down what X's failure looks like and
+check the instrument can see THAT.** If the answer is "the row doesn't exist when it
+fails", the instrument is measuring survivors.
+
+The fix is one line on the catch path, and the assertion that guards it is cheaper still:
+a deliberately malformed request reaches the real catch without any provider call, so
+"a failing first turn produces a row" is asserted for free on every run of the signup check.
+
+## Lesson 27 — before building a guard, enumerate what it is guarding
+
+Three guards were built well and aimed at a fraction of their surface:
+
+- The **per-IP rate limit** was pointed at `_caller_ip()`, which is our own edge runtime's
+  rotating egress address. It capped nothing while reporting success.
+- The **burn alert** counted drafts per hour — one consumer out of eighteen. Blind to a
+  cron, a retry, the customer chat on every live site, and every open endpoint.
+- Nobody had ever **enumerated which functions can reach the model** until asked. The
+  first attempt, by grepping the source tree, was wrong in BOTH directions: it counted
+  `scratch-freeform`, which is not deployed and therefore unreachable, and missed
+  `hubly-document-build` and `marketplace`, which are.
+
+Each was found by accident, and each time the code was fine — the aim was wrong.
+
+So the first step in building a guard is not writing the guard. It is writing down the
+complete list of what it must cover, and then checking that list against reality rather
+than against the source tree: **an audit of the repository is not an audit of the running
+system.** 52 functions were deployed; 53 directories existed; only the diff in both
+directions tells you which is which.
+
+The corollary for cost specifically: a guard on a PROXY for the expensive thing (drafts,
+requests, rows) drifts away from the thing itself. Meter the expensive thing directly —
+here, tokens — and let the proxy be a curiosity.

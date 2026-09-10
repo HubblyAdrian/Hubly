@@ -708,3 +708,38 @@ is a matcher per shape, and the model invents a new header every build.
 
 Not built. It becomes urgent the moment an owner answers the name question on a draft that
 was built without one, which is the path shipped 2026-09-09.
+
+## COST — the first real unit economics (2026-09-10)
+
+**Established: measured, from the OpenAI dashboard and our own meter.**
+
+- **$28.84 today**, against ~35c a day for the rest of the week.
+- **672 requests today of 1,107 for the week** — one day was 61% of the week's volume.
+- **~44c per signup**, at roughly **ten model calls each**.
+- Prompt caching: **44.1% hit rate**, 4.3M cached reads against 5.5M uncached. Cache-write
+  0 is expected for OpenAI's automatic caching, not a fault.
+
+**The sentence that explains the bill**, from the meter's first two rows — one short
+conversational turn is TWO model calls:
+
+    hubly-conversation    chat  gpt-5.5   15,084 input +  81 output
+    hubly-record-extract  chat  gpt-5.5    1,537 input + 110 output
+
+**15,084 input tokens for one turn.** Input, not output — the assembled system prompt is
+~12,800 tokens before capabilities, record and history are added. Cost here is dominated
+by what we SAY to the model, not what it says back, and that makes prompt hygiene a cost
+lever as much as a correctness one.
+
+Three things done on 2026-09-10 against it, all measured rather than projected:
+- **~442 tokens/call of proven-dead instructions removed** (the retired menu example, the
+  derive-a-name line, the outcome list naming built features as unbuilt). At 1,107
+  requests that was ~489,000 tokens of wrong instructions billed this week.
+- **The cacheable prefix moved from 28.9% to 85.1%** by relocating the two
+  `${draftBusiness}` blocks to the end of the prompt — verbatim, proved a permutation by
+  line multiset (zero lines lost). ~9,100 tokens of identical static text had been
+  stranded behind the first per-business byte.
+- **The meter** (`model_calls`) now records one row per provider call with the provider's
+  own token counts, so the next "why did we spend that" is a query.
+
+This is the first unit economic the product has ever had, and it came from a bad day
+rather than a good one: the number exists because the account ran dry twice.

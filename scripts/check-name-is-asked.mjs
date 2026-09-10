@@ -221,6 +221,34 @@ async function run() {
   // So the ASK side spans SHAPES, not wordings — how people actually open. `trade` and
   // `place` are the words a construction would be assembled FROM, and drive the
   // constructed-identity assertions against the rendered page.
+  // A FIRST TURN THAT FAILS MUST STILL BE COUNTED — asserted first, and it costs nothing.
+  //
+  // recordFirstTurn was wired to the success returns only, so a failed first turn wrote no
+  // business row, no conversation row and no counter row: the instrument built to make
+  // invisible turns visible was blind to exactly those. It read Adrian's night as one
+  // first turn instead of two, and the build rate as 100% instead of 50%.
+  //
+  // An invalid `content` shape reaches the real catch block without any provider call, so
+  // this exercises the failure path for free.
+  {
+    const before = Number((sql(`select count(*) as n from first_turn_outcomes`)[0] || {}).n || 0);
+    try {
+      await fetch(FN, {
+        method: "POST",
+        headers: { "content-type": "application/json", apikey: KEY, authorization: `Bearer ${KEY}`, "x-hubly-synthetic": "1" },
+        body: JSON.stringify({ messages: [{ role: "user", content: { not: "a string" } }], understanding: {}, draftBusiness: null, conversationKey: `failcount-${Date.now()}` }),
+      });
+    } catch { /* the 502 is the point */ }
+    await new Promise((z) => setTimeout(z, 1500));
+    const after = Number((sql(`select count(*) as n from first_turn_outcomes`)[0] || {}).n || 0);
+    if (after <= before) {
+      fails.push("FAILED-TURN COUNTING — a first turn that errored wrote no first_turn_outcomes row; the counter can only ever report the turns that succeeded");
+    } else {
+      sql(`delete from first_turn_outcomes where reply like 'content.map%' and is_synthetic = true`);
+    }
+    console.log(`\n[failed-turn counting] ${after > before ? "a failing first turn is recorded" : "NOT RECORDED"}`);
+  }
+
   const CASES = [
     // The shape that failed on 2026-09-09: a stated NEED, not a described job.
     { id: "NEED", say: "Im an aviation pilot in Los Angeles I need a website", mustAsk: true,
