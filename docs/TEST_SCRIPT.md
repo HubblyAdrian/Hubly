@@ -108,23 +108,26 @@ separate bugs and they were fixed separately.
   so tell me and I can answer it with a query against `placement_outcomes` rather than
   guessing.
 
-### 4. Change the name again, before claiming  ❓ NEVER WALKED — and read this first
+### 4. Change the name again, before claiming  ⚠️ CHANGED · ❓ NEVER WALKED
 Say `actually make it Thistlebank Gutter Co`.
 
-**Expect the name to change and the address NOT to follow**, and that is deliberate but
-possibly wrong — I want your ruling rather than a verdict.
+- **You should see:** the name change **and the address follow again**, silently, exactly
+  as it did the first time — `thistlebank-gutter-co.myhubly.app`. No warning, no confirm:
+  nobody has seen this URL, and an address we derived from the *old* name is just as much
+  our invention as the `site-xxxxxx` placeholder was.
+- **If it doesn't:** address stuck on the first derived name = the rename guard is reading
+  the wrong thing. It used to test whether the slug still looked like `site-` + six hex,
+  which was us recognising our own output instead of recording it — a heuristic standing in
+  for a fact, and it stopped being true the moment we derived a real-looking slug.
+  `businesses.slug_chosen` now records the fact instead (2026-09-11).
 
-The address follows a name only while the slug is still a system placeholder
-(`site-` + six hex). After the first rename it is `thistlebank-gutter`, which no longer
-matches, so the guard that protects an address *you chose* from being silently overwritten
-also stops a second conversational rename from moving it.
+**The three rules, all red-proved against real rows:**
 
-- **The open question:** a slug we derived is not a slug you chose. Should a second rename
-  on an unclaimed draft follow too? Arguments both ways — nobody has seen the URL yet
-  (follow it), versus you might already have said it out loud to someone (don't).
-- **You should see:** the name change on the record and the page. The address staying put.
-- **If the address DOES move:** that is not a bug, but it means the guard is looser than
-  this text says and the script needs correcting.
+| situation | what happens | why |
+|---|---|---|
+| pre-claim, address **derived** | follows the name, every time, silently | we made it up, so it is ours to correct |
+| address **chosen** by the owner, ever | never silently overwritten | they asked for it; it is theirs |
+| **post-claim**, whoever authored it | explicit rename only, consequence stated first | someone may hold the link, and sharing outranks authorship |
 
 ### 5. Give your prices  ❓ NEVER WALKED tonight
 Type them the way a person would, in one message:
