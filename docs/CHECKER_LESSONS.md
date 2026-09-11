@@ -923,3 +923,45 @@ So the rule has two halves:
 2. **A failed write is countable, not just visible.** The reply telling one person is not a
    record. Ask of any write: if this silently stopped working, what row would appear? If
    the answer is none, the next hour of it not working is free.
+
+---
+
+## Lesson 31 — an honest degradation is not a signal if nobody counts it
+
+A whole day was spent replacing false claims with honest ones: "saved but not showing",
+"no open spot on the page", "the page still shows the old header for now". Every one is a
+failure report, written in good English, delivered to exactly one person, and recorded
+nowhere. The photo placer degraded honestly for months while the feature was dead, and the
+only reason anyone found out is that Adrian happened to ask.
+
+The wordmark stopped landing and the reply said so — accurately, to him — and neither of
+us read it as a failure report. **A well-behaved failure is harder to see than a loud one,
+precisely because it is well-behaved.**
+
+`placement_outcomes` records every placement ATTEMPT, one row, branch only. Three things
+make it work, and each was nearly got wrong:
+
+1. **Successes are recorded too.** A branch count with no denominator cannot be read as a
+   rate — the exact defect that made "94%" and "50 of 50" both mean something other than
+   they said. `placed` costs one row and turns a count into a percentage.
+2. **The name is not `degraded_outcomes`.** A table named for failures gets read as a list
+   of problems, with its own denominator hidden inside it under a name denying it exists.
+   Caught before shipping this time, unlike `asked_name`.
+3. **The branch, never the sentence.** A branch is a stable enum the code chose; the
+   sentence is model prose that varies every turn, and counting prose is a detector over
+   free text.
+
+**It paid for itself on the first row.** The wordmark bug had survived two runs of hand
+forensics — anchor confirmed stamped, matcher confirmed matching offline, no second
+document version, cause unknown. The first row the table ever wrote said:
+
+    branch=failed  detail=create_business_document rejected: {"ok":false,"error":"invalid_created_by"}
+
+One query, exact cause: `business_documents` CHECK allows `ai|user|patch|system` while
+`create_business_document` validated against `ai|user|patch`. Two allowlists for one
+concept, drifted — the third instance of "two of almost everything" in a day. The
+difference between an instrument and an investigation is that the instrument answers in a
+query, and it does so on the first failure rather than the fiftieth.
+
+So, for any write path: **ask what row appears if this silently stops working.** If the
+answer is none, the next month of it not working is free.

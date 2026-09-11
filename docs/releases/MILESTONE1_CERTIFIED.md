@@ -7,7 +7,7 @@
 | **Product** | Hubly Brain |
 | **Version** | 1.0 |
 | **Status** | **Certified** |
-| **Date** | 2026-09-10 |
+| **Date** | 2026-09-11 |
 | **Release** | Milestone 1 |
 | **PR** | https://github.com/HubblyAdrian/Hubly/pull/196 |
 | **Validation Suite** | npm run milestone1 · npm run check:section16 · npm run check:section18 |

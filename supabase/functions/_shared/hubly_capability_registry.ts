@@ -4306,6 +4306,33 @@ export function markServiceAnchorsInFreeform(html: string, names: string[]): { h
  *  what actually happened: "placed" means their name is on the page now; "no_anchor"
  *  means it is saved on the record and the page still shows the old header, which is the
  *  honest sentence rather than a promise. */
+
+/** EVERY PLACEMENT ATTEMPT WRITES A ROW — successes included, because a branch count
+ *  without its denominator cannot be read as a rate.
+ *
+ *  The degraded branches were already honest and already explicit in the code; what they
+ *  were not was COUNTED. "The page still shows the old header for now" is a true failure
+ *  report delivered to exactly one person and recorded nowhere, which is how the photo
+ *  placer degraded honestly for months while the feature was dead.
+ *
+ *  Records the BRANCH, never the sentence: a branch is a stable enum we chose, prose is
+ *  not. Never awaited, never able to fail the thing it measures, and it logs its own
+ *  failure rather than swallowing it. */
+function notePlacement(fn: string, branch: string, businessId?: string | null, detail?: string): void {
+  try {
+    const u = (Deno.env.get("SUPABASE_URL") || "").trim();
+    if (!u) return;
+    // The admin REST call this file already uses everywhere — not a supabase-js builder,
+    // which is thenable rather than a promise and silently sends nothing when voided.
+    fetch(`${u}/rest/v1/rpc/record_placement_outcome`, {
+      method: "POST",
+      headers: { ...adminHeaders(), "content-type": "application/json" },
+      body: JSON.stringify({ p_fn: fn, p_branch: branch, p_business_id: businessId ?? null, p_detail: detail ?? null }),
+    }).then((r) => { if (!r.ok) console.error("[placement-outcome] not recorded:", r.status); })
+      .catch((e) => console.error("[placement-outcome] threw:", String(e)));
+  } catch (e) { console.error("[placement-outcome] sync threw:", String(e)); }
+}
+
 async function applyBusinessNameToFreeform(draftId: string, draftToken: string, name: string, ownerUid?: string | null):
   Promise<{ status: "placed" | "no_anchor" | "not_freeform" | "failed" | "unchanged" }> {
   // EVERY BRANCH SAYS WHICH ONE IT WAS.
@@ -4315,8 +4342,10 @@ async function applyBusinessNameToFreeform(draftId: string, draftToken: string, 
   // offline, and no second document version existed — so it either never ran or its save
   // failed, and NOTHING recorded which. A write we intended and did not make left no
   // trace at all, which is why an hour passed before anyone noticed.
-  const say = (status: string, detail = "") =>
+  const say = (status: string, detail = "") => {
     console.log(`[name-placement] ${draftId} ${status}${detail ? " — " + detail : ""}`);
+    notePlacement("applyBusinessNameToFreeform", status, draftId, detail);
+  };
 
   const latest = await selectLatestBusinessDocument(draftId, "website");
   if (!latest) { say("not_freeform", "no website document on this business"); return { status: "not_freeform" }; }
