@@ -44,109 +44,172 @@ Don't hunt for these. None of them is switched on.
 
 Use a private window. Do not sign in. Go to **myhubly.app**.
 
-### 1. Say what you do, and nothing else
-Type something real but bare — e.g. `I do mobile detailing in Los Angeles`.
+> **Rewritten 2026-09-10.** Signup changed four times in one day, so every step below was
+> re-checked against the running product rather than edited from the old text. Each step
+> is marked:
+>
+> - ✅ **PROVED** — watched happen in a real browser on 2026-09-10, end to end.
+> - ⚠️ **CHANGED** — this used to fail or behave differently; the expectation here is new.
+> - ❓ **NEVER WALKED** — no evidence either way. Not a claim that it works.
+>
+> The distinction matters: a ❓ failing is information, not a regression.
 
-- **You should see:** Hubly reflect back what it understood and then ask **one** question:
-  what the business is called. Something like *"Mobile detailing in LA — got it. What's
-  it called?"*
-- **You should NOT see:** the name question as the very first thing before it has
-  understood anything; more than one question in that message; a request for your phone,
-  city or services in the same breath.
-- **If it doesn't:** if it never asks and just builds, the name instruction did not take —
-  that's a **wrong prompt**, and you'll likely find a category name on the page. If it
-  asks three things at once, it's a **wrong sentence** and the "one ask at a time" rule
-  is being violated.
+### 1. Say what you do, and nothing else  ⚠️ CHANGED · ✅ PROVED
+Type something real but bare — e.g. `I clean gutters in Murray`.
 
-### 2. Refuse to give a name
+**This is the step that changed most.** It no longer asks your business name first. It
+**builds first**, and the name question arrives afterwards, on its own.
+
+- **You should see:** a design narration while it works, then the build card ticking
+  through its stages, then the page appears — and **after** that, one short question on
+  its own line: *"What's the business called?"* It should be the **last thing on screen**.
+- **You should NOT see:** a name question before anything is built; a menu of choices
+  (*"want me to build a website, set up booking, or both?"*); a question about services or
+  prices before the name question; more than one question in a message.
+- **If it doesn't:** a menu means the introduction/request split has come back — a **wrong
+  prompt**. A services-and-prices question *instead of* the name means the ordering rule
+  lost its slot again; that exact contest cost a day, and the ordering is now stated in one
+  place near `THE ORDER OF THE FIRST TWO QUESTIONS`.
+
+### 2. Refuse to give a name  ⚠️ CHANGED · ✅ PROVED
 Say `I'd rather not say yet` or just describe more of the business.
 
-- **You should see:** it builds anyway. The site exists, and it does **not** invent a
-  name like "Detailing Business" or "Your Business".
-- **If it doesn't:** a category name on the page means the derive rule is still firing on
-  a bare trade — a **wrong prompt**. Note the exact name it chose.
+- **You should see:** the site stands, unnamed. The header shows an **eyebrow** — the trade
+  and the place, e.g. `GUTTER CLEANING · MURRAY` — and **no wordmark at all**. The address
+  stays a placeholder like `site-3f9a21.myhubly.app`.
+- **You should NOT see:** an invented name of any kind. Not "Gutter Cleaning Murray", not
+  "Your Business", not a monogram or initials, not in the browser tab title either.
+- **If it doesn't:** any constructed name is the defect this whole thread exists for — a
+  **wrong page**. Note the exact string and where it appeared (header, tab title, footer).
 
-### 3. Now give a name
-Say `it's called Ridgeline Detail`.
+### 3. Now give a name  ⚠️ CHANGED · ✅ PROVED
+Say `it's called Thistlebank Gutter Company`.
 
-- **You should see:** the name on the page, and the address should be
-  `ridgeline-detail.myhubly.app` (or close to it).
-- **If it doesn't:** if the name changes but the **address doesn't**, the pre-claim slug
-  follow did not fire — that's a **broken write**, and it's the bug that started this
-  whole thread.
+Five things should happen from that one message. Check them individually — they were
+separate bugs and they were fixed separately.
 
-### 4. Change the name before claiming
-Say `actually make it Ridgeline Auto Detail`.
+- **The record takes it** — the name is saved.
+- **The address derives, with filler stripped:** `thistlebank-gutter.myhubly.app`. Words
+  carrying no identity (company, co, LLC, inc, ltd, the, and, in) are dropped; everything
+  else is kept. **Not** `thistlebank-gutter-company`, and **not** `george-s-…` if the name
+  has an apostrophe.
+- **The pill and the preview both follow** — the address bar above the site and the preview
+  itself should both be on the new address within the same turn.
+- **The wordmark lands ABOVE the eyebrow, and the eyebrow survives.** You should see the
+  business name on top and `GUTTER CLEANING · MURRAY` underneath it. Trade and place were
+  true before the name and are still true after; losing them to gain a name is a downgrade.
+- **The reply names the new address and offers to change it** — something like *"Saved —
+  your site is at thistlebank-gutter.myhubly.app. Say the word if you'd rather it was
+  something else."* Nobody is ever told they can choose their address otherwise.
 
-- **You should see:** the page name change **and** the address follow, with no ceremony
-  and no warning — nobody has seen this URL yet, so there is nothing to warn about.
-- **If it doesn't:** address unchanged = **broken write**. A warning about the old
-  address breaking = **wrong sentence** (that warning belongs only after you claim).
+- **If it doesn't:** name saved but address unchanged = **broken write**. Address changed
+  but the pill still reads `site-xxxxxx` = the client is not adopting, a **broken step**.
+  Name on the record but not on the page = the placement failed; that one is now countable,
+  so tell me and I can answer it with a query against `placement_outcomes` rather than
+  guessing.
 
-### 5. Give your prices
+### 4. Change the name again, before claiming  ❓ NEVER WALKED — and read this first
+Say `actually make it Thistlebank Gutter Co`.
+
+**Expect the name to change and the address NOT to follow**, and that is deliberate but
+possibly wrong — I want your ruling rather than a verdict.
+
+The address follows a name only while the slug is still a system placeholder
+(`site-` + six hex). After the first rename it is `thistlebank-gutter`, which no longer
+matches, so the guard that protects an address *you chose* from being silently overwritten
+also stops a second conversational rename from moving it.
+
+- **The open question:** a slug we derived is not a slug you chose. Should a second rename
+  on an unclaimed draft follow too? Arguments both ways — nobody has seen the URL yet
+  (follow it), versus you might already have said it out loud to someone (don't).
+- **You should see:** the name change on the record and the page. The address staying put.
+- **If the address DOES move:** that is not a bug, but it means the guard is looser than
+  this text says and the script needs correcting.
+
+### 5. Give your prices  ❓ NEVER WALKED tonight
 Type them the way a person would, in one message:
-`Express Wash 60, Full Detail 180, Ceramic Coating 600`
+`Gutter clean 180, Gutter guards 450, Downspout repair 120`
 
-- **You should see:** it saves them **and** they appear on the page. The reply should
-  name the prices back.
-- **You should NOT see:** any mention of rebuilding the page from scratch, or any
-  sentence about a "services section" being absent when you can see services on the page.
-- **If it doesn't:** if it says the prices are on the page and they are not, that's the
+- **You should see:** it saves them **and** they appear on the page. The reply should name
+  the prices back.
+- **You should NOT see:** any mention of rebuilding the page from scratch, or any sentence
+  about a "services section" being absent when you can see services on the page.
+- **If it doesn't:** if it says the prices are on the page and they are not, that is the
   worst class — a **wrong sentence about a write that didn't happen**. Reload and look
-  before deciding.
+  before deciding. This path was not touched on 2026-09-10 and was last walked before it.
 
-### 6. Go and look at the page
+### 6. Go and look at the page  ❓ NEVER WALKED tonight
 Open the site in another tab.
 
-- **You should see:** your three services with your three prices, in the page's own
-  design.
-- **You should NOT see:** placeholder copy addressed to you — anything like *"Use this
-  row for the primary work the company wants to be known for"* or *"once the owner
-  confirms"*. Those are written for the owner and should never be on a page a customer
-  reads.
-- **If you see placeholder text:** that's a **wrong page** — the real service should have
+- **You should see:** your three services with your three prices, in the page's own design.
+- **You should NOT see:** placeholder copy addressed to you — anything like *"Use this row
+  for the primary work the company wants to be known for"* or *"once the owner confirms"*.
+  Those are written for the owner and should never be on a page a customer reads.
+- **If you see placeholder text:** that is a **wrong page** — the real service should have
   overwritten it. Tell me which sentence and on which row.
+
+> ### ⓘ THE TWO REFUSALS — not a numbered step, because you cannot reliably cause them
+Both of these are rare by design and neither is easy to provoke in a normal walk. Read
+them so you recognise them if they appear, rather than trying to cause them.
+
+- **"Too many new sites from this connection"** — the per-IP limit, now 30 per hour. It
+  must say the limit is **temporary and clears within the hour**, that it is **not your
+  fault**, and it must **not** invite you to try again immediately, because that cannot
+  work. It must never invent a countdown or a number of sites.
+- **"Hubly is at capacity"** — the global ceiling, 35 generations per hour. This one must
+  say plainly that it is **us**, not your connection and nothing you typed. If it blames
+  your connection, that is a **wrong sentence**: the two refusals are different and must
+  not blur.
+- **If you see either during an ordinary walk:** tell me — at 30/hour and 35/hour neither
+  should be reachable by one person, and hitting one means something else is spending.
 
 ---
 
 # PART 2 — Claim it, then change the address  *(~10 min)*
 
-### 7. Sign up and claim the site
+### 7. Sign up and claim the site  ❓ NEVER WALKED tonight
 Use the normal flow.
 
 - **You should see:** you end up on the owner home, signed in.
-- **If it doesn't:** anything that lands you on a blank screen or back at the chat with
-  no sign anything happened is a **broken step** — note exactly what the last thing you
+- **If it doesn't:** anything that lands you on a blank screen or back at the chat with no
+  sign anything happened is a **broken step** — note exactly what the last thing you
   clicked was.
 
-### 8. Now try to change the address — read the warning carefully
-Say `can you change my address to ridgeline-detailing-la`.
+### 8. Now try to change the address — read the warning carefully  ❓ NEVER WALKED tonight
+Say `can you change my address to thistlebank-gutters-murray`.
 
-- **You should see:** it tells you the **exact final address** before doing anything, and
-  it tells you **the old address stops working**. Something like: *"I can move your site
-  to ridgeline-detailing-la.myhubly.app. Your current address stops working the moment I
+**After claiming, the rules invert.** Before a claim the address follows silently because
+nobody has seen it. After a claim, someone may hold the link, so it becomes an explicit,
+confirmed rename.
+
+- **You should see:** the **exact final address** before anything happens, and that **the
+  old address stops working**. Something like: *"I can move your site to
+  thistlebank-gutters-murray.myhubly.app. Your current address stops working the moment I
   do — anyone holding the old link won't reach you. Want me to?"*
 - **You must see the consequence BEFORE you answer, not after.**
-- **If it doesn't:** if it just does it, that's a **broken confirm**. If it says the old
-  address will keep working, that's a **wrong sentence** and it is false — there is no
-  redirect.
+- **If it doesn't:** if it just does it, that is a **broken confirm**. If it says the old
+  address will keep working, that is a **wrong sentence** and it is false — there is no
+  redirect and no alias table.
 
-### 9. Try an address that's taken
+### 9. Try an address that's taken  ❓ NEVER WALKED tonight
 Say `change it to graefs-autocare`.
 
-- **You should see:** it says that one is taken and **offers** an alternative
-  (`graefs-autocare-2`) as a choice.
-- **If it doesn't:** silently taking a numbered variant is a **wrong write** — that's how
+- **You should see:** it says that one is taken and **offers** an alternative as a choice.
+- **If it doesn't:** silently taking a numbered variant is a **wrong write** — that is how
   a second bad address gets minted.
 
-### 10. Try an address with punctuation
-Say `make it Ridgeline's Detail & Wash`.
+### 10. Try an address with punctuation  ✅ the normaliser is proved, the confirm is not
+Say `make it Thistlebank's Gutter & Wash`.
 
 - **You should see:** the exact normalised string read back to you —
-  `ridgelines-detail-wash` — **before** it commits.
-- **If it doesn't:** committing without showing you the string is a **broken confirm**.
-  You should get the chance to catch a typo before it becomes permanent.
-
+  `thistlebanks-gutter-wash` — **before** it commits. Note the apostrophe **collapses**
+  (`thistlebanks`, not `thistlebank-s`); that was a real bug on 2026-09-10 and there is now
+  one normaliser rather than two.
+- **If it doesn't:** committing without showing you the string is a **broken confirm**. You
+  should get the chance to catch a typo before it becomes permanent.
+- **Note:** an address you type is transcribed faithfully — filler words are **not**
+  stripped here, because you said what you wanted. Stripping only happens when Hubly
+  derives an address from a name.
 ---
 
 # PART 3 — The owner home  *(~10 min)*
