@@ -21,6 +21,24 @@ import { placeContactHoursInFreeform } from "../../supabase/functions/_shared/hu
 const fails: string[] = [];
 const ok = (cond: unknown, msg: string) => { if (!cond) fails.push(msg); };
 
+// ── RED-PROOF, EVERY RUN (Lesson 40) ────────────────────────────────────────
+// A check's first green is meaningless. The assertions below ask whether a block carries
+// the wrapper that holds the page's inset; this proves that question can answer NO, by
+// asking it of a block that plainly does not — the shape that shipped on
+// ridgeline-pressure-washing, where both blocks sat at x=0 while the page's content began
+// at 80px. If it cannot tell them apart, every assertion under it is decoration.
+{
+  const WITH_WRAP = `<section data-hubly-services-block class="process"><div data-hubly-sv-list class="wrap"><h3>X</h3></div></section>`;
+  const WITHOUT = `<section data-hubly-services-block class="process"><div data-hubly-sv-list class="steps"><h3>X</h3></div></section>`;
+  const carriesWrap = (b: string) => /class="[^"]*\bwrap\b/i.test(b);
+  if (!carriesWrap(WITH_WRAP) || carriesWrap(WITHOUT)) {
+    console.error("CANNOT RUN — the inset assertion failed its own fixtures:");
+    console.error(`  block WITH the wrapper recognised : ${carriesWrap(WITH_WRAP)} (expected true)`);
+    console.error(`  block WITHOUT it recognised       : ${carriesWrap(WITHOUT)} (expected false)`);
+    Deno.exit(2);
+  }
+}
+
 /** A page shaped like the ones we generate: the inset lives on an inner wrapper, and the
  *  item grid is three-up because the page had three things to say. */
 const PAGE = `<!doctype html><html><head><style>
@@ -99,4 +117,4 @@ if (fails.length) {
   for (const f of fails) console.error("  " + f);
   Deno.exit(1);
 }
-console.log("PASS — both blocks clone the donor's chain, keep their own content, stamp what the CSS binds to, and a later append stays inside the wrapper.");
+console.log("PASS — both blocks clone the donor's chain, keep their own content, stamp what the CSS binds to, and a later append stays inside the wrapper. (detector red-proofed this run)");

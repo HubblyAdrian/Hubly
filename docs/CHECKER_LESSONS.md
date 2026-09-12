@@ -1298,3 +1298,36 @@ it prints.
 The check that holds it (`scripts/check-recording-on-success.mjs`) red-proofs its own detector
 on every run and exits 2 if it cannot tell a guarded call from an unguarded one. A detector
 that cannot fail is the thing it was written to catch.
+
+## Lesson 40 — a check's first green is meaningless; only a green that follows a red proved in the same run counts
+
+Three source-scanning guards in two days passed their first run and were wrong. Each was
+found the same way — by making the thing it exists to catch and watching it stay green:
+
+| check | first green | what was actually true |
+|---|---|---|
+| the directive phrase net | PASS, "25 owner sentences scanned" | it was scanning comment text as sentences; 21 were real, and a live directive sat in the part it mis-tokenised around |
+| `check-verification-carried.mjs` | PASS, "2 values, all carried" | it had parsed parameter TYPES as the function body; deleting the field it was written to catch did not move it |
+| `check-mount-predicate.mjs` | PASS | true, but proved only by a one-off manual mutation in a session nobody will re-read |
+
+None of them failed. **They all reported.** That is the whole problem: a broken check and a
+satisfied check produce identical output, and the identical output is a pass.
+
+**The rule: every check in `scripts/` red-proofs itself on every run.** It takes a known-good
+input, mutates it into a known-bad one, asserts the detector says so, and exits 2 — CANNOT RUN
+— if it cannot tell them apart. Then it says `(detector red-proofed this run)` in its own PASS
+line, so the green is evidence rather than an absence of noise.
+
+A check red-proofed once, by hand, in a commit nobody re-reads, is a check that was working on
+the day it was written. A check that self-red-proofs announces the day it stops.
+
+**Audit, 2026-09-12:** 97 checks in `scripts/`. **Two** self-red-proofed
+(`check-recording-on-success.mjs`, `check-verification-carried.mjs`); one more proved the
+GUARDED behaviour but not its own detector (`page-css-guard.check.ts`). Four have been
+retrofitted — the phrase net, the mount predicate, the block-chain check, and the two that
+already had it. The remaining ~90 are older and untouched; they are not all worth the work,
+but any check that gates a decision is, and the ones that gate tonight's decisions now do it.
+
+The cheapest version of this rule, if nothing else survives: **before trusting a number a new
+check prints, break the thing it measures and watch it go red.** Every instrument written in
+this run was wrong on its first run. None of them failed.

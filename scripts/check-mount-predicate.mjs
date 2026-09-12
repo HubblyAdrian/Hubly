@@ -25,9 +25,32 @@ catch (e) { console.error("CANNOT RUN — public/hubly.html unreadable: " + e.me
 
 const fails = [];
 
+/** The extraction, as a function of source text — so it can be proved to fail on a
+ *  mutated copy before it is trusted on the real one (Lesson 40). */
+function extractClientPredicate(src) {
+  const m = /function hcIsFullDocument\(html\)\{\s*return\s*(\/[^\n]*?\/[a-z]*)\.test/i.exec(src.replace(/\n\s*/g, "\n"))
+    || /function hcIsFullDocument\(html\)\s*\{[\s\S]{0,200}?return\s*(\/.*?\/[a-z]*)\.test/i.exec(src);
+  return m ? m[1] : null;
+}
+
+// ── RED-PROOF, EVERY RUN (Lesson 40) ─────────────────────────────────────────
+// A check's first green is meaningless. Mutate the browser file's predicate in memory and
+// require the extraction to SEE the change; if it cannot, this check is comparing nothing
+// and must not report a pass.
+{
+  const real = extractClientPredicate(shell);
+  const mutated = real ? extractClientPredicate(shell.replace(real, "/^\\s*<!doctype/i")) : null;
+  if (!real || !mutated || mutated === real) {
+    console.error("CANNOT RUN — the drift detector failed its own fixture:");
+    console.error(`  extracted from the real file : ${real ?? "(nothing)"}`);
+    console.error(`  extracted after a mutation   : ${mutated ?? "(nothing)"}`);
+    console.error("  A detector that reads the same value from a changed file is comparing nothing.");
+    process.exit(2);
+  }
+}
+
 // 1. THE PREDICATE ITSELF, read out of the browser file and compared source-to-source.
-const m = /function hcIsFullDocument\(html\)\{\s*return\s*(\/[^\n]*?\/[a-z]*)\.test/i.exec(shell.replace(/\n\s*/g, "\n"))
-  || /function hcIsFullDocument\(html\)\s*\{[\s\S]{0,200}?return\s*(\/.*?\/[a-z]*)\.test/i.exec(shell);
+const m = extractClientPredicate(shell) ? [null, extractClientPredicate(shell)] : null;
 if (!m) {
   fails.push("hcIsFullDocument not found in public/hubly.html — the harness copy has nothing to agree with. If it was renamed, update this check and scripts/lib/mount-as-product.mjs together.");
 } else if (m[1] !== String(FULL_DOCUMENT_RE)) {
@@ -75,5 +98,5 @@ if (fails.length) {
   for (const f of fails) console.error("  " + f);
   process.exit(1);
 }
-console.log("PASS — public/hubly.html and scripts/lib/mount-as-product.mjs make the same mount decision, and the shell stylesheets are linked and present.");
+console.log("PASS — public/hubly.html and scripts/lib/mount-as-product.mjs make the same mount decision, and the shell stylesheets are linked and present. (detector red-proofed this run)");
 process.exit(0);
