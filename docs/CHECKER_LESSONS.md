@@ -1145,3 +1145,50 @@ thing — the inset metric's first version returned page medians of 670px on a 1
 reported them without complaint; only rendering one page and reading the elements it had measured
 showed it was averaging in inline `<span>` positions. The second pass was not a formality. It was
 the pass that made the first one's numbers mean anything.
+
+## Lesson 37 — a harness that renders stored content outside the shell the product mounts it in is measuring a document that does not exist
+
+The style-byte sweep rendered `rendered_html` straight from the row: `setContent(html)`,
+screenshot, count. Seven pages came back with 29 bytes of CSS and framework class names,
+which reads unambiguously as "we generated and served a page with no stylesheet". It was
+reported as a finding, and repeated to Adrian as fact.
+
+The product does not mount a page that way. `hcMountDocumentHtml` in `public/hubly.html`
+reads the format and mounts one of two ways:
+
+- **full document** (starts with a doctype) → a same-origin `srcdoc` iframe, so every byte
+  of CSS it needs must be inside it;
+- **AST fragment** (no doctype) → `innerHTML` on `#hc-doc-root`, where the shell's own
+  `journey-os/hubly-document.css` applies — 158,752 bytes of closed utility CSS scoped
+  `#hc-doc-root .py-20{…}`.
+
+The seven were all the second kind. Their 29 bytes are `#hc-doc-root{--brand:#c25a3a}`, the
+brand hookup for that stylesheet — the mechanism working, not a stub. Rendered in the real
+shell they are finished pages; rendered as the harness rendered them they are the unstyled
+documents the byte count described. **The harness was rendering something no customer has
+ever seen, and it was confident about it.**
+
+Two ways this is worse than an ordinary wrong number. It produced a FALSE ALARM, which costs
+more than a miss: a miss is silence, an alarm spends a night, reaches the person you report
+to, and gets repeated as fact. And it was invisible from inside the measurement — every
+individual step was right (the bytes were the bytes, the screenshot was of the HTML it was
+given), so nothing in the run could go red.
+
+**Rule: every page measurement mounts through the real path, both formats.** No script
+decides for itself how to render a stored page; they all call
+`scripts/lib/mount-as-product.mjs`, which reproduces `hcMountDocumentHtml` — iframe for a
+full document, `#hc-doc-root` plus the shell stylesheets for a fragment — and hands back the
+frame the page actually lives in.
+
+The mount decision is one fact in two copies, because a browser file cannot import from a
+harness. So it is checked rather than hoped: `scripts/check-mount-predicate.mjs` reads the
+regex out of `public/hubly.html`, compares it to the harness's own, tests both against the
+shapes the corpus contains, and confirms the shell still links the stylesheets an AST page
+depends on. It goes red on a one-character change to either side.
+
+That is the fifth pair of gates holding one definition of a fact in a week — after the two
+slugifiers, the two "has a services area" tests, the writer/reader anchor pair, and the
+harness that re-implemented `findServiceEntryBounds`. **This one was in our instruments, not
+in the product, which is the reason to write it down: the discipline we apply to the code is
+not yet applied to the things that measure the code, and a wrong instrument does not fail —
+it reports.**

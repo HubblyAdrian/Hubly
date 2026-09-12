@@ -5748,28 +5748,36 @@ habit into a guarantee and makes the refusal branch unreachable rather than bett
 supported target types. It does not. It has one supported type and one fortunate one, and
 the fortunate one carries most of the traffic.
 
-## The seven "CSS-less" pages are not CSS-less — the byte count was counting the wrong page (2026-09-12)
+## THE RECORD ON THE SEVEN SLUGS: healthy AST pages, not broken ones (2026-09-12)
 
-**Recorded as ruled, and the ruling's premise is disproved.** The instruction was to record
-the seven pages that carry framework-shaped utility classes with 29 bytes of stylesheet, and
-to build a generation-time check that refuses to present such a page as finished. The
-distribution was measured first, as ruled. It says the seven pages are fine.
+**This entry corrects a claim that was made here and repeated to Adrian as fact.** Earlier
+tonight these seven slugs were reported as pages we generated and served with no stylesheet —
+"twenty-nine bytes of CSS, Tailwind class names and no Tailwind" — and a cluster of 18–20
+August. **Both halves are wrong.** The seven are healthy pages in the AST format, whose CSS is
+served by the app shell, and the dates are 08-10, 08-18 and five on 08-20. Nothing here needs
+repairing. Anyone who reads the old claim anywhere else should read this instead.
 
 **The seven, re-measured on a fresh export of all 167 stored pages** (`business_documents`,
 latest row per business):
 
-| slug | built | account_kind | own `<style>` bytes | utility classes |
-|---|---|---|---|---|
-| `bucket-mobile-detailing-09616` | 2026-08-10 | test | 0 | 324 |
-| `ridge-paws` | 2026-08-18 | test | 29 | 144 |
-| `hearth-and-iron` | 2026-08-20 | test | 29 | 297 |
-| `kilnwood-bakehouse` | 2026-08-20 | test | 29 | 262 |
-| `emberfield-bakehouse` | 2026-08-20 | test | 29 | 300 |
-| `stonemill-bakehouse` | 2026-08-20 | test | 29 | 272 |
-| `saltmarsh-bindery` | 2026-08-20 | test | 29 | 242 |
+| slug | built | account_kind | own `<style>` bytes | utility classes | verdict |
+|---|---|---|---|---|---|
+| `bucket-mobile-detailing-09616` | 2026-08-10 | test | 0 | 324 | healthy AST page |
+| `ridge-paws` | 2026-08-18 | test | 29 | 144 | healthy AST page |
+| `hearth-and-iron` | 2026-08-20 | test | 29 | 297 | healthy AST page |
+| `kilnwood-bakehouse` | 2026-08-20 | test | 29 | 262 | healthy AST page |
+| `emberfield-bakehouse` | 2026-08-20 | test | 29 | 300 | healthy AST page |
+| `stonemill-bakehouse` | 2026-08-20 | test | 29 | 272 | healthy AST page |
+| `saltmarsh-bindery` | 2026-08-20 | test | 29 | 242 | healthy AST page |
 
-**Correction to the date cluster:** not 18–20 August. One is 2026-08-10, one 2026-08-18, five
-2026-08-20. All seven are `account_kind = 'test'`; no market or internal business is involved.
+No market or internal business is involved — all seven are `account_kind = 'test'` — but that
+is beside the point, because none of them is damaged.
+
+**How the false alarm was produced, since that is the transferable part:** the sweep rendered
+the stored bytes directly instead of mounting them the way `hcMountDocumentHtml` does. It was
+measuring a document the product never serves. Every page measurement now mounts through
+`scripts/lib/mount-as-product.mjs` (Lesson 37), and `scripts/check-mount-predicate.mjs` goes
+red if the harness's mount decision and the product's ever disagree.
 
 ### Why they are not broken
 
@@ -5912,3 +5920,91 @@ donor is not what we want). **Your call whether that is the next move; I have no
 was not written down anywhere, so the 11 pages could not be re-used. These numbers are the whole
 129-page set, measured for both rules in the same run — which is the comparison that decides the
 question. The old rule's 6% on that set is consistent with 1 in 11.
+
+## The chain clone: the inset is fixed, and the list inherits a column count that is not ours (2026-09-12)
+
+**Built, measured both ways as ruled, and NOT deployed. It needs a ruling, because the two
+numbers disagree.**
+
+### Which variant, and why
+
+Ruled: consider cloning the donor's container chain down to its `<h2>` versus cloning the
+entire item-donor section and substituting its items. **The second is better, and the first
+would not have worked**, for a reason that is only obvious once the failures are listed: the
+chain to the HEADING is not the chain to the ITEMS. On `kestrel-gutter-guards-db8a8` the
+`<h2>` sits in a bare `<div>` directly under a `display:flex` section while the items sit in a
+different subtree; walking to the heading fixes where "Services" appears and leaves the rows
+exactly where they were — at x=1038 on a 1280px page. It addresses number 1 and not number 2,
+and number 2 is the one that turns a working block into a broken one.
+
+So: clone every element from the donor `<section>` down to **the container whose own children
+hold the repeated `<h3>`s**, emit our rows inside it, and wrap each row in the donor's own item
+element. Chain, item container and item internals are reproduced by construction. Only OPEN
+TAGS are cloned — never the donor's text, which is about something else.
+
+The item container is found by counting siblings, not by recognising layout: the deepest
+element at least two of whose direct children contain an `<h3>`. It uses `scanHtml`, the
+scanner that already exists, rather than a second tag walker — the one it needed,
+`matchingCloseIndex`, moved out of the capability registry into `hubly_html_scan.ts` so there
+is still exactly one.
+
+### The two numbers, measured over all 129 pages that receive a block
+
+Rendered through the real mount path (Lesson 37), at 1280px, images loaded. Run twice — with a
+two-service fixture and a four-service one — because a block with two rows in a three-column
+donor grid looks "unfilled" for a reason that is the fixture, not the code.
+
+**NUMBER 1 — block text inset vs the page's content-column start (±12px):**
+
+| | old (single-tag clone) | new (chain clone) |
+|---|---|---|
+| matches | **37 / 129** | **105 / 129** |
+| median \|block − page\| | 41px | **0px** |
+| moved closer / further / unchanged | — | 80 / 4 / 45 |
+
+Three pages regress by more than 20px: `tamale-selling-business` (2px → 46px),
+`washers` (2px → 30px), `site-c1ed8e` (36px → 115px).
+
+**NUMBER 2 — does our list still read as a list?**
+
+| | old | new (2 services) | new (4 services) |
+|---|---|---|---|
+| rows narrower than 160px | 0 | **2** | **2** |
+| content overflowing its box | 0 | 0 | 0 |
+| first row filling <60% of the block width | 0 | 40 | **11** |
+
+The 40 → 11 difference between the fixtures is the fixture: two rows in a three-column grid
+leave a gap that four rows fill. **The 11 that survive four services, and the 2 squeezed pages,
+do not depend on how many services an owner has.**
+
+**It regresses, and here is what it looks like** (`docs/shots/chain-clone-squeezed-ironside.png`,
+`…-aviation.png`): on `ironside-barbers-a9fa2` the heading sits at the right inset and the list
+below it occupies the left third of the page in a three-column grid — two service cards and one
+EMPTY grey cell. On `aviation-lessons-in-lehi` the rows are 148px wide, "Express Wash" wraps
+onto two lines and its one-line description onto three. Both are legible. Both look wrong, and
+neither shows up in number 1, which passes on both.
+
+The cause is one sentence: **we inherit the donor's column count, and the donor's item count is
+not ours.** A three-up card grid is right for the three things the page chose to show; it is
+not right for two services, and it is not right for seven.
+
+**Pixel legibility, the reason the donor rule exists at all** — every block re-rendered and
+measured in pixels, same harness both sides: **old (single-tag clone): 129 of 132 readable** — the 3 recorded failures, unchanged.
+**new (chain clone): 124 of 132** — 7 NEW failures, all marginal (3.85–4.29:1 against a 4.5:1
+floor), and 2 of the 3 recorded failures FIXED, including `window-washing-company` at 1.00:1,
+ink identical to ground. So the chain clone repairs two invisible blocks and pushes seven
+readable ones just under AA. That is a different trade from the inset one and should be ruled
+on with it, not after it.
+
+### What I am not doing
+
+Not tuning it. The obvious next move — neutralise the cloned container's
+`grid-template-columns` so our rows flow — is exactly the kind of change that should be ruled
+on rather than slipped in, because it trades the thing the chain clone was built to get (the
+page's own item layout) against the thing it broke (a column count that assumes the donor's
+item count). The alternatives are: ship as measured and accept 11 thin lists; clone the chain
+but not the container's column template; or keep the chain only where the donor's item count
+matches ours. Your call.
+
+**Nothing is deployed.** The code is in the working tree and on the branch; edge functions go
+live only via `supabase functions deploy`, which has not been run.

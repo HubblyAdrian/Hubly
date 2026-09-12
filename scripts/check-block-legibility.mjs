@@ -17,6 +17,10 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { decodePng, regionContrast } from "./lib/pixel-contrast.mjs";
+// MOUNTED THE WAY THE PRODUCT MOUNTS IT (Lesson 37). This used to call setContent on the
+// stored bytes, which renders an AST page with none of the shell CSS that actually styles
+// it — i.e. measures the contrast of a document nobody is served.
+import { mountAndEvaluate } from "./lib/mount-as-product.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CORPUS = process.env.HUBLY_BLOCK_CORPUS || join(ROOT, "scripts/baselines/block-legibility-corpus.json");
@@ -65,18 +69,26 @@ const fixed = [];
 let checked = 0, cloned = 0, standalone = 0;
 for (const p of pages) {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 }, deviceScaleFactor: 1 });
-  const page = await ctx.newPage();
+  let page, frame;
   try {
-    await page.setContent(p.html, { waitUntil: "domcontentloaded" });
+    const mounted = await mountAndEvaluate(ctx, p.html, (sel) => {
+      const e = document.querySelector(sel);
+      if (e) e.scrollIntoView({ block: "center" });
+      return !!e;
+    }, p.selector);
+    page = mounted.page; frame = mounted.frame;
+    if (!mounted.value) { await ctx.close(); continue; }
+    // SCROLL AGAIN AFTER THE IMAGES SETTLE. A page with a tall hero reflows as its images
+    // arrive, which moves the block far below the fold — the first scroll aimed at where
+    // it used to be. Measuring then found nothing on 117 of 132 blocks and reported the
+    // 15 that happened to stay put as the whole corpus.
     await page.waitForTimeout(250);
-    const el = await page.$(p.selector);
-    if (!el) { await ctx.close(); continue; }
-    await el.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(150);
+    await frame.evaluate((sel) => { const e = document.querySelector(sel); if (e) e.scrollIntoView({ block: "center", behavior: "instant" }); }, p.selector);
+    await page.waitForTimeout(250);
     // MEASURE THE TEXT, not the section. Each heading, name and price is clipped with a
     // few pixels of its own ground around it, so the extremes in that box are the ink
     // and the ground a reader actually sees.
-    const boxes = await page.evaluate((sel) => {
+    const boxes = await frame.evaluate((sel) => {
       const root = document.querySelector(sel); if (!root) return [];
       const out = [];
       for (const e of root.querySelectorAll("h1,h2,h3,h4,p,span,dt,dd,a,address,li")) {

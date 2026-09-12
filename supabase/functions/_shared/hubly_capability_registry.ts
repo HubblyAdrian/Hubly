@@ -38,6 +38,8 @@
 // actually built, per "build on demand," not stubbed in speculatively.
 
 import { addServicesBlock } from "./hubly_services_block.ts";
+import { matchingCloseIndex } from "./hubly_html_scan.ts";
+import { unstyledPageVerdict, MIN_OWN_STYLE_BYTES } from "./hubly_page_css_guard.ts";
 import { photoReply, servicesAreaAddedReply } from "./hubly_owner_replies.ts";
 import { HublyAI, extractJson } from "./hubly_ai.ts";
 import { issueDraftGrant } from "./draft_grant.ts";
@@ -2287,7 +2289,7 @@ export async function generateFreeformPage(
   brief: string,
   record: Record<string, unknown>,
   jobId?: string | null,
-): Promise<{ ok: true; html: string; plan: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string; imagesPlaced?: number; imageBlanks?: number; placeholders?: number; strippedCredentials?: number; shape?: { headlineAlignment?: string; markPosition?: string } } | { ok: false; error: string }> {
+): Promise<{ ok: true; html: string; plan: string; brief: FreeformBrief; labels: number; usage: UsageTotal; modelUsed?: string; imagesPlaced?: number; imageBlanks?: number; placeholders?: number; strippedCredentials?: number; shape?: { headlineAlignment?: string; markPosition?: string } } | { ok: false; error: string; ownerMessage?: string }> {
   // WHAT HUBLY SUPPLIES, told to the model so it can DESIGN for it.
   //
   // The first three freeform pages were call-only brochures for one reason:
@@ -2548,6 +2550,18 @@ export async function generateFreeformPage(
   }
   if (!/<\/html\s*>/i.test(raw)) {
     return { ok: false, error: "generation_incomplete_no_close" };
+  }
+  // NO STYLESHEET, NO PAGE. A complete document that carries almost no CSS of its own
+  // renders as unstyled markup for the owner, because a full document is mounted in a
+  // srcdoc iframe where nothing outside reaches it. Refuse it and say so — never
+  // regenerate (prohibition 1), and never store it as a success. Format-gated and
+  // threshold-derived; see hubly_page_css_guard.ts for the distribution this comes from.
+  {
+    const css = unstyledPageVerdict(raw);
+    if (css.refuse) {
+      console.error(`freeform-unstyled [${businessId}] REFUSED — the model returned a complete document with ${css.bytes}B of its own CSS (floor ${MIN_OWN_STYLE_BYTES}B). Page not saved.`);
+      return { ok: false, error: css.reason ?? "generation_unstyled_no_css", ownerMessage: css.ownerMessage };
+    }
   }
   // STAGE: photos (the model produced a valid page; now resolving images).
   await updateDocumentBuildStage(jobId, "photos");
@@ -3565,17 +3579,6 @@ function placeOneServicePrice(html: string, name: string, price: number): { html
 }
 /** Index just past the matching close tag for an open tag of `tag` that starts at
  *  `openStart` (the `<`). Accounts for nested same-tag elements. -1 if unbalanced. */
-function matchingCloseIndex(html: string, openStart: number, tag: string): number {
-  const re = new RegExp(`<${tag}\\b|</${tag}>`, "gi");
-  re.lastIndex = openStart;
-  let depth = 0;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(html))) {
-    if (m[0][1] === "/") { depth--; if (depth === 0) return re.lastIndex; }
-    else depth++;
-  }
-  return -1;
-}
 /** Every data-hubly-service anchor on the page, in document order. */
 /** THE ONE QUESTION: is there a service entry on this page that a new service could join?
  *
@@ -5395,7 +5398,7 @@ async function runFreeformGeneration(
   sw.mark("modelAndStamp");
   const generationMs = Date.now() - genStarted;
   if (!gen.ok) {
-    return { ok: false, real: false, summary: `The page could not be generated (${gen.error}).`, error: "generation_failed", raw: { generationMs } };
+    return { ok: false, real: false, summary: (gen as { ownerMessage?: string }).ownerMessage ?? `The page could not be generated (${gen.error}).`, error: "generation_failed", raw: { generationMs } };
   }
 
   const r = await callBusinessRpc("create_business_document", {
@@ -5858,7 +5861,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const bizRow = await selectOne("businesses", "id", draftId, "name,phone,email,address,city,state,business_type,years_in_business,service_area_cities,brand_color,logo_url,slug");
           const record = await loadBusinessRecord(draftId);
           const gen = await generateFreeformPage(draftId, brief, { ...(record as any), ...(bizRow || {}) });
-          if (!gen.ok) return { ok: false, real: false, summary: `The new page could not be built (${gen.error}).`, error: "generation_failed" };
+          if (!gen.ok) return { ok: false, real: false, summary: (gen as { ownerMessage?: string }).ownerMessage ?? `The new page could not be built (${gen.error}).`, error: "generation_failed" };
 
           // CARRY THE EDITS THAT STILL MEAN SOMETHING. A value role names a
           // fact, and the new page has the same facts, so the owner's wording

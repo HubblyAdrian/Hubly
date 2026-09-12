@@ -283,3 +283,26 @@ export function spliceAll(src: string, edits: Splice[]): string {
 export function insertAttr(el: ScannedEl, text: string): Splice {
   return { start: el.attrInsertAt, end: el.attrInsertAt, text };
 }
+
+/**
+ * The index just past the `</tag>` closing the element that opens at `openStart`,
+ * counting nested opens of the same tag. -1 if it never closes.
+ *
+ * A cheaper answer than a full scan when the caller already knows the offset of one
+ * open tag and wants only its end — the anchor reader in the capability registry asks
+ * exactly that, several thousand times per page. It lives here rather than there
+ * because it was about to be written a second time in hubly_services_block.ts, and a
+ * second copy of a tag walker is how two functions end up disagreeing about where an
+ * element ends. Prefer scanHtml when you need structure; this is for one offset.
+ */
+export function matchingCloseIndex(html: string, openStart: number, tag: string): number {
+  const re = new RegExp(`<${tag}\\b|</${tag}>`, "gi");
+  re.lastIndex = openStart;
+  let depth = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    if (m[0][1] === "/") { depth--; if (depth === 0) return re.lastIndex; }
+    else depth++;
+  }
+  return -1;
+}

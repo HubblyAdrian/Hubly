@@ -30,6 +30,8 @@
  *    reintroduced in a new function.
  */
 
+import { scanHtml, type ScannedEl } from "./hubly_html_scan.ts";
+
 export type ServiceFact = { name: string; price?: number; description?: string };
 
 export type ServicesBlockPlacement = {
@@ -149,11 +151,12 @@ function sectionSpans(html: string): { start: number; end: number; open: string 
   return out;
 }
 
-export function pickDonorSection(html: string): Donor | null {
-  const spans = sectionSpans(html);
+/** The page's ordinary content sections — the pool every donor is drawn from. One
+ *  definition, used by the single-tag clone and by the chain clone alike. */
+function eligibleSections(html: string): { start: number; end: number; open: string }[] {
   const headerEnd = (() => { const i = html.toLowerCase().indexOf("</header>"); return i < 0 ? -1 : i; })();
   const footerStart = (() => { const i = html.toLowerCase().lastIndexOf("<footer"); return i < 0 ? html.length : i; })();
-  const eligible = spans.filter((sp) => {
+  return sectionSpans(html).filter((sp) => {
     const block = html.slice(sp.start, sp.end);
     if (sp.start < headerEnd) return false;
     if (sp.start >= footerStart) return false;
@@ -161,6 +164,10 @@ export function pickDonorSection(html: string): Donor | null {
     if (/data-hubly-contact-block|data-hubly-services-block/i.test(block)) return false;
     return /<h2\b[^>]*>/i.test(block);
   });
+}
+
+export function pickDonorSection(html: string): Donor | null {
+  const eligible = eligibleSections(html);
   if (!eligible.length) return null;
 
   // PREFER A SECTION SHAPED LIKE OURS — two or more <h3> items, i.e. a repeated content
@@ -183,6 +190,124 @@ export function pickDonorSection(html: string): Donor | null {
   return { open: d.open, close: d.end, insertAt: d.end, headingOpen: hm[0], headingTag: "h2",
     itemHeadOpen: im ? im[0] : null, itemHeadTag: "h3",
     itemBodyOpen: pm ? pm[0] : null, itemBodyTag: "p" };
+}
+
+/** ── THE CHAIN CLONE ──────────────────────────────────────────────────────────
+ *  THE INSET IS NOT ON THE SECTION, so cloning the section's class cannot fix it.
+ *
+ *  Measured over 129 pages on 2026-09-12: choosing the wrapper by the modal class
+ *  signature among a page's sections changed the wrapper on 60 of them and the rendered
+ *  inset on ONE, which it made worse. The reason is that the inset is carried somewhere
+ *  different on nearly every page — `div.shell` INSIDE the section on one, the section's
+ *  own `padding-left` plus `display:flex` on another, both at once on a third. Cloning one
+ *  outer tag reproduces at most one of the three, which is why 63 of 129 blocks landed
+ *  full-bleed at 0px while the page's content started at 60px or more, and 7 were pushed
+ *  more than 200px to the right of it.
+ *
+ *  So clone the CHAIN, not the tag: every element from the donor `<section>` down to the
+ *  container that actually holds its repeated items, re-emitted around our rows, and each
+ *  row wrapped in the donor's own item element. The page's nesting is reproduced by
+ *  construction rather than guessed at one level, which is the same move as cloning a
+ *  service row instead of authoring one — just carried all the way down.
+ *
+ *  ONLY OPEN TAGS ARE CLONED. Never the donor's text. Its prose describes something else,
+ *  and shipping it as ours is the fabricated-content defect wearing a layout fix.
+ */
+
+/** The repeated-item CONTAINER inside a donor section: the deepest element at least two
+ *  of whose direct children each hold an <h3>. That is a count of siblings, not a
+ *  judgement about layout — a grid of cards, a <ul> of rows and a <dl> all answer it the
+ *  same way, and a section with one lone heading answers it not at all. */
+function repeatedItemContainer(root: ScannedEl): { container: ScannedEl; items: ScannedEl[] } | null {
+  const holdsH3 = (el: ScannedEl): boolean => el.name === "h3" || el.children.some(holdsH3);
+  const found: { container: ScannedEl; items: ScannedEl[] }[] = [];
+  const visit = (el: ScannedEl) => {
+    const items = el.children.filter(holdsH3);
+    if (items.length >= 2) found.push({ container: el, items });
+    for (const c of el.children) visit(c);
+  };
+  visit(root);
+  if (!found.length) return null;
+  // DEEPEST WINS. The section also "contains two items" at every level above the grid;
+  // the one we want is the element whose own children are the items.
+  return found.reduce((a, b) => (b.container.depth > a.container.depth ? b : a));
+}
+
+/** The donor's own <p> opening tag, stamped so a later edit can find the description. */
+function descOpen(open: string, name: string): string {
+  return open.replace(/^<p/i, `<p data-hubly-desc="${escAttr(name)}"`);
+}
+
+const openTagOf = (el: ScannedEl, src: string) => src.slice(el.openStart, el.openEnd);
+const firstDescendant = (el: ScannedEl, name: string): ScannedEl | null => {
+  if (el.name === name) return el;
+  for (const c of el.children) { const f = firstDescendant(c, name); if (f) return f; }
+  return null;
+};
+
+/**
+ * The services block built by cloning the donor's CHAIN — every element from its
+ * `<section>` down to the container that holds its repeated items, with our rows inside
+ * the donor's own item element.
+ *
+ * Returns null when the donor has no repeated items to learn from; the caller then falls
+ * back to the single-tag clone, which is what shipped before this.
+ */
+export function chainClonedServicesBlock(html: string, services: ServiceFact[]): { block: string; insertAt: number } | null {
+  const eligible = eligibleSections(html);
+  if (!eligible.length) return null;
+  const withItems = eligible.filter((sp) => ((html.slice(sp.start, sp.end).match(/<h3\b/gi) || []).length >= 2));
+  if (!withItems.length) return null;
+  const d = withItems[withItems.length - 1];              // nearest the insertion point
+
+  const scan = scanHtml(html);
+  const section = scan.all.find((el) => el.name === "section" && el.openStart === d.start);
+  if (!section) return null;
+  const found = repeatedItemContainer(section);
+  if (!found) return null;
+  const { container, items } = found;
+
+  // THE CHAIN: section → … → the container's parent. This is the part that carries the
+  // page's inset, and the reason it is cloned whole rather than at one level: the inset
+  // sits on the section's padding on one page, on an inner `div.shell` on the next, and
+  // on both at once on a third.
+  const chain: ScannedEl[] = [];
+  for (let el: ScannedEl | null = container.parent; el; el = el.parent) {
+    chain.unshift(el);
+    if (el === section) break;
+  }
+  if (!chain.length || chain[0] !== section) return null;
+
+  const template = items[0];
+  const h3 = firstDescendant(template, "h3");
+  const p = firstDescendant(template, "p");
+  const h2 = firstDescendant(section, "h2");
+
+  const opens = chain.map((el, i) =>
+    i === 0
+      ? cleanClonedOpen(openTagOf(el, html)).replace(/^<section/i, `<section data-hubly-section="services" data-hubly-services-block`)
+      : cleanClonedOpen(openTagOf(el, html)));
+  const closes = chain.map((el) => `</${el.name}>`).reverse().join("");
+  const heading = h2 ? `${cleanClonedOpen(openTagOf(h2, html))}Services</${h2.name}>` : `<h2>Services</h2>`;
+
+  // OPEN TAGS ONLY, NEVER THE DONOR'S TEXT. Its prose is about something else, and
+  // shipping it as ours would be the fabricated-content defect wearing a layout fix.
+  const rows = services.map((s) => {
+    const name = String(s.name || "").trim();
+    const price = typeof s.price === "number" && Number.isFinite(s.price) && s.price > 0 ? money(s.price) : null;
+    const desc = String(s.description || "").trim();
+    const headOpen = h3 ? cleanClonedOpen(openTagOf(h3, html)) : "<h3>";
+    return cleanClonedOpen(openTagOf(template, html)) +
+      headOpen.replace(/^<h3/i, `<h3 data-hubly-service="${escAttr(name)}"`) + escText(name) + `</h3>` +
+      (price ? `<span class="hubly-sv-price" data-hubly-price="${escAttr(name)}">${escText(price)}</span>` : "") +
+      (desc ? descOpen(p ? cleanClonedOpen(openTagOf(p, html)) : `<p class="hubly-sv-desc">`, name) + escText(desc) + `</p>` : "") +
+      `</${template.name}>`;
+  }).join("");
+
+  return {
+    block: opens.join("") + heading + cleanClonedOpen(openTagOf(container, html)) + rows + `</${container.name}>` + closes,
+    insertAt: d.end,
+  };
 }
 
 /** Strip the attributes that would make the clone a duplicate of its donor rather than
@@ -241,7 +366,18 @@ export function addServicesBlock(html: string, services: ServiceFact[], accent?:
 
   const donor = pickDonorSection(html);
   let block: string, at: number, css: string, mode: string;
-  if (donor) {
+  // THE CHAIN CLONE FIRST. It reproduces the donor's whole nesting — the level that
+  // carries the inset, whichever level that is on this page — and puts each row inside
+  // the donor's own item element, so the block reads as a list the way the page's own
+  // lists read. It returns null when the donor has no repeated items to learn from, and
+  // then the single-tag clone below is exactly what shipped before.
+  const chained = chainClonedServicesBlock(html, real);
+  if (chained) {
+    block = chained.block;
+    at = chained.insertAt;
+    css = /data-hubly-sv-css/i.test(html) ? "" : servicesBlockLayoutCss();
+    mode = "chain";
+  } else if (donor) {
     // CLONED SHELL. The wrapper, its classes and inline styles, and the page's own
     // heading element — so the block inherits the page's type scale and colour context
     // instead of a number we picked. Our 24px <h2> against the page's 64px was the tell.
