@@ -91,7 +91,11 @@ for (const r of rows) {
   p_rendered_html := $html$${out}$html$,
   p_created_by := 'patch',
   p_format := 'html',
-  p_owner_id := null
+  -- A CLAIMED BUSINESS AUTHORISES BY OWNER, NOT BY DRAFT TOKEN. Passing null here returned
+  -- "not_owner" for crestview-window-cleaning on the first repair run — the same claimed-vs-
+  -- draft door that has caught every write path in this codebase. Read from the row rather
+  -- than assuming: null for a draft, the real owner for a claimed site.
+  p_owner_id := (select owner_id from businesses where slug = '${r.slug}')
 ) as result;`);
   const res = execFileSync("supabase", ["db", "query", "--linked", "-f", file], { encoding: "utf8", cwd: ROOT, maxBuffer: 64 * 1024 * 1024 });
   console.log(`   written: ${/"ok": true/.test(res) ? "yes, new version" : "NO — " + res.slice(0, 120)}`);

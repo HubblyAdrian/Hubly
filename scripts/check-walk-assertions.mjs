@@ -164,8 +164,16 @@ try {
   await ctx.close();
 
   // 6: follow the page's own Book link and see whose record loads.
-  const bookHref = (/href="(https?:\/\/[^"]*\?book=1[^"]*)"/i.exec(html) || [])[1] || null;
+  // ABSOLUTE OR RELATIVE. The page's own booking link is written relative now (`/?book=1`)
+  // precisely so a rename cannot stale it, so an extractor that only understands absolute
+  // URLs reports "no booking link" on a page that has three. Resolve against the business's
+  // own host, which is where the shell serving this page lives.
+  const rawHref = (/href="([^"]*\?book=1[^"]*)"/i.exec(html) || [])[1] || null;
+  const bookHref = rawHref
+    ? (/^https?:\/\//i.test(rawHref) ? rawHref : `https://${biz.slug}.myhubly.app${rawHref.startsWith("/") ? "" : "/"}${rawHref}`)
+    : null;
   let bookDetail = "no ?book=1 link on the page", bookOk = false;
+  if (rawHref && !/^https?:\/\//i.test(rawHref)) console.log(`  (booking link is relative: "${rawHref}" — resolved against this business's own host)`);
   let bookOwnerHits = [], bookPlaceholderHits = [];
   if (bookHref) {
     const bctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
