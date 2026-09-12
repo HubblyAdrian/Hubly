@@ -6491,6 +6491,22 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     try{ localStorage.setItem('hcArrival_' + biz.id, '1'); }catch(e){}
     hcRenderArrival(biz);
   }
+  /** CAN THIS BUSINESS ACTUALLY BE BOOKED? Read the record, do not assume.
+   *
+   *  A canned string describing the state of the product is a truth claim, and it gets
+   *  verified or it does not get said. "Your booking works too. Customers can pick a plan
+   *  and book it, at the prices you set." was said to every owner on arrival — three claims,
+   *  none checked. On crestview-window-cleaning all three were false at once: no bookable
+   *  service, no price on the page, and a booking link pointing at a host that no longer
+   *  resolved. */
+  async function hcBookableServices(bizId){
+    try{
+      var c = await authGetClient();
+      var r = await c.from('services').select('id,price').eq('business_id', bizId);
+      var rows = (r && r.data) || [];
+      return { any: rows.length > 0, priced: rows.filter(function(x){ return x.price != null && Number(x.price) > 0; }).length };
+    }catch(e){ return { any: false, priced: 0, unknown: true }; }
+  }
   function hcRenderArrival(biz){
     var thread = hcThreadBody(); if(!thread) return;
     var url = String((biz && biz.url) || '');
@@ -6500,7 +6516,19 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     // Two short Hubly lines, said plainly. "live" appears once (no green pill here).
     // Not persisted: a welcome shown once, never replayed on reload.
     hcAppendMessage('hubly', name + ' is live. ' + host + ' is a real address. Anyone can visit it.');
-    hcAppendMessage('hubly', 'Your booking works too. Customers can pick a plan and book it, at the prices you set.');
+    // THE SECOND LINE IS EARNED OR IT IS NOT SAID. It used to be unconditional:
+    // "Your booking works too. Customers can pick a plan and book it, at the prices you
+    // set." Three claims about product state, none of them checked — and on the walk that
+    // found this, all three were false simultaneously. Now the record answers first, and
+    // the sentence says exactly what the record supports: priced services, unpriced ones,
+    // or nothing at all (in which case there is no second line — an absent sentence is
+    // honest, a confident one is not).
+    hcBookableServices(biz.id).then(function(b){
+      if(b.unknown || !b.any) return;
+      hcAppendMessage('hubly', b.priced > 0
+        ? 'Your booking works too — customers can pick from the ' + b.priced + ' service' + (b.priced === 1 ? '' : 's') + ' you priced and book online.'
+        : 'Your booking works too — customers can pick a service and book it. None of them have prices yet, so nothing is shown as a price.');
+    }).catch(function(){});
     // NO ACTION BUTTONS HERE. This is a MOMENT — "your site is live" is worth saying
     // once — and a moment must not become a gate.
     //

@@ -1284,6 +1284,22 @@ only against a fixture.
 If you are writing a source-scanning check: strip comments first, walk brackets rather than
 reaching for the next one, and prove it red on the real file before trusting a single number
 it prints.
+
+**And then stop writing them this way at all.** There were three of these in two days —
+comments scanned as sentences, parameter types parsed as a function body, closing braces
+counted as statements — and a fourth in the warn-then-proceed classifier. Each made a check
+report coverage it did not have; each cost an investigation. That is not a run of bad luck, it
+is the predictable cost of deciding code structure with line windows.
+
+**RULE: a check that reasons about code structure walks an AST.** A parser is already in the
+toolchain — the inline scripts of `public/hubly.html` are parsed on every commit to prove they
+still compile ("inline scripts parsed: 7, failing: 0"), so `new Function(src)` and a real
+tokeniser are both available with no new dependency. Regex is fine for FINDING a candidate
+line. It is not fine for deciding what encloses it, what returns it, or what follows it —
+those are parser questions, and every time they have been answered with a line window the
+answer has been wrong.
+
+Not a call to rewrite the existing five. New checks, and any check you touch.
  9 across 2 looked plausible; it was checked against the file (12 raw occurrences
    of `notePlacement(`, three functions named in the rows) and did not survive. A scanner
    reports what it can see, never what it cannot, and its silence about a wrapper reads

@@ -6331,3 +6331,57 @@ directive in a real string. What remains open is the client half: `public/hubly.
 owner-facing copy that no check reads at all — recorded above, ruled B, and now with a
 customer-visible instance of its own (H2's "Add services to show them here" rendered on a
 public booking page).
+
+## Ninety-seven checks, five of which we know work (2026-09-12)
+
+The audit, stated plainly because the number is the finding: **`scripts/` holds 97 checks. Five
+red-proof themselves** — `check-recording-on-success.mjs`, `check-verification-carried.mjs`,
+`no-directives.check.ts`, `check-mount-predicate.mjs`, `block-chain.check.ts` — and one more
+(`page-css-guard.check.ts`) proves the guarded behaviour without proving its own detector.
+
+**The other 92 have neither fixtures nor a red-proof. We do not know that any of them work.**
+Three of the five now-verified ones were WRONG on their first green, so this is not a
+theoretical concern: it is the base rate.
+
+That is not a crisis and it is not worth ninety-two retrofits while the product is still wrong.
+It is a fact that should be visible rather than rediscovered the next time one of them passes
+while something is broken. The standing rule (Lesson 40): every new check self-red-proofs, and
+any check touched gets retrofitted in passing.
+
+The 92 are every `scripts/check-*.mjs` and `scripts/lib/*.check.ts` except those six — the bulk
+of them the `check-m2-epic*`, `check-builder-epic*`, `check-section*` and `check-hubly-brain*`
+families, which assert documentation and architecture claims rather than behaviour.
+
+## A canned string that describes product state is a truth claim (2026-09-12)
+
+`hcRenderArrival` said this to every owner the moment they claimed, unconditionally:
+
+> *"Your booking works too. Customers can pick a plan and book it, at the prices you set."*
+
+Three claims, none checked. On `crestview-window-cleaning` all three were false simultaneously:
+no bookable service, no price on the page, and a booking link pointing at a host that no longer
+resolved. The comment above it asserted the opposite — *"Everything it says is true when it
+renders: the site is live, the booking works"* — which is how it shipped.
+
+It now reads the record first and says only what the record supports: the number of priced
+services, or that services exist without prices, or — when there are none — **nothing at all.
+An absent sentence is honest; a confident one is not.**
+
+**The sweep, for the same shape elsewhere.** 106 candidate owner-facing strings contain
+product-state language; narrowing to DECLARATIVE claims about the product's own state leaves
+**24**, and they are the list to work through:
+
+- `public/hubly.html` ×15 — "Your store is ready." (×4), "Your business is ready." (×2),
+  "Recent edits are live for visitors.", "That improvement is live — your site just got
+  stronger.", "Your profile is live", "Your website is ready", "Your Hubly is ready" (×2),
+  "Your membership pitch is ready for five past customers.", "Your draft layout is ready…"
+- `public/platform-home.html` ×4 — including the two arrival lines now verified.
+- `supabase/functions/_shared/hubly_brain_*.ts` ×5 — "Your website is live — share your link
+  to start traffic", "Your business is live. Website, booking, and the next steps are ready",
+  "Your website is live. Customers can find you and book.", "Your calendar is connected".
+
+Each needs the same treatment: verified at the moment it is said, or not said. The brain ones
+are the sharpest — "Customers can find you and book" asserts two capabilities at once — and
+they sit outside `hubly_owner_replies.ts`, so no check sees them either. **One module, one
+check** is the answer to both this and the directive leak; the module exists for the server's
+reply channel and would need to grow to cover these, which is real work and is not done here.
