@@ -11,6 +11,21 @@
 > establish which thirty, whether each is already applied, and what a repaired ledger
 > looks like — reported before anything is changed.
 
+> ### THE INDEX, AND WHY IT IS HERE
+>
+> **This file holds 33 lessons.** Lessons **1–3** are the three instances described
+> narratively in the opening section below — they have no `## Lesson N` heading, which is
+> why a later count read the file as starting at 4. Numbered headings run **4 → 33**, with
+> **11 and 11b** both present: two distinct lessons were written with the same number on
+> different days and neither noticed.
+>
+> Renumbering 12–33 would invalidate every citation made in commit messages since, so the
+> second became **11b** rather than shifting the rest. Before adding a lesson, take the
+> next number above the highest heading here and update this count.
+>
+> A lessons file that miscounts its own lessons undermines the method it documents —
+> caught 2026-09-12 because Adrian's notes said 15 and the file held 31 headings.
+
 # Checks that report a result they did not establish
 
 One class, three instances in a single day (2026-09-08). Kept together because the fix is
@@ -316,7 +331,7 @@ keeping.
 
 ---
 
-## Lesson 11 — a truth string may not claim a value is on the page unless the value is in the bytes
+## Lesson 11b — a truth string may not claim a value is on the page unless the value is in the bytes
 
 **THE RULE.** A truth-composing function may not tell an owner that a value is on their
 page unless that value has been verified present **in the rendered output**. Not that the

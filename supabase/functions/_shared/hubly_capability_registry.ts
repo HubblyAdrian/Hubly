@@ -3895,7 +3895,7 @@ function placeServiceDescription(html: string, name: string, descText: string): 
  *  data-hc="section.N.item.M.title" is stamped by the labelling pass, is deterministic,
  *  and is present on 115 of the 120 affected pages. The other 5 fall through to the
  *  honest handoff, which is the correct outcome rather than a guess. */
-function allGuessServiceRows(html: string): { index: number; length: number; tag: string; text: string }[] {
+export function allGuessServiceRows(html: string): { index: number; length: number; tag: string; text: string }[] {
   // Locate the services section. Same signals servicesWhereLabel() already ships with,
   // so the two can never disagree about which section is the services one.
   const sections: { start: number; end: number }[] = [];
