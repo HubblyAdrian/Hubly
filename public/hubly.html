@@ -18342,6 +18342,20 @@ async function initApp(){
         // rather than a postMessage bridge, because a bridge only works from
         // inside our own iframe and a URL works from everywhere.
         try{
+          // NO STEP ASSUMES THE PREVIOUS ONE SUCCEEDED (prohibition 3). loadPublicProfile
+          // renders "This page isn't live yet" and returns when the slug resolves to
+          // nothing — and this branch then ran anyway, painting the booking page over it
+          // for a business that does not exist. What a customer saw on 2026-09-12, via a
+          // stale link on a live site: a booking page with an empty name, a "BR" monogram,
+          // "Professional business — clear packages, easy booking", and "Add services to
+          // show them here". Every one of those is this missing line, not a copy problem.
+          //
+          // renderThemedBookingLanding even warns "called without biz" — five times in that
+          // load — and paints regardless. A warning nobody acts on is not a guard.
+          if(wantsBooking && !currentBusiness){
+            hublyBootLog('deep-link booking refused — no business for this host');
+            return;                      // the unavailable page is already on screen
+          }
           if(wantsBooking){
             const svc=wantsSvc;
             // HYDRATE THE SERVICES FIRST, or booking opens empty.
@@ -29896,7 +29910,12 @@ function renderPhonePreview(prefix,data){
   const g=id=>document.getElementById(prefix+id);
   const {biz,tag,phone,city,email,links,services,portfolioUrls,logoUrl,bannerUrl,slug,bookBtnText,fontKey,about}=data;
   const accent=getAccentColor();
-  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  // NO DEFAULT INITIALS. 'BR' was a hardcoded fallback — the surviving sibling of
+  // || 'Your Business' and its "YB" monogram, removed last week — and it rendered on a
+  // booking page for a business called Crestview Window Cleaning. A monogram is DERIVED
+  // from a real name or there is no monogram; an invented one is a fact about a business
+  // that nobody stated.
+  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
   applyProfileHeader(g('hero-grad'),g('banner'),g('logo'),{bannerUrl,logoUrl,accent,init});
   const bizEl=g('biz');if(bizEl)bizEl.textContent=biz;
   const tagEl=g('tag');if(tagEl){tagEl.textContent=tag;tagEl.style.display=tag?'':'none';}
@@ -33331,7 +33350,8 @@ function renderThemedBookingLanding(biz,phone,city,email){
   }
   applyThemedBookingShell();
   const accent=getAccentColor();
-  const init=String(biz).split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  // NO DEFAULT INITIALS — see the note on the other monogram derivation.
+  const init=String(biz).split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
   const bannerEl=document.getElementById('bkland-banner');
   const logoEl=document.getElementById('bkland-logo');
   const nameEl=document.getElementById('bkland-name');
@@ -33367,7 +33387,12 @@ function renderThemedBookingLanding(biz,phone,city,email){
   }
   const svcs=getBookingServices().filter(s=>s.name);
   if(grid){
-    if(!svcs.length)grid.innerHTML=`<div style="padding:20px;color:var(--ws-muted,#64748b);font-size:14px;">${t('addServicesHint')}</div>`;
+    // A CUSTOMER IS NOT THE PERSON WHO ADDS SERVICES. This said "Add services to show
+    // them here." — owner-directed instructional copy, rendered on the public booking
+    // page, which is the directive leak the server-side module and its check exist to
+    // prevent, on the surface neither of them can see. The owner-facing wording stays on
+    // the owner's own canvas, where it is an instruction someone can act on.
+    if(!svcs.length)grid.innerHTML=`<div style="padding:20px;color:var(--ws-muted,#64748b);font-size:14px;">${t('bkNothingToBook')}</div>`;
     else grid.innerHTML=svcs.map((s,i)=>bookingServiceCardHtml(s,i)).join('');
   }
 }
@@ -33424,7 +33449,12 @@ function renderBookingLanding(mode){
   };
   const bannerUrl=getBkBanner();
   const logoUrl=getBkLogo();
-  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  // NO DEFAULT INITIALS. 'BR' was a hardcoded fallback — the surviving sibling of
+  // || 'Your Business' and its "YB" monogram, removed last week — and it rendered on a
+  // booking page for a business called Crestview Window Cleaning. A monogram is DERIVED
+  // from a real name or there is no monogram; an invented one is a fact about a business
+  // that nobody stated.
+  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
   const accent=getAccentColor();
   const nameEl=document.getElementById(idMap.name);
   const metaEl=document.getElementById(idMap.meta);
@@ -34135,7 +34165,12 @@ function renderEdBookingPhonePreview(){
   const email=S.email||document.getElementById('ed-email')?.value||'';
   const bannerUrl=getBkBanner();
   const logoUrl=getBkLogo();
-  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  // NO DEFAULT INITIALS. 'BR' was a hardcoded fallback — the surviving sibling of
+  // || 'Your Business' and its "YB" monogram, removed last week — and it rendered on a
+  // booking page for a business called Crestview Window Cleaning. A monogram is DERIVED
+  // from a real name or there is no monogram; an invented one is a fact about a business
+  // that nobody stated.
+  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
   const accent=getAccentColor();
   if(nameEl)nameEl.textContent=biz;
   if(bannerEl){
@@ -34173,7 +34208,12 @@ function renderEdProfileCanvas(){
   const city=document.getElementById('ed-city')?.value||S.city||'';
   const email=document.getElementById('ed-email')?.value||S.email||'';
   const accent=getAccentColor();
-  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  // NO DEFAULT INITIALS. 'BR' was a hardcoded fallback — the surviving sibling of
+  // || 'Your Business' and its "YB" monogram, removed last week — and it rendered on a
+  // booking page for a business called Crestview Window Cleaning. A monogram is DERIVED
+  // from a real name or there is no monogram; an invented one is a fact about a business
+  // that nobody stated.
+  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
   const useBanner=S.headerMode==='banner'&&S.bannerUrl;
   const heroStyle=useBanner?`background-image:url('${S.bannerUrl}')`:`background:${getProfileGradient()}`;
   const showLogoImg=!!S.logoUrl&&!(useBanner&&S.logoUrl===S.bannerUrl);
@@ -34206,7 +34246,12 @@ function renderEdBookingCanvas(){
   const accent=getAccentColor();
   const bannerUrl=getBkBanner();
   const logoUrl=getBkLogo();
-  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  // NO DEFAULT INITIALS. 'BR' was a hardcoded fallback — the surviving sibling of
+  // || 'Your Business' and its "YB" monogram, removed last week — and it rendered on a
+  // booking page for a business called Crestview Window Cleaning. A monogram is DERIVED
+  // from a real name or there is no monogram; an invented one is a fact about a business
+  // that nobody stated.
+  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
   const heroStyle=bannerUrl?`background-image:url('${bannerUrl}')`:`background:${S.bkBannerColor||getProfileGradient()}`;
   const showLogoImg=!!logoUrl&&!(bannerUrl&&logoUrl===bannerUrl);
   const logoInner=showLogoImg?`<img src="${logoUrl}" alt="">`:init;
@@ -39738,7 +39783,12 @@ function renderWebsite(prefix){
   if(!prefix&&siteEl)siteEl.style.setProperty('--ws-accent',accent);
   applyWsCtaInk(accent);
   const biz=getEditorBizName()||S.biz|| '';
-  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase()||'BR';
+  // NO DEFAULT INITIALS. 'BR' was a hardcoded fallback — the surviving sibling of
+  // || 'Your Business' and its "YB" monogram, removed last week — and it rendered on a
+  // booking page for a business called Crestview Window Cleaning. A monogram is DERIVED
+  // from a real name or there is no monogram; an invented one is a fact about a business
+  // that nobody stated.
+  const init=biz.split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
   const w=S.website;
   const layoutIdEarly=getWebsiteLayoutId();
   const heroMedia=prefix?document.getElementById(p+'-hero-media'):wsPageEl('ws-hero-media');
@@ -51022,6 +51072,9 @@ const T = {
     ourServices:'Our Services',
     selectService:'Select a service to book your appointment',
     addServicesHint:'Add services to show them here.',
+    /* PUBLIC — what a CUSTOMER reads when a business has nothing bookable yet. Never an
+       instruction to add something: they cannot, and it is not their page. */
+    bkNothingToBook:'Nothing is bookable online just yet.',
     tapToCopy:'Tap to copy',
     popularBadge:'★ Popular',
     hoursLabel:'Hours',
@@ -51957,6 +52010,7 @@ const T = {
     ourServices:'Nuestros servicios',
     selectService:'Selecciona un servicio para reservar tu cita',
     addServicesHint:'Agrega servicios para mostrarlos aquí.',
+    bkNothingToBook:'Todavía no hay nada para reservar en línea.',
     tapToCopy:'Toca para copiar',
     popularBadge:'★ Popular',
     hoursLabel:'Horario',
