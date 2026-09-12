@@ -1470,3 +1470,42 @@ thing.** Each was written from a failure we had already been shown, and each the
 that failure's shape. The defence is not cleverness at design time — it is that when a person
 finds something a green suite missed, the FIRST question is "what precondition was this check
 asking instead of the outcome?", and the check is widened before the bug is fixed.
+
+## Lesson 44 — you may correct a check's definition of success; you may not widen it until a known-bad case passes
+
+The same edit is either discipline or self-deception, and the difference is one question.
+
+On 2026-09-12 assertion 1 was taught to click fragment links and require the target to come
+into view. It then reported three permanent failures: `lugnutz #book`,
+`rell-okonjo-photography #contact`, `weekly-lawn-care-…-b2041 #quote`. Each targets the LAST
+section of its page. The page scrolls to its maximum — `scrollY === maxScroll` — and the target
+settles a few hundred pixels down, fully on screen. The browser has done everything available
+to it. The check was demanding "at the top", which that page can never give.
+
+So the check was changed, AFTER it went red, to ask whether the target is ON SCREEN. That is
+the shape of every bad decision in testing: a check goes red, the check gets edited, the red
+goes away.
+
+**The line: a correction changes what success MEANS; a tune changes what success INCLUDES until
+the failure you are looking at stops failing.** And there is one test that tells them apart:
+
+> **Does the check still go red on the defect it was written for, in the same run?**
+
+Here it does. With the loosened condition, `ironwood-fence` still reports:
+
+```
+RED  1. every in-page href="#…" resolves AND scrolls to its target
+        #process — the click navigated the frame to another document
+```
+
+A navigation still fails. A page that does not move still fails. What no longer fails is a link
+that did its job on a page that had no more scroll to give.
+
+**The rule for every future loosening: show the original defect going red in the same run, in
+the report, next to the loosening.** If it cannot be shown, the change is a tune and does not
+ship — and the honest alternative is to leave the check red and record the known exception by
+name, which is what `KNOWN_UNREADABLE` does in the legibility suite.
+
+The reason to be strict about this: a check that fails permanently on a correct outcome trains
+people to ignore it, and an ignored check is worse than no check, because it still reports
+green on the days it matters.
