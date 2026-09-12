@@ -6420,6 +6420,42 @@ they sit outside `hubly_owner_replies.ts`, so no check sees them either. **One m
 check** is the answer to both this and the directive leak; the module exists for the server's
 reply channel and would need to grow to cover these, which is real work and is not done here.
 
+## The class T2 belongs to: a caller refusing a draft its writer would accept (2026-09-12)
+
+**Fixed: `business.setHours`.** Shipped 2026-09-08 with `if (!ownerUid) return not_signed_in`
+at the top of its handler, refusing every UNCLAIMED DRAFT — the state a business is in when
+it first says "we open at 8". Four days, every draft owner, silent. Migration
+`20260912210000` gives `set_business_hours` a `p_draft_token` so ONE writer authorises a
+draft by token and a claimed business by owner, and still writes BOTH stores. The obvious
+fix — routing drafts to the existing `set_business_hours_in_progress` — would have written
+only `settings_business_hours` and not `businesses.meta.hours`, reporting success while a
+CLASSIC page rendered nothing: the exact defect the capability's own comment warned about.
+
+`scripts/check-draft-capable-writers.mjs` now derives the draft-capable RPC set from the
+migrations (last definition wins, as Postgres sees it) and fails any handler that refuses
+`!ownerUid` before calling one, or calls one without passing the token. Self-red-proofed both
+ways. It reads 30 of 30 handler sites — the count is printed, because its first version
+required a braced arrow body and silently skipped the one concise handler.
+
+**LEFT, DELIBERATELY, with line numbers — the same shape, a different writer.** Two
+conversational actions refuse an unclaimed draft, and their writer refuses it too, so the
+check above cannot see them (they call `applyOwnerDesignEdit`, not an RPC):
+
+- `setDesignKnob` — `hubly_capability_registry.ts:6287`
+- `restyleElement` — `hubly_capability_registry.ts:6383`
+- their writer, `applyOwnerDesignEdit` — `hubly_capability_registry.ts:4839`
+
+A pre-claim owner who types "make the text bigger" is told to sign in. Whether that is right
+is a product question — it costs a writer change, not a guard removal — and it is Adrian's
+to rule, so it is recorded rather than done.
+
+**NOT this class, checked and classified:** the `applyOwner*Edit` family
+(`:1746`, `:1818`, `:1864`, `:1925`, `:1963`, `:5021`) is the CLAIMED editor lane, reached
+from an authed surface and double-checking `owner_id` — owner-only is correct there, because
+there is no owner to compare against on a draft. `bookings` read (`:5769`), `day.add`
+(`:7240`) and `places.add` (`:7775`) are owner-only on their own merits: customer data, an
+account-level calendar, and a sidebar that only a claimed business has.
+
 ## STAGE 3 LEADS WITH THIS — sub-AA text we did not insert: 68 of 165 pages (2026-09-12)
 
 **Promoted 2026-09-12 by Adrian's partner, ahead of the migration ledger:** this is a

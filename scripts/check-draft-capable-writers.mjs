@@ -72,18 +72,52 @@ let src;
 try { src = stripComments(readFileSync(REGISTRY, "utf8")); }
 catch (e) { console.error("CANNOT RUN — registry unreadable: " + e.message); process.exit(2); }
 
+/** Top-level function bodies, so a handler that DELEGATES can still be read. */
+const localFns = new Map();
+{
+  const fre = /(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(/g;
+  let f;
+  while ((f = fre.exec(src))) {
+    const params = balanced(src, src.indexOf("(", f.index + f[0].length - 1), "(", ")");
+    if (!params) continue;
+    const open = src.indexOf("{", f.index + f[0].length - 1 + params.length);
+    const body = open < 0 ? null : balanced(src, open, "{", "}");
+    if (body) localFns.set(f[1], body);
+  }
+}
+
+// BOTH ARROW SHAPES. `handler: async (args) => { … }` and the concise
+// `handler: async (args) => runDocumentGeneration(…)`. The first version of this check
+// required the brace and silently skipped the concise one — one handler of thirty, and
+// exactly the kind of miss this check exists to catch, so the coverage is now printed.
+const sites = [...src.matchAll(/handler:\s*async\s*\(([^)]*)\)\s*=>\s*/g)];
 const handlers = [];
-const hre = /handler:\s*async\s*\(([^)]*)\)\s*=>\s*\{/g;
-let h;
-while ((h = hre.exec(src))) {
-  const body = balanced(src, src.indexOf("{", h.index + h[0].length - 1), "{", "}");
-  if (!body) continue;
-  // The action's own name is the nearest `name: "…"` above it.
+for (const h of sites) {
+  const after = h.index + h[0].length;
   const before = src.slice(0, h.index);
   const nm = [...before.matchAll(/name:\s*"([^"]+)"/g)].pop();
-  handlers.push({ name: nm ? nm[1] : "(unnamed)", body, line: before.split("\n").length });
+  const line = before.split("\n").length;
+  let body = null;
+  if (src[after] === "{") body = balanced(src, after, "{", "}");
+  else {
+    // Concise body: take the expression to the end of this object property, then follow
+    // a bare delegation into the local function it calls.
+    const end = src.indexOf("\n      },", after);
+    const expr = src.slice(after, end < 0 ? after + 400 : end);
+    const call = expr.match(/^\s*(\w+)\s*\(/);
+    body = (call && localFns.has(call[1])) ? localFns.get(call[1]) : expr;
+    if (call && !localFns.has(call[1])) {
+      console.error(`CANNOT RUN — handler at registry:${line} delegates to ${call[1]}, which is not a local function this scan can read`);
+      process.exit(2);
+    }
+  }
+  if (!body) { console.error(`CANNOT RUN — could not read the body of the handler at registry:${line}`); process.exit(2); }
+  handlers.push({ name: nm ? nm[1] : "(unnamed)", body, line });
 }
-if (handlers.length < 10) { console.error(`CANNOT RUN — only ${handlers.length} handlers parsed; the scan is broken`); process.exit(2); }
+if (handlers.length !== sites.length || handlers.length < 10) {
+  console.error(`CANNOT RUN — ${sites.length} handler sites, ${handlers.length} read; the scan is broken`);
+  process.exit(2);
+}
 
 const fails = [], ok = [];
 for (const a of handlers) {
@@ -100,7 +134,7 @@ for (const a of handlers) {
 }
 
 console.log(`draft-capable RPCs, derived from ${files.length} migrations: ${[...draftCapable].sort().join(", ")}`);
-console.log(`capability handlers parsed: ${handlers.length}   handlers calling a draft-capable writer: ${ok.length + fails.length}`);
+console.log(`capability handlers: ${handlers.length} read of ${sites.length} handler sites, both arrow shapes   calling a draft-capable writer: ${ok.length + fails.length}`);
 for (const o of ok) console.log(`  ok  ${o}`);
 if (fails.length) {
   console.error(`\nFAIL — ${fails.length} handler(s) refuse a draft their writer would accept:`);
