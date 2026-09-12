@@ -49,12 +49,21 @@ done
 
 if [[ "${SKIP_MIGRATION:-0}" != "1" ]]; then
   echo
-  echo "=== Apply remote migrations (includes 20260728080000_adobe_lightroom_oauth.sql) ==="
-  # Link may already exist; failure here is not fatal if project is already linked.
+  echo "=== Migrations: NOT pushed from here ==="
+  # `supabase db push` was removed from this script on 2026-09-12, and it is banned
+  # repo-wide (scripts/check-no-db-push.mjs fails the run if it reappears anywhere).
+  #
+  # WHY. push replays every migration the ledger does not know about — 53 files today —
+  # and one of them, 20260823140000_mark_test_accounts.sql, carries
+  #   update businesses set account_kind='test' where account_kind<>'test' and id not in (…)
+  # followed by a statement that cannot run any more. Running it relabels every market and
+  # internal business as a test account. It came one statement away from doing exactly that
+  # on 2026-09-12; the transaction rolled back, which was luck about scope, not a safeguard.
+  #
+  # Apply ONE migration deliberately instead:
+  #   supabase db query --linked -f supabase/migrations/<file>.sql
   npx --yes supabase link --project-ref "$PROJECT_REF" || true
-  npx --yes supabase db push --linked \
-    || die "Migration push failed (check SUPABASE_ACCESS_TOKEN / DB password / pending migrations)"
-  echo "  OK  db push"
+  echo "  SKIPPED  apply any needed migration by hand, one file at a time"
 fi
 
 echo

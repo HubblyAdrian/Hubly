@@ -1388,3 +1388,52 @@ admits a broken precondition, outside a `catch`, with no stop after it:
 One real, two honest. The value is not the count; it is that the list is three lines long and a
 person can read it. A check that cannot decide should hand you a short list rather than a
 confident number.
+
+## Lesson 42 — a rule that only lives in a document is a preference; a rule that fails the run is a rule
+
+`supabase db push` had been banned in `CLAUDE.md` and in the standing notes for three weeks,
+with the reason written out: the ledger is unreconciled, so push replays history.
+
+On 2026-09-12 it was run anyway — by me, to apply two additive migrations, reaching for the
+normal tool without re-reading the prose that forbade it. It replayed 53 unrecorded files,
+reached `20260823140000_mark_test_accounts.sql`, and failed on statement 6 because
+`account_kind = 'real'` stopped being a valid value in August.
+
+**Statement 5 was:**
+
+```sql
+update public.businesses set account_kind = 'test'
+  where account_kind <> 'test' and id not in (…9 ids captured 2026-08-23…);
+```
+
+Every market and internal business created since August — Graef included — relabelled as a
+test account, and every adoption, usage and value number computed from that column silently
+wrong from that moment, with nothing in the product that would notice. The file ran in a
+transaction and rolled back. **That was luck about transaction scope, not a safeguard**, and
+the rollback was proved rather than assumed: four market businesses created after the
+allowlist was written still read `market`, which they could not if the update had committed.
+
+**The rule: if a prohibition matters, something has to fail when it is violated.** Prose in a
+document is read by whoever is already being careful. The person about to run the dangerous
+thing is, by definition, the person not reading it right then — they are reaching for a tool
+they have used a hundred times elsewhere.
+
+What changed after the incident, in the order that matters:
+
+1. **A check that fails**: `scripts/check-no-db-push.mjs` scans every tracked command-carrying
+   file and fails if `supabase db push` appears anywhere it could run. It red-proofs itself,
+   and it allows the command to be NAMED inside a prohibition — a ban has to be able to say
+   what it bans.
+2. **It immediately found a loaded gun nobody knew about**:
+   `scripts/deploy-adobe-oauth-edges.sh:55` ran `npx supabase db push --linked` as part of a
+   deploy. Anyone running that script, for reasons having nothing to do with migrations, would
+   have detonated the same file. Removed the same hour. *The prose ban had been in place the
+   entire time that script existed.*
+3. **The rule where the hand is**: restated at the top of `CLAUDE.md`, and in
+   `supabase/migrations/README.md` — the directory someone is standing in when they decide to
+   run it.
+
+The generalisation, and it applies well beyond this command: **every standing prohibition in
+this repo should be read as a question — what fails if someone does it anyway?** Where the
+answer is "nothing", the prohibition is decoration, and the next violation is a matter of time
+and tiredness rather than intent.

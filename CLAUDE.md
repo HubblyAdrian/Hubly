@@ -5,6 +5,19 @@ for by a real failure that shipped while reporting success. They bind every sess
 including ones that never saw the conversation that produced them. Phrased as
 prohibitions on purpose: when in doubt, the prohibited thing is prohibited.
 
+## `supabase db push` is banned — enforced, not requested
+
+It replays every migration the remote ledger does not know about (53 files today), and one of
+them relabels every market and internal business as a test account. On 2026-09-12 it was run
+and came ONE STATEMENT from doing that to Graef's record and to every number we compute from
+`account_kind`; the transaction rolled back, which was luck about scope, not a safeguard.
+
+Apply one migration at a time, after reading it end to end:
+`supabase db query --linked -f supabase/migrations/<file>.sql`
+
+`scripts/check-no-db-push.mjs` fails the run if the command reappears anywhere in the repo.
+The ban lived in prose for three weeks and prose did not stop it (Lesson 42).
+
 ## The six prohibitions
 
 1. **No cleanup, validation, or post-processing pass may ever cause a second
