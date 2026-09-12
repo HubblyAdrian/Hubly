@@ -282,12 +282,38 @@ export type ChainDonor = {
  * Returns null when the donor has no repeated items to learn from; callers fall back to
  * the single-tag clone, which is what shipped before this.
  */
+/** A SECTION THAT DESCRIBES A SEQUENCE IS NOT A LIST OF OFFERINGS.
+ *
+ *  The item rule looks for two or more <h3> — and a "how it works" section has three step
+ *  cards, so it matches as readily as a services grid. Measured over the 119 pages that would
+ *  receive a block: the donor is a sequence section on 67 of them, 56%. It is the majority
+ *  case, not an edge, because the generator writes a process section precisely when it has no
+ *  services to list — which is exactly when a services block gets added.
+ *
+ *  On ironwood-fence that meant cloning "From quote request to installed fence" — numbered
+ *  step cards — to hold three priced services. Every signal below is a fact about the donor's
+ *  own markup or its own words; none is an opinion about layout. A sequence donor is still
+ *  used if nothing else qualifies, because a section is better than no section. */
+function describesASequence(html: string, sp: { start: number; end: number }, itemOpen: string): boolean {
+  const block = html.slice(sp.start, sp.end);
+  const text = block.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+  return /class="[^"]*\b(step|steps|process|timeline|how-it-works)\b/i.test(block)
+    || /\b(how it works|how we work|the process|our process|what happens next|step by step|from .{3,30} to )\b/i.test(text)
+    || /class="[^"]*\b(step-number|step-index)\b/i.test(block)
+    || /counter\(/i.test(block)
+    || /class="[^"]*\bstep\b/i.test(itemOpen);
+}
+
 export function pickChainDonor(html: string): ChainDonor | null {
   const eligible = eligibleSections(html);
   if (!eligible.length) return null;
   const withItems = eligible.filter((sp) => ((html.slice(sp.start, sp.end).match(/<h3\b/gi) || []).length >= 2));
   if (!withItems.length) return null;
-  const d = withItems[withItems.length - 1];              // nearest the insertion point
+  // Prefer a section that is not describing a sequence; fall back to one only if that is all
+  // the page has.
+  const notSequence = withItems.filter((sp) => !describesASequence(html, sp, html.slice(sp.start, sp.start + 400)));
+  const pool = notSequence.length ? notSequence : withItems;
+  const d = pool[pool.length - 1];                        // nearest the insertion point
 
   const scan = scanHtml(html);
   const section = scan.all.find((el) => el.name === "section" && el.openStart === d.start);
@@ -351,34 +377,34 @@ export function chainClonedServicesBlock(html: string, services: ServiceFact[]):
 
   const heading = `${donor.headingOpen}Services</${donor.headingTag}>`;
 
-  // OUR OWN ROW, NOT THE DONOR'S CARD — and this is a contrast decision, not a style one.
+  // THE DONOR'S OWN ITEM, RESTORED — with the colour question answered at the right level.
   //
-  // Cloning the donor's item element gave our rows the page's own card look, and it also
-  // gave them the card's GROUND: a tint, a panel, a dark strip. Text colour does not
-  // follow — it comes from whatever rule our elements match, which was written for the
-  // section's ground, not the card's. Measured in pixels across the corpus, that pushed
-  // SEVEN blocks below AA that were above it before (alder-fig 3.85:1, vibrant-taco-truck
-  // 4.05:1, ironside-barbers-a9fa2 4.17:1, …) — near-white service names landing on a
-  // near-white card on alder-fig, our price inheriting a decorative accent on ironside.
-  // Two of those were the page's OWN pairing reproduced faithfully, which is no defence:
-  // a block we insert has to be readable where we put it.
+  // S1.1 stopped cloning the item element because cloning it put our rows on the card's
+  // tinted ground while their colour came from rules written for the SECTION's ground: seven
+  // blocks fell below AA. Dropping the clone fixed contrast and cost the thing the page
+  // actually looks like — Adrian: "services should be in boxes like they used to be."
   //
-  // So the chain gives us the page's INSET and the container gives us its rhythm, while
-  // the rows stay ours and sit on the ground the section proved. That is the split the
-  // whole donor rule was built on — take what the page proves, never what it merely has.
+  // Both are fixable at once, because the failure was never the card. It was that our OWN
+  // elements — the price span and the description — carried no colour rule of the card's, so
+  // they inherited one from elsewhere. The name never failed: it clones the donor's <h3>,
+  // which is inside the card and matches whatever rule the card sets.
+  //
+  // So: clone the item, clone its heading, and give our two additions `color: inherit` (in
+  // servicesBlockLayoutCss) so they take the colour of the element they are inside rather
+  // than a rule written for a different ground. Colour from the level the block occupies.
   const rows = services.map((s) => {
     const name = String(s.name || "").trim();
     const price = typeof s.price === "number" && Number.isFinite(s.price) && s.price > 0 ? money(s.price) : null;
     const desc = String(s.description || "").trim();
     const headOpen = donor.itemHeadOpen ?? "<h3>";
-    return `<div class="hubly-sv-row" data-hubly-sv-row>` +
+    return donor.itemOpen.replace(new RegExp(`^<${donor.itemTag}`, "i"), `<${donor.itemTag} data-hubly-sv-row`) +
       headOpen.replace(/^<h3/i, `<h3 data-hubly-service="${escAttr(name)}"`) + escText(name) + `</h3>` +
       (price ? `<span class="hubly-sv-price" data-hubly-price="${escAttr(name)}">${escText(price)}</span>` : "") +
-      // NOT THE DONOR'S <p>: a page's body-copy class is its most MUTED style, and
-      // cloning it took pixel failures from 3 to 20 when this was measured on the
-      // single-tag path.
+      // NOT the donor's <p> — a page's body-copy class is its most MUTED style, and cloning
+      // it took pixel failures from 3 to 20 when that was measured. Our own class, inheriting
+      // the card's colour.
       (desc ? `<p class="hubly-sv-desc" data-hubly-desc="${escAttr(name)}">${escText(desc)}</p>` : "") +
-      `</div>`;
+      `</${donor.itemTag}>`;
   }).join("");
 
   // STAMPED, because the column override is a rule we own on an element we built. The
@@ -521,6 +547,13 @@ export function servicesBlockLayoutCss(): string {
     // keeping. Found on ridgeline-pressure-washing, on the page Adrian walked.
     "[data-hubly-services-block] [data-hubly-sv-row]::before," +
     "[data-hubly-services-block] [data-hubly-sv-row]::after{content:none!important}" +
+    // COLOUR FROM THE LEVEL THE BLOCK OCCUPIES. Our two additions — the price and the
+    // description — are the only elements in the row that match no rule of the donor's, so
+    // they inherit from wherever the cascade reaches. Inside a cloned card that must be the
+    // CARD's colour, not a rule written for the section's ground: that mismatch is what put
+    // seven blocks below AA when the item clone was first tried.
+    "[data-hubly-services-block] [data-hubly-sv-row] .hubly-sv-price," +
+    "[data-hubly-services-block] [data-hubly-sv-row] .hubly-sv-desc{color:inherit}" +
     "[data-hubly-services-block] .hubly-sv-list{display:grid;gap:18px;margin-top:18px}" +
     "[data-hubly-services-block] .hubly-sv-row{display:grid;grid-template-columns:1fr auto;gap:8px 24px;align-items:baseline}" +
     "[data-hubly-services-block] .hubly-sv-row h3{margin:0}" +
