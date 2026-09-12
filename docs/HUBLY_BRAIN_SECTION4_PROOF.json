@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-09-12T03:00:15.127Z",
+  "checkedAt": "2026-09-12T03:24:35.044Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -272,7 +272,7 @@
     "timing": [
       {
         "expertId": "experience_director",
-        "executionTimeMs": 2
+        "executionTimeMs": 3
       },
       {
         "expertId": "research",
@@ -284,11 +284,11 @@
       },
       {
         "expertId": "creative_director",
-        "executionTimeMs": 0
+        "executionTimeMs": 1
       },
       {
         "expertId": "critic",
-        "executionTimeMs": 1
+        "executionTimeMs": 0
       }
     ],
     "failures": [
@@ -1094,7 +1094,7 @@
         {
           "expertName": "Creative Director",
           "expertId": "creative_director",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "reasoning": [
             {
               "reason": "Creative direction leans pressure washing that earns trust with before/after proof before asking for a booking so the first screen earns trust before asking for a booking.",
@@ -1604,7 +1604,7 @@
         {
           "expertName": "Critic",
           "expertId": "critic",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "reasoning": [
             {
               "reason": "Experts agree enough to proceed without overwhelming the owner.",
@@ -1649,7 +1649,7 @@
         {
           "expertName": "Builder Expert",
           "expertId": "builder",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "reasoning": [
             {
               "reason": "Classified as Business Change toward Understand Owner Request.",
@@ -1664,7 +1664,7 @@
           "output": {
             "type": "Builder Intent",
             "builderIntent": {
-              "intentId": "bint_mtxsrybu_g710td",
+              "intentId": "bint_mtxtn8t4_kffz6k",
               "version": "1.0.0",
               "originalRequest": "I'm starting a pressure washing company.",
               "intentCategory": "Business Strategy",
@@ -1695,7 +1695,7 @@
                   "confidence": 81
                 }
               ],
-              "timestamp": "2026-09-12T03:00:15.114Z",
+              "timestamp": "2026-09-12T03:24:35.032Z",
               "applied": false,
               "changePlanGenerated": false
             },
@@ -1708,7 +1708,7 @@
         {
           "expertName": "Experience Director",
           "expertId": "experience_director",
-          "executionTimeMs": 2,
+          "executionTimeMs": 3,
           "reasoning": [
             {
               "reason": "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
@@ -1912,7 +1912,7 @@
           "changedFromPrevious": "Strategy Expert produced Business Strategy; Creative Director advanced that into Creative Plan (confidence 88 → 84).",
           "confidence": 84,
           "status": "ok",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "outputType": "Creative Plan",
           "retries": 0
         },
@@ -1937,7 +1937,7 @@
           "changedFromPrevious": "Creative Director produced Creative Plan; Critic advanced that into Quality Report (confidence 84 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "outputType": "Quality Report",
           "retries": 0
         },
@@ -1963,7 +1963,7 @@
           "changedFromPrevious": "Critic produced Quality Report; Builder Expert advanced that into Builder Intent (confidence 87 → 81).",
           "confidence": 81,
           "status": "ok",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "outputType": "Builder Intent",
           "retries": 0
         },
@@ -1990,7 +1990,7 @@
           "changedFromPrevious": "Builder Expert produced Builder Intent; Experience Director advanced that into Experience Review (confidence 81 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 2,
+          "executionTimeMs": 3,
           "outputType": "Experience Review",
           "retries": 0
         }
