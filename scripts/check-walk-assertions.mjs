@@ -217,10 +217,21 @@ try {
       const landed = await m.frame.evaluate((frag) => {
         const el = document.getElementById(frag);
         if (!el) return { gone: true };
-        return { gone: false, top: Math.round(el.getBoundingClientRect().top), url: location.href };
+        const t = Math.round(el.getBoundingClientRect().top);
+        return {
+          gone: false, top: t, url: location.href,
+          scrollY: Math.round(window.scrollY),
+          maxScroll: Math.round(document.documentElement.scrollHeight - window.innerHeight),
+          onScreen: t >= -20 && t < window.innerHeight,
+        };
       }, id).catch(() => ({ gone: true }));
       if (landed.gone || landed.url !== r.before) notScrolling.push(`#${id} — the click navigated the frame to ${String(landed.url || "another document").slice(0, 60)}`);
-      else if (Math.abs(landed.top) > 150) notScrolling.push(`#${id} — nothing scrolled (target still ${landed.top}px away)`);
+      // ON SCREEN IS THE JOB, NOT AT THE TOP. A link to the LAST section scrolls the page to
+      // its maximum and leaves the target a few hundred pixels down — the browser has done
+      // everything it can, and the reader can see it. Measured: 3 of 40 pages hit this, all
+      // with scrollY === maxScroll. Requiring the target at the top would report those as
+      // failures forever and train us to ignore this check.
+      else if (!landed.onScreen) notScrolling.push(`#${id} — nothing scrolled (target still ${landed.top}px away, page at ${landed.scrollY} of ${landed.maxScroll})`);
     }
     await ctx1.close();
     record(1, "every in-page href=\"#…\" resolves AND scrolls to its target", deadAnchors.length === 0 && notScrolling.length === 0,
