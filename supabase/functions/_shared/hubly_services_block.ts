@@ -253,7 +253,36 @@ const firstDescendant = (el: ScannedEl, name: string): ScannedEl | null => {
  * Returns null when the donor has no repeated items to learn from; the caller then falls
  * back to the single-tag clone, which is what shipped before this.
  */
-export function chainClonedServicesBlock(html: string, services: ServiceFact[]): { block: string; insertAt: number } | null {
+/** What the chain clone needs from a donor, as strings ready to emit. Exported because
+ *  the CONTACT/HOURS block takes the identical path — one definition of "the chain", used
+ *  by both blocks, so they cannot drift into two answers about where the page's content
+ *  column is. That has happened five times in this codebase already. */
+export type ChainDonor = {
+  /** `<section …>` first, then each wrapper down to the item container's PARENT. Cleaned;
+   *  the section tag is left unstamped so each block marks it with its own attribute. */
+  opens: string[];
+  closes: string;
+  headingOpen: string;
+  headingTag: string;
+  /** The element whose own children are the donor's repeated items. */
+  containerOpen: string;
+  containerTag: string;
+  /** One item, and the elements inside it — open tags only. */
+  itemOpen: string;
+  itemTag: string;
+  itemHeadOpen: string | null;
+  itemBodyOpen: string | null;
+  insertAt: number;
+};
+
+/**
+ * THE CHAIN. Every element from the donor `<section>` down to the container that holds
+ * its repeated items, as open tags, plus the item template inside it.
+ *
+ * Returns null when the donor has no repeated items to learn from; callers fall back to
+ * the single-tag clone, which is what shipped before this.
+ */
+export function pickChainDonor(html: string): ChainDonor | null {
   const eligible = eligibleSections(html);
   if (!eligible.length) return null;
   const withItems = eligible.filter((sp) => ((html.slice(sp.start, sp.end).match(/<h3\b/gi) || []).length >= 2));
@@ -267,10 +296,9 @@ export function chainClonedServicesBlock(html: string, services: ServiceFact[]):
   if (!found) return null;
   const { container, items } = found;
 
-  // THE CHAIN: section → … → the container's parent. This is the part that carries the
-  // page's inset, and the reason it is cloned whole rather than at one level: the inset
-  // sits on the section's padding on one page, on an inner `div.shell` on the next, and
-  // on both at once on a third.
+  // section → … → the container's parent. Cloned whole rather than at one level because
+  // the inset sits on the section's padding on one page, on an inner `div.shell` on the
+  // next, and on both at once on a third.
   const chain: ScannedEl[] = [];
   for (let el: ScannedEl | null = container.parent; el; el = el.parent) {
     chain.unshift(el);
@@ -283,30 +311,84 @@ export function chainClonedServicesBlock(html: string, services: ServiceFact[]):
   const p = firstDescendant(template, "p");
   const h2 = firstDescendant(section, "h2");
 
-  const opens = chain.map((el, i) =>
-    i === 0
-      ? cleanClonedOpen(openTagOf(el, html)).replace(/^<section/i, `<section data-hubly-section="services" data-hubly-services-block`)
-      : cleanClonedOpen(openTagOf(el, html)));
-  const closes = chain.map((el) => `</${el.name}>`).reverse().join("");
-  const heading = h2 ? `${cleanClonedOpen(openTagOf(h2, html))}Services</${h2.name}>` : `<h2>Services</h2>`;
+  return {
+    opens: chain.map((el) => cleanClonedOpen(openTagOf(el, html))),
+    closes: chain.map((el) => `</${el.name}>`).reverse().join(""),
+    headingOpen: h2 ? cleanClonedOpen(openTagOf(h2, html)) : "<h2>",
+    headingTag: h2 ? h2.name : "h2",
+    containerOpen: cleanClonedOpen(openTagOf(container, html)),
+    containerTag: container.name,
+    itemOpen: cleanClonedOpen(openTagOf(template, html)),
+    itemTag: template.name,
+    itemHeadOpen: h3 ? cleanClonedOpen(openTagOf(h3, html)) : null,
+    itemBodyOpen: p ? cleanClonedOpen(openTagOf(p, html)) : null,
+    insertAt: d.end,
+  };
+}
 
-  // OPEN TAGS ONLY, NEVER THE DONOR'S TEXT. Its prose is about something else, and
-  // shipping it as ours would be the fabricated-content defect wearing a layout fix.
+/** Put a block's own inner content inside the donor's chain, stamping the section with
+ *  whatever attributes the block marks itself by. Shared with hubly_contact.ts. */
+export function wrapInChain(donor: ChainDonor, sectionAttrs: string, inner: string, innermostAttrs?: string): string {
+  const last = donor.opens.length - 1;
+  const opens = donor.opens.map((o, i) => {
+    let t = i === 0 ? o.replace(/^<section/i, `<section ${sectionAttrs}`) : o;
+    // The INNERMOST wrapper can be marked too, because a later edit that adds a row to
+    // this block has to put it INSIDE the chain. Before the chain existed, "append before
+    // </section>" was the same place; now it is outside the wrapper that carries the
+    // page's inset, and the added row would land full-bleed — the exact defect the chain
+    // fixes, reintroduced by the next edit.
+    if (innermostAttrs && i === last) t = t.replace(/^<([a-z][a-z0-9]*)/i, (_m, tag) => `<${tag} ${innermostAttrs}`);
+    return t;
+  });
+  return opens.join("") + inner + donor.closes;
+}
+
+/** The services block built by cloning the donor's chain, with our rows inside the
+ *  donor's own item element. */
+export function chainClonedServicesBlock(html: string, services: ServiceFact[]): { block: string; insertAt: number } | null {
+  const donor = pickChainDonor(html);
+  if (!donor) return null;
+
+  const heading = `${donor.headingOpen}Services</${donor.headingTag}>`;
+
+  // OUR OWN ROW, NOT THE DONOR'S CARD — and this is a contrast decision, not a style one.
+  //
+  // Cloning the donor's item element gave our rows the page's own card look, and it also
+  // gave them the card's GROUND: a tint, a panel, a dark strip. Text colour does not
+  // follow — it comes from whatever rule our elements match, which was written for the
+  // section's ground, not the card's. Measured in pixels across the corpus, that pushed
+  // SEVEN blocks below AA that were above it before (alder-fig 3.85:1, vibrant-taco-truck
+  // 4.05:1, ironside-barbers-a9fa2 4.17:1, …) — near-white service names landing on a
+  // near-white card on alder-fig, our price inheriting a decorative accent on ironside.
+  // Two of those were the page's OWN pairing reproduced faithfully, which is no defence:
+  // a block we insert has to be readable where we put it.
+  //
+  // So the chain gives us the page's INSET and the container gives us its rhythm, while
+  // the rows stay ours and sit on the ground the section proved. That is the split the
+  // whole donor rule was built on — take what the page proves, never what it merely has.
   const rows = services.map((s) => {
     const name = String(s.name || "").trim();
     const price = typeof s.price === "number" && Number.isFinite(s.price) && s.price > 0 ? money(s.price) : null;
     const desc = String(s.description || "").trim();
-    const headOpen = h3 ? cleanClonedOpen(openTagOf(h3, html)) : "<h3>";
-    return cleanClonedOpen(openTagOf(template, html)) +
+    const headOpen = donor.itemHeadOpen ?? "<h3>";
+    return `<div class="hubly-sv-row" data-hubly-sv-row>` +
       headOpen.replace(/^<h3/i, `<h3 data-hubly-service="${escAttr(name)}"`) + escText(name) + `</h3>` +
       (price ? `<span class="hubly-sv-price" data-hubly-price="${escAttr(name)}">${escText(price)}</span>` : "") +
-      (desc ? descOpen(p ? cleanClonedOpen(openTagOf(p, html)) : `<p class="hubly-sv-desc">`, name) + escText(desc) + `</p>` : "") +
-      `</${template.name}>`;
+      // NOT THE DONOR'S <p>: a page's body-copy class is its most MUTED style, and
+      // cloning it took pixel failures from 3 to 20 when this was measured on the
+      // single-tag path.
+      (desc ? `<p class="hubly-sv-desc" data-hubly-desc="${escAttr(name)}">${escText(desc)}</p>` : "") +
+      `</div>`;
   }).join("");
 
+  // STAMPED, because the column override is a rule we own on an element we built. The
+  // marker goes on AFTER cleanClonedOpen, which strips data-hubly-* off a clone.
+  const containerOpen = donor.containerOpen
+    .replace(new RegExp(`^<${donor.containerTag}`, "i"), `<${donor.containerTag} data-hubly-sv-list`);
+  const inner = heading + containerOpen + rows + `</${donor.containerTag}>`;
   return {
-    block: opens.join("") + heading + cleanClonedOpen(openTagOf(container, html)) + rows + `</${container.name}>` + closes,
-    insertAt: d.end,
+    block: wrapInChain(donor, `data-hubly-section="services" data-hubly-services-block`, inner),
+    insertAt: donor.insertAt,
   };
 }
 
@@ -413,6 +495,32 @@ export function addServicesBlock(html: string, services: ServiceFact[], accent?:
 export function servicesBlockLayoutCss(): string {
   return (
     "\n<style data-hubly-sv-css>" +
+    // THE COLUMN TEMPLATE IS A FACT ABOUT THE DONOR'S CONTENT, NOT ABOUT THE PAGE'S
+    // SPACING. The chain clone takes the donor's nesting, classes and ground — that is
+    // where the page's inset lives, and it is why the block finally sits in the content
+    // column. What it must NOT take is how many columns the donor's items are laid out
+    // in: the donor chose three because it had three things to say. Three services then
+    // fill three cells and two leave one empty; two services in a three-up grid on
+    // ironside-barbers-a9fa2 rendered as two cards and a visible empty one, and on
+    // aviation-lessons-in-lehi as 148px columns with "Express Wash" wrapped onto two
+    // lines. Measured over the 129 pages that receive a block: every container we clone
+    // is a grid (121) or a plain block (8) — not one flex row — so one property covers
+    // the corpus, and it is scoped to the marker we stamp on our own container.
+    // The second declaration is the gap under our heading, which the single-tag path has
+    // always had (`.hubly-sv-list{margin-top:18px}`). Inside the chain our heading sits
+    // outside the cloned container, so without it "Services" lands directly on the first
+    // row — visible on ridgeline-pressure-washing. Same rule, same marker, our element.
+    "[data-hubly-services-block] [data-hubly-sv-list]{grid-template-columns:1fr!important;margin-top:18px}" +
+    // THE DONOR'S NUMBERING IS THE DONOR'S CONTENT TOO. The item class we clone often
+    // paints a step badge from a CSS counter (`.step:before{content:counter(steps)}`).
+    // Cloned onto our rows the counter never increments, so every service gets a "0" or
+    // "00" circle — and even when it numbered correctly it would be wrong, because
+    // services are a list and not a sequence (the same reason stripDecorativeOrdinals
+    // exists). Measured across the 129 pages that receive a block: 9 paint a pseudo
+    // element on our rows and ALL NINE are counters — no icons, no rules, nothing worth
+    // keeping. Found on ridgeline-pressure-washing, on the page Adrian walked.
+    "[data-hubly-services-block] [data-hubly-sv-row]::before," +
+    "[data-hubly-services-block] [data-hubly-sv-row]::after{content:none!important}" +
     "[data-hubly-services-block] .hubly-sv-list{display:grid;gap:18px;margin-top:18px}" +
     "[data-hubly-services-block] .hubly-sv-row{display:grid;grid-template-columns:1fr auto;gap:8px 24px;align-items:baseline}" +
     "[data-hubly-services-block] .hubly-sv-row h3{margin:0}" +

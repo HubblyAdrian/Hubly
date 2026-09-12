@@ -6008,3 +6008,138 @@ matches ours. Your call.
 
 **Nothing is deployed.** The code is in the working tree and on the branch; edge functions go
 live only via `supabase functions deploy`, which has not been run.
+
+## The ridgeline-pressure-washing walk: what the rows said, and the four fixes (2026-09-12)
+
+Adrian walked a real signup at 05:45 and found four failures. This is what the RECORD says
+about them, read before anything was reconstructed from the chat.
+
+**`placement_outcomes` for this business — three rows, and one that should exist and does not:**
+
+| time | fn | branch | detail |
+|---|---|---|---|
+| 05:45:04 | `applyServicesToFreeform` | not_freeform | no website document (the page did not exist yet) |
+| 05:46:37 | `applyBusinessNameToFreeform` | **placed** | the name landed |
+| 05:47:40 | `applyServicesToFreeform` | none_on_page | `placed=0 missing=3 noSection` |
+
+`business_documents` shows v3 at **05:47:52** carrying `data-hubly-services-block` — the
+services area went on the page twelve seconds after that last row, and **nothing recorded
+it**. Cause, found by reading the code the rows pointed at: in `addServicesSection` the
+`notePlacement(… "inserted" …)` call sat INSIDE the `if (!saved)` failure branch, so the
+one path that actually puts a services area on a page wrote a row only when it had just
+failed to. Fixed — the success row is now on the success path. A table that records only
+failures cannot be read as a rate, which is the whole reason the table exists.
+
+### W1 — both blocks were set outside the page's content column, on a page generated tonight
+
+Measured on the stored v4, mounted the way the product mounts it:
+
+| | before | after |
+|---|---|---|
+| page's content column starts at | 80px | 80px |
+| services block text starts at | **0px** | **80px** |
+| hours block text starts at | **0px** | **80px** |
+| price column right edge | **1280px** (the viewport edge) | **1200px** (inside the column) |
+
+The clipping needed no separate fix: **it falls out of the inset.** A full-bleed block with a
+right-aligned price column puts the price against the viewport edge with no gutter; put the
+block in the content column and the price lands at the column's right edge. Before/after:
+`docs/shots/ridgeline-blocks-before.png`, `docs/shots/ridgeline-blocks-after.png`.
+
+On the heading size, the measurement disagrees with the impression: our `<h2>` renders at
+51.2px and so do the page's own section headings (`Start with the surface`, `Request service
+online`). It read as too big because it was in the wrong PLACE — 51.2px type starting at x=0
+beside content inset to 80px. Same size, wrong column.
+
+**The hours block had the identical fault, and that is the finding**: two blocks, one defect.
+Both now take one shared function (`pickChainDonor` / `wrapInChain` in
+`hubly_services_block.ts`), so there is no second definition of "where the page's content
+column is" to drift. `scripts/lib/block-chain.check.ts` asserts the property on both.
+
+### The donor ruling, measured — all three numbers, both fixtures
+
+Chain cloned, column template overridden on our own marker, rows kept ours:
+
+| | old | new (2 services) | new (4 services) |
+|---|---|---|---|
+| inset matches the content-column start (±12px) | 37/129 | **105/129** | **105/129** |
+| same, ±24px | 41/129 | 111/129 | 111/129 |
+| rows under 160px wide | 0 | **0** | **0** |
+| content overflowing its box | 0 | 0 | 0 |
+| first row filling <60% of the block | 0 | **0** | **0** |
+| pixel contrast — blocks readable at 4.5:1 | 129/132 | **130/132** | — |
+
+**Contrast did not regress; it improved by one** (`tamale-selling-business`, 3.20:1, now
+readable). The seven sub-AA blocks from the first attempt are gone, and the cause was not
+the one either of us proposed: it was cloning the donor's ITEM ELEMENT. That gave our rows
+the card's tinted ground while their colour came from rules written for the section's
+ground — near-white names on a near-white card (`alder-fig` 3.85:1), our price inheriting a
+decorative accent (`ironside-barbers-a9fa2` 4.17:1) — and on two pages it faithfully
+reproduced a pairing the page itself has below AA (`vibrant-taco-truck` 4.05:1), which is no
+defence for a block we insert. **So the chain gives the inset, the container gives the
+rhythm, and the rows stay ours on the ground the section proved.**
+
+Two additions beyond the ruled "column template and nothing else", both on our own marker,
+both stated rather than slipped in:
+- `margin-top:18px` on our container — the single-tag path always had it; inside the chain
+  our heading sits outside the container, so without it "Services" lands on the first row.
+- `content:none` on our rows' `::before`/`::after` — the donor's item class often paints a
+  step badge from a CSS counter, which cloned onto our rows renders "0". Measured: 9 of 129
+  pages paint a pseudo-element on our rows and **all nine are counters** — no icons, nothing
+  worth keeping. Visible on ridgeline itself, where the page's OWN cards also render "0"
+  badges (its counter never increments) — a live defect of the page we did not cause and
+  have not fixed.
+
+### W2 — the name question had two writers
+
+The transcript: seq 2 at 05:45:11 (model narration ending "What's the business called?"),
+seq 3 at 05:45:53 (the standalone ask, verbatim). The standalone ask is composed
+CLIENT-side (`isTalkBizTitle`, `public/hubly.html`) — not in `hubly_owner_replies.ts`, which
+is where every owner-facing string is supposed to live; worth knowing before the next
+attempt to edit that sentence in a prompt.
+
+Removed from the model's side in two places (`startDraft`'s result summary, and the `unnamed`
+argument description, which told it to ask as a precondition). `scripts/check-one-writer-per-question.mjs`
+holds it from both ends: statically, that nothing instructs the model to ask for a name; and
+against the record, that no business has two consecutive assistant turns asking the same
+question. It found a SECOND business with the identical pair — `george-s-window-cleaning-company`,
+2026-09-10 — which is why both are recorded as known-and-dated rather than hidden.
+
+**Other questions with two possible writers: none found.** The client's talk-step questions
+(owner name, phone, trade, specialty, city, packages) have no counterpart instruction on the
+server; the only other model-side ask is the address-change confirmation, which has one writer.
+
+### W3 — the permission question is gone
+
+`applyServicesToFreeform` now adds the area and places the services in the same move when the
+page has none, and reports what actually happened afterwards. The offer sentence in
+`composeServicesTruth` is replaced by a plain statement of failure for the case where the
+area could not be added at all — reaching it is now a defect, not a decision to hand back.
+
+### W4 — the photo promise, reported only, nothing changed
+
+"Send me the truck photo and I'll put it on the front of the draft" (seq 14). Keepability,
+counted over all 160 freeform pages using the production matcher:
+
+| | |
+|---|---|
+| ladder 1 — a hidden work slot to un-hide | 6 |
+| ladder 2 — a stock image on the page to swap | 128 |
+| **neither — the promise cannot be kept** | **26** |
+| keepable | **134 / 160 (84%)** |
+
+**But not on his page.** `ridgeline-pressure-washing` has no photo slot, no `placed_images`
+rows, and **zero `<img>` tags at all** — the generator produced a page with no images, so the
+placer would have returned `no_slot`, stored the photo, and told him it is not on the page.
+The promise was unkeepable at the moment it was made.
+
+Two further cautions on that sentence: the placer deprioritises the hero (`rolePref` puts it
+last), so even a success is usually not "the front"; and `placed_images` holds 4 customer rows
+across 2 businesses, which is the "four times in three weeks" figure and is consistent with
+the promise being made far more often than it is kept.
+
+**Correction to my own first number here:** the initial pass reported 4% keepable because it
+compared raw URLs against the page, where the html carries `&amp;`. Production escapes the URL
+before matching (`escUrlForMatch`); with that, 84%. A harness that re-implements a production
+matcher measures its replica (Lesson 34) — caught before it was reported, by checking the
+production function rather than trusting the number.

@@ -22,7 +22,8 @@
 
 /** Digits-only comparison key: strip non-digits, drop a leading US 1, last 10.
  *  Mirrors public/hubly.html phoneDigits. Never displayed. */
-import { pickDonorSection, cleanClonedOpen } from "./hubly_services_block.ts";
+import { pickDonorSection, cleanClonedOpen, pickChainDonor, wrapInChain } from "./hubly_services_block.ts";
+import { scanHtml } from "./hubly_html_scan.ts";
 
 export function phoneDigitsKey(raw: string): string {
   let d = String(raw || "").replace(/\D/g, "");
@@ -377,6 +378,21 @@ function addIntoExistingBlock(html: string, facts: ContactBlockFacts): { html: s
     const out = html.replace(listRe, (_m, open: string, mid: string, close: string) => open + mid + rowsHtml + close);
     return { html: out, changed: true, added };
   }
+  // INSIDE THE CHAIN, not before the section's close. A block built by cloning the
+  // donor's chain keeps its content inside a wrapper that carries the page's inset;
+  // appending before </section> would put the new list outside it, full-bleed, which is
+  // the defect the chain was built to fix arriving one edit later.
+  //
+  // FOUND BY SCANNING, NOT BY A NON-GREEDY REGEX. `<div data-hubly-ch-body>…</div>` with
+  // an hours <dl> inside it contains other <div>s, and `[\s\S]*?</div>` stops at the
+  // first of them — which put the contact list INSIDE the hours list. Caught by
+  // scripts/lib/block-chain.check.ts before it shipped; the scanner knows where an
+  // element actually ends.
+  const body = scanHtml(html).all.find((el) => "data-hubly-ch-body" in el.attrs);
+  if (body && body.closeStart > body.openEnd) {
+    const out = html.slice(0, body.closeStart) + `<ul class="hubly-ch-list">${rowsHtml}</ul>` + html.slice(body.closeStart);
+    return { html: out, changed: true, added };
+  }
   const blockCloseRe = /(<section\b[^>]*\bdata-hubly-contact-block\b[\s\S]*?)(<\/section>)/i;
   const out = html.replace(blockCloseRe, (_m, body: string, close: string) => body + `<ul class="hubly-ch-list">${rowsHtml}</ul>` + close);
   return { html: out, changed: out !== html, added };
@@ -471,10 +487,27 @@ export function placeContactHoursInFreeform(
       // image it inherits the body's text colour and lands wherever the gradient is
       // darkest. Clone a real content section's shell instead of composing one: the
       // page already contains sections proved readable on its own ground.
-      const donor = pickDonorSection(out);
+      // THE SAME PATH AS THE SERVICES BLOCK, and by the same function — pickChainDonor.
+      // Adrian walked ridgeline-pressure-washing on 2026-09-12 and both blocks carried the
+      // identical fault: set at x=0 while the page's own content began at 80, with the
+      // right-hand column flush against the viewport edge. It was never a services bug. A
+      // defect written once in this codebase is present twice, so the fix is shared code
+      // rather than the same edit applied twice — the sixth pair of gates this week would
+      // otherwise have been these two.
+      //
+      // The chain carries the inset; the block keeps its OWN inner rows (a <dl> of hours
+      // is not a list of cards, and must not be dropped into the donor's item grid).
+      const chain = pickChainDonor(out);
+      const donor = chain ? null : pickDonorSection(out);
       let at: number;
       let css: string;
-      if (donor) {
+      if (chain) {
+        const inner = block.replace(/^<section\b[^>]*>/i, "").replace(/<\/section>\s*$/i, "")
+          .replace(/^<h2>([\s\S]*?)<\/h2>/i, (_m, t) => `${chain.headingOpen}${t}</${chain.headingTag}>`);
+        block = wrapInChain(chain, `data-hubly-contact-block`, inner, `data-hubly-ch-body`);
+        at = chain.insertAt;
+        css = contactHoursLayoutCss();
+      } else if (donor) {
         const openTag = cleanClonedOpen(donor.open).replace(/^<section/i, `<section data-hubly-contact-block`);
         const headOpen = cleanClonedOpen(donor.headingOpen);
         // Re-shell the composed block: keep its inner rows, take the page's wrapper.

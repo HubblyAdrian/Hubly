@@ -4501,9 +4501,48 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
       return { status: "failed", placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, leakedAttrText: r.leakedAttrText, detail: "save" };
     }
   }
-  // Only when there is genuinely no section to insert into is a rebuild the answer.
-  // Compute what that rebuild would COST now, so the offer names it BEFORE the owner
-  // agrees (how many of their edits it would lose), never in the past tense after.
+  // NO PERMISSION QUESTION. The owner asked for three services on his page; whether a
+  // section has to be built first is OUR problem, not a decision to hand back to him.
+  // Until 2026-09-12 this returned noSection and the reply asked "want me to add one?" —
+  // ridgeline-pressure-washing, seq 8, on a walk Adrian did himself. He said yes, and the
+  // section that then appeared was one call away the whole time. So make that call here,
+  // in the same move, and report what actually happened afterwards.
+  //
+  // This is the SMALL answer, not a rebuild: addServicesBlock adds the area and leaves
+  // everything else on the page alone. A rebuild is still never offered here.
+  if (r.noSection && !(r.placed || []).length) {
+    const bizRow = await selectOne("businesses", "id", draftId, "brand_color");
+    const base = r.changed && r.html ? r.html : latest.renderedHtml;
+    const block = addServicesBlock(base, services, String((bizRow as any)?.brand_color || ""), allServiceAnchors(base).length);
+    if (block.changed) {
+      const saved = await callBusinessRpc("create_business_document", {
+        p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
+        p_document: latest.brief, p_rendered_html: stripEditorChrome(block.html, "services"),
+        p_created_by: "patch", p_format: "html", p_owner_id: ownerUid || null,
+      });
+      if (saved && saved.ok === true) {
+        // VERIFIED IN THE BYTES, not from the writer's word (Lesson 11): a service is
+        // only reported as placed if its name — and its price, when it has one — are in
+        // the html that was actually saved.
+        const verified = services.filter((sv) => {
+          const nameIn = block.html.includes(String(sv.name).trim());
+          const priceIn = typeof sv.price !== "number" || block.html.includes(fmtServicePrice(sv.price));
+          return nameIn && priceIn;
+        });
+        notePlacement("applyServicesToFreeform", "section_added", draftId,
+          `added=${(block.inserted || []).length} verified=${verified.length} mode=${block.detail ?? "-"}`);
+        return { status: verified.length === services.length ? "placed" : "partial",
+          placed: verified, verifiedPlaced: verified,
+          missing: services.filter((sv) => !verified.includes(sv)).map((sv) => sv.name),
+          inserted: block.inserted, where: "services section", changed: true } as ServicesPlacement;
+      }
+      notePlacement("applyServicesToFreeform", "section_save_failed", draftId, JSON.stringify(saved || null).slice(0, 120));
+    } else {
+      notePlacement("applyServicesToFreeform", "section_not_added", draftId, `via=${block.via} detail=${block.detail ?? "-"}`);
+    }
+  }
+  // If even that could not run, the page genuinely has nowhere to put them. Compute what
+  // a rebuild would COST, so any later offer names it BEFORE the owner agrees.
   let lostEdits: number | undefined;
   if (r.noSection) {
     try { const plan = await planFreeformRegeneration(draftId); lostEdits = plan.lost.length; } catch { /* best-effort */ }
@@ -6754,15 +6793,15 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
                 "'Aviation Business' are all CONSTRUCTIONS — descriptions of a job, cut to different widths. A name " +
                 "is a name because A PERSON CHOSE IT, and no amount of narrowing turns a description into a choice.\n\n" +
                 "This is not a judgement call and confidence is not a licence. If you are assembling words into a " +
-                "name, stop: omit it and pass unnamed: true. The build still happens immediately — you ask what it " +
-                "is called in the SAME reply, while the page builds. The rule used to say 'derive one specific " +
+                "name, stop: omit it and pass unnamed: true. The build still happens immediately, and HUBLY asks what " +
+                "it is called on its own — you do not ask. The rule used to say 'derive one specific " +
                 "enough to be a name', and on the first sentence anyone typed at it — 'I do mobile detailing in los " +
                 "angeles' — it minted that as both the name and the permanent web address of a real person.",            },
             unnamed: {
               type: "boolean",
               description:
-                "Set true ONLY when you asked what the business is called and they declined, ignored it, " +
-                "or gave something that is plainly not a name. The record is marked as having no name yet " +
+                "Set true ONLY when the name is not in what they said — they gave none, declined, ignored the " +
+                "question Hubly asked, or gave something that is plainly not a name. The record is marked as having no name yet " +
                 "and the site says so, which is an honest gap they can close in one sentence — never a " +
                 "real-looking name they did not choose and cannot change.",
             },
@@ -6916,7 +6955,16 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
                 // branch. The mandatory call goes FIRST; the question is scoped to the reply TEXT.
                 `You are NOT finished. Call website.generateDocument now, in this same turn, exactly as you would for a named business — ` +
                 `a business row with no generated page is an empty skeleton, which is worse than no signup at all. ` +
-                `Then, in the reply text, ask what the business is called: one short question. ` +
+                // THE QUESTION HAS EXACTLY ONE WRITER, AND IT IS NOT YOU. Hubly's own
+                // standalone ask ("What's the business called?", composed client-side —
+                // isTalkBizTitle in public/hubly.html) is what actually asks. This used
+                // to say "ask what the business is called", and on
+                // ridgeline-pressure-washing the owner got the question twice in a row:
+                // the narration ended with it at 05:45:11 and the standalone ask repeated
+                // it verbatim at 05:45:53. Two writers of one question, and the first pair
+                // of gates this week an owner could see. Describe what you are making and
+                // stop; the ask arrives on its own.
+                `Then write ONE short line about what you are making — and do NOT ask what the business is called, or ask for a name in any other words. Hubly asks that itself, immediately after you. ` +
                 `Do not invent a name, do not describe the address, and never wait for the name before building.`
               : `Real business created and live at ${url} — this is a real, visitable site, not a mockup.`,
             raw: { id: r.id, slug: r.slug, draftToken: r.draft_token, url, draftGrant },
@@ -7491,9 +7539,16 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           });
           if (!saved || saved.ok !== true) {
             notePlacement("addServicesBlock", "save_failed", draftId, JSON.stringify(saved || null).slice(0, 120));
-            notePlacement("addServicesBlock", "inserted", draftId, `inserted=${(r.inserted || []).length}`);
-          return { ok: false, real: false, error: "save_failed", summary: "The area was built but could not be saved, so it is NOT on the page." };
+            return { ok: false, real: false, error: "save_failed", summary: "The area was built but could not be saved, so it is NOT on the page." };
           }
+          // THE SUCCESS ROW, WHICH WAS INSIDE THE FAILURE BRANCH. `inserted` was recorded
+          // only when the save had just failed — so it never fired on success, and the
+          // one path that actually puts a services area on a page wrote nothing to
+          // placement_outcomes. Found by reading the rows for ridgeline-pressure-washing:
+          // the table showed the refusal at 05:47:40 and had nothing to say about the
+          // block that landed at 05:47:52. A table that records only failures cannot be
+          // read as a rate, which is the reason every other branch here writes a row.
+          notePlacement("addServicesBlock", "inserted", draftId, `inserted=${(r.inserted || []).length} mode=${r.detail ?? "-"}`);
           const url = `https://${(bizRow as any)?.slug}.${HUBLY_DOMAIN}`;
           const named = r.inserted.join(", ");
           return {

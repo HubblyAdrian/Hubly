@@ -129,16 +129,20 @@ export function composeServicesTruth(placement: ServicesPlacementLike, url: stri
     // AND THE ANSWER CHANGED. "The only way is to rebuild the whole page from scratch"
     // was an enormous response to "here are my prices", and on the signup path it read
     // as the product being broken. There is a small answer now: add the area.
+    // NO PERMISSION QUESTION — RULED 2026-09-12. This used to read "Your page doesn't
+    // have a section listing your services yet — want me to add one with X, Y and Z in
+    // it?", and Adrian got it on his own walk (ridgeline-pressure-washing, seq 8). He
+    // asked for three services on his page; whether a section has to be built first is
+    // our problem. applyServicesToFreeform now builds and places in the same move, so
+    // reaching this line means the page HAS no services area AND we could not add one.
+    // That is a failure to state plainly, not an offer to make.
     if (placement.noSection) {
-      const names = (placement.missing || []).slice(0, 3);
-      const withPrices = (placement.placed || []).length ? [] : names;
-      const what = withPrices.length ? andList(withPrices) : "them";
-      return `I've saved those to your record. Your page doesn't have a section listing your services yet — want me to add one with ${what} in it?`;
+      return `I've saved those to your record, but I couldn't get a services area onto your page, so they aren't showing there yet.`;
     }
     // `what` belongs to the noSection branch above and is NOT in scope here — this is the
     // OTHER failure: the page has somewhere to put them and the placement still failed.
     // Naming them again would be a second list; the offer is the same either way.
-    return `I've saved those to your record, but I couldn't get them onto the page, so they aren't showing yet. Want me to add a services list to your page?`;
+    return `I've saved those to your record, but I couldn't get them onto the page, so they aren't showing yet.`;
   }
   if (placement.status === "no_prices") {
     // Names are on the page; no prices were given. Let the model ask for them —

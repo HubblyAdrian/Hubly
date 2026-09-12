@@ -1192,3 +1192,30 @@ harness that re-implemented `findServiceEntryBounds`. **This one was in our inst
 in the product, which is the reason to write it down: the discipline we apply to the code is
 not yet applied to the things that measure the code, and a wrong instrument does not fail —
 it reports.**
+
+## Lesson 38 — never create a file with a redirect onto a path you have not checked is empty
+
+Building the shared mount module, I needed a small tag walker and wrote it to
+`supabase/functions/_shared/hubly_html_scan.ts` with `cat > … <<'EOF'`. That path already
+held a 279-line HTML scanner — the one with byte-range element bounds, raw-text handling
+for `<style>`, and the comment explaining why it never rebuilds a document. The redirect
+destroyed it. The next `deno check` failed on a missing export and `git checkout` restored
+it inside a minute.
+
+It cost nothing only because the repo happened to be clean at that moment. It has not
+always been, and it will not always be — half of tonight's work sat uncommitted for an hour
+at a time.
+
+**Rule: a redirect (`>`, `cat >`, `tee`) may only create a file at a path confirmed not to
+exist.** Check first, or use the Write tool, which refuses to overwrite a file this session
+has not read. The same applies to `mv` onto an existing path and to `cp` over one.
+
+The deeper version is the one already written down for the product: **look at the target
+before you overwrite it.** I have been applying that rule all week to generated pages —
+never regenerate what you can patch, never discard a draft, never replace what you have not
+read — while running commands that do exactly that to my own repository. A tool that
+destroys silently is a tool that needs the check built in, not remembered.
+
+And the restore is the other half of the lesson: it worked because the file was committed.
+The instruments deserve the same discipline as the product — commit before a session of
+file surgery, so `git checkout` is always available as the undo.
