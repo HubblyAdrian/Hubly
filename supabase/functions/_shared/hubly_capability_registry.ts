@@ -4482,7 +4482,10 @@ async function applyBusinessNameToFreeform(draftId: string, draftToken: string, 
 
 async function applyServicesToFreeform(draftId: string, draftToken: string, services: { name: string; price?: number; description?: string }[], ownerUid?: string | null): Promise<ServicesPlacement> {
   const latest = await selectLatestBusinessDocument(draftId, "website");
-  if (!latest || latest.format !== "html") return { status: "not_freeform", placed: [], missing: services.map((s) => s.name) };
+  if (!latest || latest.format !== "html") {
+    notePlacement("applyServicesToFreeform", "not_freeform", draftId, latest ? `format=${latest.format}` : "no website document");
+    return { status: "not_freeform", placed: [], missing: services.map((s) => s.name) };
+  }
   const r = placeServicesInFreeform(latest.renderedHtml, services) as ServicesPlacement & { html: string };
   if (r.changed && r.html) {
     const saved = await callBusinessRpc("create_business_document", {
@@ -4490,7 +4493,10 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
       p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "services"), p_created_by: "patch", p_format: "html",
       p_owner_id: ownerUid || null,
     });
-    if (!saved || saved.ok !== true) return { status: "failed", placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, leakedAttrText: r.leakedAttrText, detail: "save" };
+    if (!saved || saved.ok !== true) {
+      notePlacement("applyServicesToFreeform", "failed", draftId, `create_business_document rejected: ${JSON.stringify(saved || null).slice(0, 120)}`);
+      return { status: "failed", placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, leakedAttrText: r.leakedAttrText, detail: "save" };
+    }
   }
   // Only when there is genuinely no section to insert into is a rebuild the answer.
   // Compute what that rebuild would COST now, so the offer names it BEFORE the owner
@@ -4499,6 +4505,11 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
   if (r.noSection) {
     try { const plan = await planFreeformRegeneration(draftId); lostEdits = plan.lost.length; } catch { /* best-effort */ }
   }
+  // EVERY OUTCOME, not just the failures. A branch count with no denominator cannot be
+  // read as a rate — and this is the function whose silence made tonight's forensics
+  // necessary: it refused three services and left no row anywhere.
+  notePlacement("applyServicesToFreeform", r.status, draftId,
+    `placed=${(r.placed || []).length} missing=${(r.missing || []).length}${r.noSection ? " noSection" : ""}`);
   return { status: r.status, placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, lostEdits, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, leakedAttrText: r.leakedAttrText, changed: r.changed };
 }
 
@@ -7462,10 +7473,12 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           // inserter about the same page. It is given the answer now.
           const r = addServicesBlock(latest.renderedHtml, clean, String((bizRow as any)?.brand_color || ""), allServiceAnchors(latest.renderedHtml).length);
           if (r.via === "anchor") {
+            notePlacement("addServicesBlock", "already_has_services", draftId, `detail=${r.detail ?? "-"}`);
             return { ok: false, real: false, error: "already_has_services",
               summary: "That page already has a services area, so a second one would be wrong. Add the services the normal way instead." };
           }
           if (!r.changed) {
+            notePlacement("addServicesBlock", "not_placed", draftId, `via=${r.via} detail=${r.detail ?? "-"}`);
             return { ok: false, real: false, error: "not_placed", summary: "I couldn't add the area to the page just now. It has NOT been added." };
           }
           const saved = await callBusinessRpc("create_business_document", {
@@ -7474,7 +7487,9 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_created_by: "patch", p_format: "html", p_owner_id: ownerUid || null,
           });
           if (!saved || saved.ok !== true) {
-            return { ok: false, real: false, error: "save_failed", summary: "The area was built but could not be saved, so it is NOT on the page." };
+            notePlacement("addServicesBlock", "save_failed", draftId, JSON.stringify(saved || null).slice(0, 120));
+            notePlacement("addServicesBlock", "inserted", draftId, `inserted=${(r.inserted || []).length}`);
+          return { ok: false, real: false, error: "save_failed", summary: "The area was built but could not be saved, so it is NOT on the page." };
           }
           const url = `https://${(bizRow as any)?.slug}.${HUBLY_DOMAIN}`;
           const named = r.inserted.join(", ");

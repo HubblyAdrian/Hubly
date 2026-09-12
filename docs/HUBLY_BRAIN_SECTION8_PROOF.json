@@ -4,7 +4,7 @@
   "passed": true,
   "version": "1.0.0",
   "owner": "hubly_brain",
-  "checkedAt": "2026-09-12T03:29:26.341Z",
+  "checkedAt": "2026-09-12T04:41:17.627Z",
   "proofs": [
     "Reasoning Engine module exists",
     "Reasoning Object type exists",
@@ -121,7 +121,7 @@
   "evidence": {
     "reasoningObjects": [
       {
-        "reasoningId": "rsn_mtxtthkh_0ykoav",
+        "reasoningId": "rsn_mtxwdw6g_06fumb",
         "decisionKey": "industry_selection",
         "decision": "Focus on pressure washing",
         "explanation": "You said you're starting a pressure washing business, so industry selection follows your description.",
@@ -151,13 +151,13 @@
         "dnaVersion": "pressure_washing@1",
         "influencedBy": [],
         "influences": [
-          "rsn_mtxtthkh_3lic9t"
+          "rsn_mtxwdw6g_l4th9s"
         ],
         "reusesReasoningId": null,
-        "timestamp": "2026-09-12T03:29:26.321Z"
+        "timestamp": "2026-09-12T04:41:17.608Z"
       },
       {
-        "reasoningId": "rsn_mtxtthkh_3lic9t",
+        "reasoningId": "rsn_mtxwdw6g_l4th9s",
         "decisionKey": "brand_positioning",
         "decision": "pressure washing that earns trust with before/after proof before asking for a booking",
         "explanation": "Homeowners hiring pressure washing services usually look for proof before comparing price. Positioning around visible trust beats generic price competition.",
@@ -188,18 +188,18 @@
         "workspaceVersion": 1,
         "dnaVersion": "pressure_washing@1",
         "influencedBy": [
-          "rsn_mtxtthkh_0ykoav"
+          "rsn_mtxwdw6g_06fumb"
         ],
         "influences": [
-          "rsn_mtxtthkh_wjuxxj",
-          "rsn_mtxtthkh_6ssnum",
-          "rsn_mtxtthkh_3cl2os"
+          "rsn_mtxwdw6g_r9bwvj",
+          "rsn_mtxwdw6g_rtus0c",
+          "rsn_mtxwdw6g_cnqmxf"
         ],
         "reusesReasoningId": null,
-        "timestamp": "2026-09-12T03:29:26.321Z"
+        "timestamp": "2026-09-12T04:41:17.608Z"
       },
       {
-        "reasoningId": "rsn_mtxtthkh_wjuxxj",
+        "reasoningId": "rsn_mtxwdw6g_r9bwvj",
         "decisionKey": "homepage_strategy",
         "decision": "Lead with proof, then packages, then a single Book CTA",
         "explanation": "I recommend this homepage order because homeowners hiring pressure washing services usually look for proof before comparing price. Based on your Business DNA, putting reviews/proof above pricing should improve trust. (Building on earlier reasoning: Homeowners hiring pressure washing services usually look for proof before comparing price. Positioning around visible trust beats generic price competition.)",
@@ -231,18 +231,18 @@
         "workspaceVersion": 1,
         "dnaVersion": "pressure_washing@1",
         "influencedBy": [
-          "rsn_mtxtthkh_3lic9t"
+          "rsn_mtxwdw6g_l4th9s"
         ],
         "influences": [
-          "rsn_mtxtthkh_7scsy1",
-          "rsn_mtxtthkh_6ssnum",
-          "rsn_mtxtthkh_3cl2os"
+          "rsn_mtxwdw6g_ma1r35",
+          "rsn_mtxwdw6g_rtus0c",
+          "rsn_mtxwdw6g_cnqmxf"
         ],
-        "reusesReasoningId": "rsn_mtxtthkh_3lic9t",
-        "timestamp": "2026-09-12T03:29:26.321Z"
+        "reusesReasoningId": "rsn_mtxwdw6g_l4th9s",
+        "timestamp": "2026-09-12T04:41:17.608Z"
       },
       {
-        "reasoningId": "rsn_mtxtthkh_7scsy1",
+        "reasoningId": "rsn_mtxwdw6g_ma1r35",
         "decisionKey": "booking_strategy",
         "decision": "One primary Book / Get quote CTA — avoid multi-step quizzes",
         "explanation": "A single booking path reduces friction once trust is established on the homepage.",
@@ -270,14 +270,14 @@
         "workspaceVersion": 1,
         "dnaVersion": "pressure_washing@1",
         "influencedBy": [
-          "rsn_mtxtthkh_wjuxxj"
+          "rsn_mtxwdw6g_r9bwvj"
         ],
         "influences": [],
         "reusesReasoningId": null,
-        "timestamp": "2026-09-12T03:29:26.321Z"
+        "timestamp": "2026-09-12T04:41:17.608Z"
       },
       {
-        "reasoningId": "rsn_mtxtthkh_6ssnum",
+        "reasoningId": "rsn_mtxwdw6g_rtus0c",
         "decisionKey": "pricing_direction",
         "decision": "Package tiers (driveway / house / full property) with a clear mid package",
         "explanation": "Clear package tiers outperform open-ended hourly quotes for first-time pressure washing buyers.",
@@ -305,15 +305,15 @@
         "workspaceVersion": 1,
         "dnaVersion": "pressure_washing@1",
         "influencedBy": [
-          "rsn_mtxtthkh_3lic9t",
-          "rsn_mtxtthkh_wjuxxj"
+          "rsn_mtxwdw6g_l4th9s",
+          "rsn_mtxwdw6g_r9bwvj"
         ],
         "influences": [],
         "reusesReasoningId": null,
-        "timestamp": "2026-09-12T03:29:26.321Z"
+        "timestamp": "2026-09-12T04:41:17.608Z"
       },
       {
-        "reasoningId": "rsn_mtxtthkh_3cl2os",
+        "reasoningId": "rsn_mtxwdw6g_cnqmxf",
         "decisionKey": "trust_recommendations",
         "decision": "Lead with before/after photos and insured language above pricing",
         "explanation": "Before & after photos are a top trust signal for pressure washing. Showing proof before price reduces damage fears. (Building on earlier reasoning: Homeowners hiring pressure washing services usually look for proof before comparing price. Positioning around visible trust beats generic price competition.)",
@@ -347,12 +347,12 @@
         "workspaceVersion": 1,
         "dnaVersion": "pressure_washing@1",
         "influencedBy": [
-          "rsn_mtxtthkh_3lic9t",
-          "rsn_mtxtthkh_wjuxxj"
+          "rsn_mtxwdw6g_l4th9s",
+          "rsn_mtxwdw6g_r9bwvj"
         ],
         "influences": [],
-        "reusesReasoningId": "rsn_mtxtthkh_3lic9t",
-        "timestamp": "2026-09-12T03:29:26.321Z"
+        "reusesReasoningId": "rsn_mtxwdw6g_l4th9s",
+        "timestamp": "2026-09-12T04:41:17.608Z"
       }
     ],
     "evidenceChain": [
@@ -551,20 +551,20 @@
       "regenerated": false,
       "decisionKey": "homepage_strategy",
       "answer": "We chose this because: I recommend this homepage order because homeowners hiring pressure washing services usually look for proof before comparing price. Based on your Business DNA, putting reviews/proof above pricing should improve trust. (Building on earlier reasoning: Homeowners hiring pressure washing services usually look for proof before comparing price. Positioning around visible trust beats generic price competition.) Evidence: Business DNA homepage order: Hero with before/after → Packages → Trust proof → Book; pressure washing that earns trust with before/after proof before asking for a booking. Expected outcome: higher_conversion. Confidence: 90. Experts involved: strategy → creative_director → critic. Here's how it connects: industry_selection → Focus on pressure washing → brand_positioning → pressure washing that earns trust with before/after proof before asking for a booking → homepage_strategy → Lead with proof, then packages, then a single Book CTA.",
-      "reasoningId": "rsn_mtxtthkh_wjuxxj",
+      "reasoningId": "rsn_mtxwdw6g_r9bwvj",
       "decisionGraph": [
         {
-          "reasoningId": "rsn_mtxtthkh_0ykoav",
+          "reasoningId": "rsn_mtxwdw6g_06fumb",
           "decision": "Focus on pressure washing",
           "decisionKey": "industry_selection"
         },
         {
-          "reasoningId": "rsn_mtxtthkh_3lic9t",
+          "reasoningId": "rsn_mtxwdw6g_l4th9s",
           "decision": "pressure washing that earns trust with before/after proof before asking for a booking",
           "decisionKey": "brand_positioning"
         },
         {
-          "reasoningId": "rsn_mtxtthkh_wjuxxj",
+          "reasoningId": "rsn_mtxwdw6g_r9bwvj",
           "decision": "Lead with proof, then packages, then a single Book CTA",
           "decisionKey": "homepage_strategy"
         }
@@ -574,60 +574,60 @@
     },
     "reasoningHistory": [
       {
-        "reasoningId": "rsn_mtxtthkh_0ykoav",
+        "reasoningId": "rsn_mtxwdw6g_06fumb",
         "decisionKey": "industry_selection",
         "decision": "Focus on pressure washing",
         "version": 1,
-        "timestamp": "2026-09-12T03:29:26.321Z"
+        "timestamp": "2026-09-12T04:41:17.608Z"
       },
       {
-        "reasoningId": "rsn_mtxtthkh_3lic9t",
+        "reasoningId": "rsn_mtxwdw6g_l4th9s",
         "decisionKey": "brand_positioning",
         "decision": "pressure washing that earns trust with before/after proof before asking for a booking",
         "version": 1,
-        "timestamp": "2026-09-12T03:29:26.321Z"
+        "timestamp": "2026-09-12T04:41:17.608Z"
       },
       {
-        "reasoningId": "rsn_mtxtthkh_wjuxxj",
+        "reasoningId": "rsn_mtxwdw6g_r9bwvj",
         "decisionKey": "homepage_strategy",
         "decision": "Lead with proof, then packages, then a single Book CTA",
         "version": 1,
-        "timestamp": "2026-09-12T03:29:26.321Z"
+        "timestamp": "2026-09-12T04:41:17.608Z"
       },
       {
-        "reasoningId": "rsn_mtxtthkh_7scsy1",
+        "reasoningId": "rsn_mtxwdw6g_ma1r35",
         "decisionKey": "booking_strategy",
         "decision": "One primary Book / Get quote CTA — avoid multi-step quizzes",
         "version": 1,
-        "timestamp": "2026-09-12T03:29:26.321Z"
+        "timestamp": "2026-09-12T04:41:17.608Z"
       },
       {
-        "reasoningId": "rsn_mtxtthkh_6ssnum",
+        "reasoningId": "rsn_mtxwdw6g_rtus0c",
         "decisionKey": "pricing_direction",
         "decision": "Package tiers (driveway / house / full property) with a clear mid package",
         "version": 1,
-        "timestamp": "2026-09-12T03:29:26.321Z"
+        "timestamp": "2026-09-12T04:41:17.608Z"
       },
       {
-        "reasoningId": "rsn_mtxtthkh_3cl2os",
+        "reasoningId": "rsn_mtxwdw6g_cnqmxf",
         "decisionKey": "trust_recommendations",
         "decision": "Lead with before/after photos and insured language above pricing",
         "version": 1,
-        "timestamp": "2026-09-12T03:29:26.321Z"
+        "timestamp": "2026-09-12T04:41:17.608Z"
       },
       {
-        "reasoningId": "rsn_mtxtthki_0r34yx",
+        "reasoningId": "rsn_mtxwdw6g_iyp1i9",
         "decisionKey": "brand_positioning",
         "decision": "Use Luxury Branding",
         "version": 2,
-        "timestamp": "2026-09-12T03:29:26.322Z"
+        "timestamp": "2026-09-12T04:41:17.608Z"
       },
       {
-        "reasoningId": "rsn_mtxtthki_6lb084",
+        "reasoningId": "rsn_mtxwdw6g_rxnc9y",
         "decisionKey": "brand_positioning",
         "decision": "Use Family-Owned Branding",
         "version": 3,
-        "timestamp": "2026-09-12T03:29:26.322Z"
+        "timestamp": "2026-09-12T04:41:17.608Z"
       }
     ],
     "versionComparison": {
@@ -637,108 +637,108 @@
           "version": 1,
           "decision": "pressure washing that earns trust with before/after proof before asking for a booking",
           "explanation": "Homeowners hiring pressure washing services usually look for proof before comparing price. Positioning around visible trust beats generic price competition.",
-          "reasoningId": "rsn_mtxtthkh_3lic9t"
+          "reasoningId": "rsn_mtxwdw6g_l4th9s"
         },
         {
           "version": 2,
           "decision": "Use Luxury Branding",
           "explanation": "Premium neighborhoods nearby support a luxury brand position.",
-          "reasoningId": "rsn_mtxtthki_0r34yx"
+          "reasoningId": "rsn_mtxwdw6g_iyp1i9"
         },
         {
           "version": 3,
           "decision": "Use Family-Owned Branding",
           "explanation": "Business expanded into residential services — family-owned trust beats luxury signaling.",
-          "reasoningId": "rsn_mtxtthki_6lb084"
+          "reasoningId": "rsn_mtxwdw6g_rxnc9y"
         }
       ],
       "changed": true
     },
     "decisionGraph": {
-      "tip": "rsn_mtxtthkh_wjuxxj",
+      "tip": "rsn_mtxwdw6g_r9bwvj",
       "chain": [
         {
-          "reasoningId": "rsn_mtxtthkh_0ykoav",
+          "reasoningId": "rsn_mtxwdw6g_06fumb",
           "decision": "Focus on pressure washing",
           "decisionKey": "industry_selection"
         },
         {
-          "reasoningId": "rsn_mtxtthkh_3lic9t",
+          "reasoningId": "rsn_mtxwdw6g_l4th9s",
           "decision": "pressure washing that earns trust with before/after proof before asking for a booking",
           "decisionKey": "brand_positioning"
         },
         {
-          "reasoningId": "rsn_mtxtthkh_wjuxxj",
+          "reasoningId": "rsn_mtxwdw6g_r9bwvj",
           "decision": "Lead with proof, then packages, then a single Book CTA",
           "decisionKey": "homepage_strategy"
         }
       ],
       "edges": [
         {
-          "from": "rsn_mtxtthkh_0ykoav",
-          "to": "rsn_mtxtthkh_3lic9t",
+          "from": "rsn_mtxwdw6g_06fumb",
+          "to": "rsn_mtxwdw6g_l4th9s",
           "relation": "influences"
         },
         {
-          "from": "rsn_mtxtthkh_3lic9t",
-          "to": "rsn_mtxtthkh_wjuxxj",
+          "from": "rsn_mtxwdw6g_l4th9s",
+          "to": "rsn_mtxwdw6g_r9bwvj",
           "relation": "influences"
         },
         {
-          "from": "rsn_mtxtthkh_3lic9t",
-          "to": "rsn_mtxtthkh_wjuxxj",
+          "from": "rsn_mtxwdw6g_l4th9s",
+          "to": "rsn_mtxwdw6g_r9bwvj",
           "relation": "influences"
         },
         {
-          "from": "rsn_mtxtthkh_wjuxxj",
-          "to": "rsn_mtxtthkh_7scsy1",
+          "from": "rsn_mtxwdw6g_r9bwvj",
+          "to": "rsn_mtxwdw6g_ma1r35",
           "relation": "influences"
         },
         {
-          "from": "rsn_mtxtthkh_3lic9t",
-          "to": "rsn_mtxtthkh_6ssnum",
+          "from": "rsn_mtxwdw6g_l4th9s",
+          "to": "rsn_mtxwdw6g_rtus0c",
           "relation": "influences"
         },
         {
-          "from": "rsn_mtxtthkh_wjuxxj",
-          "to": "rsn_mtxtthkh_6ssnum",
+          "from": "rsn_mtxwdw6g_r9bwvj",
+          "to": "rsn_mtxwdw6g_rtus0c",
           "relation": "influences"
         },
         {
-          "from": "rsn_mtxtthkh_3lic9t",
-          "to": "rsn_mtxtthkh_3cl2os",
+          "from": "rsn_mtxwdw6g_l4th9s",
+          "to": "rsn_mtxwdw6g_cnqmxf",
           "relation": "influences"
         },
         {
-          "from": "rsn_mtxtthkh_wjuxxj",
-          "to": "rsn_mtxtthkh_3cl2os",
+          "from": "rsn_mtxwdw6g_r9bwvj",
+          "to": "rsn_mtxwdw6g_cnqmxf",
           "relation": "influences"
         },
         {
-          "from": "rsn_mtxtthkh_3lic9t",
-          "to": "rsn_mtxtthkh_3cl2os",
+          "from": "rsn_mtxwdw6g_l4th9s",
+          "to": "rsn_mtxwdw6g_cnqmxf",
           "relation": "influences"
         }
       ]
     },
     "reuse": {
-      "homepageReuses": "rsn_mtxtthkh_3lic9t",
-      "trustReuses": "rsn_mtxtthkh_3lic9t",
+      "homepageReuses": "rsn_mtxwdw6g_l4th9s",
+      "trustReuses": "rsn_mtxwdw6g_l4th9s",
       "creativeDirector": {
         "decision": "Move Reviews Higher",
-        "reusesReasoningId": "rsn_mtxtthky_vhcz0y",
+        "reusesReasoningId": "rsn_mtxwdw6w_55v4hd",
         "explanation": "I recommend this homepage order because homeowners hiring pressure washing services usually look for proof before comparing price. Based on your Business DNA, putting reviews/proof above pricing should improve trust. (Building on earlier reasoning: Homeowners hiring pressure washing services usually look for proof before comparing price. Positioning around visible trust beats generic price competition.)"
       }
     },
     "demo": {
       "buildRequest": "I'm starting a pressure washing business.",
       "reasoningIds": [
-        "rsn_mtxtthkh_0ykoav",
-        "rsn_mtxtthkh_3lic9t",
-        "rsn_mtxtthkh_wjuxxj",
-        "rsn_mtxtthkh_7scsy1",
-        "rsn_mtxtthkh_6ssnum",
-        "rsn_mtxtthkh_3cl2os"
+        "rsn_mtxwdw6g_06fumb",
+        "rsn_mtxwdw6g_l4th9s",
+        "rsn_mtxwdw6g_r9bwvj",
+        "rsn_mtxwdw6g_ma1r35",
+        "rsn_mtxwdw6g_rtus0c",
+        "rsn_mtxwdw6g_cnqmxf"
       ],
       "thinkBuild": {
         "expertsRun": [

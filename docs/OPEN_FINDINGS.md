@@ -5691,3 +5691,59 @@ It moves 5 real pages for no demonstrated benefit on them.
 **So the `fr` gap remains open.** The alternative is re-running the existing transform in
 the paths that skip it — `applyOwnerNodeDelete` is the sharpest, since deleting a sibling
 turns a two-child grid into a one-child grid. Not built; needs a ruling.
+
+## Placing a service depends on the model having volunteered a services section (2026-09-12)
+
+**This is not a design. It is a habit we have been relying on.**
+
+When an owner gives Hubly their services, the inserter puts them on the page by finding
+somewhere to put them. It has two kinds of target:
+
+- a **real anchor** — `data-hubly-service`, stamped at build time from services already on
+  the record; and
+- a **guess row** — `data-hubly-guess="…servic…"`, which `allGuessServiceRows` recognises.
+
+**The second kind is a side effect, not a feature.** Nothing in the generator asks for a
+placeholder services section. What exists is the `MARK WHAT YOU GUESS` instruction, which
+tells the model to attribute any copy it invented:
+
+> *"On any element whose text you INVENTED (not grounded in the record above), add the
+> attribute `data-hubly-guess="a few words naming what it is"` … This is not an error — it
+> is you flagging your own suggestions so the owner can replace them in one click."*
+
+So the chain is: the model decides, unprompted, to invent a services section on a page
+where it has nothing to list — because an empty page would not read as finished — then
+honestly marks that invented copy as a guess, and *we* later treat those marks as the slot
+an owner's real services get written into.
+
+**Every link in that is the model's habit, not our instruction.** Nothing tells it to
+produce a services section when there are no services. Nothing guarantees it will next
+week, on a new model, or for a trade where a services list feels less natural.
+
+**The numbers that make this concrete**, measured across 167 stored pages on 2026-09-12:
+
+| | |
+|---|---|
+| valid service anchor only | 12 |
+| **guess rows only** | **89** |
+| both | 3 |
+| writable (either) | 104 — **62.3%** |
+| neither — refused | 63 — **37.7%** |
+
+**89 of the 104 writable pages are writable only because the model volunteered a section.**
+That is 85% of our placement capability resting on an unrequested habit.
+
+And the split by whether services existed at generation shows why the anchors cannot cover
+it: of pages built since the stamping pass shipped, **83%** carry an anchor when services
+were on the record, and **0%** when they were not — and two thirds of pages are built in
+the second state, because Hubly builds first and asks about services afterwards. That
+sequence is the product and is not changing.
+
+**The fix is D: the generator emits a stamped, empty, fillable services slot
+unconditionally** — `data-hubly-section="services"`, which `addServicesBlock` already
+writes and 24 pages already carry, but which the generator never produces. That converts a
+habit into a guarantee and makes the refusal branch unreachable rather than better handled.
+
+**Why it will not be obvious in a month:** the code reads as though placement has two
+supported target types. It does not. It has one supported type and one fortunate one, and
+the fortunate one carries most of the traffic.
