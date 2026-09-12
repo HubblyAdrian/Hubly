@@ -1331,3 +1331,44 @@ but any check that gates a decision is, and the ones that gate tonight's decisio
 The cheapest version of this rule, if nothing else survives: **before trusting a number a new
 check prints, break the thing it measures and watch it go red.** Every instrument written in
 this run was wrong on its first run. None of them failed.
+
+## Lesson 41 — a warning in a path that proceeds anyway is not a guard, it is a confession
+
+`renderThemedBookingLanding` begins:
+
+```js
+if(biz==null||biz===''){
+  console.warn('renderThemedBookingLanding called without biz — use renderBookingLanding(\'pub\')');
+  ({biz,phone,city,email}=getBookingLandingFields('pub'));
+}
+```
+
+…and then paints the booking page. On a customer load of a stale link that warning fired
+**five times**, and the page rendered an empty business name, a hardcoded "BR" monogram,
+"Professional business — clear packages, easy booking", and an instruction addressed to the
+owner. The code detected the broken precondition, said so out loud, and rendered a stranger's
+initials to a customer.
+
+**The rule: if the condition is wrong enough to warn about, it is wrong enough to stop.** A
+warning that does not stop the path is a note to a developer who is not there, on a screen
+nobody is watching, about a page a customer is already looking at. Either recover to a state
+that is true, or refuse and say so — the refusal is already written in that file ("This page
+isn't live yet") and this path painted over it.
+
+**The sweep, with its limit stated, because the limit is the interesting part.** 214
+`console.warn`/`console.error` sites in `public/`. Asking a scanner "does it then render?"
+does not work: in the known instance the warning is at the top of the function and the first
+`innerHTML` is forty lines below it, past a dozen `getElementById` calls. Widening the window
+until that one case appears would be tuning a check to pass, so `check-warning-then-proceed.mjs`
+does not do it. What is decidable is narrower and still useful — a warning whose own MESSAGE
+admits a broken precondition, outside a `catch`, with no stop after it:
+
+| | |
+|---|---|
+| `hubly.html:33348` | `renderThemedBookingLanding called without biz` — **the instance. Fixed by the caller's guard.** |
+| `hubly.html:13651` | `[Hubly CEO Demo] seed module missing — empty Operate shell` — behind a secret key, and the message names exactly what it renders. Diagnostic. |
+| `hubly.html:17108` | `saveStorefront portfolio host failures` — recovers: it tells the owner ("Some photos need another Save on Wi-Fi") or reschedules the write. Diagnostic. |
+
+One real, two honest. The value is not the count; it is that the list is three lines long and a
+person can read it. A check that cannot decide should hand you a short list rather than a
+confident number.
