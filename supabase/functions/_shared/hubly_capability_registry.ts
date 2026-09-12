@@ -3597,8 +3597,16 @@ export function allServiceAnchors(html: string): { index: number; length: number
   let m: RegExpExecArray | null;
   while ((m = re.exec(html))) {
     const tag = m[1].toLowerCase();
-    // The predicate, not a second opinion about it.
-    if (!findServiceEntryBounds(html, m.index, m[0].length, tag)) continue;
+    // THE SAME GATE THAT GOVERNS WRITING. Until 2026-09-12 this required only
+    // findServiceEntryBounds while the region constraints governed STAMPING alone — so a
+    // joinable anchor sitting in header furniture was refused by the stamper and ACCEPTED
+    // by the inserter. Red-proved on the site-f71f30 shape: a <strong data-hubly-service>
+    // inside .trade-label inside <header> was cloned, and "Ceramic Coating $600" was
+    // written into the page header beside the branding.
+    //
+    // A constraint applied at write time and not at read time is not a constraint; the
+    // wrong value simply enters by the other door. One function answers this now.
+    if (!isStampableServiceElement(html, m.index, m[0].length, tag)) continue;
     out.push({ index: m.index, length: m[0].length, tag, text: stripElementText(m[3]) || m[2] });
   }
   return out;

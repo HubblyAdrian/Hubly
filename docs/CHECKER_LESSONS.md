@@ -13,7 +13,7 @@
 
 > ### THE INDEX, AND WHY IT IS HERE
 >
-> **This file holds 33 lessons.** Lessons **1–3** are the three instances described
+> **This file holds 35 lessons.** Lessons **1–3** are the three instances described
 > narratively in the opening section below — they have no `## Lesson N` heading, which is
 > why a later count read the file as starting at 4. Numbered headings run **4 → 33**, with
 > **11 and 11b** both present: two distinct lessons were written with the same number on
@@ -1054,3 +1054,59 @@ name.
 And keep the empty answer available. **A page with no valid anchor is a true fact we can
 act on; a page with a wrong anchor is a false one we cannot.** Stamping nothing is a
 result, not a failure.
+
+---
+
+## Lesson 34 — a harness that reimplements a production predicate is measuring its replica
+
+The B3 corpus survey reimplemented `findServiceEntryBounds` in the measurement script
+rather than importing it. It disagreed with the real function on one page out of 167 — a
+number I reported before noticing, and only caught because a later run using the real
+function returned a different count.
+
+One page in 167 sounds like rounding. It is not: the number was being used to decide
+whether a predicate change was safe to ship, and the threshold for "stop and tell me" was
+"near zero". A replica that drifts by one page can put a real change on the wrong side of a
+gate.
+
+The timing is the point. This happened **on the night the duplicate-predicate bug was being
+fixed in the product** — two functions holding two definitions of "does this page have a
+services area", found and collapsed into one. The harness measuring that fix had quietly
+made a third copy.
+
+**Rule: a harness imports the production function, or it does not ship a number.** If the
+function is not exported, export it — `allGuessServiceRows` was made exportable for exactly
+this and cost one word. An unexported function is not a reason to reimplement; it is a
+reason to export.
+
+The tell is easy to miss because a replica is usually *written from* the original, so it is
+right at the moment it is written and wrong the first time either side changes. That is the
+same drift as any duplicated logic — it just happens in a file nobody thinks of as product
+code.
+
+## Lesson 35 — a constraint applied at write time but not at read time is not a constraint
+
+`isStampableServiceElement` was introduced to stop the stamper marking header furniture as
+a service anchor: inside `<body>`, not inside `<header>`/`<nav>`/`<footer>`, not inside a
+`.brand-*` container, and joinable. It worked — the stamper stopped producing bad anchors.
+
+But `allServiceAnchors`, which READS anchors for the inserter, required only
+`findServiceEntryBounds`. So an anchor already sitting in header furniture — because an
+older build stamped it, or a page arrived from anywhere else — was refused by the writer
+and **accepted by the reader**.
+
+Red-proved on the `site-f71f30` shape: a `<strong data-hubly-service>` inside
+`.trade-label` inside `<header>`, joinable because an ancestor `<div>` qualifies. The
+inserter cloned it and wrote **"Ceramic Coating, $600" into the page header**, beside the
+business's branding. One owner asking for a price would have put a service in their own
+logo area.
+
+**The wrong value does not need the door you locked. It enters by the other one.** Guarding
+creation while leaving consumption open protects only against futures, never against the
+present — and the corpus is the present: two pages carried exactly this anchor tonight.
+
+So: when a constraint defines what something IS, every function that asks "is this one?"
+uses it — the writer, the reader, the checker, the repair script. One function answers, and
+the answer cannot depend on which door you came through. This is the third pair of gates
+tonight holding two definitions of one fact, after the two slugifiers and the two
+"has a services area" tests.
