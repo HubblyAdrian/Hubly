@@ -6302,3 +6302,32 @@ mode it creates is not in the code that differs but in the assumption that "we f
 is fixed everywhere. When chatbot-message is next deployed it will pick up six days of shared
 changes at once, none of them tested through that surface, and that is the deploy that deserves
 its own walk.
+
+## The directive leak was inside the module built to prevent directive leaks (2026-09-12)
+
+`hubly_owner_replies.ts` exists for one reason: every sentence an owner reads verbatim lives
+in one place, so a model directive cannot leak into that channel. `no-directives.check.ts`
+asserts it structurally.
+
+It contained this, live, in the branch that fires when a price does not land:
+
+> *"I saved those to your record, but Screen cleaning is not showing on the page. **Say that
+> plainly — do not say the price is on the page.**"*
+
+A stage direction to the model, in a string handed to a person word for word — inside the
+module whose entire purpose is that this cannot happen, guarded by a check written to catch
+exactly this shape. The same phrase closed `droppedClause`, so two of the module's sentences
+carried it.
+
+**The finding is the location, not the leak.** It says the directive-leak class is not closed
+by having a module. A module is where the strings live; it is not a guarantee about what is in
+them. The class is closed by a check that actually reads what the module contains — and ours
+did not, because it paired backticks naively and was scanning comment text as if it were
+sentences (Lesson 39). It reported 25 sentences checked where 21 were real, and the live
+directive sat in the part it mis-tokenised around.
+
+Both strings are gone. The check strips comments before scanning and was red-proofed on a real
+directive in a real string. What remains open is the client half: `public/hubly.html` composes
+owner-facing copy that no check reads at all — recorded above, ruled B, and now with a
+customer-visible instance of its own (H2's "Add services to show them here" rendered on a
+public booking page).

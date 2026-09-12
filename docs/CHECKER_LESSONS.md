@@ -1249,7 +1249,42 @@ Three things make it hard to see, all worth naming:
 
    That third one is the transferable part, so it gets its own sentence: **the count was
    wrong and the check was green, and the only thing that caught it was not believing the
-   number.** 9 across 2 looked plausible; it was checked against the file (12 raw occurrences
+   number.**
+
+### The same failure, twice more, in text-scanning guards (2026-09-12)
+
+**A guard that does not tokenise its input the way the compiler does reports coverage it
+does not have** — and it inflates its own number while doing it, which is the worst failure
+mode a guard has: it looks *stronger* than it is.
+
+Two instances, one day apart, both mine:
+
+1. **The directive net paired backticks naively.** It scans `` `…` `` template literals in
+   `hubly_owner_replies.ts` for phrases addressed to a model. A closing backtick and the
+   next opening one bound a "sentence" — so the COMMENTS between two literals were scanned
+   as if an owner would read them. It reported **25 owner sentences checked when 21 were
+   real**, and the four phantoms were comment text. The one live directive it existed to
+   catch — *"Say that plainly — do not say the price is on the page"* — was inside the 21
+   it mis-tokenised around. Fixed by stripping comments before the scan.
+
+2. **The verification-carried check found the wrong `{`.** It located a function body as
+   "the first `{` after the function name", and a TypeScript parameter can be an object
+   type: `services: { name: string; price?: number }[]`. So it extracted parameter types
+   as the body, found no `return {` inside them, and passed everything. It reported
+   "2 verification values, all carried" — and did not move when the field it was written to
+   catch was deleted from the product. Fixed by walking the parameter list to its balanced
+   close first.
+
+The tell is identical in both: **a count that looks plausible and a check that is green.**
+Neither failed. Both reported. What caught them was removing the thing the check exists to
+catch and watching it stay green — which is the only test of a guard that means anything, and
+is why every check written in this run red-proofs itself against the real product and not
+only against a fixture.
+
+If you are writing a source-scanning check: strip comments first, walk brackets rather than
+reaching for the next one, and prove it red on the real file before trusting a single number
+it prints.
+ 9 across 2 looked plausible; it was checked against the file (12 raw occurrences
    of `notePlacement(`, three functions named in the rows) and did not survive. A scanner
    reports what it can see, never what it cannot, and its silence about a wrapper reads
    exactly like an absence of wrappers. So a census from a new scanner is not a result until

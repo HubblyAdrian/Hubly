@@ -43,7 +43,20 @@ function functions(src) {
   const re = /(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(/g;
   let m;
   while ((m = re.exec(src))) {
-    const open = src.indexOf("{", m.index + m[0].length);
+    // PAST THE PARAMETER LIST FIRST. A parameter can be an object TYPE — 
+    // `services: { name: string; price?: number }[]` — and the first `{` after the
+    // function name is then inside the signature, not the body. The first version of
+    // this check did exactly that, extracted a body of parameter types, found no
+    // `return {` in it, and passed everything. It reported "2 verification values,
+    // all carried" and did not move when the field it was written to catch was
+    // deleted. Same mis-tokenising as the phrase net (Lesson 39), one day later.
+    let p = m.index + m[0].length - 1, depth = 0, close = -1;
+    for (let i = p; i < src.length; i++) {
+      if (src[i] === "(") depth++;
+      else if (src[i] === ")") { depth--; if (!depth) { close = i; break; } }
+    }
+    if (close < 0) continue;
+    const open = src.indexOf("{", close);
     if (open < 0) continue;
     let d = 0, end = -1;
     for (let i = open; i < src.length; i++) {
