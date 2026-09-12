@@ -29,7 +29,48 @@ const DIRECTIVE = [
   "be honest that", "avoid claiming", "make clear that", "don't overstate",
   "tell them", "say the", "state that",
 ];
+/** COMMENTS ARE NOT SENTENCES AN OWNER READS. Stripped before the phrase scan, because
+ *  the scan pairs backticks naively: a closing backtick and the next opening one capture
+ *  everything between them, comments included. On 2026-09-12 a comment EXPLAINING that a
+ *  directive had been removed was reported as a directive — the check flagging the record
+ *  of its own fix. Code only from here. */
+function stripComments(src: string): string {
+  return src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
+}
+
 const hit = (s: string) => DIRECTIVE.find((d) => s.toLowerCase().includes(d)) || null;
+
+/** THE PHRASE SCAN, as a function of source text — so it can be pointed at a fixture and
+ *  proved to fail before it is pointed at the product (Lesson 40). */
+function scanSentences(src: string): string[] {
+  const out: string[] = [];
+  for (const m of stripComments(src).matchAll(/`([^`]{20,500})`/g)) {
+    const h = hit(m[1]);
+    if (h) out.push(`${h} :: ${m[1].replace(/\s+/g, " ").slice(0, 120)}`);
+  }
+  return out;
+}
+
+// ── RED-PROOF, EVERY RUN (Lesson 40) ────────────────────────────────────────
+// A check's first green is meaningless. This mutates a known-good sentence into a
+// known-bad one and asserts the scan catches it — and asserts it does NOT fire on a
+// comment that merely quotes a directive, which is the exact mis-tokenising that let a
+// live leak through while this file reported 25 sentences where 21 were real.
+{
+  const CLEAN = "function f(){ return `Screen cleaning $60 is on your page now.`; }";
+  const LEAK  = "function f(){ return `Screen cleaning $60 is not showing. Say that plainly.`; }";
+  const QUOTED_IN_A_COMMENT = "// this used to say: say that plainly\nfunction f(){ return `Screen cleaning $60 is on your page now.`; }";
+  const ok = scanSentences(CLEAN).length === 0
+    && scanSentences(LEAK).length === 1
+    && scanSentences(QUOTED_IN_A_COMMENT).length === 0;
+  if (!ok) {
+    console.error("CANNOT RUN — the phrase net failed its own fixtures:");
+    console.error(`  clean sentence flagged   : ${scanSentences(CLEAN).length} (expected 0)`);
+    console.error(`  directive caught         : ${scanSentences(LEAK).length} (expected 1)`);
+    console.error(`  directive in a comment   : ${scanSentences(QUOTED_IN_A_COMMENT).length} (expected 0)`);
+    Deno.exit(2);
+  }
+}
 
 const fails: string[] = [];
 const idx = await Deno.readTextFile(ROOT + "/supabase/functions/hubly-conversation/index.ts");
@@ -85,22 +126,11 @@ for (const src of sources) {
 }
 
 // ── NET 2: THE PHRASE LIST, over the owner module's own sentences ───────────
-/** COMMENTS ARE NOT SENTENCES AN OWNER READS. Stripped before the phrase scan, because
- *  the scan pairs backticks naively: a closing backtick and the next opening one capture
- *  everything between them, comments included. On 2026-09-12 a comment EXPLAINING that a
- *  directive had been removed was reported as a directive — the check flagging the record
- *  of its own fix. Code only from here. */
-function stripComments(src: string): string {
-  return src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
-}
 const modCode = stripComments(mod);
 const idxCode = stripComments(idx);
 let checked = 0;
-for (const m of modCode.matchAll(/`([^`]{20,500})`/g)) {
-  checked++;
-  const h = hit(m[1]);
-  if (h) fails.push(`${OWNER_MODULE} would say "${h}" to an owner\n      full: ${m[1].replace(/\s+/g, " ").slice(0, 170)}`);
-}
+for (const m of modCode.matchAll(/`([^`]{20,500})`/g)) checked++;
+for (const f of scanSentences(mod)) fails.push(`${OWNER_MODULE} would say "${f.split(" :: ")[0]}" to an owner\n      full: ${f.split(" :: ")[1]}`);
 // …and over any composer still living outside it that feeds the channel.
 for (const [fn, src] of [["composeServicesTruth", idxCode], ["composeContactHoursTruth", idxCode]] as [string, string][]) {
   const at = src.indexOf(`function ${fn}(`);
@@ -114,7 +144,7 @@ for (const [fn, src] of [["composeServicesTruth", idxCode], ["composeContactHour
   }
 }
 
-console.log(`primaryReply sources checked structurally: ${structural} · owner sentences scanned: ${checked} · phrases watched: ${DIRECTIVE.length}`);
+console.log(`primaryReply sources checked structurally: ${structural} · owner sentences scanned: ${checked} · phrases watched: ${DIRECTIVE.length} · (detector red-proofed this run)`);
 if (fails.length) {
   console.error(`\nFAIL — ${fails.length}:`);
   for (const f of fails) console.error("  " + f);
