@@ -4105,6 +4105,31 @@ export function insertServiceIntoFreeform(html: string, name: string, price?: nu
       clone = clone.replace(/\s+data-hc="[^"]*"/gi, "");   // don't renumber; add unlabelled (talk-editable only)
     }
   }
+  // THE PRICE, ON THIS BRANCH TOO — AND INSIDE THE ENTRY.
+  //
+  // buildClonedServiceEntry can only SET a price where the template already had one: it
+  // re-keys an existing data-hubly-price or wraps a bare "$8" it finds. Clone a bare
+  // `<li>Clean windows</li>` and the name lands with no price element at all, and the
+  // entry still reports ok. The guess-row branch above already fixes this by calling
+  // placeOneServicePrice; this branch, three hundred lines away, never got it. A bug is a
+  // CLASS, and on 2026-09-12 this one told an owner his three prices were on a page that
+  // contains none of them (crestview-window-cleaning: three <li> clones, zero price spans).
+  //
+  // WHY NOT JUST CALL placeOneServicePrice HERE. Measured on those exact bytes: it injects
+  // right after the NAME ELEMENT'S close tag, and when the name element IS the entry (a
+  // checklist <li>), that puts the span BETWEEN list items — stray content in a <ul>, and
+  // worse, inside the next insertion's search window, where branch 1 ("a price span is
+  // already here") rewrites the previous service's price to the new one. Replaying the
+  // three services that way left ONE span on the page: $140, keyed to the last service,
+  // having eaten $220 and $60 in turn. So the price goes INSIDE the cloned entry, before
+  // its closing tag, where it belongs and where nothing else can reach it.
+  if (typeof price === "number" && priceStr && !/data-hubly-price=/i.test(clone)) {
+    const nameAttr = String(name).replace(/"/g, "");
+    const span = `<span data-hubly-price="${nameAttr}">${priceStr}</span>`;
+    const closeAt = clone.lastIndexOf(`</${tmpl.kind}>`);
+    if (closeAt < 0) return { ok: false, reason: "price_not_placed" };   // honest, not ok-with-no-price
+    clone = clone.slice(0, closeAt) + span + clone.slice(closeAt);
+  }
   return { ok: true, html: html.slice(0, at) + clone + html.slice(at), kind: tmpl.kind, single: anchors.length === 1, hadDesc, labeled };
 }
 /** Run the whole list over the page; report what landed and what's simply not there. */
