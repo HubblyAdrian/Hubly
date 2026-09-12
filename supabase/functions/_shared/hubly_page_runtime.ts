@@ -248,7 +248,27 @@ export function contrastRescueHtml(): string {
       function lum(c){ return 0.2126*chan(c[0])+0.7152*chan(c[1])+0.0722*chan(c[2]); }
       function parse(s){ var m=s&&s.match(/rgba?\\(([^)]+)\\)/); if(!m) return null; var p=m[1].split(',').map(function(x){return parseFloat(x);}); return {rgb:[p[0],p[1],p[2]], a:p.length>3?p[3]:1}; }
       function ratio(a,b){ var L1=lum(a),L2=lum(b),hi=Math.max(L1,L2),lo=Math.min(L1,L2); return (hi+0.05)/(lo+0.05); }
-      function effBg(el){ var n=el; while(n && n.nodeType===1){ var cs=getComputedStyle(n); if(cs.backgroundImage && cs.backgroundImage!=='none') return {image:true}; var bg=parse(cs.backgroundColor); if(bg && bg.a>0) return {rgb:bg.rgb}; n=n.parentElement; } return {rgb:[255,255,255]}; }
+      // THE GROUND BEHIND SOME TEXT, COMPOSITED. A translucent layer is not the colour it
+      // names: a card painted rgba(255,255,255,0.035) over a near-black section is still
+      // near-black, and reading it as white is how this function, in its first form, told
+      // the block rescue to paint #111 ink onto a dark card at 1.06:1 on twelve pages.
+      // So: collect every layer up to the first OPAQUE one, then composite top-down.
+      function effBg(el){
+        var layers=[], n=el;
+        while(n && n.nodeType===1){
+          var cs=getComputedStyle(n);
+          if(cs.backgroundImage && cs.backgroundImage!=='none') return {image:true};   // cannot judge over art
+          var bg=parse(cs.backgroundColor);
+          if(bg && bg.a>0){ layers.push(bg); if(bg.a>=1) break; }
+          n=n.parentElement;
+        }
+        var base=(layers.length && layers[layers.length-1].a>=1) ? layers.pop().rgb : [255,255,255];
+        for(var q=layers.length-1;q>=0;q--){
+          var L=layers[q], a=L.a;
+          base=[L.rgb[0]*a+base[0]*(1-a), L.rgb[1]*a+base[1]*(1-a), L.rgb[2]*a+base[2]*(1-a)];
+        }
+        return {rgb:base};
+      }
       var sel='a.button,a.btn,button,.button,.btn,[class*="button"],[class*="btn"],[role="button"]';
       var els=document.querySelectorAll(sel);
       var fixed=0, leftSubAA=0, couldNotFix=0, unfixReasons={};
@@ -273,6 +293,49 @@ export function contrastRescueHtml(): string {
         // invisible and readable, and refusing it would leave the button unreadable.
         if(best.r>=MIN_READABLE && best.r>cur){ el.style.setProperty('color',best.c,'important'); fixed++; }
         else { couldNotFix++; unfixReasons.midToneBg=(unfixReasons.midToneBg||0)+1; }  // even best stays unreadable
+      }
+      // ── OUR OWN BLOCK, HELD TO AA ──────────────────────────────────────────
+      // WE INSERTED IT, SO IT IS OURS TO GUARANTEE. The services block clones the page's
+      // own item element so it looks like the page's own cards (that is the point), and a
+      // clone inherits the page's colour choices — including the ones below AA. On
+      // vibrant-taco-truck the page's .menu-card h3 is orange on cream at 4.05:1; our
+      // cloned row reproduced it faithfully and shipped a block we chose to insert that a
+      // reader cannot comfortably read.
+      //
+      // THE ASYMMETRY IS DELIBERATE, and someone will read it as a bug: after this runs,
+      // our services text on that page is MORE legible than the page's own cards beside
+      // it. We are not entitled to fix the owner's design. We are obliged to fix ours.
+      //
+      // Scoped strictly to [data-hubly-services-block]; nothing else on the page changes.
+      //
+      // FLAT 4.5:1, INCLUDING LARGE TEXT — deliberately STRICTER than WCAG AA, which lets
+      // text >=24px (or >=18.66px bold) sit at 3:1. vibrant-taco-truck is precisely that
+      // case: the service name is 28px bold at 4.05:1, AA-compliant as large text and
+      // still hard to read on cream. The alternative was to teach the legibility check
+      // WCAG's large-text allowance, which would turn that page green without moving a
+      // pixel on it — tuning a check to pass. Being stricter than AA can only produce
+      // false REDS, never a false green, so the strict side is the safe one to be wrong on.
+      var ourFixed=0, ourLeft=0;
+      var block=document.querySelector('[data-hubly-services-block]');
+      if(block){
+        var texts=block.querySelectorAll('h1,h2,h3,h4,h5,h6,p,span,dt,dd,li,a');
+        for(var j=0;j<texts.length;j++){
+          var t=texts[j];
+          if(!(t.textContent||'').trim()) continue;
+          if(t.querySelector('h1,h2,h3,h4,h5,h6,p,span,dt,dd,li,a')) continue;   // leaves only
+          var tcs=getComputedStyle(t);
+          var tfg=parse(tcs.color); if(!tfg) continue;
+          var tbg=effBg(t); if(tbg.image) continue;                              // cannot judge over an image
+          var need=TARGET_AA;                                                    // 4.5 at every size; see above
+          var have=ratio(tfg.rgb,tbg.rgb);
+          if(have>=need) continue;
+          var w=[255,255,255], k=[17,17,17];
+          var rw=ratio(w,tbg.rgb), rk=ratio(k,tbg.rgb);
+          var pick=rw>=rk?{c:'#ffffff',r:rw}:{c:'#111111',r:rk};
+          if(pick.r>=need){ t.style.setProperty('color',pick.c,'important'); ourFixed++; }
+          else { ourLeft++; }                                                     // mid-tone ground: nothing reaches AA
+        }
+        document.documentElement.setAttribute('data-hubly-block-contrast','fixed:'+ourFixed+';left:'+ourLeft);
       }
       var summary='fixed:'+fixed+';left-sub-aa:'+leftSubAA+';could-not-fix:'+couldNotFix;
       document.documentElement.setAttribute('data-hubly-cta-contrast', summary);

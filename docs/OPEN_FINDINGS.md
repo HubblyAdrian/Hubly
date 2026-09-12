@@ -6394,3 +6394,38 @@ are the sharpest — "Customers can find you and book" asserts two capabilities 
 they sit outside `hubly_owner_replies.ts`, so no check sees them either. **One module, one
 check** is the answer to both this and the directive leak; the module exists for the server's
 reply channel and would need to grow to cover these, which is real work and is not done here.
+
+## Sub-AA text we did not insert: 68 of 165 pages (2026-09-12) — RECORDED, NOT BUILT
+
+T1 held our own services block to a flat 4.5:1 on the ground it lands on. The obvious next
+question, asked deliberately as a finding rather than as work: **how much of the text already
+on these pages is below AA, none of it ours?**
+
+Measured over `corpus4.json` (pulled 2026-09-12), every page mounted through the real mount
+path at 1280×900, every text leaf OUTSIDE `[data-hubly-services-block]`,
+`[data-hubly-contact-block]` and `[data-hubly-runtime]`:
+
+- **68 of 165 pages (41%) carry at least one sub-AA text element we did not insert.**
+- **234 of 4,838 judged text elements (4.8%)** are below their WCAG AA threshold.
+- **2,968 further elements were skipped** because they sit over a background image, where a
+  ratio cannot be computed from the DOM at all. That is 38% of the text on these pages
+  unjudged — the largest single gap in this number.
+- By `account_kind`: **67 of 164 test** pages, **1 of 6 market** pages. The market
+  denominator is 6. It cannot carry a rate; it is reported so the number is not read as one.
+- Worst cases are not marginal: 12 pages have text at or under 1.4:1 — `lawn-care-in-provo`
+  "Booking" at 1.00:1, `larkspur-landscaping` "See services" at 1.00:1, `sable-crumb` (the
+  business's own name in its header) at 1.09:1. Invisible, not merely hard.
+
+**How it was established, and what the number is not.** Computed from the DOM using the same
+compositing `effBg` the rescue now uses, not from pixels — a pixel sweep of every text leaf on
+165 pages is hours, and this is a finding, not a gate. So it is a **floor** with two named
+blind spots: text over a background image is not judged at all (the 2,968), and antialiasing
+moves the real ratio either way (fernwick-bakehouse computes 4.39:1 and measures 4.23:1 in
+pixels). WCAG AA thresholds here, large-text allowance included — the stricter flat 4.5 is
+what we hold OUR OWN block to, and the asymmetry is deliberate (see `contrastRescueHtml`).
+
+**Not built, on purpose.** Fixing this means recolouring text the model chose, on pages we did
+not design, at a rate of 4.8% of all text — the exact thing the rescue's comment says we are
+not entitled to do. The existing button rescue already acts on the model's own CTAs, but only
+where text is *unreadable* (<3.0), never merely sub-AA. Extending that to all page text is a
+product decision about how far Hubly overrides the model's design, and Adrian rules on it.
