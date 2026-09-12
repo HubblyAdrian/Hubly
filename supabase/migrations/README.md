@@ -38,7 +38,11 @@ unbounded `update`. If it does, stop and ask.
 
 ## The ledger is unreconciled, and that is the actual problem
 
-221 migration files, 168 recorded, **53 unrecorded**. The unrecorded ones are not pending —
+222 migration files, 168 recorded, **56 unrecorded** (as of 2026-09-12). The count moves every
+time a migration is applied by hand, which is the standing procedure here, so it is stated with
+its date and re-counted rather than quoted: 53 at the time this file was written, plus
+`20260912200000_slug_history_provenance.sql`, `20260912200100_slug_history_backfill_from_evidence.sql`
+and `20260912210000_set_business_hours_draft_or_owner.sql`. The unrecorded ones are not pending —
 their effects are already in the database, applied by hand exactly as above. Push cannot tell
 the difference between "already applied by hand" and "never applied", which is why it replays
 history and why it is dangerous here.

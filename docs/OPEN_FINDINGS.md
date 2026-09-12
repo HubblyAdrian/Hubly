@@ -6456,6 +6456,85 @@ there is no owner to compare against on a draft. `bookings` read (`:5769`), `day
 (`:7240`) and `places.add` (`:7775`) are owner-only on their own merits: customer data, an
 account-level calendar, and a sidebar that only a claimed business has.
 
+## T5, measured properly: 16 of 95 pages do not show a fact their own record holds (2026-09-12)
+
+Adrian's ironwood-fence walk produced T5: a page contradicting what we know about the
+business. **The first detector enumerated absence PHRASES** — "no price list", "call for
+hours", "quote-only" — and it was thrown away before it produced a number, because that is
+the failure this repo has paid for four times already (CLAUDE.md: the anchor count, the price
+scan, the hours detector, the extraction gate twice in one sitting). A phrase list finds only
+the wordings someone already thought of.
+
+`scripts/measure-record-page-divergence.mjs` asks a question with no phrasing in it: **the
+record holds a VALUE — is that value anywhere on the page?** A page that does not show a fact
+we hold contradicts it whether it says so out loud or just quietly omits it. Measurement only;
+it fixes nothing and gates nothing.
+
+**172 businesses with a stored page; 95 hold at least one checkable fact. 16 of those 95 (17%)
+do not show one.** 15 test, 1 market (`detailing-chemicals-equipment-courses`, one service name
+of four). By fact:
+
+| fact | absent | conflicting | of held |
+|---|---|---|---|
+| phone | 1 | **3** | 66 |
+| email | 5 | — | 8 |
+| service names | 10 | — | 73 |
+| prices | 2 | — | 35 |
+| hours | 1 | — | 27 |
+
+**The three phone CONFLICTS are the sharp finding, and they are not omissions.**
+`copperwick-kilns` prints 801-555-7420 while the record holds 801-555-9001; `hearth-iron`
+prints 801-555-8888 against a record of 801-555-2200; `saltmarsh-bindery` prints 801-555-9001
+— which is copperwick's *record* number. Two answers to the same question, and a customer
+dials the one on the page. Which side is stale cannot be told from this data, so the census
+names both and assigns nothing.
+
+`ironwood-fence` — the page Adrian walked — flags with 5 of 5 recorded open times absent,
+which is the finding he reported arriving by a different road.
+
+**What each number counts** (a heuristic counts a FORM, not a fact): the phone's last 10
+digits in the page's digits and `tel:` hrefs; the email case-insensitively or in a `mailto:`;
+the service NAME as a normalised substring; the price as `180`, `$180`, `180.00`, `1,800` —
+with or without the symbol, because priced services often render without one; the open time as
+`9:00 / 9am / 9 am / 09:00 / 9:00am`, which is the weakest of the five and is a floor. Every
+one of these can MISS a fact the page renders in a form not listed, and every miss INFLATES
+the divergence — the error runs toward over-reporting, and the sixteen are printed by slug so
+they can be read rather than trusted. Self-red-proofed in both directions: removing a price
+from a clean page adds exactly that page (16 → 17), writing a flagged page's recorded services
+onto it removes exactly that page (16 → 15), and no other page moves either time.
+
+**Not fixed. Not started.** The cause is not one bug — a stale page, a record written after
+the page was built, and a page built before extraction ran all land here identically.
+
+## STAGE 3, BEHIND THE 41% — every fact stored twice, and whether both copies are written
+
+Queued 2026-09-12, straight out of T2. Hours are stored in TWO places:
+`settings_business_hours` (the table) and `businesses.meta.hours` (the shape a CLASSIC page
+renders from). `set_business_hours` writes both; `set_business_hours_in_progress` writes only
+the table. Routing drafts to the latter was the obvious one-line fix for T2 and it would have
+reported success while nothing a customer sees changed — **found by reading the writer, not by
+any check, and only because that one fix was being considered.**
+
+The generalisation is almost certainly not alone, and the work is:
+
+1. **Name every fact stored in two places** — a table and `businesses.meta` (hours is proven;
+   services/`services` table vs any meta copy, branding, contact, and service area are the
+   candidates to enumerate from the schema, not from memory).
+2. **Name every writer of each** and say, per writer, which copies it updates.
+3. **Say which pairs can drift** — a writer that updates one copy and not the other is a
+   silent divergence that reports success, which is the same defect as an unearned checkmark.
+
+The T5 census above is the downstream symptom of exactly this class, which is why it sits
+directly behind the 41% finding rather than with the ledger.
+
+## Proof fixtures: a harness should not write to a row someone might be looking at (2026-09-12)
+
+The T2 red-proofs wrote hours to `photography-website` and `dawn-patrol-coffee` — two real test
+businesses — and restored them afterwards (verified back to zero hour rows and no
+`meta.hours`). The restore was clean, but the pattern is not: a dedicated fixture business,
+created and dropped by the harness itself, means no proof ever touches a row Adrian might have
+open. Recorded, not built.
+
 ## STAGE 3 LEADS WITH THIS — sub-AA text we did not insert: 68 of 165 pages (2026-09-12)
 
 **Promoted 2026-09-12 by Adrian's partner, ahead of the migration ledger:** this is a
