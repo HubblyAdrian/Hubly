@@ -98,9 +98,12 @@ export function classicScopeReply(host: string): string {
  *  reads. */
 export type ServicesPlacementLike = {
   status?: string;
-  placed?: { name: string; price?: number }[];
-  verifiedPlaced?: { name: string; price?: number }[];
+  /** WHAT IS IN THE SAVED BYTES. Required, and there is no `placed` here on purpose —
+   *  a caller that cannot supply this cannot use this composer. */
+  verifiedPlaced: { name: string; price?: number }[];
   unverified?: { name: string; price?: number }[];
+  /** Name in the bytes, price nowhere to put it. */
+  namesOnly?: { name: string; price?: number }[];
   missing?: string[];
   inserted?: string[];
   descNeeded?: string[];
@@ -123,13 +126,26 @@ export function fmtSvcPrice(n: number): string {
   return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
 }
 export function composeServicesTruth(placement: ServicesPlacementLike, url: string): string {
-  // READ THE VERIFIED LIST, NOT THE REPORTED ONE (Lesson 11). `placed` is what the
-  // writers said; `verifiedPlaced` is what is in the bytes that were saved. The price
-  // bug lived exactly here: a row with no price element took the name and dropped the
-  // price, the writer still said ok, and this sentence would have quoted the price back.
-  const truthful = placement.verifiedPlaced || placement.placed || [];
+  // THE VERIFIED LIST, AND NOTHING ELSE. The deletion IS the fix: there is no
+  // `|| placement.placed` here any more, and nothing restores it.
+  //
+  // It read `placement.verifiedPlaced || placement.placed || []` until 2026-09-12. That
+  // looked safe — prefer the verified list, fall back if absent. Then
+  // applyServicesToFreeform was written and returned WITHOUT verifiedPlaced, and the
+  // fallback served the REPORTED list to a real owner: "Interior and exterior window
+  // cleaning $220, Screen cleaning $60 and Hard water removal $140 are on your page now."
+  // There is no $220 anywhere in that document.
+  //
+  // A fallback to the unverified value is how a working check becomes decoration. The next
+  // caller that forgets the field now gets an empty read-back — a visibly wrong sentence
+  // somebody fixes — instead of a confident lie nobody sees.
+  const truthful = placement.verifiedPlaced || [];
   const priced = truthful.filter((p) => typeof p.price === "number");
   const dropped = (placement.unverified || []).filter((p) => typeof p.price === "number");
+  // The third state: the NAME is on the page and the price is not, because the list it
+  // landed in has nowhere to put one. Neither "they're on your page" nor "they aren't" is
+  // true of that, and the owner is owed the half that actually happened.
+  const namesOnly = placement.namesOnly || [];
   const wherePhrase = placement.where === "services section" ? "in the services section" : "on your page";
   const missing = placement.missing || [];
   const inserted = new Set(placement.inserted || []);
@@ -182,11 +198,20 @@ export function composeServicesTruth(placement: ServicesPlacementLike, url: stri
   // "on your page now" we just said ("…on your page now, on your page.") — so drop it.
   const whereClause = placement.where === "services section" ? `, ${wherePhrase}` : "";
   // Anything a writer claimed and the bytes did not confirm is SAID, not swallowed.
+  // NO DIRECTIVE IN AN OWNER'S SENTENCE. This clause ended with an instruction addressed
+  // to a model, inside the module whose whole job is that this never happens.
   const droppedClause = dropped.length
-    ? ` ${andList(dropped.map((d) => d.name))} ${dropped.length === 1 ? "is" : "are"} saved to your record but ${dropped.length === 1 ? "isn't" : "aren't"} showing on the page — say that plainly.`
+    ? ` ${andList(dropped.map((d) => d.name))} ${dropped.length === 1 ? "is" : "are"} saved to your record but ${dropped.length === 1 ? "isn't" : "aren't"} showing on the page.`
     : "";
+  // NAMES LANDED, PRICES DID NOT. Two facts, said as two facts.
+  if (!priced.length && namesOnly.length) {
+    const names = andList(namesOnly.map((d) => d.name));
+    const one = namesOnly.length === 1;
+    return `${names} ${one ? "is" : "are"} on your page now — but without ${one ? "its price" : "their prices"}: the list ${one ? "it's" : "they're"} in has nowhere to show one. The ${one ? "price is" : "prices are"} saved to your record.`;
+  }
   if (!priced.length && dropped.length) {
-    return `I saved those to your record, but ${andList(dropped.map((d) => d.name))} ${dropped.length === 1 ? "is" : "are"} not showing on the page. Say that plainly — do not say the price is on the page.`;
+    // The directive that used to close this sentence has been removed here too.
+    return `I saved those to your record, but ${andList(dropped.map((d) => d.name))} ${dropped.length === 1 ? "is" : "are"} not showing on your page.`;
   }
   const landedLine = `${readback} ${priced.length === 1 ? "is" : "are"} on your page now${whereClause}.${addedClause}${droppedClause}`;
   if (placement.status === "partial" && missing.length) {

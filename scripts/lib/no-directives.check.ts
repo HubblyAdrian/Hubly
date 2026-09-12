@@ -85,14 +85,24 @@ for (const src of sources) {
 }
 
 // ── NET 2: THE PHRASE LIST, over the owner module's own sentences ───────────
+/** COMMENTS ARE NOT SENTENCES AN OWNER READS. Stripped before the phrase scan, because
+ *  the scan pairs backticks naively: a closing backtick and the next opening one capture
+ *  everything between them, comments included. On 2026-09-12 a comment EXPLAINING that a
+ *  directive had been removed was reported as a directive — the check flagging the record
+ *  of its own fix. Code only from here. */
+function stripComments(src: string): string {
+  return src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
+}
+const modCode = stripComments(mod);
+const idxCode = stripComments(idx);
 let checked = 0;
-for (const m of mod.matchAll(/`([^`]{20,500})`/g)) {
+for (const m of modCode.matchAll(/`([^`]{20,500})`/g)) {
   checked++;
   const h = hit(m[1]);
   if (h) fails.push(`${OWNER_MODULE} would say "${h}" to an owner\n      full: ${m[1].replace(/\s+/g, " ").slice(0, 170)}`);
 }
 // …and over any composer still living outside it that feeds the channel.
-for (const [fn, src] of [["composeServicesTruth", idx], ["composeContactHoursTruth", idx]] as [string, string][]) {
+for (const [fn, src] of [["composeServicesTruth", idxCode], ["composeContactHoursTruth", idxCode]] as [string, string][]) {
   const at = src.indexOf(`function ${fn}(`);
   if (at < 0) continue;
   let d = 0, end = -1; const open = src.indexOf("{", at);

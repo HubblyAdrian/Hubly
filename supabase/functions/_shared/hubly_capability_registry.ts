@@ -3352,6 +3352,7 @@ type ServicesPlacement = {
   noSection?: boolean;                           // true only when there is no services section to insert into (the sole rebuild case)
   replacedGuessRows?: number;                    // placeholder rows overwritten with a real service this pass
   verifiedPlaced?: { name: string; price?: number }[];   // present in the SAVED bytes, not merely reported (Lesson 11)
+  namesOnly?: { name: string; price?: number }[];        // name in the bytes, price nowhere to go
   unverified?: { name: string; price?: number }[];       // a writer said it landed and it is not in the bytes
   lostEdits?: number;                            // when noSection: how many owner edits a rebuild would lose (named before the yes)
   where?: string;                                // "services section" | "page"
@@ -4214,7 +4215,13 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
     return out.includes(money) || out.includes(String(pl.price));
   });
   const unverified = placed.filter((pl) => !verifiedPlaced.includes(pl));
-  return { status, placed, verifiedPlaced, unverified, missing, inserted, descNeeded, noSection, retroAnchored, leakedAttrText, replacedGuessRows, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
+  // NAME LANDED, PRICE DID NOT — a third state, and the one crestview-window-cleaning was
+  // actually in. Its services live in a `<ul class="checklist">`, whose rows have no price
+  // element, so three names went onto the page and three prices had nowhere to go. Without
+  // this the composer can only choose between "they're on your page" and "they aren't",
+  // and both are false: the owner is owed the sentence that says which half landed.
+  const namesOnly = unverified.filter((pl) => typeof pl.price === "number" && out.includes(pl.name));
+  return { status, placed, verifiedPlaced, unverified, namesOnly, missing, inserted, descNeeded, noSection, retroAnchored, leakedAttrText, replacedGuessRows, where: servicesWhereLabel(out), changed: out !== html, paths, html: out } as ServicesPlacement & { html: string };
 }
 /** Stamp a stable data-hubly-service ANCHOR on each service-name element at
  *  GENERATION time — whatever its shape (<h3>, <dt>, <li><span>, a table cell).
@@ -4533,6 +4540,7 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
           `added=${(block.inserted || []).length} verified=${verified.length} mode=${block.detail ?? "-"}`);
         return { status: verified.length === services.length ? "placed" : "partial",
           placed: verified, verifiedPlaced: verified,
+          namesOnly: services.filter((sv) => !verified.includes(sv) && typeof sv.price === "number" && block.html.includes(String(sv.name).trim())),
           missing: services.filter((sv) => !verified.includes(sv)).map((sv) => sv.name),
           inserted: block.inserted, where: "services section", changed: true } as ServicesPlacement;
       }
@@ -4552,7 +4560,12 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
   // necessary: it refused three services and left no row anywhere.
   notePlacement("applyServicesToFreeform", r.status, draftId,
     `placed=${(r.placed || []).length} missing=${(r.missing || []).length}${r.noSection ? " noSection" : ""}`);
-  return { status: r.status, placed: r.placed, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, lostEdits, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, leakedAttrText: r.leakedAttrText, changed: r.changed };
+  // verifiedPlaced / unverified / namesOnly ARE THE POINT OF THIS RETURN. They were absent
+  // until 2026-09-12 — computed correctly by placeServicesInFreeform and dropped here — so
+  // composeServicesTruth fell back to the reported list and told an owner three prices were
+  // on a page that contains none of them. A field missing from a return statement is how a
+  // working check becomes decoration.
+  return { status: r.status, placed: r.placed, verifiedPlaced: r.verifiedPlaced, unverified: r.unverified, namesOnly: r.namesOnly, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, lostEdits, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, leakedAttrText: r.leakedAttrText, changed: r.changed };
 }
 
 export type ContactHoursResult = {
