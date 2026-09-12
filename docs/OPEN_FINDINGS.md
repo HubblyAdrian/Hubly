@@ -6143,3 +6143,102 @@ compared raw URLs against the page, where the html carries `&amp;`. Production e
 before matching (`escUrlForMatch`); with that, 84%. A harness that re-implements a production
 matcher measures its replica (Lesson 34) — caught before it was reported, by checking the
 production function rather than trusting the number.
+
+## A recording call must be proved to fire on the success path (2026-09-12)
+
+**The rule, and it is the headline of the ridgeline walk.** `notePlacement("addServicesBlock",
+"inserted", …)` sat inside `if (!saved || saved.ok !== true) { … }`. It existed, it was
+correct, it was never going to run: the row that says a services area LANDED fired only when
+the save had just failed. The table built to answer "did this work?" could only ever answer
+"no", and on the night we needed it, it said nothing at all about a block that went onto a
+customer's page twelve seconds earlier.
+
+This is Lesson 13 in its own habitat — an instruction inside a refusal branch is invisible to
+every test of the path that succeeds — and it is the second time in one night this table was
+not watching when we needed it.
+
+**`scripts/check-recording-on-success.mjs`** holds it: every `notePlacement` call site is
+classified as on-the-success-path or inside a failure guard, and a function whose only
+success recording is guarded fails the check. It sees three shapes, because the first version
+saw only one — direct literal calls, dynamic-branch calls (`notePlacement(fn, r.status, …)`,
+which record everything and are the pattern to copy), and calls through a local wrapper
+(`const say = (status) => notePlacement("applyBusinessNameToFreeform", status, …)` — the
+function whose rows we were reading when the defect was found, invisible to a scanner that
+greps for `notePlacement(`).
+
+It red-proofs its own detector on every run against two fixtures, and exits 2 — cannot run —
+if it cannot tell them apart. It was also red-proofed against the real product: the fix was
+reverted, the check went red naming the exact line, and the fix restored.
+
+```
+addServicesBlock             4 call(s), 1 naming success, 0 on the success path
+FAIL — addServicesBlock: every success recording is inside a failure guard
+       (_shared/hubly_capability_registry.ts:7542 "inserted")
+```
+
+### The sweep: which recorders were only recording failure
+
+Every outcome table, by what it has actually stored:
+
+| table | records a success? | evidence |
+|---|---|---|
+| `placement_outcomes` | **partly — this is the defect** | `applyBusinessNameToFreeform/placed` ×4; `applyServicesToFreeform` has **never** written a success row; `addServicesBlock` has **no rows at all, ever** |
+| `first_turn_outcomes` | yes | `drafted=true built=true` ×20, and the false combinations too |
+| `rebuild_outcome_events` | yes | placed/patched/swapped with `landed=true` ×32 |
+| `image_slot_probe` | yes | `pexels` ×235 (filled) beside `blank` ×32 (empty) |
+| `endpoint_failures`, `capture_miss_events`, `price_extraction_miss_events`, `planner_fallback_events`, `postbuild_fallback_events` | no — **by design** | miss/fallback logs; a success row would be meaningless in them |
+
+**So: one of the four tables meant to record both was only recording failure**, and within it
+the two services functions. The five failure-only tables are correct as they are; naming them
+here so the count is not read as five more defects.
+
+`applyServicesToFreeform` will now write `section_added` on the path that builds and places in
+one move — a branch that could not exist before tonight, because that path used to ask the
+owner's permission instead.
+
+## `hubly_owner_replies.ts` claims more than its guard can see (2026-09-12)
+
+The module is documented as the single home for every string an owner reads verbatim, and
+`scripts/lib/no-directives.check.ts` asserts it structurally. **The check can only see the
+server.** The standalone "What's the business called?" ask is composed CLIENT-side
+(`isTalkBizTitle` in `public/hubly.html`), and so are the claim card, the "reserved for you"
+line and the rest of the talk-step questions. The invariant is narrower than its own
+description, which is the kind of gap that makes people trust a guard that is not guarding —
+and it is why the name question could be duplicated with every server-side check green.
+
+**Two ways to close it. Not implemented; the choice is Adrian's.**
+
+**A — extend the check to cover owner-facing strings in `public/`.** The guard becomes true as
+written. Cost: `public/hubly.html` is a 55,000-line monolith where owner-facing copy, UI
+chrome, translations (`isTalk*Title` has an `es` twin) and developer strings sit in one file,
+so the check needs a rule for what counts as owner-facing — and a wrong rule here is a check
+that either cries wolf on every label or goes quiet on the strings that matter. It also puts a
+Node check on the critical path of the second deploy path (git push to Vercel), which nothing
+currently guards.
+
+**B — narrow the module's stated claim to server-composed replies.** One comment edit, honest
+immediately, and the check keeps exactly the coverage it has. Cost: the client keeps writing
+owner-facing sentences with no structural guard at all, and the next duplicated question is
+found the way this one was — by Adrian reading it on his own screen.
+
+**My reading: B now, A when the client strings move.** The claim should not outrun the guard
+for another week, and A's real prerequisite is that owner-facing client copy lives somewhere a
+check can recognise — a single table of strings rather than inline literals. B makes the
+documentation true tonight; A becomes cheap the moment that table exists.
+
+## Ridgeline's own process cards render "0" badges — generation defect, not ours (2026-09-12)
+
+The page Adrian walked paints a step badge on each of its three process cards from
+`.step:before{content:counter(steps)}` — and the page's CSS contains **no `counter-increment`
+anywhere**, so every badge renders `0`. Three cards, three zeros, on a page generated tonight.
+Our own inserted rows no longer show it (we suppress the pseudo-element on our rows), but the
+page's own cards do, and that is the generator's output, not our clone.
+
+**Counted across the corpus:** 9 of 129 pages paint a counter badge on the elements we clone.
+**Four of those nine render a wrong number** — `detailing-chemicals-equipment-courses-1c692`,
+`washers-0a8e1`, `mobile-auto-detailing-in-lehi`, `mobile-detailing-in-lehi-f207e`, all with
+`content:counter(steps)` and no increment — and the other five number correctly. With
+ridgeline (built after tonight's corpus export) that is **5 of 10**.
+
+`stripDecorativeOrdinals` exists to remove exactly this at generation and did not fire on
+these pages. Recorded, not fixed, as ruled.

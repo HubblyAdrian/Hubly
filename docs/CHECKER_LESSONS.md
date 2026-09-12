@@ -1219,3 +1219,34 @@ destroys silently is a tool that needs the check built in, not remembered.
 And the restore is the other half of the lesson: it worked because the file was committed.
 The instruments deserve the same discipline as the product — commit before a session of
 file surgery, so `git checkout` is always available as the undo.
+
+## Lesson 39 — a recording call must be proved to fire on the success path, not merely to exist
+
+`notePlacement("addServicesBlock", "inserted", …)` was written, reviewed, correct, and
+unreachable: it sat inside `if (!saved || saved.ok !== true) { … }`, two lines below the row
+that records the failure. The services area went onto a real owner's page and
+`placement_outcomes` had nothing to say about it, because the only row naming success fired
+exclusively when the save had just failed.
+
+Every test that existed passed. They would: the failure path DOES write its row, and nothing
+asked whether the success path writes one.
+
+**Rule: an instrument is verified on the path it is meant to observe.** For a recorder that
+means the success path specifically — the branch least likely to be exercised by a test
+suite, because tests are written about failures and reviews read the lines that are there,
+not the lines that run.
+
+Three things make it hard to see, all worth naming:
+
+1. **The call is present.** Grep says the recorder covers this function. Presence is what a
+   reviewer checks and presence is exactly what is not in question.
+2. **The table looks alive.** `placement_outcomes` had rows — for other functions, and for
+   this one's failures. A table with rows in it reads as a working instrument.
+3. **The blind spot is in the instrument's own instrument.** The first version of the check
+   written for this scanned for `notePlacement(` and found 9 call sites across 2 functions.
+   The real answer is 17 across 3: one function records through a local `say()` wrapper — and
+   it is the very function whose rows we were reading when the defect was found.
+
+The check that holds it (`scripts/check-recording-on-success.mjs`) red-proofs its own detector
+on every run and exits 2 if it cannot tell a guarded call from an unguarded one. A detector
+that cannot fail is the thing it was written to catch.
