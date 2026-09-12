@@ -6,6 +6,11 @@
  * add the area, from real services, and leave the rest of the page alone.
  */
 import { addServicesBlock, servicesBlockHtml } from "../../supabase/functions/_shared/hubly_services_block.ts";
+// THE SAME PREDICATE THE PRODUCT USES. Importing it rather than re-implementing a count
+// here is the whole point of the change being checked: one function answers "does this
+// page have a joinable service entry", and the check must not become the second one.
+import { allServiceAnchors } from "../../supabase/functions/_shared/hubly_capability_registry.ts";
+const countServiceAnchors = (html: string) => allServiceAnchors(html).length;
 
 const fails: string[] = [];
 const t = (n: string, c: boolean, d: string) => { if (!c) fails.push(`${n} — ${d}`); };
@@ -16,7 +21,17 @@ const NO_SERVICES = `<body><header><nav>Home</nav></header><main>
 <section class="about"><h2>About</h2><p>Family run since forever.</p></section>
 </main><footer><p>Call 555-0100</p></footer></body>`;
 
-const HAS_SERVICES = `<body><main><section class="s"><h3 data-hubly-service="Full Detail">Full Detail</h3></section></main><footer>x</footer></body>`;
+// A REAL services list: repeating entries a fourth service could join. This is what
+// "the page already has services" has to mean, and it is what allServiceAnchors requires.
+const HAS_SERVICES = `<body><main><section class="s"><ul><li data-hubly-service="Full Detail">Full Detail</li><li data-hubly-service="Express Wash">Express Wash</li></ul></section></main><footer>x</footer></body>`;
+
+// AN ORPHAN ANCHOR — one attribute, no repeating entry, nothing to join. The old fixture
+// was this shape and the old code called it "already has a services area". It is the shape
+// that shipped the contradiction on toms-gutters-more: a strapline in the page header
+// carrying data-hubly-service, with the inserter saying it could not place a service and
+// addServicesBlock saying the page already had somewhere to put one. Under one predicate
+// it is an attribute, so a services list IS added.
+const ORPHAN_ANCHOR = `<body><main><section class="s"><h3 data-hubly-service="Full Detail">Full Detail</h3></section></main><footer>x</footer></body>`;
 
 const SVCS = [
   { name: "Roof Replacement", price: 8500 },
@@ -41,14 +56,25 @@ if (r.changed) {
   t("inserted before the footer", h.indexOf("data-hubly-services-block") < h.lastIndexOf("<footer"), "the block landed after the footer");
   t("no marker leaked into visible text", !/data-hubly-/.test(visible(h)), "one of our attributes is readable on the page");
   t("reports what it added", r.inserted.length === 3, `inserted=${JSON.stringify(r.inserted)}`);
-  // idempotent: it refuses to add a second one
-  const again = addServicesBlock(h, SVCS);
+  // IDEMPOTENT — it refuses to add a second one. The count is now passed IN, because the
+  // "does this page already have services" question has exactly one owner
+  // (allServiceAnchors, which requires a joinable entry). Asserting it here with its own
+  // regex would recreate the second definition this change exists to delete — so the check
+  // drives the same contract the real caller does.
+  const again = addServicesBlock(h, SVCS, undefined, countServiceAnchors(h));
   t("refuses a second area", again.changed === false && again.via === "anchor", `via=${again.via}`);
 }
 
 // ── refuses when the page already has services ──────────────────────────────
-const r2 = addServicesBlock(HAS_SERVICES, SVCS);
+const r2 = addServicesBlock(HAS_SERVICES, SVCS, undefined, countServiceAnchors(HAS_SERVICES));
 t("refuses on a page that has services", r2.changed === false && r2.via === "anchor", `via=${r2.via}`);
+
+// An orphan anchor is NOT a services area. Asserted so the distinction is a tested
+// contract rather than an accident of which regex ran.
+const rOrphan = addServicesBlock(ORPHAN_ANCHOR, SVCS, undefined, countServiceAnchors(ORPHAN_ANCHOR));
+t("an orphan anchor does not count as a services area", rOrphan.changed === true && rOrphan.via === "inserted", `via=${rOrphan.via} detail=${rOrphan.detail}`);
+t("an orphan anchor yields zero anchors", countServiceAnchors(ORPHAN_ANCHOR) === 0, `count=${countServiceAnchors(ORPHAN_ANCHOR)}`);
+t("a real list yields two anchors", countServiceAnchors(HAS_SERVICES) === 2, `count=${countServiceAnchors(HAS_SERVICES)}`);
 
 // ── refuses with nothing real to add ────────────────────────────────────────
 const r3 = addServicesBlock(NO_SERVICES, []);

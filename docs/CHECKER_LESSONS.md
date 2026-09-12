@@ -1000,3 +1000,42 @@ This sits under "a pass that enumerates is prompt guidance with extra steps": th
 says what goes wrong, this one says what would have prevented it. And the corollary is
 sharper than either — **a fix fitted to one example is indistinguishable from a working fix
 until somebody counts.**
+
+---
+
+## Lesson 33 — a scorer with a penalty list is an enumeration wearing a number
+
+(Adrian called this Lesson 16; the file was already past 30, so it is 33 here. Same rule.)
+
+`findServiceNameElement` ranks candidate elements — headings score 3, `dt`/`th` score 2,
+everything else 1, plus a bonus for an exact text match and a **penalty of −5 for
+`data-hc="hero|nav|footer|announce|cta"`**. It looks like judgement. It is a list of five
+things somebody thought of, with arithmetic on top.
+
+**It has now picked header furniture twice:**
+
+- **2026-09-11** — stamping the business-name slot, it chose `<title>`. "Photography"
+  appeared three times as a leaf and the scorer took the first. The business's name would
+  have been inserted inside `<head>`.
+- **2026-09-12** — stamping a service anchor, it chose a `<div class="service-label">`
+  inside `.brand-slot` in the page `<header>`: a strapline, not a service entry. That one
+  shipped, and produced two functions contradicting each other in front of an owner —
+  "I couldn't get them onto the page" followed by "that page already has a services area."
+
+`header` was not on the penalty list. Adding it would have been the fifth patch to the same
+enumeration, and the model writes a new shape every build, so there would be a sixth.
+
+**The failure mode is what makes it dangerous: an enumeration that MISSES returns nothing,
+which is visible. A scorer that misses returns SOMETHING, which reads as success.** It
+always finds a best candidate, because "best" is just the highest number in a list that may
+contain no correct answer at all. There is no branch for "none of these qualify".
+
+So: replace scoring with **structural constraints** — what must be TRUE of the thing, not
+what we remember to exclude. For a service anchor: inside `<body>`, not inside `<header>`,
+`<nav>` or `<footer>`, not inside any `.brand-*` container, and `findServiceEntryBounds`
+succeeds on it. Same shape as `findNameSlotElement`, written when this scorer failed on the
+name.
+
+And keep the empty answer available. **A page with no valid anchor is a true fact we can
+act on; a page with a wrong anchor is a false one we cannot.** Stamping nothing is a
+result, not a failure.

@@ -219,11 +219,23 @@ function countLeaked(html: string): number {
  * there is nowhere to put a service, and adding a second services section to a page that
  * has one would be the destructive thing it exists to avoid. That refusal is `anchor`.
  */
-export function addServicesBlock(html: string, services: ServiceFact[], accent?: string): ServicesBlockPlacement {
+export function addServicesBlock(html: string, services: ServiceFact[], accent?: string, existingAnchorCount = 0): ServicesBlockPlacement {
   const real = (services || []).filter((s) => s && String(s.name || "").trim());
   if (!real.length) return { html, changed: false, inserted: [], via: "missed", detail: "no_real_services" };
 
-  if (/data-hubly-section="services"/i.test(html) || /data-hubly-service=/i.test(html) || /data-hubly-services-block/i.test(html)) {
+  // ONE PREDICATE, PASSED IN. This used to run its own test:
+  //   /data-hubly-section="services"/ || /data-hubly-service=/ || /data-hubly-services-block/
+  // — a presence check on an attribute, which is a SECOND definition of "does this page
+  // have a services area". On 2026-09-12 the two definitions disagreed about the same
+  // page: this one refused with "that page already has a services area" because a header
+  // strapline carried data-hubly-service, while the inserter had just told the same owner
+  // it could not get his services onto the page. Both statements reached him; neither was
+  // right about what the element was.
+  //
+  // The count comes from allServiceAnchors, which requires findServiceEntryBounds to
+  // succeed — i.e. an entry a service could actually join. Second definitions are the
+  // disease; there is only one question now and only one function answers it.
+  if (existingAnchorCount > 0) {
     return { html, changed: false, inserted: [], via: "anchor", detail: "already_has_services" };
   }
 

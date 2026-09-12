@@ -3577,11 +3577,30 @@ function matchingCloseIndex(html: string, openStart: number, tag: string): numbe
   return -1;
 }
 /** Every data-hubly-service anchor on the page, in document order. */
-function allServiceAnchors(html: string): { index: number; length: number; tag: string; text: string }[] {
+/** THE ONE QUESTION: is there a service entry on this page that a new service could join?
+ *
+ *  AN ANCHOR WITH NO ENCLOSING REPEATING ENTRY IS NOT AN ANCHOR, IT IS AN ATTRIBUTE.
+ *  Until 2026-09-12 this returned every element carrying data-hubly-service, and two
+ *  callers then asked the same question with different tests and got opposite answers on
+ *  the same page: the inserter said "I couldn't get them onto the page" while
+ *  addServicesBlock said "that page already has a services area". Both were looking at ONE
+ *  element — a strapline in the page HEADER, inside .brand-slot, wrongly stamped by the
+ *  scorer. An owner saw the contradiction and said so.
+ *
+ *  Requiring findServiceEntryBounds to succeed collapses the two definitions into one BY
+ *  CONSTRUCTION rather than by fixing both to agree, which is the failure mode that keeps
+ *  recurring — two writers of one fact drifting apart. addServicesBlock is now given this
+ *  function's result rather than running a test of its own. */
+export function allServiceAnchors(html: string): { index: number; length: number; tag: string; text: string }[] {
   const out: { index: number; length: number; tag: string; text: string }[] = [];
   const re = /<([a-z0-9]+)\b[^>]*\bdata-hubly-service="([^"]*)"[^>]*>([\s\S]*?)<\/\1>/gi;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(html))) out.push({ index: m.index, length: m[0].length, tag: m[1].toLowerCase(), text: stripElementText(m[3]) || m[2] });
+  while ((m = re.exec(html))) {
+    const tag = m[1].toLowerCase();
+    // The predicate, not a second opinion about it.
+    if (!findServiceEntryBounds(html, m.index, m[0].length, tag)) continue;
+    out.push({ index: m.index, length: m[0].length, tag, text: stripElementText(m[3]) || m[2] });
+  }
   return out;
 }
 /** The repeatable ENTRY element that contains (or is) a service-name anchor —
@@ -4294,6 +4313,49 @@ function escHtmlText(s: string): string {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+
+/** MAY THIS ELEMENT BE STAMPED AS A SERVICE ANCHOR? Structural constraints, not a score.
+ *
+ *  findServiceNameElement is an enumeration wearing a number: a tag ranking plus a penalty
+ *  list of data-hc prefixes (hero|nav|footer|announce|cta). It has now picked header
+ *  furniture TWICE — <title> when stamping the business name on 2026-09-11, and a
+ *  .brand-slot strapline when stamping a service on 2026-09-12. Adding "header" to the
+ *  penalty list would be the fifth patch to the same enumeration and it will miss a sixth
+ *  case, because the model writes a new shape every build.
+ *
+ *  So the test is what must be TRUE of a real service entry, not what we remember to
+ *  exclude:
+ *    - inside <body>
+ *    - not inside <header>, <nav> or <footer>
+ *    - not inside any .brand-* container
+ *    - findServiceEntryBounds succeeds on it — there is an entry a service could join
+ *
+ *  If nothing qualifies, stamp nothing. A page with NO valid anchor is a true fact we can
+ *  act on (build a services list). A page with a WRONG anchor is a false one we cannot —
+ *  it made two functions contradict each other in front of an owner. */
+function isStampableServiceElement(html: string, index: number, length: number, tag: string): boolean {
+  const bodyAt = html.search(/<body\b/i);
+  if (bodyAt >= 0 && index < bodyAt) return false;
+  for (const region of ["header", "nav", "footer"]) {
+    const re = new RegExp(`<${region}\\b`, "gi");
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html))) {
+      if (m.index > index) break;
+      const close = matchingCloseIndex(html, m.index, region);
+      if (close > index) return false;          // the element sits inside this region
+    }
+  }
+  // Any .brand-* container — brand-slot, brand-mark, brandbar — is identity, not a service.
+  const brand = /<([a-z0-9]+)\b[^>]*class="[^"]*\bbrand-[a-z0-9-]*[^"]*"[^>]*>/gi;
+  let bm: RegExpExecArray | null;
+  while ((bm = brand.exec(html))) {
+    if (bm.index > index) break;
+    const close = matchingCloseIndex(html, bm.index, bm[1].toLowerCase());
+    if (close > index) return false;
+  }
+  return !!findServiceEntryBounds(html, index, length, tag);
+}
+
 export function markServiceAnchorsInFreeform(html: string, names: string[]): { html: string; marked: number } {
   let out = html;
   let marked = 0;
@@ -4302,6 +4364,10 @@ export function markServiceAnchorsInFreeform(html: string, names: string[]): { h
     if (!name) continue;
     const el = findServiceNameElement(out, name);
     if (!el) continue;
+    // STRUCTURAL GATE. The scorer picks SOMETHING on almost any page, and picking
+    // something reads as success — which is how a header strapline became a service
+    // anchor. A page with no valid anchor is a better outcome than a wrong one.
+    if (!isStampableServiceElement(out, el.index, el.length, /^<([a-z0-9]+)/i.exec(out.slice(el.index))?.[1]?.toLowerCase() || "")) continue;
     if (/data-hubly-service=/i.test(el.attrs)) continue;   // already marked
     const open = out.slice(el.index, el.index + el.length);
     const anchorVal = el.text.replace(/"/g, "");           // the page's OWN text, not the record spelling
@@ -7383,7 +7449,10 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             return { ok: false, real: false, error: "not_freeform", summary: "This page is not one I can add a section to." };
           }
           const bizRow = await selectOne("businesses", "id", draftId, "brand_color,slug");
-          const r = addServicesBlock(latest.renderedHtml, clean, String((bizRow as any)?.brand_color || ""));
+          // ONE PREDICATE. addServicesBlock used to run its own three-way regex test for
+          // "does this page already have services", which is how it disagreed with the
+          // inserter about the same page. It is given the answer now.
+          const r = addServicesBlock(latest.renderedHtml, clean, String((bizRow as any)?.brand_color || ""), allServiceAnchors(latest.renderedHtml).length);
           if (r.via === "anchor") {
             return { ok: false, real: false, error: "already_has_services",
               summary: "That page already has a services area, so a second one would be wrong. Add the services the normal way instead." };
