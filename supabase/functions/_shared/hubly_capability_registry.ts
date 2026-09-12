@@ -2104,7 +2104,19 @@ export function fixCollapsibleGridColumns(html: string): { html: string; fixed: 
   //     the whole grid — nothing else is in it — so spanning every column is always
   //     correct and cannot make a good page worse. Appended CSS only; if the <li>
   //     is not a grid, grid-column is simply ignored.
-  const net = `<style id="hubly-layout-net">:where(li,dd,dt)>*:only-child{grid-column:1/-1}</style>`;
+  //     UNSCOPED, and the scope is the whole lesson. This was written
+  //     `:where(li,dd,dt)>*:only-child` because the page that prompted it in August used a
+  //     LIST — the rule was fitted to the single failing example rather than to the shape.
+  //     Measured across 167 stored pages on 2026-09-12: 23 elements have this exact
+  //     collapse and ZERO of them are li/dd/dt. They are div, article and section, with
+  //     tracks like "48px 600px" and "58px 998px". The rule covered nothing at all, and
+  //     had looked like a fix for three weeks.
+  //
+  //     `grid-column` is INERT outside grid layout — ignored in block, flex, inline-block,
+  //     table and flow-root, all five verified by rendering before this shipped — so the
+  //     rule needs no parent scope. :where() keeps specificity at zero, so an authored
+  //     `grid-column: 2` still wins and a deliberate placement is never overridden.
+  const net = `<style id="hubly-layout-net">:where(*)>*:only-child{grid-column:1/-1}</style>`;
   out = out.includes("</body>") ? out.replace("</body>", net + "</body>") : out + net;
   return { html: out, fixed };
 }

@@ -965,3 +965,38 @@ query, and it does so on the first failure rather than the fiftieth.
 
 So, for any write path: **ask what row appears if this silently stops working.** If the
 answer is none, the next month of it not working is free.
+
+---
+
+## Lesson 32 — measure the corpus for the SHAPE before choosing the scope of a fix
+
+The layout net shipped on 2026-08-27 as `:where(li,dd,dt)>*:only-child{grid-column:1/-1}`.
+Measured across 167 stored pages on 2026-09-12: **22 elements have exactly that collapse
+and ZERO of them are li, dd or dt.** They are `div`, `article` and `section`, with tracks
+like `48px 600px` and `58px 998px`.
+
+The rule covered nothing. It had looked like a fix for sixteen days.
+
+The reason is not carelessness, and that is what makes it worth writing down. The page that
+prompted the fix used a LIST, so the rule was fitted to the single failing example rather
+than to the shape. One instance produced a rule that covers exactly one instance.
+
+**The measurement is not the expensive part; not doing it is.** Scanning the corpus for the
+shape took about ten minutes, cost nothing, and ran on stored bytes — no quota, no live
+traffic, no browser walk. Run in August it would have returned the same answer: zero li,
+all div and article. The rule would have been written unscoped the first time and this
+would never have been a bug.
+
+So, mechanically, when fixing a defect on a generated page:
+
+1. **Describe the shape** — a sole child in a multi-track grid, text squeezed to a fixed
+   track — separately from the instance you are looking at.
+2. **Count it across the stored corpus** before choosing the selector, the tag list, or the
+   condition. The pages are already on disk.
+3. **Let the count choose the scope.** If every instance is outside your intended scope,
+   the scope is wrong — and you will only find that out from the number.
+
+This sits under "a pass that enumerates is prompt guidance with extra steps": that lesson
+says what goes wrong, this one says what would have prevented it. And the corollary is
+sharper than either — **a fix fitted to one example is indistinguishable from a working fix
+until somebody counts.**
