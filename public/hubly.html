@@ -54035,7 +54035,50 @@ function wireHublyDocumentReserved(){
   });
 }
 
+/** THE LINK GUARD, BOUND IN THE PREVIEW WHETHER OR NOT EDITING IS ON.
+ *
+ *  wireHcEditingSurface already stops every anchor in the frame — "IN THE EDITOR, A LINK IS
+ *  NOT A LINK", written after a card CTA navigated the whole builder tab away and cost an
+ *  owner their editing session. But that surface binds only when hcEditable=1: claimed AND
+ *  signed in. The PRE-CLAIM preview inherited none of it, so the same click on the same
+ *  button did the same thing to the owner who has not committed yet — the one still deciding
+ *  whether to trust us, with a half-built site to lose. A parallel path inherits none of the
+ *  original's guards, and the guards are invisible in the diff because they are the code
+ *  nobody wrote (Lesson 14).
+ *
+ *  So the interception is separated from the editing: this binds in ANY preview, and does
+ *  one thing — a link in the preview does not navigate. Editing stays gated exactly as it
+ *  was. Capture phase, so it runs before anything inside the page. */
+function wireFreeformLinkGuard(){
+  var inPreview = false;
+  try{
+    var q = new URL(location.href).searchParams;
+    inPreview = q.get('hcEdit') === '1' || q.get('hcEditable') === '1';
+  }catch(e){ return; }
+  if(!inPreview) return;
+  var frame = hcFreeformFrame();
+  if(!frame) return;
+  var bind = function(){
+    try{
+      var d = frame.contentDocument;
+      if(!d || d.__hcLinkGuard) return;      // once per document, not once per load event
+      d.__hcLinkGuard = 1;
+      d.addEventListener('click', function(ev){
+        var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+        if(!a) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+      }, true);
+    }catch(e){ console.warn('freeform link guard unavailable', e); }
+  };
+  try{ if(frame.contentDocument && frame.contentDocument.readyState === 'complete') bind(); }catch(e){}
+  frame.addEventListener('load', bind);
+}
+
 function wireHublyDocumentClickToEdit(){
+  // The link guard is NOT gated on hcEditable — see its own note. Called here because this
+  // is where the preview frame is known to exist.
+  try{ wireFreeformLinkGuard(); }catch(e){ console.warn('link guard not bound', e); }
   try{
     // hcEditable=1 (claimed + owner signed in), NOT hcEdit=1 (which only means
     // "builder preview, show the draft"). Pre-claim there is no editing surface at
