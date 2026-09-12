@@ -63,14 +63,16 @@ const html = page.html;
 const results = [];
 const record = (n, name, ok, detail) => { results.push({ n, name, ok, detail }); };
 
-// ── 1. EVERY IN-PAGE ANCHOR RESOLVES ──────────────────────────────────────────
-{
-  const ids = new Set([...html.matchAll(/\sid="([^"]+)"/gi)].map((m) => m[1]));
-  const hrefs = [...new Set([...html.matchAll(/href="#([^"]+)"/gi)].map((m) => m[1]))].filter((h) => h && h !== "top");
-  const dead = hrefs.filter((h) => !ids.has(h));
-  record(1, "every in-page href=\"#…\" resolves to an element that exists", dead.length === 0,
-    dead.length ? `dead: ${dead.join(", ")} (of ${hrefs.length} anchor links)` : `${hrefs.length} anchor link(s), all resolve`);
-}
+// ── 1. EVERY IN-PAGE ANCHOR RESOLVES *AND SCROLLS* ────────────────────────────
+// The resolve half is cheap and static; the scroll half is the one that matters and it can
+// only be measured by clicking. This check asked "does the target exist?" until 2026-09-12,
+// because the failure it was written from was a dead anchor. Then ironwood-fence shipped a
+// link whose target exists and whose click NAVIGATED THE FRAME AWAY — a srcdoc document
+// resolves a fragment against its parent's URL — and this assertion passed it. A gate built
+// from the failures we have seen catches the failures we have seen (Lesson 43).
+const anchorIds = new Set([...html.matchAll(/\sid="([^"]+)"/gi)].map((m) => m[1]));
+const anchorHrefs = [...new Set([...html.matchAll(/href="#([^"]+)"/gi)].map((m) => m[1]))].filter((h) => h && h !== "top");
+const deadAnchors = anchorHrefs.filter((h) => !anchorIds.has(h));
 
 // ── 2. EVERY myhubly.app LINK IS THIS BUSINESS'S OWN ADDRESS ──────────────────
 {
@@ -192,6 +194,37 @@ try {
       bookPlaceholderHits = PLACEHOLDER.filter((s) => seen.text.includes(s));
     } catch (e) { bookDetail = `${bookHref} → could not load: ${String(e.message).slice(0, 80)}`; }
     await bctx.close();
+  }
+
+  // 1 (the half that matters): click each fragment link and require the target to come into
+  // view without the frame navigating.
+  {
+    const ctx1 = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const m = await mountAndEvaluate(ctx1, html, () => true);
+    const notScrolling = [];
+    for (const id of anchorHrefs) {
+      if (!anchorIds.has(id)) { notScrolling.push(`#${id} (no such element)`); continue; }
+      const r = await m.frame.evaluate((frag) => {
+        const before = location.href;
+        const el = document.getElementById(frag);
+        const a = [...document.querySelectorAll(`a[href="#${CSS.escape(frag)}"]`)][0];
+        if (!el || !a) return { ok: false, why: "link or target missing" };
+        a.click();
+        return { before, after: location.href, el: frag };
+      }, id).catch((e) => ({ ok: false, why: String(e.message).slice(0, 40) }));
+      await m.page.waitForTimeout(500);
+      if (r && r.ok === false) { notScrolling.push(`#${id} (${r.why})`); continue; }
+      const landed = await m.frame.evaluate((frag) => {
+        const el = document.getElementById(frag);
+        if (!el) return { gone: true };
+        return { gone: false, top: Math.round(el.getBoundingClientRect().top), url: location.href };
+      }, id).catch(() => ({ gone: true }));
+      if (landed.gone || landed.url !== r.before) notScrolling.push(`#${id} — the click navigated the frame to ${String(landed.url || "another document").slice(0, 60)}`);
+      else if (Math.abs(landed.top) > 150) notScrolling.push(`#${id} — nothing scrolled (target still ${landed.top}px away)`);
+    }
+    await ctx1.close();
+    record(1, "every in-page href=\"#…\" resolves AND scrolls to its target", deadAnchors.length === 0 && notScrolling.length === 0,
+      [...deadAnchors.map((d) => `#${d} has no element`), ...notScrolling].join(" | ") || `${anchorHrefs.length} anchor link(s), all resolve and all scroll`);
   }
 
   record(4, "no owner-directed instructional copy renders on a public surface",

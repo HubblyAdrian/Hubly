@@ -1437,3 +1437,36 @@ The generalisation, and it applies well beyond this command: **every standing pr
 this repo should be read as a question — what fails if someone does it anyway?** Where the
 answer is "nothing", the prohibition is decoration, and the next violation is a matter of time
 and tiredness rather than intent.
+
+## Lesson 43 — a gate built from the failures we have seen catches the failures we have seen
+
+Assertion 1 asked: *does every `href="#…"` resolve to an element that exists?* It was written
+the day we found a dead anchor, and it answers the only question a dead anchor raises.
+
+On 2026-09-12 Adrian clicked "See how the quote works" on a live page and nothing happened.
+The gate had passed that page — because `#process` **does** exist. The link resolves perfectly
+and the click navigates the frame to the site root, because a `srcdoc` document has no URL of
+its own and resolves a fragment against its PARENT's. Target exists, click is wrong, check
+green.
+
+Measured across 40 stored pages, clicking every fragment link: **0 of 119 scrolled.** 55
+navigated the frame away, 64 did nothing. Not one in-page link in the corpus worked, and the
+gate written to guard in-page links said they were fine.
+
+**The rule: a gate asserts the OUTCOME a person needs, not the precondition the last bug
+happened to violate.** "The target exists" is a precondition. "Clicking it brings the target
+into view" is the outcome. The first is cheap and static and was what the previous failure
+made obvious; the second is what a customer experiences, and it is only measurable by doing it.
+
+The assertion now clicks. Before the fix it reports:
+
+```
+RED  1. every in-page href="#…" resolves AND scrolls to its target
+        #process — the click navigated the frame to another document
+```
+
+The uncomfortable part, worth keeping: **every check in this file is vulnerable to the same
+thing.** Each was written from a failure we had already been shown, and each therefore encodes
+that failure's shape. The defence is not cleverness at design time — it is that when a person
+finds something a green suite missed, the FIRST question is "what precondition was this check
+asking instead of the outcome?", and the check is widened before the bug is fixed.

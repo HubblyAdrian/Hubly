@@ -193,6 +193,50 @@ function chatWidgetHtml(opts: { businessId: string; businessName: string; supaba
  *    stored HTML is unchanged; nothing here regenerates anything).
  *  - Our own injected furniture ([data-hubly-runtime]) is excluded — we own those.
  */
+/**
+ * IN-PAGE LINKS MUST SCROLL, NOT NAVIGATE.
+ *
+ * A generated page is mounted in a `srcdoc` iframe, and a srcdoc document has no URL of its
+ * own: its base URL is the PARENT's. So `<a href="#process">` does not scroll — the browser
+ * resolves it against `https://<slug>.myhubly.app/` and navigates the frame there, replacing
+ * the page with the shell and a fragment that means nothing in it.
+ *
+ * Measured on ironwood-fence, 2026-09-12, on the live site: before the click the frame's URL
+ * is `about:srcdoc` and #process sits 1578px down; after it, the URL is
+ * `https://ironwood-fence.myhubly.app/#process` and #process no longer exists. To a customer
+ * that is a button that does nothing. Adrian's words: "we can't be giving buttons that are
+ * not tied to anything."
+ *
+ * It is the same fact as the relative `/?book=1`, pointed the other way — there, inheriting
+ * the parent's URL is what makes a relative link correct forever; here, it is what breaks a
+ * fragment link. Corpus: 788 such links across 155 stored pages, every nav link on every
+ * freeform page among them.
+ *
+ * This is a CAPTURE-phase listener on the document, so it runs before anything the page
+ * wrote, and it only ever acts on a same-document fragment whose target actually exists —
+ * a link to a missing id is left alone rather than silently swallowed, because a dead
+ * anchor is a different defect and hiding it would make it unfindable.
+ */
+export function fragmentScrollHtml(): string {
+  return `
+<script data-hubly-runtime="fragment-scroll">
+(function(){
+  document.addEventListener('click', function(ev){
+    try{
+      var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
+      if(!a) return;
+      var href = a.getAttribute('href') || '';
+      if(href.charAt(0) !== '#' || href.length < 2) return;      // not a same-document fragment
+      var el = document.getElementById(href.slice(1)) || document.querySelector('[name="' + href.slice(1) + '"]');
+      if(!el) return;                                            // dead anchor: leave it visible
+      ev.preventDefault();
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }catch(e){}
+  }, true);
+})();
+</script>`;
+}
+
 export function contrastRescueHtml(): string {
   return `
 <script data-hubly-runtime="contrast">
@@ -552,7 +596,9 @@ export function injectHublyRuntime(html: string, ctx: RuntimeContext): RuntimeIn
     (injectedFallbackCta ? fallbackBookingHtml(bookBase, accent) : "") +
     // Recolours only unreadable button/CTA text at runtime (see contrastRescueHtml).
     // New pages only — existing stored pages carry the older runtime without it.
-    contrastRescueHtml();
+    contrastRescueHtml() +
+    // Makes every in-page link scroll instead of navigating the frame away (see above).
+    fragmentScrollHtml();
 
   const closeBody = out.toLowerCase().lastIndexOf("</body>");
   out = closeBody === -1 ? out + payload : out.slice(0, closeBody) + payload + out.slice(closeBody);
