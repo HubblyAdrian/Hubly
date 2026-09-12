@@ -6535,6 +6535,72 @@ businesses — and restored them afterwards (verified back to zero hour rows and
 created and dropped by the harness itself, means no proof ever touches a row Adrian might have
 open. Recorded, not built.
 
+## The refusal that actually saved — ironwood-fence hours (2026-09-12)
+
+**Established from the rows and the transcript.** At 20:41:55 Adrian typed *"open monday to
+friday 7 to 4"*. At 20:42:05 Hubly replied *"I couldn't save the hours yet — only the
+signed-in owner can set opening hours."* `settings_business_hours` now holds exactly five
+rows, weekdays 1–5, 07:00–16:00. **The write happened. The refusal was false.**
+
+**Which writer, proved by the store signature, not by a clock** (the hours table has no
+`created_at`, so this rests on which stores hold what):
+
+- `businesses.meta.hours` for ironwood-fence is **null**, and `meta.hours` is written by
+  exactly one function in the entire schema — `set_business_hours` (migration
+  `20260909040000`, line 301). So the rows did NOT come from the capability's writer.
+- `set_business_hours_in_progress` writes the table and only the table. Its pre-claim caller
+  is `applyExtractedFacts` (`hubly_capability_registry.ts:1026`), which runs on the user's
+  message and authorises by draft token — it does not care that nobody is signed in.
+- The values match the sentence exactly, and the business was not claimed until 20:44,
+  two minutes after the refusal.
+
+So **two writers raced on one fact in one turn**: extraction wrote it silently through the
+draft-token writer, the model's `setHours` capability was refused by the owner-only guard,
+and the reply was composed from the refusal alone. The owner was told no while the state
+changed under him — the truth-string defect inverted, and worse than the version fixed
+today, because a person told "no" stops trying.
+
+**T2 fixes the refusal half** (setHours now authorises a draft and writes both stores). It
+does NOT fix the deeper shape: one fact, two writers, a reply composed from one of them, and
+a page that got neither — which is why the T5 census flags ironwood with 5 of 5 open times
+absent from the page. That belongs with the dual-store work queued behind the 41% finding.
+
+## Can a phone number reach a page the record never held? Yes — nothing stops it (2026-09-12)
+
+**The structural answer.** The freeform generation prompt tells the model to draw "only from
+the record", and then enumerates a HARD LINE of things it must never write even as a guess
+(`hubly_capability_registry.ts:2360`): a price, a customer name, a review, a testimonial, a
+star rating, a review count, "trusted by N", years in business, a licence, insurance, a
+certification, an award, a guarantee. **A phone number is not on that list**, and no pass
+after generation validates a number on the page against the record. The classic renderer
+cannot invent one — it only ever emits `ctx.businessPhone` — but the freeform path is the
+model writing the whole page. This is the enumerate-the-valuable-side failure that CLAUDE.md
+already names four times, applied to the one fact a customer physically ACTS on.
+
+**Measured on the corpus: 1 page of 106 phoneless records prints a phone anyway** —
+`bucket-mobile-detailing-09616` shows **774-933-0822**, which is NOT in the reserved
+555 range and reads as a dialable number. Its record has never held a phone. Its conversation
+rows do not exist (created 2026-08-10, before transcripts were stored), so it CANNOT be
+proved the owner never said it — what is proved is that the record never held it and nothing
+in the pipeline would have stopped it either way.
+
+**The saltmarsh/copperwick collision, with the arithmetic.** `saltmarsh-bindery` prints TWO
+numbers, 801-555-6310 and 801-555-9001; the second is `copperwick-kilns`'s RECORD number.
+Under uniform random draws from 801-555-0000…9999 there are 10,000 possibilities; with 5
+page-printed numbers that differ from their own record and 66 records holding a phone, there
+are ~330 ordered pairs, so the expected number of collisions is **0.033** and the chance of
+seeing at least one is **≈3%**. One observation at 3% is weak evidence — suggestive, not
+conclusive. Against that: the two drafts were created **35 minutes apart on the same day**
+(18:36 and 19:11 on 2026-08-20) and draw from the same number space, which is equally
+consistent with a shared seeding pool or shared model context — the lifting failure of
+2026-09-01 wearing a different hat. **The transcripts that would settle it were never
+stored.** Stated as unresolved rather than decided.
+
+**Report only.** The fix — adding a phone (and every other dialable/actionable fact) to the
+hard line, plus a post-generation check that no phone on the page is absent from the record —
+is a ruling, not a patch, because it also has to decide what happens to the page when the
+model puts one there anyway.
+
 ## STAGE 3 LEADS WITH THIS — sub-AA text we did not insert: 68 of 165 pages (2026-09-12)
 
 **Promoted 2026-09-12 by Adrian's partner, ahead of the migration ledger:** this is a
