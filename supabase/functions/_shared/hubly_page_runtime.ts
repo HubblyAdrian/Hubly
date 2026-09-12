@@ -413,7 +413,30 @@ export interface RuntimeContext {
 export function injectHublyRuntime(html: string, ctx: RuntimeContext): RuntimeInjectionResult {
   const src = String(html || "");
   const accent = ctx.accent && /^#[0-9a-f]{3,8}$/i.test(ctx.accent) ? ctx.accent : "#1a3a6e";
-  const bookBase = `https://${ctx.slug}.${(Deno.env.get("HUBLY_PUBLIC_DOMAIN") || "myhubly.app")}/?book=1`;
+  // RELATIVE, NOT ABSOLUTE — RULED 2026-09-12. This was
+  //   `https://${ctx.slug}.myhubly.app/?book=1`
+  // and it is the one place a page's own address is written into its stored bytes. The
+  // address then changes: a draft starts at site-e93b28, the owner names the business, the
+  // slug derives to crestview-window-cleaning, and the stored link still points at a host
+  // that now resolves to nothing. A customer clicking Book on a live site reached a booking
+  // page with an empty name and a "BR" monogram. Six stored pages carry such a link today,
+  // and every future rename would mint another.
+  //
+  // A relative link cannot go stale. The page is always mounted inside the shell served
+  // from the business's own host, so `/?book=1` resolves to that host by definition, and a
+  // rename needs no rewrite pass, no alias table and no backfill — the class is gone rather
+  // than patched. `target="_top"` is unchanged: the link still leaves the frame, so booking
+  // still has a real address that an email, an SMS or a QR code can point at (the stored
+  // bytes simply no longer hard-code which one).
+  //
+  // KNOWN, AND SMALLER THAN WHAT IT REPLACES: inside the BUILDER preview the parent
+  // document is myhubly.app rather than the business host, so a click there resolves
+  // against the builder. That is an owner testing their own button in a preview — visible
+  // and recoverable — against a customer reaching a dead host on the live site, which is
+  // neither. If it needs fixing, the runtime below can rewrite the href from the top
+  // window's host at load; it is not fixed here because nothing has yet shown the preview
+  // click is not already intercepted by the editor.
+  const bookBase = `/?book=1`;
 
   const scan = scanHtml(src);
   const edits: Splice[] = [];
