@@ -1247,6 +1247,19 @@ Three things make it hard to see, all worth naming:
    The real answer is 17 across 3: one function records through a local `say()` wrapper — and
    it is the very function whose rows we were reading when the defect was found.
 
+   That third one is the transferable part, so it gets its own sentence: **the count was
+   wrong and the check was green, and the only thing that caught it was not believing the
+   number.** 9 across 2 looked plausible; it was checked against the file (12 raw occurrences
+   of `notePlacement(`, three functions named in the rows) and did not survive. A scanner
+   reports what it can see, never what it cannot, and its silence about a wrapper reads
+   exactly like an absence of wrappers. So a census from a new scanner is not a result until
+   it has been reconciled against a second source — the raw grep, the table's own distinct
+   values, the function names in the rows. Every instrument written tonight was wrong on its
+   first run: the mount harness rendered the wrong document, the legibility harness measured
+   an unsettled viewport and reported 15 of 132 as the whole corpus, the keepability pass
+   compared unescaped URLs, and this one could not see a wrapper. None of them failed. They
+   all reported.
+
 The check that holds it (`scripts/check-recording-on-success.mjs`) red-proofs its own detector
 on every run and exits 2 if it cannot tell a guarded call from an unguarded one. A detector
 that cannot fail is the thing it was written to catch.

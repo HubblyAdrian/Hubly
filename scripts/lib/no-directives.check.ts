@@ -3,10 +3,16 @@
  *
  * TWO NETS, AND THE FIRST IS THE ONE THAT LASTS.
  *
- * 1. STRUCTURAL. hubly_owner_replies.ts owns every string an owner reads verbatim. This
- *    asserts that each producer feeding primaryReply is IMPORTED from that module rather
- *    than defined somewhere else. A future leak is then not a phrase we failed to
- *    predict — it is a string in the wrong file, which is decidable.
+ * 1. STRUCTURAL. hubly_owner_replies.ts owns every string an owner reads verbatim FROM
+ *    THE SERVER. This asserts that each producer feeding primaryReply is IMPORTED from
+ *    that module rather than defined somewhere else. A future leak is then not a phrase we
+ *    failed to predict — it is a string in the wrong file, which is decidable.
+ *
+ *    WHAT IT DOES NOT SEE: owner-facing copy composed CLIENT-side in public/hubly.html —
+ *    the standalone name ask, the claim card, the talk-step questions. On 2026-09-12 an
+ *    owner was asked one question twice, once by the model and once by the client, with
+ *    this check green. The module's claim was narrowed to match this coverage rather than
+ *    the coverage left implied; see OPEN_FINDINGS.md for what closing the gap would take.
  *
  * 2. THE PHRASE LIST. Kept because it costs nothing, and because it is what caught the
  *    three live leaks. It will never catch "be honest that…", "avoid claiming…", "make
@@ -104,5 +110,5 @@ if (fails.length) {
   for (const f of fails) console.error("  " + f);
   Deno.exit(1);
 }
-console.log(`PASS — every string reaching an owner is produced by ${OWNER_MODULE}, and none of them instructs a model.`);
+console.log(`PASS — every SERVER-composed string reaching an owner is produced by ${OWNER_MODULE}, and none of them instructs a model. (Client-composed owner copy in public/ is outside this check.)`);
 Deno.exit(0);

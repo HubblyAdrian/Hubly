@@ -6226,6 +6226,14 @@ for another week, and A's real prerequisite is that owner-facing client copy liv
 check can recognise — a single table of strings rather than inline literals. B makes the
 documentation true tonight; A becomes cheap the moment that table exists.
 
+**RULED B, and done (2026-09-12).** `hubly_owner_replies.ts` now says SERVER-composed in its
+first line and names what it has never held (the client's name ask, claim card, talk-step
+questions and their Spanish twins). `no-directives.check.ts` says the same in its header and in
+its PASS line — "every SERVER-composed string … (Client-composed owner copy in public/ is
+outside this check.)" — so a reader cannot take the green as wider than it is. Comment and
+message only; no behaviour changed, so this needs no deploy of its own and will ride the next
+one. **A stays open**, with its prerequisite named.
+
 ## Ridgeline's own process cards render "0" badges — generation defect, not ours (2026-09-12)
 
 The page Adrian walked paints a step badge on each of its three process cards from
@@ -6242,3 +6250,55 @@ ridgeline (built after tonight's corpus export) that is **5 of 10**.
 
 `stripDecorativeOrdinals` exists to remove exactly this at generation and did not fire on
 these pages. Recorded, not fixed, as ruled.
+
+## chatbot-message cannot place, and the shared module is running at two versions (2026-09-12)
+
+**Question 1 — does chatbot-message reach any of the changed code?** No. Established by reading
+the path, not by inference:
+
+- It imports `loadConciergeContext`, which imports exactly ONE symbol from the capability
+  registry — `findAction` — used only by `resolveCapabilities` to filter a context's allow-list
+  down to capability ids that exist. An existence test against an in-memory array.
+- `chatbot-message/index.ts` (292 lines) has **no capability dispatcher**. It loads context,
+  builds a system prompt, makes one model call, and writes `chatbot_messages` /
+  `chatbot_conversations`. It never calls a capability action.
+- It never touches `business_documents`, never calls a placement function, and never imports or
+  calls `hubly_owner_replies.ts` — its replies are customer-facing, composed from its own
+  prompt and a local `redirectReply`.
+- Importing the registry is inert: the module has no top-level statements that do work — no
+  top-level calls, no `await`, no env reads at module scope. It costs bundle size, nothing else.
+
+**Question 2 — is the header-injection bug live on a customer surface?** **No.** The reading
+gate (`allServiceAnchors` accepting header furniture) is only reachable from capability handlers
+chatbot-message does not invoke. Not deploying it is therefore NOT the dangerous option; the
+inversion does not apply.
+
+### The skew, recorded: which function is on which commit
+
+| function | deployed version | last deployed (UTC) | commit |
+|---|---|---|---|
+| `hubly-conversation` | 318 | 2026-09-12 18:16:44 | `eea02d8` |
+| `hubly-document-build` | 128 | 2026-09-12 17:49:43 | `eb124bd` |
+| `chatbot-message` | 59 | **2026-09-06 20:30:49** | `b6708b9` |
+
+The two deployed today are at different commits and that is harmless here:
+`eb124bd..eea02d8` touches **nothing** under `supabase/functions/_shared/`, so the shared bundle
+is byte-identical in both; the difference is one prompt line inside
+`hubly-conversation/index.ts`.
+
+chatbot-message is six days behind. Of everything it can actually reach, **exactly one file has
+changed since its deploy** — `hubly_ai.ts`, which gained per-call metering
+(`record_model_call`). So its model calls are not metered.
+
+**And that has cost nothing measurable, which is the honest version:** `chatbot_messages` shows
+**no traffic since 2026-08-28** (2 messages that day, 20 on 08-20). There have been no calls to
+meter since the meter shipped. `model_calls` confirms it from the other side — 200 rows, none
+from `chatbot-message`.
+
+**So: leave the skew, with the reason recorded.** A function with no traffic in fifteen days,
+whose reachable delta is one telemetry writer, is not worth a customer-surface deploy tonight.
+The thing to watch is that this is a SHARED MODULE at two versions in production — the failure
+mode it creates is not in the code that differs but in the assumption that "we fixed X" means X
+is fixed everywhere. When chatbot-message is next deployed it will pick up six days of shared
+changes at once, none of them tested through that surface, and that is the deploy that deserves
+its own walk.

@@ -1,10 +1,29 @@
 /**
- * EVERY SENTENCE AN OWNER READS VERBATIM LIVES HERE.
+ * EVERY SERVER-COMPOSED SENTENCE AN OWNER READS VERBATIM LIVES HERE.
  *
  * hubly-conversation composes the reply as
  *   primaryReply = photoTruth || servicesTruth || contactHoursTruth || …
  * so those strings are not summaries a model reworks — they are handed to a person
  * word for word.
+ *
+ * READ THE FIRST WORD: **SERVER-COMPOSED**. This module used to claim EVERY sentence an
+ * owner reads, and that claim was false. Hubly also speaks from the CLIENT — the
+ * standalone "What's the business called?" ask (`isTalkBizTitle` in public/hubly.html),
+ * the claim card, the "reserved for you" line, the talk-step questions and their Spanish
+ * twins. Those are owner-facing, verbatim, and this file has never held them.
+ *
+ * The guard matches the narrowed claim and not the old one: no-directives.check.ts reads
+ * the SERVER only, because a Node check cannot meaningfully classify owner-facing copy
+ * inside a 55,000-line browser monolith where product strings, UI chrome, translations and
+ * developer text sit in one file. Narrowed on 2026-09-12 after the name question was asked
+ * twice on one screen — once by the model, once by the client — with every server check
+ * green. A claim that outruns its guard is worse than a narrow guard honestly described:
+ * it is how you come to trust a check that is not checking.
+ *
+ * Extending the guard to public/ is real work with a real prerequisite — owner-facing
+ * client copy living somewhere a check can recognise, a table of strings rather than
+ * inline literals. Recorded in OPEN_FINDINGS.md as option A; this file is option B, and
+ * it is honest today.
  *
  * WHY A MODULE AND NOT A LONGER PHRASE LIST. The first guard against model directives
  * leaking into that channel was a blocklist: "say that plainly", "do not claim", and so
@@ -12,10 +31,11 @@
  * claiming…", "make clear that…". That is enumerate-the-harmless-side — a list of the
  * forms we have already been burned by, which undercounts every single time.
  *
- * The structural version: ONE module owns the strings, and
- * scripts/check-no-directives-to-owners.mjs asserts that nothing outside it produces a
- * string reaching primaryReply. Then a future leak is not a phrase we failed to predict.
- * It is a string in the wrong file, which a check can see with certainty.
+ * The structural version: ONE module owns the SERVER's strings, and
+ * scripts/lib/no-directives.check.ts asserts that nothing else in the server produces a
+ * string reaching primaryReply. Then a future leak on that side is not a phrase we failed
+ * to predict. It is a string in the wrong file, which a check can see with certainty —
+ * and on the client side, nothing can see it yet, which is the gap named above.
  *
  * THE RULE FOR EVERY SENTENCE IN THIS FILE:
  *   - it is spoken TO the owner, never ABOUT what the model should say
