@@ -5653,3 +5653,41 @@ the state and the next action. The services panel shows a blank section with no 
 built" in the editor — because `inEditor` shows the section with no products — so if the section
 becomes gated on `hasStore`, that editor affordance disappears for businesses without a store,
 which is the intended behaviour and worth stating so it does not read as a regression later.
+
+## The minmax(0,fr) floor CAN be CSS, and should not ship unscoped (2026-09-12)
+
+**Question asked:** can the `minmax(0,1fr)` rewrite — a one-time HTML transform, and
+therefore skipped by 9 of the 11 paths that save rendered_html — be expressed as a
+stylesheet rule instead, so it becomes durable the way the sole-child rule is?
+
+**Answer: yes, and it still should not ship unscoped.**
+
+`min-width: 0` on a grid item reproduces `minmax(0,1fr)` exactly. Measured on a forced
+collapse: the squeezed item went **69px → 300px**, its proper half. The mechanism is the
+same — `1fr` means `minmax(auto,1fr)`, and `auto` resolves to the item's automatic minimum
+size, which `min-width:0` overrides.
+
+**But CSS cannot select "grid items."** `display` is not selectable and there is no
+parent-display selector, so `:where(*)>*{min-width:0}` also applies to FLEX items, where
+`min-width:auto` is likewise the default.
+
+**Measured against all 167 stored pages** rather than argued:
+
+| | |
+|---|---|
+| pages whose layout is identical | 0 |
+| pages that change by ≤2px (sub-pixel rounding) | 162 |
+| **pages with a real relayout (>2px)** | **5** |
+
+Worst is `ironside-barbers-647b4` at 333px across 22 elements — and on that page it
+**neither fixes a collapse nor creates an overflow** (4 squeezed elements before and after,
+zero overflowing either way). So the movement is neither a repair nor a break; it is just
+movement.
+
+Unlike `grid-column`, which is inert outside grid layout (verified in block, flex,
+inline-block, table and flow-root), this rule is **not** "cannot make a good page worse."
+It moves 5 real pages for no demonstrated benefit on them.
+
+**So the `fr` gap remains open.** The alternative is re-running the existing transform in
+the paths that skip it — `applyOwnerNodeDelete` is the sharpest, since deleting a sibling
+turns a two-child grid into a one-child grid. Not built; needs a ruling.
