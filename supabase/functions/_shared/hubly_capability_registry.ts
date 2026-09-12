@@ -2116,7 +2116,15 @@ export function fixCollapsibleGridColumns(html: string): { html: string; fixed: 
   //     table and flow-root, all five verified by rendering before this shipped — so the
   //     rule needs no parent scope. :where() keeps specificity at zero, so an authored
   //     `grid-column: 2` still wins and a deliberate placement is never overridden.
+  //     REPLACE, NEVER APPEND. This used to append unconditionally, so the block grew by
+  //     one copy every time anything touched the page: 166 stored documents carry it more
+  //     than once, up to SIX times. That is not merely untidy — it is why the transform
+  //     cannot tell whether it has already run, which is what made it one-time-only and
+  //     left the fr floor unapplied on every write path that isn't generation.
+  //     Replacing makes the whole operation idempotent, which is the property that would
+  //     let it run safely on every write.
   const net = `<style id="hubly-layout-net">:where(*)>*:only-child{grid-column:1/-1}</style>`;
+  out = out.replace(/<style id="hubly-layout-net">[\s\S]*?<\/style>/gi, "");
   out = out.includes("</body>") ? out.replace("</body>", net + "</body>") : out + net;
   return { html: out, fixed };
 }

@@ -48,7 +48,13 @@ export function photoReply(p: PhotoPlacementLike): string {
   return `I've saved that photo, but I couldn't place it on the page just now, so it isn't showing. I can try again, or rebuild the page around it.`;
 }
 
-/** A services area was added to a page that had none. */
+/** A services list was added to a page that had none.
+ *
+ *  "SERVICES AREA" IS BANNED IN OWNER-FACING TEXT. The generated page uses that phrase for
+ *  GEOGRAPHY — toms-gutters-more has a section headed "SERVICE AREA — Serving Murray" — so
+ *  asking an owner whether to add gutter cleaning at $180 to his "services area" reads as
+ *  asking about the towns he covers. He said so. The page's own vocabulary has taken the
+ *  phrase; we use "a services list on your page" or "a section listing your services". */
 export function servicesAreaAddedReply(url: string, names: string[]): string {
   const list = names.length === 1
     ? names[0]
@@ -56,7 +62,7 @@ export function servicesAreaAddedReply(url: string, names: string[]): string {
   // "Have a look" and nothing more: 93 of 96 pages take the cloned section correctly and
   // on 3 it is unreadable, with nothing in the HTML separating them. A human eye is the
   // only thing that reaches there. No offer to fix follows, because no path can.
-  return `I've added a services area with ${list} in it — have a look at your page. It's live at ${url}.`;
+  return `I've added a services list with ${list} in it — have a look at your page. It's live at ${url}.`;
 }
 
 /** The owner's site cannot be edited from here (no generated document). */
@@ -127,9 +133,12 @@ export function composeServicesTruth(placement: ServicesPlacementLike, url: stri
       const names = (placement.missing || []).slice(0, 3);
       const withPrices = (placement.placed || []).length ? [] : names;
       const what = withPrices.length ? andList(withPrices) : "them";
-      return `I've saved those to your record. Your page doesn't have a services area yet — want me to add one with ${what} in it?`;
+      return `I've saved those to your record. Your page doesn't have a section listing your services yet — want me to add one with ${what} in it?`;
     }
-    return `I've saved those to your record, but I couldn't get them onto the page, so they aren't showing yet. Want me to add them to your services area?`;
+    // `what` belongs to the noSection branch above and is NOT in scope here — this is the
+    // OTHER failure: the page has somewhere to put them and the placement still failed.
+    // Naming them again would be a second list; the offer is the same either way.
+    return `I've saved those to your record, but I couldn't get them onto the page, so they aren't showing yet. Want me to add a services list to your page?`;
   }
   if (placement.status === "no_prices") {
     // Names are on the page; no prices were given. Let the model ask for them —

@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-09-12T01:39:36.371Z",
+  "checkedAt": "2026-09-12T02:00:11.137Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -276,7 +276,7 @@
       },
       {
         "expertId": "research",
-        "executionTimeMs": 1
+        "executionTimeMs": 0
       },
       {
         "expertId": "strategy",
@@ -288,7 +288,7 @@
       },
       {
         "expertId": "critic",
-        "executionTimeMs": 0
+        "executionTimeMs": 1
       }
     ],
     "failures": [
@@ -323,7 +323,7 @@
         {
           "expertName": "Research Expert",
           "expertId": "research",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "reasoning": [
             {
               "reason": "Used Business DNA knowledge (pressure washing v1) as evidence.",
@@ -1604,7 +1604,7 @@
         {
           "expertName": "Critic",
           "expertId": "critic",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "reasoning": [
             {
               "reason": "Experts agree enough to proceed without overwhelming the owner.",
@@ -1664,7 +1664,7 @@
           "output": {
             "type": "Builder Intent",
             "builderIntent": {
-              "intentId": "bint_mtxpw8pz_saqnm3",
+              "intentId": "bint_mtxqmph1_cpux9e",
               "version": "1.0.0",
               "originalRequest": "I'm starting a pressure washing company.",
               "intentCategory": "Business Strategy",
@@ -1695,7 +1695,7 @@
                   "confidence": 81
                 }
               ],
-              "timestamp": "2026-09-12T01:39:36.359Z",
+              "timestamp": "2026-09-12T02:00:11.125Z",
               "applied": false,
               "changePlanGenerated": false
             },
@@ -1865,7 +1865,7 @@
           "changedFromPrevious": "First expert in this run — established the baseline.",
           "confidence": 90,
           "status": "ok",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "outputType": "Research Report",
           "retries": 0
         },
@@ -1937,7 +1937,7 @@
           "changedFromPrevious": "Creative Director produced Creative Plan; Critic advanced that into Quality Report (confidence 84 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "outputType": "Quality Report",
           "retries": 0
         },
