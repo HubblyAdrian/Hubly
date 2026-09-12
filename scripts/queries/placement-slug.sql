@@ -8,7 +8,7 @@
 -- it can now: addServicesBlock/inserted (its row was inside the save-failure branch) and
 -- applyServicesToFreeform/section_added (that path used to ask permission instead of acting).
 -- A clean walk should show LANDINGS here, not only refusals.
-with target as (select 'ridgeline-pressure-washing'::text as slug)
+with target as (select 'crestview-window-cleaning'::text as slug)
 
 select 'timeline' as section,
        to_char(p.occurred_at, 'MM-DD HH24:MI:SS') as at,
