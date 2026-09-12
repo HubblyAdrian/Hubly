@@ -5747,3 +5747,168 @@ habit into a guarantee and makes the refusal branch unreachable rather than bett
 **Why it will not be obvious in a month:** the code reads as though placement has two
 supported target types. It does not. It has one supported type and one fortunate one, and
 the fortunate one carries most of the traffic.
+
+## The seven "CSS-less" pages are not CSS-less — the byte count was counting the wrong page (2026-09-12)
+
+**Recorded as ruled, and the ruling's premise is disproved.** The instruction was to record
+the seven pages that carry framework-shaped utility classes with 29 bytes of stylesheet, and
+to build a generation-time check that refuses to present such a page as finished. The
+distribution was measured first, as ruled. It says the seven pages are fine.
+
+**The seven, re-measured on a fresh export of all 167 stored pages** (`business_documents`,
+latest row per business):
+
+| slug | built | account_kind | own `<style>` bytes | utility classes |
+|---|---|---|---|---|
+| `bucket-mobile-detailing-09616` | 2026-08-10 | test | 0 | 324 |
+| `ridge-paws` | 2026-08-18 | test | 29 | 144 |
+| `hearth-and-iron` | 2026-08-20 | test | 29 | 297 |
+| `kilnwood-bakehouse` | 2026-08-20 | test | 29 | 262 |
+| `emberfield-bakehouse` | 2026-08-20 | test | 29 | 300 |
+| `stonemill-bakehouse` | 2026-08-20 | test | 29 | 272 |
+| `saltmarsh-bindery` | 2026-08-20 | test | 29 | 242 |
+
+**Correction to the date cluster:** not 18–20 August. One is 2026-08-10, one 2026-08-18, five
+2026-08-20. All seven are `account_kind = 'test'`; no market or internal business is involved.
+
+### Why they are not broken
+
+`hcMountDocumentHtml` in `public/hubly.html` mounts a stored page one of **two** ways, and the
+format decides which:
+
+- **A full document** (starts with a doctype) goes into a same-origin `srcdoc` iframe. Nothing
+  outside reaches it, so all of its CSS must be in the page.
+- **An AST fragment** (no doctype) is set as `innerHTML` on `#hc-doc-root`, where the app shell's
+  own stylesheets apply — `public/journey-os/hubly-document.css` (158,752 B, a closed utility set
+  scoped `#hc-doc-root .py-20{…}`) and `hubly-document-chrome.css` (17,481 B), both linked in
+  `public/hubly.html` and both live (HTTP 200 from `myhubly.app`).
+
+The seven are exactly the seven AST-format pages in the corpus. Their 29 bytes are
+`#hc-doc-root{--brand:#c25a3a}` — the brand hookup for that stylesheet, which is the whole
+mechanism working, not a stub. `bucket-mobile-detailing-09616` has no `<style>` at all and
+inherits the stylesheet's own `--brand: #D9632D` default.
+
+**Rendered both ways to look at it, not only to count it** (`ast-inshell-hearth-and-iron.png`,
+`ast-bare-hearth-and-iron.png`): in the real shell it is a finished page — gradient hero band,
+88px section padding, white display type, brand buttons; `py-20` computes to 80px, `bg-brand-900`
+resolves. Stripped of the shell it is the unstyled document the byte count implied. The byte count
+was describing a page the product never serves.
+
+Class coverage for the same seven against the served stylesheet: 95–99% of classes used are
+defined; the handful that are not are markers (`hubly-reserved`) and minor variants
+(`aspect-[4/3]`, `hd-h-left`). No page depends on CSS that does not exist.
+
+### The distribution, which is what makes the split visible
+
+Own `<style>` content per page, all 167, Hubly-injected `<style data-hubly-*>` counted separately:
+
+```
+     0–   30   ####### 7          (every AST page)
+  5000– 8000   # 1
+  8000–12000   ################################################################ 84
+ 12000–20000   ############################################ 75
+```
+
+| | full-document (iframe) | AST fragment (innerHTML) |
+|---|---|---|
+| pages | 160 | 7 |
+| own `<style>` bytes — min / median / max | 6,656 / 11,892 / 17,339 | 0 / 29 / 29 |
+| utility classes — min / median / max | 0 / 0 / 2 | 144 / 272 / 324 |
+| built | 2026-08-20 → 2026-09-12 | 2026-08-10 → 2026-08-20 |
+| account kinds | test, internal, market | test only |
+
+The two populations are **the two renderers**, not healthy pages and broken ones. The gap between
+29 B and 6,656 B is empty, and nothing sits in it. The utility-class signal separates just as
+cleanly in the other direction: no full-document page uses more than **2** framework-shaped
+classes, and no AST page uses fewer than 144.
+
+### What the check would have to be, if we build one
+
+The check as ruled — utility classes plus low style bytes — fires on all seven of these pages and
+on nothing else in the corpus. **Every hit would be a false one.** The version that is actually
+about the fear:
+
+> A page **mounted in an iframe** (full document, `hcIsFullDocument` — the production predicate,
+> imported, not re-implemented) whose own `<style>` content is below **2,000 bytes** cannot have
+> been designed and must not be presented as finished.
+
+2,000 B is 3.3× below the lowest real page (6,656 B) and 70× above the highest AST page, so it sits
+in the empty gap with room on both sides. **Current hits: 0 of 160.** For an AST page the equivalent
+question is not bytes at all — it is whether the served closed stylesheet defines the classes the
+page uses, measured above at 95–99%.
+
+**Still open, and yours:** what the check does on a hit — regenerate, or refuse and tell the owner
+honestly. Not decided here. Note that at zero current hits it is a guard against a future
+regression (a model that stops emitting `<style>`, or a renderer change), not a repair for anything
+now live, which may change how much the answer matters.
+
+**The lesson, which is the part that survives the disproof:** the count was of a FORM — bytes of
+`<style>` inside the stored HTML — and the fact was "does this page have CSS when a person looks at
+it". Those came apart the moment a second renderer existed, and nothing in the measurement knew
+there were two. Same shape as the anchor count, the price scan and the hours detector before it.
+
+## Two donors does not move the inset — the inset is not on the section (2026-09-12)
+
+**Ruled: split the donor in two — wrapper by modal class signature among the page's sibling
+content sections, items by the current 2+ `<h3>` rule — and report the match rate against the
+old rule. Built, measured, and it does not move the number. Reverted, not tuned, as ruled.**
+
+Both halves import the production function; the "old" half is a frozen copy of
+`hubly_services_block.ts` as it stood before the edit, not a re-implementation (Lesson 34).
+Corpus re-exported tonight: 167 stored pages, of which **129 receive a services block** (38 skip
+— already have a services area, or no eligible donor).
+
+| | |
+|---|---|
+| pages where the new rule picked a **different wrapper** | **60 / 129** |
+| pages where the block's rendered inset **changed at all** (>2px) | **1 / 129** |
+| that one page | a regression: `gutter-guard-installation-and-gutter-cle-6fe23`, 4px off → 395px off |
+| match rate vs the page's median text inset (±12px) | old **8/129** · new **7/129** |
+| match rate vs the page's content-column start (±12px) | old **39/129** · new **38/129** |
+| same, ±24px | old **55/129** · new **54/129** |
+
+Measured at 1280px with images loaded. The median is reported as ruled, and a second statistic —
+the page's leftmost content inset — is reported beside it because a page with two-column sections
+has a median that is a line position, not a column start. **Both statistics give the same answer:
+nothing moved.** (The first pass of this measurement included inline `<span>`/`<a>` leaves and
+produced page medians of 600–670px on a 1280px page; corrected before any of these numbers.)
+
+### Why it cannot move it
+
+Changing the `<section>`'s class attribute cannot change the inset, because on these pages the
+inset is not carried by the section. Read off three pages, each carrying it somewhere different:
+
+| page | where the inset lives | what our clone reproduces |
+|---|---|---|
+| `ember-and-oak` | `div.shell` **inside** the section, `margin-left:60px` | the section only → our text lands at **0px**, full bleed |
+| `kestrel-gutter-guards-db8a8` | section `padding-left:64px` **and `display:flex`** | padding yes; our `.hubly-sv-list` becomes a flex item → rows at **1038px** |
+| `gutter-guard-…-6fe23` | section `padding-left:42px` + an inner `<div>` | 42px of 102px |
+
+Counted across all 129: **63 pages** land the block's text at ≤24px while the page's own content
+starts at ≥40px — the signature of a missing inner container. **7 pages** push the block more than
+200px to the RIGHT of the content start — the signature of a section whose own `display` places our
+single child as a grid/flex item.
+
+So the two-donor split was the right decomposition of the *question* and the wrong level for the
+*answer*. The wrapper's class attribute is one of three things that set the inset, and on the pages
+that are worst wrong it is not the one.
+
+### What I think the next step is — not taken
+
+Clone the donor's **container chain**, not its outermost tag: the element path from the section down
+to the element that actually holds its `<h2>` (`section.booking-band > div.shell > div.booking-inner
+> div`), re-emitted around our rows with the same classes. Still pure cloning and string work — no
+layout recognition, no pixels, nothing that needs a browser at insert time. It reproduces all three
+carriers at once, because it reproduces the page's own nesting instead of guessing which level the
+inset is on.
+
+Two things to weigh before building it, both of which argue for measuring first: a deeper clone
+carries more of the donor's scoped colour rules with it (which is what the item-donor rule exists to
+exploit — it could help), and it also carries more of the donor's layout (a `display:grid` container
+with `grid-template-columns` would place our rows the way it places the donor's, which on a two-column
+donor is not what we want). **Your call whether that is the next move; I have not built it.**
+
+**Unrecorded sample, stated so it is not read as a comparison it is not:** the earlier "1 of 11"
+was not written down anywhere, so the 11 pages could not be re-used. These numbers are the whole
+129-page set, measured for both rules in the same run — which is the comparison that decides the
+question. The old rule's 6% on that set is consistent with 1 in 11.

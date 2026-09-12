@@ -1110,3 +1110,38 @@ uses it — the writer, the reader, the checker, the repair script. One function
 the answer cannot depend on which door you came through. This is the third pair of gates
 tonight holding two definitions of one fact, after the two slugifiers and the two
 "has a services area" tests.
+
+## Lesson 36 — looking and measuring fail differently, and neither substitutes for the other
+
+Both directions happened in one night on the same work, which is the only reason this is a
+lesson and not a preference.
+
+**A metric passed two pages the screenshots caught.** The services block was measured as
+inserted, in the frame, and above 4.5:1 in pixel contrast — and two pages still looked broken
+when rendered and looked at: the block sat at a different inset from everything around it, full
+bleed on a page whose content sat in a column. No assertion in the suite asks "is this in the
+same place as the rest of the page", because nobody had thought to ask it until they saw it.
+
+**A measurement caught five pages the screenshots passed.** Then the inset was measured across
+the corpus rather than sampled, and pages that *looked* fine in a screenshot were 300–900px out —
+including the block's rows pushed to x=1038 on a 1280px page, which a fullpage screenshot at a
+glance reads as "a right-aligned block", not as a defect. Five of those were never going to be
+found by looking, because looking does not scale to 129 pages and the eye forgives what it can
+explain.
+
+And the same night, in the other direction: **a byte count said seven pages had no CSS, and one
+screenshot said they were finished pages.** The count was right about the bytes and wrong about
+the page, because the CSS was in the app shell. Looking is what disproved it; counting is what
+found it worth checking.
+
+**Rule: a finding about how something LOOKS is not closed until it has been both rendered and
+counted.** Render it, because legibility, overlap, jumping and "this sits in the wrong place"
+have no number until somebody names one. Count it, because a sample of 11 cannot tell you whether
+you are looking at 1 page or 60, and because the eye stops seeing a defect it has seen twice.
+
+The trap is that each method's blind spot is invisible from inside the other. A screenshot cannot
+tell you how many pages share the defect. A metric cannot tell you it is measuring the wrong
+thing — the inset metric's first version returned page medians of 670px on a 1280px page and
+reported them without complaint; only rendering one page and reading the elements it had measured
+showed it was averaging in inline `<span>` positions. The second pass was not a formality. It was
+the pass that made the first one's numbers mean anything.
