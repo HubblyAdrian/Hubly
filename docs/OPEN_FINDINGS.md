@@ -6343,9 +6343,18 @@ red-proof themselves** — `check-recording-on-success.mjs`, `check-verification
 Three of the five now-verified ones were WRONG on their first green, so this is not a
 theoretical concern: it is the base rate.
 
-That is not a crisis and it is not worth ninety-two retrofits while the product is still wrong.
-It is a fact that should be visible rather than rediscovered the next time one of them passes
-while something is broken. The standing rule (Lesson 40): every new check self-red-proofs, and
+**THE BASE RATE IS THE FINDING, NOT THE 92.** Three of the five checks that have now been
+red-proofed were WRONG on their first green — the phrase net, the verification-carried check,
+and the warn-then-proceed classifier. That is the measured rate on the only sample we have, and
+on it the expectation is plain: **a majority of the 92 unverified checks probably do not do what
+their name says.** Not "might not" — probably do not.
+
+Which means "we have 97 checks" is never again a reason to feel safe, and a green from an
+unverified check is not evidence of anything. It is worth saying in those words because the
+comfortable reading of 97 is exactly what let a live page ship with a Book button pointing at a
+dead address while every suite passed.
+
+It is not worth ninety-two retrofits while the product is still wrong. It is worth knowing. The standing rule (Lesson 40): every new check self-red-proofs, and
 any check touched gets retrofitted in passing.
 
 The 92 are every `scripts/check-*.mjs` and `scripts/lib/*.check.ts` except those six — the bulk
