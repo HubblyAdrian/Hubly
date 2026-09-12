@@ -52,7 +52,12 @@
   --toast-bg:#141414;--toast-fg:#fff;
   --r-sm:8px;--r-md:12px;--r-lg:16px;--r-xl:20px;
   --sh-sm:0 1px 4px rgba(0,0,0,0.07);--sh-md:0 4px 16px rgba(0,0,0,0.09);--sh-lg:0 8px 36px rgba(0,0,0,0.12);
-  --font:'Inter',sans-serif;--font-d:'DM Sans',sans-serif;--nav:220px;
+  /* ONE STACK, BYTE FOR BYTE, ACROSS BOTH SHELLS (2026-09-12). platform-home.html
+     declares the same string; the walk assertion compares them literally, because two
+     different Inter stacks is exactly how a divergence starts that nobody notices until
+     an owner says "the font on the left is bad". system-ui is the fallback while Inter
+     loads — a real improvement here, not a compromise for the comparison. */
+  --font:'Inter',system-ui,sans-serif;--font-d:'DM Sans',sans-serif;--nav:220px;
   color-scheme:light;
 }
 html[data-theme="night"]{

@@ -30,7 +30,20 @@
   --ink:#1B1712;         /* near-black warm — primary text */
   --ink-2:rgba(27,23,18,.66);
   --ink-3:rgba(27,23,18,.50);
-  --font:'DM Sans',system-ui,sans-serif;
+  /* THE RAIL'S TOKENS, DEFINED. The claimed rail was authored 2026-09-08 against
+     --sidebar and --brand-400 and neither was ever added, so it rendered its own CSS
+     fallbacks: a dark green (#0f2a22) sidebar and a yellow (#f0b429) "ly". An owner
+     claimed his business and landed in what looked like a different product. Both
+     values below are the real brand, not new colours: the rail is the brand's darkest
+     ink, and the mark's second syllable is the brand orange, exactly as
+     .hubly-lockup .ly has always been. */
+  --sidebar:#1B1712;
+  --brand-400:#D9632D;
+  /* ONE FONT ACROSS THE TWO SHELLS. hubly.html — the shell the owner is in for the
+     whole build — is Inter; this was DM Sans, so claiming changed the typeface under
+     them thirty seconds after they committed. Consistency with where they just were
+     beats whichever face is nicer in isolation. */
+  --font:'Inter',system-ui,sans-serif;
   --display:'Plus Jakarta Sans',system-ui,sans-serif;
   --page-x:clamp(18px,4.5vw,64px);
   --nav-h:64px;
@@ -351,7 +364,10 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   padding:22px 14px 16px;background:var(--sidebar,#0f2a22);color:#fff;z-index:2;height:100%;box-sizing:border-box;
   animation:hcRailArrive .5s cubic-bezier(.22,.61,.36,1) both}
 .hc-app.hc-claimed .hc-rail{display:flex}
-.hc-rail-mark{display:flex;align-items:center;gap:8px;padding:2px 10px 22px;font-size:26px;font-weight:800;letter-spacing:-.03em;color:#fff}
+/* NO GAP. `display:flex` with `gap:8px` put 8px between the text node "hub" and the
+   <i>ly</i> — the wordmark rendered as "hub ly", two words. The lockup elsewhere has no
+   gap because it is inline; this is a flex row, so the gap has to be zero explicitly. */
+.hc-rail-mark{display:flex;align-items:center;gap:0;padding:2px 10px 22px;font-size:26px;font-weight:800;letter-spacing:-.03em;color:#fff}
 .hc-rail-mark i{font-style:normal;color:var(--brand-400,#f0b429)}
 .hc-rail-tabs{display:flex;flex-direction:column;gap:4px;width:100%;align-items:stretch}
 .hc-rail-tab{width:100%;min-height:48px;border:0;border-radius:12px;background:transparent;cursor:pointer;
