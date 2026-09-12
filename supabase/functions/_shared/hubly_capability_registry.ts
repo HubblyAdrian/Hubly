@@ -200,6 +200,11 @@ const OWNER_AUTHORISED_RPCS = new Set([
   "create_business_document",
   "patch_business_in_progress",
   "set_business_hours_in_progress",
+  // set_business_hours (2026-09-12) joined this set with the migration that gave it a
+  // p_draft_token: it now authorises a draft by token OR a claimed business by owner, so
+  // an omitted p_owner_id is refused for every owner who has signed up — the same trap,
+  // the same enforcement point.
+  "set_business_hours",
   "set_business_draft_services",
   // Added with the writer itself, not after someone forgot: add_business_place's
   // p_owner_id has NO default in SQL, so an omission fails at the call — and this
@@ -7432,12 +7437,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!draftId || (!draftToken && !ownerUid)) {
             return { ok: false, real: false, summary: "No business is connected to this conversation.", error: "missing_draft" };
           }
-          if (!ownerUid) {
-            return {
-              ok: false, real: false, error: "not_signed_in",
-              summary: "Only the signed-in owner can set opening hours. Say that plainly; do not claim anything was saved.",
-            };
-          }
+          // NO OWNER-ONLY GUARD. It was here from 2026-09-08 to 2026-09-12 and it refused
+          // every unclaimed draft — the state a business is in when it first says "we open
+          // at 8". The writer authorises a draft by token and a claimed business by owner
+          // (migration 20260912210000); the caller does not get to second-guess it. The
+          // precondition above already refuses a request carrying neither.
           const list = Array.isArray((args as any)?.hours) ? (args as any).hours : [];
           const clean = list
             .filter((h: any) => h && Number.isInteger(Number(h.weekday)) && Number(h.weekday) >= 0 && Number(h.weekday) <= 6)
@@ -7471,11 +7475,21 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             }
           }
           const r = await callBusinessRpc("set_business_hours", {
-            p_business_id: draftId, p_owner_id: ownerUid, p_hours: clean,
+            p_business_id: draftId, p_owner_id: ownerUid || null, p_hours: clean,
+            p_draft_token: draftToken || null,
           });
-          const n = Number((r as any)?.set_business_hours ?? r ?? -2);
+          const n = Number((r as any)?.set_business_hours ?? r ?? -99);
+          // EVERY DISTINCT FAILURE GETS A DISTINCT SENTENCE. "Could not be saved" fits all
+          // four causes equally, and a message that fits everything is how the
+          // claimed-owner class stayed invisible for a week.
           if (n === -1) {
-            return { ok: false, real: false, error: "not_owner", summary: "That business's hours are not writable by the signed-in account. Say so plainly." };
+            return { ok: false, real: false, error: "not_owner", summary: "That business's hours are not writable by the signed-in account. Say so plainly; do not claim anything was saved." };
+          }
+          if (n === -2) {
+            return { ok: false, real: false, error: "not_an_open_draft", summary: "This draft could not be verified, so nothing was written. Say the hours were NOT saved and that they may need to reopen their draft or sign in." };
+          }
+          if (n === -3) {
+            return { ok: false, real: false, error: "no_such_business", summary: "That business record no longer exists, so nothing was written. Say so plainly." };
           }
           if (!Number.isFinite(n) || n < 0) {
             return { ok: false, real: false, error: "rpc_failed", summary: "The hours could not be saved just now. Say they were NOT saved — never that they were." };
