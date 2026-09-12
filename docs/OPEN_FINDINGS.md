@@ -1,5 +1,30 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## TOP OF THE RECORD — we were repainting the owner's own buttons on 24 pages (2026-09-12)
+
+**The largest correction of the day, and it was never a reported bug.** The CTA contrast
+rescue reads the ground behind a button and repaints its text when that text is unreadable.
+Its `effBg` walked up the ancestors and returned the first background-colour it found —
+**ignoring alpha**. A card painted `rgba(255,255,255,0.035)` over a near-black section is
+still near-black; `effBg` called it white. So the pass "fixed" buttons that were never broken.
+
+- Pages where we repainted the **owner's own** CTAs: **33 → 9** once `effBg` composites the
+  layer stack (measured over the same 127-page services corpus, mounted through the real path).
+- **Proved, not assumed.** With the paint withdrawn, the worst owner CTA on each of the 22
+  measurable pages reads **4.10:1 or better** in pixels, and **none is below 3.0** — the
+  threshold that pass acts on. They were false positives, all 24.
+- It has been live the whole time and rarely fired, because the button rescue only touches
+  text already below 3:1. It surfaced only when a caller looked harder: the block rescue
+  calls `effBg` on every leaf, and its first run painted `#111` ink onto dark cards on twelve
+  pages (132 blocks, 129 readable → 118) before the cause was found.
+
+**The general shape, which is the reason this sits at the top:** a latent defect in a
+judgement function is invisible until something asks it more questions. Every "we fixed N
+things" number this pass produced was partly us breaking things we had misjudged, and no
+check could see it because the check measured the block, not the page around it. Carried into
+the boundary report; fixed in `contrastRescueHtml`, one fix, both callers.
+
+
 ## 10. Every generated page is ~6 phone-screens tall (public site) — SEPARATE BUILD
 
 **Severity: high — this is the PUBLIC site, what a customer sees when they tap the
