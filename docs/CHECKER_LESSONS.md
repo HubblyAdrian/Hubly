@@ -1509,3 +1509,30 @@ name, which is what `KNOWN_UNREADABLE` does in the legibility suite.
 The reason to be strict about this: a check that fails permanently on a correct outcome trains
 people to ignore it, and an ignored check is worse than no check, because it still reports
 green on the days it matters.
+
+## Lesson 45 — Re-run THE report, not A report over the same data (2026-09-12)
+
+The chain clone's headline number was `inset match 103/127`. Re-running it after the contrast
+work produced `19/127`, and it was reported in a table cell labelled **unmoved** — a word that
+resolved the contradiction instead of raising it. Adrian caught it; the instrument had changed,
+not the product.
+
+Two reporters read the same `inset-rows3.jsonl` under near-identical headers:
+- `report4.mjs` uses `block.textStart` — the block's FIRST text left. 37 → 103 (81%).
+- `report-v3.mjs` uses `block.textMedian` — the MEDIAN text left. 34 → 19 (15%).
+
+Both are correct arithmetic. Only one asks the question the work was for. A multi-column card
+grid — exactly what the chain clone produces — must fail textMedian, because half its text sits
+in columns two and three: 93 of 127 blocks start at the page's content column and have a median
+that does not. Verified on both corpora with the same code; the numbers are identical, so
+neither the corpus nor the re-injected runtime was involved.
+
+Three rules out of it:
+1. **A number is a (measurement, reporter) pair.** Re-running the measurement and reading it
+   with a different reporter is a different number. Record which reporter produced a headline
+   figure at the moment it is quoted.
+2. **Never attach a resolving word — "unmoved", "stable", "unchanged" — to a number that
+   differs from the one reported before.** The contradiction leads the report; the explanation
+   follows it. A cell is not the place to settle a discrepancy.
+3. **When two reporters exist over one dataset, the one that does not answer the question is a
+   trap with a plausible header.** Delete it or rename it to say what it measures.

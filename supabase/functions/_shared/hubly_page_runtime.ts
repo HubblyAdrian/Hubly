@@ -315,7 +315,15 @@ export function contrastRescueHtml(): string {
       // WCAG's large-text allowance, which would turn that page green without moving a
       // pixel on it — tuning a check to pass. Being stricter than AA can only produce
       // false REDS, never a false green, so the strict side is the safe one to be wrong on.
-      var ourFixed=0, ourLeft=0;
+      // Hue-preserving lightness moves, for the ground case below.
+      function rgb2hsl(c){ var r=c[0]/255,g=c[1]/255,b=c[2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),h=0,s=0,l=(mx+mn)/2,dd=mx-mn;
+        if(dd){ s=l>0.5?dd/(2-mx-mn):dd/(mx+mn); h=(mx===r?((g-b)/dd+(g<b?6:0)):mx===g?((b-r)/dd+2):((r-g)/dd+4))*60; }
+        return [h,s*100,l*100]; }
+      function hsl2rgb(h,s,l){ s/=100; l/=100; var c2=(1-Math.abs(2*l-1))*s, x=c2*(1-Math.abs((h/60)%2-1)), m=l-c2/2, t2;
+        h=((h%360)+360)%360;
+        t2 = h<60?[c2,x,0]:h<120?[x,c2,0]:h<180?[0,c2,x]:h<240?[0,x,c2]:h<300?[x,0,c2]:[c2,0,x];
+        return [(t2[0]+m)*255,(t2[1]+m)*255,(t2[2]+m)*255]; }
+      var ourFixed=0, ourLeft=0, ourGround=0, maxDL=0;
       var block=document.querySelector('[data-hubly-services-block]');
       if(block){
         var texts=block.querySelectorAll('h1,h2,h3,h4,h5,h6,p,span,dt,dd,li,a');
@@ -332,10 +340,39 @@ export function contrastRescueHtml(): string {
           var w=[255,255,255], k=[17,17,17];
           var rw=ratio(w,tbg.rgb), rk=ratio(k,tbg.rgb);
           var pick=rw>=rk?{c:'#ffffff',r:rw}:{c:'#111111',r:rk};
-          if(pick.r>=need){ t.style.setProperty('color',pick.c,'important'); ourFixed++; }
-          else { ourLeft++; }                                                     // mid-tone ground: nothing reaches AA
+          if(pick.r>=need){ t.style.setProperty('color',pick.c,'important'); ourFixed++; continue; }
+          // NEITHER INK REACHES AA — so move OUR OWN BUTTON'S GROUND, KEEPING ITS HUE.
+          // fernwick-bakehouse: our Book CTA clones the page's .btn-primary (#c25a3a), where
+          // white reaches 4.39 and near-black 4.31 and nothing reaches 4.5. The button is
+          // ours — we built it and inserted it — so its ground is ours to move. Same hue and
+          // saturation, lightness only, smallest shift that clears AA, and ONLY on elements
+          // inside our block: the owner's own buttons elsewhere keep their exact accent.
+          var host=t, hostBg=null;
+          while(host && block.contains(host)){
+            var hcs=getComputedStyle(host), hb=parse(hcs.backgroundColor);
+            if(hb && hb.a>=1 && (hcs.backgroundImage==='none' || !hcs.backgroundImage)){ hostBg=hb.rgb; break; }
+            host=host.parentElement;
+          }
+          if(!host || !hostBg || !block.contains(host)){ ourLeft++; continue; }
+          var base=rgb2hsl(hostBg), moved=null;
+          for(var d=1; d<=60 && !moved; d++){
+            for(var s2=0; s2<2 && !moved; s2++){
+              var L=base[2] + (s2 ? d : -d);                                      // darker first, then lighter
+              if(L<0 || L>100) continue;
+              var cand=hsl2rgb(base[0], base[1], L);
+              var rc=ratio(tfg.rgb,cand), cw=ratio(w,cand), ck=ratio(k,cand);
+              if(rc>=need) moved={bg:cand, dL:L-base[2], ink:null};
+              else if(Math.max(cw,ck)>=need) moved={bg:cand, dL:L-base[2], ink:cw>=ck?'#ffffff':'#111111'};
+            }
+          }
+          if(!moved){ ourLeft++; continue; }
+          host.style.setProperty('background-color','rgb('+Math.round(moved.bg[0])+','+Math.round(moved.bg[1])+','+Math.round(moved.bg[2])+')','important');
+          if(moved.ink) t.style.setProperty('color',moved.ink,'important');
+          ourGround++;
+          if(Math.abs(moved.dL)>maxDL) maxDL=Math.abs(moved.dL);
+          console.log('[hubly] block-ground-shift', (t.textContent||'').trim().slice(0,24), 'L '+base[2].toFixed(1)+' -> '+(base[2]+moved.dL).toFixed(1)+' (dL '+moved.dL.toFixed(1)+')');
         }
-        document.documentElement.setAttribute('data-hubly-block-contrast','fixed:'+ourFixed+';left:'+ourLeft);
+        document.documentElement.setAttribute('data-hubly-block-contrast','fixed:'+ourFixed+';ground:'+ourGround+';max-dL:'+maxDL.toFixed(1)+';left:'+ourLeft);
       }
       var summary='fixed:'+fixed+';left-sub-aa:'+leftSubAA+';could-not-fix:'+couldNotFix;
       document.documentElement.setAttribute('data-hubly-cta-contrast', summary);

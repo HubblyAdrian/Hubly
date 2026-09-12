@@ -6395,7 +6395,12 @@ they sit outside `hubly_owner_replies.ts`, so no check sees them either. **One m
 check** is the answer to both this and the directive leak; the module exists for the server's
 reply channel and would need to grow to cover these, which is real work and is not done here.
 
-## Sub-AA text we did not insert: 68 of 165 pages (2026-09-12) — RECORDED, NOT BUILT
+## STAGE 3 LEADS WITH THIS — sub-AA text we did not insert: 68 of 165 pages (2026-09-12)
+
+**Promoted 2026-09-12 by Adrian's partner, ahead of the migration ledger:** this is a
+generation defect affecting more pages than everything else fixed today combined. Recorded to
+be picked up cold — every page below is named with its ratio. **Do not start it without a
+ruling on how far Hubly may override the model's design.**
 
 T1 held our own services block to a flat 4.5:1 on the ground it lands on. The obvious next
 question, asked deliberately as a finding rather than as work: **how much of the text already
@@ -6412,9 +6417,28 @@ path at 1280×900, every text leaf OUTSIDE `[data-hubly-services-block]`,
   unjudged — the largest single gap in this number.
 - By `account_kind`: **67 of 164 test** pages, **1 of 6 market** pages. The market
   denominator is 6. It cannot carry a rate; it is reported so the number is not read as one.
-- Worst cases are not marginal: 12 pages have text at or under 1.4:1 — `lawn-care-in-provo`
-  "Booking" at 1.00:1, `larkspur-landscaping` "See services" at 1.00:1, `sable-crumb` (the
-  business's own name in its header) at 1.09:1. Invisible, not merely hard.
+- Worst cases are not marginal: 12 pages have text at or under 1.4:1. Invisible, not merely
+  hard. **The twelve, by slug and ratio — this is the pick-up list:**
+
+| slug | kind | sub-AA / judged | worst | the text |
+|---|---|---|---|---|
+| `lawn-care-in-provo` | test | 1/43 | **1.00:1** | "Booking" |
+| `larkspur-landscaping` | test | 4/46 | **1.00:1** | "See services" |
+| `foxglove-fern` | test | 6/27 | **1.00:1** | "Relaxed floral arranging ses…" |
+| `blackthorn-tattoo` | test | 2/54 | **1.00:1** | "Contact" |
+| `kestrel-auto-detailing` | test | 6/41 | **1.01:1** | "KA" (the logo monogram) |
+| `mobile-detailing-in-lehi-74738` | test | 3/22 | **1.09:1** | "Mobile Detailing in Lehi" |
+| `sable-crumb` | test | 6/21 | **1.09:1** | "Sable & Crumb" (its own name) |
+| `rowan-sage` | test | 6/43 | **1.15:1** | "R&S" |
+| `gutter-guard-installation-gutter-cleanin` | test | 4/16 | **1.25:1** | "Gutter guard installation" |
+| `gutter-guard-installation-and-gutter-cle-8e436` | test | 1/12 | **1.32:1** | "See the two services" |
+| `marigold-lane` | test | 4/58 | **1.37:1** | "Book online" |
+| `mobile-detailing-in-lehi-5410f` | test | 1/38 | **1.39:1** | "Book online" |
+
+  Four of the twelve are a business's own name or monogram; three are its booking CTA.
+- **The single MARKET page affected, named because the denominator is 6 and a rate would
+  mislead:** `site-aa7537` — 6 of 24 judged elements sub-AA, worst **1.40:1** on "Your name"
+  (a form label on a page a real customer reaches).
 
 **How it was established, and what the number is not.** Computed from the DOM using the same
 compositing `effBg` the rescue now uses, not from pixels — a pixel sweep of every text leaf on
