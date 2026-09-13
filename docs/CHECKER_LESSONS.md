@@ -1929,3 +1929,35 @@ The page limits, established 2026-09-13: `get_business_customers` **8** · `get_
 one of those limits. Graef hides every paging bug we can write. That is what the seeded
 paging fixture exists to stop — a business with more rows than the largest limit, rendered
 beside Graef, where a number that differs between them for the wrong reason is a defect.
+
+## Lesson 60 — A safety guard written as a negation fails open (2026-09-13)
+
+Costing the notification guard, the obvious form was "don't notify unless this is a real
+business":
+
+```sql
+if v_kind <> 'market' then return new; end if;   -- WRONG
+```
+
+That is a **deny-list of silence**, and it fails open on every value nobody thought of. A new
+`account_kind`, a null from a business the backfill never reached, a typo in a seeder — each
+one is "not market", so each one gets silenced, and the failure is invisible: an owner simply
+stops being told about bookings and nothing anywhere reports it.
+
+The correct form is an **allow-list of silence** — name the values that are allowed to be
+quiet, and let everything else notify:
+
+```sql
+if v_kind = 'test' then return new; end if;      -- RIGHT
+```
+
+An unexpected value now falls through to the loud side. The worst case is a test business that
+sends a notification we did not want; the worst case of the negation is a real owner who never
+hears about a customer.
+
+**The general rule: a guard decides which side an UNKNOWN value lands on, and that is the only
+thing it is really for.** Write the condition so the unknown lands where it costs least. This
+is the same asymmetry as never discarding an unfinished draft, and the same one as
+`account_kind` itself — which cost a week by defaulting to the flattering value ('real'), and
+then cost more when the claim trigger silently promoted unrecognised signups to 'market'. Three
+instances now, one rule.

@@ -4229,6 +4229,31 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
       var res = await c.rpc('get_my_businesses');   // every business this uid owns
       var list = (res && res.data) || [];
       if(!Array.isArray(list) || list.length === 0) return false;   // owns none -> anon flow
+      // ?business=<slug> — SELECT WHICH OWNED BUSINESS IS ACTIVE (2026-09-13).
+      //
+      // hcLastBusiness pinning the session to the last one worked on is correct and stays.
+      // What was missing is any route to a DIFFERENT owned business: the picker below is
+      // unreachable once hcLastBusiness is set, and no control in the shell opens it — an
+      // owner of two businesses could reach the second only by clearing site data. That
+      // blocked verifying a screen against the paging fixture, and it would have blocked
+      // every screen after it.
+      //
+      // NO NEW PERMISSION SURFACE, and this is the reason it is a URL and not a lookup:
+      // the slug is matched against `list`, which is get_my_businesses() — already scoped
+      // to auth.uid() inside a security-definer function. Nothing here queries by slug. A
+      // slug the signed-in user does not own simply does not match, and the normal path
+      // continues. Verified 2026-09-13: all nine readers the shell calls are security
+      // definer and enforce ownership INSIDE the function (the get_business_* family via
+      // p_owner_id, the get_my_* family via auth.uid(), which a parameter cannot spoof).
+      var wantSlug = null;
+      try{ wantSlug = new URLSearchParams(location.search).get('business'); }catch(eQ){}
+      if(wantSlug){
+        var wanted = list.filter(function(b){ return b.slug === wantSlug; })[0];
+        if(wanted){ hcOpenOwnedBusiness(wanted); return true; }
+        // Asked for one they do not own, or a typo. Fall through to the normal path —
+        // never an error, because "you do not own that" is not something to announce to
+        // someone who may simply have mistyped their own slug.
+      }
       if(list.length === 1){ hcOpenOwnedBusiness(list[0]); return true; }   // owns one -> load it
       // Owns more than one. If they were last working on one they still own, go
       // straight back to THAT — a reload should never bounce them to a different
