@@ -1630,3 +1630,34 @@ once. This is the same asymmetry as every other lesson here, pointed at design i
 **The tell we missed:** the mechanism kept needing new exceptions — a sequence predicate, then
 a heading-word exclusion, then a false-positive list. A rule that needs a new exception every
 week is usually answering a question that did not need to be asked.
+
+## Lesson 50 — A decision's cost is recorded where decisions are READ, not in the commit that made it (2026-09-13)
+
+Commit **`c2ff42d`** (2026-08-20), the switch to freeform page generation, did the honest
+thing. It listed what it was giving up, by name — no booking, no enquiry form, no reviews, no
+map, no photographs, no logo in the header, no structural editing, no styling controls, no
+design rationale — and it wrote down, in the same message:
+
+> *"a freeform page renders in an iframe, so nothing the shell wires to `#hc-doc-root` can
+> reach inside it — booking will need the wiring moved, bridged, or the frame removed."*
+
+That is the fragment-link defect, foreseen a month before we found it by clicking, and the
+reason booking needed a URL rather than a bridge. **The list was written once and never read
+again.** Scored on 2026-09-13: **7 of its 11 recorded gaps were still open or partial** — four
+fully open, three partial — so most of a week's work was foreseeable rather than unlucky.
+
+The commit was not the failure. **The place was.** A commit message is addressed to whoever is
+reviewing that diff, on that day; nobody greps `git log` for the bill of a choice made a month
+ago. So:
+
+**Every decision's cost goes in `docs/DECISIONS.md` — the choice, the date and commit, the
+reason QUOTED not paraphrased, what it gave up, and what is still outstanding — and the
+outstanding part is updated as items close.** A path taken with no recorded reason is entered
+as exactly that, because the absence is a finding (see D-006: an owner-only guard added inside
+a commit about something else, no reason given, four days of refusing every draft).
+
+And, as Lesson 42 already establishes, **a rule that lives only in a document is a
+preference**: `scripts/decisions-open.mjs` prints every open item across every decision in one
+screen, newest first, and `--check` refuses a record whose entries are undated or have no
+outstanding list. That is what gets run at the start of a session and put in the handoff — not
+the document.
