@@ -148,3 +148,19 @@ Nothing found that tracks per-business step completion. What exists is adjacent 
   Setting up booking, Finishing touches — while the pane still reads "Loading your site…".
   Green before the thing it describes has reported back is prohibition 2; needs checking
   against what each tick actually knows.
+
+---
+
+## ADDENDUM — the four, driven on Adrian's signed-in session (evergreen-yard-care)
+
+| item | verdict |
+|---|---|
+| the right pane at claim | **REPRODUCED.** Home is a full-width chat, no site. Website brings it back. Cause confirmed: `platform-home.html:283` shows the pane for an unclaimed draft, `:290-294` hides it for `.hc-claimed[data-mode="home"]`. |
+| the preview toolbar | **REPRODUCED.** The account chip overlaps the Design button, clipping it to "esign". |
+| the rail | **NOT BROKEN — INCOMPLETE.** Renders Home + Website only. Settings is an unlabelled gear pinned bottom-left that opens a working MODAL (Account/magic link, Notifications, Website address, Stripe Connected) — not the third rail item the spec asks for. |
+| Jobs / Customers | **CANNOT REPRODUCE HERE, and now for a confirmed reason.** evergreen's `business_places` holds only `website` and `store`, so the rooms are unreachable by rail AND by URL: `myhubly.app/#jobs` falls back to Home, which is the earning rule working (`hcModeFromUrl :4522`). Corpus: `jobs` 7, `planner` 7, `customers` 5 — on `adrians-lawn-service`, `graefs-autocare`, `lugnuts-regulators`, `aquaspeed`, `bucket-mobile-detailing`. Reproducing the pane regression needs a session on one of those; all are Adrian's or Graef's. |
+
+**Two smaller things seen on the same session:**
+- `#jobs` in the address bar survives the fallback — the URL claims a room the app is not in.
+- The greeting is **"Good evening." / "Evergreen Yard Care"** — the business name where the spec
+  wants the person's ("Good morning, Adrian"). The claim questions were never built.
