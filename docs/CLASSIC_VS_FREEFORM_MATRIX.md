@@ -98,8 +98,13 @@ Counting the three that already worked (hours, claim, and hours' silence), the b
   including six variable prices, three `includes` and a photo URL, are byte-identical.
 - The card renders on the live public page.
 
-**NOT proved:** the same write driven by typing into the assistant as the signed-in owner. The
-owner session in this environment is expired and restoring it was not available to me, so the
-last link — model → capability → RPC — is exercised by its own code and its own RPC, not by a
-human sentence. **That is one four-sentence walk for Adrian and it is the thing to do first.**
-No screenshot of a signed-in state was taken, and none was simulated.
+**NOW PROVED — VERIFIED BY A HUMAN WALK, 2026-09-13, Adrian, signed in as the owner of
+hubly-classic-fixture.** He typed *"add a service called Ceramic Coating for $200"* and then
+*"add a service called 2 year coating $400"*. Both cards render on the live public page with
+price, duration and Book Now. The last link — a human sentence → model → capability → RPC →
+the page a customer sees — is exercised end to end by a person, not by its own code.
+
+This closes the gap recorded here at 22:40, which read: *"the owner session in this environment
+is expired and restoring it was not available to me, so the last link is exercised by its own
+code and its own RPC, not by a human sentence."* No screenshot of a signed-in state was ever
+taken by Claude Code, and none was simulated; the walk is Adrian's.
