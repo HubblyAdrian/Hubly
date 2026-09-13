@@ -1661,3 +1661,31 @@ preference**: `scripts/decisions-open.mjs` prints every open item across every d
 screen, newest first, and `--check` refuses a record whose entries are undated or have no
 outstanding list. That is what gets run at the start of a session and put in the handoff — not
 the document.
+
+## Lesson 51 — Navigating to the URL you are already on is not a reload (2026-09-13)
+
+After deploying the claimed-shell fix I "reloaded" the page by navigating the tab to
+`https://myhubly.app/#home` — while that tab was already at `https://myhubly.app/#home`. A
+navigation to an identical URL, hash included, is a SAME-DOCUMENT navigation: the browser
+changes nothing and the document in the tab stays exactly as it was. That document predated
+the deploy by minutes, so the fix "did not work", and a cache-busted URL "fixed" it.
+
+**I reported that as a product finding** — "a returning owner may not see this today" — and it
+was promoted to the front of the build order before anyone checked it. It was wrong:
+
+- `cache-control: public, max-age=0, must-revalidate` with an ETag on every HTML surface
+- a conditional request returns **304**; revalidation works
+- no service worker exists anywhere in `public/`
+- a FRESH TAB on the plain URL shows the new layout, no cache-buster
+
+Three rules out of it:
+1. **To verify a deploy, open a new tab on the plain URL.** Not a hash change, not the same
+   URL, not a cache-buster — a cache-buster proves the server is right and tells you nothing
+   about what a returning visitor gets, which is the only question being asked.
+2. **A cache-buster that "fixes" something is a warning, not a result.** It changes the URL,
+   which changes the navigation type, which changes whether a load happens at all. Two
+   variables moved; the conclusion named one.
+3. **Before reporting an infrastructure defect, read the response headers.** Thirty seconds of
+   `curl -I` would have disproved this before it reached a ruling. The instruments this week
+   have been the corpus, the reporters, and now the browser's own navigation — each time the
+   number moved and the product had not.
