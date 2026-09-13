@@ -146,7 +146,7 @@ try { kinds = loadKinds(); } catch (e) { console.error("CANNOT RUN — account_k
 const checkable = rows.filter((r) => String(r.phone||"").trim() || String(r.email||"").trim() || (Array.isArray(r.svc)&&r.svc.length) || (Array.isArray(r.hours)&&r.hours.length)).map((r) => r.slug);
 console.log(`businesses with a stored page: ${rows.length}`);
 console.log("  " + subsetLine("holding at least one checkable fact", checkable, kinds));
-console.log("  " + rateLine("PAGES THAT DO NOT SHOW A FACT THEIR OWN RECORD HOLDS", detail.length, checkable, kinds));
+console.log("  " + rateLine("PAGES THAT DO NOT SHOW A FACT THEIR OWN RECORD HOLDS", detail.length, checkable, kinds, { store: "business_documents" }));
 console.log("  " + subsetLine("of those, by kind", detail.map((d) => d.slug), kinds));
 console.log(`\nper fact — record holds it / page does not show it:`);
 // not-a-corpus-rate: a per-FACT table over the same population whose split is printed above it

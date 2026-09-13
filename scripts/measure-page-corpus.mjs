@@ -45,6 +45,8 @@ if (!rows.length) { console.error("CANNOT RUN — no pages"); process.exit(2); }
 const slugs = rows.map((r) => r.slug);
 
 console.log(`\nPAGE CORPUS — re-exported now, ${rows.length} stored pages`);
+console.log(`  STORE: business_documents.rendered_html (freeform). The classic store,`);
+console.log(`  businesses.meta, is NOT measured here — and it is what the live customer serves (SETTLED #2).`);
 console.log(`  ${subsetLine("the corpus itself", slugs, kinds)}`);
 console.log(`  A rate over this corpus is a rate over OUR OWN TEST DRAFTS unless the market column says otherwise.\n`);
 
@@ -59,7 +61,7 @@ for (const [label, re] of [
   ["the #hubly-logo marker used", /#hubly-logo/],
   ["design knobs stamped", /hubly-type-scale/],
   ["any image at all (stock included)", /<img/i],
-]) console.log("  " + rateLine(label, has(re).length, slugs, kinds));
+]) console.log("  " + rateLine(label, has(re).length, slugs, kinds, { store: "business_documents" }));
 
 // ── 2. NAV LINKS POINTING AT NOTHING ───────────────────────────────────────────
 let totalLinks = 0, deadLinks = 0;
@@ -72,7 +74,7 @@ for (const r of rows) {
   if (miss.length) { deadLinks += miss.length; deadPages.push(r.slug); }
 }
 console.log(`\nIN-PAGE LINKS: ${totalLinks} total, ${deadLinks} pointing at an id that was never written`);
-console.log("  " + rateLine("pages with at least one link to nothing", deadPages.length, slugs, kinds));
+console.log("  " + rateLine("pages with at least one link to nothing", deadPages.length, slugs, kinds, { store: "business_documents" }));
 
 // ── 3. SUB-AA TEXT WE DID NOT INSERT ───────────────────────────────────────────
 // Computed from the DOM with the compositing effBg the runtime rescue uses — a FLOOR: text
@@ -120,7 +122,7 @@ for (const r of rows) {
 }
 await browser.close();
 console.log(`\nSUB-AA TEXT WE DID NOT INSERT — a floor: ${skippedTotal} more elements sit over a background image and cannot be judged from the DOM`);
-console.log("  " + rateLine("pages carrying at least one sub-AA element", subPages.length, seen, kinds));
+console.log("  " + rateLine("pages carrying at least one sub-AA element", subPages.length, seen, kinds, { store: "business_documents" }));
 console.log("  " + subsetLine("of those pages, by kind", subPages, kinds));
 // not-a-corpus-rate: an ELEMENT rate, not a page rate; the page rates two lines above carry the split
 console.log(`  text elements judged: ${judged} · below AA: ${subTotal} (${judged ? Math.round(subTotal/judged*100) : 0}% of elements — NOT a page rate)`);

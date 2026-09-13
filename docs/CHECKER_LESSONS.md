@@ -2033,3 +2033,32 @@ account_kind split in the same line as the rate.
 Seeded fixtures are the same category and are already handled (`hubly-paging-fixture` is
 excluded by `withoutFixtures()`). A trigger is the version nobody thinks to exclude, because
 nobody ran it on purpose.
+
+## Lesson 63 — A single-source claim is a claim about every writer AND every reader (2026-09-13)
+
+Two "one store, one writer" claims failed in one day. **Neither failed loudly. Both were found
+by checking.**
+
+1. **`business_events`** was described as a projection of `booking_requests`. It is a **union of
+   four sources** — non-abandoned requests, abandoned requests, **jobs** with
+   `from_booking AND booking_request_id IS NULL`, and chat conversations. Found because 11 rows
+   produced 12 events and the arithmetic was re-run per row.
+2. **"One store, one writer, one reader"** for pages. True for `business_documents` — and the
+   only paying customer's website is not in it. His page is built from **`businesses.meta`**
+   (`meta.website` 11.8KB, `meta.service_catalog` 8 services, `meta.portfolioUrls` 26), read by
+   `get_public_business`, written by many paths. Found by fetching the live URL.
+
+**The rule: a single-source claim is only true once BOTH sets have been enumerated — every
+writer and every reader.** "I found the writer" is half a claim. The `business_events` case was
+a missing *reader* enumeration (a second source feeding one reader); the pages case was a
+missing *writer* enumeration (a second store behind one URL).
+
+**How to enumerate, cheaply:**
+- writers — `grep` for the table/column across `supabase/functions` and `public/`, and read
+  `pg_trigger` for the table (Lesson 62: a trigger is a writer nobody remembers);
+- readers — `grep` the RPC and the table, then **fetch the live surface and ask where its bytes
+  came from.** That last step is what found this one, and no amount of code reading would have.
+
+It sits beside the two-writers rule (`applyExtractedFacts` and `setHours` racing on hours). One
+fact, two writers; one URL, two stores. **Same family: the count of participants was assumed
+rather than enumerated.**

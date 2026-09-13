@@ -67,7 +67,24 @@ export function splitOf(items, kinds) {
 
 /** "label: 139 of 172 (81%)   market 6 · internal 1 · test 165"
  *  THROWS rather than printing a bare rate — the whole point of this module. */
+/** TWO WEBSITE STORES, and a claim about "pages" that does not say which one is not a claim.
+ *  `business_documents.rendered_html` is freeform — 173 of 174 pages, and everything built in
+ *  September targets it. `businesses.meta` is the classic renderer's content model, and it is
+ *  what the only paying customer serves. Same enforcement shape as the account_kind split:
+ *  a rate about pages states its store or throws. */
+export const PAGE_STORES = new Set(["business_documents", "businesses.meta", "both"]);
+
 export function rateLine(label, n, denominatorItems, kinds, opts = {}) {
+  if (/\bpages?\b/i.test(label)) {
+    if (!opts.store) {
+      throw new Error(`rateLine("${label}") counts PAGES without naming its store. ` +
+        `Pass { store: "business_documents" | "businesses.meta" | "both" } — there are two, ` +
+        `and the live customer is on the one most code ignores (SETTLED #2).`);
+    }
+    if (!PAGE_STORES.has(opts.store)) {
+      throw new Error(`rateLine("${label}") store "${opts.store}" is not one of: ${[...PAGE_STORES].join(", ")}`);
+    }
+  }
   // A RATE OVER A CORPUS THAT STILL CONTAINS A FIXTURE IS NOT A RATE. The caller either
   // excluded them, or says `includesFixtures: true` and wears it in the output.
   if (Array.isArray(denominatorItems) && !opts.includesFixtures) {
@@ -92,7 +109,8 @@ export function rateLine(label, n, denominatorItems, kinds, opts = {}) {
   if (counts.unknown) parts.push(`unknown ${counts.unknown}`);
   const pct = total ? Math.round((n / total) * 100) : 0;
   const warn = opts.includesFixtures ? "   [INCLUDES FIXTURE ROWS]" : "";
-  return `${label}: ${n} of ${total} (${pct}%)   ${parts.join(" · ")}${warn}`;
+  const store = opts.store ? `   [store: ${opts.store}]` : "";
+  return `${label}: ${n} of ${total} (${pct}%)   ${parts.join(" · ")}${store}${warn}`;
 }
 
 /** For a rate over a SUBSET whose own split matters more than the denominator's
