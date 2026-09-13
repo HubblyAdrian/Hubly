@@ -5552,14 +5552,24 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
       var c = await authGetClient();
       var today = new Date(); var iso = today.getFullYear() + '-' +
         String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+      // TWO QUERIES DELETED HERE, NOT FIXED (2026-09-13).
+      //
+      // `openBookings` counted booking_requests WHERE status='pending' and nothing ever
+      // rendered it — no countKey consumed it. `openLeads` counted chatbot_conversations
+      // while calling itself leads, and was also never rendered. Both were the SECOND
+      // READER of facts get_business_events already owns, arriving in the claimed shell
+      // before the merge that exists to remove second readers. Repairing them in place
+      // would have made this a WORKING second reader, which is worse than a broken one:
+      // two readers of one fact drift, and both have shipped here.
+      //
+      // If Home needs a count of open or unfinished bookings, derive it from
+      // hcEvents.list, which is already in memory and already filtered by kind at :5383.
+      // No new query. The event feed is the reader, and it reconciles row-for-row with
+      // booking_requests (see docs/RAIL_COVERAGE.md).
       var r = await Promise.all([
-        c.from('jobs').select('id', { count:'exact', head:true }).eq('business_id', biz.id).eq('scheduled_date', iso),
-        c.from('booking_requests').select('id', { count:'exact', head:true }).eq('business_id', biz.id).eq('status','pending'),
-        c.from('chatbot_conversations').select('id', { count:'exact', head:true }).eq('business_id', biz.id).eq('resulted_in_booking', false)
+        c.from('jobs').select('id', { count:'exact', head:true }).eq('business_id', biz.id).eq('scheduled_date', iso)
       ]);
       if(!r[0].error && r[0].count > 0) hcHomeCounts.jobsToday = r[0].count;
-      if(!r[1].error && r[1].count > 0) hcHomeCounts.openBookings = r[1].count;
-      if(!r[2].error && r[2].count > 0) hcHomeCounts.openLeads = r[2].count;
       // The customer count is the FOLDED one from SQL, never a raw row count: two rows
       // that share a phone are one person, and "5 customers" when three of them are
       // Dana is the same defect as a count over a truncated list.

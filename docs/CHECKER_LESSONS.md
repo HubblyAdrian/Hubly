@@ -1824,3 +1824,34 @@ that changes what the row MEANS must appear beside the count, or the count is no
 The tell was available and I did not look: I wrote `coalesce(r.status,'') <> 'accepted'` myself.
 A query whose filter is a NEGATION is a count of "everything else", and everything else is
 rarely one thing.
+
+## Lesson 57 — Computed and dropped, three times. Now it fails the run. (2026-09-13)
+
+| # | value | what it did |
+|---|---|---|
+| 1 | `verifiedPlaced` | computed correctly, dropped one function later; the reply was composed from a value that never arrived |
+| 2 | `hcHomeCounts.openBookings` | a live `booking_requests` count on a real business, rendered by nothing |
+| 3 | `hcHomeCounts.openLeads` | never rendered, AND counting `chatbot_conversations` while named leads |
+
+Every one ran a real query against a real business and threw the answer away. **The cost is
+never the wasted read — it is that the screen and the database disagree while the code looks
+correct.** Two of the three were in the claimed shell as a SECOND READER of facts
+`get_business_events` already owns, so repairing them in place would have produced a working
+second reader, which is worse than a broken one. They were deleted, not fixed.
+
+`scripts/check-computed-and-dropped.mjs` parses with **acorn** and fails when a property
+written into a `*Counts` / `*Results` / `*Totals` / `*Stats` object is never read. Scoped to
+those objects on purpose: a repo-wide unused-value scanner becomes noise, and a check everyone
+exempts is a dead check.
+
+**Two instrument failures while building it, both caught by an implausible answer:**
+1. The first red-proof passed. `ROOT` was the script's own repo, so the mutated copy was never
+   read — the check was measuring the real file both times. Absolute paths now bypass `ROOT`.
+2. The second red-proof passed too. The "is it used as a string key?" escape hatch regexed the
+   raw source, and was satisfied by **the deletion comment that named the very property it was
+   meant to catch** (`` `openBookings` `` in backticks). String literals are now collected from
+   the AST, which never sees comments.
+
+The escape hatch exists because the consumer is `countKey:'jobsToday'` — an indirection no AST
+can follow. **An AST alone would under-report here**, and that is stated in the check rather
+than assumed.

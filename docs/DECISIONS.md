@@ -177,3 +177,19 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
   - [ ] leads, calendar, chats, money, reports, reviews, memberships, pipeline and photo-projects are now unreachable for an owner by this route, and the claimed rail has no equivalent for any of them
   - [ ] NOT REPRODUCED IN A BROWSER: setting a persisted view requires running script in the page, which is blocked here. The defect is established from the code and the fix is proved by `scripts/check-retired-shell-exit.mjs` (both halves red independently), not by a live walk
   - [ ] the redirect fires for any signed-in visitor on this path, including the owner-preview and editor entries — those already redirected under the old condition, so nothing new breaks, but it has not been walked
+
+## D-020 — Money, Reports and Pipeline own no data. The retired shell is a view layer.
+- **Date / commit:** 2026-09-13 · `docs/RAIL_COVERAGE.md`
+- **Reason given at the time:** established by reading the renderers, not by inference. `renderRevenue` and `renderReportsPageInner` reach no table; **`DS()` is `HublyDS` — the DESIGN SYSTEM (`public/journey-os/design-system.js`), not a data source** — and `ensurePipelineOsState()` initialises `st.pipeline = {manual:[], stages:{}, edits:{}}`, local edits with no table behind them. `journey.js`, which renders all 25 operator destinations, touches only `jobs` and `recurring_schedules`; the other 20 tables are read by `hubly.html` into client state.
+- **Gave up:** nothing. This is the finding that makes the merge direction safe — there is no operator data path to preserve, so moving UI onto the claimed shell's readers cannot lose a reader.
+- **Outstanding:**
+  - [ ] measured on a denominator of ONE live business whose cells are mostly zero. **Revisit when a live business has non-zero rows in `review_submissions`, `memberships`, any pipeline-owning table, or any money-owning table**
+  - [ ] `photography_project_invoices` DOES exist and is vertical-specific; it was not audited
+
+## D-021 — The two Home count queries were deleted, not repaired
+- **Date / commit:** 2026-09-13 · `platform-home.html` `hcLoadHomeCounts`
+- **Reason given at the time:** both were second readers of facts `get_business_events` already owns, arriving in the claimed shell before the merge that exists to remove second readers. *"Fixing them in place would make the claimed shell a working second reader, which is worse than a broken one."*
+- **Gave up:** a pending-booking count on Home. If Home needs one it derives from `hcEvents.list`, already in memory and already filtered by kind at `:5383` — no new query.
+- **Outstanding:**
+  - [ ] Home shows no count of the 2 people waiting on Graef; the event feed shows the bookings themselves but nothing says "2 are waiting"
+  - [ ] deleted in the repo, NOT yet deployed — `public/` ships only by git push
