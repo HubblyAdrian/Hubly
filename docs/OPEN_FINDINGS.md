@@ -6870,6 +6870,31 @@ test would silently stop notifying its owner. That is the same failure mode as
 `account_kind` defaulting to 'real' (the week that cost), pointed the other way — so the guard
 should be `= 'test'` (an explicit allow-list of silence), never `<> 'market'`.
 
+## There is no way to switch business in the claimed shell (2026-09-13)
+
+Found while trying to render the merged Customers room against the paging fixture.
+
+`hcOpenOwnedBusiness` / `hcRenderBusinessPicker` (`platform-home.html:4229`) handle multiple
+businesses correctly on paper: own none → anon flow; own one → load it; own more than one →
+**go back to the one you were last working on**, else show the picker. The last rule is right
+and its comment says why: *"a reload should never bounce them to a different (e.g. the newest)
+site."*
+
+**But once `localStorage.hcLastBusiness` is set, the picker is unreachable.** There is no
+control anywhere in the claimed shell that opens it — the business chip at the bottom of the
+rail is not a switcher (clicked, twice, nothing happens), and no rail item, menu or settings
+row offers one. An owner with two businesses can reach the second only by clearing site data.
+
+**Consequence for this session:** the merged Customers room could not be RENDERED against
+`hubly-paging-fixture`, which is the business big enough to show the defect it fixes. The merge
+was proved at the reader level instead — `get_business_customers` returns 200, and
+`get_business_customer_count` returns 250, so the header reads 250 and the sub-line says
+"Showing the 200 most recent of 250." That is the decisive evidence, and it is not the same
+thing as having looked at it.
+
+**Not a defect in the merge.** Recorded as a gap in the shell, and as the reason one line of
+this pass's verification is a number rather than a screenshot.
+
 ## STAGE 2, REVISED BY THE BOUNDARY (2026-09-12)
 
 1. **The whitespace-neutral injector** — small, and it unblocks a repair already built and
