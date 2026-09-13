@@ -6913,6 +6913,78 @@ concept anywhere in the schema.
 
 **Not built, not costed.** Recorded so that "we can sell training videos" is never said.
 
+## THE LIVE CUSTOMER'S WEBSITE IS NOT IN `business_documents` (2026-09-13)
+
+**"One store, one writer, one reader" is true for FREEFORM pages only. It is false for the
+live customer.** Established read-only; not softened.
+
+### What graefs-autocare actually serves
+
+**HTTP 200, and a complete website renders** — hero "GRAEF'S AUTOCARE · Professional Mobile
+Detailing", an **Our Services grid of 8 priced cards** each with a *Schedule Today* button, and
+a portfolio of real photographs. Verified in a browser, as a visitor.
+
+**It has 0 rows in `business_documents`.** The bytes come from somewhere else:
+
+| where the page comes from | evidence |
+|---|---|
+| `hubly.html`, served for every business host (~3.0 MB) | all 11 return the same shell |
+| the CONTENT comes from **`businesses.meta`**, fetched by `get_public_business(slug)` — which returns **the whole businesses row as jsonb**, `meta` included | `meta` is **46,254 bytes** for Graef |
+| the page's copy, gallery, FAQ, area, trust section | **`meta.website`** — an 11,809-byte object: `customHeroHeadline`, `customHeroSub`, `galleryAlbums` (7), `faq` (6), `whyChooseUs` (5), `profileTabs` (5), `trustStats` (3), `manualReviews` (2), `membershipOffers` (2), `composition`, `bookingStyle` |
+| **the 8 service cards** | **`meta.service_catalog.services` — 8 entries**, plus `addons` (3), `version`, `currency`, `updated_at` |
+| the portfolio images | `meta.portfolioUrls` — 26 |
+
+**The `services` TABLE has 1 row for Graef — "clay and seal", price 0 — and it is not what the
+page shows.** The live page reads the catalogue in `meta`; the relational `services` table is a
+different, nearly-empty store.
+
+### So, plainly
+
+**There are TWO website stores, and the live customer is on the one nobody worked on this week.**
+
+- **`business_documents.rendered_html`** — freeform HTML. One writer (`create_business_document`),
+  one reader (`get_public_business_document`), versioned. **173 of 174 pages.** Everything built
+  this week targets this store.
+- **`businesses.meta`** — the classic renderer's content model (`meta.website`,
+  `meta.service_catalog`, `meta.portfolioUrls`). Read by `get_public_business`. **Written by
+  many paths** — `patch_business_in_progress`, `set_business_hours`, `saveStorefront` and the
+  classic editor. **This is what the only live customer serves.**
+
+**Everything this week assumed the first store.** The block spec, `insertServiceIntoFreeform`,
+`placeContactHoursInFreeform`, `moveFreeformSection`, the services placement, steps 6 and 9 —
+**none of it reaches Graef's page**, because his page is not made of the thing they edit.
+
+**This is the second exception to a "one store, one reader" claim today.** The first was
+`business_events` being a four-source union, not a projection. Both were found by checking
+rather than by the claim failing.
+
+### The other 10
+
+All claimed, all serving the same shell, none with a document:
+
+| slug | account_kind | services table rows |
+|---|---|---|
+| **graefs-autocare** | **market** | 1 |
+| aquaspeed | market | 3 |
+| bucket-mobile-detailing | market | 0 |
+| devdetailing661 | market | 0 |
+| adrians-lawn-service | test | 9 |
+| star-windows | test | 9 |
+| cedar-ridge-plumbing | test | 0 |
+| my-photography | test | 0 |
+| hubly-paging-fixture | test | 0 (mine, 2026-09-13) |
+| cotter-aviation | internal | 0 |
+| my-auto-detailing | internal | 0 |
+
+**4 of the 11 are `market`.** Whether each renders a full page or an empty shell was verified
+for Graef only; the rest return 200 with the shell and were not individually rendered.
+
+### What this does not change
+
+The freeform work is not wasted — it is correct for the 173 pages in `business_documents`. What
+is wrong is the **scope claim**: "Hubly pages" has meant "freeform pages" all week, and the one
+paying customer is outside it.
+
 ## RISK, kept out of My Day scope — 11 claimed businesses have no document (2026-09-13)
 
 Spec §13 says keep this separate from My Day, and this is where it lives instead.
