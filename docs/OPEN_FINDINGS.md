@@ -6601,6 +6601,56 @@ hard line, plus a post-generation check that no phone on the page is absent from
 is a ruling, not a patch, because it also has to decide what happens to the page when the
 model puts one there anyway.
 
+## RULED, NOT BUILT — the hard line becomes a rule about the class (2026-09-12)
+
+Adrian's partner, on the phone gap: *"the next gap will be an address, or a service area, or
+a years-in-business, and we will find it the same way."*
+
+The generation prompt's hard line (`hubly_capability_registry.ts:2360`) is a LIST of members
+— price, customer name, review, rating, licence, award, guarantee — and a list can only
+forbid what someone already thought of. It is to be rewritten as a rule about the CLASS:
+
+> **Anything a customer could act on or verify — contact it, dial it, visit it, check it —
+> comes from the record or does not appear.**
+
+The enumeration survives only as illustration, never as definition. This is the same
+inversion CLAUDE.md already demands everywhere else: enumerate the harmless side, never the
+valuable one.
+
+**And the check that makes it true rather than hoped**, same shape as the byte-verified truth
+strings but pointed at the page instead of the reply: the record holds the phone; the page
+must not print a different one, and must not print one at all when the record holds none.
+Extend to every actionable fact as the rule above defines them. The measurement already
+exists (`scripts/measure-record-page-divergence.mjs` found the one case); what does not exist
+is the decision about what happens to a page when the model puts one there anyway — strip it,
+refuse the generation, or flag it for the owner. That decision is Adrian's, and it is why
+this is recorded rather than written.
+
+## Two writers for one fact — what else does applyExtractedFacts write without saying so?
+
+Its own finding, NOT folded into the dual-store work: they share a symptom and have different
+causes. **Two stores for a fact** (hours: the table and `meta.hours`) is one problem; **two
+writers for a fact** is another, and 2026-09-12 produced one of each.
+
+Established tonight on ironwood-fence: `applyExtractedFacts` (`hubly_capability_registry.ts`,
+from :857) runs on EVERY user message, authorises by draft token, and wrote five days of
+opening hours while the model's `setHours` capability was refused and the reply said *"I
+couldn't save the hours yet."* T2 fixes the refusal. It does not touch the shape.
+
+**The work, and it is two problems at once:**
+
+1. **Enumerate every fact `applyExtractedFacts` can set** on any message — not from memory,
+   from the function.
+2. **For each, say whether anything in the reply reports it.** A fact written and not
+   reported is a TRUTH problem: the owner is not told what changed (prohibition 6, silence
+   after a request, pointed the other way — silence after something they did not request).
+3. **And a CONSENT problem, which is the sharper half:** an offhand remark becomes a stored
+   fact about someone's business. "we're usually open 7 to 4" in passing is not the same act
+   as answering "what are your hours?", and today they are indistinguishable at the writer.
+
+The reply-composition side already has the right pattern — `servicesTruth`, composed from
+what ACTUALLY happened — and it covers one writer while this one writes underneath it.
+
 ## STAGE 3 LEADS WITH THIS — sub-AA text we did not insert: 68 of 165 pages (2026-09-12)
 
 **Promoted 2026-09-12 by Adrian's partner, ahead of the migration ledger:** this is a
