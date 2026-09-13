@@ -6790,6 +6790,22 @@ Ordered so that each step is verifiable before the next: the recorder first so t
 measured, the predicate second so today's pages unblock, the stamp third so tomorrow's pages
 never reach either path.
 
+## TRACKED, UNAUDITED — `photography_project_invoices` (2026-09-13)
+
+Surfaced while establishing that Money, Reports and Pipeline own no tables (D-020). This one
+DOES exist, and it is the single exception to that finding.
+
+- **Exists:** yes, a real table in `public`.
+- **Row count: 0** (measured 2026-09-13). Zero rows is not the same as unaudited — the table exists and nothing has read its writers.
+- **Audited:** **no.** Nothing in this pass read its schema, its writers, or which surface
+  renders it.
+- **Scope:** vertical-specific — the photography projects / Media surface
+  (`photo-projects`), not a general operator surface.
+- **Why it matters:** D-020 says the retired shell is a view layer with no data of its own.
+  This table is the one thing that could falsify that, and it was not checked. If the Media
+  surface is ever retired or merged, this is the row count that decides whether it is a
+  retirement or a deletion (Lesson 53).
+
 ## STAGE 2, REVISED BY THE BOUNDARY (2026-09-12)
 
 1. **The whitespace-neutral injector** — small, and it unblocks a repair already built and
