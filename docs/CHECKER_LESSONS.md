@@ -1727,3 +1727,45 @@ Corollary, learned the expensive way in v3: it still could not classify 18 of th
 those views render from client state loaded elsewhere. **When a traversal comes back empty,
 that is a result about the ARCHITECTURE, not a verdict about the code** — here, that the views
 do not own their data — and it must be reported as that rather than as "no data".
+
+## Lesson 53 — A redirect that removes access is a DELETION OF CAPABILITY. Count the users, not the code paths. (2026-09-13)
+
+`5a21a1b` changed which owners get routed out of the retired operator shell. It was reviewed
+as a routing fix, red-proofed as a routing fix, and shipped as a routing fix. Nobody asked the
+only question that matters: **who was using the nine surfaces it removed?**
+
+The check ran after the push. It should have run before, and it takes one query:
+
+> `graefs-autocare` — a real business with a paying owner — has **11 booking_requests
+> (7 still open), 4 customers, 2 jobs, 1 service.** Not empty.
+
+**The rule: before shipping anything that removes a route, count the ROWS behind the surfaces
+it removes, for every live customer.** A code-path argument ("the operator side has no data
+path to preserve") is a statement about code; this is a statement about people, and the two
+are answered with different instruments. The row count takes seconds and is the only evidence
+that distinguishes a retirement from a deletion.
+
+Corollary: "nobody uses it" is a measurement, never an assumption — and its denominator is
+live customers, not the corpus (Lesson: the corpus is 96% our own test drafts).
+
+## Lesson 54 — A comment asserting a deliberate choice is a decision record filed where nothing reads it
+
+The argument that `5a21a1b` overruled — *"Deliberately NOT a blanket /app redirect — jobs,
+calendar, leads, customers, chats and the rest are working surfaces the front door does not
+have yet, and removing them would cost more than the fabrications did"* — was correct, load
+bearing, and sitting in `public/hubly.html:13777`, where nothing reads it. It surfaced only
+because the change happened to touch those exact lines. Had the edit been three lines lower it
+would have been overruled silently.
+
+**Swept 2026-09-13:** comments containing *deliberately / intentionally / on purpose / by
+design* — **329 across 123 files.** The heaviest: `hubly.html` 31, `hubly_capability_registry.ts`
+28, `journey-os/journey.js` 28, `platform-home.html` 23, `hubly_document.ts` 14.
+
+Every one is either **a decision that belongs in `docs/DECISIONS.md`** (it records a choice, an
+alternative rejected, and a cost — e.g. `registry:354` *"Deliberately not merged into brief"*,
+`platform-home:1584` *"Deliberately NOT the draft_token"*) or **a rule that belongs in a check**
+(it states an invariant someone will break — e.g. `registry:225` *"the key is MANDATORY, and the
+distinction is deliberate"*, which already HAS its check, which is why it survived).
+
+Not moved yet — the list is the deliverable. The pattern to fix is that 329 arguments about why
+the code is the way it is live in the one place a reader reaches only by accident.
