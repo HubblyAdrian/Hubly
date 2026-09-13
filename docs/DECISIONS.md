@@ -144,3 +144,19 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
   - [ ] the walk line is a RECORDED result, not a live one, unless `--walk <slug>` is passed — it is labelled as a memory, which is the honest form, not a fix
   - [ ] the instrument count is a proxy: it greps for the WORD "red-proof", not for a proof
   - [ ] nothing makes the brief run — it is a command, not a hook
+
+## D-016 — Home shows the site again at claim, REVERSING a stated design
+- **Date / commit:** 2026-09-13 · `98dbb69` (reverses the rule written at `platform-home.html:290`)
+- **Reason given at the time:** the ORIGINAL choice was deliberate and argued, in its own comment: *"HOME (default): the conversation IS the screen — a comfortable centred column, the way an owner arrives and returns. The site is not shown here; you are talking to Hubly."* It was the claimed-shell author's call, made when the mode switch was introduced. **Adrian overruled it** on the strength of what it does to a real owner: the preview they have been watching build disappears at the exact moment the site becomes theirs, and the first screen of ownership is a full-width chat with no product in it. *"The website goes back on the right side, as it is before claiming."*
+- **Gave up:** the calm, centred, single-column Home the original design was aiming at. The thread is now a 380px sidebar on a claimed account with a page, so the greeting, the suggestion chips and every Home card live in a narrow column instead of a comfortable 720px measure. That is a real cost and it was the whole point of the rule being reversed.
+- **Outstanding:**
+  - [ ] Home's cards and chips were laid out for a 720px centred column and have NOT been re-checked at 380px
+  - [ ] the original argument — "you are talking to Hubly, not looking at a site" — is untested either way; nobody has measured what an owner does on arrival
+  - [ ] a claimed account with NO page still gets the centred column (bound to `.hc-has-draft`); that branch is unverified in a browser
+
+## D-017 — The two booking exits stay two functions, for now
+- **Date / commit:** 2026-09-13 · `98dbb69`
+- **Reason given at the time:** `bookingBack()` and `closePublicBooking()` have now been the same three-line mistake TWICE — once on the classic-storefront fall-through, once on the `?book=1` deep-link case. Both were fixed together this time rather than one being reported and the other left live.
+- **Gave up:** nothing yet — the duplication is intact, which is the point of the entry. Two exits from one screen is two writers of one fact in a new costume.
+- **Outstanding:**
+  - [ ] decide and do at the next boundary: ONE function with a parameter, or a check asserting both exits leave by the same route. Smaller is the check — the two have different callers, different in-app branches (owner preview, slide-over) and different post-conditions, so merging them is a refactor of live booking code, while the check is ~40 lines and self-red-proofs by reverting either exit
