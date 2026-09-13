@@ -59,3 +59,27 @@ booking_requests, owned by evergreen's owner so the existing session can reach i
 because the only live business is smaller than every page limit we ship. **Exclude it from
 every corpus count, or say that you did not.** Details and its three first-run findings:
 `docs/PAGING_FIXTURE.md`. *(built 2026-09-13)*
+
+**10. THE TAB IS CALLED MY DAY, NEVER PLANNER, in anything user-facing.** The code may still
+say `planner` — the rail label, the greeting, the docs and every sentence Hubly speaks say
+**My Day**. *(Adrian, 2026-09-13)*
+
+**11. THE PRODUCT CONCEPT, and it settles every future "where does this go" argument:**
+
+> **Home tells you what matters. My Day tells you what you need to do. Chat lets you ask
+> anything. Workspace lets you do the work.**
+
+*(Adrian, 2026-09-13)*
+
+**12. THE LAYERING — Home is the entry/context layer; detailed views live in tabs/workspaces.**
+
+A job or lead arrives → it appears on **Home** → the **right side of Home** shows more → a
+button there opens the **full tab/workspace**.
+
+**The existence of underlying rows/data does not automatically mean a new navigation tab should
+appear.** The tab/capability becomes visible when the owner actually has a reason to use it, or
+has entered that workflow. **Do not use the existence of rows, or the `business_places` earning
+rule, as the sole reason to paint a tab on the navigation rail.**
+
+Home is where the owner discovers and understands what needs attention; My Day, Jobs, Calendar,
+Website and Store are where the owner goes to work in detail. *(Adrian, 2026-09-13)*
