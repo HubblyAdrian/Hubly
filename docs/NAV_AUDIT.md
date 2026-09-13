@@ -50,7 +50,14 @@ pressing Back should not bounce into the retired view."*
 **21 of 25 are mapped to a renderer; 17 have a real function body; 3 reach a database read
 from the render path.**
 
-### THE INBOUND COLUMN ABOVE WAS WRONG — corrected 2026-09-13
+### THE INBOUND COLUMN ABOVE IS SUPERSEDED — corrected 2026-09-13
+
+**The original column is left in place above, not deleted.** A wrong number that was acted on
+is part of the record: `customers: 0` was the stated basis for ruling its retirement safe, and
+`projects: 2` was the stated basis for ruling it "already broken". Both were wrong. Deleting
+them would hide what the rulings rested on.
+
+### The verified column — every destination, all 24
 
 It reported `customers: 0`, and a retirement was ruled safe on that basis. **There were 2.**
 The count came from a regex assuming one call shape — `.ni[data-v="..."]` — while the real
@@ -60,14 +67,36 @@ A second attempt over-corrected to 61 (a regex that matched the same call repeat
 verified count, reproducible with `grep -n` and now enforced by
 `scripts/check-nav-targets-exist.mjs`, is **32 call sites across 9 destinations**:
 
-| destination | inbound |
-|---|---|
-| dashboard | 11 |
-| editor | 9 |
-| jobs | **3** (this one was right) |
-| customers | **2** (reported as 0) |
-| photo-projects · quotes | 2 each |
-| ask · leads · settings | 1 each |
+| destination | nav item | inbound (verified) | was reported |
+|---|---|---|---|
+| dashboard | yes | **11** | 0 |
+| editor | yes | **9** | 0 |
+| jobs | yes | **3** | 3 — right, by luck |
+| customers | (retired) | **2** at the time | **0** — the basis of the retirement ruling |
+| photo-projects | yes | 2 | 2 |
+| quotes | yes | **2** | 0 |
+| ask · leads · settings | yes | 1 each | ask 1, others 0 |
+| **projects** | **no** | **0** | **2** — the basis of the "already broken" ruling |
+| activity, apps, calendar, chats, growth, marketing, marketplace, memberships, money, opportunities, pipeline, reports, reviews, store, studio | yes | 0 | 0 |
+
+**Total 30** across 23 declared nav items (24 destinations; `projects` has none, `customers`
+was retired 2026-09-13).
+
+### `projects` — the ruling it supported is void
+
+It was reported as *"no view container at all and two inbound links. Already broken today."*
+**It has ZERO inbound links.** The two hits came from the wrong pattern seeing this:
+
+```js
+document.querySelector('.ni[data-v="photo-projects"],.ni[data-v="projects"]')
+```
+
+— a **fallback selector** at `hubly.html:18890` and `:32568`. Both resolve via
+`photo-projects`, which exists; the `projects` half is a dead alternative that never fires,
+and a comma-selector returning the first match means it cannot fire. **Nothing is broken.**
+There is no view, nothing reaches it, and no user-visible consequence. The only possible
+change is deleting `,.ni[data-v="projects"]` from two selectors — cosmetic, zero behaviour
+change. **The "fix or remove both links" ruling has no subject.**
 
 **Three counts of the same thing, two of them wrong.** The number that survived is the one a
 person can check by eye, and it is the one the check now enforces on every run.

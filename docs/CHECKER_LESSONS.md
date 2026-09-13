@@ -1980,7 +1980,21 @@ person can check with `grep -n`, is **32 across 9 destinations**.
 **Three counts of the same thing; two of them wrong, in opposite directions.** Undercounting
 would have retired a view with live callers. Overcounting would have blocked a safe retirement.
 
-Three rules:
+**THE READ RECEIPT DOES NOT COVER THIS, and nobody should read it as having closed it.**
+`receipt()` answers *"did I read the right bytes?"* — the right file, the right hash, a
+mutation that actually differs. Every one of those was correct here. The failure was
+*"did my pattern match all the shapes?"*, which is a different class entirely: the bytes were
+right and the regex was narrow. Receipts and coverage are two separate holes and only one of
+them is plugged.
+
+**THE RULE THIS EARNS: a count that gates a destructive action is produced TWICE, by two
+independent methods, and they must agree.** Retiring a view, deleting a column, dropping a
+function, removing a route — anything whose cost is paid by someone else if the number is
+wrong. Here the second method was `grep -n` read by eye, and it disagreed with the regex
+three times running. **If the two disagree, neither is the answer until they are reconciled.**
+That is what happened, and it worked — this makes it standing rather than lucky.
+
+Three supporting rules:
 1. **A call-site count is only as good as the shapes you enumerated**, and enumerating shapes
    is the same losing game as enumerating fact forms (CLAUDE.md: the anchor count, the price
    scan, the hours detector, the extraction gate). Count with a pattern that is deliberately
@@ -1988,6 +2002,14 @@ Three rules:
 2. **Print the hits, not just the number.** `scripts/check-nav-targets-exist.mjs` lists every
    call site with its file and line, so the count is checkable rather than trusted.
 3. **The check must be as suspect as the code.** Its first run declared `dashboard` an orphan
-   because the declaration regex required `class="ni"` exactly and that item is
-   `class="ni active"` — the same one-shape assumption, made inside the check written to catch
-   it. Caught only because "the dashboard has no nav item" was implausible.
+   because the declaration regex required `class="ni"` exactly while that nav item is
+   `class="ni active"` — **the same one-shape assumption, made inside the check written to
+   catch it.** Caught only because "the dashboard has no nav item" was implausible. A check
+   that makes the assumption it was written to catch is the clearest possible statement of why
+   one method is never enough.
+
+**What the corrected column did to three rulings** (full audit in D-025): the Customers
+retirement SURVIVED but its execution changed — 2 callers repointed instead of left to fall
+through; the Jobs count was right by luck; and **"`projects` is already broken with two inbound
+links" is VOID** — it has zero, and the two hits were one fallback selector,
+`.ni[data-v="photo-projects"],.ni[data-v="projects"]`, resolving via the half that exists.

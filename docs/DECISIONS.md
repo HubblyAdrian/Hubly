@@ -226,3 +226,13 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
 - **Outstanding:**
   - [ ] total billed / total visits are unbuilt. When they are wanted, they come from an RPC that AGGREGATES server-side — never from a client sum
   - [ ] the client already passes `p_limit: 200` at `platform-home.html:4814`; that is a list read, and it must not become the basis of any total
+
+## D-025 — Every decision that cited the inbound column, re-checked against the verified count
+- **Date / commit:** 2026-09-13 · `docs/NAV_AUDIT.md`
+- **Reason given at the time:** the inbound-link column was produced by a regex assuming one call shape. Three rulings cited it. Each is re-checked here rather than assumed to survive.
+- **Gave up:** nothing — this is an audit of prior rulings.
+- **Outstanding:**
+  - [x] **Customers retirement (ruled safe at "0 inbound")** — the real count was **2**. **The ruling SURVIVES but the execution changed**: both call sites were repointed at the merged room in the same commit rather than left to fall through to `goDash()`. Had it shipped on the original number, booking-for-a-customer would have landed on the front door.
+  - [x] **Jobs repoint (3 inbound)** — **unchanged. The original number was right**, by luck rather than method: `.ni[data-v="jobs"]` happens to be the shape all three use.
+  - [x] **`projects` "already broken, two inbound links"** — **VOID.** Zero inbound. The two hits were one fallback selector, `.ni[data-v="photo-projects"],.ni[data-v="projects"]`, at `:18890` and `:32568`, both resolving via `photo-projects`. Nothing reaches `projects`, nothing is broken, and the ruling has no subject.
+  - [ ] no DECISIONS entry quoted an inbound figure directly — the numbers lived in `NAV_AUDIT.md` and `TWO_IMPLEMENTATIONS.md`, which is why the corrections land there
