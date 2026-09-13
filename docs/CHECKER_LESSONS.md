@@ -1606,3 +1606,27 @@ sequences explicitly**, and the predicate already exists: `describesASequence()`
 (step/process/timeline class, "how it works" heading text, a step-number class or CSS counter,
 a step class on the item). Every new heading-word recogniser consults it, or it inherits this
 bug on its first week.
+
+## Lesson 49 — When the product already contains a correct example, READ IT. Do not build a mechanism to re-derive it. (2026-09-13)
+
+Two days went into inferring what a services block should look like on a page we did not
+design: a donor census, a chain clone that walks section → wrappers → item container, a
+`describesASequence()` predicate to stop it cloning "How it works", an item-shape measurement,
+an inset measurement against the page's content column, a box-match comparison against the
+page's own items. Every one of those answers the question **"how do we infer this page's
+design?"**
+
+We never had to ask it. `evergreen-yard-care` has had the right services block the whole time —
+a card, an image tile, the name, a baseline-aligned price with its unit beside it, a
+description, and a full-width book button on the card's floor — and Adrian had been pointing at
+that page as the reference. The answer was not a better inference mechanism. The answer was to
+open the page and transcribe it (`docs/SERVICES_BLOCK_SPEC.md`).
+
+**The rule:** before building anything that RECOGNISES, SCORES, or INFERS a design, ask whether
+a correct example already exists in the product. If it does, read it and render it. An
+inference mechanism has to be right on every page forever; a transcription has to be right
+once. This is the same asymmetry as every other lesson here, pointed at design instead of data.
+
+**The tell we missed:** the mechanism kept needing new exceptions — a sequence predicate, then
+a heading-word exclusion, then a false-positive list. A rule that needs a new exception every
+week is usually answering a question that did not need to be asked.
