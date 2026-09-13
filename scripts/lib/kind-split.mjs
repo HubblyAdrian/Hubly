@@ -26,7 +26,7 @@ const ORDER = ["market", "internal", "test"];   // market first: it is the only 
  *  before it existed). Any count or rate computed without excluding it is meaningless, and
  *  SETTLED #8 saying so is prose, which decays. So the rule lives here, beside the split, and
  *  a caller either excludes them or DECLARES the inclusion in its own output. */
-export const FIXTURE_SLUGS = new Set(["hubly-paging-fixture"]);
+export const FIXTURE_SLUGS = new Set(["hubly-paging-fixture", "hubly-classic-fixture"]);
 
 /** Drop fixture rows from a corpus. Returns the kept items and prints what it removed —
  *  silence would make an exclusion indistinguishable from a corpus that had none. */

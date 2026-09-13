@@ -97,3 +97,10 @@ rule, as the sole reason to paint a tab on the navigation rail.**
 
 Home is where the owner discovers and understands what needs attention; My Day, Jobs, Calendar,
 Website and Store are where the owner goes to work in detail. *(Adrian, 2026-09-13)*
+
+**13. `hubly-classic-fixture` is the CLASSIC-store test business.** Its website lives in
+`businesses.meta` — `meta.website` plus `meta.service_catalog` with 2 services and 1 addon —
+and it has **no `business_documents` row**, the same shape as the only paying customer's.
+`hubly-paging-fixture` covers the freeform store; this covers the other one. **Exclude both
+from every corpus count**, and **never prove a classic-store change against
+`graefs-autocare` — read-only, always.** *(built 2026-09-13)*
