@@ -32,3 +32,9 @@ in that tab. *(Adrian, 2026-09-13)*
 
 **7. Booking is a panel on the business's own page, never a separate page.**
 *(Adrian, 2026-09-13)*
+
+**8. `hubly-paging-fixture` is a test fixture, not a business.** 250 customers, 250 jobs, 250
+booking_requests, owned by evergreen's owner so the existing session can reach it. It exists
+because the only live business is smaller than every page limit we ship. **Exclude it from
+every corpus count, or say that you did not.** Details and its three first-run findings:
+`docs/PAGING_FIXTURE.md`. *(built 2026-09-13)*
