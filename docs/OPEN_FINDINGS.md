@@ -6913,6 +6913,26 @@ concept anywhere in the schema.
 
 **Not built, not costed.** Recorded so that "we can sell training videos" is never said.
 
+## RISK, kept out of My Day scope — 11 claimed businesses have no document (2026-09-13)
+
+Spec §13 says keep this separate from My Day, and this is where it lives instead.
+
+**11 claimed businesses have no `business_documents` row**, so they render through the CLASSIC
+renderer (`#p-classic-site`). They include **`graefs-autocare` — the only live customer** — and
+`adrians-lawn-service`.
+
+**Consequence:** every freeform capability built this week **does not reach them**. The block
+spec, services placement, contact/hours placement, `moveFreeformSection`, `insertServiceIntoFreeform`,
+steps 6 and 9 of the flow — all operate on freeform HTML in `business_documents`, and these
+businesses have none.
+
+It is also why the shell tells those owners *"Moving whole sections isn't something I can do on
+this page, and that isn't a temporary problem"* — the capability gate is correct, and the word
+that is wrong is **"temporary"**: a rebuild turns the page into a document and every freeform
+capability applies from that moment.
+
+**Not a My Day dependency. Not fixed here.** Recorded so it is not rediscovered a third time.
+
 ## STAGE 2, REVISED BY THE BOUNDARY (2026-09-12)
 
 1. **The whitespace-neutral injector** — small, and it unblocks a repair already built and
