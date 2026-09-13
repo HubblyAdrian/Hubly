@@ -1801,3 +1801,26 @@ points, this changes one" is.
 
 The accident worth noticing: because the fix was partial, the one live customer never lost
 access to his 7 open leads. A correct-looking complete fix would have taken them away.
+
+## Lesson 56 — A count over a mixed-status set is not a fact until the statuses are named (2026-09-13)
+
+I reported "graefs-autocare has 7 open booking requests". The query was
+`status <> 'accepted'`, and the 7 was **2 pending + 5 abandoned**.
+
+Those are not the same event and cannot be added:
+
+- **pending** — a real person sent a request and is WAITING FOR A REPLY. Two people.
+- **abandoned** — someone opened the booking form and left. Nobody is waiting.
+
+"7 people are waiting on Graef" is what a reader takes from that number, and it is wrong by a
+factor of three and a half. The ruling that followed it ("closing the doors is an outage for a
+paying customer") was built on the inflated reading.
+
+**The rule: never report a count whose set spans statuses without naming the split in the same
+line.** Exactly the denominator rule (`rateLine()` refuses a rate without its account_kind
+split) pointed at a different column: `status`, `kind`, `role`, `account_kind` — any column
+that changes what the row MEANS must appear beside the count, or the count is not yet a fact.
+
+The tell was available and I did not look: I wrote `coalesce(r.status,'') <> 'accepted'` myself.
+A query whose filter is a NEGATION is a count of "everything else", and everything else is
+rarely one thing.
