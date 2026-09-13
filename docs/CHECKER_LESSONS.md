@@ -1769,3 +1769,35 @@ distinction is deliberate"*, which already HAS its check, which is why it surviv
 
 Not moved yet — the list is the deliverable. The pattern to fix is that 329 arguments about why
 the code is the way it is live in the one place a reader reaches only by accident.
+
+**And one line in that sweep is the whole argument for enforcement over documentation:**
+`registry:225` — *"the key is MANDATORY, and the distinction is deliberate"* — survived, and it
+survived because it ALREADY HAS A CHECK (`check-owner-id-invariant.mjs`). Every other comment in
+this list is an argument defended by nothing. The ones that hold are the ones something runs.
+
+## Lesson 55 — A fix's scope claim must ENUMERATE the entry points, not the one you edited (2026-09-13)
+
+`5a21a1b` was reported as "owners are routed out of the retired operator shell". It changes
+`openOperateHome()`. That is **one door of six**, and the other five reach the same shell
+without passing the new gate:
+
+| entry | what it is |
+|---|---|
+| `openOperateHome()` | the one that was fixed |
+| `hubly.html:13553` / `:13561` | a signed-in user hitting p-landing/p-signup/p-signin is pushed into `p-app`; `:13561` then calls `switchV(dash)` |
+| `:18498` | session restored on boot → `showP('p-app')` |
+| `:18696` | `goWebsiteSetup()` → `showP('p-app')` |
+| `:14011`, `:14049` | the pixel-editor entries |
+
+The instruction said "gate the redirect on the arriver", and the fix gated *the* arriver — as
+though there were one. Nobody checked how many ways in there were, so a partial fix was
+reported as a retirement, and the next step after it (closing the shell) would have been taken
+on the belief that the shell was already unreachable.
+
+**The rule: a claim about scope is a measurement.** Before saying "X is now routed away /
+blocked / retired", grep for every call site that reaches X and list them — the fixed ones and
+the unfixed ones. "I changed the function I found" is not a scope claim; "there are six entry
+points, this changes one" is.
+
+The accident worth noticing: because the fix was partial, the one live customer never lost
+access to his 7 open leads. A correct-looking complete fix would have taken them away.

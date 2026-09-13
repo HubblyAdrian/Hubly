@@ -145,6 +145,36 @@ Whatever we learn from Graef generalises further than one customer.
 
 ---
 
+### Row counts, measured 2026-09-13 (read-only, nothing written)
+
+**This is the only live customer. Every retirement decision counts rows here first
+(Lesson 53).** Counted directly against the tables, not inferred:
+
+| table | rows |
+|---|---|
+| `booking_requests` | **11 (7 still open)** |
+| `customers` | 4 |
+| `jobs` | 2 |
+| `services` | 1 |
+| `business_memories` | 1 |
+| `business_places` earned | 4 — `customers`, `jobs`, `planner`, `website` |
+| `google_calendar_connections` | 0 — calendar NOT connected |
+| `google_calendar_events` | 0 |
+| `chatbot_conversations` | 0 |
+| `review_submissions` | 0 |
+| `memberships` | 0 |
+
+**What this means for the rail, and it is the live gap:** his 7 open booking requests appear
+in **Leads**, which is an operator-shell surface. The claimed rail carries Home, Website,
+Settings plus earned places — and `customers`, `jobs`, `planner`, `website` are not where an
+open booking request shows. As of 2026-09-13 the only reason he can still reach them is that
+the retired-shell redirect (`5a21a1b`) covers one entry point of six. **Closing the other five
+before Home surfaces open bookings would turn a partial fix into a real outage for the only
+paying business on the product.**
+
+How established: `supabase db query --linked`, counts only, on 2026-09-13. No write of any
+kind was made to this business.
+
 ## PROSPECTS AND COMMITMENTS
 
 *Anyone who has said they would pay. What for, how much, by when, and where the
