@@ -1899,6 +1899,14 @@ state, just a number that is too small — and too small in a way that looks pla
 predicted and fails identically when it arrives. **Either the aggregate is computed
 server-side, or it is not rendered.**
 
+**SUMMED, NOT FOLDED — the distinction, in the lesson and not only in the check, because the
+next person will hit the same false positive.** `list.reduce((a, e) => t > a ? t : a, 0)` over a
+page is **legitimate**: it finds the newest event in the page in order to mark what was just
+shown as seen, and "the newest thing I displayed" is by definition a property of the page. A
+max, a min, a concat and a find are all fine. **Addition is not**, because addition claims to
+describe a whole that the page does not contain. The check requires additive accumulation for
+exactly this reason.
+
 The page limits, established 2026-09-13: `get_business_customers` **8** · `get_business_events`
 **30** · `get_business_notifications` **8** · client reads of `booking_requests` and `jobs`
 **200** · one RPC with an internal `limit 80`.

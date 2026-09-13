@@ -6806,6 +6806,70 @@ DOES exist, and it is the single exception to that finding.
   surface is ever retired or merged, this is the row count that decides whether it is a
   retirement or a deletion (Lesson 53).
 
+## OPEN PRODUCT GAP (not a defect) — Home has no leads LIST (2026-09-13)
+
+**For Adrian. Nothing is being built for this.**
+
+The claimed rail surfaces recent leads through the activity feed. `get_business_events` caps at
+**100** by design — `least(coalesce(p_limit, 30), 100)` — which is correct for a feed. A feed
+shows what just happened. A list is something an owner works through until it is empty, and
+**leads are a list**: each one is a person who has not been answered.
+
+**Evidence, from the paging fixture rather than from argument:** `hubly-paging-fixture` has
+~500 events and `get_business_events` returns **100** at any `p_limit`. `graefs-autocare` has 12,
+which is why this was invisible until the fixture existed.
+
+**The question for Adrian:** does Home need a real leads list — a surface that shows every
+unanswered booking and shrinks as they are answered — or is the feed enough, with the
+understanding that past 100 events an owner cannot reach older unanswered bookings by any
+route?
+
+This is **not** a defect: nothing is broken or lying. It is a product gap, and the shape of the
+answer decides whether the Jobs/Customers merge should be followed by a Leads screen.
+
+## COSTED, NOT BUILT — guard the notification triggers on `account_kind` (2026-09-13)
+
+**The hole:** `booking_request_completed_notify` fires on INSERT when `status='pending'` and
+calls `net.http_post`. So **the one state that matters most to an owner — a person waiting for
+a reply — is the one state no fixture can seed at volume.** The paging fixture has 250 bookings
+and **zero pending**, for exactly this reason.
+
+**It is a class of TWO, established from `pg_proc`, not from memory.** Every function in the
+database that calls `http_post` and is wired to a trigger:
+
+| function | table | fires when | guards on `account_kind` today |
+|---|---|---|---|
+| `notify_owner_on_booking_completion` | `booking_requests` | AFTER INSERT OR UPDATE OF status, when status = 'pending' | **no** |
+| `notify_platform_owner_on_claim` | `businesses` | AFTER UPDATE, when `owner_id` goes null → not null | **no** |
+
+Neither reads `businesses` at all today, so neither can see what kind of account it is
+notifying about. **Both fire for test businesses**, which means every fixture and every seeded
+draft we have ever made has been capable of sending real notifications.
+
+**The migration, costed — one file, both functions, fix the class not the trigger:**
+
+- **Shape:** two `create or replace function` statements. **No table change, no drop, no
+  signature change** — the same pure-add-shaped risk as `get_business_jobs`, and the safest
+  thing a migration can be against a ledger with 56 unrecorded files.
+- **Change:** each gains one lookup and one early return —
+  `select account_kind into v_kind from public.businesses where id = <the business>;`
+  `if v_kind = 'test' then return new; end if;`
+  For the booking trigger the business id is `new.business_id`; for the claim trigger it is
+  `new.id`.
+- **Size:** ~12 lines of SQL across the two.
+- **Red-proofable:** yes, and cheaply — insert a pending booking against the fixture and assert
+  `notification_deliveries` gains **no** row; insert one against a non-test business in a
+  transaction that rolls back and assert it gains one.
+- **What it unlocks:** seeding pending bookings at volume, which closes the largest untested
+  path in the product, and it removes "we cannot test that" from every future fixture.
+
+**Not written.** Costed and stopped, as ruled.
+
+**One caveat worth stating:** guarding on `account_kind = 'test'` means a business misfiled as
+test would silently stop notifying its owner. That is the same failure mode as
+`account_kind` defaulting to 'real' (the week that cost), pointed the other way — so the guard
+should be `= 'test'` (an explicit allow-list of silence), never `<> 'market'`.
+
 ## STAGE 2, REVISED BY THE BOUNDARY (2026-09-12)
 
 1. **The whitespace-neutral injector** — small, and it unblocks a repair already built and

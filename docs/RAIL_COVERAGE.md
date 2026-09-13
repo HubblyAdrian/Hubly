@@ -8,7 +8,7 @@ the redirect fix was partial. That was wrong. They are on Home already.
 
 | surface | covered today? | evidence | cost to cover |
 |---|---|---|---|
-| **Leads / open bookings** | **YES** | `get_business_events` returns **7 `booking.created` + 5 `booking.abandoned`** for graefs-autocare, and Home renders them — `'Booking'` / `'Unfinished booking'` (`platform-home.html:5130-5131`), filtered at `:5383`, fresh counts at `:5675-5677` | **none.** Already shipped |
+| **Leads / open bookings** | **PARTLY — and the distinction matters** | see the correction below | see below |
 | **Chats** | partly | `chat.asked` is an event kind and Home handles it (`:5062`). Not a browsable surface | Graef has 0 chatbot_conversations — no data, no loss today |
 | **Calendar** | no | — | Graef: calendar NOT connected, 0 `google_calendar_events`. No data, no loss today |
 | **Money** | no | `renderRevenue` owns no table; `DS()` is `HublyDS`, the DESIGN SYSTEM, not a data source. It renders from client state derived from jobs + bookings | a VIEW problem, not a second merge. No migration |
@@ -47,6 +47,25 @@ Both are in the claimed shell, and both are **direct table reads** (`c.from('boo
 `c.from('chatbot_conversations')`, `c.from('jobs')`) rather than reads through a shared RPC —
 the exact pattern the merge ruling forbids. They are already the second reader of a fact
 `get_business_events` owns.
+
+## CORRECTED — a feed is not a list (2026-09-13)
+
+The row above first read **YES**. That was wrong in kind, not in degree:
+
+> **The claimed rail shows recent leads via the activity feed, capped at 100 events. It has no
+> leads list. An owner past 100 events cannot reach older unanswered bookings by any route.**
+
+`get_business_events` caps at `least(coalesce(p_limit, 30), 100)` **by design**, and that is
+correct for what it is — a recent-activity feed. The error was using a feed to answer "where do
+an owner's leads live." **A feed shows what just happened; a list is something you work through
+until it is empty. Leads are a list.**
+
+It held for graefs-autocare because he has 12 events. The paging fixture has ~500 and returns
+100 at any `p_limit`.
+
+**The retirement ruling stands**, because the operator Leads screen reads the same client state
+— not a deeper source. Retiring it removes a second view of the same 100, not a route to the
+rest.
 
 ## RECONCILED — 12 events from 11 rows, per row (2026-09-13, read-only)
 
