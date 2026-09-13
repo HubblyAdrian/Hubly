@@ -18,7 +18,14 @@ business of his; the booking walk below is read-only and no booking was complete
 | **the wizard** | 4 steps — Package / When & where / Your info / Review — `submitBooking()` | `#bk-step-1..4`, `hubly.html:12559+`, submit at `:43101` |
 | **the second website** | hero, nav (Services/Reviews/About), BOOK NOW + VIEW PACKAGES, its own chat input, "Powered by Hubly", a Window Services section | `renderThemedBookingLanding()` `:33344`, painting `#bkland-*` `:12492-12509`, shell `applyThemedBookingShell()` `:33282` |
 
-**CONFIRMED BY CLICKING, and the route is worse than reported.** On
+**THE JOB IS MUCH SMALLER THAN WE FEARED, AND THE CORRECTION IS THE POINT.** It was recorded
+as "a customer clicks Book and lands on a second website", which would have been a routing
+problem across 507 links. It is not. **Book opens the WIZARD. The impostor site is what the
+wizard's own "← Back" control shows, and the browser's own back button behaves correctly.**
+One broken control, not a routing problem. The code reading predicted the larger version; the
+click disproved it — the browser earning its place on its first outing.
+
+**CONFIRMED BY CLICKING.** On
 `crestview-window-cleaning`, clicking **Book** goes straight to the WIZARD (not the landing) —
 so the second website is not what a first click shows. It is what the wizard's own **"← Back"**
 shows: pressing it leaves the customer on the impostor site, still at `?book=1`, with the
