@@ -6651,6 +6651,63 @@ couldn't save the hours yet."* T2 fixes the refusal. It does not touch the shape
 The reply-composition side already has the right pattern — `servicesTruth`, composed from
 what ACTUALLY happened — and it covers one writer while this one writes underneath it.
 
+## BOUNDARY, 2026-09-12/13 — what shipped, and what Adrian will still meet
+
+**Deployed** (`supabase functions deploy`, the server path):
+`hubly-conversation` 01:05:00→01:05:06 UTC · `hubly-document-build` 01:05:12→01:05:18 UTC.
+
+**Pushed** (`public/` ships ONLY by git push to Vercel): 12 commits, `608384f..bf303c8`,
+01:05:24→01:05:26 UTC. **Confirmed live by CONTENT, not by a deploy message:**
+`https://myhubly.app/hubly.html` returns 200 and carries "Nothing is bookable online just
+yet" and both `wireFreeformLinkGuard` bindings; `https://myhubly.app/` carries
+`--sidebar:#1B1712`. No `public/` file changed in these 12 commits — the markers confirm the
+already-live build still matches the repo.
+
+**Fragment-link repair** (`scripts/repair-fragment-links.mjs --write`):
+**142 pages repaired, 421 fragment links covered**, 3 skipped (already had it or no
+fragments), **18 refused on the inverse byte proof**.
+
+- **Verified by clicking, not by bytes**: on repaired pages the link now scrolls —
+  `rell-okonjo-photography` `#services` scrollY 0→1498, `ironwood-fence` `#process` 0→1578,
+  neither navigating away, handler present.
+- **All 18 refusals are WHITESPACE-ONLY.** `injectHublyRuntime` normalises inter-tag
+  whitespace in a few places (as little as one byte: `</div>\n</body>` → `</div></body>`),
+  and the proof is byte-exact, so it refuses. Verified page by page by re-normalising
+  inter-tag whitespace: 18 of 18 identical in substance. **The proof was not loosened at a
+  boundary** — Lesson 44 requires that any widening show the original defect (the harness bug
+  that produced a 9KB page from a 32KB one) still going red in the same run. The fix belongs
+  in the INJECTOR, made whitespace-neutral, and is a separate pass.
+- **`crestview-window-cleaning` is one of the 18.** The page the gate walks did not get the
+  handler, which is why assertion 1 is still red there.
+
+**The eight assertions, both walks:**
+
+| | crestview-window-cleaning | ironwood-fence |
+|---|---|---|
+| 1 in-page links scroll | **RED** — `#services` navigates the frame; `#service-area` target missing | GREEN |
+| 2 self-links match the slug | GREEN | GREEN |
+| 3 services appear by name and price | GREEN | GREEN |
+| 4 no owner-directed copy on a public surface | GREEN | GREEN |
+| 5 no placeholder copy on a public surface | **RED** — booking page: "Your Business" | **RED** — same |
+| 6 booking loads this business's record | GREEN | GREEN |
+| 7 a message during the claim transition is answered | **RED** — seq 17 got the welcome | GREEN |
+| 8 post-claim shell tokens match | GREEN | GREEN |
+
+**5 green / 3 red** and **7 green / 1 red**. Repo checks all green: no-db-push,
+owner-id-invariant, draft-capable-writers, verification-carried, one-writer-per-question,
+warning-then-proceed, recording-on-success, mount-predicate.
+
+**WHAT ADRIAN WILL MEET ON A WALK — known, not hunting:**
+1. **Every booking page says "Your Business"** somewhere in the consent line (`bk-biz-consent`).
+   Both walks red on it. Stage 2, first item.
+2. **`crestview-window-cleaning`'s in-page nav links still navigate the page away** instead of
+   scrolling — it is one of the 18 whitespace refusals. Its `#service-area` link also has no
+   target on the page at all, which the repair cannot fix.
+3. **A message typed during the claim transition is still swallowed** on crestview (seq 17, an
+   hours request, answered by the post-claim welcome). Not fixed tonight.
+4. **ironwood-fence's page shows no hours** though the record holds five days — the two-writer
+   finding above; the hours went to the table only and freeform has no hours placement path.
+
 ## STAGE 3 LEADS WITH THIS — sub-AA text we did not insert: 68 of 165 pages (2026-09-12)
 
 **Promoted 2026-09-12 by Adrian's partner, ahead of the migration ledger:** this is a
