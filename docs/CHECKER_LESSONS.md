@@ -1855,3 +1855,33 @@ exempts is a dead check.
 The escape hatch exists because the consumer is `countKey:'jobsToday'` — an indirection no AST
 can follow. **An AST alone would under-report here**, and that is stated in the check rather
 than assumed.
+
+## Lesson 58 — A red-proof that PASSES is a result about the instrument, not about the code (2026-09-13)
+
+Sits next to "a check's first green is meaningless." Five instrument failures in one week:
+
+| # | instrument | what it reported | what was true |
+|---|---|---|---|
+| 1 | nav audit v1 | 0 renderers for 25 destinations | it was reading the wrong file |
+| 2 | nav audit v2 | 0 database reads, anywhere | it walked one level; every read is 2–4 calls down |
+| 3 | the two inset reporters | 103 became 19, labelled "unmoved" | two reporters, one `.jsonl`, near-identical headers |
+| 4 | check-computed-and-dropped | red-proof PASSED | paths resolved against the script's own repo, so the mutated copy was never opened — it parsed the real file twice |
+| 5 | the same check | red-proof PASSED again | the string escape hatch regexed raw source and was satisfied by the DELETION COMMENT naming the property it was meant to catch |
+
+**Every one was caught because a human thought the answer looked implausible.** That is
+attention, not method, and attention does not survive a long night. Four and five are the
+sharpest: the red-proof passing is what a working check looks like from the outside.
+
+**THE MECHANICAL FIX — `scripts/lib/read-receipt.mjs`, shared, not per-script.**
+
+- `receipt(path)` prints the **absolute path, byte count and content hash** of everything a
+  check opens, before it reports anything. Failure 1 and failure 4 are both visible in that one
+  line: the wrong file names itself, and a red-proof reading the baseline twice prints the same
+  hash twice.
+- `expectDifferent(mutated, baseline)` is a red-proof's own postcondition. It **exits 2 —
+  CANNOT RUN, never a pass —** when the two are the same bytes. A red-proof may no longer
+  silently test nothing.
+
+Retrofitted into `check-computed-and-dropped`, `check-retired-shell-exit`,
+`check-denominator-rule` and `decisions-open`. **The rule: a check states what it read before
+it states what it found.** An unsourced finding is an opinion with an exit code.

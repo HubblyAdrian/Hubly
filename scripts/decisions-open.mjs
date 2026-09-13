@@ -23,6 +23,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { receipt } from "./lib/read-receipt.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const FILE = process.env.HUBLY_DECISIONS || join(ROOT, "docs/DECISIONS.md");
@@ -30,7 +31,7 @@ const ALL = process.argv.includes("--all");
 const CHECK = process.argv.includes("--check");
 
 let src;
-try { src = readFileSync(FILE, "utf8"); }
+try { src = receipt(FILE, "read"); }
 catch (e) { console.error("CANNOT RUN — no decisions record at " + FILE); process.exit(2); }
 
 /** One pass, line by line: a `## D-xxx — title` opens a decision, `- **Date / commit:**` dates

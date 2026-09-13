@@ -20,12 +20,13 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { receipt } from "./lib/read-receipt.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const FILE = process.env.HUBLY_SHELL_FILE || join(ROOT, "public/hubly.html");
 
 let src;
-try { src = readFileSync(FILE, "utf8"); }
+try { src = receipt(FILE, "read"); }
 catch (e) { console.error("CANNOT RUN — cannot read " + FILE); process.exit(2); }
 
 // The block is bounded by its own marker comment and the `location.replace('/')` inside it.

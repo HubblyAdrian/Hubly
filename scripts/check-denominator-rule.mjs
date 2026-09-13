@@ -22,6 +22,7 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { receipt } from "./lib/read-receipt.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DIR = process.env.HUBLY_SCRIPTS_DIR || join(ROOT, "scripts");

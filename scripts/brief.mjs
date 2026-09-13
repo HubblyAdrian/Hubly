@@ -28,7 +28,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const argv = process.argv.slice(2);
 const walkSlug = (argv.includes("--walk") ? argv[argv.indexOf("--walk") + 1] : null);
 
-const REQUIRED = ["docs/DECISIONS.md", "docs/OPEN_FINDINGS.md", "docs/CHECKER_LESSONS.md", "CLAUDE.md",
+const REQUIRED = ["docs/SETTLED.md", "docs/DECISIONS.md", "docs/OPEN_FINDINGS.md", "docs/CHECKER_LESSONS.md", "CLAUDE.md",
                   "scripts/decisions-open.mjs", "scripts/lib/kind-split.mjs"];
 const missing = REQUIRED.filter((f) => !existsSync(join(ROOT, f)));
 if (missing.length) { console.error("CANNOT RUN — missing: " + missing.join(", ")); process.exit(2); }
@@ -41,6 +41,26 @@ const line = (s = "") => console.log(s);
 const rule = (t) => { line(); line("─".repeat(78)); line(t); line("─".repeat(78)); };
 
 line(`\nHUBLY SESSION BRIEF · ${new Date().toISOString().slice(0, 16).replace("T", " ")} UTC`);
+
+// ── 0. SETTLED — FIRST, ALWAYS ─────────────────────────────────────────────────
+// Before the decisions, before the findings, before anything. These are the facts
+// Adrian has already given us, and asking for one of them again is the failure this
+// whole file exists to stop.
+rule("SETTLED — established, closed, DO NOT RE-ASK");
+{
+  const settled = readFileSync(join(ROOT, "docs/SETTLED.md"), "utf8");
+  const items = settled.split(/\n(?=\*\*\d+\.)/).slice(1);
+  if (!items.length) { console.error("CANNOT RUN — docs/SETTLED.md has no numbered facts"); process.exit(2); }
+  for (const it of items) {
+    const flat = it.replace(/\s+/g, " ").replace(/\*\*/g, "").trim();
+    const who = (/\*?\(([^)]*\d{4}-\d{2}-\d{2})\)\*?\s*$/.exec(flat) || [])[1] || "";
+    const body = flat.replace(/\s*\*?\([^)]*\d{4}-\d{2}-\d{2}\)\*?\s*$/, "").replace(/`/g, "");
+    const wrapped = body.match(/.{1,92}(\s|$)/g) || [body];
+    line("  " + wrapped.join("\n     ").trimEnd());
+    if (who) line(`     — ${who}`);
+    line("");
+  }
+}
 
 // ── 1. STANDING FACTS ──────────────────────────────────────────────────────────
 rule("STANDING FACTS — the ones that keep costing us");

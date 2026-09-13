@@ -147,14 +147,17 @@ Whatever we learn from Graef generalises further than one customer.
 
 ### Row counts, measured 2026-09-13 (read-only, nothing written)
 
-**This is the only live customer. Every retirement decision counts rows here first
-(Lesson 53).** Counted directly against the tables, not inferred:
+**This is the only live customer, and EVERY ROW BELOW IS OURS.** Adrian confirmed on
+2026-09-13 that all 11 booking_requests are test bookings we made; the 2 jobs are the owner and
+a relative. **This business has zero real bookings.** Every retirement decision counts rows
+here first (Lesson 53) — and then asks who made them, because a row count is never usage
+(docs/SETTLED.md #1). Counted directly against the tables, not inferred:
 
 | table | rows |
 |---|---|
-| `booking_requests` | **11 (7 still open)** |
+| `booking_requests` | **11 — ALL OURS. Zero real bookings.** Confirmed by Adrian, 2026-09-13. Of the 11: 4 accepted, 2 pending, 5 abandoned |
 | `customers` | 4 |
-| `jobs` | 2 |
+| `jobs` | 2 — the owner (Austin Graef) and a relative (Leslie Graef). Not members of the public |
 | `services` | 1 |
 | `business_memories` | 1 |
 | `business_places` earned | 4 — `customers`, `jobs`, `planner`, `website` |

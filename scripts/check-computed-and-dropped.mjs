@@ -29,6 +29,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { dirname, join, isAbsolute } from "node:path";
+import { receipt } from "./lib/read-receipt.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const require_ = createRequire(import.meta.url);
@@ -40,8 +41,10 @@ const TARGETS = (process.env.HUBLY_CD_FILES || "public/platform-home.html,public
 const OBJ = /(Counts|Results|Totals|Stats)$/;
 
 function scriptsOf(path) {
-  // absolute paths are used as given, so a red-proof can point at a mutated copy
-  const src = readFileSync(isAbsolute(path) ? path : join(ROOT, path), "utf8");
+  // absolute paths are used as given, so a red-proof can point at a mutated copy.
+  // The RECEIPT is what makes that safe: failure #4 was this exact line resolving against
+  // the script's own repo, so a red-proof parsed the real file twice and passed.
+  const src = receipt(isAbsolute(path) ? path : join(ROOT, path), "parse");
   if (!/\.html$/.test(path)) return [src];
   return [...src.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
 }
