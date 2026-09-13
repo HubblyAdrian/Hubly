@@ -1558,3 +1558,51 @@ losing real content (−11 to −96 bytes), because the normaliser used to test 
 whitespace" collapsed runs but left a leading space, so `\n   </div>` still differed from
 `</div>`. Normalising whitespace BETWEEN TAGS showed all 18 identical in substance. Check the
 normaliser before reporting what the diff means.
+
+## Lesson 47 — Every branch of a placement decision writes a row, including the branch that is nothing (2026-09-12)
+
+`placeContactHoursInFreeform` reads:
+
+```
+if (hoursAnchorExists)      { update in place; record updated / alreadyPresent }
+else if (hoursSectionExists){ missed.push("hours") }
+```
+
+There is no `else`. A page with no anchor and no hours section — **135 of 172 stored pages** —
+takes neither branch: hours are not inserted, not recorded as `missed`, not recorded as
+`alreadyPresent`, and no `rebuild_outcome_events` row is written. The owner's hours vanish
+without a trace, and the telemetry that exists precisely to catch this reports nothing,
+because nothing is exactly what it was told.
+
+**THE THIRD TIME THIS WEEK the instrument was not watching the branch that mattered:**
+
+1. the placement recorder that lived INSIDE the save-failure branch, so a successful
+   placement recorded nothing;
+2. `verifiedPlaced`, computed correctly and discarded one function later, so the reply was
+   composed from a value that never arrived;
+3. this missing `else`.
+
+Same family, three disguises. So:
+
+**A path that does nothing is a DECISION, and an undocumented decision is indistinguishable
+from a bug that never ran.** Every branch of a placement decision — including the one where
+the code does nothing at all — writes a row saying what it decided and why. When a decision
+tree is written, the branch count and the recorded-outcome count are the same number; if they
+are not, the missing one is the branch nobody will find.
+
+## Lesson 48 — A how-it-works section keeps being read as a content section. Recognise the class, not the incident.
+
+Twice this week, a recogniser that identifies a section BY ITS HEADING WORDS took a process
+sequence for the content it names:
+
+- the services donor cloned a **"How it works"** section instead of **"What we offer"** on 44
+  of 127 pages — both are short headed items in a row, and by markup shape they are identical;
+- `hasHoursHeading`'s `/^(listed )?schedule\b/` read a how-it-works step headed **"Schedule the
+  installation"** as an existing schedule, and refused to place five real days of hours.
+
+These are not two bugs. **Anything that recognises a section by its heading words must exclude
+sequences explicitly**, and the predicate already exists: `describesASequence()` in
+`hubly_services_block.ts`, built for the donor case, reading four markup and word facts
+(step/process/timeline class, "how it works" heading text, a step-number class or CSS counter,
+a step class on the item). Every new heading-word recogniser consults it, or it inherits this
+bug on its first week.

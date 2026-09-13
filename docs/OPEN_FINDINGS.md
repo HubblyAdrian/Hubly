@@ -6769,6 +6769,27 @@ nav item for a section the generator decided not to write.
 generator defect (a nav promising a section the page does not contain), not a runtime one, and
 at 2% of pages it is small — recorded so it is not rediscovered as a runtime bug.
 
+## RULED — the hours fix, three parts in order (2026-09-12, not started)
+
+Same shape as D (the unconditional stamped services slot). Re-recognition has now failed on
+services and on hours by the same mechanism, and it will fail on the next fact.
+
+1. **Close the silent branch** so nothing vanishes untraced — every branch of the placement
+   decision writes a row, including the branch that is nothing (Lesson 47). This is first
+   because until it lands, every later number about hours is measured by an instrument that
+   cannot see 135 of 172 pages.
+2. **Fix the sequence false positive with the predicate we already have** — `hasHoursHeading`
+   consults `describesASequence()` rather than matching `/^(listed )?schedule\b/` blind
+   (Lesson 48). Unblocks `ironwood-fence` and `sable-crumb` today, and the other 8 false
+   positives when their owners set hours.
+3. **Stamp the hours anchor AT GENERATION**, when the fact and its element are both in hand —
+   which makes 1 and 2 unreachable for every new page. `markServiceAnchorsInFreeform` is the
+   pattern; this is the same pass for hours.
+
+Ordered so that each step is verifiable before the next: the recorder first so the fix can be
+measured, the predicate second so today's pages unblock, the stamp third so tomorrow's pages
+never reach either path.
+
 ## STAGE 2, REVISED BY THE BOUNDARY (2026-09-12)
 
 1. **The whitespace-neutral injector** — small, and it unblocks a repair already built and
