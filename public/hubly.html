@@ -38525,7 +38525,21 @@ function closePublicBooking(){
     }catch(e){}
     document.getElementById('p-hubly-document')?.classList.add('active');
   } else {
-    document.getElementById('p-storefront')?.classList.add('active');
+    // SAME CLASS AS bookingBack's DEEP-LINK FALL-THROUGH (2026-09-13). These two have
+    // already been caught once being three lines of the same mistake; this is the second
+    // time, in the ?book=1 arrival case. Nothing is mounted because the site was never
+    // rendered for the deep link, so p-storefront — static markup that always exists —
+    // used to win, and closing booking showed a different website with the same name.
+    let wentBack = false;
+    try{
+      const u2 = new URL(location.href);
+      if(u2.searchParams.has('book') || u2.searchParams.has('svc')){
+        u2.searchParams.delete('book'); u2.searchParams.delete('svc');
+        location.assign(u2.pathname + (u2.search || '') + u2.hash);
+        wentBack = true;
+      }
+    }catch(e){}
+    if(!wentBack) document.getElementById('p-storefront')?.classList.add('active');
   }
   window.scrollTo(0,0);
 }
@@ -42801,6 +42815,28 @@ function bookingBack(){
       showP('p-hubly-document');
       return;
     }
+    // NOTHING MOUNTED — THIS IS A ?book=1 DEEP LINK, and the fall-through below is the
+    // defect Adrian reported on 2026-09-13. The site is deliberately NOT rendered for a
+    // booking deep link (that is what makes booking open immediately), so #hc-doc-root is
+    // empty and the p-storefront branch under this one always won — `p-storefront` is
+    // static markup in this file, so its `getElementById` is never null. Back therefore
+    // showed a SECOND WEBSITE with the same business name, same host, different design,
+    // for every customer who arrived from a link, an email or a QR code.
+    //
+    // Go to the business's own page instead: same URL, booking params stripped. That is
+    // the page they came from by definition, and a business with no stored document
+    // renders its own real state there rather than a template belonging to someone else.
+    // (The in-app cases — the owner preview and the slide-over — returned above.)
+    try{
+      var backUrl = new URL(location.href);
+      if(backUrl.searchParams.has('book') || backUrl.searchParams.has('svc')){
+        backUrl.searchParams.delete('book'); backUrl.searchParams.delete('svc');
+        location.assign(backUrl.pathname + (backUrl.search || '') + backUrl.hash);
+        return;
+      }
+    }catch(e){}
+    // Genuinely nowhere to go back TO: no document, no booking params to strip. The
+    // classic storefront is the only remaining surface, and it is correct only here.
     if(document.getElementById('p-storefront')){showP('p-storefront');return;}
     goDash();
   }else{bkBack(S.bkStep);}
