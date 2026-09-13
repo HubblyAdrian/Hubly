@@ -4251,8 +4251,16 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
         var wanted = list.filter(function(b){ return b.slug === wantSlug; })[0];
         if(wanted){ hcOpenOwnedBusiness(wanted); return true; }
         // Asked for one they do not own, or a typo. Fall through to the normal path —
-        // never an error, because "you do not own that" is not something to announce to
+        // never a UI error, because "you do not own that" is not something to announce to
         // someone who may simply have mistyped their own slug.
+        //
+        // BUT NOT SILENTLY. This is a dev tool, and a dev tool that fails without saying so
+        // is the class we have spent a day hunting: the first person to pass a slug that is
+        // right but not yet loaded would conclude the override is broken and lose an hour.
+        // Silent-and-correct is still silent.
+        console.warn('[hubly] ?business=' + wantSlug + ' matched none of the ' + list.length +
+          ' business(es) this account owns — ignoring it and loading the usual one. Owned: ' +
+          list.map(function(b){ return b.slug; }).join(', '));
       }
       if(list.length === 1){ hcOpenOwnedBusiness(list[0]); return true; }   // owns one -> load it
       // Owns more than one. If they were last working on one they still own, go
