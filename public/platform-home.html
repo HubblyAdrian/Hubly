@@ -4806,20 +4806,53 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
 
   // ── CUSTOMERS: the folded list, straight off get_business_customers. ────────
   // Same reader the assistant uses, so the room and the answer can never disagree.
+  // THE MERGED CUSTOMERS SCREEN. The operator view's KPI header moves onto this room, and
+  // every number comes from a SHARED READER — get_business_customers for the list,
+  // get_business_customer_count for the count. Zero migrations (D-023).
+  //
+  // THE COUNT IS SERVER-SIDE, AND THAT IS THE WHOLE POINT. This header used to read
+  // `rows.length` — the length of THE PAGE. `get_business_customers` is called with
+  // p_limit 200, so a business with 250 customers read "200 people" and nothing said
+  // otherwise. It looked right against the only live business (4 customers) and was wrong
+  // for anyone real; the paging fixture returns 200 of 250 and made it visible.
+  // get_business_customer_count counts in SQL and returned 250 against that same fixture.
+  //
+  // AND WHEN THE LIST IS SHORT OF THE COUNT, IT SAYS SO. A truncated list that does not
+  // admit it is the same defect wearing a smaller hat: the owner cannot tell the
+  // difference between "these are all my customers" and "these are the first 200".
+  // NO AGGREGATE IS SUMMED FROM THESE ROWS (D-024) — no total billed, no total visits.
+  // Those come from an RPC that aggregates, or they are not rendered.
   async function hcRenderCustomers(canvas, biz){
     var uid = await hcOwnerUid();
-    var rows = null;
+    var rows = null, total = null;
     try{
       var c = await authGetClient();
-      var r = await c.rpc('get_business_customers', { p_business_id: biz.id, p_owner_id: uid, p_limit: 200 });
+      var res = await Promise.all([
+        c.rpc('get_business_customers', { p_business_id: biz.id, p_owner_id: uid, p_limit: 200 }),
+        c.rpc('get_business_customer_count', { p_business_id: biz.id, p_owner_id: uid })
+      ]);
+      var r = res[0];
       if(r && r.error) throw new Error(r.error.message);
       rows = Array.isArray(r && r.data) ? r.data : [];
+      // The count is a separate read and may fail on its own. If it does we fall back to
+      // the page length AND say the list may be partial — never a confident wrong number.
+      var cr = res[1];
+      total = (cr && !cr.error && Number.isFinite(Number(cr.data))) ? Number(cr.data) : null;
     }catch(e){
       var r0 = hcRoomShell('Customers', null, null);
       hcRoomEmpty(r0, 'I couldn’t read your customers just now', 'That’s a read failure, not an empty list. Try again in a moment.');
       canvas.appendChild(r0); return;
     }
-    var room = hcRoomShell('Customers', rows.length ? (rows.length + (rows.length === 1 ? ' person' : ' people')) : null, null);
+    var shown = rows.length;
+    var headline = (total != null) ? total : shown;
+    var countLabel = shown ? (headline + (headline === 1 ? ' person' : ' people')) : null;
+    var partial = (total != null) ? (shown < total) : (shown >= 200);
+    var subLine = partial
+      ? (total != null
+          ? ('Showing the ' + shown + ' most recent of ' + total + '.')
+          : ('Showing the first ' + shown + '. The total could not be read just now.'))
+      : null;
+    var room = hcRoomShell('Customers', countLabel, subLine);
     if(!rows.length){
       hcRoomEmpty(room, 'No customers on record yet',
         'Someone becomes a customer when they book, or when you tell me about them. Two records that share a phone or email are shown as one person here — never matched on name alone.');

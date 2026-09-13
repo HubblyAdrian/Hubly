@@ -21,6 +21,22 @@ import { dirname, join } from "node:path";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const ORDER = ["market", "internal", "test"];   // market first: it is the only one that can carry a rate
 
+/** FIXTURES ARE NOT THE CORPUS. `hubly-paging-fixture` holds 250 customers, 250 jobs and 250
+ *  booking_requests — roughly 25x everything real (jobs 5, customers 17, booking_requests 31
+ *  before it existed). Any count or rate computed without excluding it is meaningless, and
+ *  SETTLED #8 saying so is prose, which decays. So the rule lives here, beside the split, and
+ *  a caller either excludes them or DECLARES the inclusion in its own output. */
+export const FIXTURE_SLUGS = new Set(["hubly-paging-fixture"]);
+
+/** Drop fixture rows from a corpus. Returns the kept items and prints what it removed —
+ *  silence would make an exclusion indistinguishable from a corpus that had none. */
+export function withoutFixtures(items, keyOf = (x) => (typeof x === "string" ? x : x && x.slug)) {
+  const kept = [], dropped = [];
+  for (const it of items) (FIXTURE_SLUGS.has(keyOf(it)) ? dropped : kept).push(it);
+  console.log(`  fixtures excluded: ${dropped.length}${dropped.length ? " (" + dropped.map(keyOf).join(", ") + ")" : ""}  ·  corpus: ${kept.length}`);
+  return kept;
+}
+
 /** slug -> account_kind, straight from the database. Never cached to a file: a reused export
  *  silently undercounts, which is the standing rule for every corpus sweep. */
 export function loadKinds() {
@@ -51,7 +67,17 @@ export function splitOf(items, kinds) {
 
 /** "label: 139 of 172 (81%)   market 6 · internal 1 · test 165"
  *  THROWS rather than printing a bare rate — the whole point of this module. */
-export function rateLine(label, n, denominatorItems, kinds) {
+export function rateLine(label, n, denominatorItems, kinds, opts = {}) {
+  // A RATE OVER A CORPUS THAT STILL CONTAINS A FIXTURE IS NOT A RATE. The caller either
+  // excluded them, or says `includesFixtures: true` and wears it in the output.
+  if (Array.isArray(denominatorItems) && !opts.includesFixtures) {
+    const key = (x) => (typeof x === "string" ? x : x && x.slug);
+    const inside = denominatorItems.filter((x) => FIXTURE_SLUGS.has(key(x)));
+    if (inside.length) {
+      throw new Error(`rateLine("${label}") includes ${inside.length} FIXTURE row(s) (${inside.map(key).join(", ")}). ` +
+        `Call withoutFixtures() first, or pass { includesFixtures: true } to say so in the output.`);
+    }
+  }
   if (!Array.isArray(denominatorItems) || !denominatorItems.length) {
     throw new Error(`rateLine("${label}") needs the denominator's ITEMS, not just a count — the split is computed from them`);
   }
@@ -65,7 +91,8 @@ export function rateLine(label, n, denominatorItems, kinds) {
     .map((k) => `${k} ${counts[k]}`);
   if (counts.unknown) parts.push(`unknown ${counts.unknown}`);
   const pct = total ? Math.round((n / total) * 100) : 0;
-  return `${label}: ${n} of ${total} (${pct}%)   ${parts.join(" · ")}`;
+  const warn = opts.includesFixtures ? "   [INCLUDES FIXTURE ROWS]" : "";
+  return `${label}: ${n} of ${total} (${pct}%)   ${parts.join(" · ")}${warn}`;
 }
 
 /** For a rate over a SUBSET whose own split matters more than the denominator's
