@@ -161,3 +161,19 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
 - **Gave up:** nothing yet — the duplication is intact, which is the point of the entry. Two exits from one screen is two writers of one fact in a new costume.
 - **Outstanding:**
   - [ ] decide and do at the next boundary: ONE function with a parameter, or a check asserting both exits leave by the same route. Smaller is the check — the two have different callers, different in-app branches (owner preview, slide-over) and different post-conditions, so merging them is a refactor of live booking code, while the check is ~40 lines and self-red-proofs by reverting either exit
+
+## D-018 — The 18 unclassified operator destinations are deferred, not settled
+- **Date / commit:** 2026-09-13 · `docs/NAV_AUDIT.md`, `12ca812`
+- **Reason given at the time:** they need a signed-in walk through a shell that the intended path no longer routes to. The claimed rail is Home, Website, Settings — Planner, Jobs and Customers appear only when earned via `business_places` — so the 18 sit inside a shell no owner reaches on the intended path.
+- **Gave up:** knowing what they are.
+- **Outstanding:**
+  - [ ] 18 operator destinations remain unclassified; a view rendering from client state is statically indistinguishable from one rendering from a constant, and classifying them requires a signed-in walk. Deferred because the claimed rail does not route to them. **Cost: if any is later promoted to the rail, it ships unverified.**
+
+## D-019 — Leaving the retired shell is gated on WHO arrives, not on which view was restored
+- **Date / commit:** 2026-09-13 · `public/hubly.html` `openOperateHome()`
+- **Reason given at the time:** the previous condition (`_target === 'dashboard'`, added 2026-09-08) asked which view was restored. `readPersistedOwnerAppView()` restores whatever the owner last opened, so the redirect fired for owners who had never been anywhere and never for the ones who had — one visit to jobs or leads pinned an owner inside the retired 25-item shell permanently, because the stale value restored itself on every arrival.
+- **NARROWS A DELIBERATE CHOICE, and the cost is real.** The 2026-09-08 comment argued the opposite on purpose: *"Deliberately NOT a blanket /app redirect — jobs, calendar, leads, customers, chats and the rest are working surfaces the front door does not have yet, and removing them would cost more than the fabrications did."* That argument still holds on its facts. Every operator surface other than the three earned rail places becomes unreachable by this route.
+- **Outstanding:**
+  - [ ] leads, calendar, chats, money, reports, reviews, memberships, pipeline and photo-projects are now unreachable for an owner by this route, and the claimed rail has no equivalent for any of them
+  - [ ] NOT REPRODUCED IN A BROWSER: setting a persisted view requires running script in the page, which is blocked here. The defect is established from the code and the fix is proved by `scripts/check-retired-shell-exit.mjs` (both halves red independently), not by a live walk
+  - [ ] the redirect fires for any signed-in visitor on this path, including the owner-preview and editor entries — those already redirected under the old condition, so nothing new breaks, but it has not been walked

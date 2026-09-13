@@ -13786,10 +13786,32 @@ function openOperateHome(opts){
   //
   // The front door shows the same information honestly: real booking, chat and abandoned-
   // booking events from get_business_events, and gaps from real empty fields.
+  // GATE ON WHO IS ARRIVING, NOT ON WHICH VIEW WAS RESTORED (2026-09-13).
+  //
+  // The condition above used to be `_target === 'dashboard'`, which asked the wrong
+  // question. readPersistedOwnerAppView() restores whatever the owner last opened, so an
+  // owner who ever touched jobs, leads, chats or any of the 25 got _target !== 'dashboard'
+  // and stayed in the retired shell — on that visit AND every visit after it, permanently,
+  // because the stale value kept restoring itself. The redirect fired for exactly the
+  // owners who had never been anywhere, and never for the ones who had.
+  //
+  // AND THE STALE VALUE IS CLEARED, not left behind: leaving it in place means the next
+  // path that reads it pulls them straight back in. One of those is this function.
+  //
+  // THIS NARROWS A DELIBERATE CHOICE AND THE COST IS REAL. The comment above says it
+  // plainly: jobs, calendar, leads, customers and chats "are working surfaces the front
+  // door does not have yet, and removing them would cost more than the fabrications did."
+  // That is still true — the claimed rail carries Home, Website and Settings, and Planner/
+  // Jobs/Customers only once earned. Every other operator surface becomes unreachable by
+  // this route. Adrian's ruling, recorded in DECISIONS.md with that cost stated.
   try{
-    var _persisted = (typeof readPersistedOwnerAppView === 'function') ? readPersistedOwnerAppView() : null;
-    var _target = wantRestore ? ((_persisted && _persisted.view) || 'dashboard') : 'dashboard';
-    if(_target === 'dashboard'){
+    var _ownerArriving = false;
+    try{
+      _ownerArriving = !!(window.currentUser
+        || (window.HublySupabase && HublySupabase.session && HublySupabase.session.user));
+    }catch(eSess){}
+    if(_ownerArriving){
+      try{ clearPersistedOwnerAppView(); }catch(eClr){}
       // replace, not assign: an owner pressing Back should not bounce into the retired view.
       location.replace('/');
       return;
@@ -13880,6 +13902,16 @@ function persistOwnerAppView(view,extra,opts){
       };
       document.title='Hubly · '+(titles[v]||v);
     }else document.title='Hubly · Home';
+  }catch(e){}
+}
+/** Forget the restored view. Written because the retired-shell redirect must not leave a
+ *  value behind that pulls the owner back the moment anything else reads it. */
+function clearPersistedOwnerAppView(){
+  try{ sessionStorage.removeItem('hubly_app_view_v1'); }catch(e){}
+  try{
+    if((location.hash||'').replace(/^#/,'')){
+      history.replaceState(null,'',location.pathname+(location.search||''));
+    }
   }catch(e){}
 }
 function readPersistedOwnerAppView(){

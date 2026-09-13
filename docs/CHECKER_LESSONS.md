@@ -1700,3 +1700,30 @@ Three rules out of it:
 Every one made a number move while the product stood still, and every one was caught by
 asking what the TOOL did, not what the answer meant. The cost of asking is seconds. The cost
 of not asking, three times in one week, was a ruling built on a phantom.
+
+## Lesson 52 — A reachability instrument that walks one level measures imports, not behaviour (2026-09-13)
+
+The 25-destination nav audit took three attempts, and only the third was measuring the product:
+
+- **v1** searched `hubly.html` for renderers and inbound links. It reported **0 renderers and 0
+  inbound links for all 25 destinations.** The renderers live in `journey-os/journey.js`'s
+  `onSwitchView` map, and navigation-by-name is `.ni[data-v="x"].click()` — neither of which v1
+  looked for. It was reading the wrong file and would have concluded the entire shell was dead.
+- **v2** read both files and walked ONE level from each renderer. It reported that **no
+  destination touches a database.** `renderCustomers()` is a 12-line wrapper: it sets a mode,
+  paints a loading stub, and calls `renderCustomersPageInner`, which calls
+  `ensureCustomersOsState` and `ensureRecurringSchedulesLoaded`. Every read is two to four calls
+  down. A one-level walk measures what a function MENTIONS, not what it DOES.
+- **v3** walks the call graph to depth 4 across both files and prints the depth each read was
+  found at, so under-reporting is visible in the output rather than implied by its absence.
+
+**The rule: any instrument that answers "can X reach Y" must traverse, and must report its
+depth and its visited count.** A reachability number without a traversal depth beside it is a
+statement about imports. And the giveaway both times was the same one Lesson 51 names — the
+answer was implausible (a shell with 25 working screens and zero renderers), and the
+implausible answer was the tool's, not the product's.
+
+Corollary, learned the expensive way in v3: it still could not classify 18 of the 25, because
+those views render from client state loaded elsewhere. **When a traversal comes back empty,
+that is a result about the ARCHITECTURE, not a verdict about the code** — here, that the views
+do not own their data — and it must be reported as that rather than as "no data".
