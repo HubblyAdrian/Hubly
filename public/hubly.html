@@ -11191,9 +11191,10 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="ni" data-v="photo-projects" onclick="switchV(this,{push:true})" title="Media">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span class="ni-lbl">Media</span>
       </div>
-      <div class="ni" data-v="customers" onclick="switchV(this,{push:true})" title="Completed Customers">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg><span class="ni-lbl">Customers</span>
-      </div>
+      <!-- The operator Customers view is RETIRED (2026-09-13). One Customers screen, in
+           the claimed shell, reading get_business_customers with a server-side count.
+           Both inbound call sites were repointed in this same commit, not left to fail
+           silently. docs/TWO_IMPLEMENTATIONS.md -->
       <div class="ni" data-v="pipeline" onclick="switchV(this,{push:true})" title="Pipeline">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h14"/><circle cx="18" cy="12" r="2"/><circle cx="20" cy="18" r="2"/></svg><span class="ni-lbl">Pipeline</span>
       </div>
@@ -38532,9 +38533,11 @@ function closePublicBooking(){
       S._bookForCustomer=null;
       setOwnerPreview(false);
       showP('p-app',{replaceRoute:true});
-      const custNav=document.querySelector('[data-v="customers"]');
-      if(custNav)switchV(custNav);
-      else goDash();
+      // REPOINTED AT THE MERGED CUSTOMERS ROOM (2026-09-13). The operator Customers view
+      // is retired in this commit; its nav item is gone, so `switchV(custNav)` would have
+      // silently fallen through to goDash() and dropped the owner on the front door after
+      // booking for a customer. One Customers screen now, in the claimed shell.
+      location.assign('/#customers');
       return;
     }
     goDash();
@@ -43601,9 +43604,11 @@ function closeConfirm(){
       S._bookForCustomer=null;
       setOwnerPreview(false);
       showP('p-app',{replaceRoute:true});
-      const custNav=document.querySelector('[data-v="customers"]');
-      if(custNav)switchV(custNav);
-      else goDash();
+      // REPOINTED AT THE MERGED CUSTOMERS ROOM (2026-09-13). The operator Customers view
+      // is retired in this commit; its nav item is gone, so `switchV(custNav)` would have
+      // silently fallen through to goDash() and dropped the owner on the front door after
+      // booking for a customer. One Customers screen now, in the claimed shell.
+      location.assign('/#customers');
       return;
     }
     goDash();

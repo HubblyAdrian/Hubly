@@ -1961,3 +1961,33 @@ is the same asymmetry as never discarding an unfinished draft, and the same one 
 `account_kind` itself — which cost a week by defaulting to the flattering value ('real'), and
 then cost more when the claim trigger silently promoted unrecognised signups to 'market'. Three
 instances now, one rule.
+
+## Lesson 61 — Counting call sites with one call shape in mind is not counting (2026-09-13)
+
+The nav audit reported **`customers: 0 inbound links`**, and a retirement was ruled safe on
+that basis. **There were two**, and both drive the nav item directly:
+
+```js
+const custNav = document.querySelector('[data-v="customers"]');
+if (custNav) switchV(custNav); else goDash();
+```
+
+The count came from a regex written for the shape I had happened to read first —
+`.ni[data-v="..."]`. The real call sites use the bare attribute. The second attempt
+over-corrected to **61** by matching the same call repeatedly. The verified number, which a
+person can check with `grep -n`, is **32 across 9 destinations**.
+
+**Three counts of the same thing; two of them wrong, in opposite directions.** Undercounting
+would have retired a view with live callers. Overcounting would have blocked a safe retirement.
+
+Three rules:
+1. **A call-site count is only as good as the shapes you enumerated**, and enumerating shapes
+   is the same losing game as enumerating fact forms (CLAUDE.md: the anchor count, the price
+   scan, the hours detector, the extraction gate). Count with a pattern that is deliberately
+   loose, then read every hit.
+2. **Print the hits, not just the number.** `scripts/check-nav-targets-exist.mjs` lists every
+   call site with its file and line, so the count is checkable rather than trusted.
+3. **The check must be as suspect as the code.** Its first run declared `dashboard` an orphan
+   because the declaration regex required `class="ni"` exactly and that item is
+   `class="ni active"` — the same one-shape assumption, made inside the check written to catch
+   it. Caught only because "the dashboard has no nav item" was implausible.

@@ -48,7 +48,29 @@ pressing Back should not bounce into the retired view."*
 | apps · marketplace · quotes | yes | **none mapped** (legacy `v==='x'` branch only) | — | 0 |
 
 **21 of 25 are mapped to a renderer; 17 have a real function body; 3 reach a database read
-from the render path; 4 have an inbound link.**
+from the render path.**
+
+### THE INBOUND COLUMN ABOVE WAS WRONG — corrected 2026-09-13
+
+It reported `customers: 0`, and a retirement was ruled safe on that basis. **There were 2.**
+The count came from a regex assuming one call shape — `.ni[data-v="..."]` — while the real
+call sites use the bare attribute: `document.querySelector('[data-v="customers"]')`.
+
+A second attempt over-corrected to 61 (a regex that matched the same call repeatedly). The
+verified count, reproducible with `grep -n` and now enforced by
+`scripts/check-nav-targets-exist.mjs`, is **32 call sites across 9 destinations**:
+
+| destination | inbound |
+|---|---|
+| dashboard | 11 |
+| editor | 9 |
+| jobs | **3** (this one was right) |
+| customers | **2** (reported as 0) |
+| photo-projects · quotes | 2 each |
+| ask · leads · settings | 1 each |
+
+**Three counts of the same thing, two of them wrong.** The number that survived is the one a
+person can check by eye, and it is the one the check now enforces on every run.
 
 ## What the operator shell actually reads, asked the other way round
 
