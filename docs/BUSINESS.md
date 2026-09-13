@@ -145,6 +145,26 @@ Whatever we learn from Graef generalises further than one customer.
 
 ---
 
+### The assistant cannot reach his website — found 2026-09-13, NOT YET FIXED
+
+**The assistant reports services as added when they are saved to a store his page does not
+read; 6 of 10 owner capabilities do not reach his site.**
+
+His page is live and complete — hero, 8 priced service cards, portfolio — and **it is built
+from `businesses.meta`**, not `business_documents` (he has 0 rows there). The 8 cards are
+`meta.service_catalog.services`. The assistant's `setServices` writes the relational `services`
+table instead, which his page never reads, and `servicesTruth` has no branch for that case, so
+nothing tells him.
+
+**If he has ever mentioned a service not showing up, this is the reason.** We should know that
+before he asks.
+
+Working for him: hours (via `meta.hours`, which his renderer does read) and claim. Silent but
+working: hours again — the truth composer says nothing about it. Failing: add a service, set a
+price, add a photo, move a photo, move a section, edit page text.
+
+Full cell-by-cell: `docs/CLASSIC_VS_FREEFORM_MATRIX.md`.
+
 ### Row counts, measured 2026-09-13 (read-only, nothing written)
 
 **This is the only live customer, and EVERY ROW BELOW IS OURS.** Adrian confirmed on

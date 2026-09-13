@@ -150,6 +150,24 @@ export function composeServicesTruth(placement: ServicesPlacementLike, url: stri
   const missing = placement.missing || [];
   const inserted = new Set(placement.inserted || []);
 
+  // THE CLASSIC STORE. There are TWO website stores (SETTLED #2): freeform HTML in
+  // business_documents, and businesses.meta for the classic renderer. `not_freeform` means
+  // this business's page is built from meta — and setServices wrote the relational `services`
+  // table, which that page never reads. So the services ARE saved and are NOT on the site,
+  // and until 2026-09-13 this composer had no branch for it: it fell through to the verified
+  // list, which is empty, and said nothing. The only paying customer is on this store, and
+  // every service he has ever added through the assistant is in that position.
+  //
+  // Say the half that happened and the half that did not. No rebuild offer here: his page is
+  // live and full, and offering to rebuild it over a missing service would be the destructive
+  // default wearing a helpful face.
+  if (placement.status === "not_freeform") {
+    const names = (placement.missing && placement.missing.length)
+      ? placement.missing
+      : (placement.verifiedPlaced || []).map((p) => p.name);
+    const list = names.length ? andList(names) : "those";
+    return `I've saved ${list} to your record, but they aren't showing on your site — your page is built a different way and I can't add them to it from here yet. Your record is right; the page hasn't changed.`;
+  }
   if (placement.status === "failed") {
     return `I saved those to your record, but couldn't update the page just now — so don't take them as showing yet. Try again in a moment.`;
   }

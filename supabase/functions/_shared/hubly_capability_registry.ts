@@ -4679,7 +4679,19 @@ export async function applyContactHoursToFreeform(draftId: string, draftToken: s
  *  vague "contact info updated". "put your hours on the page" only if they landed;
  *  "no phone on file" when there was nothing to place. */
 export function composeContactHoursTruth(r: ContactHoursResult): string {
-  if (r.status === "not_freeform" || r.status === "not_applicable") return "";
+  // THE SAME DEFECT, POINTED THE OTHER WAY (2026-09-13). `not_freeform` means the page is
+  // built from businesses.meta — and set_business_hours writes meta.hours, which the CLASSIC
+  // RENDERER DOES READ (hubly.html:15264). So on that store the hours genuinely land on the
+  // live page, and returning "" told the owner nothing about something that worked.
+  //
+  // Prohibition 6: a state change the owner asked for may not complete without visible
+  // confirmation. Silence after success is a defect of the same severity as a false success.
+  //
+  // `not_applicable` stays silent: there is no document AND no meta path to speak about.
+  if (r.status === "not_freeform") {
+    return "Saved. Your hours are on your record and showing on your site.";
+  }
+  if (r.status === "not_applicable") return "";
   const human: Record<string, string> = {
     hours: "your hours", "hours note": "your hours note", phone: "your phone number",
     email: "your email", address: "your address",
