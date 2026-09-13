@@ -254,3 +254,48 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
 - **Gave up:** nothing. 59 lines changed in one file, id-only.
 - **Outstanding:**
   - [ ] **the collision is only half killed.** ~40 OTHER identifiers still say Storefront while meaning the classic website: `saveStorefront`, `publishStorefront`, `revertStorefrontDraft`, `storefrontAst`, `HublyStorefrontAst`, `renderEdStorefrontPreview`, `isStorefrontOnlyBusiness`, `syncStorefront` and more. Renaming functions is a larger, riskier change that was not ruled; the element was
+
+## D-028 — The classic store gets a writer of its own, not a parameter on an existing one
+
+- **Ruled:** 2026-09-13, by Adrian. The pure add: `set_business_service_catalog`, the same shape
+  as `set_business_hours`, with its owner/draft-token predicate copied verbatim (quoted in the
+  migration so a reader can compare without opening the other file).
+- **Rejected:** adding `p_service_catalog` to `patch_business_in_progress` — a drop-and-recreate
+  of a security-definer function with 31 call sites, against a ledger holding 56 migrations the
+  remote does not know about, taken to avoid writing one new function.
+- **Applied:** `supabase db query --linked -f supabase/migrations/20260913220000_…sql`. Never
+  `db push`. Verified pure: `pg_proc` shows exactly one new signature and both
+  `set_business_hours(uuid,uuid,jsonb,uuid)` and
+  `patch_business_in_progress(uuid,uuid,jsonb,jsonb,uuid)` unchanged.
+
+## D-029 — The ruled pipeline was destructive; the merge is additive by construction
+
+- **Ruled:** `getCatalog → catalogFromOwnerServicesPayload → buildCatalogWritePayload`.
+- **Measured, before writing anything:** feeding a canonical catalogue's own services back
+  through `catalogFromOwnerServicesPayload` returns `price_cents 12000 → null`,
+  `mode variable → quote_required`, `variable_prices 6 → 0`. `migrateLegacyService` reads
+  `raw.price` / `raw.varPrices` — the owner-EDITOR shape — while a stored canonical service keeps
+  those under `pricing`. And a payload of one service returns a catalogue of one, with the
+  positional id `svc-0`. **Run as ruled against Graef, tonight's fix would have blanked all eight
+  of his prices and dropped seven of his services.**
+- **Decided:** `catalogFromOwnerServicesPayload` is used for exactly what is safe — shaping ONE
+  NEW entry, with an explicit id — and never to re-derive a service that already exists.
+  `mergeClassicCatalog` carries untouched services through as the SAME objects, so
+  "byte-identical" is a property of the code rather than a result checked afterwards, and it is
+  exported so the proof runs the real merge instead of a copy of it.
+- **Proved** on `hubly-classic-fixture`: `diff PRE POST` adds one service block and removes one
+  line — the catalogue's own `updated_at`.
+
+## D-030 — The sentence ships in the same commit as the capability, with a check that ties them
+
+- **Ruled:** "or tonight's fix becomes tomorrow's lie." `composeServicesTruth`'s classic branch
+  said *"I can't add them to it from here yet"* — true for about four hours.
+- **Built:** `scripts/check-classic-claim.mjs` (`npm run check:classic-claim`), three legs, each
+  red-proofed independently: **wired** (every call site passes the classic outcome), **reachable**
+  (no caller may gate on `status !== "not_freeform"`), **truthful** (the composer is executed and
+  its written-classic sentence must contain no negation marker), plus **3b** (an empty list must
+  return `""`).
+- **Leg 2 caught a live defect in my own fix from four hours earlier:** `hubly-conversation`
+  gated the composer on `placement.status !== "not_freeform"`, so the classic branch deployed at
+  22:18 was **dead code and never once executed.** A gate written when only one store existed kept
+  the other store's owners in silence.

@@ -38,6 +38,10 @@
 // actually built, per "build on demand," not stubbed in speculatively.
 
 import { addServicesBlock } from "./hubly_services_block.ts";
+// The classic store's catalogue functions. service_engine is the ONLY writer of
+// meta.service_catalog and was imported by marketplace, chatbot-message, booking_job and
+// the context loader — by everything except the assistant that owners actually talk to.
+import { buildCatalogWritePayload, catalogFromOwnerServicesPayload, getCatalog } from "./service_engine.ts";
 import { matchingCloseIndex } from "./hubly_html_scan.ts";
 import { unstyledPageVerdict, MIN_OWN_STYLE_BYTES } from "./hubly_page_css_guard.ts";
 import { photoReply, servicesAreaAddedReply } from "./hubly_owner_replies.ts";
@@ -210,6 +214,11 @@ const OWNER_AUTHORISED_RPCS = new Set([
   // p_owner_id has NO default in SQL, so an omission fails at the call — and this
   // set plus check-owner-id-invariant.mjs make it fail at build time instead.
   "add_business_place",
+  // set_business_service_catalog (2026-09-13) copies set_business_hours's predicate
+  // verbatim — draft by token, claimed by owner — so it belongs to the same set. Its
+  // only caller writes the store the ONE PAYING CUSTOMER's page renders from, and he
+  // is claimed: an omitted p_owner_id here fails for exactly the business it was built for.
+  "set_business_service_catalog",
 ]);
 async function callBusinessRpc(fn: string, payload: Record<string, unknown>): Promise<any> {
   // ── THE CLAIMED-OWNER INVARIANT ────────────────────────────────────────────
@@ -4598,6 +4607,164 @@ async function applyServicesToFreeform(draftId: string, draftToken: string, serv
   return { status: r.status, placed: r.placed, verifiedPlaced: r.verifiedPlaced, unverified: r.unverified, namesOnly: r.namesOnly, missing: r.missing, inserted: r.inserted, descNeeded: r.descNeeded, noSection: r.noSection, lostEdits, where: r.where, paths: r.paths, retroAnchored: r.retroAnchored, leakedAttrText: r.leakedAttrText, changed: r.changed };
 }
 
+/**
+ * THE CLASSIC STORE'S SERVICE WRITER — the door that was missing.
+ *
+ * There are two website stores (docs/SETTLED.md #2). A FREEFORM page is HTML in
+ * business_documents and applyServicesToFreeform patches it. A CLASSIC page has NO
+ * document at all: hubly.html renders its cards from businesses.meta.service_catalog.
+ * setServices wrote only the relational `services` table — which neither store reads —
+ * so on the one paying customer every service he ever added was stored, invisible, and
+ * reported as saved. The capability was not missing; its door was.
+ *
+ * ADDITIVE BY CONSTRUCTION, not by hoping the model passes a complete list. Untouched
+ * services are carried through as the SAME objects and never re-derived, so "byte-identical"
+ * is a property of the code rather than a result we check for afterwards.
+ *
+ * WHY NOT THE OBVIOUS PIPELINE. The ruling was getCatalog -> catalogFromOwnerServicesPayload
+ * -> buildCatalogWritePayload. Measured against a canonical catalogue shaped exactly like
+ * the paying customer's, feeding the prior services back through
+ * catalogFromOwnerServicesPayload loses every price:
+ *
+ *     Existing Service One: price_cents 12000 -> null | mode variable -> quote_required
+ *                           | variable_prices 6 -> 0
+ *     Existing Service Two: price_cents  9500 -> null | mode fixed    -> quote_required
+ *
+ * because migrateLegacyService reads `raw.price` / `raw.varPrices` — the OWNER-EDITOR shape —
+ * and a stored canonical service keeps those under `pricing`. And a payload of one service
+ * (what the model actually sends when an owner names one) returns a catalogue of one, with
+ * the positional id `svc-0`, which on a real catalogue overwrites whatever already holds it.
+ * Run as ruled, tonight's fix would have blanked all eight of Graef's prices. So
+ * catalogFromOwnerServicesPayload is used for exactly what it is safe for — shaping ONE NEW
+ * entry, with an explicit id — and never to re-derive a service that already exists.
+ */
+export type ClassicServicesWrite = {
+  status: "written" | "not_classic" | "unchanged" | "not_owner" | "failed";
+  added: string[];
+  updated: string[];
+  preserved: number;
+  detail?: string;
+};
+
+function classicServiceKey(s: string): string {
+  return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+/**
+ * THE MERGE, EXPORTED SO IT CAN BE PROVED. Pure: a prior catalogue and what the owner just
+ * said in, a new service list and what changed out. Untouched services are carried through
+ * as the SAME objects — "byte-identical" is a property of this function, not a result to be
+ * checked afterwards. Exported because the additive proof must run the real merge; a proof
+ * against a reimplementation of it proves nothing.
+ */
+export function mergeClassicCatalog(
+  prior: { services: HublyServiceLike[]; addons: unknown[] },
+  services: { name: string; price?: number; description?: string }[],
+): { next: HublyServiceLike[]; added: string[]; updated: string[] } {
+  const priorByKey = new Map(prior.services.map((s) => [classicServiceKey(s.name), s]));
+  const next = prior.services.slice();
+  const added: string[] = [];
+  const updated: string[] = [];
+  const ts = new Date().toISOString();
+
+  for (const inc of services) {
+    const hit = priorByKey.get(classicServiceKey(inc.name));
+    if (hit) {
+      const i = next.findIndex((s) => s.id === hit.id);
+      if (i < 0) continue;
+      const s = { ...next[i], pricing: { ...next[i].pricing } };
+      let changed = false;
+      if (typeof inc.price === "number" && Number.isFinite(inc.price)) {
+        const cents = Math.round(inc.price * 100);
+        if (s.pricing.price_cents !== cents) {
+          s.pricing.price_cents = cents;
+          // A price was just stated, so this is no longer quote-only. Any other mode
+          // (fixed, variable, from) is the owner's and is left exactly as it is.
+          if (s.pricing.mode === "quote_required") s.pricing.mode = "fixed";
+          s.pricing.show_price = true;
+          changed = true;
+        }
+      }
+      if (inc.description && s.description !== inc.description) { s.description = inc.description; changed = true; }
+      if (changed) { s.updated_at = ts; next[i] = s; updated.push(s.name); }
+      continue;
+    }
+    // A NEW service, shaped by the production function so its canonical form is not
+    // reimplemented here — with an EXPLICIT id, because migrateLegacyService mints
+    // `svc-<index>` when one is absent and that collides with real ids on a real catalogue.
+    const id = `svc-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    const shaped = catalogFromOwnerServicesPayload(
+      [{ id, name: inc.name, price: inc.price, description: inc.description }],
+      prior as never,
+    ).services[0] as unknown as HublyServiceLike;
+    if (!shaped) continue;
+    shaped.sort_order = next.length;
+    next.push(shaped);
+    priorByKey.set(classicServiceKey(shaped.name), shaped);
+    added.push(shaped.name);
+  }
+  return { next, added, updated };
+}
+
+type HublyServiceLike = {
+  id: string;
+  name: string;
+  description?: string | null;
+  sort_order?: number;
+  updated_at?: string;
+  pricing: { mode: string; price_cents: number | null; show_price?: boolean; variable_prices?: Record<string, number> };
+  [k: string]: unknown;
+};
+
+async function applyServicesToClassic(
+  draftId: string,
+  draftToken: string,
+  services: { name: string; price?: number; description?: string }[],
+  ownerUid?: string | null,
+): Promise<ClassicServicesWrite> {
+  // CLASSIC means NO website document. `not_freeform` is a wider set than that — an AST
+  // document is also not freeform, and an AST page does not render from meta either, so
+  // writing the catalogue for it would be a second invisible write, the exact defect this
+  // function exists to end.
+  const latest = await selectLatestBusinessDocument(draftId, "website");
+  if (latest) {
+    notePlacement("applyServicesToClassic", "not_classic", draftId, `format=${latest.format}`);
+    return { status: "not_classic", added: [], updated: [], preserved: 0, detail: `document format=${latest.format}` };
+  }
+  const biz = await selectOne("businesses", "id", draftId, "meta");
+  if (!biz) {
+    notePlacement("applyServicesToClassic", "failed", draftId, "no business row");
+    return { status: "failed", added: [], updated: [], preserved: 0, detail: "no business row" };
+  }
+  const prior = getCatalog(biz as Record<string, unknown>);
+  const { next, added, updated } = mergeClassicCatalog(prior, services);
+
+  if (!added.length && !updated.length) {
+    notePlacement("applyServicesToClassic", "unchanged", draftId, `services=${services.length} catalogue=${prior.services.length}`);
+    return { status: "unchanged", added: [], updated: [], preserved: prior.services.length };
+  }
+
+  const payload = buildCatalogWritePayload({ ...prior, services: next } as never, {}) as Record<string, unknown>;
+  const r = await callBusinessRpc("set_business_service_catalog", {
+    p_business_id: draftId,
+    p_owner_id: ownerUid || null,
+    p_catalog: payload.service_catalog,
+    p_draft_token: draftToken || null,
+  });
+  const n = Number((r as { set_business_service_catalog?: unknown } | null)?.set_business_service_catalog ?? r ?? -99);
+  if (n === -1) {
+    notePlacement("applyServicesToClassic", "not_owner", draftId);
+    return { status: "not_owner", added: [], updated: [], preserved: prior.services.length };
+  }
+  if (n < 0 || !Number.isFinite(n)) {
+    notePlacement("applyServicesToClassic", "failed", draftId, `rpc=${n}`);
+    return { status: "failed", added: [], updated: [], preserved: prior.services.length, detail: `rpc returned ${n}` };
+  }
+  notePlacement("applyServicesToClassic", "written", draftId,
+    `added=${added.length} updated=${updated.length} total=${n} preserved=${prior.services.length - updated.length}`);
+  return { status: "written", added, updated, preserved: prior.services.length - updated.length };
+}
+
 export type ContactHoursResult = {
   status: "patched" | "not_applicable" | "not_freeform" | "failed";
   inserted: string[];
@@ -7710,6 +7877,16 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           try { placement = await applyServicesToFreeform(draftId, draftToken, services, ownerUid); }
           catch (e) { placement = { status: "failed", placed: [], missing: services.map((s) => s.name), detail: String((e as Error)?.message || e).slice(0, 120) }; }
           const isFreeform = placement.status !== "not_freeform";
+          // NOT FREEFORM IS NOT "NOWHERE". Until tonight this branch stopped here and the
+          // reply said the page is built a different way — true, and the end of it. A
+          // business with no document renders from businesses.meta.service_catalog, and
+          // that store has a writer now, so take the second door before reporting a wall.
+          let classic: ClassicServicesWrite | null = null;
+          if (!isFreeform) {
+            try { classic = await applyServicesToClassic(draftId, draftToken, services, ownerUid); }
+            catch (e) { classic = { status: "failed", added: [], updated: [], preserved: 0, detail: String((e as Error)?.message || e).slice(0, 120) }; }
+          }
+          const classicWrote = classic?.status === "written";
           return {
             ok: true,
             real: true,
@@ -7718,7 +7895,19 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             // If placement failed entirely it still said the page showed them.
             summary: (() => {
               const saved = `Saved ${r.count} service${r.count === 1 ? "" : "s"} to their record.`;
-              if (!isFreeform) return `${saved} The page is rebuilt separately from the record, so do NOT say they are showing yet.`;
+              if (!isFreeform) {
+                if (classicWrote) {
+                  const names = [...(classic!.added || []), ...(classic!.updated || [])];
+                  return `${saved} ${names.length} of them (${names.join(", ")}) also went onto the live page's service list, and the page shows them now. Their other ${classic!.preserved} service${classic!.preserved === 1 ? "" : "s"} were left exactly as they were.`;
+                }
+                if (classic && classic.status === "unchanged") {
+                  return `${saved} Nothing on the page changed — the page already lists them exactly as stated. Say that, do not claim an update.`;
+                }
+                if (classic && (classic.status === "not_owner" || classic.status === "failed")) {
+                  return `${saved} The page's own service list was NOT updated${classic.detail ? ` (${classic.detail})` : ""} — say the record is saved and the page has not changed.`;
+                }
+                return `${saved} The page is rebuilt separately from the record, so do NOT say they are showing yet.`;
+              }
               const landed = (placement.placed || []).length;
               if (landed === 0) return `${saved} NONE of them reached the page — say that plainly and do not claim anything is showing.`;
               if (landed < r.count) return `${saved} ${landed} of them reached the page; the rest did not — name what landed and say the others are saved but not showing.`;
@@ -7730,12 +7919,18 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
               // compose the read-back (names + prices + WHERE) and to record a
               // countable outcome, exactly as the photo path does.
               services: placement,
+              // The classic write's real outcome, for composeServicesTruth. A null here
+              // means the page was freeform and this door was never opened.
+              classic,
               // recordChange ONLY on a non-freeform page: there the placement was a
               // no-op and the async rebuild does the real work. On a freeform page
               // the patch already happened here, so firing a rebuild would just
               // no-op AND wrongly trip the "you have manual edits" note (this patch
               // writes a 'patch' version). Same split as uploadDraftPhoto.
-              ...(isFreeform ? {} : { recordChange: ["services"] }),
+              // …and NOT after a classic write either: the catalogue IS the page's source,
+              // so the write already happened here. Firing a rebuild would be a second
+              // generation off a deterministic pass — prohibition 1.
+              ...(isFreeform || classicWrote ? {} : { recordChange: ["services"] }),
             },
           };
         },

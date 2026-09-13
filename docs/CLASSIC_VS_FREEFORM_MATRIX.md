@@ -53,3 +53,53 @@ capability applies from that moment. **Neither sentence offers that route.**
 says nothing, and 6 that refuse or silently do not reach his page.** The single most damaging
 is *add a service*: it succeeds, it is stored, and it never appears — because the assistant
 writes the relational `services` table while his page renders `meta.service_catalog`.
+
+---
+
+# RE-RUN, 2026-09-13 22:40 UTC — after `set_business_service_catalog`
+
+**Same table shape, same condition, one capability moved.** Everything below the matrix that
+was established from code paths is unchanged except where marked.
+
+| capability | FREEFORM (has a document) | CLASSIC (no document — Graef) | what the owner is told |
+|---|---|---|---|
+| **add a service** | unchanged | **record + PAGE.** `applyServicesToFreeform` still returns `not_freeform`; `applyServicesToClassic` then merges the catalogue and writes it through `set_business_service_catalog` | *"Headlight Restoration is on your site now — ‹url›. Your other 2 services are exactly as they were."* — **verified in the bytes of the live page**, screenshot below |
+| **set prices** | unchanged | **record + PAGE**, same path (a price on a name already in the catalogue is an `updated`, not an `added`) | as above |
+| **set hours** | unchanged | works and shows (unchanged) | **no longer silent** — fixed earlier tonight |
+| **add a photo** | unchanged | **still `no_slot`** — `media.photos` on a catalogue entry is untouched by this work | unchanged |
+| **move a photo / move a section / edit page text** | unchanged | **still `no_document`** | unchanged |
+| **add a block / services area** | unchanged | **still `not_freeform`** | unchanged |
+| **claim / publish** | unchanged | unchanged | unchanged |
+
+## How many of Graef's six failures closed
+
+**Two of six, and they are the two that were costing him.**
+
+| his six | before | after |
+|---|---|---|
+| add a service | stored, invisible, not said | **writes the store his page renders from** |
+| set a price | stored, invisible, not said | **same** |
+| add a photo | no slot | no slot — open |
+| move a photo | no page to change | open |
+| move a section | no page to change | open |
+| edit page text | edited in Edit details | open |
+
+Counting the three that already worked (hours, claim, and hours' silence), the bill is now
+**4 of 10 working, 0 working-but-silent, 6 refusing** → **6 of 10 working, 4 refusing.**
+
+## What is proved, and what is not
+
+**Proved** (hubly-classic-fixture, never Graef):
+- The RPC refuses a wrong owner (`-1`), a null owner on a claimed row (`-1`), a random draft
+  token on a claimed row (`-1`), a missing business (`-3`) and an empty catalogue (`0`), and the
+  catalogue count is unchanged across all five.
+- The merge is additive: with one new service stated, `diff PRE POST` adds exactly one service
+  block and removes exactly one line — the catalogue's own `updated_at`. Both existing services,
+  including six variable prices, three `includes` and a photo URL, are byte-identical.
+- The card renders on the live public page.
+
+**NOT proved:** the same write driven by typing into the assistant as the signed-in owner. The
+owner session in this environment is expired and restoring it was not available to me, so the
+last link — model → capability → RPC — is exercised by its own code and its own RPC, not by a
+human sentence. **That is one four-sentence walk for Adrian and it is the thing to do first.**
+No screenshot of a signed-in state was taken, and none was simulated.

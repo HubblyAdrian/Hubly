@@ -115,6 +115,16 @@ export type ServicesPlacementLike = {
   leakedAttrText?: number;
 };
 
+/** What the CLASSIC store's writer actually did. `not_classic` means the business has a
+ *  document (an AST page) and this door was never the right one. */
+export type ClassicWriteLike = {
+  status: "written" | "not_classic" | "unchanged" | "not_owner" | "failed";
+  added?: string[];
+  updated?: string[];
+  preserved?: number;
+  detail?: string;
+};
+
 export function andList(items: string[], overflowAfter = 3): string {
   if (items.length === 0) return "";
   if (items.length === 1) return items[0];
@@ -125,7 +135,7 @@ export function andList(items: string[], overflowAfter = 3): string {
 export function fmtSvcPrice(n: number): string {
   return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
 }
-export function composeServicesTruth(placement: ServicesPlacementLike, url: string): string {
+export function composeServicesTruth(placement: ServicesPlacementLike, url: string, classic?: ClassicWriteLike | null): string {
   // THE VERIFIED LIST, AND NOTHING ELSE. The deletion IS the fix: there is no
   // `|| placement.placed` here any more, and nothing restores it.
   //
@@ -162,11 +172,40 @@ export function composeServicesTruth(placement: ServicesPlacementLike, url: stri
   // live and full, and offering to rebuild it over a missing service would be the destructive
   // default wearing a helpful face.
   if (placement.status === "not_freeform") {
+    // THE SENTENCE AND THE CAPABILITY SHIP TOGETHER. The first version of this branch said
+    // "I can't add them to it from here yet" — true for about four hours, and a lie the
+    // moment set_business_service_catalog was wired. scripts/check-classic-claim.mjs fails
+    // the build if this branch claims an inability the classic writer no longer has; a
+    // sentence about what we can do is not documentation, it is a status indicator, and it
+    // is subject to the same rule as any other (prohibition 2).
+    if (classic && classic.status === "written") {
+      const names = [...(classic.added || []), ...(classic.updated || [])];
+      // REFUSE TO EMIT ON AN EMPTY LIST. A composer that slot-fills a list into an
+      // assertion produces "and are on your site now" when the list is empty — and broken
+      // grammar in a composed sentence is the tell that the sentence is COMPOSED rather
+      // than TRUE. Say nothing and let the model answer from the summary instead.
+      if (!names.length) return "";
+      const rest = typeof classic.preserved === "number" && classic.preserved > 0
+        ? ` Your other ${classic.preserved} service${classic.preserved === 1 ? "" : "s"} are exactly as they were.`
+        : "";
+      return `${andList(names)} ${names.length === 1 ? "is" : "are"} on your site now${url ? ` — ${url}` : ""}.${rest}`;
+    }
+    if (classic && classic.status === "unchanged") {
+      return `Your site already lists those exactly like that, so nothing needed changing.`;
+    }
+    if (classic && classic.status === "not_owner") {
+      return `I saved those to your record, but I couldn't update the page — this account isn't the owner of that site, so the page hasn't changed.`;
+    }
+    if (classic && classic.status === "failed") {
+      return `I saved those to your record, but the page didn't update just now — so don't take them as showing yet. The page hasn't changed.`;
+    }
+    // classic === "not_classic", or no classic result at all: the business HAS a document
+    // and it is not html (an AST page), which the async rebuild handles separately.
     const names = (placement.missing && placement.missing.length)
       ? placement.missing
       : (placement.verifiedPlaced || []).map((p) => p.name);
-    const list = names.length ? andList(names) : "those";
-    return `I've saved ${list} to your record, but they aren't showing on your site — your page is built a different way and I can't add them to it from here yet. Your record is right; the page hasn't changed.`;
+    if (!names.length) return "";
+    return `I've saved ${andList(names)} to your record. Your page is rebuilt separately from the record, so they aren't showing on it yet.`;
   }
   if (placement.status === "failed") {
     return `I saved those to your record, but couldn't update the page just now — so don't take them as showing yet. Try again in a moment.`;

@@ -61,7 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
-import { composeServicesTruth, andList, type ServicesPlacementLike } from "../_shared/hubly_owner_replies.ts";
+import { composeServicesTruth, andList, type ServicesPlacementLike, type ClassicWriteLike } from "../_shared/hubly_owner_replies.ts";
 import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
 import { adminHeaders, createAdminClient, requireSecretKey } from "../_shared/supabase_admin.ts";
@@ -2404,9 +2404,16 @@ Deno.serve(async (req) => {
         if (capabilityName === "business" && actionName === "setServices" && result?.ok) {
           try {
             const placement = (result.raw as { services?: ServicesPlacementLike } | undefined)?.services;
+            const classic = (result.raw as { classic?: ClassicWriteLike | null } | undefined)?.classic ?? null;
             const url = String((result.raw as { url?: string } | undefined)?.url || (draftBusiness?.url || ""));
-            if (placement && placement.status !== "not_freeform") {
-              const truth = composeServicesTruth(placement, url);
+            // `not_freeform` WAS EXCLUDED HERE, and that made the whole classic branch of
+            // composeServicesTruth dead code — written and deployed 2026-09-13 22:18 to stop
+            // exactly this lie, and never once reached. A gate written when only one store
+            // existed kept the other store's owners in silence: setServices returned ok, this
+            // block skipped, and the model composed from the summary alone. The composer owns
+            // the decision about what is true of each store; this caller does not.
+            if (placement) {
+              const truth = composeServicesTruth(placement, url, classic);
               if (truth) servicesTruth = truth;
               // Loud + countable: a price that saved but didn't appear is a row we
               // can query, never a silence.

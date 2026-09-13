@@ -2062,3 +2062,50 @@ missing *writer* enumeration (a second store behind one URL).
 It sits beside the two-writers rule (`applyExtractedFacts` and `setHours` racing on hours). One
 fact, two writers; one URL, two stores. **Same family: the count of participants was assumed
 rather than enumerated.**
+
+## Lesson 64 — Offering to regenerate a live page over one missing service is the destructive default wearing a helpful face (2026-09-13)
+
+A classic page has no update path, so every "I can't put that on your page" reply is one step
+from "…but I could rebuild it." That offer sounds like service and is the same decision as
+`start over` on an unfinished draft: **it trades a live, full, hand-built page for a generated
+one, to solve a missing $75 card.** The costs are not symmetric — the page is unrecoverable and
+the missing service is one write — so the tie does not go to the destructive option, and here it
+is not even a tie.
+
+The tell is that the offer is always the *biggest available* action rather than the *smallest
+sufficient* one. Twice now the smallest sufficient action existed and nobody looked:
+`ridgeline-pressure-washing` was offered a full rebuild when `addServicesBlock` was one call
+away, and Graef's page was a candidate for the same offer while the store it renders from had
+had a perfectly good writer (`service_engine.ts`) sitting unimported since Phase 6.
+
+**So: before any reply offers to rebuild, the missing door has to have been looked for and not
+found — and the refusal names what is missing, not what could be destroyed.** "It isn't showing
+and I can't add it from here" is a complete, honest answer. It does not need a rescue attached.
+
+This is the *reply-side* of "look for the missing door before building the room": there, the
+cost of assuming greenfield is a rebuilt system; here it is a rebuilt customer page.
+
+## Lesson 65 — Broken grammar in a composed sentence means the sentence is composed, not true (2026-09-13)
+
+While red-proofing `check-classic-claim.mjs`, deleting the empty-list guard produced this,
+verbatim, from the real composer:
+
+```
+ are on your site now — https://x.myhubly.app. Your other 7 services are exactly as they were.
+```
+
+A sentence with a hole where its subject should be is not a cosmetic defect. It is a **structural
+confession**: the assertion was built by slotting a list into a template, and the template asserted
+something the data did not support. Every previous instance says the same thing — the `"but Your
+page doesn't have…"` splice (two fragments glued at an interpolation), the slot-filled sign-up
+guidance, the post-build services question. In each case the grammar broke at exactly the seam
+where a claim outran its evidence.
+
+**The rule: any composer that slot-fills a list into an assertion must refuse to emit when the
+list is empty.** Return `""` and let the caller say nothing — silence is a correct output, and a
+composer that has nothing true to say must be able to produce it. This is the same discipline as
+`servicesTruth` composing from what ACTUALLY happened rather than from what was requested; the
+empty list is just the degenerate case, and it is the case that reaches a real person as gibberish.
+
+Read it the other way too, as a diagnostic: **when Hubly's output is ungrammatical, do not fix the
+grammar.** Find the composer, and ask what it was asserting that it did not know.
