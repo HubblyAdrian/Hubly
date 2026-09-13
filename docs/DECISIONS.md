@@ -193,3 +193,35 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
 - **Outstanding:**
   - [ ] Home shows no count of the 2 people waiting on Graef; the event feed shows the bookings themselves but nothing says "2 are waiting"
   - [ ] deleted in the repo, NOT yet deployed — `public/` ships only by git push
+
+## D-022 — The Google Calendar merge into Jobs is cut, and not because the data is thin
+- **Date / commit:** 2026-09-13 · `docs/MERGE_COSTING.md`
+- **Reason given at the time:** NOT "Graef has zero calendar events" — that is a
+  denominator-of-one argument and it would be the wrong reason. **The reason is that carrying
+  it requires a fifth union in `business_events`, a view we have just proved reconciles
+  row-for-row with its sources** (11 booking_requests → 11 events, plus one job via the
+  `booking_request_id IS NULL` guard). Adding a source to a reconciling view is how that
+  property is lost silently: nothing fails, the counts simply stop matching, and the next
+  person to check finds a feed that no longer maps onto rows.
+- **Gave up:** calendar events in the merged Jobs list. An owner who connects Google Calendar
+  sees their jobs and their bookings, not their calendar.
+- **Outstanding:**
+  - [ ] build it when a business actually connects a calendar — and when it is built, the
+        reconciliation must be re-run and recorded, because that is the property being risked
+  - [ ] `google_calendar_events` stays readable only from `hubly.html`, which is a second
+        reader by the merge's own rule
+
+## D-023 — "Active in range" is not built, and the drop-and-recreate is not taken
+- **Date / commit:** 2026-09-13 · ruled in conversation
+- **Reason given at the time:** three, in order. (1) **Nobody asked for it** — it is not in Adrian's spec and no owner has requested it. (2) Buying it costs a **drop-and-recreate on a security-definer function** — the most dangerous migration shape available — against a database with **56 unrecorded migrations of 222** and a banned `db push`. We do not take that risk for a nice-to-have. (3) Its value today would be computed over **4 test rows**.
+- **Gave up:** a date-range customer KPI. The merge ships with zero migrations.
+- **Outstanding:**
+  - [ ] revisit when a live business has enough customers for a date-range filter to mean anything, and **bundle the drop-and-recreate with another change that already requires one**
+
+## D-024 — No aggregate is rendered from a paginated result, at any size
+- **Date / commit:** 2026-09-13 · `docs/MERGE_COSTING.md`
+- **Reason given at the time:** `get_business_customers` has `p_limit integer DEFAULT 8`. A total summed from its rows is a total over A PAGE. Graef has 4 customers so it reads correctly for him and would be **silently wrong for anyone real** — no error, just a wrong number. Passing a bigger limit from the client was rejected explicitly: *"that is a guess that becomes wrong at a size we cannot predict, and it fails the same way."*
+- **Gave up:** total billed and total visits on the Customers screen. Counts come from `get_business_customer_count`, which counts server-side; anything else is left out.
+- **Outstanding:**
+  - [ ] total billed / total visits are unbuilt. When they are wanted, they come from an RPC that AGGREGATES server-side — never from a client sum
+  - [ ] the client already passes `p_limit: 200` at `platform-home.html:4814`; that is a list read, and it must not become the basis of any total

@@ -1885,3 +1885,39 @@ sharpest: the red-proof passing is what a working check looks like from the outs
 Retrofitted into `check-computed-and-dropped`, `check-retired-shell-exit`,
 `check-denominator-rule` and `decisions-open`. **The rule: a check states what it read before
 it states what it found.** An unsourced finding is an opinion with an exit code.
+
+## Lesson 59 — A value summed from a paginated result is not an aggregate (2026-09-13)
+
+`get_business_customers(p_business_id, p_owner_id, p_limit integer DEFAULT 8)`. Summing
+`total_billed` across the rows it returns gives the total for **a page**, not for the business.
+
+It reads as correct today because the only live business has **4 customers**, which is under
+every limit in the codebase. It would be silently wrong for a real one: no error, no empty
+state, just a number that is too small — and too small in a way that looks plausible.
+
+**The fix is not a bigger limit.** Passing `p_limit: 500` moves the failure to a size nobody
+predicted and fails identically when it arrives. **Either the aggregate is computed
+server-side, or it is not rendered.**
+
+The page limits, established 2026-09-13: `get_business_customers` **8** · `get_business_events`
+**30** · `get_business_notifications` **8** · client reads of `booking_requests` and `jobs`
+**200** · one RPC with an internal `limit 80`.
+
+**Building the check took three tries, and each failure is worth more than the check:**
+1. It blew the stack. The `_parent` back-links it adds make the tree cyclic, and the walk
+   followed them back up forever.
+2. Its red-proof PASSED. It tainted only the RPC result `r`, while real code extracts first —
+   `var rows = (r && r.data) || []` — and sums `rows`. Taint now propagates through
+   derivation until it stops changing.
+3. Then it failed on the REAL file, at `platform-home.html:3679` — and that was a FALSE
+   POSITIVE worth keeping: `list.reduce((a,e) => t > a ? t : a, 0)` is a MAX of timestamps,
+   used to mark the events just shown as seen. Over a page that is not merely acceptable, it
+   is the only correct thing. The class is a value **summed** from a page, not folded over
+   one, so the check now requires additive accumulation — a max, a min, a concat and a find
+   are all legitimate; addition is not, because addition claims to describe a whole the page
+   does not contain.
+
+**And the reason this class will keep arriving:** our only live business is smaller than every
+one of those limits. Graef hides every paging bug we can write. That is what the seeded
+paging fixture exists to stop — a business with more rows than the largest limit, rendered
+beside Graef, where a number that differs between them for the wrong reason is a defect.

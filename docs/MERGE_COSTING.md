@@ -11,6 +11,16 @@ justified by demand, because no demand has been observed.
 
 ---
 
+## THE JOBS MERGE BUILDS THE RULE; IT DOES NOT FOLLOW IT
+
+Stated in the words it needs to be stated in, because the costing nearly came in low on it:
+
+> **"Every read through the shared reader" describes the current state for Customers. For Jobs
+> it has never been true.** `hcLoadJobs` reads `c.from('jobs')` directly and there is no
+> `get_business_jobs`. So the Jobs merge is **not** moving operator features onto an existing
+> rule — **it is building the rule.** An instruction that describes a rule which does not exist
+> is how a costing comes in low.
+
 ## The finding that reshapes the costing
 
 **There is no shared reader for jobs.** The `get_business_*` family covers customers,
@@ -50,8 +60,46 @@ every number comes from `get_business_customers` / `get_business_customer_count`
 | **drag-a-lead-into-Jobs** | a WRITE, not a read. The write path exists in `hubly.html`; `get_business_unlinked_jobs` suggests the linking concept is already modelled | ~40 lines UI + reuse the existing writer — **needs its own establish pass before costing properly** | unknown | yes |
 | KPI header (today / this week / unpaid) | derivable from the same `get_business_jobs` rows | ~20 lines | no | yes |
 
-**Jobs total: ~185 lines across 2 files, TWO migrations, and one affordance (drag-to-Jobs)
-that is not honestly costed until its write path is established.**
+**Jobs total: ~185 lines across 2 files and TWO migrations — named below.** Drag-to-Jobs is
+**excluded entirely**, not carried as a placeholder number: its write path has not been
+established, and a number attached to unestablished work is the thing that makes a costing
+wrong.
+
+### The two migrations, named
+
+**Migration A — `get_business_jobs`. A NEW function. Touches no existing table's shape.**
+
+```
+get_business_jobs(p_business_id uuid, p_owner_id uuid,
+                  p_from date default null, p_to date default null,
+                  p_limit integer default 200)
+  returns table (id uuid, customer_name text, service_name text, scheduled_date date,
+                 scheduled_time time, duration_hours numeric, amount numeric, status text,
+                 phone text, email text, address text, vehicle text, notes text,
+                 is_block boolean, paid boolean)
+```
+
+- **security definer**, like every sibling in the `get_business_*` family, with the same first
+  statement they all use: refuse unless `businesses.owner_id = p_owner_id`. That is the whole
+  security surface — it reads one business's `jobs` rows and returns them; it writes nothing
+  and takes no user-supplied SQL.
+- It is a pure ADD: no `alter table`, no column change, no drop. The `jobs` table is untouched.
+- Risk: **new object only.** The 56-unrecorded-migrations problem is about REPLAYING old
+  migrations; a new `create function` is the least dangerous shape a migration can have, and
+  it is applied by hand one file at a time like every other.
+
+**Migration B — a fifth union in the `business_events` view, for Google Calendar. CUT.** See
+the decision below. It is not in the 185.
+
+### Does `get_business_jobs` gate the merge, or is it the merge?
+
+**It is the merge, and it should ship inside it.** The Jobs room today is ~26 lines that read a
+table; replacing that read with an RPC call is the same edit as rendering the room. Building the
+function first as a "precondition" would mean shipping a security-definer function that nothing
+calls, which is an unexercised surface — and an RPC with no caller has never been red-proofed
+against a real render. So: **one commit, function and caller together**, which is also what
+makes it red-proofable (revert the caller, the room goes empty; revert the grant, it fails
+loudly rather than silently returning nothing).
 
 ---
 
