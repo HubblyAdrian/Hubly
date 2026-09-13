@@ -79,7 +79,9 @@
     "check:no-directives": "node scripts/check-no-directives-to-owners.mjs",
     "check:services-block": "node scripts/check-services-block.mjs",
     "check:block-legibility": "node scripts/check-block-legibility.mjs",
-    "check:name": "node scripts/check-name-is-asked.mjs"
+    "check:name": "node scripts/check-name-is-asked.mjs",
+    "brief": "node scripts/brief.mjs",
+    "decisions": "node scripts/decisions-open.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

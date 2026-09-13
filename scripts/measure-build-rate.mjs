@@ -86,7 +86,9 @@ const CASES = [
 // It is opt-in now, and it says what it costs before it costs it.
 // ─────────────────────────────────────────────────────────────────────────────
 function printPrice(drafts) {
+  // not-a-corpus-rate: a cost plan before the run, not a measurement
   console.log(
+    // not-a-corpus-rate: a cost plan before the run, not a measurement
     `\n  THIS RUN WILL CREATE ${drafts} DRAFT BUSINESSES AND GENERATE ${drafts} WEBSITES.\n` +
     `  Cost anchor (2026-09-09, denominator unknown): ~35 signups drained one full top-up,\n` +
     `  so this is roughly ${(drafts / 35 * 100).toFixed(0)}% of a top-up. Drafts are deleted afterwards; quota is not refunded.\n`);
@@ -153,6 +155,7 @@ async function main() {
     // as a build failure — the same false red the checker's exit-2 branch exists to stop.
     const ok = rows.filter((r) => !r.error && !r.aborted);
     const built = ok.filter((r) => r.built).length;
+    // not-a-corpus-rate: over the drafts THIS RUN creates, which are test by construction
     console.log(`\n${"=".repeat(78)}\n${c.id} — "${c.say}"   n=${ok.length}   built ${built}/${ok.length}\n${"=".repeat(78)}`);
     for (const r of rows) {
       if (r.aborted) { console.log(`\n[${r.run}] NOT RUN — endpoint stopped answering`); continue; }
@@ -166,7 +169,9 @@ async function main() {
   console.log(`\nraw results written to ${OUT}`);
   if (cannotRun) {
     const done = results.filter((r) => !r.error && !r.aborted).length;
+    // not-a-corpus-rate: a CANNOT RUN message counting attempts, not pages
     console.error(
+      // not-a-corpus-rate: a CANNOT RUN message counting attempts, not pages
       `\nCANNOT RUN — the endpoint stopped answering after ${done} of ${N * CASES.length} runs: ${cannotRun}\n` +
       `The ${done} completed runs ARE in ${OUT}, but this is a TRUNCATED SAMPLE — report it as ` +
       `"${done} runs, cut short" and never as the build rate.`);

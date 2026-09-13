@@ -21,6 +21,8 @@ import { decodePng, regionContrast } from "./lib/pixel-contrast.mjs";
 // stored bytes, which renders an AST page with none of the shell CSS that actually styles
 // it — i.e. measures the contrast of a document nobody is served.
 import { mountAndEvaluate } from "./lib/mount-as-product.mjs";
+// THE DENOMINATOR RULE: a rate may not be printed without its account_kind split (CLAUDE.md).
+import { loadKinds, rateLine, subsetLine } from "./lib/kind-split.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CORPUS = process.env.HUBLY_BLOCK_CORPUS || join(ROOT, "scripts/baselines/block-legibility-corpus.json");
@@ -102,6 +104,7 @@ for (const p of pages) {
     }, p.selector);
     if (!boxes.length) { await ctx.close(); continue; }
     checked++;
+    p.__measured = true;
     if (p.mode === "cloned") cloned++; else if (p.mode === "standalone") standalone++;
     let worst = { ratio: 99, t: "" };
     for (const b of boxes) {
@@ -128,8 +131,12 @@ for (const p of pages) {
 }
 await browser.close();
 
+let kinds = null;
+try { kinds = loadKinds(); } catch (e) { console.error("CANNOT RUN — account_kind unavailable, and a rate may not be printed without it: " + String(e.message).slice(0, 100)); process.exit(2); }
+const measuredSlugs = pages.filter((p) => p.__measured).map((p) => p.slug);
 console.log(`blocks rendered and measured in pixels: ${checked} (cloned ${cloned}, standalone ${standalone})`);
-console.log(`readable: ${checked - known.length - fails.length} / ${checked}`);
+console.log("  " + subsetLine("the blocks measured", measuredSlugs, kinds));
+console.log("  " + rateLine("readable where they land", checked - known.length - fails.length, measuredSlugs, kinds));
 if (known.length) { console.log(`known unreadable, recorded (${known.length}):`); for (const k of known) console.log("  " + k); }
 if (fixed.length) console.log(`NOW READABLE — remove from KNOWN_UNREADABLE: ${fixed.join(", ")}`);
 if (fails.length) {

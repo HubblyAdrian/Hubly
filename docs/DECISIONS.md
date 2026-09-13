@@ -127,3 +127,20 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
   - [ ] nothing durable records per-business completion state; today it is `hc.*` flags that die with the tab
   - [ ] walked 2026-09-13: step 2 (claim-or-services) absent, step 5 (ask hours) absent, step 7 (ask photos) absent, step 8 (move photos) not found
   - [ ] the claim questions — the person's name and logo, asked once — were designed and never built; the greeting still reads "Good evening. / Evergreen Yard Care"
+
+## D-014 — Every corpus rate prints its account_kind split, in the same line
+- **Date / commit:** 2026-09-13 · `scripts/lib/kind-split.mjs`, `scripts/check-denominator-rule.mjs`
+- **Reason given at the time:** *"Then neither of us can quote a behavioural rate off a synthetic corpus, because the denominator is standing right there."* CLAUDE.md had ruled this since August; it kept not happening because the denominator lived in the record and the rate lived in the output.
+- **Gave up:** the ability to print a quick rate. `rateLine()` needs the denominator's ITEMS, not a count, so a caller must keep the population around.
+- **Outstanding:**
+  - [ ] the rule is enforced in `scripts/` only — nothing stops a bare rate in a commit message, a doc, or a chat reply, which is where the 2026-09-13 photo rate was actually quoted
+  - [ ] 7 statements are declared exempt; each carries a reason, none has been argued with
+
+## D-015 — One command prints the brief, over four files nobody opens
+- **Date / commit:** 2026-09-13 · `scripts/brief.mjs`, `npm run brief`
+- **Reason given at the time:** the facts we keep relearning were already written down — the db push ban lived in prose while a deploy script ran it, the 2026-08-20 gap list died in a commit message. *"A document nobody opens is what caused this."*
+- **Gave up:** nothing yet — but a brief is a summary, and a summary can go stale against the files it summarises.
+- **Outstanding:**
+  - [ ] the walk line is a RECORDED result, not a live one, unless `--walk <slug>` is passed — it is labelled as a memory, which is the honest form, not a fix
+  - [ ] the instrument count is a proxy: it greps for the WORD "red-proof", not for a proof
+  - [ ] nothing makes the brief run — it is a command, not a hook

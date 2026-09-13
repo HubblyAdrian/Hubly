@@ -114,6 +114,7 @@ const started = new Date(Date.now() - 5000).toISOString();
 // It is opt-in now, and it says what it costs before it costs it.
 // ─────────────────────────────────────────────────────────────────────────────
 function printPrice(drafts) {
+  // not-a-corpus-rate: a cost plan before the run, not a measurement
   console.log(
     `\n  THIS RUN WILL CREATE ${drafts} DRAFT BUSINESSES AND GENERATE ${drafts} WEBSITES.\n` +
     `  Cost anchor (2026-09-09, denominator unknown): ~35 signups drained one full top-up,\n` +
@@ -466,6 +467,7 @@ for (const r of results) {
 const askShapes = results.filter((r) => r.mustAsk);
 if (askShapes.length) {
   const askedOk = askShapes.filter((r) => r.askedForName).length;
+  // not-a-corpus-rate: over the drafts THIS RUN creates, which are test by construction
   console.log(`\n  the name was asked on ${askedOk} of ${askShapes.length} ASK shapes; built on ${results.filter((r) => r.built).length} of ${results.length} overall.`);
 }
 console.log(`  per-shape detail: ${OUT}`);

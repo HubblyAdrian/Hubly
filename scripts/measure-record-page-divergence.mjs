@@ -32,6 +32,8 @@
  * MEASUREMENT ONLY. It fixes nothing and gates nothing.
  */
 import { readFileSync } from "node:fs";
+// THE DENOMINATOR RULE: a rate may not be printed without its account_kind split (CLAUDE.md).
+import { loadKinds, rateLine, subsetLine } from "./lib/kind-split.mjs";
 
 const CORPUS = process.env.HUBLY_T5_CORPUS;
 if (!CORPUS) { console.error("CANNOT RUN — set HUBLY_T5_CORPUS to the exported record+page json"); process.exit(2); }
@@ -139,11 +141,15 @@ for (const r of rows) {
 }
 
 const heldAny = rows.filter((r) => String(r.phone||"").trim() || String(r.email||"").trim() || (Array.isArray(r.svc)&&r.svc.length) || (Array.isArray(r.hours)&&r.hours.length)).length;
-console.log(`businesses with a stored page: ${rows.length}   holding at least one checkable fact: ${heldAny}`);
-console.log(`\nPAGES THAT DO NOT SHOW A FACT THEIR OWN RECORD HOLDS: ${detail.length} of ${heldAny}` +
-            ` (${Math.round(detail.length / heldAny * 100)}%)`);
-console.log(`  by account_kind: ${JSON.stringify(byKind)}`);
+let kinds = null;
+try { kinds = loadKinds(); } catch (e) { console.error("CANNOT RUN — account_kind unavailable, and a rate may not be printed without it: " + String(e.message).slice(0, 100)); process.exit(2); }
+const checkable = rows.filter((r) => String(r.phone||"").trim() || String(r.email||"").trim() || (Array.isArray(r.svc)&&r.svc.length) || (Array.isArray(r.hours)&&r.hours.length)).map((r) => r.slug);
+console.log(`businesses with a stored page: ${rows.length}`);
+console.log("  " + subsetLine("holding at least one checkable fact", checkable, kinds));
+console.log("  " + rateLine("PAGES THAT DO NOT SHOW A FACT THEIR OWN RECORD HOLDS", detail.length, checkable, kinds));
+console.log("  " + subsetLine("of those, by kind", detail.map((d) => d.slug), kinds));
 console.log(`\nper fact — record holds it / page does not show it:`);
+// not-a-corpus-rate: a per-FACT table over the same population whose split is printed above it
 for (const f of FACTS) console.log(`  ${f.padEnd(14)} absent ${String(missing[f]).padStart(3)}` +
   (conflict[f] ? `   CONFLICTING ${String(conflict[f]).padStart(2)}` : "            ") +
   `   of ${String(held[f]).padStart(3)} held` +
