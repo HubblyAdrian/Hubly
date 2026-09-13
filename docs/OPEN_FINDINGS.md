@@ -6708,6 +6708,81 @@ warning-then-proceed, recording-on-success, mount-predicate.
 4. **ironwood-fence's page shows no hours** though the record holds five days — the two-writer
    finding above; the hours went to the table only and freeform has no hours placement path.
 
+## Freeform CAN place hours. On 135 of 172 pages it silently does not. (2026-09-12)
+
+Asked after ironwood-fence held five days in the record and showed none: is freeform
+placement of hours missing in general, or was that turn specific? **Neither. The path exists,
+runs, and fails in four different ways — and only one of them leaves a trace.**
+
+`applyContactHoursToFreeform` is called from the conversation turn (`hubly-conversation`
+:2547) whenever `recordChanges` includes hours, synchronously, and records telemetry to
+`rebuild_outcome_events`. Across all businesses: **17 runs landed (`patched`), 19 did not
+(`not_applicable`)**.
+
+**What ironwood's turn actually recorded**, at 20:42:04, ten seconds after Adrian typed his
+hours: `contact-hours-placement · not_applicable · via=missed; present=address; missed=hours ·
+landed=false`.
+
+**Why**, traced through the production predicates (`hubly_contact.ts:432-445`): placement
+updates an hours ANCHOR in place; failing that, if the page "already shows a schedule" it
+records a miss rather than duplicate. `pageHasHoursSection` decides that, and one of its three
+tests is `hasHoursHeading`, which matches any short element whose text starts with
+`/^(listed )?schedule\b/`. **ironwood's page has a how-it-works step headed "Schedule the
+installation."** No times, no weekday names, no hours anywhere — a process step. That heading
+was read as an existing schedule, and five real days were refused to avoid duplicating it.
+
+**Measured over 172 stored pages with the production predicates:**
+
+| state | pages |
+|---|---|
+| has a `data-hubly-hours` anchor — hours can be updated in place | **5** |
+| no anchor, page genuinely shows a schedule (placement correctly skips) | 22 |
+| no anchor, **no times and fewer than 3 weekday names, yet `pageHasHoursSection` says yes** — a false positive that blocks placement permanently | **10** |
+| no anchor, no section at all — **the silent branch** | **135** |
+
+**The silent branch is the big one.** `if (hoursAnchorExists) … else if (hoursSectionExists) …`
+has NO else. A page with neither gets nothing: hours are not inserted, not recorded as
+`missed`, not recorded as `alreadyPresent`. 135 of 172 pages are in that state, and their
+owners' hours would vanish without a single telemetry row — which is why this went unnoticed
+while `rebuild_outcome_events` was being read.
+
+**Blocked right now by the false positive:** `sable-crumb` and `ironwood-fence`, five recorded
+days each, zero on the page.
+
+**So T2 fixed the write and the owner still sees nothing** — the same shape as services before
+today, and the fix is the same shape too: stamp a `data-hubly-hours` anchor AT GENERATION, when
+the fact and its element are both in hand, rather than re-recognising a schedule afterwards by
+its markup. That is exactly what CLAUDE.md already rules for service prices and already names
+as the open gap for hours. Four mechanisms produced one outcome on ironwood: a table-only
+write, a false refusal, a heading false positive, and a silent branch.
+
+## Nav links pointing at nothing: 6 links on 3 of 172 pages (2026-09-12)
+
+Recorded with the nav-link work, after crestview's `#service-area` turned out to have no
+target. Measured over a fresh export (the repair had just rewritten 142 pages): **784 in-page
+links, 6 of them pointing at an id that was never written, on 3 pages** — 2 market
+(`mobile-auto-detailing-in-los-angeles` `#work`, `window-washing` `#gallery`) and 1 test
+(`pike-sons-tree-service` `#work`). The missing targets are `#work` (×2) and `#gallery` — a
+nav item for a section the generator decided not to write.
+
+**The repair cannot fix these** and never could: a scroll handler needs a target. This is a
+generator defect (a nav promising a section the page does not contain), not a runtime one, and
+at 2% of pages it is small — recorded so it is not rediscovered as a runtime bug.
+
+## STAGE 2, REVISED BY THE BOUNDARY (2026-09-12)
+
+1. **The whitespace-neutral injector** — small, and it unblocks a repair already built and
+   proved. 18 pages including `crestview-window-cleaning`, the gate's own default, cannot take
+   the fragment fix until `injectHublyRuntime` stops normalising inter-tag whitespace. Fix the
+   injector, re-run the repair, expect 18 more pages and assertion 1 green on crestview.
+2. **`bk-biz-consent` — "Your Business" on every booking page.** Customer-facing, in front of
+   someone typing their phone number, and the first instance of the 24-claims work.
+3. **The 24 declarative product-state claims** — one module, one check, reaching client strings
+   and `hubly_brain_*`.
+4. **G2 — the swallowed claim-transition message.**
+5. **G1's disclosure rule and the two-shell merge cost.**
+6. **The claim questions** — his name, his logo, asked once, only for what we do not already hold.
+
 ## STAGE 3 LEADS WITH THIS — sub-AA text we did not insert: 68 of 165 pages (2026-09-12)
 
 **Promoted 2026-09-12 by Adrian's partner, ahead of the migration ledger:** this is a

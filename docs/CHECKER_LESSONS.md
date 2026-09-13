@@ -1536,3 +1536,25 @@ Three rules out of it:
    follows it. A cell is not the place to settle a discrepancy.
 3. **When two reporters exist over one dataset, the one that does not answer the question is a
    trap with a plausible header.** Delete it or rename it to say what it measures.
+
+## Lesson 46 — A dry run on a convenience sample is a smoke test, not a rate (2026-09-12)
+
+`repair-fragment-links.mjs` was dry-run with `--limit=6`. Five pages passed the inverse byte
+proof and one, `hearth-iron`, was refused. That went into the plan as "hearth-iron refused" —
+a named exception, as if the picture were complete.
+
+The real run: **18 of 163 refused**, `crestview-window-cleaning` — the walk gate's own default
+page — among them. The rate was 1-in-6 all along; the sample was too small to show it and the
+first six pages were whatever the query returned first, which is not a sample at all.
+
+- A limited dry run answers "does this run without crashing", never "how many will it affect".
+- Carry the SAMPLE SIZE with any number taken from a limited run, and say what it cannot tell
+  you. "1 of 6 refused" would have prompted the question; "hearth-iron refused" ended it.
+- If the number will shape the plan, run the full pass in report mode. It costs one more run
+  and it is the difference between a named exception and a class.
+
+The same run also nearly produced the opposite error: the 18 refusals were first classified as
+losing real content (−11 to −96 bytes), because the normaliser used to test "is it only
+whitespace" collapsed runs but left a leading space, so `\n   </div>` still differed from
+`</div>`. Normalising whitespace BETWEEN TAGS showed all 18 identical in substance. Check the
+normaliser before reporting what the diff means.
