@@ -48,7 +48,12 @@ pressing Back should not bounce into the retired view."*
 | apps · marketplace · quotes | yes | **none mapped** (legacy `v==='x'` branch only) | — | 0 |
 
 **21 of 25 are mapped to a renderer; 17 have a real function body; 3 reach a database read
-from the render path.**
+from the render path; 30 call sites target a nav item, across 9 destinations.**
+
+> The last figure previously read *"4 have an inbound link"*. It was wrong — see the
+> superseded column below. **dashboard (11) and editor (9) were both reported as 0, and
+> together they are 20 of the 30**: not a rounding error in the old audit, but its headline
+> being wrong.
 
 ### THE INBOUND COLUMN ABOVE IS SUPERSEDED — corrected 2026-09-13
 
@@ -81,6 +86,26 @@ verified count, reproducible with `grep -n` and now enforced by
 
 **Total 30** across 23 declared nav items (24 destinations; `projects` has none, `customers`
 was retired 2026-09-13).
+
+### `editor` is not an operator screen — it is the website editor
+
+All nine call sites mean one thing: **open or return to the owner's website editor.**
+`openAdvancedStudio()` `:14017` · `goWebsiteSetup()` `:18698` · `openWebsiteEditorHub()`
+`:30510` · `switchWebsiteHubTab()` `:30555` · `goToStripeSettings()` `:31331` ·
+`goEditorFromOnboard()` `:34722` · `returnToEditor()` `:37533` · `closePublicBooking()`
+`:38527` · `bootApp()` `:53701`. Its renderer is `restoreWebsiteEditor` and its container
+`#v-editor` is a full-height canvas (`height:calc(100vh - 54px)`), not a list room like Jobs
+or Customers.
+
+**So it is the Website half of the claimed rail wearing an operator name, and nothing about it
+should be retired.** Every path that returns an owner to their own site editing surface goes
+through it — including `closePublicBooking`, which is how an owner gets back after previewing
+their booking form. Retiring the operator shell must not take this with it.
+
+**One thing it is NOT, and this matters for the merge:** the claimed shell's Website mode is a
+*different* surface — it mounts the live site in an iframe with `hcEdit=1` (a builder preview),
+not `#v-editor`. Which editing surface survives is a product question about two editors, not a
+retirement question, and it is not answered here.
 
 ### `projects` — the ruling it supported is void
 

@@ -28,7 +28,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const argv = process.argv.slice(2);
 const walkSlug = (argv.includes("--walk") ? argv[argv.indexOf("--walk") + 1] : null);
 
-const REQUIRED = ["docs/SETTLED.md", "docs/DECISIONS.md", "docs/OPEN_FINDINGS.md", "docs/CHECKER_LESSONS.md", "CLAUDE.md",
+const REQUIRED = ["docs/SETTLED.md", "docs/CAPABILITIES.md", "docs/DECISIONS.md", "docs/OPEN_FINDINGS.md", "docs/CHECKER_LESSONS.md", "CLAUDE.md",
                   "scripts/decisions-open.mjs", "scripts/lib/kind-split.mjs"];
 const missing = REQUIRED.filter((f) => !existsSync(join(ROOT, f)));
 if (missing.length) { console.error("CANNOT RUN — missing: " + missing.join(", ")); process.exit(2); }
@@ -96,6 +96,21 @@ line(`    fragment-scroll handler or it navigates the frame away.`);
 line();
 line(`  REFERENCE vs SCRATCH. evergreen-yard-care is the REFERENCE design (docs/SERVICES_BLOCK_SPEC.md)`);
 line(`    and a working business — read it, do not break it. payson-chimney is the scratch draft.`);
+
+// ── 1b. WHAT WE ALREADY BUILT ──────────────────────────────────────────────────
+// Three times we queued research into a capability that was already shipping. The count
+// goes here so the answer to "can we build X" starts with "read what we built".
+rule("ALREADY BUILT — read this before asking whether we can build something");
+{
+  const cap = readFileSync(join(ROOT, "docs/CAPABILITIES.md"), "utf8");
+  const n  = (/\*\*(\d+) mutation functions\*\*/.exec(cap) || [])[1];
+  const ok = (/\*\*(\d+) are owner-reachable\*\*/.exec(cap) || [])[1];
+  const dk = (/\*\*(\d+) have NO CALLER ANYWHERE\*\*/.exec(cap) || [])[1];
+  if (!n) { console.error("CANNOT RUN — docs/CAPABILITIES.md has no headline count; regenerate it"); process.exit(2); }
+  line(`  ${n} mutation capabilities in supabase/functions/_shared`);
+  line(`    ${ok} owner-reachable  ·  ${dk} with NO CALLER ANYWHERE — the missing-door list`);
+  line(`  Full list: docs/CAPABILITIES.md (generated — node scripts/generate-capabilities.mjs)`);
+}
 
 // ── 2. THE OPEN COST OF EVERY CHOICE ───────────────────────────────────────────
 rule("OPEN COST OF EVERY CHOICE — scripts/decisions-open.mjs");
