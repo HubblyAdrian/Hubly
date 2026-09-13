@@ -1686,6 +1686,17 @@ Three rules out of it:
    which changes the navigation type, which changes whether a load happens at all. Two
    variables moved; the conclusion named one.
 3. **Before reporting an infrastructure defect, read the response headers.** Thirty seconds of
-   `curl -I` would have disproved this before it reached a ruling. The instruments this week
-   have been the corpus, the reporters, and now the browser's own navigation — each time the
-   number moved and the product had not.
+   `curl -I` would have disproved this before it reached a ruling.
+
+**THE CLASS, because three of these landed in one week:**
+
+> **When a measurement changes and the product did not, suspect the instrument first.**
+
+- the corpus denominator — a rate moved because the population was 96% our own test drafts;
+- two reporters over one data file under near-identical headers — 103 became 19 because a
+  different field was read, and the word "unmoved" was attached to it;
+- the browser's own navigation — a fix "failed" because no load had happened.
+
+Every one made a number move while the product stood still, and every one was caught by
+asking what the TOOL did, not what the answer meant. The cost of asking is seconds. The cost
+of not asking, three times in one week, was a ruling built on a phantom.
