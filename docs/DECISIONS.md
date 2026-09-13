@@ -76,7 +76,7 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
   - [ ] UNKNOWN: what the second website is currently doing for anyone — nothing has measured traffic to it
 
 ## D-008 — The services block is a fixed Hubly component read from evergreen-yard-care, over donor-cloning
-- **Date / commit:** 2026-09-13 · `docs/SERVICES_BLOCK_SPEC.md`
+- **Date / commit:** 2026-09-13 · `docs/BLOCK_SPEC.md`
 - **Reason given at the time:** *"evergreen slug has how the services should look like… we went off on a beaten path and didn't have to."* The design already exists; we render it rather than infer it.
 - **Gave up:** visual continuity with whatever section happens to be on the page — our block will no longer imitate the model's cards. And the donor machinery (census, chain clone, inset and box-match measurements) is cancelled.
 - **Outstanding:**

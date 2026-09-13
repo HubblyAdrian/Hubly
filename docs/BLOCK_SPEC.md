@@ -1,4 +1,43 @@
-# The canonical services block — read from evergreen-yard-care, not derived
+# The canonical BLOCK spec — read from evergreen-yard-care, not derived
+
+**This is the BLOCK spec, not the services spec** (`docs/SETTLED.md` #1). A service and a
+product are **the same card with a different action**: image tile, name, price, action button.
+A service block's action is **Book** and opens the booking panel; a product block's action is
+**Buy** and opens checkout. **Nothing here may branch on "is this a storefront."**
+
+**Freshness checked 2026-09-13:** evergreen-yard-care is still at **document v162, 31,406
+bytes, byte-identical** to what was transcribed. The spec below is not stale and was not
+re-transcribed.
+
+## What was service-specific, and what it generalises to
+
+| in the transcription | service-specific? | generalised |
+|---|---|---|
+| `.cards` grid, `.card`, `.card-body`, `.price`, `.section-kicker`, `.lead`, all CSS | **no** | unchanged — this is the block, and it is the same card either way |
+| `.card img` — the image tile | **no** | unchanged. A product photo and a service photo occupy the same slot |
+| `<h2 data-hubly-service="Full Service">` | **the ANCHOR NAME is** | `data-hubly-block` for the name element, with `data-hubly-block-kind="service｜product"` on the card. The existing `data-hubly-service` stays as the service value of that kind, so nothing already stamped breaks |
+| `<span data-hubly-price="Full Service">$95</span>` | **no** | unchanged — a price is a price |
+| `<span>per visit</span>` — the unit beside the price | **no** | unchanged. "per visit", "per cleanup", "each", "per seat" — it is a free unit string either way |
+| `<a data-hubly-runtime="card-book" href="…?book=1&svc=Full%20Service">Book Full Service</a>` | **YES — this is the only service-specific part** | **the ACTION is the parameter.** `data-hubly-runtime="card-action"` with `data-hubly-action="book｜buy"`; the href and the label come from the action, not from the block |
+| `data-hubly-services-block` on the section | **the name is** | `data-hubly-block-section`, keeping `data-hubly-services-block` as an alias so the contrast rescue, the legibility check and the placement code keep working unchanged |
+
+**So one thing is service-specific: the action.** Everything else — the grid, the card, the
+image tile, the name, the price with its unit, the description, the button sitting on the
+card's floor via `margin-top:auto`, and every CSS rule — is the block, and is shared.
+
+**The action, as a parameter:**
+
+| kind | action | label | href | panel |
+|---|---|---|---|---|
+| service | `book` | `Book <name>` | `/?book=1&svc=<name>` | booking panel |
+| product | `buy` | `Buy <name>` | `/?buy=1&sku=<name>` | checkout panel |
+
+The href shapes match: one query flag plus one identifier, relative so it resolves against the
+business's own host (D-009), and **the panel ruling applies to both** — booking is a panel on
+the business's own page, and checkout is the same slot (`SETTLED` #8, #1).
+
+---
+
 
 **Adrian: *"evergreen slug has how the services should look like, how things should be. we went
 off on a beaten path and didn't have to."*** So this is not a proposal. It is a transcription

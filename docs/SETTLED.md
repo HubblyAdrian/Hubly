@@ -20,7 +20,7 @@ action is **Book Now** and opens the booking panel. A product card's action is *
 opens a checkout panel. **Same card, same block mechanism, different action, different panel.**
 
 Consequences that bind every piece of work:
-- `docs/SERVICES_BLOCK_SPEC.md` is **the block spec**, not the services spec — image tile,
+- `docs/BLOCK_SPEC.md` is **the block spec**, not the services spec — image tile,
   name, price, action button. A service and a product are one card with a different action.
 - Flow step 9, "add services creates blocks", **generalises to products with no new
   mechanism**: the freeform insert path already clones a donor entry.
@@ -43,7 +43,7 @@ real features. The open question is only ever which implementation survives.
 *(Adrian, 2026-09-13)*
 
 **5. `evergreen-yard-care` is the reference design.** Read it; never re-derive it. Its services
-block is transcribed in `docs/SERVICES_BLOCK_SPEC.md`. *(Adrian, 2026-09-13)*
+block is transcribed in `docs/BLOCK_SPEC.md`. *(Adrian, 2026-09-13)*
 
 **6. The claimed rail is Home, Website, Settings.** Planner, Jobs and Customers appear only
 when earned via `business_places`. *(Adrian, 2026-09-13)*

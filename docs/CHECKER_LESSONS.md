@@ -1620,7 +1620,7 @@ We never had to ask it. `evergreen-yard-care` has had the right services block t
 a card, an image tile, the name, a baseline-aligned price with its unit beside it, a
 description, and a full-width book button on the card's floor — and Adrian had been pointing at
 that page as the reference. The answer was not a better inference mechanism. The answer was to
-open the page and transcribe it (`docs/SERVICES_BLOCK_SPEC.md`).
+open the page and transcribe it (`docs/BLOCK_SPEC.md`).
 
 **The rule:** before building anything that RECOGNISES, SCORES, or INFERS a design, ask whether
 a correct example already exists in the product. If it does, read it and render it. An

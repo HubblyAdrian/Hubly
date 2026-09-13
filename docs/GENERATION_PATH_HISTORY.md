@@ -109,4 +109,4 @@ wrote that morning are still the ones on the page. The problem is VARIANCE: noth
 the next generation to do it, nothing measures whether it did, and nothing can be relied on
 afterwards. The question for Adrian is therefore not "which generator" but **"what must be
 fixed rather than invented"** — the services block is the first answer to that and is already
-specified (`docs/SERVICES_BLOCK_SPEC.md`).
+specified (`docs/BLOCK_SPEC.md`).

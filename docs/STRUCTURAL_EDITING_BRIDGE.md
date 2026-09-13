@@ -69,7 +69,7 @@ A comparison that lists only capabilities recommends whichever mechanism was rea
 
 | step | covered today? |
 |---|---|
-| **9 — "add services creates blocks"** (card, image tile, name, price, Book Now) | **the mechanism is there** — `insertServiceIntoFreeform` places a service with its price into a cloned entry, byte-verified by `verifiedPlaced`. What is missing is not structural editing, it is the **card spec** (`docs/SERVICES_BLOCK_SPEC.md`), which is a rendering change, not a bridge |
+| **9 — "add services creates blocks"** (card, image tile, name, price, Book Now) | **the mechanism is there** — `insertServiceIntoFreeform` places a service with its price into a cloned entry, byte-verified by `verifiedPlaced`. What is missing is not structural editing, it is the **card spec** (`docs/BLOCK_SPEC.md`), which is a rendering change, not a bridge |
 | **6 — "the owner can move photos around the page"** | **partly.** Insert a photo: yes. Reorder it **within its parent**: yes, `moveFreeformNode`. Move it **into a different section**: **refused by design** — limit 1 above. So drag-to-reorder works; drag-anywhere does not |
 
 **Step 6 is the only real gap, and it is one limit — cross-container move — not a missing

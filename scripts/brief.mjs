@@ -94,7 +94,7 @@ line(`    stored document in a srcdoc iframe — so the frame has NO URL of its 
 line(`    parent's. Relative links (/?book=1) are correct forever; href="#x" needs the injected`);
 line(`    fragment-scroll handler or it navigates the frame away.`);
 line();
-line(`  REFERENCE vs SCRATCH. evergreen-yard-care is the REFERENCE design (docs/SERVICES_BLOCK_SPEC.md)`);
+line(`  REFERENCE vs SCRATCH. evergreen-yard-care is the REFERENCE design (docs/BLOCK_SPEC.md)`);
 line(`    and a working business — read it, do not break it. payson-chimney is the scratch draft.`);
 
 // ── 1b. WHAT WE ALREADY BUILT ──────────────────────────────────────────────────

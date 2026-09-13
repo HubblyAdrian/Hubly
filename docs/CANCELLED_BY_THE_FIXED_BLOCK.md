@@ -1,6 +1,6 @@
 # What the fixed services block cancels — listed, not deleted
 
-Ruling: the services block becomes Hubly-owned markup (`docs/SERVICES_BLOCK_SPEC.md`) with the
+Ruling: the services block becomes Hubly-owned markup (`docs/BLOCK_SPEC.md`) with the
 brand colour substituted. That cancels the work whose only purpose was inferring a page's own
 design. **Nothing below has been deleted. Adrian rules on each line.**
 
