@@ -126,7 +126,7 @@ html[data-theme="night"] .lang-toggle{
 }
 body:has(#p-app.active) > .theme-toggle,
 body:has(#p-landing.active) > .theme-toggle,
-body:has(#p-storefront.active) > .theme-toggle{display:none!important}
+body:has(#p-classic-site.active) > .theme-toggle{display:none!important}
 @media(max-width:560px){
   .theme-toggle{right:78px;top:10px;padding:5px 9px}
   .theme-toggle [data-theme-lbl]{display:none}
@@ -5746,11 +5746,11 @@ html[data-theme="night"] #v-dashboard.body{background:var(--surface-2)}
 /* Use theme page bg — never force black or light layouts get dark-on-dark titles. */
 .sf-public.ws-site{background:var(--ws-bg,#fafafa);color:var(--ws-text,#0f172a)}
 .sf-public .lang-toggle{top:14px;right:14px;z-index:130}
-body:has(#p-storefront.active) #lang-btn-float,
+body:has(#p-classic-site.active) #lang-btn-float,
 body:has(#p-booking.active) #lang-btn-float,
 body:has(#p-booking-landing.active) #lang-btn-float,
 body.ws-booking-open #lang-btn-float{display:none!important}
-body:has(#p-storefront.active) > .lang-toggle{display:none!important;}
+body:has(#p-classic-site.active) > .lang-toggle{display:none!important;}
 html{scroll-behavior:smooth}
 .sf-prev-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 20px;background:#fff;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;box-shadow:0 1px 4px rgba(15,23,42,.06)}
 .sf-prev-bar .sf-prev-meta{font-size:12px;color:var(--ink-3);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -6093,7 +6093,7 @@ html{scroll-behavior:smooth}
 }
 .ed-ws-preview:has(.ws-layout-simple-profile),
 #edph-screen:has(.ws-layout-simple-profile),
-#p-storefront.ws-layout-simple-profile,
+#p-classic-site.ws-layout-simple-profile,
 .ws-site.ws-layout-simple-profile{
   background:var(--ws-profile-bg2,#0f766e)!important;
 }
@@ -7976,7 +7976,7 @@ body.ed-sheet-open .ed-prev{overscroll-behavior:contain}
 /* …and by preview container width (Phone toggle is ~390px inside a desktop viewport) */
 .ed-ws-preview,
 #edph-screen .ws-site,
-#p-storefront.ws-site,
+#p-classic-site.ws-site,
 .ws-site{
   container-type:inline-size;
   container-name:ws-site;
@@ -8033,15 +8033,15 @@ body.ed-owner-preview-open #ed-ai-fab,
 body.ed-owner-preview-open .hubly-coach,
 body.ed-owner-preview-open #ed-sheet-backdrop,
 body.ed-owner-preview-open #ws-pe-pop{display:none!important;}
-body.ed-owner-preview-open #p-storefront .ws-re-btns,
-body.ed-owner-preview-open #p-storefront .ws-pe-add-tile,
-body.ed-owner-preview-open #p-storefront .ws-profile-tab-add{display:none!important;}
-body.ed-owner-preview-open #p-storefront .ws-pe-target{outline:none!important;cursor:inherit;}
-body.ed-owner-preview-open #p-storefront .ws-pe-target[data-pe]::before{display:none!important;}
-body.ed-owner-preview-open #p-storefront .ws-gal-album-actions,
-body.ed-owner-preview-open #p-storefront .ws-gal-album-add,
-body.ed-owner-preview-open #p-storefront .ws-gal-rename-btn{display:none!important;}
-body.ed-owner-preview-open #p-storefront .ws-pe-add-tile{display:none!important;}
+body.ed-owner-preview-open #p-classic-site .ws-re-btns,
+body.ed-owner-preview-open #p-classic-site .ws-pe-add-tile,
+body.ed-owner-preview-open #p-classic-site .ws-profile-tab-add{display:none!important;}
+body.ed-owner-preview-open #p-classic-site .ws-pe-target{outline:none!important;cursor:inherit;}
+body.ed-owner-preview-open #p-classic-site .ws-pe-target[data-pe]::before{display:none!important;}
+body.ed-owner-preview-open #p-classic-site .ws-gal-album-actions,
+body.ed-owner-preview-open #p-classic-site .ws-gal-album-add,
+body.ed-owner-preview-open #p-classic-site .ws-gal-rename-btn{display:none!important;}
+body.ed-owner-preview-open #p-classic-site .ws-pe-add-tile{display:none!important;}
 
 /* Unified fixed editor toolbar — never show the floating pill in Website editor */
 body > #ed-float-bar,
@@ -8052,7 +8052,7 @@ body.ed-editor-open > #ed-float-bar,
 #ed-float-bar.ed-float-bar,
 .ed-float-bar{display:none!important;}
 body.ed-editor-open .ed-shell.ed-canvas-mode,
-body.ed-owner-preview-open #p-storefront{
+body.ed-owner-preview-open #p-classic-site{
   padding-top:0!important;
 }
 /* Canvas mode: keep actions in the fixed top bar (not a floating duplicate) */
@@ -8060,7 +8060,7 @@ body.ed-owner-preview-open #p-storefront{
 #v-editor.ed-canvas-on .ed-top-actions{display:flex!important;flex-wrap:wrap;gap:6px;}
 @media(max-width:900px){
   body.ed-editor-open .ed-shell.ed-canvas-mode,
-  body.ed-owner-preview-open #p-storefront{padding-top:0!important;}
+  body.ed-owner-preview-open #p-classic-site{padding-top:0!important;}
   .ed-shell.ed-canvas-mode .ed-preview-stage{padding-bottom:16px!important;}
   body.ed-editor-open .ed-prev{padding-bottom:16px;}
   .ed-top-actions{order:2;flex:1 1 100%;width:100%;z-index:6}
@@ -9739,7 +9739,7 @@ textarea.ws-pe-inp{font-family:inherit;line-height:1.5;}
 }
 /* Blueprint performance flags (Runtime Spec — engines read Blueprint, not industries) */
 body.bp-sticky-phone #ws-chat-fab{z-index:50}
-body.bp-lazy-media #p-storefront img{content-visibility:auto}
+body.bp-lazy-media #p-classic-site img{content-visibility:auto}
 body.bp-emergency-banner .ws-emergency-banner{display:block}
 </style>
 <!-- Supabase SDK (defer — waitForDb polls until ready; don't block first paint) -->
@@ -10097,7 +10097,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!--
-  Hubly Document rendering — a wholly separate page from p-storefront
+  Hubly Document rendering — a wholly separate page from p-classic-site
   (the legacy archetype renderer) on purpose. When a business has a real,
   validated Hubly Document, loadPublicProfile injects its already-rendered,
   already-validated HTML directly here and shows this page instead of
@@ -12308,7 +12308,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <!-- ═══════════════════════════════════
      PUBLIC STOREFRONT
 ═══════════════════════════════════ -->
-<div id="p-storefront" class="page sf-public ws-site">
+<div id="p-classic-site" class="page sf-public ws-site">
   <div class="sf-prev-bar" id="sf-top-bar" style="display:none;">
     <div class="sf-prev-meta"><span data-i18n="ownerPreviewLbl">Owner preview</span> · <span id="sf-url-bar">your-slug.myhubly.app</span></div>
     <button type="button" class="sf-prev-back" onclick="returnToEditor()" data-i18n="backToHubly">← Back to editor</button>
@@ -13435,11 +13435,11 @@ function showP(id,opts){
   if(id==='p-signup'){
     try{welcomeExperienceMount();}catch(e){console.warn('welcomeExperienceMount',e);}
   }
-  if(id==='p-storefront'){ensureWebsiteCopy();renderWebsite();applyWebsiteSeo();ensureWsBackTop();ensureWsChatWidget();}
+  if(id==='p-classic-site'){ensureWebsiteCopy();renderWebsite();applyWebsiteSeo();ensureWsBackTop();ensureWsChatWidget();}
   if(id==='p-public-unavailable')document.getElementById('lang-btn-float').style.display='none';
   if(id==='p-booking-landing')renderBookingLanding('pub');
-  if(id==='p-storefront'||id==='p-booking-landing'||id==='p-booking')updateOwnerPreviewBars();
-  if(id!=='p-storefront')document.getElementById('ws-back-top')?.classList.remove('is-visible');
+  if(id==='p-classic-site'||id==='p-booking-landing'||id==='p-booking')updateOwnerPreviewBars();
+  if(id!=='p-classic-site')document.getElementById('ws-back-top')?.classList.remove('is-visible');
   if(id==='p-signin'){
     try{
       const owner=readOwnerLogin();
@@ -13467,9 +13467,9 @@ function showP(id,opts){
   // page rendered in an iframe does not have, so it translates nothing and
   // floats dead over the corner. showP is the authoritative place to hide it —
   // hiding it once after render was undone every time showP re-ran here.
-  if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-storefront'||id==='p-landing'||id==='p-booking'||id==='p-booking-landing'||id==='p-onboard'||id==='p-hubly-document')?'none':'flex';
+  if(floatLang)floatLang.style.display=(id==='p-app'||id==='p-classic-site'||id==='p-landing'||id==='p-booking'||id==='p-booking-landing'||id==='p-onboard'||id==='p-hubly-document')?'none':'flex';
   ensureMktSupportChat(id==='p-landing');
-  if(id==='p-app'||id==='p-onboard'||id==='p-storefront'){
+  if(id==='p-app'||id==='p-onboard'||id==='p-classic-site'){
     try{ensureGoogleFonts();}catch(e){}
   }
   if(id==='p-app'){
@@ -14079,7 +14079,7 @@ function previewProfile(){
   try{unmountEdChrome();}catch(e){}
   try{document.getElementById('v-editor')?.classList.add('hidden');}catch(e){}
   try{syncEdAiFab();}catch(e){}
-  showP('p-storefront');
+  showP('p-classic-site');
 }
 function previewBookingPage(svcName){
   setOwnerPreview(true);
@@ -17024,7 +17024,7 @@ function wsChatShowNudge(){
   const teaser=document.getElementById('ws-chat-teaser');
   const widget=document.getElementById('ws-chat-widget');
   if(!panel||!teaser||!widget)return;
-  if(!document.getElementById('p-storefront')?.classList.contains('active'))return;
+  if(!document.getElementById('p-classic-site')?.classList.contains('active'))return;
   if(!panel.classList.contains('hidden'))return; // already open
   if(ccState().messages.length)return; // already engaged some other way
   if(getComputedStyle(widget).display==='none')return; // booking/owner-preview/editor-preview suppressed
@@ -18059,7 +18059,7 @@ async function loadPublicProfile(slug,opts){
       try{ var tt=document.querySelector('.theme-toggle'); if(tt) tt.style.display='none'; }catch(e){}
       // THE LANGUAGE FLOAT, hidden here for the same reason and by the same
       // precedent as the theme toggle above. toggleLang() translates the
-      // classic renderer's DOM (#ws-header-nav, #ws-page, #p-storefront) via
+      // classic renderer's DOM (#ws-header-nav, #ws-page, #p-classic-site) via
       // data-i18n keys. A freeform page is a whole document inside an iframe
       // with none of those selectors and no data-i18n on its own copy, so the
       // control translates NOTHING here — it has floated dead over the
@@ -18115,7 +18115,7 @@ async function loadPublicProfile(slug,opts){
   }catch(e){}
   if(data.name)document.title=data.name;
   try{applyWebsiteSeo();}catch(e){}
-  showP('p-storefront');
+  showP('p-classic-site');
   // Fill services without blocking first storefront paint.
   loadServicesFromDb().then(()=>{try{syncStorefront();renderWebsite();applyWebsiteSeo();}catch(e){}}).catch(()=>{});
 }
@@ -18495,7 +18495,7 @@ async function initApp(){
         // Session restored — never coerce dashboard/onboarding back to marketing.
         if(!document.getElementById('p-app')?.classList.contains('active') &&
            !document.getElementById('p-onboard')?.classList.contains('active') &&
-           !document.getElementById('p-storefront')?.classList.contains('active')){
+           !document.getElementById('p-classic-site')?.classList.contains('active')){
           showP('p-app',{replaceRoute:true});
         }else{
           boot.classList.remove('active');
@@ -19568,7 +19568,7 @@ function applyCompositionClass(comp){
   ensureWebsiteCopy();
   S.website.composition=id;
   const roots=[
-    document.getElementById('p-storefront'),
+    document.getElementById('p-classic-site'),
     document.getElementById('ws-page'),
     document.getElementById('ed-ws-preview'),
     document.querySelector('#ed-ws-preview .ws-site'),
@@ -29197,7 +29197,7 @@ async function confirmObHeadlineChoice(){
   await showObReveal();
 }
 
-// --- Reveal: full-screen live preview (the real p-storefront page, not the
+// --- Reveal: full-screen live preview (the real p-classic-site page, not the
 // editor), AI style + reasons, quick alternatives, Publish / Continue Editing.
 let _obRevealTimerHandle=null;
 function buildStyleRecommendationReasons(layoutId){
@@ -29236,14 +29236,14 @@ function renderObRevealAlts(){
 }
 function selectObRevealAlt(layoutId){
   selectWebsiteLayout(layoutId);
-  showP('p-storefront');
+  showP('p-classic-site');
   renderObRevealStyleInfo(layoutId);
   renderObRevealAlts();
 }
 async function showObReveal(){
   // showP first, then hide Instant Site / building chrome — reverse order blanked the page.
   setOwnerPreview(true);
-  showP('p-storefront');
+  showP('p-classic-site');
   leaveOnboardBuilding();
   document.getElementById('p-onboard')?.classList.remove('cd-active','is-active','cd-building');
   const isShell=document.getElementById('is-shell');if(isShell)isShell.style.display='none';
@@ -29810,7 +29810,7 @@ function getCtaInkColor(accent){
 }
 function applyWsCtaInk(accent){
   const ink=getCtaInkColor(accent||getAccentColor());
-  const roots=[document.documentElement,document.getElementById('p-storefront'),document.getElementById('ws-page'),document.getElementById('ed-ws-preview')];
+  const roots=[document.documentElement,document.getElementById('p-classic-site'),document.getElementById('ws-page'),document.getElementById('ed-ws-preview')];
   roots.forEach(el=>{if(el)el.style.setProperty('--ws-cta-ink',ink);});
   ['ws-hero-cta','ws-header-cta','ws-sticky-book'].forEach(id=>{
     const el=document.getElementById(id);
@@ -33352,7 +33352,7 @@ function previewBookingOverlay(){
   S._editorBookingPreview=true;
   syncEditorFieldsToState();
   syncStorefront();
-  showP('p-storefront');
+  showP('p-classic-site');
   openBookingPage(null);
 }
 function getBookingLandingFields(mode){
@@ -33761,7 +33761,7 @@ function applyLogoScale(){
   document.documentElement.style.setProperty('--ws-logo-scale',String(scale));
   const page=document.getElementById('ws-page');
   if(page)page.style.setProperty('--ws-logo-scale',String(scale));
-  const store=document.getElementById('p-storefront');
+  const store=document.getElementById('p-classic-site');
   if(store)store.style.setProperty('--ws-logo-scale',String(scale));
   document.querySelectorAll('#ed-ws-preview .ws-site, #edph-screen .ws-site').forEach(el=>{
     el.style.setProperty('--ws-logo-scale',String(scale));
@@ -33803,7 +33803,7 @@ function applyHeroFocus(root){
   const pos=`${f.x}% ${f.y}%`;
   const scopes=root?[root]:[
     document.getElementById('ws-page'),
-    document.getElementById('p-storefront'),
+    document.getElementById('p-classic-site'),
     document.getElementById('ed-ws-preview'),
     document.querySelector('#edph-screen .ws-site'),
   ];
@@ -34497,13 +34497,13 @@ function wsScrollToSection(id){
 }
 function scrollWebsiteToTop(){
   window.scrollTo({top:0,behavior:'smooth'});
-  document.getElementById('p-storefront')?.scrollTo?.({top:0,behavior:'smooth'});
+  document.getElementById('p-classic-site')?.scrollTo?.({top:0,behavior:'smooth'});
   document.documentElement.scrollTo?.({top:0,behavior:'smooth'});
 }
 function updateWsBackTopVisibility(){
   const btn=document.getElementById('ws-back-top');
   if(!btn)return;
-  const onStorefront=document.getElementById('p-storefront')?.classList.contains('active');
+  const onStorefront=document.getElementById('p-classic-site')?.classList.contains('active');
   if(!onStorefront||document.body.classList.contains('ws-booking-open')){
     btn.classList.remove('is-visible');
     return;
@@ -36020,7 +36020,7 @@ function clearProfileLogo(){
   toast('Logo removed');
 }
 function ensureWsPeFileInputs(){
-  // File inputs must not live inside a hidden page (#p-storefront) or browsers block .click().
+  // File inputs must not live inside a hidden page (#p-classic-site) or browsers block .click().
   const specs=[
     ['ws-pe-logo-file','handleEdLogo(this)',false],
     ['ws-pe-banner-file','handleEdBanner(this)',false],
@@ -36202,7 +36202,7 @@ function applyProfileCardThemeVars(siteEl){
   // Sheet photo uses a light wash overlay, so keep dark text; solid colors adapt.
   const sheetDark=w.profileSheetMode==='image'?false:profileIsDarkColor(sheetBg);
   const targets=siteEl?[siteEl]:[];
-  document.querySelectorAll('#p-storefront.ws-site, #ed-ws-preview .ws-site, #edph-screen .ws-site').forEach(el=>targets.push(el));
+  document.querySelectorAll('#p-classic-site.ws-site, #ed-ws-preview .ws-site, #edph-screen .ws-site').forEach(el=>targets.push(el));
   [...new Set(targets.filter(Boolean))].forEach(el=>{
     el.style.setProperty('--ws-profile-bg1',bg1);
     el.style.setProperty('--ws-profile-bg2',bg2);
@@ -37539,7 +37539,7 @@ function returnToEditor(){
 }
 function openEdSheet(mode,opts){
   // From public owner preview → come back to editor first
-  if(document.getElementById('p-storefront')?.classList.contains('active') && S.ownerPreview){
+  if(document.getElementById('p-classic-site')?.classList.contains('active') && S.ownerPreview){
     returnToEditor();
     setTimeout(()=>openEdSheet(mode,opts),80);
     return;
@@ -37652,7 +37652,7 @@ function applyHeroMediaPlacement(){
   const place=getHeroMediaPlacement();
   const classes=['ws-hero-media-full','ws-hero-media-left','ws-hero-media-right'];
   const roots=[
-    document.getElementById('p-storefront'),
+    document.getElementById('p-classic-site'),
     document.getElementById('ws-page'),
     document.getElementById('ed-ws-preview'),
     document.querySelector('#ed-ws-preview .ws-site'),
@@ -38508,7 +38508,7 @@ function selectWebsiteTheme(themeId){
 }
 function renderThemeSelector(){renderLayoutSelector();}
 function isPublicWebsiteView(){
-  return document.getElementById('p-storefront')?.classList.contains('active')&&!S.ownerPreview;
+  return document.getElementById('p-classic-site')?.classList.contains('active')&&!S.ownerPreview;
 }
 function openPublicBookingOverlay(){
   document.body.classList.add('ws-booking-open');
@@ -38563,7 +38563,7 @@ function closePublicBooking(){
     // SAME CLASS AS bookingBack's DEEP-LINK FALL-THROUGH (2026-09-13). These two have
     // already been caught once being three lines of the same mistake; this is the second
     // time, in the ?book=1 arrival case. Nothing is mounted because the site was never
-    // rendered for the deep link, so p-storefront — static markup that always exists —
+    // rendered for the deep link, so p-classic-site — static markup that always exists —
     // used to win, and closing booking showed a different website with the same name.
     let wentBack = false;
     try{
@@ -38574,7 +38574,7 @@ function closePublicBooking(){
         wentBack = true;
       }
     }catch(e){}
-    if(!wentBack) document.getElementById('p-storefront')?.classList.add('active');
+    if(!wentBack) document.getElementById('p-classic-site')?.classList.add('active');
   }
   window.scrollTo(0,0);
 }
@@ -38702,7 +38702,7 @@ function renderWebsiteGallery(targetId){
 
   // Photo / portfolio composition: continuous auto marquee of work.
   if(!editing&&targetId==='ws-gallery'&&(hasAlbums||singles.length)){
-    const site=document.getElementById('p-storefront')
+    const site=document.getElementById('p-classic-site')
       ||document.querySelector('#ed-ws-preview .ws-site')
       ||document.querySelector('#edph-screen .ws-site')
       ||document.querySelector('.ws-site');
@@ -39828,7 +39828,7 @@ function renderWebsite(prefix){
   if(isEditorViewOpen())syncBizToWebsiteHero();
   const p=prefix||'ws';
   const accent=getAccentColor();
-  const siteEl=document.getElementById('p-storefront');
+  const siteEl=document.getElementById('p-classic-site');
   if(!prefix&&siteEl)siteEl.style.setProperty('--ws-accent',accent);
   applyWsCtaInk(accent);
   const biz=getEditorBizName()||S.biz|| '';
@@ -40064,7 +40064,7 @@ function renderWebsite(prefix){
   renderWebsiteGallery(p==='ws'?'ws-gallery':(document.getElementById(p+'-gallery')?.id||'ws-gallery'));
   renderWebsiteReviews(p==='ws'?'ws-reviews':(document.getElementById(p+'-reviews')?.id||'ws-reviews'));
   if(!prefix){
-    applyProfileCardThemeVars(siteEl||document.getElementById('p-storefront'));
+    applyProfileCardThemeVars(siteEl||document.getElementById('p-classic-site'));
     renderProfileCardSheet();
   }
 
@@ -41694,7 +41694,7 @@ function openBookingPage(svcName,opts={}){
   try{
     maybeHealBusinessTypeFromServices();
     applyThemedBookingShell();
-    const sfActive=document.getElementById('p-storefront')?.classList.contains('active');
+    const sfActive=document.getElementById('p-classic-site')?.classList.contains('active');
     const useOverlay=sfActive&&(isPublicWebsiteView()||!!S.ownerPreview);
 
     // Promo session: only from "Book with offer". Book Now / direct service book never inherit a stale offer.
@@ -41724,7 +41724,7 @@ function openBookingPage(svcName,opts={}){
       if(useOverlay){
         document.body.classList.add('ws-booking-open');
         document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-        document.getElementById('p-storefront')?.classList.add('active');
+        document.getElementById('p-classic-site')?.classList.add('active');
         document.getElementById('p-booking-landing')?.classList.add('active');
         return;
       }
@@ -41865,7 +41865,7 @@ function openBookingPage(svcName,opts={}){
     if(useOverlay){
       document.body.classList.add('ws-booking-open');
       document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-      document.getElementById('p-storefront')?.classList.add('active');
+      document.getElementById('p-classic-site')?.classList.add('active');
       document.getElementById('p-booking-landing')?.classList.remove('active');
       document.getElementById('p-booking')?.classList.add('active');
       return;
@@ -42490,9 +42490,9 @@ async function saveAndExitBooking(){
   try{
     if(typeof closePublicBooking==='function')closePublicBooking();
     else if(typeof bookingBack==='function')bookingBack();
-    else showP('p-storefront');
+    else showP('p-classic-site');
   }catch(e){
-    try{showP('p-storefront');}catch(_){}
+    try{showP('p-classic-site');}catch(_){}
   }
 }
 function getWizardWhereOptions(){
@@ -42828,7 +42828,7 @@ function bookingBack(){
     }
     // RETURN TO THE SITE THEY CAME FROM.
     //
-    // This sent every customer to #p-storefront — the CLASSIC ARCHETYPE renderer,
+    // This sent every customer to #p-classic-site — the CLASSIC ARCHETYPE renderer,
     // which belongs to businesses that have no stored document. That element is
     // static markup in this file, so the check was always true, so Back from booking
     // showed a DIFFERENT WEBSITE for every freeform site — i.e. every real business —
@@ -42853,7 +42853,7 @@ function bookingBack(){
     // NOTHING MOUNTED — THIS IS A ?book=1 DEEP LINK, and the fall-through below is the
     // defect Adrian reported on 2026-09-13. The site is deliberately NOT rendered for a
     // booking deep link (that is what makes booking open immediately), so #hc-doc-root is
-    // empty and the p-storefront branch under this one always won — `p-storefront` is
+    // empty and the p-classic-site branch under this one always won — `p-classic-site` is
     // static markup in this file, so its `getElementById` is never null. Back therefore
     // showed a SECOND WEBSITE with the same business name, same host, different design,
     // for every customer who arrived from a link, an email or a QR code.
@@ -42872,7 +42872,7 @@ function bookingBack(){
     }catch(e){}
     // Genuinely nowhere to go back TO: no document, no booking params to strip. The
     // classic storefront is the only remaining surface, and it is correct only here.
-    if(document.getElementById('p-storefront')){showP('p-storefront');return;}
+    if(document.getElementById('p-classic-site')){showP('p-classic-site');return;}
     goDash();
   }else{bkBack(S.bkStep);}
 }
@@ -43615,7 +43615,7 @@ function closeConfirm(){
     return;
   }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.getElementById('p-storefront')?.classList.add('active');
+  document.getElementById('p-classic-site')?.classList.add('active');
   renderWebsite();
 }
 
@@ -52831,7 +52831,7 @@ function toggleLang(){
   try{
     setLangLabels(LANG==='es');
     if(typeof renderWebsite==='function')renderWebsite();
-    document.querySelectorAll('#ws-header-nav [data-i18n], #ws-page [data-i18n], #p-storefront [data-i18n]').forEach(el=>{
+    document.querySelectorAll('#ws-header-nav [data-i18n], #ws-page [data-i18n], #p-classic-site [data-i18n]').forEach(el=>{
       const key=el.dataset.i18n; if(key)el.textContent=t(key);
     });
     if(typeof isEditorViewOpen==='function'&&isEditorViewOpen()&&typeof renderWebsitePreview==='function')renderWebsitePreview();

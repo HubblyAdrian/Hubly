@@ -2013,3 +2013,23 @@ retirement SURVIVED but its execution changed — 2 callers repointed instead of
 through; the Jobs count was right by luck; and **"`projects` is already broken with two inbound
 links" is VOID** — it has zero, and the two hits were one fallback selector,
 `.ni[data-v="photo-projects"],.ni[data-v="projects"]`, resolving via the half that exists.
+
+## Lesson 62 — A row created by a trigger is not a row created by a person (2026-09-13)
+
+`marketplace_providers` has **40 rows**. Forty providers would be a marketplace. It is **40
+businesses**: `ensure_marketplace_provider_for_business` fires on every `businesses` INSERT and
+writes one row, so the count measures how many businesses exist, not how many providers do.
+The tell was in the data — **39 `draft`, 0 enabled, 0 featured; 1 `verified`** — but the number
+was quotable before anyone looked at the breakdown.
+
+This is the row-is-not-evidence-of-a-person rule (CLAUDE.md) one level lower: that rule asks
+*who* a row represents; this asks *what wrote it*.
+
+**The rule: any count over a table with an INSERT trigger states whether the rows were AUTHORED
+or GENERATED before the number is used.** Check `pg_trigger` for the table first — it takes one
+query — and say which it is in the same line as the count, exactly as `rateLine()` says the
+account_kind split in the same line as the rate.
+
+Seeded fixtures are the same category and are already handled (`hubly-paging-fixture` is
+excluded by `withoutFixtures()`). A trigger is the version nobody thinks to exclude, because
+nobody ran it on purpose.

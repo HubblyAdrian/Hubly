@@ -6895,6 +6895,24 @@ thing as having looked at it.
 **Not a defect in the merge.** Recorded as a gap in the shell, and as the reason one line of
 this pass's verification is a number rather than a screenshot.
 
+## NAMED GAP — nothing grants a buyer access to a digital good after payment (2026-09-13)
+
+In plain words: **a training video cannot be sold end to end.** Payment succeeds, an order row
+is written, and nothing then gives the buyer access to the thing they bought.
+
+**Every other part of path 2 exists.** Products, variants, carts, cart items, orders, order
+items, collections, bundles, discounts, gift cards, inventory logs, shipping profiles and store
+settings are all real tables; `create-store-checkout`, `stripe-webhook`, `stripe-connect-onboard`
+and `commerce-api` are all deployed edge functions; two Stripe Connect accounts exist with
+`charges_enabled`; `commerce_orders` carries `stripe_checkout_session_id`,
+`stripe_payment_intent_id` and `paid_at`.
+
+**What does not exist:** any table or column granting, recording or checking a buyer's
+entitlement to a digital good — no entitlement, licence, access-grant or purchase-unlock
+concept anywhere in the schema.
+
+**Not built, not costed.** Recorded so that "we can sell training videos" is never said.
+
 ## STAGE 2, REVISED BY THE BOUNDARY (2026-09-12)
 
 1. **The whitespace-neutral injector** — small, and it unblocks a repair already built and

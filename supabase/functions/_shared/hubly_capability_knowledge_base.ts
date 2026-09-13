@@ -166,7 +166,7 @@ export const HUBLY_CAPABILITY_KNOWLEDGE_BASE: CapabilityKnowledgeEntry[] = [
     whatItDoes: "A real, live, customer-facing page presenting the service catalog with a working book-now call to action.",
     customerProblem: "Turns a visitor into a booked (or paying) customer without a phone call.",
     recommendWhen: "The business has services configured but no clear way for customers to act on them.",
-    poweredBy: "public/hubly.html (#p-storefront, renderWebsite()).",
+    poweredBy: "public/hubly.html (#p-classic-site, renderWebsite()).",
     requires: "Service Catalog to exist.",
     industries: ["all"],
     dependsOn: ["storefront.serviceCatalog"],

@@ -2320,6 +2320,11 @@ means:
 | **Document (AST)** | `business_documents`, `format='ast'` | a Hubly Document tree | `data-node`, patched through `applyPatchOps` | generated sites |
 | **freeform** | `business_documents`, `format='html'` | the design brief + image list | `data-hc`, patched by string replace | new |
 
+**SUPERSEDED 2026-09-13 by D-026 (`docs/DECISIONS.md`): a storefront page IS a freeform
+website, in the same store as every other page. The separate-AST design described below was
+built and never used — `commerce_documents` has 0 rows — which is exactly what makes the
+change safe. The text below is kept as the record of the design it replaces.**
+
 **Freeform editing applies to WEBSITES ONLY. Storefronts are unchanged and will
 need their own answer.** Storefront ASTs live in `commerce_documents`, a
 different table with a different RPC surface, so none of the `format` column, the

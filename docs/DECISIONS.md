@@ -184,6 +184,7 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
 - **Reason given at the time:** established by reading the renderers, not by inference. `renderRevenue` and `renderReportsPageInner` reach no table; **`DS()` is `HublyDS` — the DESIGN SYSTEM (`public/journey-os/design-system.js`), not a data source** — and `ensurePipelineOsState()` initialises `st.pipeline = {manual:[], stages:{}, edits:{}}`, local edits with no table behind them. `journey.js`, which renders all 25 operator destinations, touches only `jobs` and `recurring_schedules`; the other 20 tables are read by `hubly.html` into client state.
 - **Gave up:** nothing. This is the finding that makes the merge direction safe — there is no operator data path to preserve, so moving UI onto the claimed shell's readers cannot lose a reader.
 - **Outstanding:**
+  - [x] AMENDED 2026-09-13, my own correction: **"the retired shell is a view layer" is TOO BROAD.** `store` and `marketplace` sit inside that shell and are backed by **25 tables and five edge functions** (`commerce-api`, `commerce-merchandising`, `create-store-checkout`, `stripe-webhook`, `marketplace`). The claim holds for Money, Reports and Pipeline specifically — not for the shell
   - [ ] measured on a denominator of ONE live business whose cells are mostly zero. **Revisit when a live business has non-zero rows in `review_submissions`, `memberships`, any pipeline-owning table, or any money-owning table**
   - [ ] `photography_project_invoices` DOES exist and is vertical-specific; it was not audited
 
@@ -236,3 +237,20 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
   - [x] **Jobs repoint (3 inbound)** — **unchanged. The original number was right**, by luck rather than method: `.ni[data-v="jobs"]` happens to be the shape all three use.
   - [x] **`projects` "already broken, two inbound links"** — **VOID.** Zero inbound. The two hits were one fallback selector, `.ni[data-v="photo-projects"],.ni[data-v="projects"]`, at `:18890` and `:32568`, both resolving via `photo-projects`. Nothing reaches `projects`, nothing is broken, and the ruling has no subject.
   - [ ] no DECISIONS entry quoted an inbound figure directly — the numbers lived in `NAV_AUDIT.md` and `TWO_IMPLEMENTATIONS.md`, which is why the corrections land there
+
+## D-026 — A storefront page is a freeform website, not a separate AST
+- **Date / commit:** 2026-09-13 · ruled by Adrian (`docs/SETTLED.md` #1)
+- **Reason given at the time:** *"A storefront IS a website. Same model call, same freeform generation. No separate generator, no separate product architecture."* The difference between a service business and a storefront is **the button and what is behind it**: a service block's action is Book and opens the booking panel; a product block's action is Buy and opens checkout.
+- **THE EVIDENCE THAT MAKES IT SAFE, and it is the whole justification:** `commerce_documents` — the separate storefront-AST store that `KNOWN_ISSUES.md:2323` documents — has **0 rows**. It was built and never used. **A direction that contradicts a documented design is safe exactly when nothing depends on that design**, and nothing does.
+- **Gave up:** the storefront AST path (`commerce_documents`, `HublyStorefrontAst`, the block catalogue). Not deleted — superseded, and it keeps whatever value it has as prior art for the block catalogue.
+- **Outstanding:**
+  - [ ] `KNOWN_ISSUES.md:2323` now points here; the two documents no longer disagree
+  - [ ] the storefront-AST code paths still exist and are unreferenced by the new direction; nothing has been deleted
+  - [ ] **no code in the flow work may branch on "is this a storefront"** — the block carries an action, and path 2 is a new action value
+
+## D-027 — `#p-storefront` renamed to `#p-classic-site`
+- **Date / commit:** 2026-09-13 · `public/hubly.html`
+- **Reason given at the time:** it is the CLASSIC RENDERER — the template page a business with no stored document falls back to, and **the impostor site the booking-Back defect landed customers on**. It has nothing to do with selling. With storefront now meaning commerce, one identifier named two unrelated things, and it was the most confusing identifier in the repo.
+- **Gave up:** nothing. 59 lines changed in one file, id-only.
+- **Outstanding:**
+  - [ ] **the collision is only half killed.** ~40 OTHER identifiers still say Storefront while meaning the classic website: `saveStorefront`, `publishStorefront`, `revertStorefrontDraft`, `storefrontAst`, `HublyStorefrontAst`, `renderEdStorefrontPreview`, `isStorefrontOnlyBusiness`, `syncStorefront` and more. Renaming functions is a larger, riskier change that was not ruled; the element was
