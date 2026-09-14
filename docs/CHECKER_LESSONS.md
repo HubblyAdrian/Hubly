@@ -2109,3 +2109,45 @@ empty list is just the degenerate case, and it is the case that reaches a real p
 
 Read it the other way too, as a diagnostic: **when Hubly's output is ungrammatical, do not fix the
 grammar.** Find the composer, and ask what it was asserting that it did not know.
+
+## Lesson 66 — A gate that only records SUCCESS retries forever on a permanent failure (2026-09-13)
+
+`hcPageUpgradeDone` asked "have we upgraded this page yet this session?" by reading a
+`sessionStorage` flag that `hcMarkPageUpgradeDone` set **only when the upgrade returned ok**.
+On a classic business the upgrade can never return ok — there is no document to upgrade and
+there never will be without a rebuild — so the flag was never written, the gate never closed,
+and the work ran again on every visit, failing identically every time.
+
+The flag was recording the **outcome** when the question it answers is about the **attempt**.
+Once those two diverge, a permanent failure becomes indistinguishable from never having asked,
+and "ask once" silently becomes "ask forever".
+
+**The rule: a do-this-once gate records that it RAN, not that it WORKED.** Keep the outcome if
+you need it — the fix here writes `'attempted'` rather than `'done'`, so the difference is still
+readable — but the gate reads presence, not value.
+
+**With one deliberate exception, and it is the exception that makes the rule usable:** a
+TIMEOUT is not recorded. A slow network is not a permanent answer, and retrying it next visit
+is correct. The distinction to hold is *permanent* failure versus *transient* failure — not
+failure versus success.
+
+## Lesson 67 — A retry driven by NAVIGATION runs as often as the owner moves (2026-09-13)
+
+The same code had a second fault that the flag was masking: the retry's schedule was "whenever
+`hcOpenWorkspace('website')` runs". Nothing about the work being retried had anything to do
+with navigation — it was a one-per-session page upgrade — but its cadence was set by how often
+the owner clicked a tab.
+
+That is why the symptom was *four identical paragraphs in a row* rather than one: Adrian entered
+the Website tab five times, and each entry printed the failure again. **The count was not a
+constant to be found; it was however many times he moved.** We spent a round logging it as
+"appears twice" and a second round correcting it to four, when the honest answer was *unbounded*.
+
+**Two things follow.** First, when a repeated message is reported, ask what drives the
+repetition before counting the copies — a count is only meaningful once the driver is known, and
+"N times" invites a fix that caps N instead of removing the driver. Second, work whose natural
+period is "once per session" or "once per business" must carry its own gate; hanging it off a
+navigation handler means its frequency is a UI behaviour, not a decision anyone made.
+
+Same family as Lesson 66 — both are a schedule that nobody chose — and they shipped in the same
+twenty lines.

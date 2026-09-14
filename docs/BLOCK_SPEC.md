@@ -124,3 +124,36 @@ baseline-aligned price with its unit beside it, `margin-top:auto` — is fixed.
 
 The card also already honours the design knobs (`--hubly-type-scale`, `-space-`, `-radius-`,
 `-media-ratio`), so the owner's type/spacing controls keep working on the fixed block for free.
+
+---
+
+## REQUIREMENT — an owner can add a block by hand, on the page, without asking the assistant
+
+**Not an option. Recorded 2026-09-13 by Adrian's ruling, after it was raised more than once and
+lost each time.**
+
+Step 9 of the spec — *"add services creates blocks"* — is **two paths, not one**:
+
+1. **The assistant adds a block.** Built 2026-09-13: `setServices` → `applyServicesToFreeform`
+   → `addServicesBlock`, and on a page with no services area it builds one in the same move.
+2. **The owner clicks a `+` and adds one themselves.** **Not built.** This is the requirement.
+
+The owner's path is not a convenience on top of the assistant's. An owner looking at their own
+page and wanting one more block should not have to describe it in a sentence to get it — that
+is the same failure as naming a control we cannot see, pointed inward.
+
+### What it costs, measured 2026-09-13
+
+| piece | state |
+|---|---|
+| block markup + CSS | **ships** — `hubly_services_block.ts`, 568 lines |
+| choosing where it goes | **ships** — `pickDonorSection`, `pickChainDonor`, `chainClonedServicesBlock` |
+| owner-authorised page write | **ships** — `create_business_document` with `p_owner_id` |
+| a capability that inserts one | **ships, but services-only** — `addServicesSection`, one kind, model-invoked |
+| a **generic** block insert | **does not exist.** `hubly_freeform.ts` exports `moveFreeformSection` and `deleteFreeformNode` and **no insert** — freeform can move and delete a node, not add one |
+| the `+` affordance on the canvas | **does not exist** |
+
+So the work is: **`insertFreeformNode` beside move and delete; generalise the donor-clone from
+one kind to N; a structured `blockInsert` branch in `hubly-conversation` beside `designEdit`;
+and the affordance.** The hard half — the donor-clone machinery, with 132 measured blocks behind
+it — is done. **Costed; not scheduled. Nothing further tonight.**

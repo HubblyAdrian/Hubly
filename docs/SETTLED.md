@@ -104,3 +104,33 @@ and it has **no `business_documents` row**, the same shape as the only paying cu
 `hubly-paging-fixture` covers the freeform store; this covers the other one. **Exclude both
 from every corpus count**, and **never prove a classic-store change against
 `graefs-autocare` — read-only, always.** *(built 2026-09-13)*
+
+## 14. The classic renderer is a LEGACY surface. Every new site is freeform
+
+**Settled 2026-09-13, counted from the database, because this question keeps being re-asked
+and answered by impression.**
+
+- **174 of 197** businesses have a `business_documents` row with rendered HTML — the freeform
+  generator's output. **23 do not**, and those render from `businesses.meta` through the
+  classic renderer in `hubly.html` (`#p-classic-site`).
+- Of those 23, only **9 serve a real page** — the other 14 have between 0 and 378 bytes of
+  `meta.website` and are aborted starts, not websites. **4 of the 9 are `market`**:
+  `graefs-autocare`, `bucket-mobile-detailing`, `devdetailing661`, `aquaspeed`.
+- **By month created:** July 2026 — 0 freeform, 9 classic. August — 124 freeform, 10 classic.
+  September — 50 freeform, 4 classic, and all four of those are two of our own fixtures from
+  2026-09-13 plus two empty starts.
+- **The newest real classic page anywhere was built 2026-07-25** (internal); the newest
+  **market** one, 2026-07-20. **Every business that has actually built a site since late July
+  got the freeform generator.**
+
+**So a classic page is not a path anyone is put on; it is where four market businesses already
+live, one of whom pays us.** Work on it is maintenance of a legacy surface, and it should be
+costed that way — which is also why `set_business_service_catalog` was a pure add rather than a
+change to a writer with 31 call sites (D-028).
+
+**And `hubly-paging-fixture`'s page is thin because its `meta.website` is EMPTY (0 bytes), not
+because any generator produced it.** It was seeded as a *paging* fixture — rows for pagination
+limits — and never given a website. It is the thinnest possible input to the classic renderer.
+Graef's page looks good through the same renderer because his fields are full: 11,809 bytes of
+`meta.website`, 8 services, 26 portfolio URLs. **Do not read that fixture as a sample of what
+Hubly builds.**

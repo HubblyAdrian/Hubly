@@ -299,3 +299,72 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
   gated the composer on `placement.status !== "not_freeform"`, so the classic branch deployed at
   22:18 was **dead code and never once executed.** A gate written when only one store existed kept
   the other store's owners in silence.
+
+## D-031 — The Design button stays. The ruling to delete it is withdrawn by Adrian
+
+- **Ruled, then withdrawn:** 2026-09-13. The original ruling was *"Remove Design and Preview
+  booking. Design is dead (item 4)."* On establishing it, Design turned out not to be dead:
+  `hcOpenDesign` (`platform-home.html:6535`) opens a real panel backed by `hcLoadDesign`,
+  `hcRenderDesignBody`, five knobs with owner-facing step words, an undo, and a **server
+  handler** — `hubly-conversation:1845` serves `designKnobs` (read) and `designEdit` (write)
+  through `readOwnerDesignKnobs` / `applyOwnerDesignEdit`. It even has an honest empty state:
+  on a classic business the read returns `no_document` and the panel says *"There's no page to
+  change yet."*
+- **Adrian withdrew the ruling in his own words:** *"Design is not dead — I withdraw the ruling
+  to delete it."* Recorded here with his name because deleting it would have deleted the only
+  entry point to a built feature **and** left an unreachable server handler behind.
+- **The standing hypothesis for why it looked dead** is D-032: the account chip covers it.
+  Design is the rightmost button in the canvas bar, directly under the chip, which is why that
+  button and not Visit site. **Not yet confirmed by a click** — that needs an owner session.
+- **Preview booking is still removed.** It is not dead either; it is redundant. One markup
+  site, one listener, `window.open(liveUrl + '/?book=1')`, and no other route — confirmed the
+  same way Customers was.
+
+## D-032 — The chip gets out of the toolbar's way, exactly as it already does for the panel
+
+- `body.hc-panel-open.hc-shell-claimed .nav{right:380px}` has stood since the panel hit this
+  same collision, with a comment explaining it. The canvas toolbar is the other thing living
+  in that corner and was left underneath — **a fix applied to one victim of a class and not
+  the other**, which is the sibling-bug rule, in the same corner, twice.
+- Applied: the canvas bar gets `position:relative; z-index:61` (above the fixed header's 60)
+  and reserves the chip's corner with `padding-right:clamp(180px,16vw,260px)`, dropped at
+  ≤900px where the sidebar is gone and the header re-flows.
+
+## D-033 — The right pane is contextual to its tab. This reverses a stated design
+
+- **Ruled** 2026-09-13 by Adrian, after opening a booking from Home's right pane, switching to
+  Website, and finding the booking detail still sitting over his website.
+- **The comment it reverses, quoted verbatim from `hcOpenWorkspace`:**
+
+  > *"A room is the CENTRE. The panel is left alone deliberately: if a record is open, it
+  > stays open while the owner moves rooms — the conversation is still about it."*
+
+- The reasoning was sound; the behaviour was not. A record that follows you into a room it has
+  nothing to do with does not read as continuity, it reads as a panel that failed to close.
+  `hcClosePanel()` now runs on every workspace change.
+
+## D-034 — The preview fit observes its pane instead of being told
+
+- `hcApplyPreviewFit` latches the measurement into inline custom properties. Six callers, none
+  of them the panel — so opening or closing the panel changed the pane's width by 380px without
+  firing a window resize, and the frame kept the wrong scale in **both** directions.
+- Fixed twice on purpose: explicit calls in `hcPanelPaint` and `hcClosePanel` (so the frame is
+  right in the same frame the panel animates), **and** a `ResizeObserver` on
+  `#hcCanvasFrameWrap` — the first in this file — so the seventh caller does not have to
+  remember. A latched measurement with a hand-maintained caller list is a bug waiting for the
+  next caller.
+
+## D-035 — The repeating message is a retry gate, not a duplicated string
+
+- **Both of us misdiagnosed this**, and Adrian said so: *"item 8 was misdiagnosed by both of
+  us."* The logged finding named a duplicate `hcClassicScopeLine()` at `:6355` / `:6365`. Those
+  are two **different** messages on **mutually exclusive** branches; neither duplicates the other.
+- The real defect: `hcPageUpgradeDone` reads a `sessionStorage` flag set **only on success**.
+  On a classic business the restamp can never succeed, so the flag is never set, the gate never
+  closes, and every entry into the Website tab re-runs it. `_saidClassicScope` suppresses only
+  the first reply and returns, so from the second visit onward the failure branch prints
+  "Moving whole sections isn't something I can do on this page…" — **once per tab visit,
+  unbounded.** Four in his screenshots means five visits.
+- Fixed at the gate: the flag now records the **attempt**, with a distinct `'attempted'` value
+  so the difference is still readable. A timeout is deliberately NOT recorded — that one
+  *should* be retried.

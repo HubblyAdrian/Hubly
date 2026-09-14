@@ -466,6 +466,21 @@ body.hc-shell-claimed .nav > *{pointer-events:auto}
    account chip — the chip sat between the panel's title and its close button. The
    chip gets out of the way for the same reason the stream does. */
 body.hc-panel-open.hc-shell-claimed .nav{right:380px}
+/* …AND THE SAME FOR THE CANVAS TOOLBAR, which is the collision that was actually
+   reported (2026-09-13, Adrian's walk). The rule above moved the chip for the PANEL
+   and stopped there; the toolbar is the other thing living in that corner, and it
+   was left underneath. A fix that treats one victim of a class and not the other is
+   the sibling-bug rule, and this is the second time this exact corner has produced it.
+   The toolbar is in flow with no stacking context of its own, so the fixed header at
+   z-index 60 sits on top of its right-hand end — where Design is the last button.
+   Raising the bar above the header is the smaller change than moving the chip again:
+   the chip has nowhere left to go on a narrow pane, and the toolbar must stay clickable. */
+body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
+/* The chip still needs somewhere to sit that is not on top of a control. Reserve its
+   corner INSIDE the toolbar rather than letting the two overlap: the bar's own padding
+   keeps its last button clear of the chip at every width the sidebar allows. */
+body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
+@media (max-width:900px){ body.hc-shell-claimed .hc-canvas-bar{padding-right:14px} }
 @media (max-width:900px){ body.hc-panel-open.hc-shell-claimed .nav{right:0} }
 /* Phone and tablet portrait: the sidebar is gone, so the header carries the wordmark
    again — at the far LEFT. flex-end is a desktop rule (chip only, over the stream);
@@ -657,14 +672,14 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
   color:var(--ink-2,#6b6257);padding:6px 10px;border-radius:8px;cursor:pointer}
 #hcUndoBtn:hover{color:var(--ink);background:var(--panel-2,rgba(28,22,16,.05))}
 .hc-app.hc-claimed #hcUndoBtn:not([hidden]){display:inline-flex}
-#hcVisitBtn,#hcBookPreviewBtn{display:none;align-items:center;border:0;background:none;
+#hcVisitBtn{display:none;align-items:center;border:0;background:none;
   color:var(--ink-3);font:inherit;font-size:12.5px;font-weight:650;padding:6px 10px;
   border-radius:999px;cursor:pointer;white-space:nowrap;min-height:32px}
-#hcVisitBtn:hover,#hcBookPreviewBtn:hover{color:var(--ink);background:var(--panel-2,rgba(28,22,16,.05))}
-.hc-app.hc-claimed #hcVisitBtn,.hc-app.hc-claimed #hcBookPreviewBtn{display:inline-flex}
+#hcVisitBtn:hover{color:var(--ink);background:var(--panel-2,rgba(28,22,16,.05))}
+.hc-app.hc-claimed #hcVisitBtn{display:inline-flex}
 /* Phone: the toolbar is tight, so the two ambient links step aside for the controls that
    actually edit. Announced by being absent at a breakpoint, not by vanishing mid-session. */
-@media (max-width:560px){ #hcVisitBtn,#hcBookPreviewBtn{display:none!important} }
+@media (max-width:560px){ #hcVisitBtn{display:none!important} }
 /* #hcManageBtn already carries margin-left:auto, so Edit details pushes the pair right
    and Design sits beside it — no second auto margin, which would split them apart. */
 
@@ -1904,7 +1919,6 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
         // there is something to step back, so it is never a control that does nothing.
         '<button type="button" id="hcUndoBtn" title="Undo the last change" hidden disabled>&#8617; Undo</button>' +
         '<button type="button" id="hcVisitBtn" title="Open your live site in a new tab">Visit site</button>' +
-        '<button type="button" id="hcBookPreviewBtn" title="Open your booking form the way a customer gets it">Preview booking</button>' +
         '<button type="button" id="hcManageBtn" title="Add or edit services, hours and contact yourself">&#9998; Edit details</button>' +
         // THE DOOR FOR THE DESIGN KNOBS. It lives here, beside Edit details, because the
         // canvas bar is the one claimed-owner surface that survives phone width — the rail
@@ -1932,6 +1946,7 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     // re-scales, and `100vh` in the page means one screen (see hcApplyPreviewFit).
     // Size it once from the pane width, then reveal when the frame has loaded.
     hcApplyPreviewFit();
+    hcObservePreviewPane();   // the wrap exists now; re-observing is a no-op
     // When we arrive here straight from a reveal — the picker path opens the app
     // and renders the canvas in the same tick — the pane can still be settling
     // its width, which freezes the fit at a thumbnail scale and squeezes the
@@ -1974,8 +1989,6 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     }
     var vst = document.getElementById('hcVisitBtn');
     if(vst) vst.addEventListener('click', function(){ try{ window.open(liveUrl, '_blank', 'noopener'); }catch(e){} });
-    var bkp = document.getElementById('hcBookPreviewBtn');
-    if(bkp) bkp.addEventListener('click', function(){ try{ window.open(liveUrl.replace(/\/$/, '') + '/?book=1', '_blank', 'noopener'); }catch(e){} });
   }
 
   // THE PREVIEW IS A REAL DEVICE, SCALED TO FIT.
@@ -1997,6 +2010,30 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
   // The real device, for the signup notification — captured at the moment, from the
   // user agent, never inferred from viewport later.
   function hcDeviceKind(){ try{ return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'phone' : 'desktop'; }catch(e){ return ''; } }
+  // THE FIT OBSERVES ITS OWN PANE — THE DURABLE HALF.
+  //
+  // hcApplyPreviewFit is a LATCHED MEASUREMENT: it reads the pane once and writes the
+  // result into inline custom properties. That is fine until someone changes the pane's
+  // width by a route the list of callers does not cover, and on 2026-09-13 there were SIX
+  // callers and the panel was the seventh thing that could do it. A latched measurement
+  // with a hand-maintained caller list is a bug waiting for the next caller, and there was
+  // no ResizeObserver anywhere in this file to catch it.
+  //
+  // So the pane tells the fit when it changed, instead of every future author remembering
+  // to. The explicit calls stay: an observer fires AFTER layout, and the panel open/close
+  // pair wants the frame correct in the same frame the panel animates.
+  var hcFitRO = null;
+  function hcObservePreviewPane(){
+    if(hcFitRO || typeof ResizeObserver === 'undefined') return;
+    var wrap = document.getElementById('hcCanvasFrameWrap');
+    if(!wrap) return;
+    hcFitRO = new ResizeObserver(function(){
+      // Coalesce: a panel animation fires this many times per open.
+      if(hcFitRO._t) return;
+      hcFitRO._t = setTimeout(function(){ hcFitRO._t = null; try{ hcApplyPreviewFit(); }catch(e){} }, 60);
+    });
+    try{ hcFitRO.observe(wrap); }catch(e){ hcFitRO = null; }
+  }
   function hcApplyPreviewFit(){
     var wrap = document.getElementById('hcCanvasFrameWrap');
     var frame = document.getElementById('hcPreviewFrame');
@@ -4956,9 +4993,19 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     hcRenderRail();
     // Home needs no canvas (the conversation is the screen). A workspace with a canvas
     // renders it lazily on entry — today only Website, which mounts the live site iframe.
+    // THE PANEL BELONGS TO THE TAB IT WAS OPENED FROM — RULED 2026-09-13 by Adrian,
+    // and this REVERSES A STATED DESIGN. The comment that stood here read, verbatim:
+    //
+    //     "A room is the CENTRE. The panel is left alone deliberately: if a record is
+    //      open, it stays open while the owner moves rooms — the conversation is still
+    //      about it."
+    //
+    // The reasoning was sound and the behaviour was not: he opened a booking from Home's
+    // right pane, switched to Website, and the booking detail was still sitting over his
+    // website. A record that follows you into a room it has nothing to do with does not
+    // read as continuity; it reads as a panel that failed to close. Leaving Home closes it.
+    hcClosePanel();
     if(HC_ROOMS[id]){
-      // A room is the CENTRE. The panel is left alone deliberately: if a record is open,
-      // it stays open while the owner moves rooms — the conversation is still about it.
       hcRenderRoom(id);
     }
     // HOME SHOWS THE SITE TOO (2026-09-13). The CSS above gives home the right-hand pane
@@ -5159,6 +5206,8 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     if(e.app) e.app.classList.remove('hc-panel-open');
     try{ document.body.classList.remove('hc-panel-open'); }catch(_){}
     if(e.body) e.body.innerHTML = '';
+    // …and give the canvas its 380px back. See hcPanelPaint.
+    try{ requestAnimationFrame(hcApplyPreviewFit); }catch(_){}
   }
   // push=false replaces the panel's contents; push=true keeps the previous entry so the
   // back arrow returns to it. A stack, deliberately, and not tabs: two tabs in a 380px
@@ -5181,6 +5230,12 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
     try{ top.render(e.body); }catch(err){ console.error('[panel] render failed', err); }
     if(e.back) e.back.hidden = hcPanel.stack.length < 2;
     try{ e.el.scrollTop = 0; e.body.scrollTop = 0; }catch(_){}
+    // THE PANEL TAKES 380px FROM THE CANVAS, AND THE FIT IS A LATCHED MEASUREMENT.
+    // hcApplyPreviewFit writes --hc-scale/--hc-fw/--hc-fh as inline values; opening the
+    // panel changes the pane's width without firing a window resize, so nothing re-ran it
+    // and the preview was sized for the wrong pane until the next render. Both directions
+    // were wrong — too wide on open, and stuck narrow on close (which is the half Adrian hit).
+    try{ requestAnimationFrame(hcApplyPreviewFit); }catch(_){}
   }
   function hcPanelBackStep(){
     if(hcPanel.stack.length < 2){ hcClosePanel(); return; }
@@ -6284,11 +6339,35 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
   //
   // WHAT IT CANNOT DO: hang. The wait is bounded; past it we mount and carry on.
   var HC_UPGRADE_WAIT_MS = 7000;
+  // A GATE THAT ONLY RECORDS SUCCESS RETRIES FOREVER ON A PERMANENT FAILURE.
+  //
+  // This flag existed to ask once per session. It was set ONLY by hcMarkPageUpgradeDone,
+  // which runs only when the restamp returns ok — and on a CLASSIC business the restamp can
+  // never return ok, because there is no document to upgrade and there never will be without
+  // a rebuild. So the flag was never set, the gate never closed, and every entry into the
+  // Website tab ran the whole thing again.
+  //
+  // The visible symptom was the message: `_saidClassicScope` suppresses the FIRST reply and
+  // returns, so from the SECOND visit onward control reached the failure branch and printed
+  // "Moving whole sections isn't something I can do on this page…" — once per tab visit,
+  // unbounded. Adrian's screenshots show four in a row. The count is not a constant; it is
+  // however many times he opened Website.
+  //
+  // Two faults, and both are fixed here rather than by silencing the message:
+  //   1. the gate recorded the OUTCOME instead of the ATTEMPT, so a permanent failure was
+  //      indistinguishable from never having asked;
+  //   2. the retry was driven by NAVIGATION, so it ran as often as the owner moved.
+  // Recording the attempt fixes both: one ask per business per session, whatever it returns.
   function hcPageUpgradeDone(id){
-    try{ return sessionStorage.getItem('hcStamp:' + id) === 'done'; }catch(e){ return false; }
+    try{ return !!sessionStorage.getItem('hcStamp:' + id); }catch(e){ return false; }
   }
   function hcMarkPageUpgradeDone(id){
     try{ sessionStorage.setItem('hcStamp:' + id, 'done'); }catch(e){}
+  }
+  /** ASKED AND FAILED is still ASKED. Distinct from 'done' so the value still says which
+   *  happened — a flag that erases the difference is the other half of this same mistake. */
+  function hcMarkPageUpgradeAttempted(id){
+    try{ if(!sessionStorage.getItem('hcStamp:' + id)) sessionStorage.setItem('hcStamp:' + id, 'attempted'); }catch(e){}
   }
   async function hcUpgradePageIfNeeded(){
     var biz = hc.draftBusiness;
@@ -6310,9 +6389,14 @@ body.hc-panel-open.hc-shell-claimed .nav{right:380px}
       // "Already current" and "just upgraded" are both success, and both mean we never
       // ask again this session.
       if(r && r.ok){ hcMarkPageUpgradeDone(biz.id); return r; }
+      // ASKED. It failed, and that is still an answer — do not ask again this session.
+      hcMarkPageUpgradeAttempted(biz.id);
       return { failed: true, reply: (r && r.reply) || null };
     }catch(e){
       clearTimeout(to);
+      // A TIMEOUT IS NOT A PERMANENT FAILURE and is deliberately NOT recorded: the page may
+      // well be upgradeable and the network was slow. Retrying that on the next visit is
+      // the behaviour we want; retrying "this business has no document" is not.
       return { failed: true, timedOut: true };
     }
   }
