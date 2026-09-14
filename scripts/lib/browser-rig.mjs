@@ -72,6 +72,21 @@ export async function openRig(opts = {}) {
   let page = await ctx.newPage();
   const log = (s) => { if (!opts.quiet) console.log(s); };
 
+  // CONSOLE CAPTURE THAT SURVIVES A RELOAD — added 2026-09-13 after it cost an hour.
+  //
+  // `load({fresh:true})` closes the page and opens a new one, which is the whole point (rule 1).
+  // But a caller doing the obvious thing — `rig.page.on("console", …)` and then `rig.load(url)` —
+  // attaches the listener to a page that is thrown away, and then reads ZERO console lines and
+  // concludes the code under test never ran. That is exactly what happened while chasing the
+  // "+" mount: four structural gates were investigated because an instrument reported silence
+  // it had manufactured itself.
+  //
+  // So the rig owns the buffer and re-attaches on every page it creates. `rig.consoleLines`
+  // is the whole log; `rig.consoleSince(mark)` reads what arrived after a point.
+  const consoleLines = [];
+  const attachConsole = (p) => { p.on("console", (m) => { try { consoleLines.push(m.text()); } catch (_) {} }); };
+  attachConsole(page);
+
   /** Poll a page-evaluated expression until it stops changing. Returns the trace. */
   async function settle(readFn, label = "value", { stableMs = STABLE_MS, ceilingMs = CEILING_MS } = {}) {
     const t0 = Date.now();
@@ -106,6 +121,7 @@ export async function openRig(opts = {}) {
         try { await page.close(); await ctx.close(); } catch (_) {}
         ctx = await browser.newContext({ viewport: { width, height } });
         page = await ctx.newPage();
+        attachConsole(page);
         rig.page = page;
       }
       await page.goto(url, { waitUntil: "domcontentloaded" });
@@ -170,6 +186,12 @@ export async function openRig(opts = {}) {
       log(`  [write] ${what}  asked=${JSON.stringify(asked)}  read=${JSON.stringify(read)}  at t=${ms}ms  ${ok ? "MATCH" : "DIFFERS"}`);
       return ok;
     },
+
+    /** Everything the page has logged, across every reload. */
+    get consoleLines() { return consoleLines.slice(); },
+    /** A mark to read from; pass it to consoleSince() after the action. */
+    consoleMark() { return consoleLines.length; },
+    consoleSince(mark) { return consoleLines.slice(mark); },
 
     async shot(path) { await page.screenshot({ path, fullPage: false }); log(`  [shot] ${path}`); return path; },
     async close() { try { await ctx.close(); } catch (_) {} await browser.close(); },

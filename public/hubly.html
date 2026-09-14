@@ -54279,15 +54279,27 @@ function wireHcEditingSurface(doc, root){
   try{ hcMountAddService(); }catch(e){ try{ console.log('[hc+] mount threw — ' + String(e && e.message).slice(0,120)); }catch(_){} }
   try{
     if(!root.querySelector('[data-hc-addsvc]') && typeof MutationObserver !== 'undefined'){
+      // IT MOUNTS, AND THEN SOMETHING TAKES IT AWAY.
+      //
+      // The instrument settled this after four structural gates had been opened chasing it:
+      //
+      //   [hc+] grid found — <div class="ws-svc-grid"> with 3 children
+      //   [hc+] mounting — into <div class="ws-svc-grid">
+      //   [hc+] MOUNTED — grid now has 4 children; wrap in document: true
+      //   → plus=false
+      //
+      // The mount SUCCEEDS. A later `renderWebsite()` rewrites the grid's innerHTML and the
+      // "+" goes with it — it is not a card, so nothing re-creates it. And the first version of
+      // this observer disconnected the moment it saw a successful mount, which is precisely
+      // when it stopped being able to notice the mount being destroyed.
+      //
+      // So it does NOT disconnect on success. The mount is idempotent (`:scope >
+      // [data-hc-addsvc]`), so re-running on every mutation costs a querySelector, and the
+      // observer's whole job is to survive the next re-render rather than to fire once.
       var addObs = new MutationObserver(function(){
-        try{
-          hcMountAddService();
-          if(root.querySelector('[data-hc-addsvc]')) addObs.disconnect();
-        }catch(e){ addObs.disconnect(); }
+        try{ hcMountAddService(); }catch(e){ try{ addObs.disconnect(); }catch(_){} }
       });
       addObs.observe(root, { childList: true, subtree: true });
-      // A ceiling, so a page that never paints a services grid does not observe forever.
-      setTimeout(function(){ try{ addObs.disconnect(); }catch(e){} }, 20000);
     }
   }catch(e){}
   // The builder can now answer at the toolbar instead of in the chat.
@@ -54839,7 +54851,7 @@ function wireHcEditingSurface(doc, root){
   function hcMountAddService(){
     var grid = hcServicesGrid();
     if(!grid){ hcAddSvcLog('abandoned', 'hcServicesGrid() returned null'); return; }
-    if(grid.querySelector(':scope > [data-hc-addsvc]')){ hcAddSvcLog('abandoned', 'already mounted'); return; }
+    if(grid.querySelector(':scope > [data-hc-addsvc]')) return;   // already there; silent, this runs on every mutation
     hcAddSvcLog('mounting', 'into <' + grid.tagName.toLowerCase() + ' class="' + String(grid.className).slice(0,40) + '">');
     var wrap = doc.createElement('div');
     wrap.setAttribute('data-hc-editor','1');
