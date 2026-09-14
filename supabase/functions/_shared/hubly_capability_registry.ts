@@ -44,7 +44,7 @@ import { addServicesBlock } from "./hubly_services_block.ts";
 import { buildCatalogWritePayload, catalogFromOwnerServicesPayload, getCatalog } from "./service_engine.ts";
 import { matchingCloseIndex } from "./hubly_html_scan.ts";
 import { unstyledPageVerdict, MIN_OWN_STYLE_BYTES } from "./hubly_page_css_guard.ts";
-import { photoReply, servicesAreaAddedReply } from "./hubly_owner_replies.ts";
+import { photoReply, servicesAreaAddedReply, composeServicesTruth, type ServicesPlacementLike } from "./hubly_owner_replies.ts";
 import { HublyAI, extractJson } from "./hubly_ai.ts";
 import { issueDraftGrant } from "./draft_grant.ts";
 import {
@@ -5249,7 +5249,21 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
     if (edit.id) await adminWrite("DELETE", "services", `?id=eq.${encodeURIComponent(edit.id)}&business_id=eq.${draftId}`);
     else await adminWrite("DELETE", "services", `?business_id=eq.${draftId}&name=eq.${encodeURIComponent(name)}`);
     const removed = await removeServiceCard(draftId, draftToken, ownerUid, name);
-    return { ok: true, real: true, summary: removed ? `Removed ${name} from your list and your page.` : `Removed ${name} from your list. It may still show on the page until the next rebuild.`, raw: { removed } };
+    // REMOVE HAS NO CLASSIC SIBLING, AND THE SENTENCE MUST NOT PRETEND OTHERWISE.
+    // `removeServiceCard` patches a freeform document. On a classic page there is no document
+    // and no rebuild, so "until the next rebuild" is a promise nothing will ever keep. The
+    // catalogue writer that shipped tonight REPLACES a list; it has no removal, and building
+    // one was not in the ruling. Recorded in docs/MANUAL_PLUS_FINDING.md as the open half.
+    const classicSite = !removed && (await selectLatestBusinessDocument(draftId, "website")) === null;
+    return {
+      ok: true, real: true,
+      summary: removed
+        ? `Removed ${name} from your list and your page.`
+        : classicSite
+          ? `Removed ${name} from your list. It is still on your page and I can't take it off from here yet.`
+          : `Removed ${name} from your list. It may still show on the page until the next rebuild.`,
+      raw: { removed, classicSite },
+    };
   }
   // add | edit — PER ROW, never the replace-all RPC.
   const row: Record<string, unknown> = { name, price: typeof edit.price === "number" ? edit.price : (edit.price != null ? Number(edit.price) : null), description: edit.description || null };
@@ -5263,12 +5277,41 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
     row.business_id = draftId;
     await adminWrite("POST", "services", "", row);
   }
-  const placement = await applyServicesToFreeform(draftId, draftToken, [{ name, price: row.price as number | undefined, description: (row.description as string) || undefined }], ownerUid);
-  const landed = placement.status === "placed" || placement.status === "partial" || placement.status === "no_prices";
+  const one = [{ name, price: row.price as number | undefined, description: (row.description as string) || undefined }];
+  const placement = await applyServicesToFreeform(draftId, draftToken, one, ownerUid);
+
+  // (a) THE SECOND CALL SITE. `applyServicesToFreeform` has exactly two callers — this one and
+  // setServices — and when the classic writer shipped (2026-09-13) it was wired into setServices
+  // ALONE. So every service added from Edit details or from the canvas "+" wrote a `services`
+  // row and nothing a classic page reads: the morning's defect, in the evening's other path.
+  // Found by reading rather than by a customer, which is the only reason it is not a third scar.
+  let classic: ClassicServicesWrite | null = null;
+  if (placement.status === "not_freeform") {
+    try { classic = await applyServicesToClassic(draftId, draftToken, one, ownerUid); }
+    catch (e) { classic = { status: "failed", added: [], updated: [], preserved: 0, detail: String((e as Error)?.message || e).slice(0, 120) }; }
+  }
+
+  // (b) COMPOSE FROM WHAT IS IN THE BYTES, NOT FROM A STATUS CODE.
+  //
+  // This read `placement.status` and said "Added X on your page" for any of three statuses,
+  // while `verifiedPlaced` — the list of services actually found in the saved HTML — was
+  // computed by the placement and DROPPED here. That is the fourth instance of
+  // computed-and-dropped, and it is the exact shape that told an owner three prices were on a
+  // page containing none of them (Lesson 11). composeServicesTruth is the one composer that
+  // reads the verified list and nothing else; it is used here now, and
+  // scripts/check-placement-truth.mjs fails the build if a placement result ever reaches a
+  // reply without going through it again.
+  const truth = composeServicesTruth(placement as ServicesPlacementLike, "", classic);
+  const landed = (placement.verifiedPlaced || []).length > 0;
   return {
     ok: true, real: true,
-    summary: landed ? `${edit.op === "add" ? "Added" : "Updated"} ${name} on your page, in the services section.` : `Saved ${name} to your list. I couldn't place it on the page — it will appear on the next rebuild.`,
-    raw: { services: placement },
+    // The composer's sentence when it has one. It returns "" on an empty list BY DESIGN
+    // (Lesson 65 — a composer with nothing true to say must be able to say nothing), and only
+    // then does this fall back to naming what happened to the RECORD, which is all we know.
+    summary: truth || (landed
+      ? `${edit.op === "add" ? "Added" : "Updated"} ${name} on your page, in the services section.`
+      : `Saved ${name} to your list. It is not showing on the page.`),
+    raw: { services: placement, classic },
   };
 }
 

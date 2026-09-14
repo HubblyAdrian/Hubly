@@ -13435,7 +13435,13 @@ function showP(id,opts){
   if(id==='p-signup'){
     try{welcomeExperienceMount();}catch(e){console.warn('welcomeExperienceMount',e);}
   }
-  if(id==='p-classic-site'){ensureWebsiteCopy();renderWebsite();applyWebsiteSeo();ensureWsBackTop();ensureWsChatWidget();}
+  if(id==='p-classic-site'){ensureWebsiteCopy();renderWebsite();applyWebsiteSeo();ensureWsBackTop();ensureWsChatWidget();
+    // …and the owner's editing surface, which until 2026-09-13 was wired ONLY inside the
+    // p-hubly-document branch. A classic page never reached it, so the "+ Add service"
+    // affordance had no chance to mount even once its anchors existed. Self-gated on
+    // hcEditable=1 and idempotent (data-hc-wired), so a visitor and a re-render both no-op.
+    try{ wireHublyDocumentClickToEdit(); }catch(e){}
+  }
   if(id==='p-public-unavailable')document.getElementById('lang-btn-float').style.display='none';
   if(id==='p-booking-landing')renderBookingLanding('pub');
   if(id==='p-classic-site'||id==='p-booking-landing'||id==='p-booking')updateOwnerPreviewBars();
@@ -54197,7 +54203,21 @@ function wireHublyDocumentClickToEdit(){
     // all — no hover, no cursor, no tap handler, no "click to make it yours" pill.
     if(new URL(location.href).searchParams.get('hcEditable') !== '1') return;
   }catch(e){ return; }
+  // A SECOND GATE KEYED TO THE FREEFORM HOST — found 2026-09-13 after the anchor stamp landed
+  // and the "+" still did not mount. `#hc-doc-root` is the DOCUMENT render root; a CLASSIC page
+  // renders into `#p-classic-site > #ws-page` and has none, so this returned before doing
+  // anything and the whole editing surface — link guard, selection, and hcMountAddService —
+  // was dead on classic. Exactly the shape of hcBust's `hasDocument !== false`: a gate written
+  // when one store existed, keyed to that store's furniture.
+  //
+  // Everything past this point is format-agnostic by design ("the owner should not be able to
+  // tell which format they are editing"), so the fix is to hand it the right root rather than
+  // to branch. Still gated on hcEditable=1 above: a public visitor reaches none of this.
   var host = document.getElementById('hc-doc-root');
+  if (!host || !host.children.length) {
+    var classicRoot = document.querySelector('#p-classic-site #ws-page');
+    if (classicRoot) { wireHcEditingSurface(document, classicRoot); return; }
+  }
   if(!host) return;
   // A freeform page lives inside a same-origin srcdoc iframe, so the editable
   // surface is THAT document, not this one. Everything past this point is
