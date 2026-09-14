@@ -569,3 +569,29 @@ clean harness:** which of the two it was.
   red-proofed. The third leg exists because Adrian named it as the rule most likely to be
   violated quietly: reaching for a weaker item when nothing is outstanding reads like
   helpfulness, and nothing fails.
+
+## D-049 — The rig, and the fixed-delay audit
+
+- **`scripts/lib/browser-rig.mjs`** — the write-side companion to `lib/read-receipt.mjs`. Four
+  rules, one per instrument failure of 2026-09-13: **reload between clicks** (a same-document
+  repeat is not an independent trial), **confirm the click landed** before reading anything
+  (roughly half the clicks that night missed, and a missed click reads exactly like a dead
+  control), **poll until stable**, and **print the write receipt** — value asked, value read,
+  and *when*.
+- **The stability window is itself a guess, and the rig says so.** A value that changes at 250ms
+  and again at 1200ms settles as `250` under an 800ms window. That is not a bug; it is the rig
+  answering the question it was asked. So the window is a parameter and **it is printed on every
+  reading** — Lesson 70's complaint was that the guess is invisible in the output, and the fix is
+  not to remove the guess (it cannot be removed) but to put it in the receipt.
+- **`npm run check:rig`** — the rig's self-test, against a fixture built to contain the exact
+  traps: `scroll-behavior: smooth`, a value with a slow second act, a covered control, and a
+  zero-size element carrying the same id as the real one, first in document order. Eleven
+  assertions, all red-proofs.
+- **And it reproduces the duplicate-id mechanism in nine lines of controlled HTML:** with the
+  decoy, the fragment click leaves `scrollTop` at 0; remove the decoy, reload, click the same
+  link, and it scrolls to 889. That does not resolve which fix mattered on Graef (D-041 stands —
+  runs A and C contradicted), but it settles that the mechanism is real.
+- **`docs/FIXED_DELAY_AUDIT.md`** — all 102 hits classified before anything is touched: 13 are a
+  `requestAnimationFrame` polyfill, 2 are the rig's own test fixture, 3 are watchdogs or human
+  pauses, 9 are polls and backoff that re-read, and **38 stand between an action and its
+  assertion.** Ranked by what a wrong reading would cost, not by count. Nothing changed.
