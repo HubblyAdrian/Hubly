@@ -451,6 +451,13 @@ const DRAFT_INJECTED_ACTIONS = new Set([
   // refuse every real owner — the exact class check-owner-id-invariant.mjs check 2
   // exists to catch, and the scanner fails the build if this line is removed.
   "operations.read",
+  // website.moveSection (2026-09-14). SHIPPED DEAD FOR ONE DAY and caught by the audit, not
+  // by me: the handler reads injectedOwnerUid and writes a new document version, so without
+  // this entry it saw null and every move was refused on a CLAIMED business — the only kind
+  // of business whose owner is signed in and moving sections. Third time this exact omission
+  // has been made (places.add, business.setHours, this), which is the argument for the list
+  // being derived rather than typed; until then, the check is what catches it.
+  "website.moveSection",
 ]);
 
 /**

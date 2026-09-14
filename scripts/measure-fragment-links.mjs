@@ -22,6 +22,7 @@ import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openRig } from "./lib/browser-rig.mjs";
+import { rateLine, withoutFixtures } from "./lib/kind-split.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const LIMIT = Number((process.argv.find((a) => a.startsWith("--limit=")) || "").split("=")[1] || 0);
@@ -45,6 +46,9 @@ try {
               order by b.slug`);
 } catch (e) { console.error("CANNOT RUN — database unreachable: " + String(e.message).slice(0, 140)); process.exit(2); }
 
+// FIXTURES ARE NOT THE CORPUS — excluded before anything is counted, so the numerator and the
+// denominator are drawn from the same set rather than the rate alone being filtered.
+rows = withoutFixtures(rows);
 if (LIMIT) rows = rows.slice(0, LIMIT);
 console.log(`pages with at least one in-page link: ${rows.length}${LIMIT ? ` (limited to ${LIMIT})` : ""}\n`);
 
@@ -62,13 +66,14 @@ for (const r of rows) {
   const file = join(dir, `${r.slug}.html`);
   writeFileSync(file, r.html);
   const frags = [...new Set([...r.html.matchAll(/href="#([^"]+)"/gi)].map((m) => m[1]))].filter((h) => h && h !== "top");
-  let pageScrolled = 0, pageLinks = 0;
+  let pageScrolled = 0, pageLinks = 0, pageClickable = 0;
 
   for (const id of frags) {
     pageLinks++; links++;
     await rig.load("file://" + file);
     const exists = await rig.page.evaluate((i) => !!document.getElementById(i), id);
     if (!exists) { noTarget++; continue; }
+    pageClickable++;
     const before = (await rig.settleScroll({ quiet: true })).final;
     const url0 = rig.page.url();
     // A LINK A MOUSE CANNOT REACH IS NOT A BROKEN LINK.
@@ -91,7 +96,7 @@ for (const r of rows) {
       const mid = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
       return !!(mid && (mid === a || a.contains(mid) || mid.contains(a)));
     }, id);
-    if (!pointerReachable) { keyboardOnly++; continue; }
+    if (!pointerReachable) { keyboardOnly++; pageClickable--; continue; }
     try { await rig.click({ selector: `a[href="#${id.replace(/"/g, '\\"')}"]` }); }
     catch { didNothing++; continue; }                       // could not press it: not a result
     const after = await rig.settleScroll({ quiet: true });
@@ -105,7 +110,7 @@ for (const r of rows) {
     else if (onScreen) { scrolled++; pageScrolled++; }       // already in view = the job is done
     else didNothing++;
   }
-  perPage.push({ slug: r.slug, kind: r.account_kind, hasHandler, links: pageLinks, scrolled: pageScrolled });
+  perPage.push({ slug: r.slug, account_kind: r.account_kind, kind: r.account_kind, hasHandler, links: pageLinks, scrolled: pageScrolled, clickable: pageClickable });
   process.stdout.write(`  ${r.slug.padEnd(42)} ${hasHandler ? "repaired " : "UNREPAIRED"} ${String(pageScrolled).padStart(3)}/${String(pageLinks).padEnd(3)} scrolled\n`);
 }
 await rig.close();
@@ -117,11 +122,14 @@ console.log(`  in-page links found   : ${links}`);
 console.log(`  keyboard-only (skip links, never a pointer affordance): ${keyboardOnly}`);
 console.log(`  clicked with a pointer: ${links - keyboardOnly}`);
 const clickable = links - keyboardOnly - noTarget;
-console.log(`  brought target into view: ${scrolled}  (${clickable ? Math.round(scrolled / clickable * 100) : 0}% of clickable links)`);
+// THE SPLIT IS OVER THE PAGES THE LINKS LIVE ON, one denominator item per clickable link, so a
+// rate carried by one page with forty links cannot read as a rate across the corpus.
+const clickableItems = perPage.flatMap((p) => Array.from({ length: p.clickable }, () => p));
+console.log("  " + rateLine("clickable in-page links brought their target into view", scrolled, clickableItems, null, { store: "business_documents" }));
 console.log(`  navigated the frame away: ${navigatedAway}`);
 console.log(`  target id missing      : ${noTarget}`);
 console.log(`  did nothing            : ${didNothing}`);
-console.log(`  pages where EVERY link works: ${pagesAllGood}/${pagesWithLinks}`);
+console.log("  " + rateLine("pages where EVERY link works", pagesAllGood, perPage.filter((p) => p.links > 0), null, { store: "business_documents" }));
 console.log(`  pages carrying the repaired runtime: ${repaired} · without it: ${unrepaired}`);
 const k = perPage.reduce((a, p) => { a[p.kind] = (a[p.kind] || 0) + 1; return a; }, {});
 console.log(`  account_kind split of the pages measured: ${JSON.stringify(k)}`);
