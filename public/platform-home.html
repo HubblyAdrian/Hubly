@@ -6702,6 +6702,13 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var d = ev && ev.data;
     if(!d || d.type !== 'hcShowMeWhereResult') return;
     if(!hcShowMeWhereWaiting || d.id !== hcShowMeWhereWaiting.id) return;   // stale or not ours
+    // ONLY THE PAGE WE ASKED. The id already makes a forged result useless, but the origin is
+    // the check that belongs here on principle: every other message handler in this file
+    // establishes who is speaking before it acts on what was said.
+    try{
+      var _expect = new URL(hc.draftBusiness.url).origin;
+      if(ev.origin && ev.origin !== _expect) return;
+    }catch(e){}
     var w = hcShowMeWhereWaiting;
     clearTimeout(w.timer);
     hcShowMeWhereWaiting = null;
