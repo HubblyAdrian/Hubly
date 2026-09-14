@@ -34471,6 +34471,30 @@ const EDITOR_GUIDE_STEPS=[
   {id:'hours',title:'Set your hours',body:'Add when you’re open so booking and the site feel trustworthy.',section:'hours',cta:'Set hours →'},
   {id:'publish',title:'Save whenever you’re ready',body:'Hit Save & publish anytime — you can keep editing packages, hours, and the look after that too.',section:null,cta:'Got it'},
 ];
+/**
+ * IS THE OWNER EDITING? — one predicate, two surfaces.
+ *
+ * `isEditorViewOpen()` is true inside /dashboard. Canvas edit mode is `?hcEditable=1`, set by
+ * platform-home when the business is claimed and its owner is signed in. The renderer already
+ * asked the first question when deciding whether to draw an "Add service" tile; it needed to be
+ * told about the second, and that is the whole difference between the tile existing in one
+ * surface and existing in both.
+ *
+ * Replaces ~190 lines (hcMountAddService / hcServicesGrid / a MutationObserver) that bolted a
+ * "+" onto the grid AFTER renderWebsite() had written it — a race the renderer always won,
+ * measured: the mount succeeded at t≈1900ms and `#ws-services` replaced its children in the
+ * same beat. One renderer, one output, nothing to reconcile.
+ *
+ * NEVER TRUE FOR A VISITOR. `hcEditable=1` is only ever appended by the owner's own canvas
+ * (hcBust), so a public page has neither signal — asserted, not assumed, by
+ * scripts/check-no-editor-chrome-in-public.mjs across every layout.
+ */
+function wsEditingOn(){
+  try{
+    if(typeof isEditorViewOpen === 'function' && isEditorViewOpen()) return true;
+    return new URL(location.href).searchParams.get('hcEditable') === '1';
+  }catch(e){ return false; }
+}
 function isEditorViewOpen(){
   // Owner preview / public storefront must never inherit editor PE markup — those
   // targets only bind clicks inside #ed-ws-preview, so the live site looked dead.
@@ -40081,9 +40105,11 @@ function renderWebsite(prefix){
   const svcGrid=prefix?document.getElementById(p+'-services'):wsPageEl('ws-services');
   if(svcGrid){
     const svcs=getBookingServices().filter(s=>s.name);
-    const addTile=isEditorViewOpen()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-service" data-pe-label="Add service"><span class="ws-pe-add-plus">+</span><span>Add service</span></button>':'';
+    // DRAWN IN THE SAME PASS AS THE CARDS — wsEditingOn(), not isEditorViewOpen(), so the
+    // owner's CANVAS gets the tile too and not only /dashboard. See wsEditingOn's note.
+    const addTile=wsEditingOn()?'<button type="button" class="ws-pe-add-tile ws-pe-target" data-pe="add-service" data-pe-label="Add service"><span class="ws-pe-add-plus">+</span><span>Add service</span></button>':'';
     if(svcs.length)svcGrid.innerHTML=svcs.map((s,i)=>wsServiceCardHtml(s,i)).join('')+addTile;
-    else svcGrid.innerHTML=isEditorViewOpen()?addTile:`<div style="color:#94a3b8;font-size:14px;">${t('wsServicesComing')}</div>`;
+    else svcGrid.innerHTML=wsEditingOn()?addTile:`<div style="color:#94a3b8;font-size:14px;">${t('wsServicesComing')}</div>`;
   }
   const hasTaggedServices=getBookingServices().some(s=>s.name&&s.recommendTag);
   const quizBtn=wsPageEl('ws-quiz-entry');
@@ -53871,6 +53897,42 @@ if(document.readyState==='loading'){
   }
   if(!hcEditableEnabled()) return;
 
+  // ── THE "+ ADD SERVICE" TILE, ON THE CANVAS ─────────────────────────────────
+  //
+  // The tile itself is drawn by renderWebsite() in the same pass as the cards (wsEditingOn),
+  // so there is nothing to mount and nothing to re-mount — this only gives the owner's canvas
+  // a way to ANSWER it. Inside /dashboard the same `data-pe="add-service"` goes through
+  // handleWsPeClick -> addEdSvc; here it posts to the parent, which already owns the write
+  // (hcAddServiceFromCanvas -> applyOwnerRecordEdit -> both stores).
+  //
+  // NEVER WRITES A FACT NOBODY TYPED: an empty name is refused here rather than sent. Price and
+  // description are left to the card's own inline editing, which is where they already live.
+  document.addEventListener('click', function(e){
+    var tile = e.target && e.target.closest ? e.target.closest('[data-pe="add-service"]') : null;
+    if(!tile || tile.querySelector('input')) return;
+    e.preventDefault(); e.stopPropagation();
+    var prior = tile.innerHTML;
+    tile.innerHTML = '';
+    var i = document.createElement('input');
+    i.type = 'text'; i.placeholder = 'Service name';
+    i.style.cssText = 'font:inherit;font-size:14px;padding:8px 10px;border:1px solid rgba(0,0,0,.25);' +
+      'border-radius:9px;width:100%;box-sizing:border-box;background:#fff;color:#12151f';
+    var cancel = function(){ tile.innerHTML = prior; };
+    i.addEventListener('click', function(ev){ ev.stopPropagation(); });
+    i.addEventListener('keydown', function(ev){
+      ev.stopPropagation();
+      if(ev.key === 'Escape'){ cancel(); return; }
+      if(ev.key !== 'Enter') return;
+      var nm = String(i.value || '').trim();
+      if(!nm){ cancel(); return; }
+      i.disabled = true; i.value = 'Adding…';
+      post({ type:'hcFreeformAddService', name: nm, price: null, description: null });
+    });
+    i.addEventListener('blur', function(){ if(!i.disabled && !String(i.value||'').trim()) cancel(); });
+    tile.appendChild(i);
+    try{ i.focus(); }catch(_){}
+  }, true);
+
   var TEXT_FIELDS = {
     'ws-hero-headline': 'heroHeadline',
     'ws-hero-sub': 'heroSubhead'
@@ -54253,12 +54315,10 @@ function wireHcEditingSurface(doc, root){
   // MOUNT, which is idempotent by its own check (`:scope > [data-hc-addsvc]`). So a second call
   // now re-attempts the mount and returns, instead of assuming that having been here once means
   // there was something to do.
-  var hcAlreadyWired = root.getAttribute('data-hc-wired') === '1';
-  if(hcAlreadyWired){
-    try{ hcAddSvcLog('re-entered', 'already wired; re-attempting the mount only'); }catch(e){}
-    try{ hcMountAddService(); }catch(e){}
-    return;
-  }
+  // GATE 4'S SCAFFOLDING, REMOVED WITH THE RACE IT SERVED. The re-entry branch existed so a
+  // second call could re-attempt a mount that the renderer now performs itself. Back to the
+  // plain once-only guard, which is all this was ever for: binding listeners exactly once.
+  if(root.getAttribute('data-hc-wired') === '1') return;
   root.setAttribute('data-hc-wired', '1');
   // This is the document the owner actually scrolls, so this is where "put me back
   // where I was looking" has to be wired.
@@ -54275,33 +54335,6 @@ function wireHcEditingSurface(doc, root){
   // here would be the fixed-delay defect re-introduced in the file that just finished removing
   // it (Lesson 70). hcMountAddService is already idempotent — it returns if the grid has one —
   // so re-running it on mutations is free, and the observer stops the moment it succeeds.
-  try{ hcAddSvcLog('wireHcEditingSurface reached', 'root=<' + (root.tagName||'?').toLowerCase() + (root.id?('#'+root.id):'') + '> doc=' + (doc === document ? 'top' : 'iframe')); }catch(e){}
-  try{ hcMountAddService(); }catch(e){ try{ console.log('[hc+] mount threw — ' + String(e && e.message).slice(0,120)); }catch(_){} }
-  try{
-    if(!root.querySelector('[data-hc-addsvc]') && typeof MutationObserver !== 'undefined'){
-      // IT MOUNTS, AND THEN SOMETHING TAKES IT AWAY.
-      //
-      // The instrument settled this after four structural gates had been opened chasing it:
-      //
-      //   [hc+] grid found — <div class="ws-svc-grid"> with 3 children
-      //   [hc+] mounting — into <div class="ws-svc-grid">
-      //   [hc+] MOUNTED — grid now has 4 children; wrap in document: true
-      //   → plus=false
-      //
-      // The mount SUCCEEDS. A later `renderWebsite()` rewrites the grid's innerHTML and the
-      // "+" goes with it — it is not a card, so nothing re-creates it. And the first version of
-      // this observer disconnected the moment it saw a successful mount, which is precisely
-      // when it stopped being able to notice the mount being destroyed.
-      //
-      // So it does NOT disconnect on success. The mount is idempotent (`:scope >
-      // [data-hc-addsvc]`), so re-running on every mutation costs a querySelector, and the
-      // observer's whole job is to survive the next re-render rather than to fire once.
-      var addObs = new MutationObserver(function(){
-        try{ hcMountAddService(); }catch(e){ try{ addObs.disconnect(); }catch(_){} }
-      });
-      addObs.observe(root, { childList: true, subtree: true });
-    }
-  }catch(e){}
   // The builder can now answer at the toolbar instead of in the chat.
   hcFlashMessage = function(text){
     try{
@@ -54808,113 +54841,18 @@ function wireHcEditingSurface(doc, root){
      undoable version — the same route the Edit-details panel uses. A card that appears
      on the page but cannot be booked is the defect this codebase already has a scar
      for, so there is no second, page-only way to add one. */
-  // INSTRUMENTED 2026-09-13. Three structural gates were opened blind before anyone asked the
-  // function where it abandons — the same lesson as everything else tonight, at a smaller
-  // scale: measurement beats reasoning about this codebase, and the function knows the answer.
-  // Every early return says which condition failed and what it saw. Left in: it is one console
-  // line on an owner-only surface, and the next person to wonder why the "+" is absent gets the
-  // answer instead of a search.
-  function hcAddSvcLog(where, detail){
-    try{ console.log('[hc+] ' + where + (detail ? ' — ' + detail : '')); }catch(e){}
-  }
-  function hcServicesGrid(){
-    try{
-      var anchors = root.querySelectorAll('[data-hubly-service]');
-      if(!anchors.length){
-        hcAddSvcLog('no grid', 'root <' + (root.tagName||'?').toLowerCase() + (root.id?('#'+root.id):'') +
-          '> holds 0 [data-hubly-service]; document holds ' + document.querySelectorAll('[data-hubly-service]').length);
-        return null;
-      }
-      var holds = function(el){ return !!(el.querySelector && el.querySelector('[data-hubly-service]')); };
-      // THE CARD IS THE LOWEST ANCESTOR WHOSE SIBLINGS ALSO HOLD A SERVICE.
-      //
-      // Not "the outermost element with several siblings" — that climbed straight past
-      // the card to the section and found nothing, which is why this mounted on no
-      // page at all. Structure decides it: walk up from an anchor until the level where
-      // the neighbours are other services. That level is the card; its parent is the grid.
-      for(var i=0;i<anchors.length;i++){
-        for(var n = anchors[i]; n && n.parentNode && n !== root; n = n.parentNode){
-          var p = n.parentNode;
-          if(!p.children || p.children.length < 2) continue;
-          var withService = 0;
-          for(var k=0;k<p.children.length;k++) if(p.children[k] !== n && holds(p.children[k])) withService++;
-          if(withService >= 1){
-            hcAddSvcLog('grid found', '<' + p.tagName.toLowerCase() + ' class="' + String(p.className).slice(0,40) + '"> with ' + p.children.length + ' children');
-            return p;
-          }
-        }
-      }
-      hcAddSvcLog('no grid', anchors.length + ' anchor(s) but none has a sibling that also holds one');
-      return null;
-    }catch(e){ hcAddSvcLog('no grid', 'threw: ' + String(e && e.message).slice(0,80)); return null; }
-  }
-  function hcMountAddService(){
-    var grid = hcServicesGrid();
-    if(!grid){ hcAddSvcLog('abandoned', 'hcServicesGrid() returned null'); return; }
-    if(grid.querySelector(':scope > [data-hc-addsvc]')) return;   // already there; silent, this runs on every mutation
-    hcAddSvcLog('mounting', 'into <' + grid.tagName.toLowerCase() + ' class="' + String(grid.className).slice(0,40) + '">');
-    var wrap = doc.createElement('div');
-    wrap.setAttribute('data-hc-editor','1');
-    wrap.setAttribute('data-hc-addsvc','1');
-    wrap.style.cssText = 'display:flex;align-items:center;justify-content:center;min-height:120px;' +
-      'border:2px dashed rgba(120,120,120,.45);border-radius:14px;padding:14px;' +
-      'font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
-    var btn = doc.createElement('button');
-    btn.type = 'button'; btn.textContent = '+ Add service';
-    btn.style.cssText = 'font:inherit;font-size:14px;font-weight:650;color:#12151f;background:none;border:0;cursor:pointer;padding:10px 14px;border-radius:10px';
-    var form = doc.createElement('div');
-    form.style.cssText = 'display:none;flex-direction:column;gap:8px;width:100%';
-    var mkInput = function(ph, type){
-      var i = doc.createElement('input');
-      i.type = type || 'text'; i.placeholder = ph;
-      i.style.cssText = 'font:inherit;font-size:14px;padding:9px 10px;border:1px solid rgba(0,0,0,.22);' +
-        'border-radius:9px;width:100%;box-sizing:border-box;background:#fff;color:#12151f';
-      i.addEventListener('click', function(e){ e.stopPropagation(); });
-      i.addEventListener('keydown', function(e){ e.stopPropagation(); });
-      form.appendChild(i); return i;
-    };
-    var nameI = mkInput('Service name');
-    var priceI = mkInput('Price', 'number');
-    var descI = mkInput('One-line description');
-    var row = doc.createElement('div');
-    row.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
-    var cancel = doc.createElement('button');
-    cancel.type='button'; cancel.textContent = 'Cancel';
-    cancel.style.cssText = 'font:inherit;font-size:13px;padding:8px 12px;border-radius:9px;border:1px solid rgba(0,0,0,.18);background:#fff;cursor:pointer';
-    var save = doc.createElement('button');
-    save.type='button'; save.textContent = 'Add';
-    save.style.cssText = 'font:inherit;font-size:13px;font-weight:650;padding:8px 14px;border-radius:9px;border:0;background:#2f5d45;color:#fff;cursor:pointer';
-    row.appendChild(cancel); row.appendChild(save); form.appendChild(row);
-    var note = doc.createElement('div');
-    note.style.cssText = 'font-size:12px;color:#b23;display:none';
-    form.appendChild(note);
-
-    btn.addEventListener('click', function(e){
-      e.preventDefault(); e.stopPropagation();
-      btn.style.display = 'none'; form.style.display = 'flex';
-      try{ nameI.focus(); }catch(_){}
-    });
-    cancel.addEventListener('click', function(e){
-      e.preventDefault(); e.stopPropagation();
-      form.style.display = 'none'; btn.style.display = ''; note.style.display = 'none';
-      nameI.value = priceI.value = descI.value = '';
-    });
-    save.addEventListener('click', function(e){
-      e.preventDefault(); e.stopPropagation();
-      var nm = String(nameI.value || '').trim();
-      // NEVER WRITE A FACT NOBODY TYPED. An empty name is refused here rather than
-      // sent and guessed at; price and description are optional and go as null.
-      if(!nm){ note.textContent = 'A name is needed.'; note.style.display = 'block'; try{ nameI.focus(); }catch(_){} return; }
-      var pr = String(priceI.value || '').trim();
-      save.disabled = true; save.textContent = 'Adding…';
-      post({ type:'hcFreeformAddService', name: nm,
-             price: pr === '' ? null : Number(pr),
-             description: String(descI.value || '').trim() || null });
-    });
-    wrap.appendChild(btn); wrap.appendChild(form);
-    grid.appendChild(wrap);
-    hcAddSvcLog('MOUNTED', 'grid now has ' + grid.children.length + ' children; wrap in document: ' + !!doc.querySelector('[data-hc-addsvc]'));
-  }
+  // hcMountAddService / hcServicesGrid / hcAddSvcLog DELETED 2026-09-13 — 107 lines.
+  //
+  // They bolted a "+ Add service" tile onto the services grid AFTER renderWebsite() had
+  // written it. renderWebsite draws that tile itself, in the same innerHTML assignment as the
+  // cards, and always did — gated on isEditorViewOpen(), i.e. /dashboard only. So this was 190
+  // lines re-deriving something the product already did correctly, and it lost a race it could
+  // never win: measured, the mount succeeded at t≈1900ms and #ws-services replaced its children
+  // in the same beat.
+  //
+  // The fix was four lines: wsEditingOn() = isEditorViewOpen() || hcEditableEnabled(), used by
+  // the renderer. One renderer, one output, nothing to reconcile. Fifth instance of Lesson 49 —
+  // not a missing feature, an unlit one.
 
   /* ── THE HANDLE LIVES ON THE BLOCK ─────────────────────────────────────────
      It was inside the floating toolbar, which made starting a drag three steps:
