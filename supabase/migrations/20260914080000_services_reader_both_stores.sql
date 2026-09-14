@@ -69,6 +69,27 @@ returns table (
      and (coalesce(t.price, -1) is distinct from coalesce(c.price, -1)
        or coalesce(nullif(btrim(t.description),''), '') is distinct from coalesce(nullif(btrim(c.description),''), '')))
                                                                as conflicts
+  -- ══ TWO JUDGEMENTS SOMEONE WILL PROPOSE UNDOING. BOTH ARE DELIBERATE. ══════════════════
+  --
+  -- 1. THE JOIN IS EXACT, AND IT MUST STAY EXACT.
+  --    Graef has "clay and seal" (relational, price 0) and "Clay & Seal Package" (catalogue,
+  --    $75). They are almost certainly one service. A fuzzy match — trigram, soundex, "close
+  --    enough" — would tidy nine rows into eight and read as a cleanup.
+  --    DO NOT. Name similarity is not identity. "Full Detail" and "Full Detail (Truck)" are
+  --    two services at two prices; "Wash" and "Wash & Wax" are two services. A fuzzy join
+  --    silently merges two real services into one, and the failure is invisible: the owner
+  --    simply stops being told about one of them, and the model quotes one price for two
+  --    things. The stray row is REPORTED instead — "on record only, NOT on their page" — which
+  --    is true, useful, and something the owner can resolve in one sentence.
+  --    Nine rows is the honest number. Eight would be a tidier lie.
+  --
+  -- 2. THE CATALOGUE WINS ON PRICE.
+  --    Not because it is newer or bigger, but because it is WHAT A CUSTOMER IS QUOTED. The
+  --    page renders from it; a person reading that page and clicking Book sees that number.
+  --    A price the owner can see on his own site is the true price of that service, whatever
+  --    a relational row left over from an older path says. His one relational row says 0 for
+  --    a service the page prices at $75 — preferring the table would keep handing the model
+  --    the number nobody is charging.
   from tbl t full outer join cat c on c.k = t.k
   order by coalesce(c.sort_order, t.sort_order, 999), 1;
 $$;

@@ -2515,3 +2515,37 @@ removed spend is the one that ships.
 It generalises past composers to anything with a once-per-scope rule: a lock taken and not
 released, a retry counter read and not incremented, a "seen" flag checked and not set. In every
 case the test is the visible half and the write is the half that makes it true.
+
+
+## Lesson 78 — The guard that looks right and does nothing. Twice in one night, so it is a pattern
+
+Two checks were written hours apart, for unrelated subsystems. Both had a leg A that caught the
+obvious regression and a **leg B that caught something better**, and the two leg Bs are the same
+shape:
+
+| check | RED A — the obvious one | **RED B — the one that matters** |
+|---|---|---|
+| `check-one-voluntary-addition` | a composer with no guard at all | **a composer that calls the guard and never takes the slot** |
+| `check-two-store-readers` | a reader that queries one store | **a reader that queries both and picks a winner silently** |
+
+**In both, the failing version contains the correct machinery and produces the original bug.**
+The composer consults `hcMayAddVoluntary()` — the line looks exactly like the rule — and the
+budget is never spent, so the next composer sails through. The reader joins both stores — the
+query looks exactly like the fix — and then `coalesce`s them into one column with no `source`,
+so the answer is single-store again.
+
+**Neither is caught by a check that only asks "is the mechanism present?"** Both are caught by
+asking "does the mechanism have its effect?"
+
+**The rule: when reviewing a fix, find the version that keeps the new code and restores the old
+behaviour, and make the check fail on THAT.** If no such version exists, the fix is structural
+and the check can be simple. If one does — and there usually is, because the machinery and the
+effect are separable — it is the version a careful future edit will produce, because it is the
+one that looks correct in a diff.
+
+The two shapes seen so far, and there will be more:
+- **the unspent budget** — a limit consulted and never decremented;
+- **the discarded distinction** — two sources read and then collapsed into one value.
+
+Both are Lesson 75's other half. That one says a check failing everything is probably wrong;
+this one says **a check passing everything may be asking the easier question.**

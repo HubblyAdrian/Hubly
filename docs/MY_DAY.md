@@ -240,3 +240,66 @@ Then STOP. Do not code until I approve the plan.
 My Day is not a planner. My Day is the owner's daily operating view of their business and life. It combines the things they need to do, the things that are already scheduled, and the things Hubly believes matter most — while letting them drill into the actual Hubly workspace when they need to do the work.
 
 Do not overbuild this. The magic is simplicity.
+
+
+---
+
+# WHAT A RECOMMENDATION LOOKS LIKE — the first real one, 2026-09-14
+
+Adrian: *"our AI has to become this smart it has to think about the user everyday. give a recap
+or recommendations and be ready for questions."* Here is the first instance that came from the
+product actually knowing something, rather than from anyone designing a recommendation.
+
+## The observation
+
+Fixing the services reader to consult both stores (2026-09-14) surfaced something nobody had
+told Austin Graef: **he has a service on his record that is not on his website**, and it may be
+a duplicate of one that is.
+
+| on record only | on his page |
+|---|---|
+| `clay and seal` — price 0, no description | `Clay & Seal Package` — $75, 1.5h, described |
+
+## What Hubly says
+
+> **"You've got 'clay and seal' on your record but it isn't on your site. Is that the same thing
+> as your Clay & Seal Package, or should I add it?"**
+
+## Why that is the shape, clause by clause
+
+- **It is a fact he did not know.** Not a restatement of something on his screen. A recap that
+  tells an owner what he can already see is a status report, and he will stop reading them.
+- **It is phrased as a question, because we do not know the answer.** They are probably the same
+  service. *Probably* is not a fact, and the honest form of a probable thing is a question. This
+  is also why the reader refuses to fuzzy-merge them — see the migration comment: name
+  similarity is not identity.
+- **There is an action attached, and it is one action.** "Should I add it?" — one thing, doable
+  in one reply. Not a menu.
+- **It is not a warning.** Nothing is broken. No red, no "issue found", no count of problems.
+- **It is not a checklist item.** It does not arrive in a list of four things with buttons; it is
+  one sentence in Hubly's own voice, which is the whole of `docs/NEXT_ASK_ORDER.md`.
+- **NOTHING IS CLEANED UP.** His records are not touched. The observation is offered; the
+  decision is his. A recommendation that silently fixes the thing it noticed is not a
+  recommendation, it is an edit he did not ask for.
+
+**The test for any future recommendation: could the owner have known this without us? If yes,
+it is a status line. If no, and there is one action, it is a recommendation.**
+
+## Noticing this class in general — costed, not built
+
+The observation above is one instance of a general shape: **a fact that exists in one store and
+not the other, across any two-store fact.** Today there are two such facts (`services`, `hours`)
+and both readers already return `source` per row, so the raw signal exists.
+
+| piece | cost |
+|---|---|
+| the signal | **already there** — every row from `get_business_services` / `get_business_hours` carries `source` (`both` · one store · the other) and `conflicts` |
+| a reader that returns only the divergences | **~25 lines** — one RPC, `get_business_store_divergences(business, owner)`, selecting rows where `source <> 'both'` or `conflicts` across the declared two-store facts |
+| phrasing one | **~20 lines per fact kind** — the sentence is specific ("on your record but not on your site" is not "the two copies of Tuesday disagree"), so each fact needs its own, and generating them would produce exactly the thin prose we rejected for capability descriptions |
+| deciding WHEN to say it | **the real cost, and it is not lines** — this is a recommendation, so it obeys the one-ask rule, the voluntary-addition budget, and must not repeat once he has answered. That needs a "told them, they said X" record — a new table, or a column on `hubly_owner_profile` |
+| migrations | **one**, for the divergence reader; a second if the acknowledgement record lands |
+
+**~70 lines plus a decision about memory.** The cheap half is finding them; the expensive half is
+not asking twice. **Recommended only once My Day exists to put it in** — a recommendation with
+nowhere to live becomes a fifth composer in the chat, which is the thing we spent the night
+removing.

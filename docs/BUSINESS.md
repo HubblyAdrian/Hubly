@@ -36,6 +36,18 @@ told, and never dress up a claim as a measurement. It applies to us too.
 
 ### Graef's AutoCare — the anchor
 
+**EVERY RECOMMENDATION HUBLY MADE TO AUSTIN GRAEF BEFORE 2026-09-14 06:28 UTC WAS REASONED
+FROM A FALSE PREMISE.** The operational-state slice that feeds the assistant read the relational
+`services` table alone, so on every owner turn the model was told he has **one service — "clay
+and seal", priced at zero**. His page has rendered **eight, priced $75–$400**, the whole time.
+Established / how: measured directly from the two stores, 2026-09-14; fixed and deployed at
+06:28:58 UTC, after which the model sees nine rows with the store named on each.
+
+**Why it is recorded here and not only in the engineering notes:** if he ever says the assistant
+gave him odd advice — about pricing, about what to add, about what his business offers — this is
+why, and the date bounds it. Anything before 06:28 on 2026-09-14 came from a model that believed
+he had one unpriced service. We do not know what it said to him; we know what it was working from.
+
 **HIS NAME IS IN THE PRODUCT NOW, AND IT WAS NOT (2026-09-14).** `hubly_owner_profile` holds
 `display_name: "Austin Graef"`, `name_source: 'signup'` — he typed it into Hubly's own signup
 form, so it is his, not one Google guessed — and `welcomed_at: NULL`. **Hubly has never once
