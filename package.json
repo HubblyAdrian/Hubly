@@ -91,7 +91,9 @@
     "brief": "node scripts/brief.mjs",
     "decisions": "node scripts/decisions-open.mjs",
     "audit:redproofs": "node scripts/audit-redproofs.mjs",
-    "check:grounded": "node scripts/check-facts-are-grounded.mjs"
+    "check:grounded": "node scripts/check-facts-are-grounded.mjs",
+    "check:chain": "node scripts/check-chain-acknowledgement.mjs",
+    "check:doors-offered": "node scripts/check-doors-offered-exist.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

@@ -93,6 +93,22 @@ const SET = [
       return src.slice(0, m.index + m[0].length) + " return true; " + src.slice(m.index + m[0].length);
     } },
 
+  { check: "check-chain-acknowledgement", tier: "fast", leg: "the hollow acknowledgement",
+    ruled: "the chain — an acknowledgement names something that actually changed, or is not said",
+    file: "public/platform-home.html",
+    // THE RED-PROOF IS THE NO-CHANGE TURN. Praise costs nothing to emit and reads well in a
+    // demo; this is the version that emits it with nothing behind it.
+    mutate: swapInCode("    if(!ack && !ask) return '';",
+                       "    if(!ack) ack = 'Great work!';\n    if(!ack && !ask) return '';") },
+
+  { check: "check-doors-offered-exist", tier: "fast", leg: "offering a door that is not there",
+    ruled: "the door count must be non-lying at the point of speech, not only in a document",
+    file: "public/platform-home.html",
+    // The sentence that reads best and is not true: hours has no show door until the anchor
+    // pass lands, so pointing at it would move 96% of pages to nothing.
+    mutate: swapInCode('say:"What hours are you open?"',
+                       'say:"What hours are you open? I can show you where they go."') },
+
   { check: "check-denominator-rule", tier: "fast",
     ruled: "every rate quoted this week — that it carries its market/internal/test split",
     file: "scripts/__redproof_rate.mjs", create: true,

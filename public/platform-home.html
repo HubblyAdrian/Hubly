@@ -5567,9 +5567,61 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
    * that never fires looks exactly like a thing that works. Build (b) only when the miss is
    * countable, the same condition every other silent path here has had to meet.
    */
+  // ── THE CHAIN ────────────────────────────────────────────────────────────────────────
+  //
+  // "Great job on putting your hours in. One more thing that could help is looking at your
+  // services." Two clauses: what just happened, then ONE next thing. Today each reply is a
+  // standalone answer and the owner is the only one carrying the thread.
+  //
+  // THE ACKNOWLEDGEMENT IS READ FROM STATE, NEVER FROM A FEELING. It is the DIFFERENCE
+  // between the gaps before this turn and the gaps now — a fact the database can be asked
+  // about, not an inference from what the model said it did. That is the whole discipline:
+  // "great work!" with nothing behind it is the unearned checkmark in a warmer register, and
+  // it trains an owner to ignore the line that matters.
+  //
+  // NO CHANGE MEANS NO CLAUSE. If nothing closed this turn, the reply is the ask alone — and
+  // if there is also nothing to ask, Hubly says nothing at all. Silence is the correct output
+  // and there is no fallback (hcPickNextGap's rule, one level up).
+  var HC_GAP_DONE = {
+    has_phone:           'Your number is on your page now.',
+    has_hours:           'Your hours are on your page now.',
+    has_priced_services: 'Your prices are on your page now.',
+    own_photos:          'Your photos are on your page now.',
+    services_no_desc:    'Those service descriptions are on your page now.'
+  };
+  /** Which asks were outstanding before and are satisfied now. Returns keys, in the ladder's
+   *  own order, so the sentence reads in the order the owner would have met them. */
+  function hcClosedGaps(before, after){
+    if(!before || !after) return [];                    // nothing to compare: claim nothing
+    var out = [];
+    for(var i = 0; i < HC_GAP_ASKS.length; i++){
+      var a = HC_GAP_ASKS[i];
+      var wasOpen = (a.want === false && before[a.key] === false) ||
+                    (a.want === 0 && Number(before[a.key]) === 0) ||
+                    (a.want === '>0' && Number(before[a.key]) > 0);
+      var nowOpen = (a.want === false && after[a.key] === false) ||
+                    (a.want === 0 && Number(after[a.key]) === 0) ||
+                    (a.want === '>0' && Number(after[a.key]) > 0);
+      if(wasOpen && !nowOpen && HC_GAP_DONE[a.key]) out.push(a.key);
+    }
+    return out;
+  }
+  /** The chained sentence, or '' when there is nothing true to say. Pure, so it can be
+   *  executed by a check rather than read by one (Lesson 83). */
+  function hcChainLine(closedKeys, gap){
+    var keys = Array.isArray(closedKeys) ? closedKeys.filter(function(k){ return !!HC_GAP_DONE[k]; }) : [];
+    var ack = keys.length ? keys.map(function(k){ return HC_GAP_DONE[k]; }).join(' ') : '';
+    var ask = gap && gap.say ? String(gap.say) : '';
+    if(!ack && !ask) return '';
+    if(!ack) return ask;
+    if(!ask) return ack;
+    // One acknowledgement, one ask, in that order. Never two asks: the offer is chosen by
+    // hcPickNextGap's customer-impact tiering and the rest of the ladder waits its turn.
+    return ack + ' One more thing that would help: ' + ask.replace(/^./, function(ch){ return ch.toLowerCase(); });
+  }
+
   async function hcMaybeAskNextGap(){
     try{
-      if(hc._gapAsked) return;                                    // once per session
       var biz = hc.draftBusiness;
       if(!biz || !biz.id || !hc.draftClaimed || !hcIsAuthed()) return;
       // RE-READ FIRST. A fact given in passing in the very message that triggered this must
@@ -5578,10 +5630,22 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       // instead of a value captured earlier in the turn.
       var c = await authGetClient();
       var r = await c.rpc('get_my_site_gaps', { p_business_id: biz.id });
-      var gap = hcPickNextGap(r && r.data);
-      if(!gap) return;
+      var now = r && r.data;
+      if(!now) return;                                            // no reading, no claim
+      var closed = hcClosedGaps(hc._gapsSeen, now);
+      hc._gapsSeen = now;                                         // the baseline for next turn
+      // THE SESSION CAP STILL GOVERNS THE UNPROMPTED ASK (ruled 2026-09-13: an ask that
+      // arrives as a ritual is worse than no ask). A turn that CLOSED something is not
+      // unprompted — the owner just did the thing — so it earns its chained line even after
+      // the session's one ask has been spent. The same gap is never asked twice in a row.
+      if(hc._gapAsked && !closed.length) return;
+      var gap = hcPickNextGap(now);
+      if(gap && gap.key === hc._lastGapKey && !closed.length) return;
+      var line = hcChainLine(closed, gap);
+      if(!line) return;
       hc._gapAsked = true;
-      hcAppendMessage('hubly', gap.say);
+      if(gap) hc._lastGapKey = gap.key;
+      hcAppendMessage('hubly', line);
       hcThreadScrollToEnd();
     }catch(e){ /* an ask that cannot be composed is not said */ }
   }
