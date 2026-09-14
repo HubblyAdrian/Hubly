@@ -18719,7 +18719,7 @@ async function goWebsiteSetup({name,email,openLayout=true}={}){
 }
 
 function promptForBizName({thenLayout}={}){
-  const anchor=document.querySelector('#ed-ws-preview .ws-header-name, #ed-ws-preview [data-pe="biz-name"], #ws-header-name');
+  const anchor=document.querySelector('#ed-ws-preview .ws-header-name, #ed-ws-preview [data-pe="biz-name"], #ed-ws-preview [data-ws-clone-id="ws-header-name"], #ws-header-name');
   if(!anchor){
     if(thenLayout)openEdSheet('layout');
     return;
@@ -29816,7 +29816,7 @@ function applyWsCtaInk(accent){
     const el=document.getElementById(id);
     if(el&&!layoutKeepsOwnCtaColor(getWebsiteLayoutId()))el.style.color=ink;
   });
-  document.querySelectorAll('#ed-ws-preview #ws-hero-cta, #ed-ws-preview #ws-header-cta, #ed-ws-preview #ws-sticky-book, #ed-ws-preview .ws-hero-cta, #ed-ws-preview .ws-header-cta').forEach(el=>{
+  document.querySelectorAll('#ed-ws-preview [data-ws-clone-id="ws-hero-cta"], #ed-ws-preview [data-ws-clone-id="ws-header-cta"], #ed-ws-preview [data-ws-clone-id="ws-sticky-book"], #ed-ws-preview #ws-hero-cta, #ed-ws-preview #ws-header-cta, #ed-ws-preview #ws-sticky-book, #ed-ws-preview .ws-hero-cta, #ed-ws-preview .ws-header-cta').forEach(el=>{
     if(!layoutKeepsOwnCtaColor(getWebsiteLayoutId()))el.style.color=ink;
   });
 }
@@ -34303,12 +34303,33 @@ function renderEdBookingCanvas(){
   }
 }
 function stripPreviewCloneIds(root){
-  /* Keep real IDs in the Site preview — layout/theme CSS and live edits
-     target #ws-* nodes. Duplicate IDs vs the hidden #ws-page source are OK
-     for querySelector inside the preview root. */
+  /* A CLONE MAY NOT ANSWER TO THE ORIGINAL'S NAME.
+   *
+   * This function has been named `strip` since it was written and never stripped
+   * anything — it copied each id into data-ws-clone-id and left the id in place. The
+   * comment that stood here explained why, and its premise was:
+   *
+   *     "Duplicate IDs vs the hidden #ws-page source are OK for querySelector
+   *      inside the preview root."
+   *
+   * True inside the EDITOR, where #ws-page is the hidden source and this clone is what
+   * the owner sees. Exactly backwards on a PUBLIC page, where #ws-page IS the site and
+   * this clone is the hidden one — and the clone comes first in document order, so it
+   * won every document.getElementById and every native #fragment lookup. Measured on
+   * graefs-autocare, live: 85 duplicate ids and 45,267 bytes of the owner's editor
+   * preview shipped to every visitor (2026-09-13).
+   *
+   * data-ws-clone-id is the replacement and the migration was already 43 selectors deep
+   * across this file; only the removal was never performed. It is performed now.
+   *
+   * NOTE, honestly: this is NOT the fix for the dead nav on classic pages. That was
+   * tested — ids held unique through a real click by a MutationObserver — and the page
+   * still did not scroll. This is a real defect on its own merits and a different one.
+   * See docs/CHECKER_LESSONS.md Lesson 68. */
   if(!root)return;
   root.querySelectorAll('[id]').forEach(el=>{
-    el.dataset.wsCloneId=el.id;
+    if(!el.dataset.wsCloneId)el.dataset.wsCloneId=el.id;
+    el.removeAttribute('id');
   });
 }
 function forceEdSiteCanvasVisible(){
@@ -35011,14 +35032,14 @@ function commitWsPeInlineValue(pe,text,target,node){
   }
   if(pe==='cta'){
     S.ctaText=text||'Book Now';
-    document.querySelectorAll('#ed-ws-preview #ws-hero-cta, #ed-ws-preview #ws-header-cta, #ed-ws-preview .ws-header-cta').forEach(el=>{el.textContent=S.ctaText;});
+    document.querySelectorAll('#ed-ws-preview [data-ws-clone-id="ws-hero-cta"], #ed-ws-preview [data-ws-clone-id="ws-header-cta"], #ed-ws-preview #ws-hero-cta, #ed-ws-preview #ws-header-cta, #ed-ws-preview .ws-header-cta').forEach(el=>{el.textContent=S.ctaText;});
     try{onWebsiteFieldChange();}catch(e){}
     return;
   }
   if(pe==='cta-secondary'){
     ensureWebsiteCopy();
     S.website.secondaryCtaText=text||'View Packages';
-    document.querySelectorAll('#ed-ws-preview #ws-hero-cta-secondary, #ws-hero-cta-secondary').forEach(el=>{el.textContent=S.website.secondaryCtaText;});
+    document.querySelectorAll('#ed-ws-preview [data-ws-clone-id="ws-hero-cta-secondary"], #ed-ws-preview #ws-hero-cta-secondary, #ws-hero-cta-secondary').forEach(el=>{el.textContent=S.website.secondaryCtaText;});
     try{onWebsiteFieldChange();}catch(e){}
     return;
   }
@@ -36631,7 +36652,7 @@ function applyWsPeCta(val){
 function liveWsPeCta(val){
   const text=String(val||'').trim()||'Book Now';
   S.ctaText=text;
-  document.querySelectorAll('#ed-ws-preview #ws-hero-cta, #ed-ws-preview #ws-header-cta, #ed-ws-preview .ws-header-cta, #ws-hero-cta, #ws-header-cta').forEach(el=>{el.textContent=text;});
+  document.querySelectorAll('#ed-ws-preview [data-ws-clone-id="ws-hero-cta"], #ed-ws-preview [data-ws-clone-id="ws-header-cta"], #ed-ws-preview #ws-hero-cta, #ed-ws-preview #ws-header-cta, #ed-ws-preview .ws-header-cta, #ws-hero-cta, #ws-header-cta').forEach(el=>{el.textContent=text;});
 }
 function applyWsPeCtaSave(){
   const text=(document.getElementById('ws-pe-inp')?.value||'').trim()||'Book Now';

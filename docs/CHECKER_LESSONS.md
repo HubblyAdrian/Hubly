@@ -2151,3 +2151,43 @@ navigation handler means its frequency is a UI behaviour, not a decision anyone 
 
 Same family as Lesson 66 — both are a schedule that nobody chose — and they shipped in the same
 twenty lines.
+
+## Lesson 68 — The obvious cause that survives reading must still be TESTED before it is fixed (2026-09-13)
+
+Graef's website navigation does nothing. Reading the page found **85 duplicate ids**, with the
+invisible copy first in document order at `top: 0`, so `getElementById` and every native
+`#fragment` lookup resolved to it. That is not a weak theory. It explains the symptom exactly,
+it is visible in one query, and it is a genuine defect sitting right where the bug is.
+
+**It is not the cause.** Stripping the ids — on his live page, in memory, holding uniqueness
+through the click with a `MutationObserver` because the clone is rebuilt on many triggers —
+left the nav just as dead. Real mouse click, unique id, target at `docTop 581`, `scrollTop`
+0 → 0.
+
+The second theory was as good and also wrong: *the page scrolls an inner container, so a
+fragment link asks the document to scroll and the document has nothing to scroll.* It fits
+every observation — the wheel works, `window.scrollY` never moves, nothing intercepts, no
+`scrollTo` fires. Measured: **there is no inner scroller.** No ancestor of the section has
+`overflow-y: auto|scroll`; a document-wide sweep for any scroller taller than 200px returns
+zero; `document.scrollingElement` is `html` with `scrollHeight 7238` vs `clientHeight 848`;
+and the wheel moves **that** element, 0 → 400. Both halves of the pair measured, both wrong.
+
+**A page full of a plausible defect is a confession, and a confession is not evidence.** The
+cost of the mistake is specific and nasty: ship the id fix, watch the bug persist, conclude
+the area is cursed, and go looking somewhere else entirely — while the real cause sits
+untouched and the customer's site is still broken.
+
+**So: reproduce the FIX before proposing it, not just the bug.** Apply it in the running page
+and check the symptom is gone. It costs one browser round-trip and it is the difference between
+a fix and a plausible story. And when the state you are testing can be rebuilt underneath you —
+as this clone is — hold it with an observer and verify it is still held at the moment of the
+click, or the null result is worth nothing either.
+
+Two corollaries earned the hard way tonight:
+- **Scripted scrolling does not prove anything about scrolling.** `scrollTop = n` from the
+  extension's evaluation context silently does not apply here, while a real wheel event does.
+  Every scroll conclusion was re-taken with real input before it was believed.
+- **State that a strip or a patch establishes can be rebuilt between the setup and the test.**
+  The first in-memory id strip "failed" and the second one, held by a `MutationObserver`, also
+  failed — but only the second one was worth reporting, and the difference was not knowable
+  without checking.

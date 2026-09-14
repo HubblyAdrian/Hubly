@@ -368,3 +368,26 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
 - Fixed at the gate: the flag now records the **attempt**, with a distinct `'attempted'` value
   so the difference is still readable. A timeout is deliberately NOT recorded — that one
   *should* be retried.
+
+## D-036 — A fix is tested in the running product before it is proposed
+
+- **Adrian, 2026-09-13:** *"Testing the duplicate-id fix in the browser before proposing it,
+  finding it did not work, and refusing to name a second cause you had not tested — that is the
+  standard."* Recorded as the standard, with his name on it.
+- What it means in practice: reproducing the BUG is half. The other half is applying the
+  candidate FIX in the running page and checking the symptom is gone, before it reaches a
+  report as a cause. And when the fix's state can be rebuilt underneath you, hold it and verify
+  it is still held at the moment of the test.
+- It has now cost two theories in one night — the duplicate ids and the inner-scroller — both
+  of which fit every observation and neither of which survived being tried. See Lesson 68.
+
+## D-037 — The clone's ids go; the 45KB stays, on the record, as the better end state
+
+- **Ruled:** option 1. `stripPreviewCloneIds` now does what its name says — copy to
+  `data-ws-clone-id`, then remove the id. Five bare `#ws-*` selectors scoped to a preview root
+  were dual-written; the migration was already 43 selectors deep and only the removal had never
+  been performed. Cheaper than a shadow root, safer than gating 20+ call sites.
+- **Option 2 stays on the record as the better end state:** `renderEdDesktopProfile` ships
+  45,267 bytes of the owner's editor preview into every public visitor's document. It is waste
+  today and one day it will carry something that should not leave the editor.
+- **This does not fix the dead nav**, and the code comment says so where someone will find it.
