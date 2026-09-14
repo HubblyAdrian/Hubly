@@ -33,6 +33,7 @@
  * Exit: 0 PASS · 1 FAIL · 2 CANNOT RUN (never reported as either)
  */
 import { readFileSync, writeFileSync } from "node:fs";
+import { settleUntil } from "./lib/browser-rig.mjs";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -142,6 +143,10 @@ async function waitForDocument(businessId, maxMs = 240000) {
                       order by created_at desc limit 1`);
     const r = rows[0];
     if (r && String(r.html || "").length > 500) return { html: String(r.html), doc: String(r.doc || "") };
+    // A POLL INTERVAL, not a wait-for-an-outcome: the loop re-reads every pass and returns the
+    // moment the document exists. Labelled because a grep for setTimeout flagged it as a fixed
+    // delay once already (docs/FIXED_DELAY_AUDIT.md), and reading the line without the loop is
+    // how a correct pattern gets "fixed".
     await new Promise((z) => setTimeout(z, 5000));
   }
   return null;
@@ -240,8 +245,18 @@ async function run() {
         body: JSON.stringify({ messages: [{ role: "user", content: { not: "a string" } }], understanding: {}, draftBusiness: null, conversationKey: `failcount-${Date.now()}` }),
       });
     } catch { /* the 502 is the point */ }
-    await new Promise((z) => setTimeout(z, 1500));
-    const after = Number((sql(`select count(*) as n from first_turn_outcomes`)[0] || {}).n || 0);
+    // POLLED, NOT WAITED. This was `setTimeout(1500)` — a guess about how long an async row
+    // write takes, standing between an action and an assertion about PRODUCT BEHAVIOUR. On a
+    // slow run it reported "a failing first turn writes no row", which is a claim we would
+    // have acted on. Lesson 70: a fixed delay encodes a duration guess into something that
+    // reads like an observation, and the guess is invisible in the output. Now it says how
+    // long it actually took, and a timeout is a DISTINCT outcome from "the count never moved".
+    const rowSeen = await settleUntil(
+      () => Number((sql(`select count(*) as n from first_turn_outcomes`)[0] || {}).n || 0),
+      (n) => n > before,
+      { label: "first_turn_outcomes row", ceilingMs: 15000 },
+    );
+    const after = rowSeen.final;
     if (after <= before) {
       fails.push("FAILED-TURN COUNTING — a first turn that errored wrote no first_turn_outcomes row; the counter can only ever report the turns that succeeded");
     } else {
@@ -336,6 +351,8 @@ async function run() {
       let jobs = Number(mine.build_jobs);
       // Give the async dispatch a few seconds before calling it absent.
       for (let t = 0; t < 8 && jobs < 1; t++) {
+        // A POLL INTERVAL — the loop re-reads `jobs` every pass and exits the moment one
+        // exists. Not a fixed delay between an action and its assertion. See the note above.
         await new Promise((z) => setTimeout(z, 1000));
         jobs = Number((sql(`select count(*) as n from document_build_jobs where business_id='${mine.id}'`)[0] || {}).n || 0);
       }

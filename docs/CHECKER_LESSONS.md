@@ -2295,3 +2295,56 @@ And the reason this one ran for weeks: **the sentence was true about the assista
 about the destination, and nobody reads a sentence in two halves.** The half that was checked —
 *can I change the page text from here?* — was honest. The half nobody checked was the half the
 owner acted on.
+
+## Lesson 72 — A delay generous enough to be usually right is worse than one that is usually wrong (2026-09-13)
+
+Adrian's sentence, and it is the sharpest thing to come out of the fixed-delay audit:
+
+> **A delay generous enough to be usually right is worse than one that is usually wrong, because
+> the eventual failure arrives disguised as a product defect.**
+
+A `waitForTimeout(250)` that is too short fails often, visibly, and early — somebody notices on
+day one and fixes it. A `waitForTimeout(4000)` is correct on almost every run, so it is trusted;
+and the one run in fifty where the page was slow does not present as "the harness read too early".
+It presents as **the business name is missing from the booking landing**, or **this block's text
+is unreadable**, filed against a live page with a screenshot attached. The instrument's failure
+wears the product's clothes, and the investigation starts in the wrong place.
+
+That asymmetry inverts the usual instinct. **The delays worth converting first are the long
+comfortable ones, not the short flaky ones** — and in the 2026-09-13 audit the two most dangerous
+sites were `3500ms` and `4000ms`, both of which had never once failed.
+
+**Two corollaries, both paid for in the same audit:**
+
+- **The cost of a wrong reading, not the count, is the ranking.** 27 of the 36 sites were
+  `e2e`/`smoke` step waits, and they are the LEAST urgent: their failure is a red test next to
+  its own cause. Three chat-reply waits were the most urgent, because their failure is a
+  confident wrong claim about how the product behaves — and behaviour claims are the ones we act
+  on. A ranking by count would have started in exactly the wrong place.
+- **Read the LOOP, not the LINE.** The first pass of this audit classified three
+  `check-name-is-asked` hits as fixed delays. Two of them sit inside loops that re-read every
+  pass — polls, the correct pattern. A grep sees `setTimeout(…, 5000)` and cannot see the
+  `while` around it, and "fixing" a poll into something else is a regression dressed as
+  diligence. Both are now labelled in the source, because the audit did this to ITSELF and the
+  next grep will be no wiser.
+
+## Lesson 73 — Leaving something alone is a decision, and it has to be written down where the next person looks
+
+Kinds 4 and 5 of the audit — 43 fixed delays — were deliberately not converted. Without a record
+that is indistinguishable from not having looked, and the next audit re-derives the same answer
+from scratch in a month.
+
+So each one carries a comment naming the audit, the kind, the reason, and the words **"do not
+re-audit"**:
+
+```js
+// DELIBERATE FIXED DELAY (docs/FIXED_DELAY_AUDIT.md kind 5): a render settling before a
+// SCREENSHOT. An early picture is a worse picture, not a wrong number — nothing is asserted
+// across this line. Reviewed 2026-09-13; do not re-audit.
+```
+
+**The rule: a decision to leave something alone is recorded at the site, not only in the doc.**
+A doc records what was decided; the comment is what the next person actually encounters, and it
+is the difference between a codebase that accumulates judgement and one that accumulates
+re-investigations. Same reasoning as naming the CLASS when a bug is fixed: the note is for the
+person who arrives without the conversation.

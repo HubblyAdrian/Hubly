@@ -176,3 +176,59 @@ export async function openRig(opts = {}) {
   };
   return rig;
 }
+
+/**
+ * SETTLE ON A PAGE THE CALLER ALREADY OWNS.
+ *
+ * The rig above owns its browser. Most existing scripts already have a Playwright `page` and
+ * only need the one thing a fixed delay cannot give them: a reading that stopped changing,
+ * with the window that was assumed printed beside it. This is that, and nothing else.
+ *
+ *   const r = await settleOn(page, () => document.body.innerText.length, "reply text");
+ *   //   [settle] reply text = 812  at t=1240ms  (stable for 800ms · 3 change(s))
+ */
+export async function settleOn(page, readFn, label = "value", { stableMs = STABLE_MS, ceilingMs = CEILING_MS, quiet = false } = {}) {
+  const t0 = Date.now();
+  const trace = [];
+  let last = Symbol("none"), stableSince = null;
+  for (;;) {
+    const v = await page.evaluate(readFn).catch(() => null);
+    const t = Date.now() - t0;
+    if (JSON.stringify(v) !== JSON.stringify(last)) { trace.push([t, v]); last = v; stableSince = t; }
+    const done = stableSince !== null && t - stableSince >= stableMs && t >= 300;
+    if (done || t > ceilingMs) {
+      if (!quiet) {
+        console.log(`  [settle] ${label} = ${JSON.stringify(v)}  at t=${t}ms  ` +
+          (done ? `(stable for ${stableMs}ms · ${trace.length} change(s))` : `CEILING ${ceilingMs}ms — never settled`));
+      }
+      return { final: v, ms: t, trace, label, stableMs, ceiling: !done };
+    }
+    await page.waitForTimeout(60);
+  }
+}
+
+/**
+ * POLL ANYTHING UNTIL A CONDITION HOLDS — for the non-browser waits (a row appearing, a job
+ * dispatching). Returns as soon as the predicate is true, and says how long it took; on a
+ * timeout it says THAT rather than returning a value that looks settled.
+ *
+ *   const r = await settleUntil(() => countRows(), (n) => n > before, { label: "outcome row" });
+ *   if (r.timedOut) …   // a distinct outcome, never confused with "the value is still 0"
+ */
+export async function settleUntil(readFn, predicate, { label = "value", everyMs = 250, ceilingMs = 15000, quiet = false } = {}) {
+  const t0 = Date.now();
+  let v;
+  for (;;) {
+    v = await readFn();
+    const t = Date.now() - t0;
+    if (predicate(v)) {
+      if (!quiet) console.log(`  [settle] ${label} = ${JSON.stringify(v)}  satisfied at t=${t}ms`);
+      return { final: v, ms: t, timedOut: false };
+    }
+    if (t > ceilingMs) {
+      if (!quiet) console.log(`  [settle] ${label} = ${JSON.stringify(v)}  NEVER SATISFIED within ${ceilingMs}ms`);
+      return { final: v, ms: t, timedOut: true };
+    }
+    await new Promise((r) => setTimeout(r, everyMs));
+  }
+}

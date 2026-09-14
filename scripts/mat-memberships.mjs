@@ -460,6 +460,9 @@ window.localStorage={getItem:function(){return null;},setItem:function(){}};
   async function vp(w, h) {
     await page.setViewportSize({ width: w, height: h });
     await page.goto(`http://127.0.0.1:${port}/mat-memberships.html`, { waitUntil: "domcontentloaded", timeout: 30000 });
+    // DELIBERATE FIXED DELAY (docs/FIXED_DELAY_AUDIT.md kind 5): a render settling before a
+    // SCREENSHOT. An early picture is a worse picture, not a wrong number — nothing is asserted
+    // across this line. Reviewed 2026-09-13; do not re-audit.
     await page.waitForTimeout(350);
     return page.evaluate(() => {
       const root = document.getElementById("jos-memberships-root");

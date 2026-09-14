@@ -185,6 +185,9 @@ for (const v of VIEWS) {
     document.body.classList.add('hc-active');
     H.reflectAuth(); H.renderRail();
   }, { jobs: JOBS, customers: CUSTOMERS, tasks: TASKS });
+    // DELIBERATE FIXED DELAY (docs/FIXED_DELAY_AUDIT.md kind 5): a render settling before a
+    // SCREENSHOT. An early picture is a worse picture, not a wrong number — nothing is asserted
+    // across this line. Reviewed 2026-09-13; do not re-audit.
   await page.waitForTimeout(250);
 
   const tabs = await page.evaluate(() => [...document.querySelectorAll('.hc-rail-tab')].map(b => b.textContent.trim()));
@@ -193,6 +196,9 @@ for (const v of VIEWS) {
 
   for (const room of ROOMS) {
     await page.evaluate((r) => window.__hcHarness.openWorkspace(r), room);
+    // DELIBERATE FIXED DELAY (docs/FIXED_DELAY_AUDIT.md kind 5): a render settling before a
+    // SCREENSHOT. An early picture is a worse picture, not a wrong number — nothing is asserted
+    // across this line. Reviewed 2026-09-13; do not re-audit.
     await page.waitForTimeout(300);
     const m = await page.evaluate(() => {
       const canvas = document.getElementById('hcCanvas');
@@ -247,6 +253,9 @@ for (const v of VIEWS) {
     // Open the first row as a record: a workspace takes the centre, a record takes the panel.
     if (m.nRows) {
       await page.evaluate(() => document.querySelector('#hcCanvas .hc-row').click());
+    // DELIBERATE FIXED DELAY (docs/FIXED_DELAY_AUDIT.md kind 5): a render settling before a
+    // SCREENSHOT. An early picture is a worse picture, not a wrong number — nothing is asserted
+    // across this line. Reviewed 2026-09-13; do not re-audit.
       await page.waitForTimeout(220);
       const pan = await page.evaluate(() => {
         const el = document.getElementById('hcPanel');

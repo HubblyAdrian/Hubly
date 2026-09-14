@@ -81,3 +81,31 @@ is a worse picture, not a wrong number. The ranking is by *what a wrong reading 
 
 **Nothing touched.** The rig (`scripts/lib/browser-rig.mjs`) is the replacement for kinds 1-3;
 kind 4 wants `waitFor`, not the rig.
+
+
+---
+
+## Converted 2026-09-13 — five sites, in the ranked order
+
+| site | was | now |
+|---|---|---|
+| `check-name-is-asked:243` | `setTimeout(1500)` between a failing first turn and a row count | `settleUntil(readCount, n => n > before)` — and a timeout is a **distinct outcome** from "the count never moved" |
+| `check-block-legibility:87,89` | `waitForTimeout(250)` ×2 around a `scrollIntoView` | `settleOn(frame, block top)` ×2 — watches the block's own position until the reflowing images have arrived, and says so when it never settles |
+| `check-walk-assertions:185` | `waitForTimeout(3500)` after `goto(bookHref)` | `settleOn(bp, body text length, stable 1000ms, ceiling 20s)` |
+| `check-graefs-page:191` | `waitForTimeout(4000)` before the snapshot | `settleOn(page, body text length, stable 1200ms, ceiling 25s)` |
+
+`check-name-is-asked:145` and `:339` were **not** converted — they are polls, and they are now
+labelled as such in the source.
+
+## Kinds 4 and 5 — left deliberately, and marked so
+
+Both are annotated in the source with *"do not re-audit"* and the reason, so nobody spends a
+month's-time re-deriving this answer:
+
+- **Kind 4 — the `e2e-*` / `smoke-*` / `screenshot-*` step waits (27).** Every one is "wait for
+  the next step to appear", which is `waitFor(selector)`. **The conversion is the risk, not the
+  delay**: these are long serial flows where a wrong selector fails far from its cause. Convert
+  when someone is next in the file for another reason.
+- **Kind 5 — the `mat-*` / `shot-*` render waits (16).** A render settling before a SCREENSHOT.
+  **An early picture is a worse picture, not a wrong number** — nothing is asserted across the
+  line. Left as they are.

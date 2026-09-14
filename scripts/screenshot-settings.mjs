@@ -14,6 +14,9 @@ import { extname } from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 const OUT = '/opt/cursor/artifacts/screenshots';
+// DELIBERATE FIXED DELAY (docs/FIXED_DELAY_AUDIT.md kind 4): "wait for the next step", which is
+// waitFor(selector). Mechanical to convert and worth doing when someone is next in this file;
+// not converted 2026-09-13 because the conversion is the risk, not the delay. Do not re-audit.
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const MIME = {
   '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',

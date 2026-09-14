@@ -6,6 +6,9 @@ import { chromium } from 'playwright';
 
 const BASE = (process.argv[2] || 'http://127.0.0.1:8766').replace(/\/$/, '');
 const URL = `${BASE}/hubly.html`;
+// DELIBERATE FIXED DELAY (docs/FIXED_DELAY_AUDIT.md kind 4): "wait for the next step", which is
+// waitFor(selector). Mechanical to convert and worth doing when someone is next in this file;
+// not converted 2026-09-13 because the conversion is the risk, not the delay. Do not re-audit.
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const stamp = Date.now().toString(36);
 const BIZ = `E2E Shine ${stamp}`;

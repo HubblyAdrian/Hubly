@@ -10,6 +10,9 @@ console.log('playwright loaded');
 const BASE = process.argv[2] || 'http://127.0.0.1:8766';
 const URL = `${BASE.replace(/\/$/, '')}/hubly.html`;
 
+// DELIBERATE FIXED DELAY (docs/FIXED_DELAY_AUDIT.md kind 4): "wait for the next step", which is
+// waitFor(selector). Mechanical to convert and worth doing when someone is next in this file;
+// not converted 2026-09-13 because the conversion is the risk, not the delay. Do not re-audit.
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
 }

@@ -21,6 +21,7 @@
  * Exit: 0 all green · 1 one or more red · 2 cannot run (never reported as either)
  */
 import { execFileSync } from "node:child_process";
+import { settleOn } from "./lib/browser-rig.mjs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -182,7 +183,10 @@ try {
     const bp = await bctx.newPage();
     try {
       await bp.goto(bookHref, { waitUntil: "networkidle", timeout: 45000 });
-      await bp.waitForTimeout(3500);
+      // 3500ms was generous enough to be USUALLY right, which is the worse failure mode: on a
+      // slow day it reads a half-painted booking landing and reports a missing business name —
+      // a product defect that isn't one, filed against somebody's live page (Lesson 72).
+      await settleOn(bp, () => document.body.innerText.length, "booking landing text", { stableMs: 1000, ceilingMs: 20000 });
       const seen = await bp.evaluate(() => ({
         text: document.body.innerText,
         name: (document.getElementById("bkland-name") || {}).textContent || "",

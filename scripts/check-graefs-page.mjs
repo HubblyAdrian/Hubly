@@ -34,6 +34,7 @@
  * show up as a diff — that is correct, and the fix is --update, never a code change.
  */
 import { createServer } from 'node:https';
+import { settleOn } from "./lib/browser-rig.mjs";
 import { readFile, stat } from 'node:fs/promises';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -188,7 +189,9 @@ try {
     const a = [...document.querySelectorAll('.page.active')].map(e => e.id);
     return a.length && !a.includes('p-boot');
   }, null, { timeout: 45000 }).catch(() => {});
-  await page.waitForTimeout(4000);
+  // Was waitForTimeout(4000) — see Lesson 72. This page is the PAYING CUSTOMER's, and a
+  // snapshot taken mid-paint would be read as his site being broken.
+  await settleOn(page, () => document.body.innerText.length, "graefs page text", { stableMs: 1200, ceilingMs: 25000 });
   snap = await page.evaluate(CAPTURE);
 } catch (e) { err = e; }
 await browser.close();

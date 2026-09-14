@@ -152,6 +152,9 @@ for (const v of VIEWS) {
     H.reflectAuth(); H.renderRail();
     return H.renderHome();
   }, EVENTS);
+    // DELIBERATE FIXED DELAY (docs/FIXED_DELAY_AUDIT.md kind 5): a render settling before a
+    // SCREENSHOT. An early picture is a worse picture, not a wrong number — nothing is asserted
+    // across this line. Reviewed 2026-09-13; do not re-audit.
   await page.waitForTimeout(350);
 
   // ── Layout assertions, closed. ──────────────────────────────────────────────
@@ -285,6 +288,9 @@ for (const v of VIEWS) {
   // ── Open the panel and measure again. It must NARROW, not cover. ────────────
   const widthBefore = await page.evaluate(() => document.querySelector('.hc-app-left').getBoundingClientRect().width);
   await page.evaluate(() => { document.querySelector('.hc-event-acts .hc-arrival-act').click(); });
+    // DELIBERATE FIXED DELAY (docs/FIXED_DELAY_AUDIT.md kind 5): a render settling before a
+    // SCREENSHOT. An early picture is a worse picture, not a wrong number — nothing is asserted
+    // across this line. Reviewed 2026-09-13; do not re-audit.
   await page.waitForTimeout(300);
   const p2 = await page.evaluate(() => {
     const left = document.querySelector('.hc-app-left').getBoundingClientRect();

@@ -13,6 +13,7 @@
  * Exit: 0 PASS · 1 FAIL · 2 CANNOT RUN (never reported as either)
  */
 import { readFileSync, existsSync } from "node:fs";
+import { settleOn } from "./lib/browser-rig.mjs";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -84,9 +85,20 @@ for (const p of pages) {
     // arrive, which moves the block far below the fold — the first scroll aimed at where
     // it used to be. Measuring then found nothing on 117 of 132 blocks and reported the
     // 15 that happened to stay put as the whole corpus.
-    await page.waitForTimeout(250);
+    // SETTLE ON THE LAYOUT, DO NOT GUESS AT IT. These were two `waitForTimeout(250)` guesses
+    // about how long a hero's images take to arrive and reflow — on a corpus where THIS VERY
+    // COMMENT records an earlier run measuring 117 of 132 blocks in the wrong place. A 250ms
+    // guess that is usually enough is worse than one that is usually wrong: the eventual miss
+    // arrives disguised as a contrast defect on somebody's page (Lesson 72).
+    //
+    // What is watched is the block's own position: once it stops moving, the images that were
+    // going to reflow it have arrived. The window is printed on every line, because it is a
+    // guess too — just a visible one.
+    const readTop = (sel) => { const e = document.querySelector(sel); return e ? Math.round(e.getBoundingClientRect().top + window.scrollY) : null; };
+    await settleOn(frame, new Function("sel", `return (${readTop.toString()})(${JSON.stringify(p.selector)})`), `block top (${p.slug})`, { quiet: true });
     await frame.evaluate((sel) => { const e = document.querySelector(sel); if (e) e.scrollIntoView({ block: "center", behavior: "instant" }); }, p.selector);
-    await page.waitForTimeout(250);
+    const settledAt = await settleOn(frame, new Function("sel", `return (${readTop.toString()})(${JSON.stringify(p.selector)})`), `block top after scroll (${p.slug})`, { quiet: true });
+    if (settledAt.ceiling) console.log(`  [unsettled] ${p.slug} ${p.selector} never stopped moving within the ceiling — its reading is suspect`);
     // MEASURE THE TEXT, not the section. Each heading, name and price is clipped with a
     // few pixels of its own ground around it, so the extremes in that box are the ink
     // and the ground a reader actually sees.
