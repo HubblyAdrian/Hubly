@@ -36,10 +36,31 @@ const PAGE = `<!doctype html><meta charset="utf-8"><title>rig fixture</title>
 <a id="jump" href="#target">jump</a>
 <button id="slowbtn">go slow</button>
 <span style="position:relative;display:inline-block"><button id="covered">covered</button><span class="cover" style="inset:-4px"></span></span>
+<!-- THE TWO WITNESS TRAPS. Both were live defects in the rig, found by a real control. -->
+<button id="stopprop">stops propagation in capture</button>
+<button id="selfrewrite"><span>rewrites its own element</span></button>
 <div class="pad"></div>
 <div id="target">THE REAL TARGET</div>
 <div id="slow">0</div>
 <script>
+  // TRAP A — a document-level CAPTURE handler that stops propagation. The element's own
+  // listener never fires, so a witness attached to the element sees nothing.
+  document.addEventListener('click', function(e){
+    if(e.target && e.target.closest && e.target.closest('#stopprop')){
+      e.preventDefault(); e.stopPropagation();
+      document.getElementById('stopprop').setAttribute('data-fired','1');
+    }
+  }, true);
+  // TRAP B — a handler that rewrites its own element, detaching e.target before any later
+  // listener runs, so e.target.closest(sel) finds nothing.
+  document.addEventListener('click', function(e){
+    var t = e.target && e.target.closest ? e.target.closest('#selfrewrite') : null;
+    if(t){
+      e.preventDefault(); e.stopPropagation();
+      t.setAttribute('data-fired','1');
+      t.innerHTML = '<input id="rewritten">';
+    }
+  }, true);
   document.getElementById('slowbtn').addEventListener('click', function(){
     var el=document.getElementById('slow');
     setTimeout(function(){ el.textContent='250'; }, 250);
@@ -122,6 +143,26 @@ try {
   let threwCovered = false;
   try { await rig.click({ selector: "#covered" }); } catch (e) { threwCovered = /CLICK DID NOT LAND/.test(e.message); }
   say("2c a covered control does not report a landed click", threwCovered);
+
+  // ── THE WITNESS, against both shapes that defeated it ──────────────────────────
+  //
+  // The rig's landing witness is the most load-bearing line in the toolchain: everything it
+  // says "didn't happen" is a claim about the product. Both of these reported a WORKING
+  // control as dead, and both were found only because a real control happened to be shaped
+  // that way. They are fixtures now so an edit cannot regress them quietly.
+  await rig.load(URL_);
+  let okStop = true;
+  try { await rig.click({ selector: "#stopprop" }); } catch (e) { okStop = false; }
+  const stopFired = await rig.page.evaluate(() => document.getElementById("stopprop").getAttribute("data-fired") === "1");
+  say("5 a capture handler that stops propagation does not hide the click", okStop && stopFired,
+    `rig said landed=${okStop}, the page's own handler ran=${stopFired}`);
+
+  await rig.load(URL_);
+  let okRewrite = true;
+  try { await rig.click({ selector: "#selfrewrite" }); } catch (e) { okRewrite = false; }
+  const rewriteFired = await rig.page.evaluate(() => document.getElementById("selfrewrite").getAttribute("data-fired") === "1");
+  say("5b a handler that rewrites its own element does not hide the click", okRewrite && rewriteFired,
+    `rig said landed=${okRewrite}, the page's own handler ran=${rewriteFired}`);
 
 } finally {
   await rig.close();

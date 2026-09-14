@@ -2415,3 +2415,74 @@ same suspicion as a surprising number.* Any real page logs SOMETHING. "No consol
 should have been read as "my listener is not attached" long before it was read as "the code did
 not run" — the same instinct that makes a 0% conversion rate or an empty result set worth
 checking the query before believing the finding.
+
+### Lesson 74, continued — the two shapes that defeated the click witness
+
+Both were found by one real control, the `+ Add service` tile, which happened to be shaped
+like both at once. Both reported a **working** control as dead. They are fixtures in
+`check-browser-rig.mjs` now, and red-proofed in the order they were fixed: reverting to the
+element witness fails both legs; reverting to document-capture-on-`click` fixes the first and
+still fails the second.
+
+**A. `stopPropagation()` during the CAPTURE phase means the element's own listener never fires.**
+Capture runs document → target. A handler on `document` with `capture: true` that calls
+`e.stopPropagation()` ends the journey before the target is reached, so a witness attached to
+the ELEMENT sees nothing at all. The fix is to witness on `document` in capture too:
+`stopPropagation` stops the journey *between* nodes, not other listeners *on* the same node.
+
+**B. A handler that rewrites its own element detaches `e.target` before a later listener runs.**
+`tile.innerHTML = ''` removes the very node the event was dispatched at. A later listener
+evaluating `e.target.closest(sel)` walks a detached subtree and finds nothing — so even a
+correctly-placed witness reports no hit. The fix is to witness `mousedown`, which fires before
+any click handler and therefore before any mutation.
+
+**Why this matters more than it looks:** the witness is the most load-bearing line in the
+toolchain. *Everything it says did not happen is a claim about the product.* A false "did not
+land" does not read as a broken instrument; it reads as a broken feature, and the investigation
+starts in the product. That is Lesson 72's asymmetry — a failure disguised as a product defect —
+pointed at the tool that decides whether anything happened at all.
+
+## Lesson 75 — When a brand-new check fails everything, suspect the check
+
+Three times on 2026-09-13:
+
+1. `check-computed-and-dropped`'s new placement leg found **one** function where there are two —
+   its regex saw `function NAME(` and every capability handler is `handler: async (args) => {}`.
+2. `check-no-editor-chrome-in-public` failed **all 8** page/layout combinations on the untouched
+   live site, by listing `[data-pe]` — an inert marker a visitor cannot see or press — as chrome.
+3. `measure-fragment-links` reported 21 dead links; 19 were `<a class="skip-link" href="#main">`,
+   the keyboard-only accessibility affordance, which the rig had correctly refused to press.
+
+**A new check's first run is a test of the CHECK, not of the code.** The codebase was in
+production yesterday; if a fresh assertion says everything is broken, the base rate strongly
+favours the assertion being wrong. The instinct to fix twenty pages is the expensive one.
+
+**And the diagnostic is the same each time: what is this actually counting?** A FORM, not the
+fact (CLAUDE.md). `[data-pe]` counts a marker and calls it a control. `function NAME(` counts a
+syntax and calls it a function. A refused click counts an instrument limit and calls it a page
+defect. **Every one was fixed in the measurement, and the product was fine.**
+
+Two of the three had a second property worth naming: they would have *stayed* wrong in the
+quiet direction. Leg 1 silently checked half of what it claimed; a green from it meant less
+than it looked. **A check that fails loudly gets fixed the same day. A check that passes for the
+wrong reason is the one to fear** — which is why leg 1's count of functions is printed, and why
+the chrome check prints its inert-marker tallies rather than dropping them.
+
+## Lesson 76 — A guard is red-proofed by SIMULATING the condition, never by creating it
+
+`check-no-editor-chrome-in-public` asserts that an owner-only control never reaches a visitor.
+Red-proofing it the obvious way means shipping the leak: force the gate open, deploy, watch the
+check go red, deploy the fix. That puts a `+ Add service` tile on a paying customer's live
+website for as long as the round trip takes.
+
+**`--redproof` appends the owner's own `?hcEditable=1` to the visitor URL instead.** That is the
+one condition under which the control legitimately appears, so the detector must fire on all 8
+combinations — which proves the detector detects, with nothing deployed and nothing on anyone's
+page that should not be there.
+
+**The rule: to prove a guard notices a bad state, ARRANGE the bad state in the test, never
+produce it in production.** The generalisation is broader than red-proofing — it is the same
+reasoning as never taking a verification screenshot of hand-set state and presenting it as the
+product. Simulate to prove a detector; never simulate to prove a feature. The difference is
+which direction the claim runs: a detector firing on a simulated condition is evidence about the
+DETECTOR, and that is exactly what is being claimed.
