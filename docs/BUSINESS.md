@@ -36,6 +36,14 @@ told, and never dress up a claim as a measurement. It applies to us too.
 
 ### Graef's AutoCare — the anchor
 
+**HIS NAME IS IN THE PRODUCT NOW, AND IT WAS NOT (2026-09-14).** `hubly_owner_profile` holds
+`display_name: "Austin Graef"`, `name_source: 'signup'` — he typed it into Hubly's own signup
+form, so it is his, not one Google guessed — and `welcomed_at: NULL`. **Hubly has never once
+greeted him by name, because until today there was no column to keep it in.** Measured the same
+day: 9 of 29 owners had a name anywhere at all, and 4 of those only because an OAuth profile
+supplied it. Established / how: read from `auth.users` metadata and seeded; the source ranking
+means anything he later tells Hubly outranks this permanently.
+
 **`graefs-autocare.myhubly.app` · Austin Graef · Bakersfield, California · mobile
 detailing · `account_kind = market`.**
 

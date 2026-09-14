@@ -2486,3 +2486,32 @@ reasoning as never taking a verification screenshot of hand-set state and presen
 product. Simulate to prove a detector; never simulate to prove a feature. The difference is
 which direction the claim runs: a detector firing on a simulated condition is evidence about the
 DETECTOR, and that is exactly what is being claimed.
+
+
+## Lesson 77 — A guard without a take is the original bug with an extra step
+
+Three voluntary composers could each append to one owner turn. Two shared a floor predicate;
+the third yielded to nothing. Adrian got four composers stacked in one reply.
+
+The fix was one gate — `hcMayAddVoluntary()` — and one counter, `hcTookVoluntary()`. Checking
+it produced three red-proofs, and **the second is the one worth keeping:**
+
+```
+RED A  ungate a composer              → FAIL  no hcMayAddVoluntary() within 3 lines
+RED B  gate it, but never take a slot → FAIL  gated but never calls hcTookVoluntary()
+RED C  remove the gate's short-circuit → FAIL  the gate no longer refuses a second addition
+```
+
+**A guard without a take is the original bug with an extra step, and it is the shape a careful
+future edit produces.** Someone adds a fourth composer, sees the pattern, copies the `if
+(hcMayAddVoluntary())` — and stops there, because the guard is the part that *looks* like the
+rule. The turn then emits two additions and every gate in the file still reads correctly.
+
+**The general form: when a rule is "at most one of these", the check must assert the
+DECREMENT, not only the test.** A budget that is read and never spent is not a budget. Red-proof
+by removing the spend, not only by removing the test — the removed test fails loudly, and the
+removed spend is the one that ships.
+
+It generalises past composers to anything with a once-per-scope rule: a lock taken and not
+released, a retry counter read and not incremented, a "seen" flag checked and not set. In every
+case the test is the visible half and the write is the half that makes it true.
