@@ -86,10 +86,22 @@ export function servicesAreaAddedReply(url: string, names: string[]): string {
 }
 
 /** The owner's site cannot be edited from here (no generated document). */
+/**
+ * NAMING A SURFACE IS A CLAIM ABOUT THAT SURFACE.
+ *
+ * This said "that's edited in Edit details" in all three places it is composed. Edit details
+ * (`hcOpenManage`) edits CONTACT, HOURS and SERVICES — `OwnerRecordEdit`'s kinds are exactly
+ * `contact | hours | service | design` — and has no page-text field of any kind. So the
+ * sentence named a real surface, sent a paying customer to it, and the surface could not do
+ * the thing. Established 2026-09-13, docs/TEXT_EDIT_SURFACES.md.
+ *
+ * The replacement makes no redirect at all. "I can't do this yet" is a complete, honest
+ * answer; a redirect is a second claim, and we had not earned it.
+ */
 export function classicScopeReply(host: string): string {
   return host
-    ? `I can't change the page text from here — that's edited in Edit details, and your live site is unchanged at ${host}.`
-    : `I can't change the page text from here — that's edited in Edit details, and your live site is unchanged.`;
+    ? `I can't change your page wording yet. Your live site is unchanged at ${host}.`
+    : `I can't change your page wording yet. Your live site is unchanged.`;
 }
 
 /** THE SERVICES READ-BACK. Moved here 2026-09-09: its output is servicesTruth, which is

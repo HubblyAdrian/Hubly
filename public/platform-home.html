@@ -2186,11 +2186,27 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     //                  simply a page. Half-gated editing (looks live, then blocks)
     //                  was the whole class of bug this removes.
     var editable = false;
-    // hc.hasDocument === false means the CLASSIC archetype path: the inline editor
-    // has nowhere to write, so the affordance is not offered at all rather than
-    // painting a save that never lands. Unknown (null) keeps the previous
-    // behaviour — this gate removes a lie, it must not invent a new lockout.
-    try{ editable = !!(hc.draftClaimed && hcIsAuthed() && hc.hasDocument !== false); }catch(e){}
+    // THE CLASSIC GATE IS FLIPPED — 2026-09-13. The comment that stood here read, verbatim:
+    //
+    //     "hc.hasDocument === false means the CLASSIC archetype path: the inline editor
+    //      has nowhere to write, so the affordance is not offered at all rather than
+    //      painting a save that never lands."
+    //
+    // It has somewhere to write. The inline editor posts `hcInlineEdit` -> `directEdit` ->
+    // `updateDraft`, which sets `websiteMeta.heroHeadline` / `heroSub` with
+    // `customHeroHeadline: true` through `patch_business_in_progress(p_website_meta)` —
+    // into `businesses.meta.website`, which is EXACTLY what the classic renderer reads
+    // (`ensureWebsiteCopy` keeps `w.heroHeadline` when `customHeroHeadline` is set). The
+    // save lands. It was switched off anyway, and that sentence — reasonable-sounding,
+    // never checked — cost the only paying customer his headline for weeks. It is the
+    // direct cause of "nothing text-wise is changeable" (docs/TEXT_EDIT_SURFACES.md #2).
+    //
+    // SCOPED TO WHAT GENUINELY WORKS. hubly.html's inline editor only ever offers two
+    // fields on the classic page — `ws-hero-headline` and `ws-hero-sub` (its TEXT_FIELDS
+    // map) — so enabling the flag here enables exactly those two and nothing else. Section
+    // titles, service descriptions, about and FAQ are NOT reachable this way; costing that
+    // is docs/CANVAS_TEXT_COST.md, and no affordance is painted for them.
+    try{ editable = !!(hc.draftClaimed && hcIsAuthed()); }catch(e){}
     var q = url + (url.indexOf('?') === -1 ? '?' : '&') + '_r=' + Date.now() + '&hcEdit=1';
     return editable ? q + '&hcEditable=1' : q;
   }
@@ -6444,8 +6460,14 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var host = String(biz.url || '').replace(/^https?:\/\//i,'').replace(/\/$/,'')
       || (biz.slug ? (biz.slug + '.myhubly.app') : '');
     return (lead ? (lead + ' ') : '')
-      + 'I can\u2019t change the page text from here \u2014 that\u2019s edited in Edit details'
-      + (host ? (', and your live site is unchanged at ' + host + '.') : ', and your live site is unchanged.');
+      // NO REDIRECT — 2026-09-13. This read "that's edited in Edit details", and Edit
+      // details (hcOpenManage, just below) edits contact, hours and services and has NO
+      // page-text field at all. It named a real surface and misdescribed it, which sent a
+      // paying customer to a door that opens onto the wrong room. See
+      // docs/TEXT_EDIT_SURFACES.md and CHECKER_LESSONS Lesson 71. "I can't do this yet" is
+      // a complete answer; a redirect is a second claim we had not earned.
+      + 'I can\u2019t change your page wording yet'
+      + (host ? ('. Your live site is unchanged at ' + host + '.') : '. Your live site is unchanged.');
   }
   async function hcRunPageUpgradeThenMount(){
     var r = null;

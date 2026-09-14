@@ -1222,7 +1222,10 @@ async function refuseIfClassicSite(draftId: string): Promise<CapabilityActionRes
     summary:
       // NOT "built by hand". That is our word for our data model (no business_documents
       // row), it is not a fact about the owner, and the model repeats it to him verbatim.
-      "I can't change the page text or layout from here — that's edited in Edit details. " +
+      // NO REDIRECT. This used to end "— that's edited in Edit details", and Edit details
+      // edits contact, hours and services and no page text at all. Naming a surface is a
+      // claim about that surface (docs/TEXT_EDIT_SURFACES.md, Lesson 71).
+      "I can't change your page wording or layout yet. " +
       "Anything I built from here would replace the page with far less than what is on it now. " +
       (slug ? `It is live and unchanged at ${slug}.myhubly.app. ` : "It is live and unchanged. ") +
       "Say this plainly to the owner, do not claim anything was changed, and do not suggest rebuilding. " +
