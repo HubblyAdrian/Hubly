@@ -1631,6 +1631,32 @@ once. This is the same asymmetry as every other lesson here, pointed at design i
 a heading-word exclusion, then a false-positive list. A rule that needs a new exception every
 week is usually answering a question that did not need to be asked.
 
+### The second tell, added 2026-09-13 after the fourth instance: **A COSTING THAT CONTAINS A NEW OBJECT.**
+
+Four times now, in one week:
+
+| we were about to build | what was already there |
+|---|---|
+| a design-inference mechanism | `evergreen-yard-care`'s block, and Adrian pointing at it |
+| Jobs and Customers screens | both built, on the operator app, with no door |
+| structural editing of a page | the whole `ws-pe-*` system, gated on being inside `/dashboard` |
+| **`insertFreeformNode`, "the one new object"** | **the `+ Add service` affordance, shipping, wired end to end** |
+
+The fourth one is the sharpest because the costing was explicit and careful and still wrong. It
+named one new object, justified it, and the feature that object was for **was already in the
+product and already worked** — `hcMountAddService` at `hubly.html:54739`, finding the grid
+structurally, refusing an empty name, posting through the donor-clone placement path.
+
+**The rule: a costing that contains a new object is a prompt to look again.** If a build needs
+something that does not exist, check FIRST whether the thing it is FOR already does. The new
+object is the tell, because it is the moment you have stopped describing what is missing and
+started describing what you intend to write — and the gap between those two is exactly where an
+existing capability hides.
+
+Cheap to check and expensive to skip: one grep for the FEATURE's name before writing the
+OBJECT's. Three of the four above were found by Adrian hitting them; this one was found by
+reading, which is the whole difference.
+
 ## Lesson 50 — A decision's cost is recorded where decisions are READ, not in the commit that made it (2026-09-13)
 
 Commit **`c2ff42d`** (2026-08-20), the switch to freeform page generation, did the honest

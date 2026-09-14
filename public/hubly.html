@@ -38619,8 +38619,8 @@ function wsServiceCardHtml(s,idx){
   const priceTxt=editing?(rawPrice||'Add price'):((showPricesOnLanding()&&s.showPrice!==false)?rawPrice:'');
   const price=priceTxt
     ?(editing
-      ?`<span class="ws-svc-price ws-pe-target" data-pe="svc-price" data-pe-label="Edit price" data-svc-id="${s.id??idx}">${priceTxt}</span>`
-      :`<span class="ws-svc-price">${priceTxt}</span>`)
+      ?`<span class="ws-svc-price ws-pe-target" data-pe="svc-price" data-pe-label="Edit price" data-svc-id="${s.id??idx}" data-hubly-price>${priceTxt}</span>`
+      :`<span class="ws-svc-price" data-hubly-price>${priceTxt}</span>`)
     :'';
   const durLabel=s.dur?`⏱ ${s.dur} ${t('wsHrs')}`:(editing?'⏱ Add hours':'');
   const dur=durLabel
@@ -38628,9 +38628,27 @@ function wsServiceCardHtml(s,idx){
       ?`<span class="ws-svc-dur ws-pe-target" data-pe="svc-dur" data-pe-label="Edit hours" data-svc-id="${s.id??idx}">${durLabel}</span>`
       :`<span>${durLabel}</span>`)
     :'';
+  // ONE ANCHOR CONVENTION ACROSS BOTH STORES — ruled 2026-09-13, option A.
+  //
+  // A freeform page carries `data-hubly-service` on the element holding a service's NAME,
+  // stamped at generation by markServiceAnchorsInFreeform, and `data-hubly-price` on its
+  // price. Six readers in this file depend on that attribute — the add-service grid finder,
+  // the selection code, the breadcrumb namer — and the classic renderer never emitted it, so
+  // every one of them was dead on a classic page and the "+ Add service" affordance could not
+  // mount at all.
+  //
+  // The alternative was teaching each reader a second selector (.ws-svc-card). That is a
+  // matcher per shape, which is precisely the defect markServiceAnchorsInFreeform exists to
+  // prevent: "a matcher per shape, and the model invents new shapes every rebuild". Stamping
+  // the same attribute here is one convention for one concept, and it turns four capabilities
+  // on for classic pages at the cost of two attributes.
+  //
+  // BOTH BRANCHES. The editor preview and the PUBLIC page both need it: the readers run
+  // against the public page mounted in the owner's canvas, not against the editor clone.
+  const svcAnchor=` data-hubly-service="${escPeHtml(s.name||'')}"`;
   const nameHtml=editing
-    ?`<h3 class="ws-pe-target" data-pe="svc-name" data-pe-label="Edit name" data-svc-id="${s.id??idx}">${s.name||''}</h3>`
-    :`<h3>${s.name||''}</h3>`;
+    ?`<h3 class="ws-pe-target" data-pe="svc-name" data-pe-label="Edit name" data-svc-id="${s.id??idx}"${svcAnchor}>${s.name||''}</h3>`
+    :`<h3${svcAnchor}>${s.name||''}</h3>`;
   const emptyIco=blueprintEmptyIcon();
   // Tapping a specific package books THAT package. It routes to
   // openBookingPage(name), which resolves the service out of
