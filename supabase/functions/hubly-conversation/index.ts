@@ -1086,8 +1086,32 @@ Deno.serve(async (req) => {
   // model below, same as any other turn. Dashboard-only: no deterministic
   // opening has been designed for "customer" yet, so that context always
   // goes straight to the model rather than reusing Dashboard's canned line.
+  //
+  // AND IT IS FOR A BUSINESS WITH NOTHING — added 2026-09-14.
+  //
+  // This gate never looked at `draftBusiness`. Adrian walked hubly-classic-fixture as the
+  // signed-in owner — claimed, live site, three services — typed "hey", and was asked to
+  // "paste a website, your Google Business Profile… or simply tell me you're starting from
+  // scratch". The stranger script, to the owner of a finished site.
+  //
+  // ONE FIX, NOT TWO. The condition that produces the stranger script is the SAME condition
+  // that produces no greeting: no assistant message in this thread. Today that means a new
+  // laptop or a cleared cache greets an owner as a stranger AND skips the arrival, at the
+  // same moment, for the same reason. Excluding a built business here is half of it; the
+  // other half is that the welcome is now a fact about the owner (hubly_owner_profile),
+  // not about their browser.
+  // Read from `body` rather than the parsed `draftBusiness`, which is declared below this
+  // point — the deterministic opening deliberately runs before every other setup step so it
+  // never depends on provider configuration, and moving it would change that ordering.
+  const _dbForOpening = (body?.draftBusiness && typeof body.draftBusiness === "object")
+    ? body.draftBusiness as { id?: unknown; slug?: unknown; url?: unknown; claimed?: unknown }
+    : null;
+  const hasABuiltBusiness = !!(_dbForOpening && _dbForOpening.id && (
+    !!_dbForOpening.claimed || !!_dbForOpening.slug || !!_dbForOpening.url
+  ));
   if (
     context === "dashboard" &&
+    !hasABuiltBusiness &&
     !incoming.some((m) => m.role === "assistant") &&
     isGenericOpener(incoming[0]?.content)
   ) {

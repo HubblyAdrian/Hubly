@@ -3263,10 +3263,42 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // "building now" filler) — never echoed into the chat. On a normal turn
           // it shows.
           if(!generatingDocument && data.reply && !hcIsFallbackReply(data.reply)){ var _reply = hcOncePhotoOffer(data.reply); hcAppendMessage('hubly', _reply); hcPersist('assistant', _reply); }
+          // ── ONE VOLUNTARY ADDITION PER TURN, ENFORCED IN ONE PLACE ──────────────
+          //
+          // Seven composers can append to a single turn (docs/WHAT_THE_MODEL_KNOWS.md §1).
+          // Three of them are VOLUNTARY — nobody asked for them, they are Hubly choosing to
+          // say one more thing: the capture re-ask, the account offer, and the next-gap ask.
+          // Until now the account offer and the gap ask shared a floor predicate and the
+          // capture re-ask yielded to nothing, so it fired alongside them. Adrian got four
+          // composers stacked in one reply.
+          //
+          // ASSERTED, NOT TRUSTED. A rule enforced by three functions agreeing with each
+          // other is not enforced — that is the whole lesson of tonight. One counter, one
+          // gate, and scripts/check-one-voluntary-addition.mjs fails the build if a second
+          // composer is added without going through it.
+          var hcVoluntary = 0;
+          function hcMayAddVoluntary(){
+            // The floor: Hubly said something this turn, it was not a question, and nothing
+            // is already waiting on the person. Computed ONCE, from what was actually shown.
+            if(hcVoluntary > 0) return false;
+            var _said = (Array.isArray(interim) ? interim.slice() : []);
+            if(_reply) _said.push(_reply);
+            var _last = _said.length ? String(_said[_said.length - 1]) : '';
+            if(!_last) return false;
+            if(/\?\s*["'\u201d\u2019)]*\s*$/.test(_last)) return false;
+            return true;
+          }
+          function hcTookVoluntary(){ hcVoluntary++; }
+
           // THE CAPTURE GUARD, after the reply so the re-ask lands last. Check the ask
           // that was pending from last turn; if it wasn't recorded, own the miss and
           // re-ask. Then arm from THIS turn's ask (unless a re-ask already re-armed it).
-          var hcReasked = hcCheckCaptureMiss(hcPriorCapture, data);
+          //
+          // IT IS A VOLUNTARY ADDITION AND IT NOW COUNTS AS ONE. A re-ask is Hubly choosing
+          // to speak again about something the person did not raise this turn — the same
+          // shape as the offer and the gap ask, and it was the one that yielded to nothing.
+          var hcReasked = hcMayAddVoluntary() ? hcCheckCaptureMiss(hcPriorCapture, data) : false;
+          if(hcReasked) hcTookVoluntary();
           if(!hcReasked && ['services','hours','area','phone','logo','photos'].indexOf(data.askedFor) >= 0){
             hc.pendingCapture = { askedFor: data.askedFor, tries: 0 };
           }
@@ -3290,13 +3322,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
               // interimMessage (e.g. "…— done." on a setServices turn), not data.reply, so we
               // must look at both or the offer never fires. Fire only if Hubly said something,
               // it wasn't a question, and no capture ask/re-ask is on the floor.
-              var _shown = (Array.isArray(interim) ? interim.slice() : []);
-              if(_reply) _shown.push(_reply);
-              var _lastSaid = _shown.length ? String(_shown[_shown.length - 1]) : '';
-              var _floorClear = !!_lastSaid && !hcReasked
-                && !(hc.pendingCapture && hc.pendingCapture.askedFor)
-                && !/\?\s*["'”’)]*\s*$/.test(_lastSaid);
-              if(_floorClear){ hc.accountOfferShown = true; hcAppendAccountOffer(); }
+              // ONE PREDICATE, NOT A SECOND OPINION. This used to recompute the floor
+              // itself; it now asks the same function the re-ask and the gap ask ask.
+              if(hcMayAddVoluntary() && !(hc.pendingCapture && hc.pendingCapture.askedFor)){
+                hc.accountOfferShown = true; hcAppendAccountOffer(); hcTookVoluntary();
+              }
             }
           }
           // THE NEXT OUTSTANDING THING — once per session, after the owner's first message.
@@ -3314,14 +3344,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // _gapAsked, each once — but the order is stated so the next reader does not have
           // to derive it.
           try{
-            var _shown2 = (Array.isArray(interim) ? interim.slice() : []);
-            if(_reply) _shown2.push(_reply);
-            var _last2 = _shown2.length ? String(_shown2[_shown2.length - 1]) : '';
-            var _clear2 = !!_last2 && !hcReasked
-              && !(hc.pendingCapture && hc.pendingCapture.askedFor)
-              && !/\?\s*["'\u201d\u2019)]*\s*$/.test(_last2)
-              && !hc.accountOfferShown;
-            if(_clear2) hcMaybeAskNextGap();
+            if(hcMayAddVoluntary() && !(hc.pendingCapture && hc.pendingCapture.askedFor)){
+              hcMaybeAskNextGap(); hcTookVoluntary();
+            }
           }catch(_e){}
           // THE DROPZONE COMES LAST, after the sentence that points at it.
           //
