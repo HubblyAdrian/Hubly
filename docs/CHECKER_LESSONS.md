@@ -2613,3 +2613,32 @@ stories are not.
 
 Both are Lesson 75's other half. That one says a check failing everything is probably wrong;
 this one says **a check passing everything may be asking the easier question.**
+
+
+## Lesson 80 — "Is it imported" is not "is it used"
+
+`hubly_brain_experience_layer.ts`: 762 lines, written 2026-07-24, one commit, **never touched
+since and never called.** It passes every cheap liveness heuristic:
+
+- it **is** imported — by `hubly_brain_experience_director`, `hubly_brain_chat_os` and `hubly_ai`;
+- `hubly_ai` **re-exports** it as `HublyExperienceLayer`, in a namespace of thirty such exports;
+- that namespace **is** imported by the conversation function.
+
+An import-graph check would have drawn an unbroken line from the live edge function to this file
+and called it live. **The only caller of `HublyExperienceLayer.*` anywhere is
+`check-m2-epic0.mjs`, the test asserting it exists.** It is imported into a namespace, exported
+from that namespace, and consumed by nothing but its own proof of existence.
+
+**The rule: liveness is a property of CALL SITES, not of the import graph.** A re-export through
+a barrel file launders dead code into apparently-live code, and the bigger the barrel the better
+the laundering. Count invocations of the symbol, in the files that would invoke it, and say which
+files you counted.
+
+**And the tell, which is specific enough to grep for:** a module whose only caller is its own
+test. That is not coverage; it is a file keeping itself alive. `check-m2-epic0.mjs` has been
+green for 52 days about a layer no owner has ever read a word from.
+
+This belongs beside the six unlit shapes (Lesson 49) as a **seventh**, and it is the one that
+hides best:
+
+| 7 | **imported, re-exported, never called** | the import graph says live, the call graph says dead — and only the call graph is about behaviour |

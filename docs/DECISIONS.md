@@ -657,3 +657,43 @@ migration file so it cannot drift from the thing it reverses.
 
 **Graef, specifically:** `website` (was `backfill`), `jobs`, `customers`, `planner` (all were
 `system`, all with `earned_by` set) — four tabs, all `visible: true` before and after.
+
+
+## D-052 — ONE LAYER FOR OWNER-FACING COPY: a decision to make at Part 2, not a file to ignore
+
+**The question was asked in July and it is open for the second time.**
+`hubly_brain_experience_layer.ts` (2026-07-24, 762 lines, one commit, never touched) states it
+in its own header:
+
+> *"No feature writes its own customer copy — everything comes through this layer."*
+
+**It was never enforced, and the evidence since is one-sided.** Seven composers can speak in one
+owner turn; four of four false statements measured on 2026-09-13 came from scattered copy
+(`docs/WHAT_THE_MODEL_KNOWS.md` §3). The July claim was right about the problem.
+
+**Why it failed is the part that matters, and it is not that the idea was wrong: NOTHING FAILED
+WHEN IT WAS BYPASSED.** Every feature since has written its own copy, no check noticed, and the
+layer sat unreferenced for 52 days while the defect it was designed to prevent shipped four
+times. An architectural claim with no enforcement point is a preference with a file attached —
+the same finding as "a rule that lives only in a comment" (`check-two-store-readers`), one level
+up.
+
+**THE DECISION, AND WHEN:** at Part 2, when the arrival sentences are written. Does
+`hubly_owner_replies.ts` become that layer *in fact* — with a check that fails when owner-facing
+copy is composed anywhere else?
+
+The position is better than July's in three ways:
+- the composer honesty rule already sits at the top of that file, with its enforcement gap
+  written underneath it (**seven composers, one checked**);
+- three checks already enforce it for one composer, so the mechanism is proven, not theoretical;
+- the July attempt is evidence of the failure mode to design against.
+
+**The hard part is not the layer, it is the boundary.** `public/platform-home.html` and
+`public/hubly.html` compose owner-facing copy in ~72 `hcAppendMessage` calls, and
+`no-directives.check.ts` already narrowed its own claim to the SERVER for exactly that reason:
+*"a Node check cannot meaningfully classify owner-facing copy inside a 55,000-line browser
+monolith where product strings, UI chrome, translations and developer text sit in one file."*
+A layer that covers the server and not the client is honest and partial; one that claims both
+and checks one is how July happened.
+
+**Not decided here. Recorded so Part 2 decides it deliberately rather than by default.**

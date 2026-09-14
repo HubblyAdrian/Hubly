@@ -1,5 +1,31 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## BUILT, WANTED, AND UNREACHABLE — the five, by name (2026-09-14)
+
+The brief has carried *"63 with no caller anywhere"* for days. Measured and split
+(`docs/CAPABILITY_DOORS.md`), **51 of the 62 are internal or platform and correctly have no
+owner door** — 18 are our own mission-control dashboard, 11 an unreferenced voice layer, the
+rest helpers and scaffolding. Four more are the Google Calendar sync that D-022 deliberately
+cut until a business connects one, and there are still **zero connections product-wide**.
+
+**The honest count of built, wanted and unreachable is FIVE:**
+
+| # | capability | what it is for | why nothing reaches it |
+|---|---|---|---|
+| **1** | **`stripe.createAccountLink`** | **Stripe Connect onboarding — how a business starts getting paid** | built; **nothing in the owner shell opens it** |
+| **2** | **`stripe.createConnectLoginLink`** | **the owner's Stripe dashboard — where they see their money** | built; nothing opens it |
+| 3 | `createJobFromBookingRequest` | a booking becomes a job | another path does this; this one is unreferenced. **Read before assuming which is live** |
+| 4 | `createBooking` (`booking_engine.ts`) | the booking write | superseded by another path. **Same caveat — read it first** |
+| 5 | `buildCampaignPlan` + `createMarketingAsset` | marketing campaigns and assets | never given a surface |
+
+**1 and 2 lead.** They are how a business gets paid, they are built, and nothing opens them.
+Everything else on this page is about a page or a sentence; these two are about money.
+
+**The number that was wrong was counting a form, not a fact** — "exported and uncalled" is a
+property of a symbol table; "an owner wants this and cannot have it" is a property of the
+product, and they differ by a factor of twelve.
+
+
 ## TOP OF THE RECORD (2026-09-13) — the paying customer cannot change the words on his own website
 
 Established read-only, from the code, with the full surface table in
