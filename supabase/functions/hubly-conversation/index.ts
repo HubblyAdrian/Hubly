@@ -61,7 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
-import { composeServicesTruth, andList, type ServicesPlacementLike, type ClassicWriteLike } from "../_shared/hubly_owner_replies.ts";
+import { composeServicesTruth, andList, type ServicesPlacementLike, type ClassicWriteLike, type ServicesOmissions } from "../_shared/hubly_owner_replies.ts";
 import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
 import { adminHeaders, createAdminClient, requireSecretKey } from "../_shared/supabase_admin.ts";
@@ -2463,7 +2463,13 @@ Deno.serve(async (req) => {
             // block skipped, and the model composed from the summary alone. The composer owns
             // the decision about what is true of each store; this caller does not.
             if (placement) {
-              const truth = composeServicesTruth(placement, url, classic);
+              // The omissions ride with the placement: what the write removed because the
+              // owner named it, and what it was REFUSED from removing because they did not.
+              // A refusal the owner never hears about is indistinguishable from a write that
+              // was simply correct — and the whole reason this exists is that the silent
+              // version of it deleted services.
+              const omissions = (result.raw as { omissions?: ServicesOmissions | null } | undefined)?.omissions ?? null;
+              const truth = composeServicesTruth(placement, url, classic, omissions);
               if (truth) servicesTruth = truth;
               // Loud + countable: a price that saved but didn't appear is a row we
               // can query, never a silence.

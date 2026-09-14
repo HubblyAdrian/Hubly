@@ -176,6 +176,15 @@ const SET = [
     mutate: swapInCode("const rec = reconcileServices(services, existing, userMessage);",
                        "const rec = { allowed: services, droppedLift: [] as string[], changed: true };") },
 
+  { check: "check-facts-are-grounded", tier: "fast", leg: "the silently short list",
+    ruled: "a services write may not delete what the owner never asked to remove",
+    file: "supabase/functions/_shared/hubly_grounding.ts",
+    // THE SHAPE THAT MATTERS: not an empty list — a short one. This restores the old
+    // behaviour exactly (walk only the model's list) while keeping the new fields, which is
+    // what a red-proof must do: keep the new code and bring back the old defect.
+    mutate: swapInCode("    if (sentKeys.has(key)) continue;",
+                       "    if (sentKeys.has(key)) continue;\n    if (!sentKeys.has(key)) continue;   // redproof: the omission walks off the end again") },
+
   { check: "check-classic-claim", tier: "slow",
     ruled: "the two-store split, classic side — the sentence may not outlive the inability",
     file: "supabase/functions/_shared/hubly_owner_replies.ts",

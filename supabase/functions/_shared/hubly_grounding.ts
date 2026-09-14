@@ -98,6 +98,13 @@ export type ServiceReconcile = {
    *  price change)? If false and something was dropped, WRITE NOTHING and ask —
    *  a replace-all with no real change would only risk the existing list. */
   changed: boolean;
+  /** Existing services the model's list OMITTED and the message NAMED — a removal the
+   *  owner actually asked for. Performed, and named in the reply. */
+  removed: string[];
+  /** Existing services the model's list omitted and the message never mentioned — an
+   *  accidental deletion, refused. They are carried into `allowed` so the replace-all
+   *  cannot drop them, and they are named so the owner can say "no, remove those". */
+  keptBack: string[];
 };
 
 function svcKey(name: string): string {
@@ -116,7 +123,25 @@ function samePrice(a: number | undefined, b: number | undefined): boolean {
  *  message is treated as a lift — the RECORD's value is preserved, not the
  *  model's — so a hallucinated price can never overwrite a real one. Only a
  *  genuinely new-or-changed entry needs grounding; existing services are never
- *  destroyed by the grounding check. */
+ *  destroyed by the grounding check.
+ *
+ *  AND AN ABSENCE IS A VALUE (added 2026-09-14). Until now this walked ONLY the model's
+ *  list, so a service that exists on the record and is missing from that list was not
+ *  dropped as a lift and not preserved — it was simply absent from the replace-all, and it
+ *  was gone. Nobody invoked a delete: the owner said "add ceramic coating", the model
+ *  returned a list missing three, and three services left a live page. He would find out
+ *  when a customer asked for one.
+ *
+ *  So the same rule the prices already get, one dimension over: **an ungrounded ABSENCE may
+ *  not overwrite the record's existence, exactly as an ungrounded PRICE may not overwrite
+ *  the record's price.** An omission whose service the message NAMES is a removal the owner
+ *  asked for — performed, and named in the reply. An omission the message never mentions is
+ *  an accident — refused, carried through, and said out loud so one sentence puts it right.
+ *
+ *  The tie-break is the standing one: a default that destroys work is never acceptable, even
+ *  when the alternative is ambiguous. Costed both ways in docs/SERVICES_REPLACE_ALL_COST.md.
+ *  The case it cannot read is "get rid of everything except mowing" — no removal is named, so
+ *  everything is kept and Hubly asks. One turn, in the direction that keeps the work. */
 export function reconcileServices(model: SvcIn[], existing: SvcRow[], message: string): ServiceReconcile {
   const exByKey = new Map<string, SvcRow>();
   for (const e of existing) exByKey.set(svcKey(e.name), { name: e.name, price: typeof e.price === "number" ? e.price : (e.price != null ? Number(e.price) : undefined) });
@@ -135,7 +160,24 @@ export function reconcileServices(model: SvcIn[], existing: SvcRow[], message: s
       droppedLift.push(s.name);                          // new AND ungrounded -> a lift
     }
   }
-  return { allowed, droppedLift, changed };
+  // ── THE OMISSIONS ─────────────────────────────────────────────────────────────────────
+  // Everything on the record the model did not send. Grounded in the message => the owner
+  // named it, so it goes. Not named => it stays, and we say so.
+  const sentKeys = new Set(model.map((s) => svcKey(s.name)));
+  const removed: string[] = [];
+  const keptBack: string[] = [];
+  for (const [key, ex] of exByKey) {
+    if (sentKeys.has(key)) continue;
+    if (serviceGrounded(ex.name, undefined, message)) {
+      removed.push(ex.name);
+      changed = true;                                    // a removal IS a change; without this a
+                                                         // removal-only turn would write nothing
+    } else {
+      keptBack.push(ex.name);
+      allowed.push({ name: ex.name, price: ex.price });   // the refusal: the record survives
+    }
+  }
+  return { allowed, droppedLift, changed, removed, keptBack };
 }
 
 export type GroundableFact = "phone" | "email" | "address" | "price";

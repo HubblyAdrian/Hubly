@@ -35,6 +35,7 @@ import { HUBLY_CAPABILITY_REGISTRY as REGISTRY } from "../../supabase/functions/
 import {
   addressGrounded, emailGrounded, phoneGrounded, priceGrounded, serviceGrounded, reconcileServices,
 } from "../../supabase/functions/_shared/hubly_grounding.ts";
+import { composeServicesTruth } from "../../supabase/functions/_shared/hubly_owner_replies.ts";
 
 const fails: string[] = [];
 
@@ -105,6 +106,64 @@ for (const [what, got, want] of CASES) {
   if (!rode || rode.price !== 600) {
     fails.push("BASELINE MOVED — a name-grounded service no longer carries an unstated price through. If that was deliberate, delete the business.setServices::price-when-only-the-name-is-stated baseline entry; it is a hole closing.");
   }
+}
+
+// ── LEG 1b — THE SILENTLY SHORT LIST ─────────────────────────────────────────────────────
+//
+// THE SHAPE THAT MATTERS IS NOT AN EMPTY LIST — that case every layer already refuses. It is a
+// list that is SHORT: the owner says "add ceramic coating", the model returns two of five, and
+// the replace-all deletes the difference in silence. Nobody invoked a delete, and the owner
+// finds out when a customer asks for a service that is no longer on the page.
+{
+  const five = [
+    { name: "Gutter Clearing", price: 120 },
+    { name: "Window Washing", price: 90 },
+    { name: "Pressure Washing", price: 200 },
+    { name: "Roof Moss Removal", price: 250 },
+    { name: "Solar Panel Clean", price: 80 },
+  ];
+  const nameOf = (s: { name: string }) => s.name;
+
+  // 1. SILENTLY SHORT — the message names none of the missing three.
+  const short = reconcileServices(
+    [{ name: "Gutter Clearing", price: 120 }, { name: "Ceramic Coating", price: 600 }],
+    five, "add ceramic coating, six hundred",
+  );
+  const kept = short.allowed.map(nameOf);
+  for (const missing of ["Window Washing", "Pressure Washing", "Roof Moss Removal", "Solar Panel Clean"]) {
+    if (!kept.includes(missing)) {
+      fails.push(`SILENTLY SHORT — "${missing}" is on the record, was absent from the model's list, and the message never mentions it. It must be KEPT; the write is replace-all, so dropping it deletes it from a live page.`);
+    }
+  }
+  if ((short.keptBack || []).length !== 4) {
+    fails.push(`SILENTLY SHORT — four omissions were unmentioned; keptBack reports ${JSON.stringify(short.keptBack)}. What was refused must be named, or the owner cannot tell a correct write from one we corrected.`);
+  }
+  if ((short.removed || []).length !== 0) {
+    fails.push(`SILENTLY SHORT — nothing was asked to be removed; removed reports ${JSON.stringify(short.removed)}.`);
+  }
+
+  // 2. A REMOVAL THE OWNER ACTUALLY ASKED FOR still works, and is named.
+  const asked = reconcileServices(
+    five.filter((s) => s.name !== "Window Washing"), five, "drop the window washing please",
+  );
+  if (!(asked.removed || []).includes("Window Washing")) {
+    fails.push(`ASKED REMOVAL — "drop the window washing" must remove it; removed reports ${JSON.stringify(asked.removed)}. A guard that cannot let go of anything is a different defect, not a fix.`);
+  }
+  if (asked.allowed.map(nameOf).includes("Window Washing")) {
+    fails.push("ASKED REMOVAL — the service the owner asked to remove is still in the write.");
+  }
+  if (!asked.changed) fails.push("ASKED REMOVAL — a removal IS a change; without that flag a removal-only turn writes nothing and reports nothing.");
+
+  // 3. THE SENTENCE. A refusal nobody hears about is indistinguishable from a correct write,
+  //    and a removal nobody hears about is the defect wearing a fix.
+  const placement = { status: "placed", placed: [{ name: "Ceramic Coating", price: 600 }], verifiedPlaced: [{ name: "Ceramic Coating", price: 600 }], missing: [] } as any;
+  const said = composeServicesTruth(placement, "https://x.myhubly.app", null, { removed: ["Window Washing"], keptBack: ["Pressure Washing", "Roof Moss Removal"] });
+  for (const must of ["Window Washing", "Pressure Washing", "Roof Moss Removal"]) {
+    if (!said.includes(must)) fails.push(`THE SENTENCE — "${must}" was removed or kept back and the owner's sentence never names it: ${JSON.stringify(said.slice(0, 200))}`);
+  }
+  // And it may not fabricate one when there is nothing to say.
+  const quiet = composeServicesTruth(placement, "https://x.myhubly.app", null, { removed: [], keptBack: [] });
+  if (/kept|off your list/i.test(quiet)) fails.push(`THE SENTENCE — nothing was removed or kept, and the sentence talks about it anyway: ${JSON.stringify(quiet)}`);
 }
 
 // ── LEG 2 + 3 — WHO CALLS IT, AND WHAT IS STILL UNGROUNDED ───────────────────────────────
@@ -178,7 +237,7 @@ for (const key of Object.keys(UNGROUNDED_TODAY)) {
   if (!FACT_WRITERS[id]) fails.push(`the frozen baseline names ${id}, which is no longer a fact writer. Delete the entry or restore the writer.`);
 }
 
-console.log(`grounding behaviours exercised : ${CASES.length + 4}`);
+console.log(`grounding behaviours exercised : ${CASES.length + 4} + 10 on the silently short list`);
 console.log(`owner-fact writers checked     : ${checked}  (${covered.join(", ")})`);
 for (const h of recordedHoles) console.log(`  recorded hole: ${h}`);
 console.log(`facts still ungrounded, frozen : ${Object.keys(UNGROUNDED_TODAY).length}`);

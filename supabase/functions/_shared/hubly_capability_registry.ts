@@ -8067,6 +8067,7 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
               price: typeof s.price === "number" && Number.isFinite(s.price) ? s.price : undefined,
               description: typeof s.description === "string" && s.description.trim() ? s.description.trim() : undefined,
             }));
+          let svcOmissions: { removed: string[]; keptBack: string[] } = { removed: [], keptBack: [] };
           // GROUND against THIS message when one is present (the model-invoked
           // path). set_business_draft_services is REPLACE-ALL, so a plain filter
           // would delete the owner's other services — reconcile instead: keep an
@@ -8087,6 +8088,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
               price: typeof s.price === "number" ? s.price : undefined,
               description: (s as any).description,
             }));
+            // WHAT THE REPLACE-ALL WAS REFUSED FROM DELETING, AND WHAT IT DELETED ON PURPOSE.
+            // Carried on `raw` so the composer says both halves: a removal the owner asked for
+            // is named, and one we refused is reported. Silence about either is how three
+            // services leave a live page on an "add ceramic coating".
+            svcOmissions = { removed: rec.removed || [], keptBack: rec.keptBack || [] };
           }
           const r = await callBusinessRpc("set_business_draft_services", {
             p_id: draftId,
@@ -8153,6 +8159,9 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
               // The classic write's real outcome, for composeServicesTruth. A null here
               // means the page was freeform and this door was never opened.
               classic,
+              // What the replace-all removed because they asked, and what it was refused from
+              // removing. Read by hubly-conversation and said in the owner's sentence.
+              omissions: svcOmissions,
               // recordChange ONLY on a non-freeform page: there the placement was a
               // no-op and the async rebuild does the real work. On a freeform page
               // the patch already happened here, so firing a rebuild would just

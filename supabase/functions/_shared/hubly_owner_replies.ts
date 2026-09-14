@@ -207,7 +207,55 @@ export function andList(items: string[], overflowAfter = 3): string {
 export function fmtSvcPrice(n: number): string {
   return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
 }
-export function composeServicesTruth(placement: ServicesPlacementLike, url: string, classic?: ClassicWriteLike | null): string {
+/** What the replace-all was refused from deleting, and what it deleted on purpose. Both are
+ *  facts about what HAPPENED, so they belong in the sentence the owner reads and nowhere else
+ *  (the same rule as every other line in this file). */
+export type ServicesOmissions = {
+  /** Existing services the owner NAMED and the write removed. */
+  removed?: string[];
+  /** Existing services the model's list dropped and the message never mentioned. Kept. */
+  keptBack?: string[];
+};
+
+/**
+ * AN ABSENCE IS A VALUE, AND THE OWNER HEARS ABOUT IT (2026-09-14).
+ *
+ * `set_business_draft_services` is replace-all. A model list that is silently short used to
+ * delete the difference in silence: the owner said "add ceramic coating", the model returned a
+ * list missing three, three services left a live page, and nothing said so. Nobody invoked a
+ * delete.
+ *
+ * The writer now refuses an ungrounded removal (hubly_grounding.ts) and this composer says both
+ * halves — what was removed because they asked, and what was KEPT because they did not. The
+ * kept-back sentence is not chatter: it is the report of a refusal, and without it the owner
+ * cannot tell a correct write from one we quietly corrected.
+ */
+export function composeServicesTruth(placement: ServicesPlacementLike, url: string, classic?: ClassicWriteLike | null, omissions?: ServicesOmissions | null): string {
+  const base = composeServicesTruthCore(placement, url, classic);
+  const removed = (omissions?.removed || []).filter(Boolean);
+  const keptBack = (omissions?.keptBack || []).filter(Boolean);
+  if (!removed.length && !keptBack.length) return base;
+  // NOTHING IS APPENDED TO SILENCE. When the core composer refuses to speak (an empty list, a
+  // state it has no true sentence for), a removal line on its own would be a fragment with no
+  // subject — but a removal that happened must still be said, so it becomes the whole sentence.
+  const parts: string[] = [];
+  if (base) parts.push(base);
+  if (removed.length) {
+    parts.push(`${andList(removed)} ${removed.length === 1 ? "is" : "are"} off your list now.`);
+  }
+  if (keptBack.length) {
+    parts.push(
+      // "Say the word" was the first phrasing and the directive net caught it — "say the" is on
+      // the watchlist because it is how a model instruction reads. The net cannot tell an
+      // owner-facing idiom from a directive, and the cheap answer is to write the sentence
+      // without the phrase rather than to widen the net.
+      `I kept ${andList(keptBack)} — ${keptBack.length === 1 ? "it was" : "they were"} missing from the update and you didn't ask to remove ${keptBack.length === 1 ? "it" : "them"}. Tell me if you did want ${keptBack.length === 1 ? "it" : "them"} gone.`,
+    );
+  }
+  return parts.join(" ");
+}
+
+function composeServicesTruthCore(placement: ServicesPlacementLike, url: string, classic?: ClassicWriteLike | null): string {
   // THE VERIFIED LIST, AND NOTHING ELSE. The deletion IS the fix: there is no
   // `|| placement.placed` here any more, and nothing restores it.
   //
