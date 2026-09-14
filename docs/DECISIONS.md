@@ -625,3 +625,35 @@ scroll position **polled until stable** with the window printed. Raw run:
 does not scroll (41 of 466 clicks navigate the frame away, 3 target an id that does not exist,
 21 do nothing). That is a countable backlog rather than a rumour, and it is the first honest
 figure this repair has ever had.
+
+
+## D-051 — The places migration, run: 76 rows, not the 75 that were approved
+
+**Executed 2026-09-14 06:0x UTC**, `supabase/migrations/20260914060000_places_added_by_owner.sql`,
+applied with `supabase db query --linked -f`. Never `db push`.
+
+| | pre | post |
+|---|---|---|
+| rows | 76 | 76 |
+| `added_by = 'owner'` | **0** | **76** |
+| `added_by in ('system','backfill')` | **76** | **0** |
+| `visible` | 76 | 76 |
+| rollback value stored in `config` | 0 | **76** |
+| **visibility fingerprint** (`md5` of every `business:kind:visible`) | `0849509d9ac8…` | **`0849509d9ac8…` — identical** |
+
+**The number moved and that is the report.** `docs/MY_DAY_ARCHITECTURE.md` §5 said **75 rows /
+51 businesses**; execution found **76 / 52**. The extra row is `hubly-classic-fixture`'s
+`website` place, created **22:19:17 the same night by our own fixture work** — a test business,
+inserted after the count was taken. The migration is defined by a predicate rather than a count,
+so its intent is untouched; the discrepancy is recorded because **a number quoted from a document
+is a memory of a measurement**, and this one was four hours old when it was quoted.
+
+**Split, per the denominator rule:** market 21 rows / 10 businesses · test 50 / 39 ·
+internal 5 / 3.
+
+**Reversible exactly, not approximately.** The prior value is carried in `config`:
+`backfill` 34, `system` 42 — 76 of 76 recoverable. The rollback statement lives in the
+migration file so it cannot drift from the thing it reverses.
+
+**Graef, specifically:** `website` (was `backfill`), `jobs`, `customers`, `planner` (all were
+`system`, all with `earned_by` set) — four tabs, all `visible: true` before and after.
