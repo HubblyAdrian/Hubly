@@ -157,11 +157,84 @@ if (gaps.length) {
   console.log(`\n${gaps.length} door(s) whose model story is worth printing every run, not filing away:`);
   for (const d of gaps) console.log(`  body.${d.padEnd(14)} ${SHOULD_BE_MODEL_ACTIONS[d]}`);
 }
+// ── LEG 2 — A DECLARED DOOR MUST BE A REAL DOOR (2026-09-14) ─────────────────────────────
+//
+// `CapabilityDoors` lets an action declare its three doors: talk · do-it-yourself · show. Leg 1
+// above asks whether every server branch is DECLARED; this asks whether every declaration is
+// TRUE. Declaring a door is a commitment — the finding of 2026-09-13 was four capabilities whose
+// middle door existed and whose others did not, and nothing in the code said so.
+//
+// The do-it-yourself door is a MARKER IN A FILE, never a sentence, because Hubly may not name a
+// control it cannot see (CLAUDE.md). That makes it checkable: the marker is either in the file
+// or the door is gone. Otherwise a control renamed in a refactor takes its door with it
+// silently — shape 1 of the unlit catalogue, arriving through the back.
+//
+// Read from the LOADED registry, not from its source text: these are real objects, and parsing
+// a literal to learn what a literal says is the kind of indirection that reads a receipt rather
+// than the goods (Lesson 83).
+{
+  let decls = [];
+  try {
+    const out = createRequire(import.meta.url)("node:child_process").execFileSync("deno", ["eval", "--no-check",
+      'import {HUBLY_CAPABILITY_REGISTRY as R} from "' + resolve(ROOT, "supabase/functions/_shared/hubly_capability_registry.ts") +
+      '"; const o=[]; for(const c of R) for(const x of (c.actions||[])) if(x.doors) o.push({id:c.name+"."+x.name, name:x.name, doors:x.doors}); console.log(JSON.stringify(o));'],
+      { encoding: "utf8" });
+    decls = JSON.parse(out.trim().split("\n").pop());
+  } catch (e) { console.error("CANNOT RUN — could not read declared doors: " + String(e.message).slice(0, 160)); process.exit(2); }
+
+  for (const d of decls) {
+    const { talk, diy, show } = d.doors || {};
+    if (talk === undefined || diy === undefined || show === undefined) {
+      failed++; console.error(`FAIL  ${d.id} declares doors but not all three of talk/diy/show. A door nobody decided about is what this type exists to prevent.`);
+      continue;
+    }
+    if (!talk && !diy && !show) {
+      failed++; console.error(`FAIL  ${d.id} declares three closed doors. Either it has one, or it should not be an action.`);
+    }
+    if (talk && !registryActions.has(String(talk).split(".").pop())) {
+      failed++; console.error(`FAIL  ${d.id} declares talk door "${talk}" and no such action exists in the registry.`);
+    }
+    if (diy) {
+      if (!diy.file || !diy.marker) {
+        failed++; console.error(`FAIL  ${d.id} declares a do-it-yourself door without a file and a marker — nothing to verify.`);
+      } else {
+        let src = null;
+        try { src = readFileSync(resolve(ROOT, diy.file), "utf8"); }
+        catch { failed++; console.error(`FAIL  ${d.id} declares its do-it-yourself door in ${diy.file}, which does not exist.`); }
+        // A COMMENT MENTIONING THE CONTROL IS NOT THE CONTROL. Written the same afternoon as
+        // Lesson 82, and this check still made the mistake on its first run: renaming every
+        // real `data-pe="add-service"` in public/hubly.html left it green, because a comment
+        // three thousand lines away still said the name. Comments are masked before the marker
+        // is looked for — HTML and JS, because the file is both.
+        if (src !== null) {
+          src = src.replace(/<!--[\s\S]*?-->/g, " ")
+                   .replace(/\/\*[\s\S]*?\*\//g, " ")
+                   .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
+        }
+        if (src !== null && !src.includes(diy.marker)) {
+          failed++;
+          console.error(`FAIL  ${d.id} declares a do-it-yourself door — ${diy.marker} in ${diy.file} — and that marker is GONE.\n` +
+                        `      The control was renamed or removed, and the capability now claims a door it does not have.`);
+        }
+      }
+    }
+    if (show && !conv.includes(String(show))) {
+      failed++; console.error(`FAIL  ${d.id} declares a show-me-where door "${show}" and no such mechanism exists.`);
+    }
+    console.log(`  doors  ${d.id.padEnd(24)} talk: ${talk || "—"} · diy: ${diy ? diy.marker + " in " + diy.file : "—"} · show: ${show || "— (no mechanism exists yet, product-wide)"}`);
+  }
+  console.log(`declared door sets checked: ${decls.length}`);
+}
+
 if (undeclared.length) {
-  failed = undeclared.length;
+  failed += undeclared.length;
   console.error(`\nFAIL — ${undeclared.length} door(s) the code exposes and nobody decided about:`);
   for (const d of undeclared) console.error(`  body.${d}  — no registry action, no NOT_FOR_MODEL entry`);
   console.error(`\nEither give it an action the model can invoke, or add it to NOT_FOR_MODEL with a reason.\nSilence is the one option that is not available: it is how six capabilities came to exist that\nthe assistant refuses to perform.`);
   process.exit(1);
 }
-console.log(`\nPASS — all ${doors.length} doors are accounted for: an action the model can invoke, or an explicit reason it cannot.`);
+if (failed) {
+  console.error(`\n${failed} failure(s).`);
+  process.exit(1);
+}
+console.log(`\nPASS — all ${doors.length} doors are accounted for: an action the model can invoke, or an explicit reason it cannot.\nEvery declared door set names a door that is actually there.`);

@@ -49,8 +49,17 @@ const append = (text) => (src) => src + text;
  *  worth stating twice: a comment that mentions a symbol is not that symbol. */
 /** Every occurrence in code — a store read twice in one query is not un-read by fixing one. */
 const swapAllInCode = (find, repl) => (src) => {
-  let out = src, guard = 0;
-  while (out.includes(find) && guard++ < 50) out = swapInCode(find, repl)(out);
+  let out = src, guard = 0, n = 0;
+  // Stops when no CODE occurrence is left — not when no occurrence is left. A marker that also
+  // appears in a comment would otherwise loop until swapInCode threw, and report a mutation
+  // failure about a mutation that had already worked.
+  for (;;) {
+    let next;
+    try { next = swapInCode(find, repl)(out); } catch { break; }
+    out = next; n++;
+    if (guard++ > 200) break;
+  }
+  if (!n) throw new Error(`anchor not present in CODE: ${JSON.stringify(find.slice(0, 60))}`);
   return out;
 };
 
@@ -178,6 +187,13 @@ const SET = [
     // The mutation is therefore a NEW DOOR nobody declared — which is what all six of the
     // capabilities measured on 2026-09-14 were.
     mutate: append(`\n// redproof: an undeclared door\nif (body.redproofUndeclaredDoor) { await doSomethingDestructive(body.redproofUndeclaredDoor); }\n`) },
+
+  { check: "check-registry-knows-every-door", tier: "slow", leg: "declared doors are real",
+    ruled: "services' and hours' doors — a declared door that is gone is a claimed capability",
+    file: "public/hubly.html",
+    // ALL of them: the tile's marker appears seven times in that file (two renderers, a
+    // selector list, a click delegate), and renaming one leaves the door standing.
+    mutate: swapAllInCode('data-pe="add-service"', 'data-pe="add-service-renamed"') },
 
   { check: "check-draft-capable-writers", tier: "slow",
     ruled: "which writers work on an unclaimed draft",

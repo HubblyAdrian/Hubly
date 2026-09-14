@@ -126,11 +126,43 @@ export type CapabilityActionResult = {
   error?: string;
 };
 
+/**
+ * THE THREE DOORS INTO A CAPABILITY — declared, so the claim is checkable.
+ *
+ * Measured 2026-09-14 (`docs/CAPABILITY_DOORS.md`): of 212 capabilities, 8 have the talk door,
+ * 20 the do-it-yourself door, 3 have two, and **none has all three** — "I can show you where"
+ * exists nowhere in the product. A door is the thing a capability is useless without, and until
+ * now nothing in the code said which doors a capability had, so nothing could notice one going
+ * missing. Four capabilities turned out to have only the middle door on 2026-09-13; they were a
+ * sample of seventeen.
+ *
+ * `doors` is OPTIONAL and declaring it is a commitment, not decoration:
+ * `check-registry-knows-every-door` fails if a declared do-it-yourself door's marker is not
+ * present in the file it names. A door declared and then deleted is exactly the failure this
+ * type exists to catch.
+ *
+ * **WHY `diy` IS A MARKER AND NOT A SENTENCE.** Hubly never names or describes a UI control
+ * (CLAUDE.md) — it does not render the page and cannot know what is on screen. So the
+ * do-it-yourself door is recorded as something a CHECK can verify, never as prose for the model
+ * to read aloud. Telling someone where a control is is the job of the third door, which SHOWS
+ * them; until that exists, `show` is null and Hubly offers to do the thing itself.
+ */
+export type CapabilityDoors = {
+  /** The action id the model can invoke, or null if the model cannot do this at all. */
+  talk: string | null;
+  /** A control the person can use themselves. `marker` must literally appear in `file`. */
+  diy: { file: string; marker: string; what: string } | null;
+  /** The mechanism that takes them to that control. Null until one exists — never a sentence. */
+  show: string | null;
+};
+
 export type CapabilityAction = {
   name: string;
   description: string;
   argsSchema: CapabilityActionArgSchema;
   handler: (args: Record<string, unknown>) => Promise<CapabilityActionResult>;
+  /** Optional today; see CapabilityDoors. Services and hours are the first two declared. */
+  doors?: CapabilityDoors;
 };
 
 export type Capability = {
@@ -7721,6 +7753,16 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           "'normal business hours', and never fill a day they did not mention. A weekday you omit is left exactly as it was, so a partial " +
           "statement ('we open at 8 on Saturdays now') changes Saturday and nothing else. If they asked to set hours without saying what " +
           "they are, ASK — do not invent them. Seven pages shipped with invented hours on 2026-08-27 and that is the rule this carries.",
+        // TWO DOORS, NAMED HONESTLY. Talk: this action. Do-it-yourself: the hours rows in Edit
+        // details. There is no third — nothing can take an owner to that form. And there is a
+        // fourth thing missing that is NOT a door: a freeform page has no hours anchor, so a
+        // write here reaches the RECORD and may never reach the PAGE. Costed in
+        // docs/HOURS_EXTRACTOR_COST.md rather than papered over here.
+        doors: {
+          talk: "business.setHours",
+          diy: { file: "public/platform-home.html", marker: "kind:'hours'", what: "the hours rows in Edit details (hcOpenManage)" },
+          show: null,
+        },
         argsSchema: {
           type: "object",
           properties: {
@@ -7934,7 +7976,16 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
       {
         name: "setServices",
         description:
-          "Writes the real services list — the live site's Services section renders these for real, immediately. Pass the COMPLETE current list every time (replaces what's there, same convention as everything else here) — never just the newly-mentioned one.",
+          "Writes the real services list — the live site's Services section renders these for real, immediately. Pass the COMPLETE current list every time (replaces what's there, same convention as everything else here) — never just the newly-mentioned one. " +
+          "If the owner would rather do it themselves, you cannot tell them where to click — you do not render their page, and naming a control is claiming to see it. Offer to do it, or do it.",
+        // THE FIRST DECLARED SET OF DOORS. Services has two of three: the owner can say it, and
+        // the owner can add one on the page. Nothing can take them TO that control, which is why
+        // the description above forbids describing it rather than working around it.
+        doors: {
+          talk: "business.setServices",
+          diy: { file: "public/hubly.html", marker: 'data-pe="add-service"', what: "the add-service tile on the services block, drawn when wsEditingOn()" },
+          show: null,
+        },
         argsSchema: {
           type: "object",
           properties: {
