@@ -54256,7 +54256,8 @@ function wireHcEditingSurface(doc, root){
   // here would be the fixed-delay defect re-introduced in the file that just finished removing
   // it (Lesson 70). hcMountAddService is already idempotent — it returns if the grid has one —
   // so re-running it on mutations is free, and the observer stops the moment it succeeds.
-  try{ hcMountAddService(); }catch(e){}
+  try{ hcAddSvcLog('wireHcEditingSurface reached', 'root=<' + (root.tagName||'?').toLowerCase() + (root.id?('#'+root.id):'') + '> doc=' + (doc === document ? 'top' : 'iframe')); }catch(e){}
+  try{ hcMountAddService(); }catch(e){ try{ console.log('[hc+] mount threw — ' + String(e && e.message).slice(0,120)); }catch(_){} }
   try{
     if(!root.querySelector('[data-hc-addsvc]') && typeof MutationObserver !== 'undefined'){
       var addObs = new MutationObserver(function(){
@@ -54776,10 +54777,23 @@ function wireHcEditingSurface(doc, root){
      undoable version — the same route the Edit-details panel uses. A card that appears
      on the page but cannot be booked is the defect this codebase already has a scar
      for, so there is no second, page-only way to add one. */
+  // INSTRUMENTED 2026-09-13. Three structural gates were opened blind before anyone asked the
+  // function where it abandons — the same lesson as everything else tonight, at a smaller
+  // scale: measurement beats reasoning about this codebase, and the function knows the answer.
+  // Every early return says which condition failed and what it saw. Left in: it is one console
+  // line on an owner-only surface, and the next person to wonder why the "+" is absent gets the
+  // answer instead of a search.
+  function hcAddSvcLog(where, detail){
+    try{ console.log('[hc+] ' + where + (detail ? ' — ' + detail : '')); }catch(e){}
+  }
   function hcServicesGrid(){
     try{
       var anchors = root.querySelectorAll('[data-hubly-service]');
-      if(!anchors.length) return null;
+      if(!anchors.length){
+        hcAddSvcLog('no grid', 'root <' + (root.tagName||'?').toLowerCase() + (root.id?('#'+root.id):'') +
+          '> holds 0 [data-hubly-service]; document holds ' + document.querySelectorAll('[data-hubly-service]').length);
+        return null;
+      }
       var holds = function(el){ return !!(el.querySelector && el.querySelector('[data-hubly-service]')); };
       // THE CARD IS THE LOWEST ANCESTOR WHOSE SIBLINGS ALSO HOLD A SERVICE.
       //
@@ -54793,16 +54807,21 @@ function wireHcEditingSurface(doc, root){
           if(!p.children || p.children.length < 2) continue;
           var withService = 0;
           for(var k=0;k<p.children.length;k++) if(p.children[k] !== n && holds(p.children[k])) withService++;
-          if(withService >= 1) return p;
+          if(withService >= 1){
+            hcAddSvcLog('grid found', '<' + p.tagName.toLowerCase() + ' class="' + String(p.className).slice(0,40) + '"> with ' + p.children.length + ' children');
+            return p;
+          }
         }
       }
+      hcAddSvcLog('no grid', anchors.length + ' anchor(s) but none has a sibling that also holds one');
       return null;
-    }catch(e){ return null; }
+    }catch(e){ hcAddSvcLog('no grid', 'threw: ' + String(e && e.message).slice(0,80)); return null; }
   }
   function hcMountAddService(){
     var grid = hcServicesGrid();
-    if(!grid) return;
-    if(grid.querySelector(':scope > [data-hc-addsvc]')) return;
+    if(!grid){ hcAddSvcLog('abandoned', 'hcServicesGrid() returned null'); return; }
+    if(grid.querySelector(':scope > [data-hc-addsvc]')){ hcAddSvcLog('abandoned', 'already mounted'); return; }
+    hcAddSvcLog('mounting', 'into <' + grid.tagName.toLowerCase() + ' class="' + String(grid.className).slice(0,40) + '">');
     var wrap = doc.createElement('div');
     wrap.setAttribute('data-hc-editor','1');
     wrap.setAttribute('data-hc-addsvc','1');
@@ -54863,6 +54882,7 @@ function wireHcEditingSurface(doc, root){
     });
     wrap.appendChild(btn); wrap.appendChild(form);
     grid.appendChild(wrap);
+    hcAddSvcLog('MOUNTED', 'grid now has ' + grid.children.length + ' children; wrap in document: ' + !!doc.querySelector('[data-hc-addsvc]'));
   }
 
   /* ── THE HANDLE LIVES ON THE BLOCK ─────────────────────────────────────────
