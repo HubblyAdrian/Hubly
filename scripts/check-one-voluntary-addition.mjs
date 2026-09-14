@@ -12,7 +12,7 @@
  * fails if a fourth composer is added beside them without doing the same.
  *
  * Three legs, each red-proofable:
- *   1. the gate exists and refuses once a slot is taken;
+ *   1. the gate, EXECUTED, refuses once a slot is taken (read, it passed a gate returning true);
  *   2. every voluntary composer call site is guarded by it;
  *   3. every guarded call site also TAKES the slot — a guard without a take lets the next
  *      composer through, which is the bug with an extra step.
@@ -36,11 +36,41 @@ catch (e) { console.error("CANNOT RUN — " + e.message); process.exit(2); }
 let failed = 0;
 const say = (n, ok, d) => { console.log(`${ok ? "PASS" : "FAIL"}  ${n}${d ? " — " + d : ""}`); if (!ok) failed++; };
 
-// ── 1. the gate exists and short-circuits ───────────────────────────────────────
-const gate = /function hcMayAddVoluntary\(\)\s*\{([\s\S]*?)\n          \}/.exec(src);
-say("1 the one gate exists and refuses a second addition",
-  !!gate && /hcVoluntary\s*>\s*0\s*\)\s*return false/.test(gate[1]),
-  gate ? "hcMayAddVoluntary short-circuits on hcVoluntary > 0" : "hcMayAddVoluntary not found");
+// ── 1. THE GATE IS RUN, NOT READ ────────────────────────────────────────────────
+// The first version of this leg matched the text `hcVoluntary > 0) return false` inside the
+// function body and called that enforcement. On 2026-09-14 the red-proof audit put
+// `return true;` at the top of the gate — the short-circuit line still present, three lines
+// below, now unreachable — and this check stayed green. A text assertion about a line is not
+// an assertion about a decision. So the gate is EXTRACTED and EXECUTED against four states.
+const start = src.indexOf("var hcVoluntary = 0;");
+const tookAt = src.indexOf("function hcTookVoluntary()");
+if (start < 0 || tookAt < 0) { console.error("CANNOT RUN — hcVoluntary / hcTookVoluntary not found in the file"); process.exit(2); }
+const gateSrc = src.slice(start, src.indexOf("\n", tookAt) + 1);
+
+let may, took;
+try {
+  // `interim` and `_reply` are the gate's only free names; passing them as parameters puts
+  // them in scope exactly as the closure does at run time.
+  const make = new Function("interim", "_reply", gateSrc + "\nreturn { may: hcMayAddVoluntary, took: hcTookVoluntary };");
+  const behaves = (interim, reply, takeFirst) => {
+    const api = make(interim, reply);
+    if (takeFirst) api.took();
+    return api.may();
+  };
+  const cases = [
+    ["a statement was shown, no slot taken", behaves(["Added Ceramic Coating at $600."], "", false), true],
+    ["the slot is already taken", behaves(["Added Ceramic Coating at $600."], "", true), false],
+    ["the last thing said was a question", behaves(["What do you charge for that?"], "", false), false],
+    ["nothing was said this turn", behaves([], "", false), false],
+  ];
+  const wrong = cases.filter(([, got, want]) => got !== want);
+  say("1 the gate, executed, refuses in every state it must", wrong.length === 0,
+    wrong.length ? wrong.map(([n, got, want]) => `${n}: returned ${got}, must be ${want}`).join("; ")
+                 : `4 states exercised: ${cases.map(([n, got]) => `${n} → ${got}`).join(" · ")}`);
+} catch (e) {
+  console.error("CANNOT RUN — the gate could not be executed: " + String(e.message).slice(0, 120));
+  process.exit(2);
+}
 
 // ── 2 + 3. every voluntary call site is gated AND takes a slot ──────────────────
 // The window is the statement the call appears in: from the start of its line back to the
@@ -61,7 +91,7 @@ for (const name of VOLUNTARY) {
     if (gated && !takes) say(`3 ${name} at :${i + 1} takes its slot`, false, "gated but never calls hcTookVoluntary()");
   }
 }
-say("2 every voluntary composer call site is gated", failed === (gate ? 0 : 1), `${sites} call site(s) examined across ${VOLUNTARY.length} composers`);
+say("2 every voluntary composer call site is gated", failed === 0, `${sites} call site(s) examined across ${VOLUNTARY.length} composers`);
 
 console.log(failed ? `\n${failed} assertion(s) failed.` : `\nOne voluntary addition per turn, enforced in one place. ${sites} call site(s) checked.`);
 process.exit(failed ? 1 : 0);

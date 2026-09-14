@@ -70,6 +70,22 @@ if (gateAt >= 0 && !/owner_id/.test(gateBody)) {
        `      live hand-built page. Without that it either breaks signup or stops protecting.`);
 }
 
+/** COMMENTS ARE NOT CALLS.
+ *
+ * Every one of these call sites carries the line `// THE CLASSIC-SITE GATE — see
+ * refuseIfClassicSite(). A claimed business with…`, and the test below used to be
+ * `span.includes("refuseIfClassicSite(")` — which that comment satisfies on its own. The
+ * red-proof audit renamed the real call on 2026-09-14 and this check stayed green, because it
+ * was reading the comment that points at the gate rather than the call that runs it. An action
+ * whose gate was deleted but whose explanatory comment survived would have passed.
+ *
+ * So: comments and strings are stripped, and an INVOCATION is required — `await gate(` or
+ * `= gate(` — not a mention. */
+function stripComments(t) {
+  return t.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/(^|[^:])\/\/[^\n]*/g, "$1 ");
+}
+const invokes = (text) => new RegExp(`(await|=|\\breturn)\\s+${GATE}\\s*\\(`).test(stripComments(text));
+
 let called = 0;
 for (const action of DESTRUCTIVE) {
   const at = src.indexOf(`name: "${action}"`);
@@ -77,7 +93,7 @@ for (const action of DESTRUCTIVE) {
   const next = DESTRUCTIVE.map((a) => src.indexOf(`name: "${a}"`, at + 10)).filter((i) => i > at);
   const end = next.length ? Math.min(...next) : Math.min(at + 6000, src.length);
   const span = src.slice(at, end);
-  if (span.includes(`${GATE}(`)) { called++; continue; }
+  if (invokes(span)) { called++; continue; }
 
   // FOLLOW ONE LEVEL OF DELEGATION. generateDocument's handler is a one-line delegate
   // to runDocumentGeneration(), where the gate actually lives. Reporting that as a
@@ -87,7 +103,7 @@ for (const action of DESTRUCTIVE) {
   const delegate = span.match(/handler:\s*async \([^)]*\)\s*=>\s*\n?\s*([A-Za-z_$][\w$]*)\s*\(/);
   if (delegate) {
     const fnAt = src.search(new RegExp(`(async )?function ${delegate[1]}\\s*\\(`));
-    if (fnAt >= 0 && src.slice(fnAt, fnAt + 8000).includes(`${GATE}(`)) {
+    if (fnAt >= 0 && invokes(src.slice(fnAt, fnAt + 8000))) {
       called++;
       console.log(`  note: website.${action} reaches the gate via ${delegate[1]}()`);
       continue;

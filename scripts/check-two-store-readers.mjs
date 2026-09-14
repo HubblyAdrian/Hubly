@@ -35,14 +35,23 @@ const MIG = join(ROOT, "supabase/migrations");
  * Enumerated explicitly rather than inferred: a fact is "two-store" because of a decision
  * somebody made, not because of anything visible in a query. Each entry names the reader, the
  * two stores, and a marker that must appear in the reader's body for each.
+ *
+ * A MARKER IS AN ACCESS PATH, NEVER A NAME. The first markers were substrings — /service_catalog/,
+ * /settings_business_hours/ — and the red-proof audit on 2026-09-14 renamed the real read to
+ * `service_catalog_REDPROOF` and then to nothing at all, and this check stayed green both times.
+ * The reason is in the function's own body: it SELECTS the literal `'meta.service_catalog'` as
+ * the `source` column, so the store's NAME is present in a reader that has stopped reading it.
+ * A check satisfied by a label is satisfied by a lie about where a row came from — which is the
+ * exact defect it was written to catch, one level of indirection up. Every marker below is now
+ * a jsonb path or a FROM clause: something that only appears when the store is actually read.
  */
 const TWO_STORE_FACTS = [
   {
     fact: "opening hours",
     reader: "get_business_hours",
     stores: [
-      { name: "settings_business_hours", marker: /settings_business_hours/ },
-      { name: "businesses.meta.hours", marker: /meta::jsonb\)->'hours'|->'hours'/ },
+      { name: "settings_business_hours", marker: /from public\.settings_business_hours\b/ },
+      { name: "businesses.meta.hours", marker: /\(b\.meta::jsonb\)\s*->\s*'hours'/ },
     ],
   },
   {
@@ -50,7 +59,7 @@ const TWO_STORE_FACTS = [
     reader: "get_business_services",
     stores: [
       { name: "public.services", marker: /from public\.services\b/ },
-      { name: "businesses.meta.service_catalog", marker: /service_catalog/ },
+      { name: "businesses.meta.service_catalog", marker: /\(b\.meta::jsonb\)\s*->\s*'service_catalog'/ },
     ],
   },
 ];

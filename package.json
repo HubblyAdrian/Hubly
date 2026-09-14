@@ -89,7 +89,8 @@
     "check:block-legibility": "node scripts/check-block-legibility.mjs",
     "check:name": "node scripts/check-name-is-asked.mjs",
     "brief": "node scripts/brief.mjs",
-    "decisions": "node scripts/decisions-open.mjs"
+    "decisions": "node scripts/decisions-open.mjs",
+    "audit:redproofs": "node scripts/audit-redproofs.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

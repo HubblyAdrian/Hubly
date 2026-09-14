@@ -2642,3 +2642,49 @@ This belongs beside the six unlit shapes (Lesson 49) as a **seventh**, and it is
 hides best:
 
 | 7 | **imported, re-exported, never called** | the import graph says live, the call graph says dead — and only the call graph is about behaviour |
+
+
+## Lesson 81 — A check whose red you have never seen is a check you have never run
+
+Fifteen checks that had each gated a real decision were mutated on 2026-09-14 — break the thing
+the check asserts, in the real file, require it to say so. **Four were passing for the wrong
+reason**, and each was a different way of measuring the shape of the code instead of its
+behaviour:
+
+| check | what it was actually measuring |
+|---|---|
+| `check-one-voluntary-addition` | that a LINE was present in the gate — `return true;` above it passed |
+| `check-destructive-confirm` | that the gate's NAME appeared in the span — the comment naming it passed |
+| `check-no-directives-to-owners` | backtick PAIRS in document order — one nested template hid half the file |
+| `check-two-store-readers` | that the store's NAME appeared — the `source` label passed |
+
+The common shape: **a name, a line, or a token standing in for a behaviour.** Where the fix was
+possible, the check now RUNS the thing — the gate is executed, the invocation is required, the
+source is lexed, the marker is an access path.
+
+And two of the fifteen were **already red on main** and nobody had looked: a capability shipped
+the previous day was dead for every claimed owner, and two rates were printed without their
+denominator. Neither needed a mutation. They needed the check to be run.
+
+The cost of the audit was about two hours. The cost of not running it was a capability that
+shipped dead, a rule (`never point at a control you cannot see`) enforced nowhere at all, and
+four instruments reporting on themselves.
+
+## Lesson 82 — Mutate the code, not the comment that names it
+
+Half of this codebase's checks scan source text, and the good ones carry long comments naming
+the very symbol they assert. That makes the comment a decoy in BOTH directions:
+
+- **For the auditor:** four of the first fifteen mutations landed in a comment — the line that
+  says `// see refuseIfClassicSite()`, the two `p_owner_id:` mentions explaining the invariant,
+  the header naming `composeServicesTruth`, an SQL `--` line. Each produced a confident
+  "STAYED GREEN" verdict about a check that was fine. A mutation that does not change behaviour
+  proves nothing, and it slanders a working instrument.
+- **For the check:** `check-destructive-confirm` was doing the same thing in reverse — counting
+  `// see refuseIfClassicSite()` as a call to it. The gate could have been deleted entirely and
+  the check would have passed on the comment left behind.
+
+So: anchors are resolved against **comment-masked source** (`swapInCode`), and a check that looks
+for a call strips comments before it looks. **A comment that mentions a symbol is not that
+symbol** — the mistake is easy enough that both the code and the person auditing the code made it
+on the same afternoon.

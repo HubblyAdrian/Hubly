@@ -39,6 +39,30 @@ const swap = (find, repl) => (src) => {
 };
 const append = (text) => (src) => src + text;
 
+/** THE MUTATION MUST BREAK CODE, NOT THE COMMENT THAT NAMES IT.
+ *
+ *  Four mutations in this file's first run hit a comment: the one pointing at
+ *  refuseIfClassicSite, the two `p_owner_id:` mentions explaining the rule, the header line
+ *  naming composeServicesTruth. Every one produced a "STAYED GREEN" verdict about a check that
+ *  was fine. It also found a check making the SAME mistake in the other direction —
+ *  check-destructive-confirm counted `// see refuseIfClassicSite()` as a call — so the rule is
+ *  worth stating twice: a comment that mentions a symbol is not that symbol. */
+/** Every occurrence in code — a store read twice in one query is not un-read by fixing one. */
+const swapAllInCode = (find, repl) => (src) => {
+  let out = src, guard = 0;
+  while (out.includes(find) && guard++ < 50) out = swapInCode(find, repl)(out);
+  return out;
+};
+
+const swapInCode = (find, repl) => (src) => {
+  const masked = src.replace(/\/\*[\s\S]*?\*\//g, (m) => " ".repeat(m.length))
+                    .replace(/(^|[^:])\/\/[^\n]*/g, (m) => " ".repeat(m.length))
+                    .replace(/^--[^\n]*/gm, (m) => " ".repeat(m.length));   // SQL comments: the fifth one I hit
+  const i = masked.indexOf(find);
+  if (i < 0) throw new Error(`anchor not present in CODE (only in comments, if at all): ${JSON.stringify(find.slice(0, 60))}`);
+  return src.slice(0, i) + repl + src.slice(i + find.length);
+};
+
 const SET = [
   // ── source-only, fast ──────────────────────────────────────────────────────
   { check: "check-no-duplicate-ids", tier: "fast",
@@ -63,73 +87,127 @@ const SET = [
   { check: "check-denominator-rule", tier: "fast",
     ruled: "every rate quoted this week — that it carries its market/internal/test split",
     file: "scripts/__redproof_rate.mjs", create: true,
-    mutate: () => `// a rate with no denominator, exactly the 2026-09-13 shape\nconsole.log(\`pages with a photo: \${(hit / total * 100).toFixed(0)}%\`);\n` },
+    // IN SCOPE MEANS READS THE CORPUS. The first fixture printed a bare rate and this check
+    // stayed green, correctly: it only scans scripts that touch the business corpus, so a file
+    // mentioning neither `businesses` nor account_kind is none of its business. The fixture now
+    // reads the corpus, which is what makes its rate a corpus rate.
+    mutate: () => `// a corpus rate with no denominator, exactly the 2026-09-13 shape\n` +
+      `const rows = sql("select slug, account_kind from businesses");\n` +
+      `console.log(\`pages with a photo: \${(hit / total * 100).toFixed(0)}%\`);\n` },
 
   { check: "check-paginated-aggregate", tier: "fast",
     ruled: "every aggregate printed off the admin connection",
     file: "public/platform-home.html",
-    mutate: append(`\n<script>async function hcRedproofAgg(){ var r = await sb.from('businesses').select('*'); var rows = (r && r.data) || []; return rows.reduce(function(a,b){ return a + 1; }, 0); }</script>\n`) },
+    // MY FIRST MUTATION WAS OUT OF SCOPE, not a blind spot: it summed a `.from().select()`,
+    // and this check is deliberately scoped to the three PAGINATED rpc readers so it stays a
+    // check rather than a repo-wide "someone summed an array" scanner. The mutation has to
+    // speak the language the rule is written in.
+    mutate: append(`\n<script>async function hcRedproofAgg(){ var r = await sb.rpc('get_business_customers', {}); var rows = (r && r.data) || []; return rows.reduce(function(a,b){ return a + (b.spend || 0); }, 0); }</script>\n`) },
 
   { check: "check-no-directives-to-owners", tier: "fast",
     ruled: "Hubly never points at a control it cannot see",
     file: "supabase/functions/_shared/hubly_owner_replies.ts",
-    mutate: append(`\nexport function redproofDirective(): string {\n  return "Click the Publish button in the top right to put it live.";\n}\n`) },
+    // A DOUBLE-QUOTED STRING WAS THE WRONG MUTATION: both phrase nets tokenise on backticks,
+    // which is how the module actually writes owner sentences. The first attempt stayed green
+    // and the check was not at fault — but the run did surface a real gap, because "never
+    // points at a control it cannot see" had no check anywhere until it was added (net 3).
+    mutate: append("\nexport function redproofPointsAtAControl(): string {\n  return `Your page is ready. Click the Publish button in the top right to put it live.`;\n}\n") },
 
   { check: "check-destructive-confirm", tier: "fast",
     ruled: "the destructive-action shape — a live page is never replaced unasked",
     file: "supabase/functions/_shared/hubly_capability_registry.ts",
-    mutate: (src) => {
-      const m = /function\s+wouldReplaceALivePage\s*\(|const\s+wouldReplaceALivePage\s*=/.exec(src);
-      if (!m) throw new Error("the gate's definition was not found under either name");
-      return src.slice(0, m.index) + "// redproof: gate renamed out from under its callers\n" +
-             src.slice(m.index).replace("wouldReplaceALivePage", "wouldReplaceALivePage_REDPROOF");
-    } },
+    // The gate is refuseIfClassicSite(); I guessed a name and the harness threw rather than
+    // reporting a verdict, which is the behaviour I want from a missing anchor.
+    // Twice wrong before it was right, and both mistakes are the reason this comment exists:
+    // first I guessed the gate's name (it is refuseIfClassicSite), then I mutated its SECOND
+    // mention — which is a comment that points at it. A mutation has to break the CALL.
+    mutate: swap("const classicBlock = await refuseIfClassicSite(draftId);",
+                 "const classicBlock = await refuseIfClassicSite_REDPROOF(draftId);") },
 
   { check: "check-owner-id-invariant", tier: "fast",
     ruled: "the claimed-owner write audit — a writer without p_owner_id is dead on a claimed site",
     file: "supabase/functions/_shared/hubly_capability_registry.ts",
-    mutate: swap("p_owner_id:", "p_owner_id_REDPROOF:") },
+    // The first two `p_owner_id:` in the file are a comment and an error message about the
+    // rule. Mutating those left every real payload intact — the same mistake as mutating the
+    // comment that points at refuseIfClassicSite. This breaks a payload.
+    mutate: swap("p_owner_id: ownerUid || null,", "p_owner_id_REDPROOF: ownerUid || null,") },
 
   { check: "check-computed-and-dropped", tier: "fast",
     ruled: "the computed-and-dropped audit — a value measured and never returned",
     file: "supabase/functions/_shared/hubly_capability_registry.ts",
-    mutate: append(`\nexport function redproofDropped(html: string) {\n  const verifiedPlaced = html.includes("data-hubly-service");\n  return { status: "ok" };\n}\n`) },
+    // OUT OF SCOPE THE FIRST TIME, not a blind spot: leg 1 is scoped to objects named
+    // …Counts/Results/Totals/Stats in public/, and leg 2 to functions that await a PLACER.
+    // A bare `const verifiedPlaced = …` in a new function is neither. The mutation now takes
+    // the shape the rule is about — a function that holds a placement and drops it.
+    mutate: append(`\nexport async function redproofDropsThePlacement(args: any) {\n  const placement = await applyServicesToFreeform(args);\n  return { ok: true, summary: placement.status === "placed" ? "Added them to your page." : "Saved." };\n}\n`) },
 
   { check: "check-classic-claim", tier: "slow",
     ruled: "the two-store split, classic side — the sentence may not outlive the inability",
     file: "supabase/functions/_shared/hubly_owner_replies.ts",
-    mutate: swap("composeServicesTruth", "composeServicesTruth_REDPROOF") },
+    // Leg 3 is the one worth breaking: the sentence, not the plumbing. This puts the
+    // inability back into the branch — the exact sentence that was true for four hours.
+    mutate: swapInCode("on your site now", "saved, but not on your site yet") },
 
   { check: "check-two-store-readers", tier: "slow",
     ruled: "the services reader reads both stores",
     file: "supabase/migrations/20260914080000_services_reader_both_stores.sql",
-    mutate: swap("meta", "meta_REDPROOF") },
+    // The classic store's marker is `service_catalog`; breaking it makes the reader a
+    // one-store reader again, which is the defect this check exists for.
+    // A SUFFIXED NAME STILL MATCHED: the store's marker is the substring /service_catalog/, so
+    // `service_catalog_REDPROOF` satisfied it. The mutation renames the key outright. The
+    // marker's looseness is recorded in the audit — it proves the TEXT appears in the ledger,
+    // never that the column exists.
+    mutate: swapAllInCode("->'service_catalog'", "->'catalogue_of_services'") },
 
   { check: "check-registry-knows-every-door", tier: "slow",
     ruled: "the door measurement — 212 capabilities, 8 talk, 20 diy, 3 both",
-    file: "supabase/functions/_shared/hubly_capability_registry.ts",
-    mutate: swap("website.moveSection", "website.moveSection_REDPROOF") },
+    file: "supabase/functions/hubly-conversation/index.ts",
+    // The rule is "every body.<x> branch is either a registry action or declared not-for-model".
+    // The mutation is therefore a NEW DOOR nobody declared — which is what all six of the
+    // capabilities measured on 2026-09-14 were.
+    mutate: append(`\n// redproof: an undeclared door\nif (body.redproofUndeclaredDoor) { await doSomethingDestructive(body.redproofUndeclaredDoor); }\n`) },
 
   { check: "check-draft-capable-writers", tier: "slow",
     ruled: "which writers work on an unclaimed draft",
     file: "supabase/functions/_shared/hubly_capability_registry.ts",
     mutate: (src) => {
-      const m = /case "business\.setHours"[\s\S]{0,400}?\{/.exec(src);
-      if (!m) throw new Error("business.setHours handler not found");
-      return src.slice(0, m.index + m[0].length) +
-        `\n      if (!ownerUid) return { error: "not_signed_in" } as any;\n` +
-        src.slice(m.index + m[0].length);
+      // The handler is an object property `name: "setHours"`, not a switch case — the same
+      // shape blindness that made check-computed-and-dropped see one function where there
+      // were two. Refuse before the writer is asked: the 2026-09-08 defect, verbatim.
+      const at = src.indexOf('name: "setHours"');
+      if (at < 0) throw new Error("the setHours action was not found in the registry");
+      const h = src.indexOf("handler:", at);
+      const brace = src.indexOf("{", h);
+      if (h < 0 || brace < 0) throw new Error("setHours has no handler body");
+      return src.slice(0, brace + 1) +
+        `\n          if (!ownerUid) return { ok: false, error: "not_signed_in" } as any;\n` +
+        src.slice(brace + 1);
     } },
 
   { check: "check-capability-reachable", tier: "slow",
     ruled: "reachability — a capability the model can name and the router cannot run",
-    file: "supabase/functions/hubly-conversation/index.ts",
-    mutate: swap("applyOwnerRecordEdit", "applyOwnerRecordEdit_REDPROOF") },
+    file: "supabase/functions/_shared/hubly_capability_registry.ts",
+    // An ORPHAN: a capability the registry declares and no context allowlist advertises —
+    // the model can name it and the router will refuse it.
+    // THE UNIT IS THE CAPABILITY GROUP, not the action: `declared` collects objects that have
+    // both `name` and `actions`, so renaming an ACTION is invisible to it and my first mutation
+    // proved nothing. Renaming the group makes it an orphan in the registry and a ghost in the
+    // allowlist at once — both halves of what this check asserts.
+    mutate: swapInCode('name: "website",', 'name: "website_redproof",') },
 
   { check: "check-browser-rig", tier: "slow",
     ruled: "every browser measurement this week ran through it",
     file: "scripts/lib/browser-rig.mjs",
-    mutate: swap("__hublyWitness", "__hublyWitness_REDPROOF") },
+    // Make every click report that it landed. Assertion 2c — "a covered control does not
+    // report a landed click" — is what must catch it.
+    // THE FIRST MUTATION HERE FOUND A REAL GAP AND IS RECORDED RATHER THAN KEPT: making
+    // `landed` always 1 left every assertion green, because assertion 2c (a covered control)
+    // is satisfied by Playwright's own actionability error before the rig's witness is ever
+    // read. The witness counter has no assertion of its own. What IS asserted is the settle
+    // loop, so that is what this breaks: return the first read, at t=0, with no stability
+    // window — the exact behaviour Lesson 69 was written about.
+    mutate: swapInCode("const v = await page.evaluate(readFn).catch(() => null);",
+                       "const v = await page.evaluate(readFn).catch(() => null);\n      return { final: v, ms: 0, trace, label, stableMs };") },
 ];
 
 if (LIST) {
