@@ -96,10 +96,33 @@ const NOT_FOR_MODEL = {
  * instead of being rediscovered by reading.
  */
 const SHOULD_BE_MODEL_ACTIONS = {
-  sectionMove: "applyOwnerSectionMove ships and works; only a canvas control reaches it",
-  nodeMove:    "applyOwnerNodeMove ships and works; only a canvas control reaches it",
-  nodeDelete:  "applyOwnerNodeDelete ships and works; only a canvas control reaches it",
-  designEdit:  "applyOwnerDesignEdit ships and works; only the Design panel reaches it",
+  // WIRED 2026-09-14 as website.moveSection. Kept listed because the DOOR `body.sectionMove`
+  // still exists for the canvas control, and both now reach applyOwnerSectionMove — which is
+  // correct (two callers, one capability) and is exactly the shape that must not drift into
+  // two capabilities. If a second mover ever appears, this line is where it will be noticed.
+  sectionMove: "SERVED — the canvas posts it, and the model invokes website.moveSection; one capability, two callers",
+  nodeMove:    "applyOwnerNodeMove takes a NodeAddress (a fingerprint of a rendered element) — the model cannot construct one. Needs the resolver path",
+  nodeDelete:  "applyOwnerNodeDelete takes a NodeAddress — same. Needs the resolver path, and the resolution must be reported because a wrong delete is unrecoverable to the owner",
+};
+
+/**
+ * A DOOR SERVED BY AN ACTION UNDER A DIFFERENT NAME.
+ *
+ * The name match is deliberately exact — a near name is how a door gets counted as covered
+ * when nothing covers it — so a capability the model CAN invoke under a different label needs
+ * saying out loud rather than being matched by resemblance.
+ *
+ * `body.designEdit` was listed as a gap on the first run of this check (2026-09-14). It is not:
+ * `website.setDesignKnob` calls `applyOwnerDesignEdit` from inside a model-invocable handler,
+ * so the model has had this capability all along. Verified by counting calls inside handler
+ * bodies, not by reading names: designEdit 1, sectionMove 0, nodeMove 0, nodeDelete 0.
+ *
+ * **That correction is the point of checking before wiring.** Adding a `moveDesignKnob` action
+ * beside the one that exists would have been a second door to one capability — the drift this
+ * whole exercise is about — and it would have looked like progress.
+ */
+const SERVED_BY_ANOTHER_ACTION = {
+  designEdit: "the Design panel's structured POST; the MODEL reaches this capability as website.setDesignKnob",
 };
 
 let conv, registryActions;
@@ -119,7 +142,7 @@ const doors = [...new Set([...conv.matchAll(/\bbody\??\.([a-zA-Z][a-zA-Z0-9_]*)/
 let failed = 0;
 const undeclared = [];
 for (const d of doors) {
-  if (NOT_FOR_MODEL[d] || SHOULD_BE_MODEL_ACTIONS[d]) continue;
+  if (NOT_FOR_MODEL[d] || SHOULD_BE_MODEL_ACTIONS[d] || SERVED_BY_ANOTHER_ACTION[d]) continue;
   // A door is "known to the model" if an action of the same name exists, or one whose name
   // differs only by case — `sectionMove` ↔ `moveSection` is NOT a match on purpose: a near
   // name is how a door gets counted as covered when nothing covers it.
@@ -129,8 +152,9 @@ for (const d of doors) {
 
 console.log(`body.<x> doors found: ${doors.length}   registry actions: ${registryActions.size}   declared not-for-model: ${Object.keys(NOT_FOR_MODEL).length}`);
 const gaps = Object.keys(SHOULD_BE_MODEL_ACTIONS).filter((d) => !registryActions.has(d));
+for (const [d, why] of Object.entries(SERVED_BY_ANOTHER_ACTION)) console.log(`  body.${d.padEnd(14)} served elsewhere — ${why}`);
 if (gaps.length) {
-  console.log(`\n${gaps.length} door(s) the model SHOULD probably have and does not — printed every run, not filed away:`);
+  console.log(`\n${gaps.length} door(s) whose model story is worth printing every run, not filing away:`);
   for (const d of gaps) console.log(`  body.${d.padEnd(14)} ${SHOULD_BE_MODEL_ACTIONS[d]}`);
 }
 if (undeclared.length) {

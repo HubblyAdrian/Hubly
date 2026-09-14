@@ -6455,6 +6455,90 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         },
       },
       {
+        // STEP 6 OF THE FLOW — "the owner can move them around the page" — and until
+        // 2026-09-14 the only way to do it was to find a control on the canvas. That is one
+        // door of the three the spec requires, and the assistant declined when asked in words
+        // because nothing in its list said it could.
+        //
+        // MODEL-SUPPLIABLE ARGUMENTS, which is why this one could be wired and its siblings
+        // could not. A section is named by a LABEL — a word the model can say — and a
+        // direction is a word. applyOwnerNodeMove and applyOwnerNodeDelete take a NodeAddress
+        // carrying a fingerprint of a rendered element, which only the canvas can compute;
+        // wiring those without a resolver would ship a capability that fails on every
+        // invocation, and it would fail as a PRODUCT DEFECT rather than as a missing feature.
+        name: "moveSection",
+        description:
+          "Move a whole section of the live page up or down — the services block above the reviews, the gallery to the end. " +
+          "Invoke it when the owner names a section and a direction." +
+          "\n\nA SECTION MOVES AMONG ITS OWN NEIGHBOURS, NEVER INTO A DIFFERENT PART OF THE PAGE. If they ask for something " +
+          "that would put one section inside another (\"put the reviews inside the hero\"), say plainly that a section can change " +
+          "its ORDER but not its CONTAINER, because a section that lands somewhere else inherits different styling and the page " +
+          "breaks. That is a real limit, not a missing feature: say which it is. Never answer that with \"I can't move things on " +
+          "this page\" — that is false, and it is the refusing-for-the-wrong-reason defect." +
+          "\n\nThe header and the footer do not move. They are page furniture, not content." +
+          "\n\nIf their page is built the older way this refuses, and the honest sentence is that their page is built the older " +
+          "way so sections can't be moved from here — then hand back the doors that DO open: they can add services and change " +
+          "their headline by talking to you, or by clicking straight on the page. A refusal that leaves the owner with nothing is " +
+          "a dead end; a refusal that names the next door is an answer." +
+          "\n\nReversible — every move is a new version of the page and \"undo that\" puts it back — so a move they asked for needs " +
+          "no confirmation first. Report where the section ended up, not that a move \"was performed\"." +
+          "\n\nNEVER: move a section they did not name; claim a move the result did not confirm; or offer to rebuild the page when " +
+          "a move is refused — a refusal is a complete answer.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: { type: "string", description: "Supplied by the system before this runs; put any placeholder." },
+            label: {
+              type: "string",
+              description:
+                "Which section, in the page's own words — \"services\", \"reviews\", \"gallery\", \"about\". Use the label the owner " +
+                "used. If you are not sure which section they mean, ASK rather than guessing.",
+            },
+            dir: { type: "string", description: "\"up\" or \"down\". One step. Never invent a destination they did not state." },
+          },
+          required: ["label", "dir"],
+        },
+        handler: async (args) => {
+          const draftId = String((args as Record<string, unknown>)?.draftId || "").trim();
+          const draftToken = String((args as Record<string, unknown>)?.draftToken || "").trim();
+          const ownerUid = injectedOwnerUid(args as Record<string, unknown>);
+          if (!draftId || !ownerUid) {
+            return { ok: false, real: false, error: "not_signed_in",
+              summary: "Moving a section needs the owner signed in — say so, and don't claim anything moved." };
+          }
+          const label = String((args as Record<string, unknown>)?.label || "").trim();
+          const rawDir = String((args as Record<string, unknown>)?.dir || "").trim().toLowerCase();
+          const dir = rawDir === "up" || rawDir === "down" ? (rawDir as "up" | "down") : null;
+          if (!label) {
+            return { ok: false, real: false, error: "no_label",
+              summary: "No section was named — ask which one they mean rather than picking one." };
+          }
+          if (!dir) {
+            return { ok: false, real: false, error: "no_direction",
+              summary: "No direction was given — ask whether it should go up or down rather than choosing." };
+          }
+          const r = await applyOwnerSectionMove(draftId, draftToken, ownerUid, { label, dir });
+          // "NOT BUILT BY HUBLY" IS FALSE AND IT INSULTS THE OWNER. Graef's page WAS built by
+          // Hubly, the older way. Telling him otherwise is Hubly disowning his site to his
+          // face — the misdescribed-refusal defect in its third costume. The sentence names
+          // the real reason and hands back the doors that do open.
+          if (!r.ok && r.error === "wrong_format") {
+            return { ok: false, real: false, error: "wrong_format",
+              summary:
+                "Their page is built the older way, so sections can't be moved from here. Say that plainly, and tell them what " +
+                "they CAN do: add services and change their headline by talking to you, or by clicking straight on the page. " +
+                "Never say you can't change anything on their page — that is not true — and never offer to rebuild it." };
+          }
+          return {
+            ok: r.ok, real: r.real,
+            summary: r.ok
+              ? `${r.summary} Say where it ended up, in their words. It is reversible — "undo that" puts it back.`
+              : `${r.summary} Tell the owner exactly this, in your own words. Do NOT claim anything moved, and do not try a different section.`,
+            raw: (r as { raw?: unknown }).raw,
+          };
+        },
+      },
+      {
         // THE DOOR FOR THE DESIGN KNOBS, added 2026-09-02.
         //
         // The mechanism, the writer, the contrast gate, the Undo path and the owner

@@ -1641,6 +1641,61 @@ Four times now, in one week:
 | Jobs and Customers screens | both built, on the operator app, with no door |
 | structural editing of a page | the whole `ws-pe-*` system, gated on being inside `/dashboard` |
 | **`insertFreeformNode`, "the one new object"** | **the `+ Add service` affordance, shipping, wired end to end** |
+| a `moveDesignKnob` action beside the four being wired | **`website.setDesignKnob`, already calling `applyOwnerDesignEdit` from a model-invocable handler — the model has had it all along** |
+
+### The shapes of "unlit", and the third is the worst
+
+Six instances in, they are not one failure. They fail differently and they present identically
+to the owner as *"it doesn't work"*:
+
+| # | shape | example |
+|---|---|---|
+| 1 | **built, no door** — the capability works and nothing reaches it | Jobs and Customers on the operator app; `moveFreeformSection` |
+| 2 | **built, door present, switch off** — a gate keyed to a condition that is never true | `hcBust`'s `hasDocument !== false`; the classic editing surface |
+| 3 | **built, described nowhere** — the model refuses correctly because its list does not say it can | `sectionMove`, `nodeMove`, `nodeDelete` |
+| 4 | **built, reachable, invisible** — the door exists and something covers it | the Design button under the account chip |
+| 5 | **built and reached, then undone** — it works and something removes the result | the `+` mounting, then the grid re-rendering |
+| 6 | **UNREACHABLE BY THE CALLER IT WAS OFFERED TO** — the capability is described and wired, and its arguments cannot be constructed by the caller | `applyOwnerNodeMove` / `applyOwnerNodeDelete` take a `NodeAddress` carrying a fingerprint of a rendered element; the model has no DOM |
+
+**Shape 6 is the worst to ship**, and it is the one we nearly did. The others fail as an absence
+— nothing happens, and somebody eventually asks why. Shape 6 fails **as a product defect**: the
+capability is advertised, the model invokes it confidently, and it errors on every single
+attempt. An owner watching that does not conclude "this isn't built"; they conclude the product
+is broken. **Before wiring anything, ask whether the caller can construct the arguments.**
+
+## Lesson 79 — A resolved reference is a guess wearing a precise type
+
+A `NodeAddress` carries a fingerprint. It looks exact — it *is* exact, downstream of the moment
+it was made. But it was derived from a WORD somebody chose, and upstream of that derivation the
+precision is invented.
+
+> **The precision is real downstream of the resolution and invented upstream of it.**
+
+Every resolver has this shape: a label → an element, a service name → a row, a slug → a
+business, a customer name → a customer. The resolved value has a type, an id, a fingerprint —
+all the furniture of certainty — and none of it is evidence that the right thing was chosen.
+
+**The rule: anything that turns a NAME into an IDENTITY must report what it resolved, whenever
+the consequence is hard to see.** Not a confirmation prompt — that costs a turn on every
+operation to guard against a rare miss. **Report it, and name the reversal, in the same breath
+after acting:**
+
+> *"That's the Clay & Seal card — removed. Say put it back if I picked the wrong one."*
+
+That closes the gap the rule exists for. The owner cannot notice what he does not know was
+there; now he does, and undoing it is one sentence.
+
+**"Whenever the consequence is hard to see" is the whole test.** A wrong move is visible and
+reversible in a word — report it and move on. A wrong delete removes something the owner will
+never notice is gone; that needs the resolution named. Same resolver, different duty, decided
+by what the owner can see afterwards.
+
+**Same family as the fuzzy-merge refusal** (`get_business_services`, 2026-09-14): two stores
+matched by name similarity, and a label matched to an element, are both **identity inferred from
+a string**. There we refused to infer at all and reported the divergence; here we infer and
+report what we inferred. The difference is whether the owner can act on the report — he can
+answer "is that the same service?", and he can say "put it back".
+
 
 The fourth one is the sharpest because the costing was explicit and careful and still wrong. It
 named one new object, justified it, and the feature that object was for **was already in the
