@@ -2543,9 +2543,18 @@ and the check can be simple. If one does — and there usually is, because the m
 effect are separable — it is the version a careful future edit will produce, because it is the
 one that looks correct in a diff.
 
-The two shapes seen so far, and there will be more:
-- **the unspent budget** — a limit consulted and never decremented;
-- **the discarded distinction** — two sources read and then collapsed into one value.
+## THE CATALOGUE OF SHAPES — add to this list as they turn up
+
+A method is only usable by someone who has not lived through the failures if the shapes are
+enumerated. Each entry is a way for a fix to keep its new code and restore its old behaviour.
+
+| # | shape | what it looks like in a diff | found in |
+|---|---|---|---|
+| 1 | **the unspent budget** | a limit is consulted and never decremented — `if (mayAdd())` with no `took()` | `check-one-voluntary-addition`, 2026-09-14 |
+| 2 | **the discarded distinction** | two sources are read and collapsed into one value — a `full outer join` whose result is `coalesce`d with no `source` column | `check-two-store-readers`, 2026-09-14 |
+
+**When you find a third, add a row.** The catalogue is the part that transfers; the individual
+stories are not.
 
 Both are Lesson 75's other half. That one says a check failing everything is probably wrong;
 this one says **a check passing everything may be asking the easier question.**

@@ -244,6 +244,30 @@ Do not overbuild this. The magic is simplicity.
 
 ---
 
+# THE RECAP AND RECOMMENDATIONS
+
+## THE TEST, and every recap line is measured against it
+
+> **Could the owner have known this without us?**
+> **If yes, it is a status line. If no, and there is one action, it is a recommendation.**
+
+A status line is not forbidden — "3 bookings came in" is worth saying. But it is not a
+recommendation, it must not be dressed as one, and a recap made of status lines is a dashboard
+with sentences, which nobody reads twice.
+
+## BUILD THE PLACE BEFORE THE THING THAT FILLS IT
+
+**A recommendation with nowhere to live becomes another voice in the chat.** Adopted as a rule
+2026-09-14, and it is why the divergence recommendation below waits for My Day rather than
+shipping as a message.
+
+It also decides how the daily recap ships: **not as a chat message first.** A recap posted into
+the conversation is a fifth composer, inside a week spent removing four of them (Lesson 77,
+`check-one-voluntary-addition`). The recap needs a surface of its own — this one — and the
+surface comes first.
+
+---
+
 # WHAT A RECOMMENDATION LOOKS LIKE — the first real one, 2026-09-14
 
 Adrian: *"our AI has to become this smart it has to think about the user everyday. give a recap
