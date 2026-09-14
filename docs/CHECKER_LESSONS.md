@@ -2263,3 +2263,35 @@ And the tell to look for in our own scripts: **`waitForTimeout`, `sleep`, and an
 `setTimeout` standing between an action and its assertion.** Each one is a number somebody
 guessed once. The assertion above now settles — stable for 400ms, 4s ceiling — and says in a
 comment why the old numbers cannot be reused.
+
+## Lesson 71 — Naming a surface is a claim about that surface (2026-09-13)
+
+Three times now Hubly has told an owner where to go, and been wrong in a different way each time:
+
+1. **A control that could not be seen.** The model described buttons on a page it does not
+   render. The rule that came out of it — *Hubly never names or describes a UI control* — reads
+   as being about hallucination. It is not. It is about **claims**.
+2. **A capability that could not be reached.** Suggestions offered actions with no writer behind
+   them ("Set your hours" while no capability wrote hours). The rule that came out — *a
+   suggestion is a promise* — governs **which** things are offered.
+3. **A door that opens onto the wrong room.** *"I can't change the page text from here — that's
+   edited in Edit details."* Edit details exists, opens, and edits **contact, hours and
+   services**. It has no page-text field of any kind. The sentence was composed in three
+   separate places and sent a paying customer to a real surface that could not do the thing.
+
+The third is the worst of the three and it is the one that looked safest, because **the surface
+was real**. Hallucination is caught by asking "does it exist". A misdescribed door passes that
+test and fails the one that matters.
+
+**The rule: naming a surface asserts what that surface DOES, and that assertion is checked the
+same way a status indicator is.** Before writing "X is edited in Y", open Y and read its fields.
+If you cannot state what Y writes, you may not name it.
+
+**The corollary, which is what shipped:** "I can't do this yet" is a complete answer. A redirect
+is a SECOND claim on top of a refusal, and it is optional. We had not earned it, so it is gone —
+all three composers now say *"I can't change your page wording yet"* and point nowhere.
+
+And the reason this one ran for weeks: **the sentence was true about the assistant and false
+about the destination, and nobody reads a sentence in two halves.** The half that was checked —
+*can I change the page text from here?* — was honest. The half nobody checked was the half the
+owner acted on.

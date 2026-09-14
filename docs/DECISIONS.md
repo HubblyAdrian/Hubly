@@ -501,3 +501,53 @@ clean harness:** which of the two it was.
   when `setHours` shipped). The discipline went into **which** items appear. Nobody asked
   whether they should appear **as a list**, which is what Adrian ruled: an internal checklist,
   surfaced one thing at a time, naturally.
+
+## D-045 — The redirect is removed from all three composers
+
+- `hcClassicScopeLine` (`platform-home.html:6447`), `refuseIfClassicSite`
+  (`registry:1225`) and `classicScopeReply` (`owner_replies:91`) all said *"that's edited in
+  Edit details."* Edit details edits contact, hours and services; `OwnerRecordEdit` is exactly
+  `contact | hours | service | design`; it has **no page-text field**.
+- All three now say **"I can't change your page wording yet"** and make **no redirect at all**.
+  A redirect is a second claim on top of a refusal, and it is optional. See Lesson 71.
+
+## D-046 — The classic editing gate is flipped, and the comment it reverses is quoted
+
+- **The comment that stood in `hcBust()`, verbatim:**
+
+  > *"hc.hasDocument === false means the CLASSIC archetype path: the inline editor has nowhere
+  > to write, so the affordance is not offered at all rather than painting a save that never
+  > lands."*
+
+- **It has somewhere to write.** `hcInlineEdit` → `directEdit` → `updateDraft` writes
+  `websiteMeta.heroHeadline` / `heroSub` with `customHeroHeadline: true` through
+  `patch_business_in_progress(p_website_meta)` — into `meta.website`, which is exactly what the
+  classic renderer reads. A reasonable-sounding sentence, never checked, cost the only paying
+  customer his headline for weeks.
+- **Scoped by construction**, not by a new list: `hubly.html`'s inline editor binds exactly
+  `ws-hero-headline` and `ws-hero-sub` (its `TEXT_FIELDS` map), so flipping the flag enables
+  those two and nothing else.
+- **Proved end to end on `hubly-classic-fixture`, never Graef.** Hovered the headline — the
+  element takes `data-hc-editable-marked` and `cursor: pointer`. Clicked it — the inline editor
+  opened with the current text. Typed and saved — it posted
+  `{type:"hcInlineEdit", field:"heroHeadline", value:"Edited by clicking the headline"}`. Ran the
+  same owner-authorised write the parent makes; `meta.website.heroHeadline` and
+  `customHeroHeadline: true` are set and the 3-service catalogue is untouched. Reloaded the
+  public page with no edit params: **the new words render.**
+- **Not proved by me:** the parent's hop from the postMessage to the write, which needs a signed-in
+  owner session. The message it posts and the write it produces were each proved separately.
+
+## D-047 — /dashboard gets no door. The alternative is costed instead
+
+- **Ruled:** do not link `/dashboard`. That editor is complete and writes correctly, but it lives
+  in the operator app closed this morning, and it puts an owner in a second application to change
+  a sentence.
+- **Costed instead** in `docs/CANVAS_TEXT_COST.md`: **zero migrations** (`p_website_meta` merges
+  freely), **~120-180 lines** for a sibling `directWebsiteTextEdit` branch beside `designEdit`
+  with a TypeScript allowlist of writable keys, **plus ~200 lines** for a public-canvas marker
+  pass that reuses `WS_PE_INLINE_TYPES`' 17 text labels and none of `/dashboard`'s handlers.
+- **`directEdit` → `updateDraft` does not extend; it needs a sibling.** `updateDraft` is
+  model-facing, and widening its schema to carry section titles and bios grows the model's
+  surface for fields it should never set unasked.
+- **Recommended scope if built:** the 17 inline text labels only. FAQ items and reviews are
+  arrays with add/remove semantics and belong with the manual `+`.
