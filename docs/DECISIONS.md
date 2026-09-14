@@ -595,3 +595,33 @@ clean harness:** which of the two it was.
   `requestAnimationFrame` polyfill, 2 are the rig's own test fixture, 3 are watchdogs or human
   pauses, 9 are polls and backoff that re-read, and **38 stand between an action and its
   assertion.** Ranked by what a wrong reading would cost, not by count. Nothing changed.
+
+
+## D-050 — "0 of 119" and "37 of 40" are replaced by measurements
+
+Re-taken 2026-09-13 under `scripts/lib/browser-rig.mjs`: one browser context per click (a
+same-document repeat is not an independent trial), a click **proven** to have landed, and the
+scroll position **polled until stable** with the window printed. Raw run:
+`docs/fragment-links-measured-2026-09-13.txt`.
+
+| | pages | links | brought the target into view | pages where EVERY link works |
+|---|---|---|---|---|
+| **carrying the repaired runtime** | 143 | 423 | **401 (95%)** | 123/143 |
+| **without it** | 21 | 43 | **0 (0%)** | 0/21 |
+| **total** | 164 | 466 | 401 (86%) | 123/161 |
+
+`account_kind` of the pages measured: **test 157 · market 6 · internal 1.**
+
+**Both floors were floors, and they were wrong in opposite directions.**
+
+- *"0 of 119 before"* — directionally right. Every page still missing the runtime scores
+  **0 of 43**, twenty-one pages, not one link working.
+- *"37 of 40 after"* — **badly understated.** The repaired pages run at **95%**, and 123 of 143
+  have every single link working. The old number was 92%-looking on a 40-page sample measured
+  through a fixed 500ms delay; the real figure across 143 pages is 95%, and the sample was
+  small enough that its own denominator was the least of its problems.
+
+**What is left, and it is a real residue:** 20 repaired pages have exactly one link that still
+does not scroll (41 of 466 clicks navigate the frame away, 3 target an id that does not exist,
+21 do nothing). That is a countable backlog rather than a rumour, and it is the first honest
+figure this repair has ever had.
