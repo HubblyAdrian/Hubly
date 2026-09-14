@@ -2239,3 +2239,27 @@ Sits beside Lesson 68: that one says test the fix in the running product, this o
 sure the thing you are reading is telling you the truth about what you did. Two theories died
 last night to Lesson 68. A third died to this one — and unlike the others, this one killed my
 own measurements rather than my hypothesis.
+
+## Lesson 70 — A fixed timeout is a t=0 read-back with a longer fuse (2026-09-13)
+
+Lesson 69 caught a scroll confirmed by a same-tick read-back. The same hour produced its
+milder sibling: `await page.waitForTimeout(500)` before checking whether a fragment link
+scrolled — the method behind **"0 of 119 before the fix, 37 of 40 after"**, the numbers that
+justified repairing 142 stored pages.
+
+500ms is not a stability check. Generated pages carry `html{scroll-behavior:smooth}`, so a link
+to a distant section can still be in flight when the check looks. **Both numbers are therefore
+FLOORS, not measurements** — the error runs toward false negatives, counting a slow success as
+a failure. The repair was still worth doing and the direction of the finding still holds; the
+two numbers are simply not the evidence they were presented as, and they should not be quoted
+again until re-taken.
+
+**The rule: never confirm an asynchronous outcome with a fixed delay.** Poll until the value is
+stable, or wait on the event the platform gives you. A fixed delay encodes a guess about
+duration into a result that reads like an observation, and the guess is invisible in the output
+— which is exactly what made "37 of 40" quotable for a day.
+
+And the tell to look for in our own scripts: **`waitForTimeout`, `sleep`, and any bare
+`setTimeout` standing between an action and its assertion.** Each one is a number somebody
+guessed once. The assertion above now settles — stable for 400ms, 4s ceiling — and says in a
+comment why the old numbers cannot be reused.

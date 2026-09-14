@@ -212,7 +212,24 @@ try {
         a.click();
         return { before, after: location.href, el: frag };
       }, id).catch((e) => ({ ok: false, why: String(e.message).slice(0, 40) }));
-      await m.page.waitForTimeout(500);
+      // SETTLE, DO NOT WAIT. A fixed 500ms is not a stability check: generated pages carry
+      // `html{scroll-behavior:smooth}`, so a link to a distant section can still be mid-flight
+      // at 500ms and get recorded as "nothing scrolled". The error is a FALSE NEGATIVE — a
+      // slow success counted as a failure — which means every number this assertion has ever
+      // produced (0 of 119 before the fix, 37 of 40 after) is a FLOOR, not a measurement.
+      // See docs/CHECKER_LESSONS.md Lesson 69: nothing here proved what a write did, and a
+      // fixed timeout is the same mistake with a longer fuse.
+      await m.frame.evaluate(async () => {
+        await new Promise((res) => {
+          let last = -1, stable = 0, t = 0;
+          const id = setInterval(() => {
+            t += 50;
+            const y = Math.round(window.scrollY);
+            if (y === last) { stable += 50; } else { stable = 0; last = y; }
+            if ((stable >= 400 && t >= 300) || t > 4000) { clearInterval(id); res(); }
+          }, 50);
+        });
+      }).catch(() => {});
       if (r && r.ok === false) { notScrolling.push(`#${id} (${r.why})`); continue; }
       const landed = await m.frame.evaluate((frag) => {
         const el = document.getElementById(frag);

@@ -418,3 +418,54 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
 - **Nothing is concluded about Graef's nav from those two tests.** They are re-runs, not
   results. Test 2 stands: the wheel works before and after a hash change, so nothing locks the
   document.
+
+## D-040 — The dead-nav finding is RETRACTED. Graef's navigation works
+
+- **Adrian looked at it with his own eyes: it glides down now.** Retracted from every place it
+  was recorded as a live customer defect.
+- **A human's unaided ten-second look settled what four hours of instrumented measurement got
+  backwards.** That is the entry; it is not a flourish. The instrument produced a confident,
+  detailed, wrong answer and kept producing it under three separate theories, and the thing
+  that broke the deadlock was a person opening the page and watching.
+
+## D-041 — Which fix did it: the A/B test does NOT separate the two, and here is why
+
+Adrian named the two possibilities and asked which: **(A)** it was never broken and every
+reading was the smooth-scroll animation sampled too early, or **(B)** the `stripPreviewCloneIds`
+fix (`d426113`, live 01:06:55) was the fix and a lying instrument made us discard a correct
+theory. He leaned B, and said so, because his original report predates that push.
+
+The test — reinstate the duplicate on his live page, in the browser only, and click — was run.
+**Three hash-confirmed runs, settled reads, no same-tick read-backs:**
+
+| run | document | duplicate | `getElementById` resolves to | settled `scrollTop` | scrolled |
+|---|---|---|---|---|---|
+| A | fresh load, fix live | no | the real section (581) | **616** | **yes** |
+| B | same document, after A | **reinstated** | the hidden clone (width 0) | **0** | no |
+| C | same document, after B | removed again | the real section | **10** | **no** |
+
+**A and C have identical id state and opposite outcomes, so the duplicate id is not the
+determining variable and the test cannot separate A from B.** Reporting either as the answer
+would be a story, not a finding.
+
+The one systematic difference between A and C is that **A was the first fragment navigation in a
+freshly loaded document, and C was a repeat to a hash that document had already visited** — a
+repeat fragment navigation to the same hash is a browser no-op. That is very likely what
+produced most of the session's "it doesn't scroll" readings, because the harness clicked the
+same links over and over inside one page session. **It is a third instrument defect in the same
+family and it is not proven** — it is the leading explanation, recorded as such.
+
+**What is settled:** the nav works for a real visitor; the duplicate-id removal is right on its
+own merits and stays; neither (A) nor (B) is established. **What is not settled and needs a
+clean harness:** which of the two it was.
+
+## D-042 — "0 of 119" and "37 of 40" are floors, not measurements
+
+- The fragment-repair numbers that justified rewriting 142 stored pages were taken with a fixed
+  `waitForTimeout(500)` between the click and the check — no stability window, on pages that
+  set `scroll-behavior: smooth`.
+- **Not a t=0 read-back, but the same mistake with a longer fuse.** The error runs toward false
+  negatives, so both numbers are floors: the repair was worth doing and its direction holds, but
+  neither number may be quoted again until re-taken.
+- `check-walk-assertions.mjs` now settles — stable for 400ms, 4s ceiling — and carries a comment
+  saying why the old numbers cannot be reused. See Lesson 70.
