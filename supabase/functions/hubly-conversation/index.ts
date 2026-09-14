@@ -390,82 +390,98 @@ const SELECTION_INJECTED_ACTIONS = new Set([
 ]);
 
 /**
- * Actions the engine injects the real draftId/draftToken into. The model never
- * sees those values, so an action absent from this set reaches its handler with
- * nothing and returns "missing_draft" — indistinguishable, from the outside,
- * from "this conversation has no draft business". That is exactly what
- * `website.newPage` did: picked correctly by the model on the first attempt,
- * and answered with a confident, wrong "there isn't a draft business connected
- * to this conversation."
+ * ACTIONS THE ENGINE INJECTS THE REAL draftId/draftToken/ownerUid INTO — **DERIVED FROM THE
+ * HANDLERS, NEVER TYPED BESIDE THEM.**
+ *
+ * An action absent from this set reaches its handler with nothing: it returns "missing_draft"
+ * (indistinguishable from "this conversation has no draft business"), or it reads an owner uid
+ * that is always null and every write it makes is refused on a CLAIMED business — silently, and
+ * invisibly to the p_owner_id invariant, because the key IS present and null.
+ *
+ * THIS LIST WAS HAND-MAINTAINED AND THE SAME OMISSION SHIPPED THREE TIMES:
+ *   · `places.add` (2026-09-08) — caught before shipping, by the audit below.
+ *   · `business.setHours` (2026-09-08) — caught before shipping, by the audit below.
+ *   · `website.moveSection` (2026-09-13) — NOT caught. Wired, described to the model, and dead
+ *     for every claimed owner for a day: it read the injected owner, was never added here, saw
+ *     null, and refused every real invocation while looking correct in every diff.
+ *
+ * The audit warned about the third one into a log nobody read. A warning is a preference; the
+ * rule is now structural. Two changes, and they are the whole point:
+ *
+ *   1. THE LIST IS DERIVED. Every handler's own source is read at module load — the same
+ *      detection the audit already used to find the drops — and any handler that mentions
+ *      draftId, draftToken or injectedOwnerUid is injected. A hand-written list beside
+ *      hand-written behaviour is the same drift as a hand-written description beside it, and
+ *      it has now cost three shipments.
+ *   2. A DERIVATION THAT CANNOT SEE FAILS THE RUN. `handler.toString()` returning a stub (a
+ *      minifier, a future runtime) would produce an EMPTY set and refuse every write in the
+ *      product while every check stayed green. The probe below proves source is readable in
+ *      THIS runtime before the derivation is trusted, and throws at boot if it is not. A dead
+ *      function is better than a silently disarmed one.
+ *
+ * OVER-INJECTION IS SAFE AND UNDER-INJECTION IS NOT, so the detector is deliberately generous:
+ * a handler that merely MENTIONS draftId in a comment is injected. The model never sees these
+ * values; the only cost of an extra entry is an argument a handler ignores.
  */
-const DRAFT_INJECTED_ACTIONS = new Set([
-  // places.add (2026-09-08). It reads injectedOwnerUid and writes through
-  // add_business_place, which authorises by owner and refuses a null uid — so
-  // without this entry every add would be refused on a claimed business, which is
-  // every business that has a sidebar. Caught by check-owner-id-invariant.mjs
-  // BEFORE it shipped, on the same commit that added the action.
-  "places.add",
-  "business.updateDraft",
-  "business.setServices",
-  // business.setHours (2026-09-08). Reads injectedOwnerUid and writes through
-  // set_business_hours, which authorises by owner and returns -1 for a null uid — so
-  // without this entry every hours write would be refused on a claimed business, which
-  // is every business that HAS hours to set. Caught by check-owner-id-invariant.mjs on
-  // the same commit that added the action, exactly as places.add was. The suggestion
-  // "Set your hours" was removed for having no writer; a writer that silently refuses
-  // for every real owner would have been worse than none.
-  "business.setHours",
-  // setAddress writes businesses.slug through set_business_slug, which authorises by
-  // owner on a claimed site. Without the injection every rename is refused for exactly
-  // the people who need it.
-  "business.setAddress",
-  // addServicesSection writes to the live page through create_business_document and
-  // authorises by owner; without the injection every add is refused on a claimed site.
-  "business.addServicesSection",
-  // business.capture (2026-09-09). Reads injectedOwnerUid and writes through
-  // capture_planner_item, which refuses a null uid. Without this every capture would be
-  // refused on a claimed business — which is every business that has a day to plan.
-  "business.capture",
-  "website.generateDocument",
-  "website.patchDocument",
-  "website.newPage",
-  // Found by the audit below on the day it was written, and seen failing in a
-  // real conversation: the model called setChrome, got no credentials, and told
-  // the owner "I couldn't change the header controls in this conversation".
-  // Its handler reads args.draftId but its argsSchema does not declare one,
-  // which is why a schema-only check reported it as fine.
-  "website.setChrome",
-  // Design knobs (2026-09-02). Needs draftId + draftToken + the verified ownerUid: a
-  // knob writes into the STORED page, so it takes the claimed-owner branch of
-  // create_business_document and is meaningless — and correctly refused — without a
-  // verified owner. Same shape as setChrome: the handler reads draftId, the schema
-  // doesn't declare it, so only the source-based audit below would have caught a miss.
-  "website.setDesignKnob",
-  // Restyle-the-selected-element (2026-09-04). Same shape as setDesignKnob: the
-  // handler reads draftId/draftToken/ownerUid, the schema declares none of them, so
-  // only the source-based audit below would catch a miss. It writes a new document
-  // version, so it is meaningless — and correctly refused — without a verified owner.
-  "website.restyleElement",
-  // Operational reads (2026-09-05, #27). The handler reads injectedOwnerUid to gate
-  // on a VERIFIED owner, so it must be on this list or it would always see null and
-  // refuse every real owner — the exact class check-owner-id-invariant.mjs check 2
-  // exists to catch, and the scanner fails the build if this line is removed.
-  "operations.read",
-  // website.moveSection (2026-09-14). SHIPPED DEAD FOR ONE DAY and caught by the audit, not
-  // by me: the handler reads injectedOwnerUid and writes a new document version, so without
-  // this entry it saw null and every move was refused on a CLAIMED business — the only kind
-  // of business whose owner is signed in and moving sections. Third time this exact omission
-  // has been made (places.add, business.setHours, this), which is the argument for the list
-  // being derived rather than typed; until then, the check is what catches it.
-  "website.moveSection",
-]);
+const NEVER_INJECTED: Record<string, string> = {
+  // startDraft CREATES the draft, so it legitimately mentions both while needing neither.
+  "business.startDraft": "creates the draft; injecting one would hand it credentials for a business that does not exist yet",
+};
+
+/** Does `Function.prototype.toString` return real source in this runtime, with identifiers
+ *  intact? Two canaries, because they fail differently: a property access (`args.draftId`)
+ *  survives minification, while a LOCAL NAME does not — and `injectedOwnerUid` is a local
+ *  function call inside the handlers, so a mangling bundler would drop exactly the owner-side
+ *  entries and leave the draft-side ones, which is the silent half of this defect. */
+function __injectionProbe(args: { draftId?: string }): string | undefined {
+  const injectedOwnerUidCanary = args?.draftId;
+  return injectedOwnerUidCanary;
+}
+
+function deriveDraftInjectedActions(): Set<string> {
+  const probeSrc = __injectionProbe.toString();
+  if (!/draftId/.test(probeSrc) || !/injectedOwnerUidCanary/.test(probeSrc)) {
+    throw new Error(
+      "REFUSING TO SERVE — handler source is not readable in this runtime, so DRAFT_INJECTED_ACTIONS " +
+      "cannot be derived. Every owner-authorised write would be refused with the key present and null, " +
+      "which is the silent failure this derivation exists to prevent.",
+    );
+  }
+  const out = new Set<string>();
+  const uninspectable: string[] = [];
+  for (const cap of HUBLY_CAPABILITY_REGISTRY) {
+    for (const action of cap.actions) {
+      const id = `${cap.name}.${action.name}`;
+      if (NEVER_INJECTED[id]) continue;
+      let source = "";
+      try { source = action.handler.toString(); } catch { uninspectable.push(id); continue; }
+      if (!source) { uninspectable.push(id); continue; }
+      if (/draftToken|draftId|injectedOwnerUid/.test(source)) out.add(id);
+    }
+  }
+  if (!out.size) {
+    throw new Error("REFUSING TO SERVE — the injection derivation matched ZERO actions. The registry is empty, or handler source has stopped being readable.");
+  }
+  if (uninspectable.length) {
+    console.warn(`injection-derivation: ${uninspectable.length} handler(s) could not be read and are NOT injected: ${uninspectable.join(", ")}`);
+  }
+  return out;
+}
+
+const DRAFT_INJECTED_ACTIONS = deriveDraftInjectedActions();
 
 /**
  * BOOT-TIME AUDIT OF THE TWO ALLOW-LISTS ABOVE.
  *
- * Both are hardcoded name lists, and both have silently dropped a new entry.
- * Running the check at module load rather than per request means the warning
- * appears before anyone reaches the broken path, and costs one pass over a
+ * DRAFT_INJECTED_ACTIONS is now DERIVED from the same handler source this audit reads, so the
+ * two can only disagree if the derivation has gone wrong — which is precisely the thing worth
+ * knowing. GATED_WEBSITE_ACTIONS is still a hardcoded judgement list and is still reported.
+ *
+ * AND THE DRAFT/OWNER DROPS NOW THROW. They warned for three shipments; the third one
+ * (`website.moveSection`, 2026-09-13) warned into a log nobody read while the capability was
+ * dead for every claimed owner. A warning about an authorisation that will refuse every real
+ * invocation is not a warning, it is a silent failure with a paper trail. Running at module
+ * load means it happens before anyone reaches the broken path, and costs one pass over a
  * registry of ~25 actions per isolate.
  *
  * "Needs a draft" is detected from the handler's own SOURCE, not from its
@@ -498,18 +514,16 @@ function auditConversationAllowlists(): void {
       if (/injectedOwnerUid/.test(source) && !DRAFT_INJECTED_ACTIONS.has(id)) needsOwner.push(id);
     }
   }
-  reportAllowlistDrops({
-    list: "DRAFT_INJECTED_ACTIONS",
-    dropped: needsDraft,
-    consequence: "the handler gets no draftId/draftToken and answers 'missing_draft', which reads to the owner as 'you have no draft business'",
-    fixAt: "hubly-conversation/index.ts DRAFT_INJECTED_ACTIONS",
-  });
-  reportAllowlistDrops({
-    list: "DRAFT_INJECTED_ACTIONS (owner side)",
-    dropped: needsOwner,
-    consequence: "the handler reads an owner uid that is never injected, so it is always null and every write it makes is refused on a CLAIMED business — the failure is silent, and the p_owner_id invariant cannot see it",
-    fixAt: "hubly-conversation/index.ts DRAFT_INJECTED_ACTIONS",
-  });
+  if (needsDraft.length || needsOwner.length) {
+    throw new Error(
+      "REFUSING TO SERVE — the injection derivation and this audit disagree.\n" +
+      (needsDraft.length ? `  reads draftId/draftToken, not injected: ${needsDraft.join(", ")}\n` : "") +
+      (needsOwner.length ? `  reads injectedOwnerUid, not injected: ${needsOwner.join(", ")}\n` : "") +
+      "  A handler in this state answers 'missing_draft' to a real draft, or writes with a null owner " +
+      "that every claimed business refuses — silently, and invisibly to the p_owner_id invariant, " +
+      "because the key IS present. Shipped three times as a warning nobody read.",
+    );
+  }
 
   // Anything on `website` that is not gated stays fully live when the feature
   // flag is off. Some of these are correct (analyze reads a URL and writes

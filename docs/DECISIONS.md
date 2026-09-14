@@ -697,3 +697,46 @@ A layer that covers the server and not the client is honest and partial; one tha
 and checks one is how July happened.
 
 **Not decided here. Recorded so Part 2 decides it deliberately rather than by default.**
+
+
+## D-053 — An authorisation an action depends on is DERIVED from the action, never listed beside it
+
+**Ruled 2026-09-14, after the same omission shipped three times.**
+
+`DRAFT_INJECTED_ACTIONS` in `hubly-conversation/index.ts` decides which capability actions the
+engine hands the real `draftId` / `draftToken` / verified owner uid to. An action absent from it
+reaches its handler with nothing: it answers `missing_draft` to a real draft, or it writes with a
+null owner that every CLAIMED business refuses — silently, and invisibly to the `p_owner_id`
+invariant, because the key IS present and null.
+
+It was a hand-written list beside hand-written handlers, and it dropped an entry three times:
+`places.add` and `business.setHours` (both caught by the boot audit before shipping),
+**`website.moveSection` (2026-09-13, NOT caught — wired, described, and dead for every claimed
+owner for a day).** The boot audit warned about the third into a log nobody read.
+
+**The decision, in two parts:**
+
+1. **The list is derived.** At module load, every handler's own source is read and any handler
+   mentioning `draftId`, `draftToken` or `injectedOwnerUid` is injected. Verified against the
+   hand list it replaced: **15 of 15, no additions, no losses** — and it would have included
+   `moveSection` on the day it was wired. Over-injection is safe (the model never sees these
+   values; an extra entry is an argument a handler ignores) and under-injection is not, so the
+   detector is deliberately generous — a mention in a comment counts.
+2. **A derivation that cannot see fails the run.** `handler.toString()` returning a stub would
+   produce an empty set and refuse every owner write while every check stayed green. Two canaries
+   are probed at boot — a property access and a LOCAL identifier, because a mangling bundler
+   preserves the first and not the second, and `injectedOwnerUid` is a local — and an empty match
+   throws. **A dead function is better than a silently disarmed one.** Confirmed live in the
+   deployed runtime on 2026-09-14: the function boots and answers, so source is readable there.
+
+The boot audit's drop reports for these two lists now **throw instead of warning**. They warned
+for three shipments.
+
+**The one escape hatch is `NEVER_INJECTED`**, currently `business.startDraft` alone (it creates
+the draft, so it mentions both while needing neither). `check-owner-id-invariant` fails if a
+handler that reads the injected owner is listed there — otherwise the hatch is the old bug with a
+friendlier name — and fails if the list ever goes back to a literal `new Set([...])`.
+
+**The general rule this is an instance of:** a hand-written list beside hand-written behaviour is
+the same drift as a hand-written description beside it. Both decay, both look correct in every
+diff, and both are only caught by someone running a check. Derive, or expect the omission.

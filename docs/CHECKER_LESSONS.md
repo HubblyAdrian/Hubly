@@ -1643,9 +1643,9 @@ Four times now, in one week:
 | **`insertFreeformNode`, "the one new object"** | **the `+ Add service` affordance, shipping, wired end to end** |
 | a `moveDesignKnob` action beside the four being wired | **`website.setDesignKnob`, already calling `applyOwnerDesignEdit` from a model-invocable handler — the model has had it all along** |
 
-### The shapes of "unlit", and the third is the worst
+### The shapes of "unlit", and shape 7 is the worst
 
-Six instances in, they are not one failure. They fail differently and they present identically
+Eight instances in, they are not one failure. They fail differently and they present identically
 to the owner as *"it doesn't work"*:
 
 | # | shape | example |
@@ -1656,12 +1656,40 @@ to the owner as *"it doesn't work"*:
 | 4 | **built, reachable, invisible** — the door exists and something covers it | the Design button under the account chip |
 | 5 | **built and reached, then undone** — it works and something removes the result | the `+` mounting, then the grid re-rendering |
 | 6 | **UNREACHABLE BY THE CALLER IT WAS OFFERED TO** — the capability is described and wired, and its arguments cannot be constructed by the caller | `applyOwnerNodeMove` / `applyOwnerNodeDelete` take a `NodeAddress` carrying a fingerprint of a rendered element; the model has no DOM |
+| **7** | **WIRED, DESCRIBED, REACHABLE — AND REFUSED BY AN AUTHORISATION IT WAS NEVER HANDED** | `website.moveSection`, 2026-09-13: wired, announced to the model, invoked correctly, and absent from `DRAFT_INJECTED_ACTIONS`, so it read a null owner and every claimed business refused it |
+| 8 | **imported, re-exported, never called** — the import graph says live, the call graph says dead | `hubly_brain_experience_layer`; see Lesson 80 |
 
 **Shape 6 is the worst to ship**, and it is the one we nearly did. The others fail as an absence
 — nothing happens, and somebody eventually asks why. Shape 6 fails **as a product defect**: the
 capability is advertised, the model invokes it confidently, and it errors on every single
 attempt. An owner watching that does not conclude "this isn't built"; they conclude the product
 is broken. **Before wiring anything, ask whether the caller can construct the arguments.**
+
+**Shape 7 is worse, and we DID ship it** — for a day, on 2026-09-13.
+
+`website.moveSection` was wired, described to the model, and reachable. The model picked it
+correctly. It then read an owner uid that was never injected, saw `null`, and every claimed
+business refused the write. **It failed for exactly the people it was built for** — a draft
+owner has no sections to move; only a signed-in owner does — and it worked in no real case at
+all.
+
+What makes it the worst shape yet is that **it looks correct in every diff.** Shape 6 is
+visible if you ask "can the caller construct the arguments". Shape 7 is invisible to that
+question and to every other one a reviewer asks about the change, because the defect is not in
+the change — it is in a LIST SOMEWHERE ELSE that the change needed to be added to and was not.
+The handler is right. The capability description is right. The writer is right. The only wrong
+thing is an absence in a file nobody opened.
+
+And it is silent in the worst way: the write is refused with the authorisation key **present
+and null**, which is indistinguishable at the RPC from a deliberate pre-claim write. The
+`p_owner_id` invariant structurally cannot see it.
+
+**The rule: an authorisation an action depends on may not live in a list maintained beside it.**
+Derive it from the action, or the omission will ship — this one shipped three times
+(`places.add`, `business.setHours`, `website.moveSection`), and the first two were caught only
+because someone happened to run a check. `DRAFT_INJECTED_ACTIONS` is now derived from the
+handlers' own source at module load, and a derivation that cannot read that source refuses to
+serve rather than yielding an empty list. See D-053.
 
 ## Lesson 79 — A resolved reference is a guess wearing a precise type
 
@@ -2638,10 +2666,12 @@ files you counted.
 test. That is not coverage; it is a file keeping itself alive. `check-m2-epic0.mjs` has been
 green for 52 days about a layer no owner has ever read a word from.
 
-This belongs beside the six unlit shapes (Lesson 49) as a **seventh**, and it is the one that
-hides best:
+This belongs beside the unlit shapes (Lesson 49) as **shape 8**, and it is the one that hides
+best. (Numbered 7 when it was written; shape 7 is now the authorisation one — `website.moveSection`
+— which was ruled the worse of the two, because it fails as a product defect rather than as an
+absence.)
 
-| 7 | **imported, re-exported, never called** | the import graph says live, the call graph says dead — and only the call graph is about behaviour |
+| 8 | **imported, re-exported, never called** | the import graph says live, the call graph says dead — and only the call graph is about behaviour |
 
 
 ## Lesson 81 — A check whose red you have never seen is a check you have never run
@@ -2688,3 +2718,37 @@ So: anchors are resolved against **comment-masked source** (`swapInCode`), and a
 for a call strips comments before it looks. **A comment that mentions a symbol is not that
 symbol** — the mistake is easy enough that both the code and the person auditing the code made it
 on the same afternoon.
+
+
+## Lesson 83 — A check that reads the receipt instead of the goods
+
+Four of the fifteen checks red-proofed on 2026-09-14 were passing for the wrong reason, and they
+are one family: **each measured the SHAPE OF THE ANSWER rather than the answer.**
+
+| check | the receipt it read | the goods it never inspected |
+|---|---|---|
+| `check-one-voluntary-addition` | the line `hcVoluntary > 0) return false` is present | whether the gate REFUSES — `return true;` above it passed |
+| `check-destructive-confirm` | the string `refuseIfClassicSite(` is present in the span | whether it is CALLED — the comment naming it passed |
+| `check-no-directives-to-owners` | backtick pairs in document order | the actual string literals — one nested template flipped the parity and hid half the file |
+| `check-two-store-readers` | the substring `service_catalog` is present | whether the store is READ — the reader SELECTS `'meta.service_catalog'` as a literal label |
+
+**The `service_catalog` one is the sharpest, and it is not a coincidence that it is about the two
+stores.** `get_business_services` returns a `source` column saying which store each row came
+from. That label is a string. A check that accepts the label as proof of the read is accepting
+**a claim about provenance as evidence of provenance** — which is the two-store defect itself,
+reappearing one level up, inside the instrument built to catch it. If the reader stopped reading
+`businesses.meta` entirely, it would keep printing `'meta.service_catalog'` for rows it no longer
+had, and the check would keep saying both stores are covered.
+
+**This is NOT Lesson 78.** That one is about a FIX that keeps the machinery and loses the effect.
+This is about a CHECK that reads the receipt rather than the goods — the machinery is intact and
+correct, and the instrument pointed at it is looking at the wrong object.
+
+**The rule: a check asserts a BEHAVIOUR or it asserts nothing.** Run the gate. Require an
+invocation, not a mention. Lex the source, do not pair its delimiters. Match an access path, not
+a name. Where the behaviour genuinely cannot be run — a rendered page, a live write — say so in
+the check's own output, so the next person knows what its green is worth.
+
+**And the tell, which is cheap:** ask what the smallest edit is that would break the product and
+keep the check green. If you can name one in under a minute, the check is reading a receipt. All
+four of these took under a minute.

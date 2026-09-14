@@ -132,6 +132,18 @@ const SET = [
     // comment that points at refuseIfClassicSite. This breaks a payload.
     mutate: swap("p_owner_id: ownerUid || null,", "p_owner_id_REDPROOF: ownerUid || null,") },
 
+  { check: "check-owner-id-invariant", tier: "fast", leg: "derivation",
+    ruled: "that the injection list is DERIVED — the hand-written list dropped an entry three times",
+    file: "supabase/functions/hubly-conversation/index.ts",
+    mutate: swapInCode("const DRAFT_INJECTED_ACTIONS = deriveDraftInjectedActions();",
+                       'const DRAFT_INJECTED_ACTIONS = new Set(["places.add", "business.setHours"]);') },
+
+  { check: "check-owner-id-invariant", tier: "fast", leg: "escape hatch",
+    ruled: "that NEVER_INJECTED cannot hide a handler that reads the owner",
+    file: "supabase/functions/hubly-conversation/index.ts",
+    mutate: swapInCode('"business.startDraft": "creates the draft;',
+                       '"business.setHours": "redproof — an owner reader hidden behind the escape hatch",\n  "business.startDraft": "creates the draft;') },
+
   { check: "check-computed-and-dropped", tier: "fast",
     ruled: "the computed-and-dropped audit — a value measured and never returned",
     file: "supabase/functions/_shared/hubly_capability_registry.ts",
@@ -262,7 +274,7 @@ const after = execFileSync("git", ["status", "--porcelain"], { cwd: ROOT, encodi
 const W = { "RED-PROVED": "✅", "STAYED GREEN": "❌", "ALREADY RED": "⚠️ ", "CANNOT RUN": "⚠️ ", "MUTATION FAILED": "⚠️ ", "CANNOT RUN UNDER MUTATION": "⚠️ " };
 console.log();
 for (const r of rows) {
-  console.log(`${W[r.verdict] || "  "} ${r.check.padEnd(34)} ${r.verdict}`);
+  console.log(`${W[r.verdict] || "  "} ${(r.check + (r.leg ? ` (${r.leg})` : "")).padEnd(34)} ${r.verdict}`);
   console.log(`   gated: ${r.ruled}`);
   if (r.note) console.log(`   ${r.note}`);
 }

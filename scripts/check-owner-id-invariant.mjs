@@ -134,9 +134,39 @@ for (const rpc of OWNER_AUTHORISED_RPCS) {
 
 /* ── CHECK 2 ─────────────────────────────────────────────────────────────────── */
 const conv = fs.readFileSync(CONVERSATION, "utf8");
-const setBlock = conv.match(/const DRAFT_INJECTED_ACTIONS = new Set\(\[([\s\S]*?)\]\);/);
-if (!setBlock) fail("could not find DRAFT_INJECTED_ACTIONS in hubly-conversation — the owner-injection check cannot run");
-const injected = new Set([...(setBlock?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((x) => x[1]));
+// THE LIST IS DERIVED NOW, NOT TYPED — and this check changed shape with it (2026-09-14).
+//
+// It used to parse `new Set([...])` and compare names. That comparison is what caught
+// places.add and business.setHours; it did NOT catch website.moveSection, because a check that
+// compares a hand-written list against hand-written behaviour only fires when someone runs it,
+// and the same omission had already shipped twice. The list is now derived from the handlers'
+// own source at module load, so membership is structural and this check's job is different:
+// prove the DERIVATION is still in place, and that the only escape hatch from it is honest.
+const derived = /const DRAFT_INJECTED_ACTIONS = deriveDraftInjectedActions\(\);/.test(conv);
+const hardcoded = conv.match(/const DRAFT_INJECTED_ACTIONS = new Set\(\[([\s\S]*?)\]\);/);
+if (hardcoded) {
+  fail("DRAFT_INJECTED_ACTIONS has gone back to a hand-written list.\n" +
+       "      That list dropped the same kind of entry three times (places.add, business.setHours,\n" +
+       "      website.moveSection — the third shipped dead for every claimed owner). Derive it.");
+}
+if (!derived) {
+  fail("DRAFT_INJECTED_ACTIONS is neither derived nor a literal Set — this check cannot tell what is injected.");
+}
+// The derivation refuses to serve if it cannot read handler source, and refuses if it matches
+// nothing. Both are load-bearing: a silently empty list refuses every owner write while every
+// check stays green. Asserted here so they cannot be quietly deleted.
+if (!/handler source is not readable in this runtime/.test(conv)) {
+  fail("the derivation no longer refuses to serve when handler source is unreadable.\n" +
+       "      Without that, a minified or future runtime yields an EMPTY injection list and every\n" +
+       "      owner-authorised write is refused with the key present and null — silently.");
+}
+if (!/matched ZERO actions/.test(conv)) {
+  fail("the derivation no longer refuses to serve on an empty match.");
+}
+// The one escape hatch. Every entry must be a handler that does NOT read the injected owner —
+// otherwise NEVER_INJECTED is just the old bug with a friendlier name.
+const neverBlock = conv.match(/const NEVER_INJECTED[^=]*=\s*\{([\s\S]*?)\n\};/);
+const never = new Set([...(neverBlock?.[1] ?? "").matchAll(/"([^"]+)":/g)].map((x) => x[1]));
 
 // Which actions read the injected owner? Located by walking the registry's capability
 // blocks: `name: "<action>"` down to the next one, and asking whether that span calls
@@ -153,13 +183,14 @@ for (let i = 0; i < actionHits.length; i++) {
   readers++;
   const cap = [...capNames].filter((c) => c.at < a.index).pop();
   const id = `${cap ? cap.name : "?"}.${a[1]}`;
-  if (!injected.has(id)) {
-    fail(`${id} reads the injected owner but is NOT in DRAFT_INJECTED_ACTIONS.\n` +
-         `      It will always see null, so every write it makes is refused on a CLAIMED\n` +
-         `      business — and the p_owner_id invariant cannot see it, because the key IS present.`);
+  if (never.has(id)) {
+    fail(`${id} reads the injected owner AND is listed in NEVER_INJECTED.\n` +
+         `      The derivation will skip it, so it will always see null and every write it makes\n` +
+         `      is refused on a CLAIMED business — the p_owner_id invariant cannot see it, because\n` +
+         `      the key IS present. NEVER_INJECTED is for handlers that need no credentials at all.`);
   }
 }
-console.log(`actions reading the injected owner        : ${readers} (all on the injection list unless failed above)`);
+console.log(`actions reading the injected owner        : ${readers} (injected by derivation; ${never.size} escape-hatch entr${never.size === 1 ? "y" : "ies"}, none of them a reader unless failed above)`);
 if (!readers) fail("no action reads injectedOwnerUid — either the reader was renamed or this check has gone blind");
 
 // ---------------------------------------------------------------------------

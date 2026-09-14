@@ -26,6 +26,25 @@ property of a symbol table; "an owner wants this and cannot have it" is a proper
 product, and they differ by a factor of twelve.
 
 
+## INSTRUMENT GAP — the rig's click witness has no assertion of its own (2026-09-14)
+
+`scripts/lib/browser-rig.mjs` decides whether a click happened by counting a document-capture
+`mousedown` into `window.__rigClicked`. **Nothing tests that counter.** The red-proof audit set
+`landed = 1` unconditionally and every assertion in `check-browser-rig` stayed green: assertion
+2c ("a covered control does not report a landed click") is satisfied by **Playwright's own
+actionability error**, which is thrown before the witness is ever read.
+
+**Why it is on this list rather than in prose:** the witness is the thing that decides whether
+anything happened at all. Every browser measurement this week — the fragment-link sweep, the
+`+` tile proofs, the dead-nav work, the editor walks — rests on it, and a witness that always
+says yes turns every one of those into a reading of the harness rather than the product.
+
+The check is red-provable through the settle loop instead (assertions 3/3b/3c), so it is not a
+blind instrument; this one leg is untested. Closing it needs a trap where the browser reports a
+successful click that delivers no event — which is exactly the case the witness exists for, and
+exactly the case that is hard to stage.
+
+
 ## TOP OF THE RECORD (2026-09-13) — the paying customer cannot change the words on his own website
 
 Established read-only, from the code, with the full surface table in
