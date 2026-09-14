@@ -465,16 +465,26 @@ export const SLICES: SliceDef[] = [
     // WHAT HE CHARGES. 253 rows across every claimed business — changeable by talking,
     // and until now not askable.
     key: "services",
-    title: "SERVICES ON RECORD (what the booking flow and the page price from)",
-    emptyLine: "SERVICES ON RECORD: none. If their page shows services, those are text on the page and not records — say so rather than saying they have no services.",
+    title: "SERVICES (both stores: the services table and the catalogue their page renders from)",
+    emptyLine: "SERVICES: none in either store. If their page shows services, those are text typed onto the page and not records — say so rather than saying they have no services.",
     read: async (admin, businessId, ownerUid) => ({
       rows: await rpc(admin, "get_business_services", { p_business_id: businessId, p_owner_id: ownerUid }),
     }),
+    // SAY WHICH STORE EACH ONE IS IN. `get_business_services` reads both (2026-09-14) and
+    // reports `source`, because the two stores can hold the same service under different
+    // names — Graef has "clay and seal" at £0 in the relational table and "Clay & Seal
+    // Package" at $75 in the catalogue his page renders. Matching them by name would be
+    // guessing which two rows are one service; naming the store is true and useful, and the
+    // stray record is a real thing for the owner to know about.
     line: (r) => [
       String(r.name || "unnamed"),
       Number(r.price) > 0 ? `· ${dollars(r.price)}` : "· no price on record",
       Number(r.duration_hours) > 0 ? `· ${Number(r.duration_hours)}h` : null,
       r.description ? "· has a description" : "· no description",
+      r.source === "services"
+        ? "· [on record only — this one is NOT on their page]"
+        : (r.source === "meta.service_catalog" ? "· [on their page]" : null),
+      r.conflicts === true ? "· [the two stored copies DISAGREE on price or description — say so and ask which is right]" : null,
     ].filter(Boolean).join(" "),
   },
   {

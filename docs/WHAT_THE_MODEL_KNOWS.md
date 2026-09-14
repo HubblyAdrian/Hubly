@@ -197,3 +197,64 @@ Checkable today, without any schema change:
 gap and the cheapest check. (1) makes drift loud without asking anyone to restructure anything.
 
 **Nothing built.**
+
+
+---
+
+# FIXED 2026-09-14 — the services slice, and the rule that should have prevented it
+
+**`get_business_services` now reads both stores**, copied from `get_business_hours` line for
+line: full outer join, `source`, `conflicts`. What the model is told about Graef went from
+
+> `clay and seal · no price on record · no description`  — **1 service**
+
+to
+
+| name | price | dur | source |
+|---|---|---|---|
+| clay and seal | — | — | `services` **— on record only, NOT on their page** |
+| Full Detail | $85 | 2h | `meta.service_catalog` |
+| Premium Detail | $130 | 3h | `meta.service_catalog` |
+| Shampoo Detail | $120 | 3.5h | `meta.service_catalog` |
+| Clay & Seal Package | $75 | 1.5h | `meta.service_catalog` |
+| Paint Enhancement | $150 | 4h | `meta.service_catalog` |
+| All-in-One Paint Correction | $200 | 4h | `meta.service_catalog` |
+| Single Stage Paint Correction | $275 | 4h | `meta.service_catalog` |
+| 2 Stage Paint Correction | $400 | 8h | `meta.service_catalog` |
+
+**The catalogue wins on price, deliberately** — it is what the page renders and what a customer
+is quoted. His one relational row says `0` for a service the page prices at $75.
+
+**Nine rows, not eight, and that is honest rather than tidy.** `"clay and seal"` and
+`"Clay & Seal Package"` are almost certainly the same service under two names. The join is
+exact — fuzzy-matching two stores is how two different services get silently merged — so the
+stray record is reported as what it is: *on record only, NOT on their page*. That is a real
+thing for the owner to know.
+
+## The matrix, re-run against all 16 slices
+
+| slice | reads | two-store fact? |
+|---|---|---|
+| **services** | `get_business_services` | **YES — fixed** |
+| **hours** | `get_business_hours` | **YES — already correct** |
+| catalogue · page_records | RPCs that already read `meta` | already both |
+| service_stats | `jobs` + `booking_requests` by name | no — a TRANSACTION fact, not a catalogue one |
+| bookings · jobs · orders · chat_leads · traffic · customers · sales · notifications · tasks · leads | single-store tables | no |
+
+**2 of 16 slices read a fact that lives in two stores. Both now read both.**
+
+## And the rule is enforced, because a comment is a preference
+
+`scripts/check-two-store-readers.mjs` (`npm run check:two-store`) declares the two-store facts
+explicitly — a fact is two-store because of a decision, not because of anything visible in a
+query — finds each reader's **latest** definition across the 227-migration ledger, and requires
+both store markers **plus** `source` and `conflicts`.
+
+Red-proofed twice, and the second leg is the one that matters:
+
+```
+RED A  revert services to one store        → FAIL  reads 1 of 2 stores · missing: meta.service_catalog
+RED B  read both but drop source/conflicts → FAIL  reads both but does not report which store a row
+                                                    came from, or whether they disagree.
+                                                    Picking a winner silently is how a two-store
+                                                    fact becomes a one-store answer again.

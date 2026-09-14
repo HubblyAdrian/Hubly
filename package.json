@@ -73,6 +73,7 @@
     "check:dup-ids": "node scripts/check-no-duplicate-ids.mjs",
     "check:one-ask": "node scripts/check-one-ask-not-a-list.mjs",
     "check:one-voluntary": "node scripts/check-one-voluntary-addition.mjs",
+    "check:two-store": "node scripts/check-two-store-readers.mjs",
     "check:rig": "node scripts/check-browser-rig.mjs",
     "check:no-editor-chrome": "node scripts/check-no-editor-chrome-in-public.mjs",
     "check:draft-token": "node scripts/check-draft-token-truthiness.mjs",
