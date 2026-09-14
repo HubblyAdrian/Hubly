@@ -21,7 +21,14 @@
  */
 import { openRig } from "./lib/browser-rig.mjs";
 
-const SLUGS = process.argv.slice(2).length ? process.argv.slice(2) : ["hubly-classic-fixture", "graefs-autocare"];
+// RED-PROOF WITHOUT SHIPPING A BROKEN GATE. `--redproof` appends the OWNER's own parameter to
+// the visitor URL, which is the one condition that legitimately puts the tile on the page. The
+// detector must then FAIL. That proves the detector detects, without a deploy whose whole
+// purpose is to put an owner-only control on a paying customer's live site for thirty seconds.
+const REDPROOF = process.argv.includes("--redproof");
+const SLUGS = process.argv.slice(2).filter((a) => !a.startsWith("--")).length
+  ? process.argv.slice(2).filter((a) => !a.startsWith("--"))
+  : ["hubly-classic-fixture", "graefs-autocare"];
 const LAYOUTS = ["", "neon-nights", "chrome-velocity", "obsidian-gold"];
 // CONTROLS, NOT MARKERS — and the first version of this check got that wrong.
 //
@@ -48,7 +55,7 @@ let failed = 0, checked = 0;
 for (const slug of SLUGS) {
   for (const layout of LAYOUTS) {
     // A visitor's URL. No hcEdit, no hcEditable, nothing.
-    const url = `https://${slug}.myhubly.app/?v=${Date.now()}${layout ? `&wslayout=${layout}` : ""}`;
+    const url = `https://${slug}.myhubly.app/?v=${Date.now()}${layout ? `&wslayout=${layout}` : ""}${REDPROOF ? "&hcEdit=1&hcEditable=1" : ""}`;
     await rig.load(url);
     await rig.settle(() => document.querySelectorAll("#p-classic-site .ws-svc-card").length, "cards", { quiet: true });
     const r = await rig.page.evaluate(({ chrome, markers }) => {
@@ -71,6 +78,12 @@ for (const slug of SLUGS) {
 }
 await rig.close();
 console.log(`\n${checked} page/layout combinations checked as a visitor · ${failed} leaking editor chrome`);
+if (REDPROOF) {
+  console.log(failed === checked
+    ? `\nRED-PROOF PASSES — with the owner's own ?hcEditable=1 the detector fires on all ${checked}.`
+    : `\nRED-PROOF FAILED — only ${failed} of ${checked} fired with editing ON. The detector is blind.`);
+  process.exit(failed === checked ? 0 : 1);
+}
 if (failed) {
   console.error(`\nFAIL — an owner-only control is in a page served to a visitor. wsEditingOn() must be\nfalse without ?hcEditable=1 and outside /dashboard, on every layout.`);
   process.exit(1);

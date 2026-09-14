@@ -157,10 +157,27 @@ export async function openRig(opts = {}) {
       if (!box || box.width < 1 || box.height < 1) {
         throw new Error(`CLICK DID NOT LAND — ${selector} has no box (${JSON.stringify(box)}); it is hidden or a zero-size clone`);
       }
+      // THE WITNESS GOES ON `document`, NOT ON THE ELEMENT.
+      //
+      // An element-level listener is defeated by any handler that calls `stopPropagation()`
+      // during the CAPTURE phase — document-capture runs before the target, so the click never
+      // reaches the element's own listener and the rig reports "did not land" for a control
+      // that worked perfectly. Found on the "+ Add service" tile, whose canvas handler is
+      // exactly that shape. A document-capture witness still fires, because stopPropagation
+      // stops the journey between nodes, not other listeners on the same node.
+      // …AND IT WITNESSES `mousedown`, NOT `click`.
+      //
+      // Second correction from the same control. A click handler that rewrites its own element
+      // — `tile.innerHTML = ''` — DETACHES `e.target` before a later listener runs, so
+      // `e.target.closest(sel)` finds nothing and the rig reports a control that worked as one
+      // that did not. `mousedown` fires before any click handler, so the target is still in the
+      // document when the witness reads it. `click` is kept as a second signal for controls
+      // driven by keyboard or by a synthetic dispatch.
       await page.evaluate((sel) => {
-        const e = document.querySelector(sel);
         window.__rigClicked = 0;
-        e.addEventListener("click", () => { window.__rigClicked++; }, { once: true, capture: true });
+        const hit = (e) => { try { if (e.target && e.target.closest && e.target.closest(sel)) window.__rigClicked++; } catch (_) {} };
+        document.addEventListener("mousedown", function m(e) { hit(e); document.removeEventListener("mousedown", m, true); }, true);
+        document.addEventListener("click", function w(e) { hit(e); document.removeEventListener("click", w, true); }, true);
       }, selector);
       // ONE VOCABULARY, AND FAST. Playwright retries a blocked click for 30s and then throws
       // its own verbose error; a covered control is an instrument failure we want in 2s, in
