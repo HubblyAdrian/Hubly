@@ -72,15 +72,15 @@ more useful than a wall of instruments that measure receipts.
 1. **Prohibition 1** — no cleanup/validation/post-processing pass may cause a second generation.
 2. **Prohibition 2** — no status indicator shows success unless that surface confirmed it. *The most-cited rule in the repo and nothing fails when it is broken.*
 3. **Prohibition 4** — the interface may not change shape silently.
-5. **The notification standard** — name the event, say who, link straight to the thing, never invite a reply to an unmonitored address.
-6. **A notification may not report a fact the system never recorded.**
-7. **Never reveal a live secret to the terminal.** No check greps for `--reveal` or a key prefix in scripts or CI.
-8. **A category that describes people may not default to the flattering value** (`account_kind`, `owner_identified`).
-9. **A row is not evidence of a person** — no check ties a claim about who someone is to the classification.
-10. **A generated page is patched by an anchor stamped at build time, never re-recognised afterward.** Enforced for service prices by construction; nothing fails if the next fact ships a matcher instead.
-11. **Pricing advice is information, not instruction, and every price traces to real retrieval.** The search backend does not exist yet; the rule will bind the moment it does.
-12. **A verification screenshot may never contain fabricated content** — including fabricated STATE.
-13. **The rig's click witness has no assertion of its own.** `window.__rigClicked` is what decides whether anything happened at all, and the covered-control assertion is satisfied by Playwright's own actionability error before the witness is ever read. Every browser measurement this week rests on it. *(Found by the red-proof audit; recorded here rather than left in prose.)*
+4. **The notification standard** — name the event, say who, link straight to the thing, never invite a reply to an unmonitored address.
+5. **A notification may not report a fact the system never recorded.**
+6. **Never reveal a live secret to the terminal.** No check greps for `--reveal` or a key prefix in scripts or CI.
+7. **A category that describes people may not default to the flattering value** (`account_kind`, `owner_identified`).
+8. **A row is not evidence of a person** — no check ties a claim about who someone is to the classification.
+9. **A generated page is patched by an anchor stamped at build time, never re-recognised afterward.** Enforced for service prices by construction; nothing fails if the next fact ships a matcher instead.
+10. **Pricing advice is information, not instruction, and every price traces to real retrieval.** The search backend does not exist yet; the rule will bind the moment it does.
+11. **A verification screenshot may never contain fabricated content** — including fabricated STATE.
+12. **The rig's click witness has no assertion of its own.** `window.__rigClicked` is what decides whether anything happened at all, and the covered-control assertion is satisfied by Playwright's own actionability error before the witness is ever read. Every browser measurement this week rests on it. *(Found by the red-proof audit; recorded here rather than left in prose.)*
 
 ## HELD BY HAND — how-we-work rules (12), and no script can hold these
 
