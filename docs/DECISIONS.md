@@ -784,3 +784,43 @@ measurement outrank the instruction — including mine, including Adrian's. A fi
 nobody measured is how two days went into inferring a design that was already in the product
 (Lesson 49). The instruction here was reasonable and the evidence disagreed with it; the evidence
 wins, and the disagreement is written down with its numbers so it can be argued with.
+
+
+## D-055 — The welcome is a ROW, and the name comes from the record, not the transcript
+
+**Part 2, first half, 2026-09-14.** Austin Graef signed up months ago, his name has been in
+`auth.users` the whole time, and **Hubly had never once said it.** The screen greeted him — a UI
+line drawn by the client, from the auth provider's guess — while the thing that actually talks to
+him addressed a stranger, every turn.
+
+**Three decisions, each of which had a cheaper wrong answer:**
+
+1. **The arrival gate moved from `localStorage` to `hubly_owner_profile.welcomed_at`.** The
+   browser flag was once-per-DEVICE: the same owner was congratulated again on their phone, and
+   an owner who cleared their browser was welcomed as a stranger. **When the row cannot be read,
+   nothing is shown** — a congratulation repeated on every load is worse than one missed, and
+   that asymmetry decides it the same way every other default here is decided.
+2. **The arrival says three things and asks at most one.** Congratulate (the thing that just
+   happened is worth marking, once), introduce (an owner who has just signed up has met a chat
+   box, not a partner), then the name — **and only when the record does not already hold one.**
+   Asking for a fact the person already gave is the worst version of not listening, and the row
+   holds a name for 9 of 9 claimed owners today. One bubble, not three: the beats are the same
+   and three messages in a row is a monologue.
+3. **The model is told the name from the RECORD.** Not from the transcript, which is the read
+   that produced the `801-888-8888` scar one field over. `hubly_owner_profile` is the same row
+   the client greets from, so the greeting and the assistant cannot disagree — and an
+   owner-given name outranks a provider's guess, so a Google token refresh cannot rename someone
+   Hubly has already been told what to call.
+
+**When the name is missing, no line is emitted and nothing is guessed** — not the business name,
+not an email local-part. The model greets without a name rather than inventing one, which is the
+same rule as everywhere else.
+
+**The answer is written only from what they just typed, and said straight back.** `Thanks,
+Austin.` is what makes a wrong capture correctable in one sentence instead of invisible forever —
+and the RPC's three verdicts (written / a higher-trust name already stored / failed) each get
+their own sentence, because a write that did not happen may not pass in silence.
+
+**While the name question is on the floor, nothing else asks.** `hcPickNextGap` returns null
+until it is answered: a second ask over an unanswered first is two people talking over each
+other, which is the defect the one-ask rule exists for.

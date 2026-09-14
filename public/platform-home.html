@@ -3398,6 +3398,36 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       hcAppendMessage('hubly', "Here it is.");
       return;
     }
+    // THE NAME ANSWER. Hubly asked what to call them and nothing else may be asked until
+    // this is answered, so this message is the answer — handled here, before the model turn,
+    // for the same reason the held photo is: the question was ours and so is the answer.
+    //
+    // WRITTEN ONLY FROM WHAT THEY JUST TYPED, and SAID STRAIGHT BACK. A name is a fact about
+    // a person; the write is grounded in this message (never an email local-part, never the
+    // business name), and reading it back is what makes a wrong one correctable in one
+    // sentence instead of invisible forever.
+    if(hcOwner.awaitingName){
+      hcOwner.awaitingName = false;                 // answered, whatever they said
+      var _nm = hcLooksLikeAName(text);
+      hcActivate();
+      hcAppendMessage('user', text);
+      hcPersist('user', text);
+      if(_nm){
+        hcSaveOwnerName(_nm).then(function(v){
+          if(v === 1){ hcAppendMessage('hubly', 'Thanks, ' + _nm.split(/\s+/)[0] + '.'); try{ hcRenderRail(); }catch(e){} }
+          // 0 = a higher-trust name is already stored; -1 = the write failed. Neither may
+          // pass in silence (prohibition 6), and neither may claim it was saved.
+          else if(v === 0) hcAppendMessage('hubly', "I already had a name for you, so I've kept that one.");
+          else hcAppendMessage('hubly', "I couldn't save that just now — I'll ask again another time.");
+        });
+        return;
+      }
+      // Not a name. Do not ask again (one ask, once) and do not guess: carry their message
+      // on to the model as the ordinary turn it is.
+      hc.messages.push({ role: 'user', content: text });
+      hcCall();
+      return;
+    }
     // A photo is held pending "is this your work?" — this message is the answer.
     // Show it, then route on it (upload the held photo, or drop and carry on).
     if(hc.heldPhoto){
@@ -4482,8 +4512,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // doing, not the tail of the last conversation dumped into their face. The first time
     // on this device the arrival ("your site is live") IS home; after that, hcRenderHome.
     hcLoadConversation(true).then(function(){
-      if(hcArrivalSeen(hc.draftBusiness && hc.draftBusiness.id)) hcRenderHome();
-      else hcMaybeShowArrival(hc.draftBusiness);
+      // ONE DECISION, ONE PLACE. The caller used to ask "has the arrival been seen" and then
+      // hcMaybeShowArrival asked it again — two readers of one fact, which is how they drift.
+      hcMaybeShowArrival(hc.draftBusiness, true);
     });
   }
 
@@ -5504,6 +5535,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   /** Which gap is outstanding, in tier order. Returns null when there is nothing to ask. */
   function hcPickNextGap(g){
     if(!g) return null;
+    // A QUESTION IS ALREADY ON THE FLOOR. Hubly asked what to call them and has not heard
+    // back; a second ask in the meantime is two people talking over each other, which is the
+    // exact defect the one-ask rule was written for.
+    if(hcOwner && hcOwner.awaitingName) return null;
     for(var i = 0; i < HC_GAP_ASKS.length; i++){
       var a = HC_GAP_ASKS[i], v = g[a.key];
       if(a.want === false && v === false) return a;
@@ -5626,7 +5661,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     }
     var txt = document.createElement('div'); txt.className = 'hc-idw-txt';
     var hi = document.createElement('div'); hi.className = 'hc-idw-hi';
-    hi.textContent = hcTimeGreeting() + (hcIdentity.owner ? (', ' + hcIdentity.owner) : '') + '.';
+    // THE NAME COMES FROM THE PROFILE FIRST. hcIdentity.owner is the auth provider's guess;
+    // hubly_owner_profile is where the owner's own answer lands, and set_owner_display_name
+    // refuses to let a provider overwrite it. Reading the guess first would mean a Google
+    // token refresh could rename someone Hubly had already been told what to call.
+    var _who = hcOwnerFirstName();
+    hi.textContent = hcTimeGreeting() + (_who ? (', ' + _who) : '') + '.';
     var sub = document.createElement('div'); sub.className = 'hc-idw-sub';
     sub.textContent = biz.name || '';
     txt.appendChild(hi); txt.appendChild(sub);
@@ -5958,6 +5998,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // percentage, no reviews (not readable at all — no Google integration exists).
     // Identity first: the brand mark, the greeting by name, the business name.
     await hcLoadIdentity(biz);
+    // The profile too, and before the greeting renders: it is where the owner's own answer to
+    // "what should I call you" lives, and a greeting that reads the provider's guess instead
+    // is Hubly forgetting something it was told.
+    await hcLoadOwnerProfile();
     hcRenderIdentity(biz, thread);
     hcRenderRailBiz(biz);
     await hcLoadHomeCounts(biz);
@@ -6903,14 +6947,99 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // right column from the moment they arrive. Everything it says is true when it
   // renders: the site is live, the booking works.
   //
-  // GATE CAVEAT: this is localStorage, so it is once-per-DEVICE, not once-per-account.
-  // Fine for a welcome (the cost of seeing it twice on a second device is nil), but do
-  // NOT read it as a per-account guarantee — there is no server record that it was shown.
-  function hcArrivalSeen(id){ try{ return !!localStorage.getItem('hcArrival_' + id); }catch(e){ return false; } }
-  function hcMaybeShowArrival(biz){
+  // THE GATE IS A ROW, NOT A BROWSER (2026-09-14). It was localStorage — once per DEVICE,
+  // with no server record that the welcome was ever shown — so the same owner was welcomed
+  // again on their phone, and an owner who cleared their browser was welcomed as a stranger.
+  // `hubly_owner_profile.welcomed_at` is the record now: once per ACCOUNT, and readable by
+  // anything that needs to know whether this person has met Hubly.
+  //
+  // WHEN THE READ FAILS, NOTHING IS SHOWN AND IT IS LOGGED. A welcome we cannot record is a
+  // welcome we will repeat, and a congratulation repeated every load is worse than one
+  // missed — the same asymmetry that decides every other default here.
+  var hcOwner = { loaded: false, name: null, source: null, welcomedAt: null, awaitingName: false };
+
+  async function hcLoadOwnerProfile(force){
+    if(hcOwner.loaded && !force) return hcOwner;
+    try{
+      var c = await authGetClient();
+      var u = await c.auth.getUser();
+      var uid = u && u.data && u.data.user && u.data.user.id;
+      if(!uid) return hcOwner;
+      var r = await c.rpc('get_owner_profile', { p_owner_id: uid });
+      if(r && r.error){ console.error('[owner-profile] read failed', r.error.message); return hcOwner; }
+      var row = Array.isArray(r && r.data) ? r.data[0] : (r && r.data);
+      hcOwner.name = row && row.display_name ? String(row.display_name).trim() : null;
+      hcOwner.source = row ? (row.name_source || null) : null;
+      hcOwner.welcomedAt = row ? (row.welcomed_at || null) : null;
+      hcOwner.loaded = true;
+    }catch(e){ console.error('[owner-profile] threw', e); }
+    return hcOwner;
+  }
+  /** The name Hubly uses out loud. First name only — "Good morning, Austin Graef" is a form
+   *  letter. The profile wins over the auth provider's guess: it is where an owner's own
+   *  correction lands, and set_owner_display_name refuses to let a provider overwrite it. */
+  function hcOwnerFirstName(){
+    var n = hcOwner.name || hcIdentity.owner || '';
+    n = String(n).trim().split(/\s+/)[0] || '';
+    return n ? n.replace(/^./, function(ch){ return ch.toUpperCase(); }) : null;
+  }
+  async function hcMarkWelcomed(){
+    try{
+      var c = await authGetClient();
+      var u = await c.auth.getUser();
+      var uid = u && u.data && u.data.user && u.data.user.id;
+      if(!uid) return false;
+      var r = await c.rpc('mark_owner_welcomed', { p_owner_id: uid });
+      if(r && r.error){ console.error('[owner-profile] welcome not recorded', r.error.message); return false; }
+      hcOwner.welcomedAt = (r && r.data) || new Date().toISOString();
+      return true;
+    }catch(e){ console.error('[owner-profile] welcome threw', e); return false; }
+  }
+  /** A NAME IS A FACT ABOUT A PERSON, so it is written only from what they just typed —
+   *  the same rule as every other fact (CLAUDE.md), and the reason nothing here guesses
+   *  from an email or a business name. Returns the RPC's own verdict: 1 written,
+   *  0 refused (a higher-trust name is already stored), -1 not the owner. */
+  async function hcSaveOwnerName(name){
+    try{
+      var c = await authGetClient();
+      var u = await c.auth.getUser();
+      var uid = u && u.data && u.data.user && u.data.user.id;
+      if(!uid) return -1;
+      var r = await c.rpc('set_owner_display_name', { p_owner_id: uid, p_name: name, p_source: 'owner' });
+      if(r && r.error){ console.error('[owner-profile] name write failed', r.error.message); return -1; }
+      var v = Number((r && r.data) != null ? r.data : -1);
+      if(v === 1){ hcOwner.name = String(name).trim(); hcOwner.source = 'owner'; }
+      return v;
+    }catch(e){ console.error('[owner-profile] name write threw', e); return -1; }
+  }
+  /** WHAT CANNOT BE A NAME IS THE SHORT LIST; everything else might be. One to three words of
+   *  letters (apostrophes and hyphens included — O'Brien, Jean-Luc), no digits, no @, and not
+   *  one of the handful of acknowledgements that are never an answer to "what should I call
+   *  you". A wrong write is visible immediately because the name is said straight back. */
+  var HC_NOT_A_NAME = ['yes','yeah','yep','no','nope','ok','okay','sure','thanks','thank you','hi','hello','hey','done','good','great','cool','nothing','skip'];
+  function hcLooksLikeAName(text){
+    var t = String(text || '').trim().replace(/[.!,]+$/, '');
+    if(!t || t.length > 40) return null;
+    if(HC_NOT_A_NAME.indexOf(t.toLowerCase()) >= 0) return null;
+    // "it's Austin", "call me Austin", "I'm Austin" — the answer with its wrapper removed.
+    t = t.replace(/^(it'?s|its|i'?m|im|call me|my name is|name'?s)\s+/i, '').trim();
+    if(!/^[A-Za-z][A-Za-z'\u2019-]{1,20}( [A-Za-z][A-Za-z'\u2019-]{1,20}){0,2}$/.test(t)) return null;
+    return t;
+  }
+
+  async function hcMaybeShowArrival(biz, renderHomeIfNotDue){
     if(!biz || !biz.id || !hc.draftClaimed) return;
-    if(hcArrivalSeen(biz.id)) return;
-    try{ localStorage.setItem('hcArrival_' + biz.id, '1'); }catch(e){}
+    await hcLoadOwnerProfile(true);
+    if(!hcOwner.loaded){
+      // Could not read the record. Say nothing rather than welcome them for the second time.
+      console.error('[arrival] owner profile unreadable — arrival skipped rather than repeated');
+      if(renderHomeIfNotDue) hcRenderHome();
+      return;
+    }
+    if(hcOwner.welcomedAt){ if(renderHomeIfNotDue) hcRenderHome(); return; }
+    // RECORDED BEFORE IT IS SHOWN, exactly as the old localStorage flag was set before the
+    // render: a welcome that renders and fails to record would repeat forever.
+    await hcMarkWelcomed();
     hcRenderArrival(biz);
   }
   /** CAN THIS BUSINESS ACTUALLY BE BOOKED? Read the record, do not assume.
@@ -6935,9 +7064,26 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
     var host = url.replace(/^https?:\/\//i, '').replace(/\/$/, '');
     var name = (biz && biz.name) ? biz.name : 'Your site';
-    // Two short Hubly lines, said plainly. "live" appears once (no green pill here).
-    // Not persisted: a welcome shown once, never replayed on reload.
-    hcAppendMessage('hubly', name + ' is live. ' + host + ' is a real address. Anyone can visit it.');
+    // THE ARRIVAL SAYS THREE THINGS AND ASKS AT MOST ONE (2026-09-14).
+    //
+    // Congratulate — the thing that just happened is worth marking, and it is said once.
+    // Introduce — an owner who has just signed up has met a chat box, not a partner; if Hubly
+    // never says what it is, the next thing they type will be a question about that.
+    // Then the NAME, and only when we do not already have one: asking for a fact the person
+    // already gave is the worst version of not listening (CLAUDE.md), and the record holds a
+    // name for most owners from signup. If we have it, the greeting uses it instead.
+    //
+    // ONE BUBBLE, not three. Three messages in a row is a monologue; the beats are the same.
+    var first = hcOwnerFirstName();
+    var intro = "I'm Hubly. I look after this site and the business behind it — tell me what you want changed and I'll change it.";
+    var openLine = (first ? (first + ' — ' + name) : name) + ' is live. ' + host + ' is a real address. Anyone can visit it.';
+    if(first){
+      hcAppendMessage('hubly', openLine + '\n\n' + intro);
+    }else{
+      // The one ask. Nothing else may be asked until it is answered (hcOwner.awaitingName).
+      hcOwner.awaitingName = true;
+      hcAppendMessage('hubly', openLine + '\n\n' + intro + '\n\nWhat should I call you?');
+    }
     // THE SECOND LINE IS EARNED OR IT IS NOT SAID. It used to be unconditional:
     // "Your booking works too. Customers can pick a plan and book it, at the prices you
     // set." Three claims about product state, none of them checked — and on the walk that
@@ -6958,7 +7104,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // hcOpenWorkspace('website') — the same thing the Website rail tab already does. So
     // Website did not open the editor: it opened this card, and the owner had to click
     // through it to reach their own site. Every time, because although the card RENDERS
-    // once per business per device (hcArrivalSeen, set before the render, so it cannot
+    // once per ACCOUNT (hubly_owner_profile.welcomed_at, written before the render, so it cannot
     // repeat), nothing ever CLEARS it: hcOpenWorkspace only swaps data-mode and renders
     // the canvas, so once appended the card sat in the thread for the whole session, in
     // every mode. Rendered once; in the way for hours.

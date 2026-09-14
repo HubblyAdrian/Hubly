@@ -1325,6 +1325,45 @@ Deno.serve(async (req) => {
       }
     }
   }
+  // ── THE OWNER'S NAME, IN HUBLY'S OWN MOUTH ────────────────────────────────────────────
+  //
+  // Austin Graef signed up months ago, his name has been in `auth.users` the whole time, and
+  // Hubly has never once said it. The screen greeted him — a UI line, drawn by the client —
+  // while the thing that actually talks to him addressed a stranger, every turn.
+  //
+  // So the model is TOLD, from the record rather than from the transcript:
+  // `hubly_owner_profile` holds an owner-given name above a provider's guess, and it is the
+  // same row the client greets from, so the two cannot disagree.
+  //
+  // NOTHING IS INVENTED WHEN THE ROW IS EMPTY. No name means no line: the model greets
+  // without one rather than reaching for the business name or an email local-part, which is
+  // the same rule as everywhere else — never state what you weren't told.
+  const ownerNameUid = await getOwnerUid();
+  if (ownerNameUid) {
+    try {
+      const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/rest/v1/hubly_owner_profile?owner_id=eq.${ownerNameUid}&select=display_name`, {
+        headers: adminHeaders(),
+      });
+      const rows = res.ok ? await res.json().catch(() => null) : null;
+      const nm = Array.isArray(rows) && rows[0] && typeof rows[0].display_name === "string" ? rows[0].display_name.trim() : "";
+      if (nm) {
+        const firstName = nm.split(/\s+/)[0];
+        history.push({
+          role: "system",
+          content:
+            `THE OWNER'S NAME IS ${firstName} (full name on record: ${nm}). Use it the way a person does — ` +
+            `in a greeting, or when you are handing something back to them — never in every sentence, and never ` +
+            `as a form letter. This came from their account record, not from the conversation, so it is safe to ` +
+            `use even on the first message of a session. If they tell you a different name, use that one instead.`,
+        });
+      }
+    } catch (e) {
+      // A NAME WE COULD NOT READ IS A NAME WE DO NOT USE. No line, no guess, and the failure
+      // is visible in the logs rather than becoming a stranger's greeting nobody can explain.
+      console.warn("owner name unreadable this turn: " + String((e as Error)?.message || e).slice(0, 120));
+    }
+  }
+
   const actions: Array<{ capability: string; capabilityAction: string; args: unknown; ok: boolean; real: boolean }> = [];
 
   // ONE ROW PER FIRST TURN — the counter that replaces buying snapshots with quota.
