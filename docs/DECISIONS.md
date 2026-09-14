@@ -740,3 +740,47 @@ friendlier name — and fails if the list ever goes back to a literal `new Set([
 **The general rule this is an instance of:** a hand-written list beside hand-written behaviour is
 the same drift as a hand-written description beside it. Both decay, both look correct in every
 diff, and both are only caught by someone running a check. Derive, or expect the omission.
+
+
+## D-054 — REVERSAL: the hours extractor is third, not first. Ask first, stamp the anchor second.
+
+**The instruction was to cost the hours extractor as a gap. The costing reversed the plan, and
+the numbers are why.** Recorded as a reversal rather than folded into the costing, because a
+costing that changes the plan is worth more than one that confirms it — and because the next
+person to reach for an extractor should find the reason it was not built.
+
+**What was measured** (`node scripts/measure-hours-capture.mjs`, 2026-09-14, fixtures excluded):
+
+| | |
+|---|---|
+| businesses with at least one owner message | 64 |
+| …whose owner MIGHT have stated hours (a deliberately over-generous form) | 10 |
+| …of those, hours actually in the record | **9 of 10** |
+| assistant messages in the corpus | 259 |
+| …that ASK for hours | **1** |
+| freeform pages | 174 |
+| …carrying a `data-hubly-hours` anchor | **7** (market: **1 of 6**) |
+
+**The reading.** Extraction is not the bottleneck — 9 of 10, against a denominator inflated on
+purpose so the rate would be understated rather than flattered. The sample is thin (10
+conversations) and that is itself part of the finding: there is not enough evidence to justify
+building an extractor, and there would not be even if the rate were worse.
+
+What the same query found instead is that **Hubly has asked for hours once, ever**, against our
+own measured rule that asking moves capture from ~40% to ~80%. And that **five of our six real
+businesses have no anchor**, so hours captured perfectly still land nowhere a customer sees.
+
+**The order, ruled:**
+
+1. **Ask for hours** — one rung in the gap ladder that already exists, already gated by the
+   one-ask rule and already checked. Cheapest step, largest measured effect, and it improves
+   every fact rather than this one.
+2. **Stamp the hours anchor at generation** — generator work, with the market number attached.
+   This is Graef's services one fact over: the record right, the page unable to show it.
+3. **The extractor** — last, and only if the misses survive 1 and 2.
+
+**The general rule this is an instance of:** measure the gap before building the fix, and let the
+measurement outrank the instruction — including mine, including Adrian's. A fix aimed at a gap
+nobody measured is how two days went into inferring a design that was already in the product
+(Lesson 49). The instruction here was reasonable and the evidence disagreed with it; the evidence
+wins, and the disagreement is written down with its numbers so it can be argued with.

@@ -162,6 +162,20 @@ const SET = [
     // the shape the rule is about — a function that holds a placement and drops it.
     mutate: append(`\nexport async function redproofDropsThePlacement(args: any) {\n  const placement = await applyServicesToFreeform(args);\n  return { ok: true, summary: placement.status === "placed" ? "Added them to your page." : "Saved." };\n}\n`) },
 
+  { check: "check-facts-are-grounded", tier: "fast", leg: "the library refuses a lift",
+    ruled: "never publish a fact the owner did not state — the 801-888-8888 scar",
+    file: "supabase/functions/_shared/hubly_grounding.ts",
+    // Make the phone check accept anything with ten digits anywhere, which is what a
+    // well-meaning "it was too strict" edit looks like.
+    mutate: swapInCode("return messageDigits(message).includes(key);",
+                       "return messageDigits(message).length >= 10;") },
+
+  { check: "check-facts-are-grounded", tier: "fast", leg: "a writer stops calling it",
+    ruled: "that every owner-fact writer grounds its values",
+    file: "supabase/functions/_shared/hubly_capability_registry.ts",
+    mutate: swapInCode("const rec = reconcileServices(services, existing, userMessage);",
+                       "const rec = { allowed: services, droppedLift: [] as string[], changed: true };") },
+
   { check: "check-classic-claim", tier: "slow",
     ruled: "the two-store split, classic side — the sentence may not outlive the inability",
     file: "supabase/functions/_shared/hubly_owner_replies.ts",

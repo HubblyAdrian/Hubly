@@ -17,13 +17,24 @@ pretending otherwise would be its own false green.
 
 | | product rules | how-we-work rules |
 |---|---|---|
-| **checked** — a script fails when it is broken | **11** | 0 |
+| **checked** — a script fails when it is broken | **12** | 0 |
 | **partly** — one slice enforced, the rest by hand | **7** | 0 |
-| **held by hand** — nothing fails | **13** | 12 |
+| **held by hand** — nothing fails | **12** | 12 |
 | total | 31 | 12 |
 
-**13 product rules have no check at all.** Two of them are prohibitions in the numbered list that
-opens CLAUDE.md.
+**12 product rules have no check at all.** Three of them are prohibitions in the numbered list
+that opens CLAUDE.md.
+
+**One was closed the day this list was written** (2026-09-14, ruled): *never publish a fact the
+owner did not state* — the only rule on the list whose violation reaches a customer's screen, and
+the one whose scar (`801-888-8888`, 2026-09-01) already had its bandage sitting unfastened in
+`hubly_grounding.ts`. `check-facts-are-grounded` now runs that library against the scar itself and
+requires every owner-fact writer to call it.
+
+**The other twelve stay listed and unchecked, deliberately.** Twelve checks written in one
+afternoon would be the shape-not-behaviour kind — a line present, a name present, a substring —
+and Lesson 83 is a day's evidence of what those cost. A list of rules we are holding by hand is
+more useful than a wall of instruments that measure receipts.
 
 ---
 
@@ -41,6 +52,7 @@ opens CLAUDE.md.
 | Don't ship copy offering an action with no working path | `check-home-promises` |
 | A sentence may not outlive the inability it describes | `check-classic-claim` (3 legs) |
 | Hubly never points at a control it cannot see | `no-directives.check.ts` **net 3, added 2026-09-14** — server-composed sentences only |
+| **Never publish a fact the owner did not state** | `check-facts-are-grounded` **added 2026-09-14** — runs the grounding library against the 801-888-8888 scar and requires every owner-fact writer to call it. Three named holes are frozen in the check itself: `updateDraft::city`, `setHours::hours`, `setServices::price-when-only-the-name-is-stated` |
 | An authorisation an action depends on is derived, not listed (D-053) | `check-owner-id-invariant` + the boot derivation refuses to serve |
 
 ## PARTLY (7) — one slice enforced, the rest held by hand
@@ -55,12 +67,11 @@ opens CLAUDE.md.
 | Never state what you weren't told | `check-classic-claim`, `servicesTruth`'s composer | every other composer; and the **ask** side (*never ask for what you were told*) has no check |
 | Two website stores, read both (SETTLED #2) | `check-two-store-readers` — hours and services readers, markers now access paths | the WRITE side, and the other facts (logo, service area, contact) |
 
-## HELD BY HAND — product rules with no check (13)
+## HELD BY HAND — product rules with no check (12)
 
 1. **Prohibition 1** — no cleanup/validation/post-processing pass may cause a second generation.
 2. **Prohibition 2** — no status indicator shows success unless that surface confirmed it. *The most-cited rule in the repo and nothing fails when it is broken.*
 3. **Prohibition 4** — the interface may not change shape silently.
-4. **Never publish a fact the owner did not state.** `addressGrounded` / `phoneGrounded` / `emailGrounded` exist in `hubly_grounding.ts` and **no check asserts a writer calls them.** This is the rule that produced the 2026-09-01 phone-number scar.
 5. **The notification standard** — name the event, say who, link straight to the thing, never invite a reply to an unmonitored address.
 6. **A notification may not report a fact the system never recorded.**
 7. **Never reveal a live secret to the terminal.** No check greps for `--reveal` or a key prefix in scripts or CI.
@@ -88,7 +99,7 @@ decidable), not for trusting them harder.
 
 ---
 
-**Not written here: any of the missing checks.** The ruling was to see how many rules we are
-holding by hand, not to close them. The list is ordered so that the first four in the
-held-by-hand section are the ones I would build first — three numbered prohibitions and the
-grounding rule that has already cost a scar.
+**One of the thirteen was closed, by ruling: the grounding rule.** The rest stay open and
+listed. The ruling was to see how many rules we are holding by hand — and then to close the one
+whose violation reaches a customer's screen, rather than to write twelve checks in an afternoon
+that would each measure the shape of an answer.

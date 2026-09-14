@@ -2719,6 +2719,25 @@ for a call strips comments before it looks. **A comment that mentions a symbol i
 symbol** — the mistake is easy enough that both the code and the person auditing the code made it
 on the same afternoon.
 
+### The addendum that matters more than the lesson: KNOWING A FAILURE MODE DOES NOT CONFER IMMUNITY FROM IT
+
+This lesson was written on the afternoon of 2026-09-14. **Hours later, the first run of
+`check-registry-knows-every-door`'s new door leg made exactly this mistake** — it looked for
+`data-pe="add-service"` in `public/hubly.html` with a plain `includes`, and renaming every real
+occurrence left it GREEN, because a comment three thousand lines away still contained the name.
+I had just written the lesson. I wrote the check anyway. The red-proof caught it; the knowledge
+did not.
+
+**That is the whole argument for checks over lessons.** A lesson is a thing you know, and knowing
+is not a mechanism — it decays under fatigue, context pressure, and the ordinary momentum of
+finishing a task. A check is a thing that happens whether or not anyone remembers, and it happens
+at the moment the mistake is made rather than the next time someone reads the file.
+
+The corollary, and it is the reason the lessons file is not the safety system: **every lesson
+here should be read as a candidate for a check, and a lesson with no check behind it is a rule
+we are holding by hand** (`docs/RULES_HELD_BY_HAND.md`). Writing one down is the beginning of
+the work, not the end of it.
+
 
 ## Lesson 83 — A check that reads the receipt instead of the goods
 

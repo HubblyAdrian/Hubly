@@ -26,6 +26,26 @@ property of a symbol table; "an owner wants this and cannot have it" is a proper
 product, and they differ by a factor of twelve.
 
 
+## FOUND WHILE CHECKING GROUNDING — a service the model omits is deleted (2026-09-14)
+
+`set_business_draft_services` is replace-all, and `reconcileServices` only walks the list the
+model hands it. A service that exists on the record and is absent from the model's list is not
+dropped as a lift and not preserved — it is simply not in the write, so it is gone.
+
+What stands between an owner's services and that outcome is a SENTENCE in the action's
+description: *"Pass the COMPLETE current list every time."* A prompt, not a structure. One
+truncated context, one model that lists four of five, and a live page loses a service silently.
+
+**This is a different rule from the one the new check enforces** — that one is "never publish a
+fact the owner did not state", this one is "a default that destroys work is never acceptable" —
+which is exactly why it is recorded here instead of being folded in. `check-facts-are-grounded`
+says in its own header that it does not assert this.
+
+Not fixed, and the fix is not obvious: a merge-by-default would make deletion impossible, and
+owners do delete services. It needs the same treatment `deleteBlock` got — do it, report what it
+resolved, name the undo.
+
+
 ## INSTRUMENT GAP — the rig's click witness has no assertion of its own (2026-09-14)
 
 `scripts/lib/browser-rig.mjs` decides whether a click happened by counting a document-capture
@@ -6844,6 +6864,32 @@ generator defect (a nav promising a section the page does not contain), not a ru
 at 2% of pages it is small — recorded so it is not rediscovered as a runtime bug.
 
 ## RULED — the hours fix, three parts in order (2026-09-12, not started)
+
+**REORDERED 2026-09-14 by measurement, and step 3 is now GENERATOR WORK with a number attached
+— see the framing below.**
+
+### The generator framing: five of our six real businesses have nowhere to put hours
+
+Measured 2026-09-14 over the latest version of every freeform page (fixtures excluded):
+
+| freeform pages | **174** |
+|---|---|
+| carrying a `data-hubly-hours` anchor | **7** |
+| text that looks like it shows hours, with no anchor | 58 |
+| **market pages** | **6** |
+| **market pages with the anchor** | **1** |
+
+**This is Graef's services, again, one fact over.** There, the record was right and the page
+could not show it, because the page was built a different way and nothing was stamped. Here the
+record can be perfect — an owner states their hours, the writer grounds them, the reply is
+true — and on **five of our six real businesses the customer still sees nothing**, because the
+generator produced a page with nowhere to put them.
+
+The fact being correct is not the product. The customer seeing it is. And the fix is not on the
+write side at all: **the generator must stamp the anchor while the fact and the element are both
+in hand**, exactly as `markServiceAnchorsInFreeform` does for prices. Every page generated
+without it is a page whose hours can never arrive, and there is no repair pass that fixes it
+afterwards — that is the whole re-recognition lesson.
 
 Same shape as D (the unconditional stamped services slot). Re-recognition has now failed on
 services and on hours by the same mechanism, and it will fail on the next fact.
