@@ -173,6 +173,11 @@ const FACT_WRITERS: Record<string, string[]> = {
   "business.updateDraft": ["phone", "email", "city"],
   "business.setHours": ["hours"],
   "business.setServices": ["services", "prices"],
+  // Added with the writer (2026-09-14), not after someone noticed. A job carries a customer's
+  // phone, address and price: the same facts, about someone else, on a planner the owner acts
+  // from. It grounds each one and DROPS what it cannot match rather than refusing the job —
+  // a job with a name and a date is worth having; one with an invented phone number is not.
+  "business.addJob": ["phone", "email", "address", "price"],
   "business.addServicesSection": ["services", "prices"],   // covered: reconcileServices
 };
 

@@ -588,6 +588,15 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
 .hc-event-card.is-new{border-color:#d9632d;box-shadow:0 2px 10px rgba(217,99,45,.10)}
 .hc-event-head{font-weight:700;font-size:15px;margin-bottom:2px}
 .hc-event-sub{font-size:12px;color:#6b7280;margin-bottom:10px}
+/* A JOB IN THE THREAD. A button, because it is one: focusable, pressable by keyboard, and
+   announced as what it opens. Styled as a card rather than a chat bubble so it reads as a
+   thing rather than a remark. */
+.hc-job-card{display:block;width:100%;text-align:left;cursor:pointer;border:1px solid var(--hc-line,#e6e3dc);
+  border-radius:12px;padding:12px 14px;background:#fff;font:inherit;color:inherit}
+.hc-job-card:hover{border-color:var(--brand,#d9632d)}
+.hc-job-card:focus-visible{outline:2px solid var(--brand,#d9632d);outline-offset:2px}
+.hc-job-card-t{font-weight:650;font-size:15px}
+.hc-job-card-s{margin-top:3px;font-size:13px;opacity:.72}
 .hc-event-fields{display:flex;flex-direction:column;gap:5px}
 .hc-event-row{display:flex;gap:12px;font-size:13px;line-height:1.4}
 .hc-event-k{flex:0 0 92px;color:#6b7280}
@@ -3267,6 +3276,8 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // addition: the owner asked where something is, and this is the answer to it. It
           // runs AFTER the reply so the sentence about what the page found lands last, and it
           // is the mechanism — not the model — that says whether the target was there.
+          // A JOB WAS CREATED THIS TURN — put it in the thread as the thing itself.
+          try{ if(data.job && data.job.id) hcAppendJobCard(data.job); }catch(e){}
           // The server plucks ONE field (`showMeWhere`) the way it plucks bookingConfirmation
           // and draftGrant — the actions log carries no `raw`, and reading a field that is
           // never sent is how a wired feature is dark on arrival.
@@ -4834,6 +4845,64 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(r && r.error) throw new Error(r.error.message);
     return Array.isArray(r && r.data) ? r.data : [];
   }
+  // ── A JOB, IN THE CONVERSATION, THAT OPENS ────────────────────────────────────────────
+  //
+  // THE PANEL ALREADY EXISTED. hcJobPanel renders a job into the right pane — every field it
+  // has, none it does not — and it has only ever been reachable from the jobs list. An owner
+  // who pastes a text message into the chat gets the job written (business.addJob) and then
+  // has nowhere to see it. That is a missing DOOR, not a missing feature, and this is the door:
+  // a real element in the thread that opens the panel that is already built.
+  //
+  // IT IS AN ELEMENT, NOT A DESCRIPTION OF ONE. "I've added it, you can find it in Jobs" is
+  // Hubly pointing at a control it cannot see. The job itself is in the message.
+  function hcJobCardLine(j){
+    var when = [hcDayLabel(j.scheduled_date), hcHm(j.scheduled_time)].filter(Boolean).join(' at ');
+    var price = Number(j.amount) > 0 ? '$' + Number(j.amount) : '';
+    // EVERY PART IS A FIELD. A field we do not have produces no part — never a placeholder,
+    // never "not specified", which is the same discipline the event cards already hold.
+    return [j.customer_name || '', j.service_name || '', when, price].filter(Boolean);
+  }
+  function hcAppendJobCard(j){
+    if(!j || !j.id) return null;
+    var thread = hcThreadBody(); if(!thread) return null;
+    var card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'hc-msg hubly hc-job-card';
+    card.setAttribute('data-hc-job', String(j.id));
+    // The accessible name is the job itself, so the control is not "button" to a screen reader.
+    var parts = hcJobCardLine(j);
+    card.setAttribute('aria-label', 'Open job: ' + (parts.join(', ') || 'job'));
+    var t = document.createElement('div'); t.className = 'hc-job-card-t';
+    t.textContent = parts[0] || parts[1] || 'Job';
+    card.appendChild(t);
+    if(parts.length > 1){
+      var sub = document.createElement('div'); sub.className = 'hc-job-card-s';
+      sub.textContent = parts.slice(1).join(' · ');
+      card.appendChild(sub);
+    }
+    // ITS OWN LISTENER, on the element the owner presses. Delegation would be fine too; this
+    // is the pattern the other chat cards already use, and one pattern is worth more than a
+    // marginally better second one.
+    card.addEventListener('click', function(){ hcJobPanel(j); });
+    thread.appendChild(card);
+    hcThreadScrollToEnd();
+    return card;
+  }
+
+  // THE ONE DELIBERATE SEAM IN THIS FILE, AND WHY IT EXISTS.
+  //
+  // Every function here lives in a closure, and the owner shell cannot be reached by a browser
+  // check without a real session — which is exactly the state this codebase has been burned by
+  // testing around (every test green on drafts while three defects lived behind the claim). So
+  // the two functions that make a job clickable are exposed under one namespace, so a rig can
+  // drive THE PRODUCT'S OWN CODE rather than a copy of it, with simulated job DATA and no
+  // simulated STATE: the card it builds and the panel it opens are the ones an owner gets.
+  //
+  // It reads nothing and writes nothing — no credentials, no network, no storage. A proof that
+  // needs a copy of the code is not a proof of the code (Lesson 37); this is the cheapest
+  // honest alternative available until a real authed session can be driven here.
+  try{ window.hublyJobUI = { append: hcAppendJobCard, panel: hcJobPanel, line: hcJobCardLine }; }catch(e){}
+
   function hcJobPanel(j){
     hcOpenPanel(j.is_block ? 'Blocked time' : 'Job', function(body){
       var rows = [

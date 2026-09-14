@@ -1486,6 +1486,9 @@ Deno.serve(async (req) => {
   // instruction and not a selector: the client owns which element that means, because the
   // server cannot see the page and must not pretend to.
   let showMeWhereTarget: string | null = null;
+  // A JOB CREATED THIS TURN — the ROW, plucked like every other client-bound payload. The
+  // client renders it as the thing itself rather than as a sentence about a thing.
+  let createdJob: unknown = null;
   // Returned to the client so the NEXT turn appends to the same conversation row
   // instead of starting a new one on every message.
   let visitorConversationId: string | null = null;
@@ -2577,6 +2580,18 @@ Deno.serve(async (req) => {
           bookingConfirmation = (result.raw as Record<string, unknown>).confirmation;
         }
 
+        // THE JOB ROW. business.addJob returns what the database actually wrote — not what was
+        // asked for — so the card in the thread is built from the record and cannot claim a
+        // field that did not save.
+        if (
+          capabilityName === "business" && actionName === "addJob" &&
+          result.ok && result.real && result.raw && typeof result.raw === "object" &&
+          "job" in (result.raw as Record<string, unknown>)
+        ) {
+          const j = (result.raw as Record<string, unknown>).job;
+          if (j && typeof j === "object") createdJob = j;
+        }
+
         // SHOW ME WHERE — hand the page the target it was asked to move to. Nothing is
         // claimed here: the page decides whether the target exists and says so itself.
         if (
@@ -2806,6 +2821,7 @@ Deno.serve(async (req) => {
         ...(buildResumed ? { buildResumed } : {}),
         ...(bookingConfirmation ? { bookingConfirmation } : {}),
         ...(showMeWhereTarget ? { showMeWhere: showMeWhereTarget } : {}),
+        ...(createdJob ? { job: createdJob } : {}),
         ...(draftGrant ? { draftGrant } : {}),
         ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),
       });
@@ -2829,6 +2845,7 @@ Deno.serve(async (req) => {
       // Also here: a turn that ran out of capability rounds still asked the page to move, and
       // dropping the field would leave the owner with a reply and a page that never moved.
       ...(showMeWhereTarget ? { showMeWhere: showMeWhereTarget } : {}),
+      ...(createdJob ? { job: createdJob } : {}),
       ...(draftGrant ? { draftGrant } : {}),
         ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),
     });

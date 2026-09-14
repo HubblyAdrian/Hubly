@@ -93,7 +93,8 @@
     "audit:redproofs": "node scripts/audit-redproofs.mjs",
     "check:grounded": "node scripts/check-facts-are-grounded.mjs",
     "check:chain": "node scripts/check-chain-acknowledgement.mjs",
-    "check:doors-offered": "node scripts/check-doors-offered-exist.mjs"
+    "check:doors-offered": "node scripts/check-doors-offered-exist.mjs",
+    "check:job-card": "node scripts/check-job-card-opens.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

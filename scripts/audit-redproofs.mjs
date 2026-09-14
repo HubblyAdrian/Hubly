@@ -201,6 +201,14 @@ const SET = [
     mutate: swapInCode("    if (sentKeys.has(key)) continue;",
                        "    if (sentKeys.has(key)) continue;\n    if (!sentKeys.has(key)) continue;   // redproof: the omission walks off the end again") },
 
+  { check: "check-job-card-opens", tier: "slow", leg: "the click lands and nothing opens",
+    ruled: "floor (c) of the job paste — pressing a job in the conversation opens it",
+    file: "public/platform-home.html",
+    // The card still renders and the click still LANDS; only the door is gone. If the witness
+    // were the proof, this would stay green — which is the distinction the check exists to make.
+    mutate: swapInCode("card.addEventListener('click', function(){ hcJobPanel(j); });",
+                       "/* redproof: the door removed, the card left */") },
+
   { check: "check-classic-claim", tier: "slow",
     ruled: "the two-store split, classic side — the sentence may not outlive the inability",
     file: "supabase/functions/_shared/hubly_owner_replies.ts",

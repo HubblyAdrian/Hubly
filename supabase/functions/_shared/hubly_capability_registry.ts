@@ -79,7 +79,7 @@ import {
   placeContactHoursInFreeform,
   type HoursRow,
 } from "./hubly_contact.ts";
-import { addressGrounded, emailGrounded, phoneGrounded, reconcileServices } from "./hubly_grounding.ts";
+import { addressGrounded, emailGrounded, phoneGrounded, priceGrounded, reconcileServices } from "./hubly_grounding.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
 // Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
 // "Invalid JWT". Both behaviours are load-bearing -- see supabase_admin.ts.
@@ -251,6 +251,10 @@ const OWNER_AUTHORISED_RPCS = new Set([
   // only caller writes the store the ONE PAYING CUSTOMER's page renders from, and he
   // is claimed: an omitted p_owner_id here fails for exactly the business it was built for.
   "set_business_service_catalog",
+  // create_business_job (2026-09-14) copies the same predicate again — a draft by token, a
+  // claimed business by owner — and a job is written by an owner who is, by definition,
+  // claimed. Added with the writer rather than after someone forgot.
+  "create_business_job",
 ]);
 async function callBusinessRpc(fn: string, payload: Record<string, unknown>): Promise<any> {
   // ── THE CLAIMED-OWNER INVARIANT ────────────────────────────────────────────
@@ -7793,6 +7797,109 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         // businesses) and businesses.meta.hours (10, and the one a CLASSIC page renders
         // from). Writing only the table would report success and change nothing the
         // owner or his customers can see. set_business_hours does both in one call.
+        // ── ONE JOB, FROM WHAT SOMEBODY PASTED ────────────────────────────────────────
+        //
+        // Jobs arrive in a text message. 255 job rows exist and every one came through the
+        // booking path or was typed into the operator app; an owner holding a text has no way
+        // in. This is that way in: he pastes it, the parsing happens here, and the job comes
+        // back as a ROW — not as a claim that a row was made.
+        //
+        // EVERY FIELD COMES FROM THIS MESSAGE. The phone, the price and the address are run
+        // through the same grounding the record facts use, because a job is a fact about a
+        // customer and a number lifted from earlier in the chat is the 801-888-8888 scar with
+        // a different subject. A field that cannot be grounded is DROPPED, never guessed, and
+        // the job is still created from what remains — a job with a name and a date is worth
+        // having; a job with an invented phone number is worse than none.
+        name: "addJob",
+        description:
+          "Create ONE job from something the owner pasted or described — a text message from a customer, a note, a screenshot they sent. " +
+          "Read the fields out of THEIR message and pass only what is actually there: customer_name, service_name, scheduled_date (YYYY-MM-DD), " +
+          "scheduled_time (HH:MM, 24h), address, phone, email, amount (number), notes. " +
+          "NEVER invent or carry over a value from earlier in the conversation — if the message does not say when it is, leave the date out; " +
+          "a job silently scheduled for today is a job they will miss tomorrow. If the paste has nothing job-shaped in it (no customer, service, date or address), do not invoke this. " +
+          "After it runs, the job appears in the conversation for them to open — so report what was saved in one short line and do not describe any control.",
+        doors: {
+          talk: "business.addJob",
+          // No do-it-yourself door yet: the claimed shell has no add-a-job control. Declared
+          // null rather than pointed at the operator app, which an owner has not been shown.
+          diy: null,
+          show: null,
+        },
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: { type: "string", description: "Automatically supplied by the system before this runs — put any placeholder here." },
+            customer_name: { type: "string", description: "Who the job is for, as they wrote it." },
+            service_name: { type: "string", description: "What the work is, in their words." },
+            scheduled_date: { type: "string", description: "YYYY-MM-DD. Omit entirely if the message does not say." },
+            scheduled_time: { type: "string", description: "HH:MM, 24-hour. Omit if not stated." },
+            address: { type: "string", description: "Where the work is." },
+            phone: { type: "string", description: "The customer's number, only if it is in this message." },
+            email: { type: "string", description: "The customer's email, only if it is in this message." },
+            amount: { type: "number", description: "The price agreed, only if it is in this message." },
+            notes: { type: "string", description: "Anything else worth keeping, in their words." },
+          },
+          required: [],
+        },
+        handler: async (args) => {
+          const draftId = String((args as any)?.draftId || "").trim();
+          const draftToken = String((args as any)?.draftToken || "").trim();
+          const ownerUid = injectedOwnerUid(args);
+          const userMessage = String((args as any)?._userMessage || "");
+          if (!draftId || (!draftToken && !ownerUid)) {
+            return { ok: false, real: false, summary: "No business is connected to this conversation.", error: "missing_draft" };
+          }
+          const str = (k: string) => {
+            const v = (args as any)?.[k];
+            return typeof v === "string" && v.trim() ? v.trim() : "";
+          };
+          const dropped: string[] = [];
+          const phone = str("phone");
+          const email = str("email");
+          const address = str("address");
+          const amountRaw = (args as any)?.amount;
+          const amount = typeof amountRaw === "number" && Number.isFinite(amountRaw) && amountRaw > 0 ? amountRaw : null;
+          const job: Record<string, unknown> = {
+            customer_name: str("customer_name"),
+            service_name: str("service_name"),
+            scheduled_date: str("scheduled_date"),
+            scheduled_time: str("scheduled_time"),
+            notes: str("notes"),
+          };
+          // GROUNDED OR DROPPED. Not refused — the rest of the job is still worth saving.
+          if (phone) { if (phoneGrounded(phone, userMessage)) job.phone = phone; else dropped.push("phone number"); }
+          if (email) { if (emailGrounded(email, userMessage)) job.email = email; else dropped.push("email"); }
+          if (address) { if (addressGrounded(address, userMessage)) job.address = address; else dropped.push("address"); }
+          if (amount !== null) { if (priceGrounded(amount, userMessage)) job.amount = String(amount); else dropped.push("price"); }
+
+          const rows = await callBusinessRpc("create_business_job", {
+            p_business_id: draftId,
+            p_owner_id: ownerUid,
+            p_job: job,
+            p_draft_token: draftToken || null,
+          });
+          const row = Array.isArray(rows) ? rows[0] : rows;
+          if (!row || row.error || !row.id) {
+            const why = row?.error || "rpc_failed";
+            return {
+              ok: false, real: false, error: why,
+              summary: why === "no_content"
+                ? "There was nothing job-shaped in that — no customer, service, date or address. Ask them what the job is."
+                : "The job could not be saved just now. Say that plainly; it has NOT been added.",
+            };
+          }
+          const when = [row.scheduled_date || "", String(row.scheduled_time || "").slice(0, 5)].filter(Boolean).join(" ");
+          const bits = [row.customer_name, row.service_name, when].filter(Boolean);
+          return {
+            ok: true, real: true,
+            summary: `Job saved: ${bits.join(" · ") || "(unnamed)"}.` +
+              (dropped.length ? ` The ${dropped.join(" and ")} in that message could not be matched to what they typed, so ${dropped.length === 1 ? "it was" : "they were"} left off — say so.` : ""),
+            humanNote: `Added the job${row.customer_name ? " for " + row.customer_name : ""}.`,
+            raw: { job: row, dropped },
+          };
+        },
+      },
+      {
         name: "setHours",
         description:
           "Set the business's opening hours for one or more weekdays. Writes the real record AND the shape the live page renders from. " +
