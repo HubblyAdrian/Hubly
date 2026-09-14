@@ -54239,7 +54239,26 @@ function wireHublyDocumentClickToEdit(){
 }
 
 function wireHcEditingSurface(doc, root){
-  if(!root || root.getAttribute('data-hc-wired') === '1') return;
+  if(!root) return;
+  // THE FOURTH GATE, NAMED BY THE INSTRUMENT RATHER THAN GUESSED AT (2026-09-13).
+  //
+  // This used to be `if(!root || alreadyWired) return;`. On a classic page the surface wires
+  // while the page is still painting, so the first call stamped `data-hc-wired` with no service
+  // cards in the DOM yet — and every later call returned HERE, before the mount, before the
+  // observer, before even the logging that was added to find this. The probe's answer was the
+  // whole diagnosis: `#ws-page` wired, 3 anchors inside it, the grid findable by hand, and
+  // ZERO console lines — the function was returning above its own first log statement.
+  //
+  // The guard exists to stop listeners being bound twice. It should never have governed the
+  // MOUNT, which is idempotent by its own check (`:scope > [data-hc-addsvc]`). So a second call
+  // now re-attempts the mount and returns, instead of assuming that having been here once means
+  // there was something to do.
+  var hcAlreadyWired = root.getAttribute('data-hc-wired') === '1';
+  if(hcAlreadyWired){
+    try{ hcAddSvcLog('re-entered', 'already wired; re-attempting the mount only'); }catch(e){}
+    try{ hcMountAddService(); }catch(e){}
+    return;
+  }
   root.setAttribute('data-hc-wired', '1');
   // This is the document the owner actually scrolls, so this is where "put me back
   // where I was looking" has to be wired.
