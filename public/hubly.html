@@ -54244,7 +54244,32 @@ function wireHcEditingSurface(doc, root){
   // This is the document the owner actually scrolls, so this is where "put me back
   // where I was looking" has to be wired.
   try{ hcWireScrollReporting(doc.defaultView || doc.parentWindow); }catch(e){}
+  // MOUNT WHEN THE GRID EXISTS, NOT WHEN THE SURFACE WIRES.
+  //
+  // The third gate, found 2026-09-13 after the first two were opened. This runs once, at wire
+  // time, and `hcServicesGrid()` needs a painted `[data-hubly-service]` card to find the grid.
+  // On a CLASSIC page the surface wires as the page renders, so on the first call there is
+  // nothing to find — and `wireHcEditingSurface` stamps `data-hc-wired` and never returns, so
+  // nothing ever tried again. Measured: anchors 3, grid findable by hand, "+" absent.
+  //
+  // An observer rather than a delay: the cards arrive when they arrive, and a number chosen
+  // here would be the fixed-delay defect re-introduced in the file that just finished removing
+  // it (Lesson 70). hcMountAddService is already idempotent — it returns if the grid has one —
+  // so re-running it on mutations is free, and the observer stops the moment it succeeds.
   try{ hcMountAddService(); }catch(e){}
+  try{
+    if(!root.querySelector('[data-hc-addsvc]') && typeof MutationObserver !== 'undefined'){
+      var addObs = new MutationObserver(function(){
+        try{
+          hcMountAddService();
+          if(root.querySelector('[data-hc-addsvc]')) addObs.disconnect();
+        }catch(e){ addObs.disconnect(); }
+      });
+      addObs.observe(root, { childList: true, subtree: true });
+      // A ceiling, so a page that never paints a services grid does not observe forever.
+      setTimeout(function(){ try{ addObs.disconnect(); }catch(e){} }, 20000);
+    }
+  }catch(e){}
   // The builder can now answer at the toolbar instead of in the chat.
   hcFlashMessage = function(text){
     try{
