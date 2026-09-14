@@ -1,4 +1,21 @@
 /**
+ * ⚠️ READ docs/EXPERIENCE_LAYER_SALVAGE.md BEFORE USING ANYTHING IN THIS FILE.
+ *
+ * NOTHING HERE IS CALLED IN PRODUCTION. Written 2026-07-24, never touched since; the only
+ * caller of `HublyExperienceLayer.*` anywhere is scripts/check-m2-epic0.mjs, the test asserting
+ * it exists. It is imported by three modules and re-exported through hubly_ai's namespace, which
+ * makes the import graph say "live" while the call graph says "dead" (Lesson 80).
+ *
+ * Read with suspicion. Two of buildGreeting's sentences are defects: `new_owner` is the stranger
+ * script, and `returning` claims "I reviewed your business while you were away" — something
+ * nothing does. Three pieces were salvaged (the empty-state two-beat, the publication wording,
+ * the honest-disagreement principle); they are named in that document with their line numbers,
+ * and each use site cites it. Everything else must be re-earned before an owner reads it.
+ *
+ * The header below states an architectural claim that was never enforced. That question is open
+ * and recorded as D-052 — decided at Part 2, not by this file.
+ */
+/**
  * Milestone 2 · Epic 0 — Hubly Experience Layer
  *
  * This Epic is about the customer's emotional experience, not infrastructure.
