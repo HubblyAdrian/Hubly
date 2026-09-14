@@ -1,4 +1,64 @@
 /**
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ * THE COMPOSER'S HONESTY RULE — the counterpart to the model's, and it binds us.
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * The system prompt has governed the model since the beginning:
+ *
+ *     "Never say or imply a capability ran, analyzed, booked, or checked something unless you
+ *      actually invoked it this turn and got a real result back."
+ *
+ * On 2026-09-14 we counted the false statements an owner was actually told in one night
+ * (docs/WHAT_THE_MODEL_KNOWS.md §3):
+ *
+ *     "that's edited in Edit details"                        — a real surface that edits no page text
+ *     "moving whole sections isn't something I can do, and
+ *      that isn't a temporary problem"                       — moveFreeformSection ships
+ *     "your services are on your page now"                   — composed from placement.status
+ *     the new-signup script, to a claimed live business       — never reached a model at all
+ *
+ *     FOUR OF FOUR WERE WRITTEN BY US. ZERO WERE HALLUCINATED.
+ *
+ * The rules were pointed at the wrong actor. The model has been held to a standard for a year;
+ * the code putting sentences in the owner's mouth has been held to none.
+ *
+ * ── THE RULE ──────────────────────────────────────────────────────────────────────────────
+ *
+ *   A SENTENCE OUR CODE PUTS IN AN OWNER'S MOUTH IS HELD TO EVERY RULE THE MODEL IS HELD TO.
+ *
+ * Concretely, for any string this file or any composer hands to a person:
+ *
+ *   1. NEVER CLAIM AN OUTCOME FROM A STATUS. Compose from what is verifiably true — the bytes
+ *      that were saved, the rows that were written — never from a code that MEANS the outcome
+ *      is likely. `placement.status === "placed"` is true when SOME of them landed.
+ *   2. NEVER NAME A SURFACE WITHOUT KNOWING WHAT IT DOES. Naming a place is a claim about that
+ *      place, checked like any other (Lesson 71). "I can't do this yet" is a complete answer;
+ *      a redirect is a second claim and it is optional.
+ *   3. NEVER CLAIM AN INABILITY THE CODE DOES NOT HAVE. A refusal is a status indicator and
+ *      earns its red the way a checkmark earns its green.
+ *   4. REFUSE TO EMIT RATHER THAN EMIT SOMETHING UNTRUE. A composer with nothing true to say
+ *      must be able to say nothing — return "" and let the caller be silent (Lesson 65).
+ *   5. THE SENTENCE SHIPS WITH THE CAPABILITY. A line describing what Hubly can or cannot do
+ *      changes in the same commit as the code that decides it, or it becomes tomorrow's lie.
+ *
+ * ── WHERE IT IS ENFORCED, AND WHERE IT IS NOT ─────────────────────────────────────────────
+ *
+ * Honestly, because a claim that outruns its guard is worse than a narrow guard described:
+ *
+ *   ENFORCED   composeServicesTruth  — check-classic-claim.mjs (3 legs) + check-computed-and-
+ *                                      dropped.mjs leg 2 (no placement reaches a reply except
+ *                                      through the truth composer)
+ *   ENFORCED   the voluntary composers — check-one-voluntary-addition.mjs
+ *   ENFORCED   no directives to owners — no-directives.check.ts (server only)
+ *   NOT YET    composeContactHoursTruth · photoReply · servicesAreaAddedReply ·
+ *              classicScopeReply · refuseIfClassicSite's summary · every `summary:` field in
+ *              the capability registry · every hcAppendMessage in public/
+ *
+ * **Seven composers can speak in one turn; the checks cover one of them by name.** That gap is
+ * the work, and it is stated here rather than left to be discovered again.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ *
  * EVERY SERVER-COMPOSED SENTENCE AN OWNER READS VERBATIM LIVES HERE.
  *
  * hubly-conversation composes the reply as
