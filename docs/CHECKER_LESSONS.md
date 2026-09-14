@@ -2374,3 +2374,44 @@ A doc records what was decided; the comment is what the next person actually enc
 is the difference between a codebase that accumulates judgement and one that accumulates
 re-investigations. Same reasoning as naming the CLASS when a bug is fixed: the note is for the
 person who arrives without the conversation.
+
+## Lesson 74 — A tool that closes the page it was asked to watch reports silence indistinguishable from absence (2026-09-13)
+
+The rig's first real use, and it lied in the same shape as everything else that night.
+
+```js
+rig.page.on("console", …)        // attach the listener
+await rig.load(url);             // rule 1: a fresh CONTEXT per load — the page is replaced
+// → zero console lines, forever
+```
+
+`load({fresh: true})` closes the page and opens a new one. That is the rig's most important
+rule — a same-document repeat is not an independent trial — and it silently invalidates every
+listener a caller attached to `rig.page` beforehand. The probe reported **zero console lines of
+any kind**, which reads exactly like "the code never ran".
+
+**It cost four structural gates.** Three were opened blind, chasing a `+` that the instrument
+would have shown mounting successfully on the first run had it been able to hear the page at
+all. The one line that settled it, once the buffer survived the reload, was:
+
+```
+[hc+] MOUNTED — grid now has 4 children; wrap in document: true
+```
+
+**This is not Lesson 69.** That one is about a value read too early — the instrument answers,
+and the answer is stale. This is the instrument *not being present to answer*, and returning a
+value that looks like a finding: **empty**. Stale is suspicious; empty is persuasive, because
+empty is what a real absence looks like.
+
+**The rule: a helper that replaces the thing it hands out must own every subscription to it.**
+The rig now owns the console buffer and re-attaches on every page it creates
+(`rig.consoleLines`, `consoleSince(mark)`). More generally, when a helper's API hands back a
+live object — a page, a connection, a handle — and the helper is also entitled to REPLACE that
+object, every listener on it is a bug waiting for the first caller who reads the docs and does
+the obvious thing.
+
+**And the tell, worth more than the rule:** *zero of anything is a claim, and it deserves the
+same suspicion as a surprising number.* Any real page logs SOMETHING. "No console output"
+should have been read as "my listener is not attached" long before it was read as "the code did
+not run" — the same instinct that makes a 0% conversion rate or an empty result set worth
+checking the query before believing the finding.

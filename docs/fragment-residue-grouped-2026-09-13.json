@@ -1,0 +1,132 @@
+Initialising login role...
+[
+ {
+  "slug": "ironclad-barbers",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "ember-and-oak-11d0c",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "rowan-bread",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "mobile-auto-detailing-in-los-angeles",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "mobile-auto-detailing-in-los-angeles",
+  "id": "work",
+  "shape": "target id missing"
+ },
+ {
+  "slug": "aspen-grove-landscaping",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "window-washing",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "window-washing",
+  "id": "gallery",
+  "shape": "target id missing"
+ },
+ {
+  "slug": "pike-sons-tree-service",
+  "id": "work",
+  "shape": "target id missing"
+ },
+ {
+  "slug": "ember-and-oak-9dfd3",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "ironwood-tattoo",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "maple-muddy",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "lehi-mobile-detailing-2c933",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "lugnuts-regulators",
+  "id": "services",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#services\"]: elementHandle.clic"
+ },
+ {
+  "slug": "sunday-field-bakery",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "ember-oak",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "tidepool-coffee",
+  "id": "menu",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#menu\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "lehi-mobile-detailing",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"] received no click event"
+ },
+ {
+  "slug": "bellweather-books-neighbourhood-coffee-h",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "rockford-bikes",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "bellweather-books",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ },
+ {
+  "slug": "mobile-detailing-in-lehi-f207e",
+  "id": "main",
+  "shape": "click could not land",
+  "detail": "CLICK DID NOT LAND — a[href=\"#main\"]: elementHandle.click: T"
+ }
+]

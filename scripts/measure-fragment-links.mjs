@@ -53,7 +53,7 @@ try { rig = await openRig({ quiet: true, width: 1280, height: 900 }); }
 catch (e) { console.error(String(e.message)); process.exit(2); }
 
 const dir = mkdtempSync(join(tmpdir(), "hubly-frag-"));
-let links = 0, scrolled = 0, navigatedAway = 0, noTarget = 0, didNothing = 0, repaired = 0, unrepaired = 0;
+let links = 0, scrolled = 0, navigatedAway = 0, noTarget = 0, didNothing = 0, repaired = 0, unrepaired = 0, keyboardOnly = 0;
 const perPage = [];
 
 for (const r of rows) {
@@ -71,6 +71,27 @@ for (const r of rows) {
     if (!exists) { noTarget++; continue; }
     const before = (await rig.settleScroll({ quiet: true })).final;
     const url0 = rig.page.url();
+    // A LINK A MOUSE CANNOT REACH IS NOT A BROKEN LINK.
+    //
+    // The first run of this counted 21 clicks as "did nothing"; grouping them showed 19 were
+    // `<a class="skip-link" href="#main">Skip to content</a>` — the accessibility affordance
+    // that is deliberately hidden until keyboard focus. The rig refused to press them, which is
+    // correct, and this script recorded the refusal as a page defect, which was not. One shape
+    // with twenty faces, and the fix was to the measurement rather than to twenty pages.
+    //
+    // Counted separately rather than dropped: a page having a skip link is a fact worth
+    // knowing, and silently excluding things is how a denominator stops meaning anything.
+    const pointerReachable = await rig.page.evaluate((i) => {
+      const a = document.querySelector(`a[href="#${CSS.escape(i)}"]`);
+      if (!a) return false;
+      const r = a.getBoundingClientRect();
+      if (r.width < 2 || r.height < 2) return false;
+      const cs = getComputedStyle(a);
+      if (cs.visibility === "hidden" || cs.opacity === "0" || cs.clipPath !== "none") return false;
+      const mid = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + r.height / 2));
+      return !!(mid && (mid === a || a.contains(mid) || mid.contains(a)));
+    }, id);
+    if (!pointerReachable) { keyboardOnly++; continue; }
     try { await rig.click({ selector: `a[href="#${id.replace(/"/g, '\\"')}"]` }); }
     catch { didNothing++; continue; }                       // could not press it: not a result
     const after = await rig.settleScroll({ quiet: true });
@@ -92,8 +113,11 @@ await rig.close();
 const pagesAllGood = perPage.filter((p) => p.links > 0 && p.scrolled === p.links).length;
 const pagesWithLinks = perPage.filter((p) => p.links > 0).length;
 console.log(`\n── MEASURED UNDER THE RIG (settled reads, proven clicks, one context per click) ──`);
-console.log(`  in-page links clicked : ${links}`);
-console.log(`  brought target into view: ${scrolled}  (${links ? Math.round(scrolled / links * 100) : 0}%)`);
+console.log(`  in-page links found   : ${links}`);
+console.log(`  keyboard-only (skip links, never a pointer affordance): ${keyboardOnly}`);
+console.log(`  clicked with a pointer: ${links - keyboardOnly}`);
+const clickable = links - keyboardOnly - noTarget;
+console.log(`  brought target into view: ${scrolled}  (${clickable ? Math.round(scrolled / clickable * 100) : 0}% of clickable links)`);
 console.log(`  navigated the frame away: ${navigatedAway}`);
 console.log(`  target id missing      : ${noTarget}`);
 console.log(`  did nothing            : ${didNothing}`);

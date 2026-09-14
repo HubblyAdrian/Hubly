@@ -87,6 +87,18 @@ export async function openRig(opts = {}) {
   const attachConsole = (p) => { p.on("console", (m) => { try { consoleLines.push(m.text()); } catch (_) {} }); };
   attachConsole(page);
 
+  // …AND THE SAME FOR INIT SCRIPTS. Found within the hour of writing Lesson 74, by doing
+  // precisely what that lesson says the next caller will do: `page.addInitScript(fn)` and then
+  // `rig.load(url)`. The init script was registered on the context `load` throws away, so the
+  // watcher it installed never armed and reported ZERO removals — silence indistinguishable
+  // from absence, a second time, in the probe written to investigate the first.
+  //
+  // Anything a caller registers on the page BEFORE a load has to be owned by the rig, because
+  // the rig is the thing entitled to replace the page. That is the whole rule; this is its
+  // second instance and there will be a third.
+  const initScripts = [];
+  const applyInit = async (p) => { for (const fn of initScripts) { try { await p.addInitScript(fn); } catch (_) {} } };
+
   /** Poll a page-evaluated expression until it stops changing. Returns the trace. */
   async function settle(readFn, label = "value", { stableMs = STABLE_MS, ceilingMs = CEILING_MS } = {}) {
     const t0 = Date.now();
@@ -122,6 +134,7 @@ export async function openRig(opts = {}) {
         ctx = await browser.newContext({ viewport: { width, height } });
         page = await ctx.newPage();
         attachConsole(page);
+        await applyInit(page);
         rig.page = page;
       }
       await page.goto(url, { waitUntil: "domcontentloaded" });
@@ -186,6 +199,10 @@ export async function openRig(opts = {}) {
       log(`  [write] ${what}  asked=${JSON.stringify(asked)}  read=${JSON.stringify(read)}  at t=${ms}ms  ${ok ? "MATCH" : "DIFFERS"}`);
       return ok;
     },
+
+    /** Register a page-world init script that SURVIVES every reload. Use this, never
+     *  `rig.page.addInitScript` — see the note above `initScripts`. */
+    async addInitScript(fn) { initScripts.push(fn); await page.addInitScript(fn).catch(() => {}); },
 
     /** Everything the page has logged, across every reload. */
     get consoleLines() { return consoleLines.slice(); },
