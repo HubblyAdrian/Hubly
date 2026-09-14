@@ -1442,6 +1442,11 @@ Deno.serve(async (req) => {
   // browser renders its confirmation card from this alone, never from the
   // model's own reply text.
   let bookingConfirmation: unknown = null;
+  // SHOW ME WHERE — the one field the page needs, plucked like bookingConfirmation and
+  // draftGrant rather than shipping `raw` to the client. It is a TARGET NAME, not an
+  // instruction and not a selector: the client owns which element that means, because the
+  // server cannot see the page and must not pretend to.
+  let showMeWhereTarget: string | null = null;
   // Returned to the client so the NEXT turn appends to the same conversation row
   // instead of starting a new one on every message.
   let visitorConversationId: string | null = null;
@@ -2527,6 +2532,17 @@ Deno.serve(async (req) => {
           bookingConfirmation = (result.raw as Record<string, unknown>).confirmation;
         }
 
+        // SHOW ME WHERE — hand the page the target it was asked to move to. Nothing is
+        // claimed here: the page decides whether the target exists and says so itself.
+        if (
+          capabilityName === "website" && actionName === "showMeWhere" &&
+          result.ok && result.raw && typeof result.raw === "object" &&
+          "showTarget" in (result.raw as Record<string, unknown>)
+        ) {
+          const t = (result.raw as Record<string, unknown>).showTarget;
+          if (typeof t === "string" && t) showMeWhereTarget = t;
+        }
+
         // A draft was created this turn — hand the browser its 10-minute claim
         // grant so it can be exchanged for an httpOnly cookie. Reads ONLY
         // draftGrant out of raw; draftToken sits beside it in the same object
@@ -2744,6 +2760,7 @@ Deno.serve(async (req) => {
         ...(draftBusiness ? { draftBusiness } : {}),
         ...(buildResumed ? { buildResumed } : {}),
         ...(bookingConfirmation ? { bookingConfirmation } : {}),
+        ...(showMeWhereTarget ? { showMeWhere: showMeWhereTarget } : {}),
         ...(draftGrant ? { draftGrant } : {}),
         ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),
       });
@@ -2764,6 +2781,9 @@ Deno.serve(async (req) => {
       ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
       ...(draftBusiness ? { draftBusiness } : {}),
       ...(bookingConfirmation ? { bookingConfirmation } : {}),
+      // Also here: a turn that ran out of capability rounds still asked the page to move, and
+      // dropping the field would leave the owner with a reply and a page that never moved.
+      ...(showMeWhereTarget ? { showMeWhere: showMeWhereTarget } : {}),
       ...(draftGrant ? { draftGrant } : {}),
         ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),
     });

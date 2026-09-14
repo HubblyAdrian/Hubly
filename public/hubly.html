@@ -17825,6 +17825,57 @@ window.addEventListener('message', function(ev){
 // Set by wireHcEditingSurface — the only scope that owns the selection.
 var hcClearSelectionFromBuilder = null;
 
+// ── SHOW ME WHERE — the third door, and the first mechanism for it in the product ──────────
+//
+// Hubly never names or describes a UI control: it does not render the page and cannot know
+// what is on screen, so "click the + on your services" is a claim it has no standing to make.
+// That left exactly two doors into every capability — talk to me, or do it yourself and find
+// it — and measured on 2026-09-14, the third door existed for NONE of 212 capabilities.
+//
+// This is that door. The parent asks for a target; this scope moves the page to it and marks
+// it; the result goes back. ONE VERB (show) and ONE MESSAGE, said by the parent AFTER the
+// answer arrives — never before, and never "I've highlighted it" on an assumption.
+//
+// THE DOCUMENT THAT SCROLLS IS NOT THIS ONE on a freeform page (see hcWireScrollReporting
+// above: this shell is a fixed full-height frame and the page lives in a srcdoc iframe). A
+// scrollIntoView on the wrong document is a feature that reports success by existing.
+function hcShowMeWhereOnCanvas(sel){
+  var doc = document, win = window;
+  try{ var f = hcFreeformFrame(); if(f && f.contentDocument && f.contentWindow){ doc = f.contentDocument; win = f.contentWindow; } }catch(e){}
+  var el = null;
+  try{ el = doc.querySelector(sel); }catch(e){ el = null; }
+  if(!el) return { found:false, why:'no-target' };
+  // A target that exists but has no box is not somewhere we can show anyone — a display:none
+  // node would scroll to nothing and mark nothing, and we would report success for it.
+  var box = null;
+  try{ box = el.getBoundingClientRect(); }catch(e){}
+  if(!box || box.width < 2 || box.height < 2) return { found:false, why:'no-box' };
+  try{
+    if(!doc.getElementById('hc-smw-style')){
+      var st = doc.createElement('style');
+      st.id = 'hc-smw-style';
+      st.textContent = '@keyframes hcSmwPulse{0%{box-shadow:0 0 0 0 rgba(37,99,235,.55)}70%{box-shadow:0 0 0 14px rgba(37,99,235,0)}100%{box-shadow:0 0 0 0 rgba(37,99,235,0)}}' +
+        '.hc-smw-mark{outline:2px solid #2563eb!important;outline-offset:3px;border-radius:6px;animation:hcSmwPulse 1.4s ease-out 2}';
+      (doc.head || doc.documentElement).appendChild(st);
+    }
+    el.classList.add('hc-smw-mark');
+    win.setTimeout(function(){ try{ el.classList.remove('hc-smw-mark'); }catch(e){} }, 3200);
+  }catch(e){}
+  try{ el.scrollIntoView({ behavior:'smooth', block:'center' }); }
+  catch(e){ try{ el.scrollIntoView(); }catch(_e){} }
+  return { found:true };
+}
+window.addEventListener('message', function(ev){
+  if(ev.source !== window.parent) return;
+  var d = ev.data;
+  if(!d || d.type !== 'hcShowMeWhere' || typeof d.selector !== 'string' || !d.selector) return;
+  var out = { found:false, why:'threw' };
+  try{ out = hcShowMeWhereOnCanvas(d.selector); }catch(e){ out = { found:false, why:'threw' }; }
+  // ALWAYS ANSWER. A silent canvas is indistinguishable from a canvas that did the thing, and
+  // the parent has a sentence to say either way.
+  try{ window.parent.postMessage({ type:'hcShowMeWhereResult', id: d.id || null, found: !!out.found, why: out.why || null }, hcBuilderOrigin()); }catch(e){}
+});
+
 // Report where the owner is looking, so a reload can put them back. The builder is a
 // different origin and cannot read it, so telling it is the only way it can know.
 //

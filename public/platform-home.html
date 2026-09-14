@@ -3263,6 +3263,14 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // "building now" filler) — never echoed into the chat. On a normal turn
           // it shows.
           if(!generatingDocument && data.reply && !hcIsFallbackReply(data.reply)){ var _reply = hcOncePhotoOffer(data.reply); hcAppendMessage('hubly', _reply); hcPersist('assistant', _reply); }
+          // SHOW ME WHERE — the model asked the page to take them somewhere. Not a voluntary
+          // addition: the owner asked where something is, and this is the answer to it. It
+          // runs AFTER the reply so the sentence about what the page found lands last, and it
+          // is the mechanism — not the model — that says whether the target was there.
+          // The server plucks ONE field (`showMeWhere`) the way it plucks bookingConfirmation
+          // and draftGrant — the actions log carries no `raw`, and reading a field that is
+          // never sent is how a wired feature is dark on arrival.
+          try{ if(typeof data.showMeWhere === 'string' && data.showMeWhere) hcShowMeWhere(data.showMeWhere); }catch(e){}
           // ── ONE VOLUNTARY ADDITION PER TURN, ENFORCED IN ONE PLACE ──────────────
           //
           // Seven composers can append to a single turn (docs/WHAT_THE_MODEL_KNOWS.md §1).
@@ -6628,6 +6636,77 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var frame = document.querySelector('#hcCanvasFrameWrap iframe.is-live') || document.getElementById('hcCanvasFrameA');
     try{ if(frame && frame.contentWindow) frame.contentWindow.postMessage({ type:'hcEditorFlash', text: text }, origin); }catch(e){}
   }
+
+  // ── SHOW ME WHERE ─────────────────────────────────────────────────────────────────────
+  //
+  // THE THIRD DOOR, BUILT ONCE AS A MECHANISM. Every capability in Hubly has had at most two
+  // doors: talk to me, or do it yourself and find it. Measured 2026-09-14, "I can show you
+  // where" existed for NONE of 212 capabilities — and it cannot be faked with a sentence,
+  // because Hubly never names or describes a control it cannot see. So the answer to "where do
+  // I do that myself?" is not a description. It is the page moving to the thing and marking it.
+  //
+  // ONE VERB, ONE MESSAGE. The verb is `show`. The message is said ONCE, AFTER the canvas
+  // answers — never before it, never twice, and never "I've highlighted it" on an assumption
+  // (prohibition 2: green is earned). If the canvas says the target is not there, the owner is
+  // told that plainly and offered the thing we CAN do, because a page with nowhere to put the
+  // fact is not the owner's mistake.
+  //
+  // WHAT IS IN THE MAP IS WHAT WE CAN ACTUALLY SHOW. Services is here because the anchors are
+  // stamped at generation and the add tile is drawn on the owner's canvas. **Hours is
+  // deliberately absent**: 7 of 174 freeform pages carry a data-hubly-hours anchor (1 of 6
+  // market pages), so on 96% of pages "let me show you where hours go" would move the page to
+  // nothing. Showing an owner where a fact goes is worthless until there is somewhere for it
+  // to go — the anchor pass at generation comes first, and hours joins this map the day it
+  // lands. An entry here is a promise that the target exists.
+  var HC_SHOW_TARGETS = {
+    services: {
+      // The owner's own service rows first (stamped at generation), then the add tile.
+      selector: '[data-hubly-service],[data-pe="add-service"]',
+      found:    'Here — that is where your services live. I have marked it on your page.',
+      missing:  'There is no services area on your page yet. I can add one with your services in it — say the word.'
+    }
+  };
+  var hcShowMeWhereWaiting = null;
+
+  function hcShowMeWhere(what){
+    var target = HC_SHOW_TARGETS[String(what || '').trim()];
+    // AN UNKNOWN TARGET IS NOT SILENCE. Prohibition 6: a request that goes nowhere must say so.
+    if(!target){ hcAppendMessage('hubly', 'I cannot take you to that part of your page yet.'); return; }
+    var origin, frame;
+    try{ origin = new URL(hc.draftBusiness.url).origin; }catch(e){ origin = null; }
+    frame = document.querySelector('#hcCanvasFrameWrap iframe.is-live') || document.getElementById('hcCanvasFrameA');
+    if(!origin || !frame || !frame.contentWindow){
+      hcAppendMessage('hubly', 'Your page is not open in front of you right now, so I cannot point at it.');
+      return;
+    }
+    var id = 'smw-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    // THE POSTCONDITION IS ASSERTED, NOT ASSUMED (prohibition 3). If the canvas never answers
+    // — an old page, a frame that navigated, a script error over there — the owner still hears
+    // one true sentence. A request that completes in silence is the failure mode this guards.
+    hcShowMeWhereWaiting = {
+      id: id, target: target,
+      timer: setTimeout(function(){
+        if(!hcShowMeWhereWaiting || hcShowMeWhereWaiting.id !== id) return;
+        hcShowMeWhereWaiting = null;
+        hcAppendMessage('hubly', 'I could not move your page just now. Tell me what to change and I will do it here.');
+      }, 4000)
+    };
+    try{ frame.contentWindow.postMessage({ type:'hcShowMeWhere', selector: target.selector, id: id }, origin); }
+    catch(e){
+      clearTimeout(hcShowMeWhereWaiting.timer); hcShowMeWhereWaiting = null;
+      hcAppendMessage('hubly', 'I could not move your page just now. Tell me what to change and I will do it here.');
+    }
+  }
+
+  window.addEventListener('message', function(ev){
+    var d = ev && ev.data;
+    if(!d || d.type !== 'hcShowMeWhereResult') return;
+    if(!hcShowMeWhereWaiting || d.id !== hcShowMeWhereWaiting.id) return;   // stale or not ours
+    var w = hcShowMeWhereWaiting;
+    clearTimeout(w.timer);
+    hcShowMeWhereWaiting = null;
+    hcAppendMessage('hubly', d.found ? w.target.found : w.target.missing);
+  });
 
   // ADD ONE SERVICE, from the grid the owner is looking at.
   //

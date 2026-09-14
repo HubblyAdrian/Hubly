@@ -6498,6 +6498,53 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         // carrying a fingerprint of a rendered element, which only the canvas can compute;
         // wiring those without a resolver would ship a capability that fails on every
         // invocation, and it would fail as a PRODUCT DEFECT rather than as a missing feature.
+        // ── SHOW ME WHERE — the model's end of the third door ─────────────────────────
+        //
+        // The whole point of this action is that Hubly must NOT answer "where do I do that
+        // myself?" with a description. It does not render the page and cannot know what is on
+        // screen, so naming a control is claiming to see it. This hands the question to the
+        // page, which moves to the place and marks it, and then says one sentence about what
+        // it found. That sentence is the client's, not the model's, and it is said AFTER the
+        // page has answered.
+        //
+        // WHAT IS NOT HERE IS AS DELIBERATE AS WHAT IS. `what` has one value. Hours is absent
+        // because 7 of 174 freeform pages have an hours anchor: pointing at it would move 96%
+        // of pages to nothing. A target joins this enum when the thing is actually on the page.
+        name: "showMeWhere",
+        description:
+          "The owner has asked WHERE they would do something on their own page. Invoke this instead of describing anything: you cannot see their screen, and naming a control claims a view you do not have. " +
+          "Their page moves to the place and marks it, and it reports what it found in its own words — so do NOT say the page moved, do not say it is highlighted, and do not describe the control. " +
+          "Keep your own reply to a few words at most, or the owner reads two messages about one thing. " +
+          "`what` currently has one value, 'services'. If they asked about anything else, do not invoke this — say plainly what you CAN do about it.",
+        doors: {
+          talk: "website.showMeWhere",
+          diy: null,
+          show: "hcShowMeWhere",
+        },
+        argsSchema: {
+          type: "object",
+          properties: {
+            what: { type: "string", description: "The part of the page to take them to.", enum: ["services"] as const },
+          },
+          required: ["what"],
+        },
+        handler: async (args) => {
+          const what = String((args as any)?.what || "").trim();
+          // THE ENUM IS RE-VALIDATED HERE. The schema only ever reaches the model, and a
+          // target we cannot actually point at must be refused rather than handed to the page
+          // to fail at silently.
+          if (what !== "services") {
+            return { ok: false, real: false, error: "no_target",
+              summary: "There is nowhere on their page I can take them for that yet. Say what you can do about it instead, and do not describe any control." };
+          }
+          // NOTHING IS CLAIMED HERE. This action did no backend work and cannot know whether
+          // the page found the target — the client says that, once, after the page answers.
+          return { ok: true, real: false,
+            summary: "Handed to their page. It will say what it found; nothing has happened yet that you can report.",
+            raw: { showTarget: what } };
+      },
+      },
+      {
         name: "moveSection",
         description:
           "Move a whole section of the live page up or down — the services block above the reviews, the gallery to the end. " +
@@ -7984,7 +8031,10 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         doors: {
           talk: "business.setServices",
           diy: { file: "public/hubly.html", marker: 'data-pe="add-service"', what: "the add-service tile on the services block, drawn when wsEditingOn()" },
-          show: null,
+          // THE FIRST CAPABILITY IN THE PRODUCT WITH ALL THREE (2026-09-14). Services goes
+          // first because its anchors are stamped at generation, so there is actually
+          // somewhere to point. Hours does not follow until its anchor pass lands.
+          show: "hcShowMeWhere",
         },
         argsSchema: {
           type: "object",

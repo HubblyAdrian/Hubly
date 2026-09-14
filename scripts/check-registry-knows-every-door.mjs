@@ -126,6 +126,7 @@ const SERVED_BY_ANOTHER_ACTION = {
 };
 
 let conv, registryActions;
+const reg = (() => { try { return readFileSync(resolve(ROOT, "supabase/functions/_shared/hubly_capability_registry.ts"), "utf8"); } catch { return ""; } })();
 try { conv = readFileSync(CONV, "utf8"); }
 catch (e) { console.error("CANNOT RUN — " + e.message); process.exit(2); }
 try {
@@ -218,8 +219,19 @@ if (gaps.length) {
         }
       }
     }
-    if (show && !conv.includes(String(show))) {
-      failed++; console.error(`FAIL  ${d.id} declares a show-me-where door "${show}" and no such mechanism exists.`);
+    if (show) {
+      // THE MECHANISM IS CLIENT-SIDE BY NATURE — it moves a page and marks an element, which
+      // no server can do — so it is looked for where it lives, and as a DEFINITION rather than
+      // a mention. A string that appears only in a comment or a call is not a mechanism.
+      const defined = ["public/platform-home.html", "public/hubly.html"].some((f) => {
+        try { return new RegExp(`function\\s+${String(show)}\\s*\\(`).test(readFileSync(resolve(ROOT, f), "utf8")); }
+        catch { return false; }
+      }) || new RegExp(`function\\s+${String(show)}\\s*\\(`).test(conv) || new RegExp(`function\\s+${String(show)}\\s*\\(`).test(reg);
+      if (!defined) {
+        failed++;
+        console.error(`FAIL  ${d.id} declares a show-me-where door "${show}" and nothing DEFINES it.\n` +
+                      `      A declared third door with no mechanism behind it is the exact claim this type exists to stop.`);
+      }
     }
     console.log(`  doors  ${d.id.padEnd(24)} talk: ${talk || "—"} · diy: ${diy ? diy.marker + " in " + diy.file : "—"} · show: ${show || "— (no mechanism exists yet, product-wide)"}`);
   }

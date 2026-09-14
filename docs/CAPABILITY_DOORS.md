@@ -15,15 +15,24 @@ a sample of seventeen.**
 | **talk to me** — a registry action handler calls it, so the model can invoke it | **8** | 4% |
 | **do it yourself** — the conversation function calls it outside a handler, so a client control reaches it | **20** | 9% |
 | **both** | **3** | 1% |
-| **I can show you where** | **0** | **no mechanism exists for any capability** |
+| **I can show you where** | **1** | **built 2026-09-14 — `business.setServices` is the first and only capability with all three** |
 | neither — called by another shared module (an internal step, not a capability) | 125 | 59% |
 | **neither — called by NOTHING, anywhere** | **62** | **29%** |
 
 **Only three capabilities in the entire product have two of the three doors:**
 `applyOwnerDesignEdit`, `applyOwnerSectionMove` (as of yesterday), `applyOwnerStyleEdit`.
 
-**Not one has the third.** "I can show you where" is item 2 of today's work order and it is
-currently a promise in a script with nothing behind it anywhere in the codebase.
+**One now has the third (2026-09-14): services.** `website.showMeWhere` (the model's end) →
+`hcShowMeWhere` (the parent) → `hcShowMeWhereOnCanvas` (the page moves and marks the target) →
+one sentence about what was actually found. Built as a MECHANISM, not as one capability's
+feature: adding a target is a line in `HC_SHOW_TARGETS` and a value in the action's enum.
+
+**Hours is deliberately NOT wired to it**, and the reason is the sequencing that the hours
+costing produced: 7 of 174 freeform pages carry an hours anchor (1 of 6 market pages), so
+"let me show you where hours go" would move 96% of pages to nothing. **Showing an owner where a
+fact goes is worthless until there is somewhere for it to go.** The anchor pass at generation
+comes first; hours joins the map the day it lands. An entry in that map is a promise that the
+target exists, and `check-registry-knows-every-door` fails if a declared door's marker is gone.
 
 ## The seventeen with only the middle door
 
