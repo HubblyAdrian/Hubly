@@ -59,3 +59,46 @@ owner. An ask that arrives as a greeting is still a ritual, just a shorter one. 
 are (a) once per session, after the owner's first message rather than before it, or (b) when it
 is contextually relevant — the owner mentions a service, Hubly notices that service has no price.
 **(b) is the version that reads as listening**, and it is more work. Not chosen here.
+
+---
+
+## Built 2026-09-13 — and the open question is answered
+
+**Ruled (a): once per session, after the owner's first message.** Adrian's reasons, recorded:
+
+> An ask that arrives as a greeting is still a ritual — and the owner has not yet told us
+> anything, so we are asking before we have listened. **(b) is better in principle and worse in
+> practice: "contextually relevant" has no definition here, and an undefined trigger fails
+> quiet. A thing that never fires looks exactly like a thing that works.**
+
+**(b) is the intended end state, deferred with its condition written next to it.** For (b) to be
+judgeable, two things must exist that do not today:
+
+1. **A checkable definition of "relevant"** — which turn kinds count, and how a gap is matched
+   to what was said. "The owner mentioned a service" is not yet a predicate.
+2. **A counter for how often it fires** — a row, like `rebuild_outcome_events`. An undefined
+   trigger fails quiet, so a contextual ask that never fires is indistinguishable from one that
+   works. Build (b) when the MISS is countable, which is the same condition every other silent
+   path in this codebase has had to meet.
+
+### Where it lives
+
+- `hcPickNextGap(g)` — tier order, `HC_GAP_ASKS`, returns `null` when nothing is outstanding.
+- `hcMaybeAskNextGap()` — re-reads `get_my_site_gaps` first, then says **one** sentence.
+- Fired from the reply handler on the **same floor predicate as the account offer**: Hubly said
+  something, it was not a question, no capture ask or re-ask is on the floor — and not if the
+  account offer already spoke this turn. Two composers in one beat is the 2026-08-26 failure,
+  and "one ask at a time" gets no exception for a good ask.
+- The greeting composes nothing. `hcRenderArrival`'s checklist block is deleted.
+
+### Asserted, not just intended
+
+`scripts/check-one-ask-not-a-list.mjs` (`npm run check:one-ask`), three legs, each red-proofed:
+
+1. **no bullets** — no `hcAppendMessage` composes a `'• '` line;
+2. **one ask** — `hcMaybeAskNextGap` contains exactly one `hcAppendMessage`;
+3. **no fallback** — every `return` after `hcPickNextGap`'s loop is `null`.
+
+Leg 3 is the one Adrian named as most likely to be violated quietly, and it is the reason the
+check exists rather than a comment: when the list comes back empty the temptation is to reach
+for a weaker item so there is something to say, and the failure reads like helpfulness.

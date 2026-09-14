@@ -3299,6 +3299,30 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
               if(_floorClear){ hc.accountOfferShown = true; hcAppendAccountOffer(); }
             }
           }
+          // THE NEXT OUTSTANDING THING — once per session, after the owner's first message.
+          //
+          // It rides the SAME floor predicate as the account offer above rather than a
+          // second opinion about what "clear" means: Hubly said something, it was not a
+          // question, and no capture ask or re-ask is on the floor. Two composers speaking
+          // in one beat is the failure of 2026-08-26, and "one ask at a time" is not a rule
+          // this may make an exception to just because its ask is a good one.
+          //
+          // Deliberately AFTER the account offer in the same block: the offer is about the
+          // turn that just happened, the gap ask is about the page in general, and if both
+          // are eligible the one that answers what they just did goes first. In practice
+          // they cannot both fire — the offer sets accountOfferShown and this sets
+          // _gapAsked, each once — but the order is stated so the next reader does not have
+          // to derive it.
+          try{
+            var _shown2 = (Array.isArray(interim) ? interim.slice() : []);
+            if(_reply) _shown2.push(_reply);
+            var _last2 = _shown2.length ? String(_shown2[_shown2.length - 1]) : '';
+            var _clear2 = !!_last2 && !hcReasked
+              && !(hc.pendingCapture && hc.pendingCapture.askedFor)
+              && !/\?\s*["'\u201d\u2019)]*\s*$/.test(_last2)
+              && !hc.accountOfferShown;
+            if(_clear2) hcMaybeAskNextGap();
+          }catch(_e){}
           // THE DROPZONE COMES LAST, after the sentence that points at it.
           //
           // It used to be appended up with the canvas work above, which runs
@@ -5406,6 +5430,94 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     }catch(e){ return false; }
   }
 
+  // ── THE NEXT OUTSTANDING THING, ASKED — NOT LISTED ───────────────────────────
+  //
+  // Replaces the bulleted checklist that used to greet the owner (removed from
+  // hcRenderArrival, 2026-09-13). Adrian's ruling, in his own words in docs/SETTLED.md:
+  // "our ai should be smart and know okay they haven't done this they still need to. we can
+  // have an internal checklist but they don't need to feel like it's a checklist."
+  //
+  // ORDER: docs/NEXT_ASK_ORDER.md, approved as written. By what the ABSENCE COSTS THE
+  // CUSTOMER OF THE BUSINESS, not by what is most incomplete and not by what is cheapest
+  // for us — a gap matters in proportion to how close it sits to somebody deciding to hire
+  // this owner.
+  //
+  //   1 ACT       has_phone              the page is a dead end at the moment it worked
+  //   2 DECIDE    has_hours, prices      the customer must ask before they can choose
+  //   3 TRUST     own_photos             the biggest upgrade, and the most work to give
+  //   4 UNDERSTAND services_no_desc      a priced service with no line still sells
+  //
+  // Photos are DELIBERATELY third though they led the old list with the strongest copy:
+  // the highest-effort ask should not be the first one, because it spends the owner's
+  // willingness on the thing most likely to be deferred. has_priced_services is promoted —
+  // the RPC has always returned it and nothing has ever asked, and a priceless service on a
+  // live page is the defect this whole session was about.
+  //
+  // get_my_site_gaps and the discipline in its comments are UNTOUCHED. A suggestion is a
+  // promise: only ask for something whose action actually reaches the page. That governs
+  // WHICH items may be asked; this governs the order and the register.
+  var HC_GAP_ASKS = [
+    { key:'has_phone',            want:false, tier:1,
+      say:"What's the best number for customers to reach you on?" },
+    { key:'has_hours',            want:false, tier:2,
+      say:"What hours are you open?" },
+    { key:'has_priced_services',  want:false, tier:2,
+      say:"What do you charge for your services?" },
+    { key:'own_photos',           want:0,     tier:3,
+      say:"Do you have a few photos of your own work? I'll put them on your page." },
+    { key:'services_no_desc',     want:'>0',  tier:4,
+      say:"Want a line under each service saying what's included? Tell me what to say and I'll add it." }
+  ];
+  /** Which gap is outstanding, in tier order. Returns null when there is nothing to ask. */
+  function hcPickNextGap(g){
+    if(!g) return null;
+    for(var i = 0; i < HC_GAP_ASKS.length; i++){
+      var a = HC_GAP_ASKS[i], v = g[a.key];
+      if(a.want === false && v === false) return a;
+      if(a.want === 0 && Number(v) === 0) return a;
+      if(a.want === '>0' && Number(v) > 0) return a;
+    }
+    // NOTHING OUTSTANDING -> NOTHING SAID. Asserted, because this is the rule most likely to
+    // be quietly violated later: the temptation when the list comes back empty is to reach
+    // for a weaker item so there is something to say. There is no fallback here and there
+    // must never be one. The list ends at four and does not wrap around. Silence is the
+    // correct output and it is a feature (prohibition 6 guards the opposite case — a state
+    // change that happened and was not reported — not this one, where nothing happened).
+    return null;
+  }
+  /**
+   * ONCE PER SESSION, AFTER THE OWNER'S FIRST MESSAGE — ruled (a), 2026-09-13.
+   *
+   * Not in the greeting: the owner has not told us anything yet, so asking there is asking
+   * before we have listened, and an ask that arrives as a greeting is still a ritual.
+   *
+   * (b), the intended END STATE, is a CONTEXTUAL trigger — the owner mentions a service,
+   * Hubly notices that service has no price, and asks then. It reads as listening and it is
+   * deferred rather than abandoned. WHAT WOULD HAVE TO EXIST FOR IT TO BE JUDGEABLE: a
+   * definition of "relevant" that is checkable (which turn kinds, matched how), and a
+   * COUNTER for how often it fires — because an undefined trigger fails quiet, and a thing
+   * that never fires looks exactly like a thing that works. Build (b) only when the miss is
+   * countable, the same condition every other silent path here has had to meet.
+   */
+  async function hcMaybeAskNextGap(){
+    try{
+      if(hc._gapAsked) return;                                    // once per session
+      var biz = hc.draftBusiness;
+      if(!biz || !biz.id || !hc.draftClaimed || !hcIsAuthed()) return;
+      // RE-READ FIRST. A fact given in passing in the very message that triggered this must
+      // remove the ask, not be asked for again — asking for what they just told us is the
+      // worst version of not listening, and it is the whole reason this reads the record
+      // instead of a value captured earlier in the turn.
+      var c = await authGetClient();
+      var r = await c.rpc('get_my_site_gaps', { p_business_id: biz.id });
+      var gap = hcPickNextGap(r && r.data);
+      if(!gap) return;
+      hc._gapAsked = true;
+      hcAppendMessage('hubly', gap.say);
+      hcThreadScrollToEnd();
+    }catch(e){ /* an ask that cannot be composed is not said */ }
+  }
+
   // ── WHOSE PLACE THIS IS ───────────────────────────────────────────────────────
   //
   // The screen read as a chatroom because nothing on it said whose business it was.
@@ -5870,50 +5982,21 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       seeBtn.addEventListener('click', function(){ try{ seeWrap.remove(); }catch(_){} hcRenderTranscript(); });
       seeWrap.appendChild(seeBtn); thread.appendChild(seeWrap);
     }
-    // What the site still needs — real empty fields only. Never invents a line.
-    try{
-      if(biz.id && hc.draftClaimed){
-        var c = await authGetClient();
-        var r = await c.rpc('get_my_site_gaps', { p_business_id: biz.id });
-        var g = r && r.data;
-        if(g){
-          // A SUGGESTION IS A PROMISE — only offer the ones whose action actually reaches the
-          // page. Hours and contact now HAVE a freeform placement path (the Contact & Hours
-          // block: stated by talking -> extracted -> placed by anchor, inserted when absent,
-          // countable, read back — verified 23/24 on pages built without hours, 2026-08-31).
-          // So "Set your hours" and "Add a phone number" are re-enabled. When the page already
-          // shows a schedule we can't safely anchor, the record still saves and Hubly says so
-          // honestly (the consent-to-replace offer is designed-but-unbuilt — OPEN_FINDINGS #9).
-          var needs = [];
-          if(!g.own_photos) needs.push({ text:'Add photos of your own work', why:'the site is showing stock photos right now, and your real work is the biggest upgrade', start:'I want to add photos of my own work.' });
-          // "SET YOUR HOURS" IS BACK, and only because the writer exists now.
-          // It was removed on 2026-09-08 after being clicked on a real business: the
-          // reply was "I can't add opening hours as a real business field yet." A
-          // suggestion is a promise, and it came back when an action wrote hours, not
-          // before — business.setHours, which writes settings_business_hours AND
-          // businesses.meta.hours (the shape a classic page actually renders from).
-          if(!g.has_hours) needs.push({ text:'Set your opening hours', why:'customers check before they call', start:'I want to set my opening hours.' });
-          // "Set your hours" REMOVED 2026-09-08. Clicked it on a real business: the reply is
-          // "I can't add opening hours as a real business field yet." set_business_hours_in_progress
-          // exists as an RPC with two call sites, but NO capability action writes hours, so the
-          // suggestion offered an owner a fix he cannot make — the exact pattern removed from the
-          // Design panel this morning, reappearing in the panel that replaced it.
-          //
-          // A suggestion is a promise. It comes back when an action writes hours, not before.
-          // Filed as a missing door in docs/CHECKER_LESSONS.md lesson 8.
-          if(!g.has_phone) needs.push({ text:'Add a phone number', why:'it is the fastest way for a customer to reach you', start:'I want to add my phone number.' });
-          if(g.services_no_desc > 0) needs.push({ text:'Write descriptions for your services', why:'', start:'Write short descriptions for my services.' });
-          if(needs.length){
-            hcAppendMessage('hubly', 'A few things would make your page stronger:');
-            needs.forEach(function(n){
-              var m = hcAppendMessage('hubly', '• ' + n.text + (n.why ? (' — ' + n.why + '.') : ''));
-              hcAttachMessageAction(m, n.text, function(){ var inp = document.getElementById('hcInput'); if(inp){ inp.value = n.start; hcSend(inp); } });
-            });
-          }
-          // No gaps -> say nothing more. Silence is a feature.
-        }
-      }
-    }catch(e){}
+    // THE CHECKLIST IS NOT SHOWN AS A CHECKLIST — ruled 2026-09-13, Adrian's own words in
+    // docs/SETTLED.md: "our ai should be smart and know okay they haven't done this they
+    // still need to. we can have an internal checklist but they don't need to feel like it's
+    // a checklist."
+    //
+    // What stood here emitted "A few things would make your page stronger:" and then one
+    // '• ' message per gap with a button attached — the internal checklist, rendered as a
+    // checklist, in the greeting. It is gone. `get_my_site_gaps` is UNTOUCHED and so is the
+    // discipline in its comments (a suggestion is a promise: only ask for something whose
+    // action actually reaches the page). That governs WHICH items may be asked for; the
+    // ordering and the register are docs/NEXT_ASK_ORDER.md, and the asking happens in
+    // hcMaybeAskNextGap() — once per session, AFTER the owner's first message, never here.
+    //
+    // WHY NOT HERE: the owner has not told us anything yet, so asking in the greeting is
+    // asking before we have listened. An ask that arrives as a greeting is still a ritual.
     hcThreadScrollToEnd();
   }
   // The full thread, on demand (from the silently-loaded context) — reachable, not dumped.

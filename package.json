@@ -71,6 +71,7 @@
     "check:destructive-confirm": "node scripts/check-destructive-confirm.mjs",
     "check:classic-claim": "node scripts/check-classic-claim.mjs",
     "check:dup-ids": "node scripts/check-no-duplicate-ids.mjs",
+    "check:one-ask": "node scripts/check-one-ask-not-a-list.mjs",
     "check:draft-token": "node scripts/check-draft-token-truthiness.mjs",
     "check:home-promises": "node scripts/check-home-promises.mjs",
     "shot:owner-home": "node scripts/shot-owner-home.mjs",

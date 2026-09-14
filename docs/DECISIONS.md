@@ -551,3 +551,21 @@ clean harness:** which of the two it was.
   surface for fields it should never set unasked.
 - **Recommended scope if built:** the 17 inline text labels only. FAQ items and reviews are
   arrays with add/remove semantics and belong with the manual `+`.
+
+## D-048 — The ask fires once per session, after the owner's first message
+
+- **Ruled (a)** by Adrian. His reasons, recorded because the alternative was the better idea:
+  an ask that arrives as a greeting is still a ritual, and the owner has not told us anything
+  yet, so we would be asking before we have listened. **"(b) is better in principle and worse
+  in practice: 'contextually relevant' has no definition here, and an undefined trigger fails
+  quiet. A thing that never fires looks exactly like a thing that works."**
+- **(b) is deferred, not abandoned, with its condition written beside it** (docs/NEXT_ASK_ORDER.md):
+  it becomes judgeable when "relevant" is a checkable predicate and the MISS is countable —
+  the same bar every other silent path here has had to clear.
+- **Built:** `hcPickNextGap` / `hcMaybeAskNextGap`, riding the account offer's own floor
+  predicate rather than a second opinion about what "clear" means. The greeting's checklist
+  block is deleted. `get_my_site_gaps` and the discipline in its comments are untouched.
+- **Asserted:** `npm run check:one-ask` — no bullets, one ask, no fallback — each leg
+  red-proofed. The third leg exists because Adrian named it as the rule most likely to be
+  violated quietly: reaching for a weaker item when nothing is outstanding reads like
+  helpfulness, and nothing fails.
