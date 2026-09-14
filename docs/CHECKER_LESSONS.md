@@ -2191,3 +2191,51 @@ Two corollaries earned the hard way tonight:
   The first in-memory id strip "failed" and the second one, held by a `MutationObserver`, also
   failed — but only the second one was worth reporting, and the difference was not knowable
   without checking.
+
+## Lesson 69 — Receipts prove what you READ. Nothing yet proves what you WROTE (2026-09-13)
+
+Every check in this repo prints a read receipt — path, bytes, sha256 — because a number you
+cannot trace is not evidence. **There is no equivalent for a write.** A write that is accepted
+and not performed reads exactly like a write that was refused, and every conclusion drawn
+through that channel inherits the error silently.
+
+It happened twice tonight, in the same hour, through the same channel.
+
+**First, the false negative.** `document.scrollingElement.scrollTop = 600` on Graef's page,
+read back synchronously: still 0. I concluded the evaluation context could not scroll and
+re-took every scroll measurement with real wheel and mouse input. Sound instinct, wrong
+diagnosis.
+
+**Then the control, which was right and also misread.** The same write on Wikipedia, same
+context: applies immediately. So it was not the context — it was his page. Also wrong.
+
+**The actual mechanism, caught by a single line in a later dump:**
+
+```
+before: 616   targetDocTop: 581   immediately: 616   afterRawWrite: 616   after900: 1200
+```
+
+`afterRawWrite` is the synchronous read after `scrollTop = 1200`, and it is the OLD value.
+`after900` is the same property 900ms later, and it is **1200**. The write was never refused.
+`html { scroll-behavior: smooth }` — which that page sets and Wikipedia does not — makes a
+`scrollTop` assignment an *animation*, so the synchronous read-back is guaranteed to return
+the pre-write value. I had been reading the start of an animation and calling it a refusal.
+
+**Three rules follow, and they are the write-side of the read-receipt rule:**
+
+1. **Never confirm a write by reading it back in the same tick.** Any property that can be
+   animated, deferred, batched or coalesced will lie to a synchronous read. Poll until stable,
+   or wait for the event the platform gives you (`scrollend`, `transitionend`, a mutation).
+2. **A write needs a receipt too: the value you asked for, the value you read, and WHEN you
+   read it.** "It did not apply" without a timestamp is not a finding. Had I printed
+   `t=0ms` beside every one of those zeros, the shape would have been obvious on the first pass.
+3. **Prove the instrument on a known-good target before trusting a null result.** I did that —
+   Wikipedia — and it produced a *second* wrong conclusion, because the control differed from
+   the subject in the one property that mattered. **A control is only a control if it differs
+   in the variable under test and nothing else.** Wikipedia does not set `scroll-behavior:
+   smooth`; that single difference turned a valid instrument check into a false localisation.
+
+Sits beside Lesson 68: that one says test the fix in the running product, this one says make
+sure the thing you are reading is telling you the truth about what you did. Two theories died
+last night to Lesson 68. A third died to this one — and unlike the others, this one killed my
+own measurements rather than my hypothesis.

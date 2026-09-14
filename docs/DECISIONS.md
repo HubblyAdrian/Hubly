@@ -391,3 +391,30 @@ listed as such** — that absence is itself a finding, not an oversight to be pa
   45,267 bytes of the owner's editor preview into every public visitor's document. It is waste
   today and one day it will carry something that should not leave the editor.
 - **This does not fix the dead nav**, and the code comment says so where someone will find it.
+
+## D-038 — The inner-scroller hypothesis, killed by measurement
+
+- **Adrian's hypothesis, 2026-09-13, in his words:** *"The page almost certainly doesn't scroll
+  the document — it scrolls an inner container with a fixed height."* It fit every observation:
+  the wheel works, `window.scrollY` never changes, nothing intercepts the click, no `scrollTo`
+  fires. He named the measurement that would settle it and asked for it to be taken rather than
+  assumed.
+- **Disconfirmed.** Walking up from `#ws-sec-services` on his live page: no ancestor has
+  `overflow-y: auto|scroll`; a document-wide sweep for any scroller taller than 200px returns
+  zero; `document.scrollingElement` is `html`, `scrollHeight 7238` vs `clientHeight 848`; and a
+  real wheel moves **that** element, 0 → 400. There is no inner container.
+- **Adrian's own instruction on being wrong:** *"My hypothesis was wrong and you killed it with
+  measurement — say so in the record with my name on it."* Recorded. Third theory of the night
+  to die this way; the first two were mine.
+
+## D-039 — Tests 1 and 3 are INVALID and must be re-run
+
+- Both concluded "the element is unreachable, the navigation is innocent" from a **synchronous
+  read-back of a scroll write** — and `html { scroll-behavior: smooth }` makes that read
+  structurally incapable of showing the new value. See Lesson 69.
+- The evidence that caught it, from the same page: `afterRawWrite: 616` (synchronous) and
+  `after900: 1200` (the same property, 900ms later). The write applied. Every "it did not
+  apply" reading in this session has the same defect.
+- **Nothing is concluded about Graef's nav from those two tests.** They are re-runs, not
+  results. Test 2 stands: the wheel works before and after a hash change, so nothing locks the
+  document.
