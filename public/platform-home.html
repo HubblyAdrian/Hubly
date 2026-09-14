@@ -666,6 +666,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   padding:6px 12px;border-radius:999px;cursor:pointer;white-space:nowrap}
 #hcDesignBtn:hover{border-color:var(--brand-600,#D9632D)}
 .hc-app.hc-claimed #hcDesignBtn{display:inline-flex}
+/* A PANEL THAT CANNOT ACT IS NOT SHOWN AT ALL. On a CLASSIC business
+   readOwnerDesignKnobs returns no_document, so the panel opens onto
+   "There's no page to change yet" and three sentences of apology — worse
+   than no button. [hidden] has to beat the rule above, same as
+   .hc-panel-back[hidden]. */
+#hcDesignBtn[hidden]{display:none!important}
 /* Ambient links — quieter than the two editing controls beside them, because they leave
    the editor rather than doing something in it. Still real buttons, still always there. */
 #hcUndoBtn{display:none;align-items:center;border:0;background:none;font:inherit;font-size:12.5px;
@@ -1977,7 +1983,26 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var mng = document.getElementById('hcManageBtn');
     if(mng) mng.addEventListener('click', hcOpenManage);
     var dsg = document.getElementById('hcDesignBtn');
-    if(dsg) dsg.addEventListener('click', hcOpenDesign);
+    if(dsg){
+      dsg.addEventListener('click', hcOpenDesign);
+      // SHOWN ONLY WHERE IT CAN CHANGE SOMETHING — ruled 2026-09-13 after Adrian opened it
+      // on a classic business. The button was never dead (D-031: the chip was covering it);
+      // the problem is what it opens onto. The design knobs live in the stored document's
+      // own :root, so a business with no document has nothing for them to bind to, and
+      // readOwnerDesignKnobs answers `no_document`. The panel then renders an empty state
+      // and a note that says, in one breath, "I can't restyle this page from here", "I can't
+      // change the page text from here", and "your live site is unchanged" — three apologies
+      // where a control should be. A door that opens onto a wall is worse than no door.
+      //
+      // GATED ON THE SAME ANSWER THE SERVER GIVES, not a second opinion: hc.hasDocument ===
+      // false is exactly the condition readOwnerDesignKnobs turns into `no_document`, and it
+      // is the same flag hcBust already uses to decide whether editing is offered at all.
+      // UNKNOWN (null) SHOWS THE BUTTON — this removes a wall, it must not invent a lockout
+      // (the same reasoning, in the same words, as the hcBust gate above).
+      //
+      // Freeform owners keep the feature untouched.
+      dsg.hidden = (hc.hasDocument === false);
+    }
     var liveUrl = String((hc.draftBusiness && hc.draftBusiness.url) || '');
     if(liveUrl && !/^https?:\/\//i.test(liveUrl)) liveUrl = 'https://' + liveUrl;
     var und = document.getElementById('hcUndoBtn');

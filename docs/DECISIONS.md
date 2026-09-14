@@ -469,3 +469,35 @@ clean harness:** which of the two it was.
   neither number may be quoted again until re-taken.
 - `check-walk-assertions.mjs` now settles — stable for 400ms, 4s ceiling — and carries a comment
   saying why the old numbers cannot be reused. See Lesson 70.
+
+## D-043 — Design opens. Item 4 was a symptom of item 3, and the delete ruling stays withdrawn
+
+- **Adrian clicked it: it opens.** The chip was covering it, exactly as hypothesised in D-031.
+  **Item 4 closes as a symptom of item 3** (D-032, the canvas bar raised above the fixed header).
+  The button was never dead, and the ruling to delete it **remains withdrawn**.
+- **But it is now hidden where it can offer nothing.** On a classic business
+  `readOwnerDesignKnobs` returns `no_document`, so the panel opened onto "There's no page to
+  change yet" and a note that says, in one breath, *"I can't restyle this page from here"*,
+  *"I can't change the page text from here"* and *"your live site is unchanged"* — three
+  apologies where a control should be. **A panel that cannot act is not shown; if it is shown,
+  it shows controls.** Gated on `hc.hasDocument === false`, the same flag `hcBust` uses and the
+  same condition the server turns into `no_document`. Unknown (`null`) still shows the button —
+  this removes a wall, it must not invent a lockout.
+- Freeform owners are untouched.
+
+## D-044 — The "things that would make your page stronger" list is CLIENT-composed, and it predates the ruling
+
+- **Established, not changed** — Adrian wants to see how it is generated before deciding.
+- **It is a renderer problem, not a prompt problem.** `platform-home.html:5833-5870`, inside the
+  arrival render. `get_my_site_gaps(p_business_id)` returns `own_photos`, `has_hours`,
+  `has_phone`, `services_no_desc`; the client builds a `needs[]` array and emits
+  `'A few things would make your page stronger:'` followed by **one `'• ' + text` message per
+  gap**, each with an attached button. Every string is a literal in `public/`. **A prompt edit
+  would change nothing** — the rule about confirming who is speaking before editing a prompt.
+- **Why it exists:** it predates the checklist ruling in SETTLED. Its comments show it was built
+  around a different and good rule — *"a suggestion is a promise, only offer the ones whose
+  action actually reaches the page"* — and each line was added or removed as capabilities
+  appeared ("Set your hours" was pulled on 2026-09-08 when it was a false promise, and restored
+  when `setHours` shipped). The discipline went into **which** items appear. Nobody asked
+  whether they should appear **as a list**, which is what Adrian ruled: an internal checklist,
+  surfaced one thing at a time, naturally.

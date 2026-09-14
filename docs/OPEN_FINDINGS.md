@@ -1,5 +1,34 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## TOP OF THE RECORD (2026-09-13) — the paying customer cannot change the words on his own website
+
+Established read-only, from the code, with the full surface table in
+[docs/TEXT_EDIT_SURFACES.md](TEXT_EDIT_SURFACES.md). Adrian, signed in as the owner:
+*"nothing text-wise is changeable."* He is right, and there are three separate reasons.
+
+1. **"That's edited in Edit details" is false.** `hcClassicScopeLine()` sends the owner to
+   Edit details for page text. Edit details (`hcOpenManage`) edits **contact, hours and
+   services** — `OwnerRecordEdit`'s kinds are exactly `contact | hours | service | design`.
+   **It has no page-text field of any kind.** Hubly names a real surface and misdescribes it.
+
+2. **The classic canvas editor is switched off by a premise that is false.**
+   `hcBust()` (`platform-home.html:2168`) sets
+   `editable = hc.draftClaimed && hcIsAuthed() && hc.hasDocument !== false`, commented
+   *"the CLASSIC archetype path: the inline editor has nowhere to write."* It does have
+   somewhere to write: `hcInlineEdit` → `directEdit` → `updateDraft` writes
+   `websiteMeta.heroHeadline` / `heroSub` with `customHeroHeadline` through
+   `patch_business_in_progress(p_website_meta)` — **into `meta.website`, the store the classic
+   renderer reads.** Two working fields, gated off by an assumption. Missing-door class.
+
+3. **The only complete text editor for a classic page has no door.** `/dashboard` → the Site
+   editor (`#v-editor`, `saveStorefront`) edits headline, section titles, service descriptions,
+   about, FAQ — all into `meta.website`. `HUBLY_PATH_TO_PAGE` maps the route; **nothing in
+   `platform-home.html` links to it.** An owner who has not been told the URL cannot get there.
+
+**Freeform owners can edit every labelled word on their page. Classic owners can edit none of
+them from anywhere they have been shown, and Graef is classic.** Nothing has been built for
+this — established only, at Adrian's instruction.
+
 ## TOP OF THE RECORD — we were repainting the owner's own buttons on 24 pages (2026-09-12)
 
 **The largest correction of the day, and it was never a reported bug.** The CTA contrast
