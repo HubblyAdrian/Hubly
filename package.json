@@ -109,7 +109,8 @@
     "check:surface": "node scripts/check-conversation-is-the-surface.mjs",
     "measure:squeeze": "node scripts/measure-squeeze.mjs",
     "check:squeezed": "node scripts/check-nothing-squeezed.mjs",
-    "check:machine-words": "node scripts/check-no-machine-words.mjs"
+    "check:machine-words": "node scripts/check-no-machine-words.mjs",
+    "check:tick": "node scripts/check-tick-never-lies.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

@@ -551,6 +551,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
    or it truncates, and it never splits a word. */
 /* THE WEEK GRID — screen 2. A calm grid, not a dashboard: a day row, its date, and whatever is
    actually in it. No colour blocks, no density, nothing per-day that is not a real row. */
+/* The tick. A real checkbox — it is a control an owner presses, not a glyph we draw. */
+.hc-tick{width:18px;height:18px;flex:0 0 auto;margin:0 2px 0 0;cursor:pointer;accent-color:var(--brand-600,#2f5d45)}
+.hc-tick:disabled{opacity:.5;cursor:progress}
+.hc-row.is-done .hc-row-t{text-decoration:line-through;opacity:.55}
 .hc-week{display:block;max-width:640px;padding:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel,#fff)}
 .hc-week-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
 .hc-week-lbl{font-weight:700;font-size:14px}
@@ -4781,14 +4785,43 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
    * only when this set says a surface exists. Each surface that ships adds one entry
    * here and its already-earned rows light up for every business at once. No second
    * migration, no re-derivation, and no window where a tab leads nowhere. */
+  // ══ THE RAIL IS FOUR THINGS: Home · My Day · Website · and the gear. ═════════════════
+  //
+  // RULED 2026-09-15 against docs/design/my-day-2026-09-15-approved.png.
+  //
+  // 1. PLANNER IS CALLED MY DAY. docs/MY_DAY.md §1 is explicit — the word "Planner" may not
+  //    appear anywhere an owner can read it. The internal id stays `planner` (it is in
+  //    business_places rows, in HC_ROOMS, in the URL hash and in hcOpenWorkspace); a word an
+  //    owner reads may not.
+  //
+  // 2. SETTINGS STAYS THE GEAR at the bottom. It is not promoted to a rail row.
+  //
+  // 3. JOBS AND CUSTOMERS COME OUT OF THE RAIL. Progressive navigation: a capability appears
+  //    when the owner ENTERS it, never because a table holds rows.
+  //
+  //    AND THE SECOND HALF OF THAT RULING IS THE IMPORTANT ONE — REMOVING THEM MUST NOT STRAND
+  //    THEM. They are not gone, they are not-yet-earned:
+  //      · asking reaches them today — HC_THREAD_VIEWS has `jobs` and `customers`, and
+  //        business.showMe renders either one in the conversation;
+  //      · the CARDS reach them — the schedule and customers cards call hcShowInThread;
+  //      · and they come BACK to the rail by the mechanism already approved in screens 2 and 3:
+  //        the owner asks, Hubly renders it inline, offers "Want me to keep this as a tab in
+  //        your sidebar?", and on yes adds it and announces it reversibly (hcOfferSidebarTab).
+  //    A business that has ALREADY earned `jobs` or `customers` keeps them: hcWorkspaces reads
+  //    business_places, and this map only decides what a place is CALLED and whether a surface
+  //    exists for it — so Graef, who holds all four rows, loses nothing.
   var HC_PLACE_SURFACES = {
     website:   { label:'Website',   icon:HC_RAIL_ICONS.website },
-    planner:   { label:'Planner',   icon:HC_RAIL_ICONS.planner },
+    planner:   { label:'My Day',    icon:HC_RAIL_ICONS.planner },
     jobs:      { label:'Jobs',      icon:HC_RAIL_ICONS.jobs },
     customers: { label:'Customers', icon:HC_RAIL_ICONS.customers },
     // leads — pending: the unbooked-lead list
     // store — pending: the storefront workspace
   };
+  /** WHICH PLACES A NEW BUSINESS IS OFFERED IN THE RAIL BY DEFAULT. Everything else is reached
+   *  by asking and earns its row through the screen-2 offer. Jobs and Customers are deliberately
+   *  absent — they are thread views until the owner says otherwise. */
+  var HC_RAIL_DEFAULT = { website: true, planner: true };
   function hcWorkspaces(){
     var ws = [];
     var biz = hc.draftBusiness;
@@ -4798,7 +4831,17 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // business the backfill never reached is survivable. It is decided per business:
     // hc.places is loaded per slug, so one business's rows never speak for another's.
     if(!hcPlacesKnown()){
+      // FAIL OPEN TO THE DEFAULT RAIL, NOT TO EVERYTHING.
+      //
+      // This used to push every surface in HC_PLACE_SURFACES, so a business whose places rows
+      // could not be read showed Jobs and Customers in the rail — the exact thing progressive
+      // navigation forbids, arriving through the safe-direction branch. "Fail open" still means
+      // "show what a new business is offered"; it does not mean "show all of it".
+      //
+      // Nothing is stranded: both are reachable by asking (HC_THREAD_VIEWS + business.showMe),
+      // both have a card, and both earn a rail row through the screen-2 offer.
       Object.keys(HC_PLACE_SURFACES).forEach(function(kind){
+        if(!HC_RAIL_DEFAULT[kind]) return;
         var s = HC_PLACE_SURFACES[kind];
         ws.push({ id:kind, label:s.label, icon:s.icon });
       });
@@ -5703,7 +5746,76 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // The task panel joins the other declared seams (hublyJobUI, hublyDayUI) so a check can drive
   // THE PRODUCT'S panel with simulated task DATA — the alternative was a leg that reported it
   // could not measure and passed nothing, which is honest but useless.
-  try{ window.hublyTaskUI = { panel: hcTaskPanel }; }catch(e){}
+  // ══ THE CHECKBOX — THE FIRST WIRE, AND A TICK MAY NOT LIE ═════════════════════════════
+  //
+  // Adrian, 2026-09-15: "A day you cannot tick is a report." `set_task_status` was written on
+  // 2026-09-09, tested by its own migration, and called by NOTHING — the seventh instance of
+  // built-and-doorless, and this one is inside the screen the whole feature is named after.
+  //
+  // OPTIMISTIC, THEN HONEST. The tick goes on immediately because a checkbox that waits for a
+  // round trip feels broken. But the write is real, it is READ BACK, and IF IT FAILS THE TICK
+  // COMES BACK OFF AND SAYS SO. A tick that stays on over a failed write is prohibition 2 in its
+  // purest form — a green the surface never earned, on the one control whose entire meaning is
+  // "this is done".
+  //
+  // The read-back is the row's own status from the table, not the RPC's ok — the writer's word
+  // is not the record (prohibition 3), the same rule hcAddDayTask and hcEditDayJob already hold.
+  async function hcSetTaskDone(taskId, done){
+    if(!taskId) return { ok:false, error:'no_task' };
+    try{
+      var uid = await hcOwnerUid();
+      if(!uid) return { ok:false, error:'not_signed_in' };
+      var c = await authGetClient();
+      var want = done ? 'done' : 'open';
+      var r = await c.rpc('set_task_status', { p_task_id: taskId, p_owner_id: uid, p_status: want });
+      if(r && r.error) return { ok:false, error:'rpc_failed' };
+      var v = r && r.data;
+      if(!v || v.ok !== true) return { ok:false, error:(v && v.error) || 'refused' };
+      // READ IT BACK from the table, as its own question.
+      var back = await c.from('tasks').select('id,status,done_at').eq('id', taskId).maybeSingle();
+      var got = back && back.data;
+      if(!got) return { ok:false, error:'not_readable_back' };
+      if(String(got.status) !== want) return { ok:false, error:'did_not_take', status: got.status };
+      return { ok:true, status: got.status };
+    }catch(e){ return { ok:false, error:'threw' }; }
+  }
+  /** What the owner is told when a tick does not take. Pure, so a check runs it (Lesson 83).
+   *  Silence is not an option here — the box moved under their finger and moved back. */
+  function hcTaskTickLine(res){
+    if(!res) return 'I couldn\u2019t tell whether that saved, so I\u2019ve put it back.';
+    if(res.ok) return '';                                     // success is the tick itself
+    if(res.error === 'not_signed_in') return 'You\u2019re signed out, so I couldn\u2019t save that.';
+    if(res.error === 'not_owner') return 'That isn\u2019t on a business you own, so nothing changed.';
+    if(res.error === 'not_readable_back') return 'I saved that but couldn\u2019t read it back, so I can\u2019t promise it stuck.';
+    if(res.error === 'did_not_take') return 'That didn\u2019t save \u2014 it\u2019s still open.';
+    return 'I couldn\u2019t save that just now, so I\u2019ve put it back.';
+  }
+  /** The control itself: an optimistic tick bound to a real write, which reverts on failure. */
+  function hcTaskCheckbox(task, onChanged){
+    var box = document.createElement('input');
+    box.type = 'checkbox';
+    box.className = 'hc-tick';
+    box.checked = String(task.status) === 'done';
+    box.setAttribute('data-hc-tick', String(task.id));
+    box.setAttribute('aria-label', (String(task.status) === 'done' ? 'Mark not done: ' : 'Mark done: ') + (task.title || 'task'));
+    box.addEventListener('click', function(ev){ ev.stopPropagation(); });   // the row opens a panel
+    box.addEventListener('change', async function(){
+      var want = box.checked;
+      box.disabled = true;
+      var res = await hcSetTaskDone(task.id, want);
+      box.disabled = false;
+      if(res.ok){
+        task.status = res.status;
+        if(typeof onChanged === 'function') onChanged(res.status);
+        return;
+      }
+      box.checked = !want;                                     // THE TICK COMES BACK OFF
+      var line = hcTaskTickLine(res);
+      if(line) hcAppendMessage('hubly', line);
+    });
+    return box;
+  }
+  try{ window.hublyTaskUI = { panel: hcTaskPanel, tick: hcTaskCheckbox, set: hcSetTaskDone, line: hcTaskTickLine }; }catch(e){}
 
   /** The add row: a time, a thing, and where it is. Always present, in every state. */
   function hcDayAddRow(room, biz){
@@ -5852,7 +5964,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       g2.textContent = 'To do';
       room.appendChild(g2);
       openTasks.forEach(function(t){
-        room.appendChild(hcRoomRow({
+        var _row = hcRoomRow({
           when: t.due_time ? (hcTimeUS(t.due_time) || hcHm(t.due_time)) : (t.band ? t.band : '—'),
           title: t.title,
           sub: [ hcLaneLabel(t.lane),
@@ -5863,7 +5975,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
                  (!t.due_date ? 'no day set' : null)
                ].filter(Boolean).join(' · '),
           onOpen: function(){ hcTaskPanel(t); }
-        }));
+        });
+        // THE TICK GOES FIRST IN THE ROW, as the design draws it: checkbox · time · title.
+        try{ _row.insertBefore(hcTaskCheckbox(t, function(st){ _row.classList.toggle('is-done', st === 'done'); }), _row.firstChild); }catch(e){}
+        room.appendChild(_row);
       });
     }
     canvas.appendChild(room);
@@ -8098,7 +8213,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // — desktop does not get to show empty rooms just because it has the space), and it will not
   // name a control. It moves, then reads the room BACK and says what is actually in it.
   var HC_GO_PLACES = {
-    planner:   { say: 'schedule',  what: 'day' },
+    planner:   { say: 'day',       what: 'day' },
     jobs:      { say: 'jobs',      what: 'jobs' },
     customers: { say: 'customers', what: 'customers' },
     website:   { say: 'website',   what: 'website' }

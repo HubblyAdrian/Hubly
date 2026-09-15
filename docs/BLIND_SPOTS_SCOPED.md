@@ -23,7 +23,12 @@ ambiguity that made Graef's report unresolvable from the database.
 **The cheapest honest record.** Not a new table and not telemetry infrastructure:
 
 > **Write the intent row FIRST, at press, with `status='attempting'`, and let the success path
-> flip it.** The abandonment path already does something very close — `writeAbandonedBookingRequest`
+> flip it.**
+>
+> **RULED 2026-09-15: THE REPLY KEYS OFF THE FINAL STATUS, NEVER THE INTENT.** An `attempting`
+> row that speaks as though it succeeded is an unearned green **with a customer attached** — the
+> worst version of prohibition 2 in this product, because the person it misleads is not the owner
+> and will arrive expecting a service. The abandonment path already does something very close — `writeAbandonedBookingRequest`
 > exists and turns an abandoned booking into a lead. A press that never reaches `pending` then
 > leaves an `attempting` row, and the count of those is the number nobody can currently see.
 
@@ -60,9 +65,26 @@ reproducing it. Given this session has now spent three separate rounds on exactl
 that is the whole argument.
 
 **What it costs that matters:** it is a row per turn, forever, and it will hold fragments of what
-was shown. It needs the same retention treatment `purge_first_turn_text` and
-`purge_old_visitor_messages` already have — **and adding it without a purge would be the third
-table we grow without one.**
+was shown.
+
+**RULED 2026-09-15: THE PURGE SHIPS IN THE SAME MIGRATION THAT CREATES THE TABLE.** Not a
+follow-up, not a ticket — the same file, with its `cron.schedule` beside it, the way
+`20260910000000_first_turn_outcomes.sql` and `20260908210000_visitor_conversation_retention.sql`
+already do it.
+
+**And the two that grow without one, named so the pattern is visible rather than asserted:**
+
+| table | purge |
+|---|---|
+| `model_calls` | **yes** — `purge_model_calls`, daily at 04:41 |
+| `placement_outcomes` | **yes** — `purge_placement_outcomes`, daily at 04:52 |
+| `first_turn_*` text | **yes** — `purge_first_turn_text` |
+| visitor messages | **yes** — `purge_old_visitor_messages`, daily at 04:17 |
+| **`business_conversations`** | **NO.** 482 rows today, and it holds everything an owner has ever typed. Growing forever by design, and the conversation-identity migration is about to make it the backbone of saved chats. |
+| **`business_events`** | **NO.** The event feed Home renders from. |
+
+So a turn-outcome table without a purge would be the **third**. Two of the five purges above were
+added by the same kind of ruling; these two were not, and neither has been revisited.
 
 ## 3. Proving ONE Google Calendar connection — the swamp, before any work
 
