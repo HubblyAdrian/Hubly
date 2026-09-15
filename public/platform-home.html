@@ -519,7 +519,18 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
 /* ── THE FOUR ACTION CARDS. Permanent furniture. Counts appear on a card only once
    there is something to count — never a zero, because "0 jobs today" is a worse
    sentence than no sentence. */
-.hc-acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:none;background:transparent;border:0;padding:0;box-shadow:none}
+/* ══ NOTHING IN HUBLY RENDERS SQUEEZED ══════════════════════════════════════════════════
+   Adrian, 2026-09-15: "the check my sales edit my website things on this view are too squeezed
+   … we should not have squeezed things like that, it doesn't look good." A standing rule, not a
+   fix for two cards: at every width a surface can reach, text does not break inside a word,
+   labels do not crush, and nothing clips. A thing that cannot be shown properly CHANGES SHAPE.
+
+   TWO COLUMNS WAS THE CRUSH. `repeat(2, minmax(0,1fr))` is two columns at ANY width, so in the
+   380px pane each card was 168px and each label box 84px — "Check my sales" over two lines, and
+   mid-word breaking the moment anything narrowed it further (measured: words break from ~345px,
+   seven of them by 260px). auto-fit with a real minimum makes the row STACK instead: one
+   full-width card, one line of label. */
+.hc-acts{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;max-width:none;background:transparent;border:0;padding:0;box-shadow:none}
 .hc-act{display:flex;align-items:center;gap:12px;text-align:left;padding:15px 16px;border:1px solid var(--line);
   border-radius:14px;background:var(--panel,#fff);cursor:pointer;font:inherit;color:var(--ink);
   transition:border-color .15s ease,box-shadow .15s ease,transform .12s ease}
@@ -532,6 +543,15 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
 /* display:block is not optional here. As inline spans the count ran straight into the
    label — "View my schedule3 jobs today" — which no rect assertion notices and which is
    the first thing a person sees. */
+/* A LABEL IS NOT A MESSAGE. `.hc-msg{overflow-wrap:anywhere}` exists so a long unbreakable
+   token — a URL someone pasted — wraps inside a chat bubble instead of overflowing it. The
+   action cards, the suggestion chips and the record cards are all `.hc-msg` too, so they
+   INHERITED permission to break inside a word, and that is what produced "Chec k my sales" and
+   "Edit my webs ite". A label has no unbreakable tokens to rescue; it wraps at word boundaries
+   or it truncates, and it never splits a word. */
+.hc-act-nm,.hc-act-ct,.hc-sugg,.hc-job-card-t,.hc-job-card-s,.hc-row-t,.hc-row-s,.hc-room-group,
+.hc-idw-hi,.hc-idw-sub,.hc-chip-nm,.hc-rail-item,.hc-room-hd h2{
+  overflow-wrap:normal;word-break:normal;hyphens:none}
 .hc-act-nm{display:block;font-size:15px;font-weight:700;letter-spacing:-.01em;line-height:1.3}
 .hc-act-ct{display:block;font-size:13px;color:var(--ink-2,#5b616e);line-height:1.3}
 
@@ -8390,6 +8410,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         // FAILS OPEN, and every place looks earned. A red-proof for the earned-gate defect then
         // passes with the defect restored, which is what happened on the first attempt.
         try{ if(biz && biz.slug) hcLoadPlaces(biz.slug); }catch(e){}
+        // AND REVEAL THE SHELL, as hcEnterClaimed does. Without this #hcApp stays hidden, every
+        // pane measures 0 wide, and a layout sweep reports "0 problems" because it was looking
+        // at nothing — which is exactly what the first squeeze measurement did.
+        try{ hcRevealApp(); hcRenderRail(); if(biz && biz.hasPage){ var _a = document.getElementById('hcApp'); if(_a) _a.classList.add('hc-has-draft'); } }catch(e){}
         // Restored history, as hcLoadConversation(silent) would have left it: seq-ordered
         // {role, content}. Supplied here so the ORDERING of the thread is assertable without a
         // session — the defect being guarded is where the block lands, not how it is fetched.

@@ -106,7 +106,9 @@
     "check:job-publishes": "deno run --allow-env --allow-net --allow-read scripts/check-job-never-publishes.ts",
     "check:service-stores": "node scripts/check-service-stores-agree.mjs",
     "check:service-stores:live": "node scripts/check-service-stores-agree.mjs --live",
-    "check:surface": "node scripts/check-conversation-is-the-surface.mjs"
+    "check:surface": "node scripts/check-conversation-is-the-surface.mjs",
+    "measure:squeeze": "node scripts/measure-squeeze.mjs",
+    "check:squeezed": "node scripts/check-nothing-squeezed.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
