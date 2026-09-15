@@ -179,6 +179,33 @@ try {
       JSON.stringify(floor.after.trim()).slice(0, 140));
     say("13 and that sentence is not the envelope", !floor.after.includes('"action"'));
   }
+  // ── 5. AND THE SUPPRESSION IS COUNTABLE ───────────────────────────────────────────────
+  // A guard that keeps no record is indistinguishable from a defect that never recurred, and a
+  // real model parse failure cannot be forced in production — this table is the only way we will
+  // ever learn it happened. So the recorder firing is part of the contract, not a nicety.
+  // Salvage and silence are recorded SEPARATELY because they are different bugs: a salvage means
+  // the parser needs fixing, a silence means a person lost a turn.
+  const rec = await rig.page.evaluate((THE_STRING) => {
+    const seen = [];
+    const realFetch = window.fetch;
+    window.fetch = function (url, opts) {
+      try {
+        if (String(url).includes("record_envelope_suppression")) seen.push(JSON.parse(opts.body));
+      } catch (e) { /* ignore */ }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+    };
+    window.hublyComposer.sayable(THE_STRING);                                   // silenced
+    window.hublyComposer.sayable('{"action":"reply","message":"Added it."}');   // salvaged
+    window.hublyComposer.sayable("An ordinary sentence.");                      // nothing
+    window.fetch = realFetch;
+    return seen;
+  }, THE_STRING);
+  say("14 a silenced envelope is recorded", rec.some((r) => r.p_outcome === "silenced"), JSON.stringify(rec.map((r) => r.p_outcome)));
+  say("15 a salvaged envelope is recorded separately", rec.some((r) => r.p_outcome === "salvaged"));
+  say("16 ordinary text records nothing", rec.length === 2, `${rec.length} events for 3 calls`);
+  say("17 the raw text is never stored, only a length and a short sample",
+    rec.every((r) => typeof r.p_raw_len === "number" && String(r.p_sample || "").length <= 120));
+
 } catch (e) {
   console.error("FAIL — " + String(e.message).slice(0, 240));
   failed++;

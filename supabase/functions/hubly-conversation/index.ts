@@ -61,7 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
-import { sayableText } from "../_shared/hubly_sayable.ts";
+import { sayable, recordEnvelopeSuppression } from "../_shared/hubly_sayable.ts";
 import { composeServicesTruth, andList, type ServicesPlacementLike, type ClassicWriteLike, type ServicesOmissions } from "../_shared/hubly_owner_replies.ts";
 import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
@@ -2329,15 +2329,30 @@ Deno.serve(async (req) => {
         // So: try to SALVAGE the message from the raw text first, and if what remains still
         // looks like our own protocol, say NOTHING and let the client's no-silence floor
         // speak. A person may never be shown our wire format.
-        decision = { action: "reply", message: sayableText(rawText) };
+        const salvage = sayable(rawText);
+        // COUNTED, because we cannot force this in production and a silent guard teaches nothing.
+        // Fire-and-forget: the instrument may never delay or break the turn it is measuring.
+        void recordEnvelopeSuppression(createAdminClient(), {
+          businessId: businessId || null, surface: "hubly-conversation",
+          outcome: salvage.outcome, parsed: false, raw: rawText,
+        });
+        decision = { action: "reply", message: salvage.text };
       }
 
       // EVEN A CLEANLY PARSED ENVELOPE CAN CARRY ONE. A model that nests its own protocol inside
       // `message` produces valid JSON whose message is machine output; the guard belongs on the
       // VALUE that reaches a person, not only on the parse failure that produced it once.
+      // `parsed: true` on the record separates the two: a nested envelope is a PROMPT problem,
+      // an unparseable one is a PARSER problem, and they do not get fixed the same way.
       if (decision && typeof decision.message === "string") {
-        const m = decision.message.trim();
-        decision.message = sayableText(m);
+        const nested = sayable(decision.message.trim());
+        if (nested.outcome !== "clean") {
+          void recordEnvelopeSuppression(createAdminClient(), {
+            businessId: businessId || null, surface: "hubly-conversation",
+            outcome: nested.outcome, parsed: true, raw: decision.message,
+          });
+        }
+        decision.message = nested.text;
       }
 
       if (decision?.understanding?.patch && typeof decision.understanding.patch === "object") {

@@ -2874,11 +2874,39 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(m){
       try{
         var decoded = String(JSON.parse('"' + m[1] + '"') || '').trim();
-        if(decoded && !/"action"\s*:/.test(decoded) && !/^[\{\[]/.test(decoded)) return decoded;
+        if(decoded && !/"action"\s*:/.test(decoded) && !/^[\{\[]/.test(decoded)){
+          hcRecordEnvelopeSuppression('salvaged', t);   // the person got their sentence; the PARSER is the bug
+          return decoded;
+        }
       }catch(e){}
     }
-    try{ console.warn('[envelope] refused to say a string that parses as our own protocol'); }catch(e){}
+    hcRecordEnvelopeSuppression('silenced', t);
     return '';
+  }
+  /** COUNTED, NOT JUST LOGGED. A suppression that keeps no record is indistinguishable from a
+   *  defect that never recurred — and we cannot force a real model parse failure in production,
+   *  so this table is the only way we will ever learn that it happened. Same lesson as the
+   *  booking path having no failed-write record.
+   *
+   *  Best-effort and deliberately silent about its own failure beyond a console line: an
+   *  instrument may never delay or break the turn it is measuring. */
+  function hcRecordEnvelopeSuppression(outcome, raw){
+    try{ console.warn('[envelope] ' + outcome + ' a string that parses as our own protocol'); }catch(e){}
+    try{
+      var d = hc && hc.draftBusiness;
+      fetch(SUPA_URL + '/rest/v1/rpc/record_envelope_suppression', {
+        method: 'POST',
+        headers: { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          p_business_id: (d && d.id) || null,
+          p_surface: 'client',
+          p_outcome: outcome,
+          p_parsed: null,
+          p_raw_len: String(raw || '').length,
+          p_sample: String(raw || '').slice(0, 120)
+        })
+      }).catch(function(){});
+    }catch(e){}
   }
   /** THE DECLARED SEAM. The two composers and their predicate, so a check can RUN the shipping
    *  code rather than read it (Lesson 83). `replay` drives the real hcRenderTranscript over a
