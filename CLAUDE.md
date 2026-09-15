@@ -166,6 +166,15 @@ acts, or it says what will happen — it never gives directions to something it 
 - **Claude Code cannot verify mobile.** There is no true 390px viewport and no soft
   keyboard in this environment. Anything mobile must be checked on a real phone before
   it is called done.
+- **An alarming number is reported with what would make it wrong — stated BEFORE the number.**
+  The scepticism spent on a green check is owed to a red one. A wrong green wastes a day; a wrong
+  ALARM gets acted on — reprioritised, escalated, repeated to a customer — and the correction
+  never travels as far as the alarm did. On 2026-09-15 "nine businesses quote a price the page
+  never shows, live and customer-facing" was reported off two detectors that agreed because they
+  shared a broken formatter; the real answer was zero, and it reached a customer as fact before it
+  was corrected. One sentence would have caught it: "this holds only if the page formats the price
+  exactly as the search does." Say that sentence first, or do not report the number yet. (And when
+  two measurements agree, establish what they SHARE before calling it corroboration — Lesson 85.)
 - **Measure before fixing when a failure is unnamed.** Don't mask a bug with a fix
   before there's evidence naming which bug it is.
 - **Hubly records what it asks for and misses what it overhears — so ask.** Measured:

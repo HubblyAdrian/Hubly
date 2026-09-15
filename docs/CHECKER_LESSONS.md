@@ -2822,3 +2822,59 @@ improves the moment you start measuring it has usually been measured wrong.
 **Related and NOT the same:** Lesson 83 is a check reading the receipt instead of the goods — the
 instrument looks at the wrong object. This is the instrument CHANGING the object by looking at
 it. The first is a bad reading; the second is contamination.
+
+---
+
+## Lesson 85
+
+**TWO DETECTORS AGREEING IS NOT CORROBORATION WHEN THEY SHARE A BUG.**
+
+Measuring whether a freeform page shows the price the booking wizard quotes, two independent-
+looking tests were run over the same corpus:
+
+```
+  test A   does the page text contain  '$' || price        ->  35 of 36 say NO
+  test B   does the page text contain   price  anywhere    ->  36 of 36 say NO
+```
+
+Two tests, different questions, same answer, pointing the same way. That agreement was read as
+confirmation and reported as **"nine businesses quote a price the page never shows — live and
+customer-facing"**. It was false. The real answer is **zero of 36**.
+
+Both tests formatted the price with `to_char(price, 'FM999999990.99')`, which returns `220.`
+for a whole number — a trailing dot. Test A searched for `$220.` and test B searched for `220.`
+and neither string is on any page. **The tests did not agree because the finding was solid. They
+agreed because they shared a formatter.**
+
+Worse, test B had been written specifically to CHECK test A — test A was suspected of being the
+`$`-anchored price scan CLAUDE.md names as a recurring mistake, which it was. So the second test
+existed to catch the first one's known failure mode, and inherited a different one from the
+helper they shared. **A check written to verify another check is only worth the independence of
+the parts they do not have in common.**
+
+**THE HABIT: when two measurements agree, establish what they share before you treat agreement
+as confirmation.** Walk the stack and name it — the formatter, the normaliser, the helper, the
+query, the fixture, the corpus, the extraction step. Independent means independent all the way
+down, and two tests over one source with one formatter are one test run twice.
+
+**The cheap version**, when a full walk is not worth it: take one row and check it BY HAND,
+end to end, in the crudest way available. `select position('$220' in page_text)` on one business
+returned true in four seconds and killed the whole finding. One hand-checked row beats two
+agreeing detectors, every time.
+
+**And the tell:** if a second measurement was written to check a first, ask what it reuses. If
+the answer is "the same helper", it has not checked anything.
+
+### The reporting half of the same discipline — paid for the same day
+
+That false number went to Adrian, who passed it to a customer as fact and had to correct it.
+
+**WHEN A NUMBER IS ALARMING, SAY WHAT WOULD HAVE TO BE TRUE FOR IT TO BE WRONG — BEFORE YOU
+REPORT IT.** The scepticism we spend on a green check is owed to a red one. A green check that
+is wrong wastes a day; an alarming number that is wrong gets ACTED ON — reprioritised, escalated,
+repeated to a customer — and the correction never travels as far as the alarm did.
+
+For "nine businesses are quoting prices their pages never show", one sentence would have caught
+it: *"this depends on the price being formatted into the page exactly as we format it for the
+search; if either side formats differently the number is meaningless."* That is the whole
+failure, stated in advance, in the time it takes to write it.
