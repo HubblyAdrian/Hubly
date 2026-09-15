@@ -2846,12 +2846,70 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   function hcThreadBody(){ var b = document.getElementById('hcThreadBody'); return b || document.getElementById('hcThread'); }
   function hcThreadScrollToEnd(){ var t = document.getElementById('hcThread'); if(t) t.scrollTop = t.scrollHeight; }
 
+  /** NOTHING HUBLY SAYS MAY BE OUR OWN WIRE FORMAT.
+   *
+   *  2026-09-15, on Adrian's own claimed site, above his week grid, as a Hubly message:
+   *      {"action":"reply","message":""}
+   *  The server produced it (a parse failure handed the raw model text back as the reply) and
+   *  THIS FUNCTION PRINTED IT, because a composer that does `div.textContent = text` will render
+   *  absolutely anything it is handed. Both ends are the fix: the server no longer emits it, and
+   *  the composer no longer renders it if something else ever does. One end alone is a single
+   *  point of failure for the most embarrassing class of output we have — machine internals read
+   *  out loud to the person paying us.
+   *
+   *  Salvage, then silence. If the envelope carries a real `message`, that sentence is what the
+   *  owner was meant to hear, so say it. If it carries nothing sayable, say NOTHING and return
+   *  null — the caller never marks the turn as spoken, and hcEnsureTurnSpoke's floor speaks a
+   *  true sentence about a turn that failed. Silence here is not a silent turn; it is the
+   *  handoff to the one speaker that cannot lie about what happened.
+   *
+   *  Only Hubly's side is filtered. A person may legitimately type JSON at us, and putting words
+   *  in their mouth — or removing them — is a different and worse defect. */
+  function hcSayable(text){
+    var t = String(text == null ? '' : text).trim();
+    if(!t) return '';
+    var looksLikeOurs = /^[\{\[]/.test(t) || /"action"\s*:/.test(t) || /"capabilityAction"\s*:/.test(t);
+    if(!looksLikeOurs) return t;
+    var m = /"message"\s*:\s*"((?:[^"\\]|\\.)*)"/.exec(t);
+    if(m){
+      try{
+        var decoded = String(JSON.parse('"' + m[1] + '"') || '').trim();
+        if(decoded && !/"action"\s*:/.test(decoded) && !/^[\{\[]/.test(decoded)) return decoded;
+      }catch(e){}
+    }
+    try{ console.warn('[envelope] refused to say a string that parses as our own protocol'); }catch(e){}
+    return '';
+  }
+  /** THE DECLARED SEAM. The two composers and their predicate, so a check can RUN the shipping
+   *  code rather than read it (Lesson 83). `replay` drives the real hcRenderTranscript over a
+   *  supplied history and restores the thread's own messages afterwards. */
+  try{
+    window.hublyComposer = {
+      sayable: hcSayable,
+      append: hcAppendMessage,
+      replay: function(msgs){
+        var thread = hcThreadBody(); if(!thread) return null;
+        var prev = hc.messages;
+        hc.messages = msgs;
+        var slot = thread.querySelector('[data-hc-history-slot]');
+        if(slot) slot.removeAttribute('data-hc-history-rendered');
+        var before = (thread.textContent || '').length;
+        var n = hcRenderTranscript();
+        var text = (thread.textContent || '').slice(before);
+        hc.messages = prev;
+        return { n: n, text: text };
+      }
+    };
+  }catch(e){}
+
   function hcAppendMessage(role, text){
     var thread = hcThreadBody();
     if(!thread) return null;
+    var body = (role === 'user') ? String(text == null ? '' : text) : hcSayable(text);
+    if(role !== 'user' && !body) return null;      // nothing sayable -> the floor speaks instead
     var div = document.createElement('div');
     div.className = 'hc-msg ' + (role === 'user' ? 'user' : 'hubly');
-    div.textContent = text;
+    div.textContent = body;
     thread.appendChild(div);
     hcThreadScrollToEnd();
     return div;
@@ -7428,6 +7486,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var n = 0;
     hc.messages.forEach(function(m){
       var txt = (typeof hcMessageToText === 'function') ? hcMessageToText(m.content) : (typeof m.content === 'string' ? m.content : '');
+      // THE SECOND COMPOSER. hcAppendMessage refuses to say our own envelope; this one replays
+      // the thread from storage and would have said it again on every single reload, forever —
+      // the envelope Adrian saw is PERSISTED, so fixing only the live path leaves it printed on
+      // his page for good. A salvaged sentence is shown; an unsayable one is dropped, because a
+      // past turn has no floor to fall through to and a gap beats printing the protocol.
+      if(m.role !== 'user') txt = hcSayable(txt);
       if(!txt) return;
       if(hc.draftClaimed && m.role !== 'user' && typeof hcIsPreAccountMsg === 'function' && hcIsPreAccountMsg(txt)) return;
       var div = document.createElement('div');

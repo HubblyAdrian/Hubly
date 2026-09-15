@@ -61,6 +61,7 @@
 //   being "connected" to that tool.
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
+import { sayableText } from "../_shared/hubly_sayable.ts";
 import { composeServicesTruth, andList, type ServicesPlacementLike, type ClassicWriteLike, type ServicesOmissions } from "../_shared/hubly_owner_replies.ts";
 import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
@@ -2313,9 +2314,30 @@ Deno.serve(async (req) => {
       try {
         decision = JSON.parse(extractJson(rawText));
       } catch {
-        // Model didn't return the expected JSON shape — fail open honestly
-        // rather than pretending structure that isn't there.
-        decision = { action: "reply", message: rawText || "Sorry, could you say that again?" };
+        // ══ NEVER PRINT OUR OWN ENVELOPE AT A PERSON ═══════════════════════════════════
+        //
+        // 2026-09-15: an owner was shown, verbatim, above his week grid:
+        //     {"action":"reply","message":""}
+        // Machine output rendered as if it were a sentence. THIS LINE DID IT: on a parse
+        // failure the raw model text became the message, and the client printed whatever it
+        // was handed.
+        //
+        // extractJson slices from the first "{" to the LAST "}", so one stray token after a
+        // valid envelope makes the slice unparseable — and then the envelope itself, which is
+        // sitting right there in rawText, gets read out loud.
+        //
+        // So: try to SALVAGE the message from the raw text first, and if what remains still
+        // looks like our own protocol, say NOTHING and let the client's no-silence floor
+        // speak. A person may never be shown our wire format.
+        decision = { action: "reply", message: sayableText(rawText) };
+      }
+
+      // EVEN A CLEANLY PARSED ENVELOPE CAN CARRY ONE. A model that nests its own protocol inside
+      // `message` produces valid JSON whose message is machine output; the guard belongs on the
+      // VALUE that reaches a person, not only on the parse failure that produced it once.
+      if (decision && typeof decision.message === "string") {
+        const m = decision.message.trim();
+        decision.message = sayableText(m);
       }
 
       if (decision?.understanding?.patch && typeof decision.understanding.patch === "object") {

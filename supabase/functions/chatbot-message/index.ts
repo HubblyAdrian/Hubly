@@ -9,6 +9,7 @@
 // key, which is why those tables have no public RLS policies.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sayableText } from "../_shared/hubly_sayable.ts";
 import type { toAiSummary } from "../_shared/service_engine.ts";
 import { HublyAI } from "../_shared/hubly_ai.ts";
 import { loadConciergeContext } from "../_shared/hubly_conversation_context_loader.ts";
@@ -259,13 +260,30 @@ Deno.serve(async (req: Request) => {
       // surfacing a hard error to a real customer; topics/handoff are
       // skipped for this one turn (safe defaults) rather than guessed.
       console.error("Failed to parse AI JSON, falling back to raw text as reply:", rawText);
-      if (!rawText) {
+      // THE SIBLING. The identical fallback in hubly-conversation put {"action":"reply",
+      // "message":""} in front of an OWNER on 2026-09-15; this copy would put it in front of that
+      // owner's CUSTOMER, on the business's public page, where the damage is to their reputation
+      // rather than ours. sayableText salvages a real answer out of a half-parsed envelope and
+      // returns "" when there isn't one — and "" here is an honest error, never our protocol.
+      const salvaged = sayableText(rawText, ["reply", "message"]);
+      if (!salvaged) {
         return jsonRes({ error: "The chatbot returned an unexpected response. Try again." }, 502);
       }
-      parsed = { reply: rawText, topics: [], handoff: { type: null } };
+      parsed = { reply: salvaged, topics: [], handoff: { type: null } };
     }
 
-    const reply = String(parsed.reply || "").trim();
+    // The clean-parse path needs it too: valid JSON whose `reply` is itself an envelope reads to
+    // a customer exactly the same as the broken one.
+    const reply = sayableText(String(parsed.reply || "").trim(), ["reply", "message"]);
+    // AND NOTHING SAYABLE IS NOT A TURN. Without this, refusing the envelope would trade
+    // "customer sees machine output" for "customer sees an empty bubble, and it is saved into
+    // the transcript forever" — the silent-turn defect, which we treat as equally severe. No
+    // assistant row is written for a turn that said nothing; the caller gets a plain failure.
+    if (!reply) {
+      console.error("chatbot-message produced no sayable reply; refusing to persist a silent turn");
+      return jsonRes({ error: "The chatbot returned an unexpected response. Try again." }, 502);
+    }
+
     const topics = Array.isArray(parsed.topics) ? parsed.topics : [];
     const handoff = parsed.handoff || { type: null };
 
