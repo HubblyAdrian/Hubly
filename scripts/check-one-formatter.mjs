@@ -51,6 +51,12 @@ const ISO = /(?<!\d)\d{4}-\d{2}-\d{2}(?!\d)/;
 const UGLY_PHONE = /(\(\d{3}\)\s*\d{3}[-.\s]?\d{4})|((?<!\d)\d{10}(?!\d))|((?<!\d)\d{3}\.\d{3}\.\d{4}(?!\d))/;
 /** The house format, for the positive assertion. */
 const HOUSE = /(?<!\d)\d{3}-\d{3}-\d{4}(?!\d)/;
+/** A 24-HOUR CLOCK IN TEXT A PERSON READS. Any HH:MM not carrying AM/PM.
+ *  The day room, the job panel, the job card and the "it is now…" sentence all read "14:00" —
+ *  Hubly telling an American tradesman his driveway job is at fourteen hundred. Same class as
+ *  the ISO date, same fix: one function, used everywhere. `<input type="time">` keeps its
+ *  24-hour VALUE, which is an attribute and never innerText, so it cannot trip this. */
+const CLOCK24 = /(?<!\d)\d{1,2}:\d{2}(?!\s*[AP]\.?M)/i;
 
 let rig;
 try { rig = await openRig(); }
@@ -73,6 +79,10 @@ try {
     UGLY_PHONE.test("Phone8018888566") && UGLY_PHONE.test("Call (801) 888-8566") &&
     UGLY_PHONE.test("801.888.8566") && !UGLY_PHONE.test("Phone801-888-8566"),
     "fires on run-together/parens/dots, not on the house format");
+  say("0d the 24-hour detector fires on concatenated DOM text, and not on a 12-hour time",
+    CLOCK24.test("When Thursday 09/17/2026 at 14:00") && CLOCK24.test("07:00doctor") &&
+    !CLOCK24.test("at 2:00 PM") && !CLOCK24.test("7:00 AM · driveway") && !CLOCK24.test("09/17/2026"),
+    "fires on 14:00 and 07:00, not on 2:00 PM or a date");
   say("0c the house detector fires on concatenated DOM text",
     HOUSE.test("Phone801-888-8566") && HOUSE.test("Call 555-0134".replace("555-0134", "555-888-0134")),
     "matches a house-format number with no preceding space");
@@ -100,6 +110,17 @@ try {
   say("5 every phone shape lands on 888-888-8888", f.phones.every((p) => p === "801-888-8888"), JSON.stringify(f.phones));
   say("6 a partial number is formatted, not invented", f.short === "555-0134", f.short);
   say("7 a moment reads month/day/year with a time", /^09\/13\/2026 at 2:30 PM$/.test(f.dt), f.dt);
+  const t12 = await rig.page.evaluate(() => {
+    const F = window.hublyFormat;
+    return { afternoon: F.time("14:00:00"), morning: F.time("07:00"), noon: F.time("12:00"),
+             midnight: F.time("00:30"), junk: F.time("nope"), none: F.time(null), input: F.hm("14:00:00") };
+  });
+  say("7a a time a person reads is a 12-hour clock",
+    t12.afternoon === "2:00 PM" && t12.morning === "7:00 AM" && t12.noon === "12:00 PM" && t12.midnight === "12:30 AM",
+    `${t12.afternoon} · ${t12.morning} · ${t12.noon} · ${t12.midnight}`);
+  say("7b nothing produces nothing, and the INPUT value stays 24-hour",
+    t12.junk === null && t12.none === null && t12.input === "14:00",
+    `junk=${t12.junk} none=${t12.none} inputValue=${t12.input}`);
 
   // ── 2. THE REAL SURFACES, RENDERED WITH RAW ROWS. THE LEG THAT CATCHES A SIXTH SITE. ──
   //
@@ -150,6 +171,12 @@ try {
     (String(rendered.jobPanel).match(/\d{3}-\d{3}-\d{4}/g) || []).join(", ") || "no phone found");
   say("11 the day sentence names the day in month/day/year",
     /09\/17\/2026|Today|Tomorrow/.test(rendered.editLine), JSON.stringify(String(rendered.editLine).slice(0, 120)));
+  const clockHits = surfaces.filter(([, v]) => typeof v === "string" && CLOCK24.test(v));
+  say("11a no owner-facing surface shows a 24-hour clock", clockHits.length === 0,
+    clockHits.length ? clockHits.map(([k, v]) => `${k}: ${JSON.stringify(String(v).slice(0, 120))}`).join(" | ")
+                     : `${surfaces.length} surfaces rendered clean`);
+  say("11b and the job panel actually SHOWS the time, in 12-hour form",
+    /2:00 PM/.test(rendered.jobPanel), JSON.stringify((String(rendered.jobPanel).match(/\d{1,2}:\d{2}\s*[AP]M/g) || []).join(", ")));
 
   // ── 3. SOURCE SWEEP — a SECONDARY signal, printed honestly. ───────────────────────────
   //

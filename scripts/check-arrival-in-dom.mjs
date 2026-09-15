@@ -119,8 +119,12 @@ function fakeBackend(opts) {
   W.fetch = () => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(null), text: () => Promise.resolve("") });
 }
 
-/** The words that must be on screen. Taken from hcRenderArrival's own copy. */
-const MUST_SAY = [/is live\./i, /is a real address/i, /I'?m Hubly/i];
+/** THE THREE BEATS, from Adrian's ruling of 2026-09-15 — congratulate, say who you are and
+ *  that you are their assistant, ask the name. Not a copy of hcRenderArrival's strings: the
+ *  previous version of this constant was the OLD copy ("is a real address"), which meant the
+ *  check would have gone green on the very sentence Adrian ruled out. A check that encodes the
+ *  shipped wording rather than the requirement only ever proves the code is the code. */
+const MUST_SAY = [/congratulations on finishing your website/i, /welcome to Hubly/i, /business assistant/i];
 
 /**
  * ONE RUN: load the page, install the fake backend, drive the real arrival path, settle on the
@@ -146,7 +150,16 @@ async function run(rig, { welcomedAt = null, displayName = null, services = [], 
       // The ARRIVAL's own text, so suggestion chips (which carry their own question marks)
       // can never be mistaken for the arrival asking a second thing.
       arrival: a ? a.innerText.replace(/\s+/g, " ").trim() : "",
-      thread: t ? t.innerText.replace(/\s+/g, " ").trim().slice(0, 400) : "",
+      // THE WHOLE SCREEN, not a 400-char prefix. The stack that shipped was eleven things
+      // long and the booking line sat past the old cut — a truncated read is a detector that
+      // cannot see the defect it was written for.
+      thread: t ? t.innerText.replace(/\s+/g, " ").trim() : "",
+      furniture: t ? {
+        cards: t.querySelectorAll(".hc-action-card, .hc-event-card").length,
+        chips: t.querySelectorAll(".hc-suggest button, .hc-suggestions button").length,
+        history: [...t.querySelectorAll("button")].filter((b) => /See earlier conversation/i.test(b.textContent)).length,
+        news: t.querySelectorAll(".hc-news").length,
+      } : { cards: 0, chips: 0, history: 0, news: 0 },
     };
   }, "arrival text", { stableMs: 900, ceilingMs: 9000 });
   const state = await rig.page.evaluate(() => ({
@@ -154,7 +167,7 @@ async function run(rig, { welcomedAt = null, displayName = null, services = [], 
     log: window.hublyArrivalUI.log(),
     rig: window.__arrivalRig || { markedAt: null, markedWithArrivalInDom: null, rpcCalls: [] },
   }));
-  return { arrival: settled.final.arrival, thread: settled.final.thread, ms: settled.ms, ...state };
+  return { arrival: settled.final.arrival, thread: settled.final.thread, furniture: settled.final.furniture, ms: settled.ms, ...state };
 }
 
 let rig;
@@ -171,8 +184,72 @@ try {
   say("1 the arrival WORDS are in the DOM after Home settled", a.inDom === true && MUST_SAY.every((r) => r.test(a.arrival)),
     `inDom=${a.inDom} at t=${a.ms}ms · ${JSON.stringify(a.arrival.slice(0, 140))}`);
   say("2 with no name on file it asks for one, and asks nothing else",
-    /What should I call you\?/.test(a.arrival) && (a.arrival.match(/\?/g) || []).length === 1,
+    /what should I call you\?/i.test(a.arrival) && (a.arrival.match(/\?/g) || []).length === 1,
     `${(a.arrival.match(/\?/g) || []).length} question mark(s) in the arrival itself`);
+
+  // ══ WHEN A QUESTION IS ON THE FLOOR, NOTHING ELSE SPEAKS. ═══════════════════════════════
+  //
+  // THIS IS THE TRANSCRIPT, 2026-09-15. What an owner was actually shown, in order:
+  //   the site is live / it is a real address / anyone can visit it / I'm Hubly / tell me what
+  //   you want changed / WHAT SHOULD I CALL YOU? / your booking works too, customers can pick
+  //   from the 1 service you priced / one person looked at your page on 09/13/2026 / two cards
+  //   / four chips / a history button.
+  // Adrian: "too many questions at once doesn't feel good."
+  //
+  // The voluntary gate existed and was correct, and every one of those walked past it, because
+  // the gate only guarded the four CHAT composers. These legs assert the whole screen, not the
+  // bubble — a speaker added later cannot pass by not being a bubble.
+  say("2a the arrival does not explain infrastructure to the person who owns it",
+    !/is a real address/i.test(a.thread) && !/anyone can visit it/i.test(a.thread),
+    JSON.stringify(a.arrival.slice(0, 160)));
+  say("2b it congratulates, and says it is their assistant",
+    /congratulations on finishing your website/i.test(a.arrival) && /business assistant/i.test(a.arrival),
+    "congratulate + who I am");
+  say("2c NOTHING ELSE SPEAKS while the name is on the floor — no booking line, no page-view count",
+    !/booking works/i.test(a.thread) && !/looked at your page/i.test(a.thread) && !/service you priced/i.test(a.thread),
+    JSON.stringify(a.thread.slice(0, 200)));
+  say("2d and no cards, chips or history button under the question",
+    a.furniture.cards === 0 && a.furniture.chips === 0 && a.furniture.history === 0 && a.furniture.news === 0,
+    `cards=${a.furniture.cards} chips=${a.furniture.chips} history=${a.furniture.history} news=${a.furniture.news}`);
+  say("2e the whole screen holds exactly ONE question mark",
+    (a.thread.match(/\?/g) || []).length === 1,
+    `${(a.thread.match(/\?/g) || []).length} question mark(s) on the entire screen`);
+
+  // RED-PROOF THE FLOOR RULE ITSELF. Restore the stack — a speaker that ignores the floor —
+  // and every one of the legs above must go red. A gate that cannot be shown to fire is the
+  // gate that let the fourth composer through in the first place.
+  const stacked = await run(rig, {
+    welcomedAt: null, services: [{ id: "s1", price: 120 }],
+    mutate: () => {
+      // Exactly the shape that shipped: a speaker appending after the arrival without asking
+      // the floor predicate anything.
+      const t = document.getElementById("hcThreadBody") || document.getElementById("hcThread");
+      const obs = new MutationObserver(() => {
+        if (t.querySelector('[data-hc-arrival="1"]') && !t.__stacked) {
+          t.__stacked = true;
+          const d = document.createElement("div"); d.className = "hc-msg hubly";
+          d.textContent = "Your booking works too — customers can pick from the 1 service you priced and book online.";
+          t.appendChild(d);
+          const n = document.createElement("div"); n.className = "hc-msg hubly hc-news";
+          n.textContent = "One person looked at your page on 09/13/2026.";
+          t.appendChild(n);
+        }
+      });
+      obs.observe(t, { childList: true, subtree: true });
+    },
+  });
+  say("R0 restoring the stack goes RED",
+    /booking works/i.test(stacked.thread) && /looked at your page/i.test(stacked.thread) &&
+    (stacked.thread.match(/\?/g) || []).length === 1,
+    "the detector sees the booking line and the page-view line when they are present");
+
+  // AND THE FURNITURE IS DEFERRED, NOT LOST. Answer the name; the screen fills in.
+  const released = await rig.page.evaluate(async () => {
+    const t = document.getElementById("hcThreadBody") || document.getElementById("hcThread");
+    return { pendingBefore: !!window.hublyArrivalUI.pending() };
+  });
+  say("2f the furniture is DEFERRED, not dropped — Home records that it is holding it",
+    released.pendingBefore === true, `furniturePending=${released.pendingBefore}`);
   say("3 welcomed_at was written, and only with the arrival already in the DOM",
     a.rig.markedAt !== null && a.rig.markedWithArrivalInDom === true,
     `marked=${a.rig.markedAt !== null} arrivalInDomAtMark=${a.rig.markedWithArrivalInDom}`);

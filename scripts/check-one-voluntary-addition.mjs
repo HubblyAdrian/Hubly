@@ -47,20 +47,30 @@ const endMark = src.indexOf("function hcSayVoluntary");
 if (start < 0 || endMark < 0) { console.error("CANNOT RUN — hcTurn / hcSayVoluntary not found in the file"); process.exit(2); }
 const gateSrc = src.slice(start, src.indexOf("\n  }", src.indexOf("function hcSayVoluntary")) + 4);
 
+// hcAskOnFloor IS PART OF THE GATE NOW and lives above hcTurn, so it is extracted with it.
+// 2026-09-15: the floor predicate moved out of hcMayAddVoluntary so that Home itself could ask
+// it — the arrival, the news line, the cards and the chips are speakers too and none of them
+// went through the voluntary gate. This check went CANNOT-RUN the moment that landed, which is
+// the correct behaviour: it refused to report on a gate it could no longer execute, rather than
+// asserting a shape and calling it enforcement.
+const floorStart = src.indexOf("  function hcAskOnFloor(){");
+if (floorStart < 0) { console.error("CANNOT RUN — hcAskOnFloor not found; the floor predicate has been renamed or removed"); process.exit(2); }
+const floorSrc = src.slice(floorStart, src.indexOf("\n  }", floorStart) + 4);
+
 let api;
 try {
-  // `hcAppendMessage`, `hcThreadScrollToEnd` and `hcOwner` are the gate's only free names.
-  api = new Function("hcAppendMessage", "hcThreadScrollToEnd", "hcOwner",
-    gateSrc + "\nreturn { hcTurn, hcBeginTurn, hcNoteSaid, hcMayAddVoluntary, hcTakeVoluntarySlot, hcSayVoluntary };");
+  // `hcAppendMessage`, `hcThreadScrollToEnd`, `hcOwner` and `hc` are the gate's only free names.
+  api = new Function("hcAppendMessage", "hcThreadScrollToEnd", "hcOwner", "hc",
+    floorSrc + "\n" + gateSrc + "\nreturn { hcTurn, hcBeginTurn, hcNoteSaid, hcAskOnFloor, hcMayAddVoluntary, hcTakeVoluntarySlot, hcSayVoluntary };");
 } catch (e) {
   console.error("CANNOT RUN — the gate would not execute: " + String(e.message).slice(0, 140));
   process.exit(2);
 }
 
 {
-  const make = (awaitingName) => {
+  const make = (awaitingName, hcState) => {
     const said = [];
-    return { said, api: api((role, text) => said.push(text), () => {}, { awaitingName: !!awaitingName }) };
+    return { said, api: api((role, text) => said.push(text), () => {}, { awaitingName: !!awaitingName }, hcState || {}) };
   };
   const cases = [];
   // A statement was shown, the slot is free.
@@ -139,6 +149,30 @@ for (const name of VOLUNTARY) {
 }
 say("4 every named composer call site goes through the one door", failed === 0,
   `${sites} call site(s) examined across ${VOLUNTARY.length} composers`);
+
+// ── THE FLOOR COVERS EVERY ASK, NOT JUST THE NAME ───────────────────────────────────────
+// A pending capture ("what's your number?") and a held photo ("is this your work?") are both
+// questions on the floor. They were guarded nowhere: hcMayAddVoluntary only knew about the
+// name, so a voluntary addition could land under either of them.
+{
+  // `make` above is block-scoped; this block builds its own from the same factory.
+  const make = (awaitingName, hcState) =>
+    ({ api: api(() => {}, () => {}, { awaitingName: !!awaitingName }, hcState || {}) });
+  const withCapture = make(false, { pendingCapture: { askedFor: "phone" } });
+  withCapture.api.hcBeginTurn(); withCapture.api.hcNoteSaid("Added the job.");
+  say("a pending capture ask holds the floor", withCapture.api.hcMayAddVoluntary() === false,
+    `mayAdd=${withCapture.api.hcMayAddVoluntary()}`);
+
+  const withPhoto = make(false, { heldPhoto: { id: "p1" } });
+  withPhoto.api.hcBeginTurn(); withPhoto.api.hcNoteSaid("Added the job.");
+  say("a held photo question holds the floor", withPhoto.api.hcMayAddVoluntary() === false,
+    `mayAdd=${withPhoto.api.hcMayAddVoluntary()}`);
+
+  const clear = make(false, {});
+  clear.api.hcBeginTurn(); clear.api.hcNoteSaid("Added the job.");
+  say("with nothing on the floor, one voluntary addition is allowed",
+    clear.api.hcMayAddVoluntary() === true, `mayAdd=${clear.api.hcMayAddVoluntary()}`);
+}
 
 console.log(failed ? `\n${failed} assertion(s) failed.` : `\nOne voluntary addition per turn, enforced in one place. ${sites} call site(s) checked.`);
 process.exit(failed ? 1 : 0);

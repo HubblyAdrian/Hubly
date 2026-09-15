@@ -1,5 +1,45 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## A JOB PASTE PUBLISHED A SERVICE TO HIS LIVE PAGE (2026-09-15) — NEEDS A RULING
+
+Asked to verify "the 1 service you priced" in the arrival. **The number is wrong and the row
+behind it should not exist.**
+
+| store | priced, active services |
+|---|---|
+| `services` table (what the arrival read) | **1** — `driveway` $180 |
+| `businesses.meta.service_catalog` (what the page and booking use) | **4** — Existing Service One $120, Existing Service Two $95, Headlight Restoration $75, **driveway $180** |
+
+So the sentence was wrong by a factor of four: a one-store reader, the same class as every
+other two-reader defect. That half is fixed — the arrival no longer says anything about
+booking, and `hcBookableServices` was **deleted** rather than left for the next caller.
+
+**The other half is worse and is NOT fixed.** The `driveway` row was created at
+`2026-09-15T03:40:59.974Z` — **four seconds before the job** — from this message:
+
+> "I need a job added: Thursday at 2 to do the driveway, 14 Maple St, 555-0134, we said $180"
+
+It landed in **both** stores, with `flags.website: true`, `flags.marketplace: true` and
+`instant_book_eligible: true`. **He asked for a job. A bookable public service appeared on his
+page at $180, and a customer could book it.**
+
+This also retires last night's reading of the chain defect. "Your prices are on your page now"
+was **literally true** — a price really did land on his page. The chain was reporting a real
+write; the write itself was the defect. The receipt-attribution fix still stands (a job write
+may not claim a page change), but it is not what was wrong here.
+
+**Why this needs a ruling rather than a patch.** The extractor's whole job is to capture a fact
+the owner states, and he did state "driveway … $180". The question is whether a price stated as
+*what this job costs* may become *what this service costs on the page*, and that is a product
+decision about what a job paste means — not something to decide inside a handler. The
+asymmetry that usually settles these points one way: a service nobody meant to publish is
+visible to customers and takes a manual deletion to undo, while a service we failed to capture
+costs one sentence to add.
+
+**Not touched:** the `driveway` service row is still on `hubly-classic-fixture` in both stores.
+It is a test business, and removing it would destroy the evidence.
+
+
 ## THE THREAD DOES NOT BLEED — MEASURED, AND THE ARRIVAL'S REAL CAUSE FOUND (2026-09-15)
 
 Reported as a privacy defect: *"THE OWNER'S THREAD IS RENDERING MESSAGES FROM ANOTHER

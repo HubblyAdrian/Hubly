@@ -7938,6 +7938,143 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         },
       },
       {
+        // ── CHANGE A JOB THAT ALREADY EXISTS ──────────────────────────────────────────
+        //
+        // "change the driveway job to 3 PM" — typed TWICE on 2026-09-15, and the owner got
+        // NOTHING back either time. update_business_job had been written and live-tested the
+        // night before (it refuses not_owner, no_job and no_change correctly) and appeared
+        // NOWHERE in supabase/functions: the writer existed and the model could not reach it.
+        // Fourth built-and-doorless instance this week, and the worst, because the failure
+        // mode was silence rather than a refusal.
+        //
+        // GROUNDED EXACTLY LIKE addJob. A job is a fact about a customer; a time, a place or a
+        // price lifted from earlier in the chat is the 801-888-8888 scar with a different
+        // subject. A field that cannot be grounded in THIS message is DROPPED, never guessed —
+        // and here a dropped field means the job keeps the value it had, which is the safe
+        // direction (null = leave alone in the writer).
+        //
+        // WHICH JOB. The model names it the way the owner did ("the driveway job"), and the
+        // handler resolves that against the business's own rows rather than trusting an id it
+        // could not have seen. An ambiguous name is REFUSED with the candidates named — never
+        // resolved to the first match, because changing the wrong job is worse than asking.
+        name: "updateJob",
+        description:
+          "Change the time, the date, the place or the price of a job that is ALREADY on this business. " +
+          "Invoke it when the owner asks to move, reschedule or correct an existing job (\"change the driveway job to 3 PM\", " +
+          "\"move Thursday's job to Friday\", \"the Maple St one is $200 now\"). " +
+          "Identify the job with `which` — the owner's own words for it (a customer name, the service, or the address). " +
+          "Pass ONLY the fields they changed in THIS message: scheduled_time (HH:MM, 24h), scheduled_date (YYYY-MM-DD), address, amount. " +
+          "A field you omit is left exactly as it was, so \"change it to 3 PM\" moves the time and touches nothing else. " +
+          "NEVER carry a value over from earlier in the conversation, and never guess which job they mean — if `which` matches more than one, " +
+          "this refuses and names them, and you ask which one. " +
+          "Report what the row says AFTER the change, not that a change \"was performed\".",
+        doors: {
+          talk: "business.updateJob",
+          diy: { file: "public/platform-home.html", marker: "data-hc-jobedit", what: "the time and place fields in the job panel" },
+          show: null,
+        },
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: { type: "string", description: "Automatically supplied by the system before this runs — put any placeholder here." },
+            which: { type: "string", description: "The owner's own words for the job — a customer name, the service, or the address." },
+            scheduled_time: { type: "string", description: "HH:MM, 24-hour. Omit unless they changed it." },
+            scheduled_date: { type: "string", description: "YYYY-MM-DD. Omit unless they changed it." },
+            address: { type: "string", description: "Where the work is. Omit unless they changed it." },
+            amount: { type: "number", description: "The price. Omit unless they changed it." },
+          },
+          required: ["which"],
+        },
+        handler: async (args) => {
+          const a = args as Record<string, unknown>;
+          const draftId = String(a?.draftId || "").trim();
+          const draftToken = String(a?.draftToken || "").trim();
+          const ownerUid = injectedOwnerUid(a);
+          const userMessage = String(a?._userMessage || "");
+          if (!draftId || (!draftToken && !ownerUid)) {
+            return { ok: false, real: false, summary: "No business is connected to this conversation.", error: "missing_draft" };
+          }
+          const which = String(a?.which || "").trim();
+          if (!which) {
+            return { ok: false, real: false, error: "no_which", summary: "Ask which job they mean — do not guess." };
+          }
+
+          // WHICH JOB, resolved against the business's OWN rows. The model never saw an id.
+          const rows = await callBusinessRpc("get_business_jobs_for_match", {
+            p_business_id: draftId, p_owner_id: ownerUid, p_draft_token: draftToken || null,
+          });
+          const list = Array.isArray(rows) ? rows : [];
+          if (!list.length) {
+            return { ok: false, real: false, error: "no_jobs", summary: "There are no jobs on this business yet, so there is nothing to change." };
+          }
+          const needle = which.toLowerCase();
+          const words = needle.match(/[a-z0-9]{3,}/g) || [];
+          const hit = (j: Record<string, unknown>) => {
+            const hay = [j.customer_name, j.service_name, j.address].filter(Boolean).join(" ").toLowerCase();
+            if (!hay) return false;
+            if (hay.includes(needle)) return true;
+            return words.length > 0 && words.every((w) => hay.includes(w));
+          };
+          const matches = list.filter(hit);
+          if (!matches.length) {
+            return { ok: false, real: false, error: "no_match",
+              summary: `Nothing on this business matches "${which}". Say which job they mean; do not guess one.` };
+          }
+          if (matches.length > 1) {
+            // AMBIGUOUS IS A QUESTION, NOT A COIN FLIP. Changing the wrong job is worse than
+            // asking which — and the candidates are named so the owner can answer in one word.
+            const names = matches.slice(0, 4).map((m: Record<string, unknown>) =>
+              [m.customer_name, m.service_name, m.scheduled_date].filter(Boolean).join(" · ")).join("; ");
+            return { ok: false, real: false, error: "ambiguous",
+              summary: `"${which}" matches more than one job: ${names}. Ask which one — do not pick.` };
+          }
+          const job = matches[0] as Record<string, unknown>;
+
+          // GROUNDED OR DROPPED, exactly as addJob. A dropped field leaves the row untouched.
+          const dropped: string[] = [];
+          const str = (k: string) => { const v = a?.[k]; return typeof v === "string" && v.trim() ? v.trim() : ""; };
+          const addr = str("address");
+          const amountRaw = a?.amount;
+          const amount = typeof amountRaw === "number" && Number.isFinite(amountRaw) && amountRaw > 0 ? amountRaw : null;
+          let sendAddr: string | null = null, sendAmount: string | null = null;
+          if (addr) { if (addressGrounded(addr, userMessage)) sendAddr = addr; else dropped.push("address"); }
+          if (amount !== null) { if (priceGrounded(amount, userMessage)) sendAmount = String(amount); else dropped.push("price"); }
+
+          const upd = await callBusinessRpc("update_business_job", {
+            p_business_id: draftId,
+            p_job_id: job.id,
+            p_owner_id: ownerUid,
+            p_scheduled_time: str("scheduled_time") || null,
+            p_scheduled_date: str("scheduled_date") || null,
+            p_address: sendAddr,
+            p_amount: sendAmount,
+            p_draft_token: draftToken || null,
+          });
+          const row = Array.isArray(upd) ? upd[0] : upd;
+          if (!row || row.error || !row.id) {
+            const why = row?.error || "rpc_failed";
+            const say: Record<string, string> = {
+              no_change: "They did not actually change anything, so nothing was written. Say that.",
+              no_job: "That job is not on this business, so nothing was changed.",
+              not_owner: "That business is not theirs, so nothing was changed.",
+              bad_token: "This draft could not be authorised, so nothing was changed.",
+              not_found: "That business does not exist, so nothing was changed.",
+            };
+            return { ok: false, real: false, error: why,
+              summary: say[why] || "The change could not be saved just now. Say that plainly; the job has NOT changed." };
+          }
+          const when = [row.scheduled_date || "", String(row.scheduled_time || "").slice(0, 5)].filter(Boolean).join(" ");
+          const bits = [row.customer_name, row.service_name, when, row.address, row.amount ? `$${row.amount}` : ""].filter(Boolean);
+          return {
+            ok: true, real: true,
+            summary: `Job updated. It now reads: ${bits.join(" · ")}.` +
+              (dropped.length ? ` The ${dropped.join(" and ")} could not be matched to what they typed, so ${dropped.length === 1 ? "it was" : "they were"} left as ${dropped.length === 1 ? "it was" : "they were"} — say so.` : ""),
+            humanNote: `Changed the job.`,
+            raw: { job: row, dropped },
+          };
+        },
+      },
+      {
         // ── TAKE ME THERE — the model's end of the fourth door ─────────────────────────
         //
         // "take me to my schedule" -> "I can't take you to the schedule from here yet." Said
@@ -7956,7 +8093,10 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         description:
           "Take the owner to one of their own places in Hubly — their schedule/day, their jobs, their customers, or their website. " +
           "Invoke this whenever they ask to GO somewhere or SEE something of theirs (\"take me to my schedule\", \"show me my jobs\", " +
-          "\"open my customers\"), instead of saying you cannot. " +
+          "\"open my customers\", \"can I see it somewhere\"), instead of saying you cannot. " +
+          "THE SCHEDULE / THE DAY / THE PLANNER ARE ALL place=\"planner\". Do NOT call business.places.add for any of these — " +
+          "that adds a room they already have, and on 2026-09-15 it answered a request to GO to a schedule with \"I can't open a " +
+          "schedule place yet\" while the schedule was working. " +
           "Their screen moves and then reports what it found in its own words — so do NOT say the screen moved, do NOT say what is on it, " +
           "and do NOT name any control or tab. Keep your own reply to a few words at most, or the owner reads two messages about one thing. " +
           "`place` has exactly four values. If they asked for somewhere else, do not invoke this — say plainly what you CAN do.",
@@ -8382,6 +8522,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
       "Add a place to this business's sidebar — a Store, a Jobs room. A place is a ROOM the " +
       "owner has asked for; it is not content and it is not a plan. Adding one puts it in the " +
       "sidebar and nothing else: an empty Store is still empty, and you must say so.\n\n" +
+      "THIS ADDS A ROOM. IT NEVER NAVIGATES. \"Take me to my schedule\", \"show me my jobs\", " +
+      "\"open my customers\" are requests to GO somewhere they already have — that is " +
+      "business.goToPlace, not this. On 2026-09-15 an owner asked to be taken to his schedule, " +
+      "this action was called instead, and he was told \"I can't open a schedule place yet\" " +
+      "while his schedule sat there working. If they already have the room, do not call this.\n\n" +
       "WHEN TO CALL IT — two cases, and the difference is whether they ASKED.\n" +
       "  • They asked directly (\"add a store\", \"can I get a store in my sidebar\") — CALL IT NOW. " +
       "Do not offer something they already requested; that reads as not listening.\n" +
@@ -8439,6 +8584,24 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
               return { ok: false, real: false, error: err, summary: "That isn't your business, so I can't change its sidebar." };
             }
             if (err === "unknown_place") {
+              // A REFUSAL THAT NAMES THE NEXT DOOR. 2026-09-15: "take me to my schedule" reached
+              // THIS handler — the model read "place" and "schedule" and picked places.add over
+              // business.goToPlace — got unknown_place, and the owner was told "I can't open a
+              // schedule place yet." goToPlace shipped the night before and never fired: two
+              // capabilities competing for one sentence, and the wrong one won.
+              //
+              // So when the kind names a room that ALREADY EXISTS, this does not refuse into a
+              // dead end; it says which action actually does it. A refusal that leaves the owner
+              // with nothing is a dead end; one that names the next door is an answer.
+              const ALREADY_A_ROOM: Record<string, string> = {
+                schedule: "planner", planner: "planner", calendar: "planner", day: "planner",
+                jobs: "jobs", customers: "customers", website: "website", site: "website",
+              };
+              const room = ALREADY_A_ROOM[kind];
+              if (room) {
+                return { ok: false, real: false, error: "already_a_room",
+                  summary: `They already have a ${kind}; there is nothing to add. If they asked to GO there, call business.goToPlace with place="${room}" instead — do not describe anything.` };
+              }
               return { ok: false, real: false, error: err, summary: `I don't have a "${kind}" to add. I can add a Store or a Jobs room.` };
             }
             return { ok: false, real: false, error: err, summary: `I couldn't add ${kind} to your sidebar — nothing was changed.` };

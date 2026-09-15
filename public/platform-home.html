@@ -3410,6 +3410,24 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // value. Hubly now offers the logo in a sentence in the first-build
           // follow-up (the account offer in hcPostBuildTurn), and the upload still works from the
           // attach menu and drag-and-drop — the capability is unchanged.
+          // ══ A TURN MUST NEVER PRODUCE SILENCE. ═══════════════════════════════════════
+          //
+          // 2026-09-15: "change the driveway job to 3 PM" — typed TWICE, and BOTH TIMES the
+          // owner got nothing back at all. Not a refusal, not an error. Nothing.
+          //
+          // THE PATH. The model had no capability that could change a job, so it ran out of
+          // useful moves and the server sent its internal filler, "I've gathered what I can
+          // for now — what would you like to do next?". hcIsFallbackReply matches that string
+          // and suppresses it — CORRECTLY, it is machinery, not something Hubly said — and
+          // then nothing took its place. Every other branch here is conditional on there being
+          // something to show, so "nothing to show" fell through all of them into silence.
+          //
+          // An operation that fails silently is indistinguishable from one that was never
+          // heard, and it is the one failure mode a person cannot report usefully. So this is
+          // a FLOOR, not another branch: the turn is over, and if the owner has been told
+          // nothing, they are told something true now. It reads hcTurn.said — what was
+          // actually DISPLAYED — never what we intended to display.
+          hcEnsureTurnSpoke(data);
         }
         showNext();
       })
@@ -3452,16 +3470,22 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       hcPersist('user', text);
       if(_nm){
         hcSaveOwnerName(_nm).then(function(v){
-          if(v === 1){ hcAppendMessage('hubly', 'Thanks, ' + _nm.split(/\s+/)[0] + '.'); try{ hcRenderRail(); }catch(e){} }
+          // ADRIAN'S SECOND LINE, verbatim in shape: "Perfect, thank you for that ______."
+          // Said only on a write that actually took — the name is read straight back so a
+          // wrong one is correctable in one sentence instead of invisible forever.
+          if(v === 1){ hcAppendMessage('hubly', 'Perfect \u2014 thank you for that, ' + _nm.split(/\s+/)[0] + '.'); try{ hcRenderRail(); }catch(e){} }
           // 0 = a higher-trust name is already stored; -1 = the write failed. Neither may
           // pass in silence (prohibition 6), and neither may claim it was saved.
           else if(v === 0) hcAppendMessage('hubly', "I already had a name for you, so I've kept that one.");
           else hcAppendMessage('hubly', "I couldn't save that just now — I'll ask again another time.");
+          hcReleaseHeldFurniture();
         });
         return;
       }
       // Not a name. Do not ask again (one ask, once) and do not guess: carry their message
-      // on to the model as the ordinary turn it is.
+      // on to the model as the ordinary turn it is. The floor is clear either way, so the
+      // furniture Home held back is released here too.
+      hcReleaseHeldFurniture();
       hc.messages.push({ role: 'user', content: text });
       hcCall();
       return;
@@ -4834,7 +4858,24 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(opts.onOpen) b.addEventListener('click', opts.onOpen);
     return b;
   }
+  /** THE 24-HOUR VALUE, for a control. `<input type="time">` takes HH:MM and nothing else,
+   *  so this is what feeds an input and what a writer is handed — never what a person reads. */
   function hcHm(t){ var v = String(t || '').slice(0,5); return v || null; }
+  /** THE TIME A PERSON READS: 2:00 PM. One function, used everywhere a time reaches a human.
+   *
+   *  The day room, the job panel, the job card and the "it is now…" sentence were all showing
+   *  "14:00" — Hubly telling an American tradesman his driveway job is at fourteen hundred.
+   *  Same class as the ISO date, and it ships with the same fix: the single path, not the
+   *  careful edit. `hcHm` stays for the INPUT value, which must remain 24-hour. */
+  function hcTimeUS(t){
+    var m = /^(\d{1,2}):(\d{2})/.exec(String(t || '').trim());
+    if(!m) return null;
+    var h = Number(m[1]), min = Number(m[2]);
+    if(!isFinite(h) || h < 0 || h > 23 || !isFinite(min) || min < 0 || min > 59) return null;
+    var ap = h < 12 ? 'AM' : 'PM';
+    h = h % 12; if(h === 0) h = 12;
+    return h + ':' + String(min).padStart(2, '0') + ' ' + ap;
+  }
   // ══ ONE DATE FUNCTION AND ONE PHONE FUNCTION. EVERY HUMAN-FACING DATE AND PHONE GOES
   //    THROUGH THEM. ═══════════════════════════════════════════════════════════════════════
   //
@@ -4880,9 +4921,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(!v) return '';
     var t = (v instanceof Date) ? v : new Date(String(v));
     if(isNaN(t.getTime())) return '';
-    var h = t.getHours(), ap = h < 12 ? 'AM' : 'PM';
-    h = h % 12; if(h === 0) h = 12;
-    return hcDateUS(t) + ' at ' + h + ':' + String(t.getMinutes()).padStart(2,'0') + ' ' + ap;
+    // ONE TIME PATH. This used to repeat the AM/PM arithmetic inline — a second implementation
+    // of the same rule, which is how two formatters drift.
+    return hcDateUS(t) + ' at ' + hcTimeUS(String(t.getHours()) + ':' + String(t.getMinutes()).padStart(2,'0'));
   }
   /** House display format 888-888-8888 — displayed, stored for display, and asked for.
    *  Best-effort for a partial number; '' for nothing. Never invents digits. */
@@ -4903,7 +4944,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(dd.length >= 4)   return dd.slice(0,3) + '-' + dd.slice(3);
     return dd;
   }
-  try{ window.hublyFormat = { date: hcDateUS, dateTime: hcDateTimeUS, phone: hcPhoneHouse }; }catch(e){}
+  try{ window.hublyFormat = { date: hcDateUS, dateTime: hcDateTimeUS, phone: hcPhoneHouse, time: hcTimeUS, hm: hcHm }; }catch(e){}
   function hcDayLabel(d){
     if(!d) return 'No date';
     var today = new Date(); var iso = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
@@ -4963,7 +5004,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // IT IS AN ELEMENT, NOT A DESCRIPTION OF ONE. "I've added it, you can find it in Jobs" is
   // Hubly pointing at a control it cannot see. The job itself is in the message.
   function hcJobCardLine(j){
-    var when = [hcDayLabel(j.scheduled_date), hcHm(j.scheduled_time)].filter(Boolean).join(' at ');
+    var when = [hcDayLabel(j.scheduled_date), hcTimeUS(j.scheduled_time)].filter(Boolean).join(' at ');
     var price = Number(j.amount) > 0 ? '$' + Number(j.amount) : '';
     // EVERY PART IS A FIELD. A field we do not have produces no part — never a placeholder,
     // never "not specified", which is the same discipline the event cards already hold.
@@ -5065,7 +5106,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(res.ok){
       var j = res.job || {};
       var bits = [];
-      if(j.scheduled_time) bits.push(hcDayLabel(j.scheduled_date) + ' at ' + hcHm(j.scheduled_time));
+      if(j.scheduled_time) bits.push(hcDayLabel(j.scheduled_date) + ' at ' + hcTimeUS(j.scheduled_time));
       if(j.address) bits.push(j.address);
       var what = j.is_block ? (j.service_name || 'Blocked time') : (j.customer_name || j.service_name || 'That job');
       return what + ' is now ' + (bits.join(' · ') || 'updated') + '.';
@@ -5084,7 +5125,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   function hcJobPanel(j){
     hcOpenPanel(j.is_block ? 'Blocked time' : 'Job', function(body){
       var rows = [
-        ['When', [hcDayLabel(j.scheduled_date), hcHm(j.scheduled_time)].filter(Boolean).join(' at ') || null],
+        ['When', [hcDayLabel(j.scheduled_date), hcTimeUS(j.scheduled_time)].filter(Boolean).join(' at ') || null],
         ['Length', Number(j.duration_hours) > 0 ? Number(j.duration_hours) + (Number(j.duration_hours) === 1 ? ' hour' : ' hours') : null],
         [j.is_block ? 'Reason' : 'Service', j.service_name || null],
         ['Customer', j.is_block ? null : (j.customer_name || null)],
@@ -5207,7 +5248,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(!res) return 'I could not add that just now.';
     if(res.ok){
       var t = res.task || {};
-      var when = [t.due_date ? hcDayLabel(t.due_date) : '', hcHm(t.due_time)].filter(Boolean).join(' at ');
+      var when = [t.due_date ? hcDayLabel(t.due_date) : '', hcTimeUS(t.due_time)].filter(Boolean).join(' at ');
       return 'Added' + (when ? (' — ' + when) : '') + ': ' + (t.title || '');
     }
     if(res.error === 'no_title') return 'Tell me what the thing is and I will put it on the day.';
@@ -5326,7 +5367,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       items.forEach(function(it){
         var j = it.row;
         room.appendChild(hcRoomRow({
-          when: hcHm(j.scheduled_time) || '—',
+          when: hcTimeUS(j.scheduled_time) || '—',
           title: j.is_block ? (j.service_name || 'Blocked time') : (j.customer_name || 'Someone'),
           sub: j.is_block ? 'Blocked — not a customer' : (j.service_name || null),
           tail: (!j.is_block && Number(j.amount) > 0) ? ('$' + Number(j.amount)) : null,
@@ -5367,7 +5408,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       room.appendChild(g2);
       openTasks.forEach(function(t){
         room.appendChild(hcRoomRow({
-          when: t.due_time ? String(t.due_time).slice(0,5) : (t.band ? t.band : '—'),
+          when: t.due_time ? (hcTimeUS(t.due_time) || hcHm(t.due_time)) : (t.band ? t.band : '—'),
           title: t.title,
           sub: [ t.lane === 'personal' ? 'Personal' : null,
                  t.band_source === 'owner' ? ('Band ' + t.band + ' — you set this') : (t.band_reason ? ('Band ' + t.band + ' — ' + t.band_reason) : ('Band ' + t.band)),
@@ -5384,7 +5425,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     hcOpenPanel('Task', function(body){
       var rows = [
         ['What', t.title],
-        ['When', t.due_date ? (hcDayLabel(t.due_date) + (t.due_time ? ' at ' + String(t.due_time).slice(0,5) : '')) : 'No day set — not overdue, just undated'],
+        ['When', t.due_date ? (hcDayLabel(t.due_date) + (t.due_time ? ' at ' + (hcTimeUS(t.due_time) || hcHm(t.due_time)) : '')) : 'No day set — not overdue, just undated'],
         ['Band', t.band + (t.band_source === 'owner' ? ' (you set this)' : (t.band_reason ? ' — ' + t.band_reason : ''))],
         ['Lane', t.lane === 'personal' ? 'Personal' : 'Work'],
         ['Moved', Number(t.roll_count) > 0 ? (t.roll_count + (Number(t.roll_count) === 1 ? ' time' : ' times')) : null],
@@ -5421,7 +5462,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       room.appendChild(hcRoomRow({
         when: j.scheduled_date ? String(j.scheduled_date).slice(5) : '—',
         title: j.customer_name || 'Someone',
-        sub: [j.service_name, hcHm(j.scheduled_time)].filter(Boolean).join(' · ') || null,
+        sub: [j.service_name, hcTimeUS(j.scheduled_time)].filter(Boolean).join(' · ') || null,
         tail: Number(j.amount) > 0 ? ('$' + Number(j.amount) + (j.paid ? ' paid' : '')) : (j.status || null),
         onOpen: function(){ hcJobPanel(j); }
       }));
@@ -6591,6 +6632,37 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       }
     }
     hcRenderRailBiz(biz);
+    // ══ WHEN A QUESTION IS ON THE FLOOR, NOTHING ELSE SPEAKS. ═══════════════════════════
+    //
+    // Everything below this line is VOLUNTARY: the news line, the action cards, the event
+    // stream, the suggestion chips, the history button. None of it is an answer to anything
+    // the owner did — it is Hubly adding things — and on 2026-09-15 all of it landed
+    // underneath "What should I call you?", so an owner's first screen asked a question and
+    // then buried it under eleven other things. "Too many questions at once doesn't feel
+    // good", and this is the structural version of that sentence rather than a copy edit.
+    //
+    // ONE GATE, NOT A GATE PER SPEAKER. hcMayAddVoluntary already guarded the four chat
+    // composers and every one of these walked past it, because they are not chat composers.
+    // The floor predicate is now asked HERE, once, by the function that draws the screen — so
+    // a speaker added later cannot miss it by not knowing the gate exists.
+    //
+    // The furniture is not lost, it is DEFERRED: hcRenderHomeFurniture is called again the
+    // moment the ask is answered (see the name handler), appending in place. It is NOT a
+    // re-render of Home — hcRenderHome starts with thread.innerHTML = '' and re-running it
+    // here would erase the arrival, his answer and the thank-you, which is precisely the wipe
+    // that ate the arrival on 2026-09-14.
+    if(hcAskOnFloor()){
+      hc._furniturePending = true;
+      try{ hcArrivalTrace('ask on the floor \u2014 Home is holding its furniture until it is answered'); }catch(e){}
+      hcThreadScrollToEnd();
+      return;
+    }
+    await hcRenderHomeFurniture(biz, thread);
+  }
+  /** Everything Home draws that is NOT an answer to something the owner just did. Called by
+   *  hcRenderHome when the floor is clear, and again by the name handler once it is. */
+  async function hcRenderHomeFurniture(biz, thread){
+    hc._furniturePending = false;
     await hcLoadHomeCounts(biz);
     // THE NEWS LINE. One line under the greeting, and the only thing on this screen that
     // changes shape day to day. It is NOT a chat bubble: a bubble says "Hubly just said
@@ -7329,14 +7401,83 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   /** What Hubly last actually SHOWED this turn — the floor predicate is computed from what
    *  was displayed, never from what we intended to display. */
   function hcNoteSaid(text){ var t = String(text || '').trim(); if(t) hcTurn.said = t; }
+  /** IS A QUESTION ON THE FLOOR? One predicate, asked by EVERY speaker — including the ones
+   *  that are not chat bubbles.
+   *
+   *  ADRIAN, 2026-09-15: "too many questions at once doesn't feel good." What he was shown on
+   *  arrival, in order: the site is live / it is a real address / anyone can visit it / I'm
+   *  Hubly / tell me what you want changed / WHAT SHOULD I CALL YOU? / your booking works too /
+   *  one person looked at your page on 09/13/2026 / two cards / four chips / a history button.
+   *
+   *  The voluntary gate below was built and correct, and every one of those walked straight
+   *  past it — because the gate only ever guarded the four composers we remembered, and the
+   *  arrival body, the booking line, the news line, the cards, the chips and the history
+   *  button are speakers too. That is the fourth-composer failure exactly: a gate that covers
+   *  the speakers you thought of.
+   *
+   *  So the predicate moves OUT of the voluntary gate and becomes the thing Home itself asks
+   *  before it draws anything beyond the question. One turn, one ask; everything voluntary
+   *  waits for the answer. */
+  function hcAskOnFloor(){
+    if(hcOwner && hcOwner.awaitingName) return true;
+    if(hc.pendingCapture && hc.pendingCapture.askedFor) return true;
+    if(hc.heldPhoto) return true;
+    return false;
+  }
+  /** THE ASK IS ANSWERED: give Home back the screen it was holding.
+   *
+   *  Appends in place. It deliberately does NOT call hcRenderHome — that function opens with
+   *  thread.innerHTML = '' and re-running it here would erase the arrival, the owner's answer
+   *  and the thank-you. That is the exact wipe that consumed the arrival's one-shot on
+   *  2026-09-14, and it is not being reintroduced as a convenience. */
+  function hcReleaseHeldFurniture(){
+    if(!hc._furniturePending) return false;
+    if(hcAskOnFloor()) return false;                 // something else is still waiting
+    var thread = hcThreadBody(); if(!thread) return false;
+    var biz = hc.draftBusiness || {};
+    try{ hcRenderHomeFurniture(biz, thread); }catch(e){ console.error('[home] furniture failed', e); return false; }
+    return true;
+  }
   function hcMayAddVoluntary(){
     if(hcTurn.voluntary > 0) return false;          // the slot is spent
     var last = hcTurn.said;
     if(!last) return false;                          // nothing was said: this would be the answer
     if(/\?\s*["'\u201d\u2019)]*\s*$/.test(last)) return false;   // a question is already on the floor
-    if(hcOwner && hcOwner.awaitingName) return false;                 // and so is this one
+    if(hcAskOnFloor()) return false;                 // and so is any ask we are waiting on
     return true;
   }
+  /** THE FLOOR: the turn is over and the owner must have been told something.
+   *
+   *  Composed from what the turn ACTUALLY DID — the receipt — so it never guesses at a cause.
+   *  Three outcomes, three sentences, and none of them borrows the filler's cheerful "what
+   *  would you like to do next?", which is what a turn says when it thinks it succeeded.
+   *
+   *  Pure enough to be executed by a check rather than read by one (Lesson 83): the sentence
+   *  picker is hcSilenceLine, and scripts/check-no-silent-turn.mjs runs it. */
+  function hcSilenceLine(actions){
+    var list = Array.isArray(actions) ? actions : [];
+    var ran = list.length;
+    var failed = list.filter(function(a){ return a && a.ok === false; }).length;
+    if(ran && failed === ran){
+      return "I tried that and it didn\u2019t go through \u2014 nothing changed. Tell me what you want different and I\u2019ll try it another way.";
+    }
+    if(ran && failed){
+      return "Part of that didn\u2019t go through, and I can\u2019t tell you which \u2014 check it before you rely on it.";
+    }
+    return "I couldn\u2019t work out how to do that one, so nothing happened. Say it a different way and I\u2019ll have another go.";
+  }
+  function hcEnsureTurnSpoke(data){
+    try{
+      if(hcTurn.said) return false;                       // something was displayed: no floor needed
+      var line = hcSilenceLine(data && data.actions);
+      hcAppendMessage('hubly', line);
+      hcNoteSaid(line);
+      hcThreadScrollToEnd();
+      try{ console.warn('[silence] a turn produced no visible reply; the floor spoke instead'); }catch(e){}
+      return true;
+    }catch(e){ return false; }
+  }
+  try{ window.hublySilenceUI = { line: hcSilenceLine, ensure: hcEnsureTurnSpoke, said: function(){ return hcTurn.said; } }; }catch(e){}
   /** CHECK AND TAKE, ATOMICALLY. The two-step version is what a late speaker slipped through. */
   function hcTakeVoluntarySlot(){
     if(!hcMayAddVoluntary()) return false;
@@ -7851,81 +7992,66 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // two paths drawing the same screen is how the first version lost the welcome.
     hcRenderHome();
   }
-  /** CAN THIS BUSINESS ACTUALLY BE BOOKED? Read the record, do not assume.
-   *
-   *  A canned string describing the state of the product is a truth claim, and it gets
-   *  verified or it does not get said. "Your booking works too. Customers can pick a plan
-   *  and book it, at the prices you set." was said to every owner on arrival — three claims,
-   *  none checked. On crestview-window-cleaning all three were false at once: no bookable
-   *  service, no price on the page, and a booking link pointing at a host that no longer
-   *  resolved. */
-  async function hcBookableServices(bizId){
-    try{
-      var c = await authGetClient();
-      var r = await c.from('services').select('id,price').eq('business_id', bizId);
-      var rows = (r && r.data) || [];
-      return { any: rows.length > 0, priced: rows.filter(function(x){ return x.price != null && Number(x.price) > 0; }).length };
-    }catch(e){ return { any: false, priced: 0, unknown: true }; }
-  }
+  // hcBookableServices WAS HERE AND IS DELETED, not left for the next caller.
+  //
+  // It answered "can this business be booked" from the `services` table alone, and the arrival
+  // said "the 1 service you priced". On hubly-classic-fixture that table holds 1 row while
+  // meta.service_catalog holds 4 priced, active, website-visible services — so the sentence
+  // was wrong by a factor of four. A one-store reader left lying around is a one-store reader
+  // someone picks up again (the two-reader rule, docs/OPEN_FINDINGS.md); the arrival no longer
+  // says anything about booking, so the reader goes with the sentence.
+
   function hcRenderArrival(biz){
     var thread = hcThreadBody(); if(!thread) return;
-    var url = String((biz && biz.url) || '');
-    if(!/^https?:\/\//i.test(url)) url = 'https://' + url;
-    var host = url.replace(/^https?:\/\//i, '').replace(/\/$/, '');
-    var name = (biz && biz.name) ? biz.name : 'Your site';
-    // THE ARRIVAL SAYS THREE THINGS AND ASKS AT MOST ONE (2026-09-14).
+    // ══ THE ARRIVAL IS THREE BEATS AND THEN IT STOPS. ═══════════════════════════════════
     //
-    // Congratulate — the thing that just happened is worth marking, and it is said once.
-    // Introduce — an owner who has just signed up has met a chat box, not a partner; if Hubly
-    // never says what it is, the next thing they type will be a question about that.
-    // Then the NAME, and only when we do not already have one: asking for a fact the person
-    // already gave is the worst version of not listening (CLAUDE.md), and the record holds a
-    // name for most owners from signup. If we have it, the greeting uses it instead.
+    // ADRIAN'S RULING, 2026-09-15, given more than once and written down here so it stops
+    // being re-derived:
+    //
+    //   "Congrats on finishing your website and welcome to Hubly!! I am your business
+    //    assistant! To get to know you let me start by asking you for your name."
+    //   "Perfect, thank you for that ______."
+    //
+    // CONGRATULATE. SAY WHO YOU ARE. ASK THE NAME. Then stop.
+    //
+    // WHAT WAS REMOVED AND WHY. The previous version opened with
+    // "hubly-classic-fixture.myhubly.app is a real address. Anyone can visit it." — Hubly
+    // explaining infrastructure to the person who owns it, as the first thing they ever read.
+    // The address, the booking state and the page-view count are all FACTS ABOUT THE PRODUCT,
+    // and none of them is what someone who has just finished a website wants first. They can
+    // be said later, once, when they are useful. They are not an arrival.
+    //
+    // THE BOOKING LINE IS GONE FROM HERE. It was "earned" — read from the record before it
+    // spoke — and it was still wrong, because being true is not the same as being wanted
+    // while a question is on the floor. (It was also reading only the `services` table, which
+    // on the fixture holds 1 row while meta.service_catalog holds 4: it said "the 1 service
+    // you priced" and the real number is 4. Removing the sentence removes the two-store read
+    // with it; the split is recorded in docs/OPEN_FINDINGS.md rather than patched here.)
     //
     // ONE BUBBLE, not three. Three messages in a row is a monologue; the beats are the same.
     var first = hcOwnerFirstName();
-    var intro = "I'm Hubly. I look after this site and the business behind it — tell me what you want changed and I'll change it.";
-    var openLine = (first ? (first + ' — ' + name) : name) + ' is live. ' + host + ' is a real address. Anyone can visit it.';
     var _el;
     if(first){
-      _el = hcAppendMessage('hubly', openLine + '\n\n' + intro);
+      // We already know them. Asking for a fact the person already gave is the worst version
+      // of not listening (CLAUDE.md), so this is a welcome with no question in it — and with
+      // no ask on the floor, Home draws the rest of itself as usual.
+      _el = hcAppendMessage('hubly',
+        'Congratulations on finishing your website, ' + first + ' \u2014 welcome to Hubly.\n\n' +
+        "I'm your business assistant. Tell me what you want changed and I'll change it.");
     }else{
-      // The one ask. Nothing else may be asked until it is answered (hcOwner.awaitingName).
+      // THE ONE ASK. Nothing else may be said until it is answered — enforced by
+      // hcAskOnFloor(), which Home itself consults before drawing anything else.
       hcOwner.awaitingName = true;
-      _el = hcAppendMessage('hubly', openLine + '\n\n' + intro + '\n\nWhat should I call you?');
+      _el = hcAppendMessage('hubly',
+        'Congratulations on finishing your website \u2014 welcome to Hubly.\n\n' +
+        "I'm your business assistant. To get to know you, let me start by asking your name \u2014 " +
+        'what should I call you?');
     }
     // TAGGED, so the one-shot can be written against the DOM rather than against the fact
     // that this function was called. hcArrivalInDom() reads this attribute and nothing else.
     if(_el) _el.setAttribute('data-hc-arrival', '1');
-    // THE SECOND LINE IS EARNED OR IT IS NOT SAID. It used to be unconditional:
-    // "Your booking works too. Customers can pick a plan and book it, at the prices you
-    // set." Three claims about product state, none of them checked — and on the walk that
-    // found this, all three were false simultaneously. Now the record answers first, and
-    // the sentence says exactly what the record supports: priced services, unpriced ones,
-    // or nothing at all (in which case there is no second line — an absent sentence is
-    // honest, a confident one is not).
-    hcBookableServices(biz.id).then(function(b){
-      if(b.unknown || !b.any) return;
-      hcAppendMessage('hubly', b.priced > 0
-        ? 'Your booking works too — customers can pick from the ' + b.priced + ' service' + (b.priced === 1 ? '' : 's') + ' you priced and book online.'
-        : 'Your booking works too — customers can pick a service and book it. None of them have prices yet, so nothing is shown as a price.');
-    }).catch(function(){});
-    // NO ACTION BUTTONS HERE. This is a MOMENT — "your site is live" is worth saying
-    // once — and a moment must not become a gate.
-    //
-    // It used to carry three buttons, and the third was "Start editing", which called
-    // hcOpenWorkspace('website') — the same thing the Website rail tab already does. So
-    // Website did not open the editor: it opened this card, and the owner had to click
-    // through it to reach their own site. Every time, because although the card RENDERS
-    // once per ACCOUNT (hubly_owner_profile.welcomed_at, written before the render, so it cannot
-    // repeat), nothing ever CLEARS it: hcOpenWorkspace only swaps data-mode and renders
-    // the canvas, so once appended the card sat in the thread for the whole session, in
-    // every mode. Rendered once; in the way for hours.
-    //
-    // If Website IS the editor there is nothing to start, so the button is gone. The two
-    // links that were genuinely useful now live permanently in the canvas toolbar
-    // (hcRenderCanvas), which is ambient rather than blocking and is there every time
-    // rather than only on the first visit.
+    // NO ACTION BUTTONS, NO SECOND LINE, NO CARDS. This is a MOMENT, and a moment must not
+    // become a gate or a briefing.
     hcThreadScrollToEnd();
     return _el || null;
   }
@@ -7952,6 +8078,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         return hcMaybeShowArrival(biz, true);
       },
       inDom: hcArrivalInDom,
+      pending: function(){ return !!hc._furniturePending; },
       log: function(){ return hcArrivalLog.slice(); },
       transcript: hcRenderTranscript,
     };

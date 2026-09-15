@@ -140,8 +140,12 @@ try {
   }, "day room", { stableMs: 700, ceilingMs: 8000 });
 
   // ── (b) WHAT THE TABLES HOLD IS ON IT. Both rows, including the one two days out. ─────
-  say("2 the block Hubly put on his day is on the day", /doctor/i.test(afterGo.final.room) && /07:00/.test(afterGo.final.room),
-    JSON.stringify(afterGo.final.room.slice(0, 160)));
+  // THE TIME IS ASSERTED AS A PERSON READS IT. This leg used to demand /07:00/ — the 24-hour
+  // value — so it would have gone green on "fourteen hundred" forever. A check that encodes
+  // the stored shape instead of the read shape only ever proves the code is the code.
+  say("2 the block Hubly put on his day is on the day, at a time a person reads",
+    /doctor/i.test(afterGo.final.room) && /7:00\s*AM/i.test(afterGo.final.room) && !/(?<!\d)07:00(?!\d)/.test(afterGo.final.room),
+    JSON.stringify(afterGo.final.room.slice(0, 170)));
   say("3 the job two days out is NOT invisible — the defect Adrian hit",
     /driveway/i.test(afterGo.final.room) && /\$180/.test(afterGo.final.room),
     /driveway/i.test(afterGo.final.room) ? "driveway present" : "DRIVEWAY MISSING (the today..tomorrow window)");
@@ -201,7 +205,7 @@ try {
     edited.sent[0].p_scheduled_date === null && edited.sent[0].p_business_id === BIZ.id,
     JSON.stringify(edited.sent[0] || null));
   say("10 and it says so, naming the new time and the new place",
-    /15:30|3:30/.test(edited.msg) && /22 Elm Ave/.test(edited.msg), JSON.stringify(edited.msg));
+    /3:30\s*PM/i.test(edited.msg) && /22 Elm Ave/.test(edited.msg), JSON.stringify(edited.msg));
 
   // ── THE SENTENCES, ALL OF THEM. No failure may borrow the word "changed"/"now". ───────
   const lines = await rig.page.evaluate(() => {
