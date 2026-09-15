@@ -555,6 +555,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
 .hc-tick{width:18px;height:18px;flex:0 0 auto;margin:0 2px 0 0;cursor:pointer;accent-color:var(--brand-600,#2f5d45)}
 .hc-tick:disabled{opacity:.5;cursor:progress}
 .hc-row.is-done .hc-row-t{text-decoration:line-through;opacity:.55}
+/* A TRANSPARENT BOX. hc-view-box exists only to give a flat thread view a node of its own so it
+   can be redrawn in place — and so a redraw can be HELD to it. It must add no spacing, no
+   background and no layout of its own: display:contents keeps every card a direct participant in
+   the thread's layout, so boxing the views changes nothing a person can see. */
+.hc-view-box{display:contents}
 .hc-week{display:block;max-width:640px;padding:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel,#fff)}
 .hc-week-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
 .hc-week-lbl{font-weight:700;font-size:14px}
@@ -5251,6 +5256,203 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // this is that card, generalised — ONE builder, and hcAppendJobCard becomes its first caller
   // rather than a second implementation beside it.
   //
+  // ══ WHAT IS ON SCREEN, AND WHAT IT IS SHOWING ═════════════════════════════════════════
+  //
+  // "when people change something they shouldn't have to refresh to see it. it should auto do
+  // it." — Adrian, 2026-09-15, after it bit him three times in one session: he moved the
+  // driveway job to 3 PM and the week grid THREE LINES ABOVE still read 2:00 PM; he gave his
+  // name and the greeting stayed "Good afternoon."; he accepted a sidebar tab and only a reload
+  // would have told him either way.
+  //
+  // THE LAW: a write that succeeds updates every surface showing the thing it changed, IN THE
+  // SAME TURN. If a surface cannot update we say so in words. We never leave a stale value on
+  // screen looking correct, and WE NEVER TELL AN OWNER TO REFRESH.
+  //
+  // WHY A REGISTRY AND NOT MORE CALLS. hcAcceptOwnerName already refreshed two surfaces on
+  // success — `hcRenderRail(); hcReflectAuthState();` — and hcRenderIdentity was simply not in
+  // that list. Not a stale reader, not caching: A HAND-WRITTEN LIST WITH ONE ITEM MISSING, which
+  // is this codebase's recurring defect (CHECKER_LESSONS Lesson 87 counts ten of them). The fix
+  // for that shape is always the same: derive the set, or make membership STRUCTURAL so a thing
+  // cannot exist outside it. Adding a third call to that list would have been the eleventh.
+  //
+  // MEMBERSHIP IS STRUCTURAL: a surface is live exactly while its node is in the document
+  // (`el.isConnected`). There is NO deregister call, deliberately — that deletes the
+  // forgot-to-unregister class outright, and a deregister path must never be added back "for
+  // tidiness". A surface that is gone from the page is gone from the registry at the next pass.
+  //
+  // KEYED ON RECORD KIND, NEVER ON A VIEW. A job can be on screen in five places at once (a
+  // card, a week grid, a day list, the planner canvas, the jobs room) and the greeting/chip pair
+  // is the same bug with the owner's name as the record. So a writer says "a job changed" and
+  // every surface showing jobs is told, whatever kind of thing it is.
+  var hcLive = [];
+  var hcLiveSeq = 0;
+  var hcLiveLog = [];
+  function hcLiveTrace(msg){
+    var line = '[live] ' + msg;
+    hcLiveLog.push(line); if(hcLiveLog.length > 60) hcLiveLog.shift();
+    try{ console.log(line); }catch(e){}
+  }
+
+  /** Declare that `el` is showing records of `kind`, and how to redraw it.
+   *
+   *  `redraw(rows)` MUST fill `el` and MUST NOT touch a node outside it — that is what keeps
+   *  hcRenderHome's `thread.innerHTML = ''` (the wipe that ate the arrival) out of this path,
+   *  and scripts/check-live-surfaces.mjs fails if a redraw reaches outside its own el. It must
+   *  also fill `el` rather than REPLACE it: replacing the node strands this handle and the
+   *  surface silently stops updating, which is the failure mode that would make the whole
+   *  mechanism quietly useless. */
+  function hcLiveRegister(o){
+    if(!o || !o.el || !o.kind || typeof o.redraw !== 'function'){ hcLiveTrace('REFUSED a registration missing el/kind/redraw'); return null; }
+    // Re-registering the same node replaces its entry rather than adding a second — a surface
+    // that redraws itself through its own register call must not accumulate duplicates.
+    hcLive = hcLive.filter(function(e){ return e.el !== o.el; });
+    var entry = {
+      id: ++hcLiveSeq, kind: String(o.kind), key: o.key || null, el: o.el,
+      redraw: o.redraw,
+      describe: (typeof o.describe === 'function') ? o.describe : function(){ return 'that view'; }
+    };
+    hcLive.push(entry);
+    hcLiveTrace('registered #' + entry.id + ' kind=' + entry.kind + ' key=' + JSON.stringify(entry.key));
+    return entry;
+  }
+
+  /** Every live surface of a kind. Prunes the dead ones on the way past — this is the only
+   *  place liveness is decided, and it is decided by the DOM, not by bookkeeping. */
+  function hcLiveOf(kind){
+    var before = hcLive.length;
+    hcLive = hcLive.filter(function(e){ return e.el && e.el.isConnected; });
+    if(hcLive.length !== before) hcLiveTrace('dropped ' + (before - hcLive.length) + ' surface(s) no longer in the document');
+    return hcLive.filter(function(e){ return e.kind === String(kind); });
+  }
+
+  /** Could this surface be showing the record that changed?
+   *
+   *  UNKNOWN MEANS REFRESH, NEVER SKIP. The two errors cost different amounts: a needless
+   *  re-read costs one query, a skipped one leaves a lie on his screen. So every unrecognised
+   *  key shape, every missing field and every surface that shows "all of this kind" refreshes.
+   *
+   *  A job that MOVED has two relevant dates — where it was and where it is — and a week grid
+   *  showing either must refresh. Passing only the new date is how a move out of a visible week
+   *  would leave the old row sitting there.  */
+  function hcLiveKeyHit(key, changed){
+    if(!key) return true;                                     // shows everything
+    if(!changed) return true;                                  // we were not told what changed
+    if(key.id !== undefined && key.id !== null){
+      if(!changed.id) return true;                             // unknown -> refresh
+      return String(key.id) === String(changed.id);
+    }
+    if(key.from && key.to){
+      var dates = Array.isArray(changed.dates) ? changed.dates.filter(Boolean) : [];
+      if(!dates.length) return true;                           // unknown -> refresh
+      for(var i = 0; i < dates.length; i++){
+        var d = String(dates[i]).slice(0, 10);
+        if(d >= String(key.from) && d <= String(key.to)) return true;
+      }
+      return false;
+    }
+    return true;                                               // an unrecognised key shape
+  }
+
+  /** ONE READ PER KIND, SHARED BY EVERY SURFACE OF THAT KIND — and it is a read of the RECORD,
+   *  never the writer's own return value (prohibition 3). Each surface then filters the rows to
+   *  its own key, which is why a single load can serve a day list, a week grid and a card at
+   *  once. */
+  var HC_LIVE_KINDS = {
+    job: {
+      noun: 'job',
+      load: async function(){
+        var biz = hc.draftBusiness;
+        if(!biz || !biz.id) return null;
+        return await hcLoadJobs(biz.id, null, null);
+      }
+    },
+    ownerName: {
+      noun: 'name',
+      // The read-back IS this: get_owner_profile, forced past the cache. hcSaveOwnerName returns
+      // the RPC's verdict, and a writer's verdict is not the record.
+      load: async function(){
+        var p = await hcLoadOwnerProfile(true);
+        return p ? [{ name: p.name || null, source: p.source || null }] : null;
+      }
+    }
+  };
+
+  /** THE PASS. Called after a write that SUCCEEDED. Returns what actually happened, so the
+   *  sentence can be composed from it rather than from an assumption (the servicesTruth rule). */
+  async function hcAfterWrite(kind, changed){
+    var spec = HC_LIVE_KINDS[String(kind)];
+    var surfaces = hcLiveOf(kind);
+    if(!spec){ hcLiveTrace('REFUSED unknown kind ' + kind); return { ok:false, error:'unknown_kind', updated:0, stale:[] }; }
+    if(!surfaces.length){ hcLiveTrace('nothing on screen shows ' + kind); return { ok:true, updated:0, stale:[], onScreen:0 }; }
+    var rows;
+    try{ rows = await spec.load(); }
+    catch(e){ rows = null; hcLiveTrace('load threw for ' + kind + ': ' + (e && e.message)); }
+    // A READ THAT FAILED MAY NOT BE DRAWN AS AN EMPTY SURFACE. That is the empty-reader defect:
+    // our failure rendered as his missing data. Every surface is reported stale instead.
+    if(rows === null || rows === undefined){
+      hcLiveTrace('read failed for ' + kind + ' — ' + surfaces.length + ' surface(s) left as they were');
+      return { ok:false, error:'read_failed', updated:0, onScreen:surfaces.length,
+               stale: surfaces.map(function(e){ return e.describe(); }) };
+    }
+    var updated = 0, skipped = 0, stale = [];
+    for(var i = 0; i < surfaces.length; i++){
+      var e = surfaces[i];
+      if(!hcLiveKeyHit(e.key, changed)){ skipped++; continue; }
+      try{
+        e.redraw(rows);
+        updated++;
+      }catch(err){
+        // A surface that threw is NOT silently skipped — it is named, because it is the one
+        // showing a stale value right now.
+        stale.push(e.describe());
+        hcLiveTrace('redraw threw for #' + e.id + ' (' + e.describe() + '): ' + (err && err.message));
+      }
+    }
+    hcLiveTrace(kind + ': ' + updated + ' updated, ' + skipped + ' not showing it, ' + stale.length + ' stale');
+    return { ok: stale.length === 0, updated: updated, skipped: skipped, stale: stale, onScreen: surfaces.length };
+  }
+
+  /** What to ADD to a confirmation when a surface could not be refreshed, or '' when every
+   *  surface on screen is now telling the truth.
+   *
+   *  It never says "refresh the page" — that is us asking him to do our job, and it was on his
+   *  screen this week. It names the surface and offers the action that re-reads it. */
+  function hcStaleLine(res){
+    if(!res || res.ok) return '';
+    if(res.error === 'unknown_kind') return '';
+    var list = Array.isArray(res.stale) ? res.stale.filter(Boolean) : [];
+    if(!list.length) return '';
+    var what = list.length === 1 ? list[0] : (list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1]);
+    return list.length === 1
+      ? ' ' + what.charAt(0).toUpperCase() + what.slice(1) + ' above is still showing the old value — open it again to see the change.'
+      : ' ' + what.charAt(0).toUpperCase() + what.slice(1) + ' above are still showing the old values — open them again to see the change.';
+  }
+  try{ window.hublyLive = {
+    register: hcLiveRegister, of: hcLiveOf, keyHit: hcLiveKeyHit,
+    after: hcAfterWrite, staleLine: hcStaleLine, kinds: Object.keys(HC_LIVE_KINDS),
+    count: function(){ return hcLive.length; }, log: function(){ return hcLiveLog.slice(); }
+  }; }catch(e){}
+  /** ONE DECLARED SEAM, AND IT IS DECLARED. There is no authed session in the rig, so the READ
+   *  behind a pass cannot be real — `fakeLoad` swaps a kind's loader and passing null restores the
+   *  shipping one. Everything else the check exercises is the shipping code: the registry, the
+   *  real week grid renderer, the real flat-view renderer, the real sentence.
+   *
+   *  A rig run against this seam is a DECLARED FAKE BACKEND and is never evidence that a write
+   *  works — only that the pass over the surfaces does. */
+  var HC_LIVE_REAL_LOADS = {};
+  try{
+    window.hublyLiveTest = {
+      weekInto: hcWeekGridInto,
+      rowsInto: hcViewRowsInto,
+      fakeLoad: function(kind, fn){
+        var spec = HC_LIVE_KINDS[kind]; if(!spec) return false;
+        if(!HC_LIVE_REAL_LOADS[kind]) HC_LIVE_REAL_LOADS[kind] = spec.load;
+        spec.load = fn ? function(){ return Promise.resolve(fn()); } : HC_LIVE_REAL_LOADS[kind];
+        return true;
+      }
+    };
+  }catch(e){}
+
   // WHAT A CARD IS: a button whose accessible name is the RECORD, not "button"; a title line, an
   // optional sub line, an optional tail; and a press that opens the record in the right pane.
   // Everything that differs between a job, a customer and a booking is data, which is why this
@@ -5458,12 +5660,24 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   }
   /** THE WEEK GRID — screen 2, rendered into the thread. Real rows only; a day with nothing
    *  says so; every appointment is a pressable record that opens the job. */
-  function hcRenderWeekGrid(kind, v, rows, thread, offsetWeeks){
+  /** THE GRID, DRAWN INTO A NODE IT DOES NOT OWN.
+   *
+   *  MEASURED 2026-09-15, before any of this was written: hcRenderWeekGrid created its own wrap
+   *  and appended it to the thread, so there was no element a later re-read could fill — it could
+   *  not redraw in place AT ALL. Same shape as hcRenderHomeFurniture being split out of
+   *  hcRenderHome. Splitting it is the prerequisite for the registry, not a tidy-up.
+   *
+   *  It FILLS `el` and never replaces it: replacing the node would strand the registry's handle
+   *  and the surface would silently stop updating — the failure mode that makes the whole
+   *  mechanism quietly useless, which is why it is red-proofed first.
+   *
+   *  And it deliberately does NOT offer the sidebar tab or scroll the thread. Those belong to the
+   *  first draw only: re-offering the tab on every write would be a second composer speaking
+   *  while a question is on the floor, and scrolling the thread under the owner's hand is one of
+   *  the four editor bugs from 2026-09-02. */
+  function hcWeekGridInto(el, kind, v, rows, offsetWeeks){
     var r = hcWeekRange(offsetWeeks);
-    var wrap = document.createElement('div');
-    wrap.className = 'hc-msg hubly hc-week';
-    wrap.setAttribute('data-hc-thread-view', kind);
-
+    el.innerHTML = '';
     var hd = document.createElement('div'); hd.className = 'hc-week-hd';
     var lbl = document.createElement('span'); lbl.className = 'hc-week-lbl'; lbl.textContent = hcWeekLabel(r);
     hd.appendChild(lbl);
@@ -5475,7 +5689,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       btn.addEventListener('click', function(){ hcShowInThread(kind, offsetWeeks + b[1]); });
       nav.appendChild(btn);
     });
-    hd.appendChild(nav); wrap.appendChild(hd);
+    hd.appendChild(nav); el.appendChild(hd);
 
     var todayIso = (function(){ var d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
     for(var i = 0; i < 7; i++){
@@ -5510,9 +5724,25 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         });
       }
       dayEl.appendChild(list);
-      wrap.appendChild(dayEl);
+      el.appendChild(dayEl);
     }
+    return { from: r.from, to: r.to };
+  }
+  function hcRenderWeekGrid(kind, v, rows, thread, offsetWeeks){
+    var wrap = document.createElement('div');
+    wrap.className = 'hc-msg hubly hc-week';
+    wrap.setAttribute('data-hc-thread-view', kind);
+    wrap.setAttribute('data-hc-surface', 'job');
+    var range = hcWeekGridInto(wrap, kind, v, rows, offsetWeeks);
     thread.appendChild(wrap);
+    // LIVE FROM HERE. The key is the week it is showing, so a job moved into or out of this week
+    // refreshes it and one three weeks away does not — while anything we cannot place refreshes
+    // it anyway (hcLiveKeyHit: unknown means refresh).
+    hcLiveRegister({
+      kind: 'job', el: wrap, key: { from: range.from, to: range.to },
+      describe: function(){ return 'the week of ' + hcDateUS(range.from); },
+      redraw: function(all){ hcWeekGridInto(wrap, kind, v, all, offsetWeeks); }
+    });
     hcOfferSidebarTab('planner', 'Schedule');
     hcThreadScrollToEnd();
   }
@@ -5588,22 +5818,68 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // with nothing says "No appointments" rather than being omitted. Screen 2's whole point is
     // that the owner can see the SHAPE of the week, and a week with holes in it is information.
     if(v.grouped){ hcRenderWeekGrid(kind, v, rows, thread, offsetWeeks || 0); return { ok:true, count: rows.length }; }
+    // A FLAT VIEW GETS A BOX, AND THIS IS THE SECOND HALF OF THE SAME MEASUREMENT.
+    //
+    // Until now the heading and every card were appended as DIRECT SIBLINGS IN THE THREAD, so
+    // day, jobs and customers had NO element of their own — nothing a re-read could fill and no
+    // boundary a redraw could be held to. Three of the four thread views were in that state; the
+    // design assumed only the week grid needed splitting, and the measurement said otherwise.
+    //
+    // The box is what makes "a redraw may only touch nodes inside its own el" enforceable rather
+    // than aspirational. Without it, re-rendering a day view has to reach for the thread — which
+    // is the wipe that ate the arrival.
+    var box = document.createElement('div');
+    box.className = 'hc-view-box';
+    box.setAttribute('data-hc-thread-view', kind);
+    box.setAttribute('data-hc-surface', 'job');
+    hcViewRowsInto(box, kind, v, rows);
+    thread.appendChild(box);
+    if(kind === 'day' || kind === 'jobs'){
+      hcLiveRegister({
+        kind: 'job', el: box, key: null,          // shows every job in its own window: always refresh
+        describe: function(){ return String(v.title || 'that list').toLowerCase(); },
+        redraw: function(all){ hcViewRowsInto(box, kind, v, hcViewWindow(kind, all)); }
+      });
+    }
+    hcShowTrace('rendered ' + rows.length + ' row(s) for ' + kind);
+    hcThreadScrollToEnd();
+    return { ok:true, count: rows.length };
+  }
+  /** The heading and the rows, drawn INTO a node this function does not own. Fills, never
+   *  replaces — a replaced node strands the registry's handle and the surface stops updating
+   *  without saying so. */
+  function hcViewRowsInto(el, kind, v, rows){
+    el.innerHTML = '';
     var head = document.createElement('div');
     head.className = 'hc-msg hubly hc-room-group';
-    head.setAttribute('data-hc-thread-view', kind);
     head.textContent = v.title;
-    thread.appendChild(head);
+    el.appendChild(head);
+    if(!rows.length && v.empty){
+      var none = document.createElement('div');
+      none.className = 'hc-msg hubly';
+      none.textContent = v.empty;
+      el.appendChild(none);
+      return;
+    }
     rows.forEach(function(row){
-      thread.appendChild(hcRecordCard({
+      el.appendChild(hcRecordCard({
         parts: v.parts(row),
         ariaPrefix: 'Open ' + kind,
         attr: 'data-hc-view-row', attrValue: kind,
         onOpen: function(){ v.open(row); }
       }));
     });
-    hcShowTrace('rendered ' + rows.length + ' row(s) for ' + kind);
-    hcThreadScrollToEnd();
-    return { ok:true, count: rows.length };
+  }
+  /** A redraw loads EVERY job once (one read per kind, shared), so each surface narrows to the
+   *  window it was showing. The day view is the next HC_DAY_HORIZON days; the jobs view is all of
+   *  them. Derived from the same range the view's own `load` uses, so the two cannot drift. */
+  function hcViewWindow(kind, all){
+    var rows = Array.isArray(all) ? all : [];
+    if(kind !== 'day') return rows;
+    var d = new Date();
+    var iso = function(x){ return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
+    var from = iso(d), to = iso(new Date(d.getTime() + HC_DAY_HORIZON * 864e5));
+    return rows.filter(function(j){ var s = String(j.scheduled_date || '').slice(0,10); return s >= from && s <= to; });
   }
   try{ window.hublyThreadViews = { show: hcShowInThread, count: hcViewCount, kinds: Object.keys(HC_THREAD_VIEWS), card: hcRecordCard, log: function(){ return hcShowLog.slice(); } }; }catch(e){}
 
@@ -5741,6 +6017,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       note.setAttribute('data-hc-jobedit-field', 'msg');
       save.addEventListener('click', async function(){
         save.disabled = true; note.textContent = '';
+        // Both dates, captured BEFORE the write: where the job was and where it ends up. A week
+        // grid showing either one has to refresh, or a job moved out of a visible week leaves its
+        // old row sitting there looking correct.
+        var wasDate = String(j.scheduled_date || '').slice(0, 10);
         var res = await hcEditDayJob(j.id, { time: tIn.value, place: pIn.value });
         // RULE 6: the owner asked for something and it worked, so they are told — in the
         // panel they are looking at, from the row that was read back, never from the button.
@@ -5753,6 +6033,16 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
             var jj = res.job; if(jj) { j.scheduled_time = jj.scheduled_time; j.address = jj.address; }
             if(hc.mode === 'planner'){ var cv = document.getElementById('hcCanvas'); if(cv){ cv.innerHTML = ''; await hcRenderPlanner(cv, hc.draftBusiness); } }
           }catch(e){}
+          // AND EVERY OTHER SURFACE SHOWING THIS JOB. This is the defect he hit: the panel said
+          // 3:00 PM correctly and the week grid THREE LINES ABOVE still read 2:00 PM, because the
+          // only re-render here was the planner canvas — and only when the planner happened to be
+          // the open mode. Now the write names what changed and the registry decides who cares.
+          var nowDate = String((res.job && res.job.scheduled_date) || wasDate || '').slice(0, 10);
+          var upd = await hcAfterWrite('job', { id: j.id, dates: [wasDate, nowDate] });
+          // A surface that could not be refreshed is named in the panel, beside the confirmation
+          // the owner is already reading. Never left looking correct, and never "refresh".
+          var stale = hcStaleLine(upd);
+          if(stale) note.textContent = note.textContent + stale;
         }
       });
       ed.appendChild(tIn); ed.appendChild(pIn); ed.appendChild(save);
@@ -6906,6 +7196,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // The identity block: brand mark, greeting by name, business name beneath.
   function hcRenderIdentity(biz, thread){
     var wrap = document.createElement('div');
+    wrap.setAttribute('data-hc-surface', 'ownerName');
     wrap.className = 'hc-msg hubly hc-idw';
     var mark;
     if(hcIdentity.logoUrl){
@@ -6934,6 +7225,24 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     txt.appendChild(hi); txt.appendChild(sub);
     wrap.appendChild(mark); wrap.appendChild(txt);
     thread.appendChild(wrap);
+    // THE GREETING IS A SURFACE SHOWING THE OWNER'S NAME, and this line is item G in full.
+    //
+    // hcAcceptOwnerName already refreshed two things on success — the rail and the chip — and
+    // this one was simply not in that hand-written list, so the chip read "Adrian" while the
+    // header above it still said "Good afternoon." until he reloaded. Registering it means the
+    // list is no longer hand-written: a writer says the name changed, and everything showing the
+    // name is told, including anything added later that nobody remembers to go back and add.
+    //
+    // Only the greeting line is rewritten — the logo mark and the business name below it are not
+    // showing the owner's name and must not be rebuilt under his eyes.
+    hcLiveRegister({
+      kind: 'ownerName', el: wrap, key: null,
+      describe: function(){ return 'the greeting'; },
+      redraw: function(){
+        var who = hcOwnerFirstName();
+        hi.textContent = hcTimeGreeting() + (who ? (', ' + who) : '') + '.';
+      }
+    });
   }
 
   // Business name + location in the rail footer.
@@ -8715,7 +9024,21 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var said = String(hc._lastUserText || '');
     if(!said || said.toLowerCase().indexOf(nm.toLowerCase()) < 0) return false;   // not in this message
     hcSaveOwnerName(nm).then(function(v){
-      if(v === 1){ try{ hcRenderRail(); hcReflectAuthState(); }catch(e){} }
+      // THE HAND-WRITTEN LIST IS GONE. It used to read `hcRenderRail(); hcReflectAuthState();`
+      // and hcRenderIdentity was missing from it — the greeting stayed "Good afternoon." while
+      // the chip said his name, until he reloaded. Now the write says WHAT CHANGED and every
+      // surface showing the owner's name is told, including ones added after this line was
+      // written. The rail stays an explicit call: it is not an ownerName surface.
+      if(v === 1){
+        try{ hcRenderRail(); }catch(e){}
+        hcAfterWrite('ownerName', { name: nm }).then(function(res){
+          // A surface that could not refresh is SAID, never left looking correct. There is no
+          // confirmation sentence of our own here — the model already replied to his name — so
+          // the only thing that speaks is a failure, and only if there is one.
+          var line = hcStaleLine(res);
+          if(line) hcSayVoluntary(line.trim());
+        });
+      }
     });
     return true;
   }
@@ -9457,6 +9780,18 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   function hcReflectAuthState(){
     var btn = document.getElementById('navSignin');
     if(!btn) return;
+    // THE CHIP IS THE ONE SURFACE THAT ALREADY SATISFIED THE CONTRACT — measured, not assumed:
+    // it fills a permanent page node in place (`btn.innerHTML = ''` then refills) rather than
+    // creating and appending its own. So it registers as-is, and its redraw is this same
+    // function. Registration is idempotent by element, so calling it on every reflect replaces
+    // the entry rather than stacking them up.
+    if(hcIsAuthed()){
+      hcLiveRegister({
+        kind: 'ownerName', el: btn, key: null,
+        describe: function(){ return 'your account chip'; },
+        redraw: function(){ hcReflectAuthState(); }
+      });
+    }
     if(hcIsAuthed()){
       // THE ACCOUNT CHIP, not a "Signed in" pill. "Signed in" is a status the owner
       // already knows — the whole screen is their business — sitting in the one corner

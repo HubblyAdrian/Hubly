@@ -1,5 +1,50 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## THE THREE THINGS THE DESIGN DID NOT KNOW — ANSWERED BY MEASUREMENT (2026-09-15)
+
+Section 6 of `docs/LIVE_SURFACES_DESIGN.md` listed three unknowns. They were measured as the first
+act of the build, before a line of the registry was written, and **one of them was worse than the
+design assumed.**
+
+**1. Can `hcRenderWeekGrid` redraw in place today? NO.** It created its own `wrap` and appended it
+to the thread — there was no element a later re-read could fill. It also ended with
+`hcOfferSidebarTab(...)` and `hcThreadScrollToEnd()`, neither of which may fire on a redraw:
+re-offering the tab on every write is a second composer speaking while a question is on the floor
+(prohibition 4 / one-ask-at-a-time), and scrolling the thread under the owner's hand is one of the
+four editor bugs of 2026-09-02. Split into `hcWeekGridInto(el, …)` + a first-draw wrapper.
+
+**2. Does any redraw replace its own `el`? THE QUESTION WAS TOO KIND — three of four surfaces had
+no `el` at all.** The flat views (`day`, `jobs`, `customers`) appended their heading and every card
+as **direct siblings in the thread**. There was nothing to be the registry's handle and no boundary
+a redraw could be held to; re-rendering a day view would have had to reach for the thread, which is
+the wipe that ate the arrival. Fixed by giving each flat view a `hc-view-box` (`display:contents`,
+so nothing a person can see changes).
+
+**The chip was the one surface that already satisfied the contract** — `hcReflectAuthState` fills a
+permanent page node in place. Measured, not assumed.
+
+**THE FAILURE MODE RED-PROOFED FIRST**, as instructed: a redraw that REPLACES its own `el` strands
+the registry's handle, `el.isConnected` goes false, and the surface **silently stops updating
+forever with nothing going red**. Restored as a defect → FAIL 6, 7, 8, 10, 15, 16, 17. Leg 10
+exists for exactly this: it redraws twice and requires the surface to still be live and still
+correct on the second pass.
+
+**3. Mobile. NOT VERIFIED AND NOT CLAIMED.** There is no 390px viewport and no soft keyboard here.
+Nothing in this slice has been checked on a phone.
+
+## AND A RED-PROOF THAT WAS INCONCLUSIVE, NOT GREEN (2026-09-15)
+
+Restoring the hand-written refresh list produced **no FAIL lines and no pass** — my edit broke the
+page, so the check exited non-zero for the wrong reason and printed nothing. A red-proof that
+cannot run is not a red-proof. Redone surgically: FAIL 21. Worth recording because the failure
+*looked* like a clean run in the terminal.
+
+**And a limit found by red-proof ②:** removing the `hcAfterWrite` call from the job-edit door fired
+only the **source** legs 22–23, not the behaviour legs. Driving the real Save button needs an authed
+session and a real job row; faking `hcEditDayJob` would test the fake, not the wiring. So the
+door's wiring is asserted by reading and the pass it triggers is asserted by running — stated in the
+check rather than papered over.
+
 ## HUBLY SAID ITS OWN WIRE PROTOCOL OUT LOUD — FIXED AT FOUR ENDS, SHIPPED (2026-09-15)
 
 Adrian was shown this, in a Hubly message bubble, above his week grid:

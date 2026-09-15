@@ -2931,3 +2931,79 @@ because it reads the thing he owns rather than the thing we forgot to create.
 **And it cuts both ways, which is easy to miss.** The same places-row gate that told him his full
 schedule was missing ALSO hid "See my customers" from Graef, who has four. A bookkeeping gate is
 not merely over-strict; it is uncorrelated with the truth in both directions.
+
+## Lesson 87
+
+**THIS CODEBASE'S RECURRING DEFECT IS A HAND-MAINTAINED SET THAT SILENTLY GOES STALE. The fix is
+never "check your lists" — it is to DERIVE the set, or to make membership STRUCTURAL so a thing
+cannot exist outside it.**
+
+### What would make this tally wrong, stated before the number
+
+The scepticism owed to an alarming count (Lesson 85). Three things would move it:
+
+1. **The unit is arguable.** I am counting *"a set of things enumerated by hand, where the code's
+   correctness depends on the set being complete, and an omission was found in production or by
+   Adrian."* A looser unit (any incomplete list) counts more; a stricter one (only sets that
+   shipped a user-visible defect) counts fewer.
+2. **Some are one defect wearing two hats.** The extraction gate's two lists (fact SHAPES and
+   assertion PHRASINGS) were found in one sitting on the same code path. Counted as two below
+   because they were two independent enumerations that each lost real messages; counted as one, the
+   total drops by one.
+3. **The window.** "This week" is 2026-09-09 → 2026-09-15. Three of the entries predate it and are
+   included because they are the same defect; if the tally is meant to be *this week only*, it is
+   **6**, not 11.
+
+**So: 11 by the unit above across the project, 6 inside this week.** Each line below cites
+something I can point at. Anything I could not cite is not on the list.
+
+### The tally
+
+| # | The hand-maintained set | What the omission cost | Citation |
+|---|---|---|---|
+| 1 | `DRAFT_INJECTED_ACTIONS` — literal set of actions needing a draft token | a writer dead on a claimed site | now `deriveDraftInjectedActions()`; `scripts/check-owner-id-invariant.mjs:145` asserts it stays derived |
+| 2 | The capability registry's **door list** | capabilities with no reachable door | `scripts/check-registry-knows-every-door.mjs` |
+| 3 | The **voluntary-addition gate**'s composer list | six speakers walked past the gate; Adrian got ~11 things at once on arrival | `public/platform-home.html` — "the gate only ever guarded the four composers we remembered" |
+| 4 | The **doorless-RPC baseline**, tracked by NAME | dropped a live function (`update_business_job`) from tracking; the sweep also silenced itself by scanning `scripts/` | Lesson 84 |
+| 5 | The **message composer** list | `hcAppendMessage` was guarded, `hcRenderTranscript` was not — the envelope would have printed on every reload, permanently | `docs/OPEN_FINDINGS.md`, 2026-09-15, end 4 |
+| 6 | The **refresh list** in `hcAcceptOwnerName` | `hcRenderRail(); hcReflectAuthState();` with `hcRenderIdentity` missing — the chip said "Adrian", the greeting said "Good afternoon." until he reloaded (item G) | this lesson's own fix; `scripts/check-live-surfaces.mjs:21` |
+| 7 | The freeform **anchor count**'s shape list | a service is a heading one build, a `<li><span>` the next | CLAUDE.md, "enumerate the harmless side" |
+| 8 | The **price scan**'s symbol list | counted `$`, missed every priced service rendered without it | CLAUDE.md, same |
+| 9 | The **hours detector**'s format list | matched formatted times, missed "Closed", "Call for hours", "open daily" | CLAUDE.md, same |
+| 10 | The **extraction gate**'s list of fact SHAPES | lost 52 of 125 real messages | CLAUDE.md, 2026-09-02 |
+| 11 | The **extraction gate**'s list of assertion PHRASINGS | lost 28 more | CLAUDE.md, same sitting |
+
+### Why "check your lists harder" is the wrong lesson
+
+Every one of these was written by someone who believed the list was complete, and in most cases it
+**was** complete on the day it was written. The defect is not carelessness; it is that a hand-kept
+set has **no relationship to the thing it is supposed to describe**, so the two drift the moment
+anyone adds a composer, a door, a surface or a page shape. A review cannot catch drift that has not
+happened yet.
+
+### The three shapes of the real fix, in order of preference
+
+1. **DERIVE IT.** `DRAFT_INJECTED_ACTIONS` became `deriveDraftInjectedActions()` — the set is now
+   computed from the registry it describes, so it cannot disagree with it.
+2. **MAKE MEMBERSHIP STRUCTURAL.** The live-surface registry (2026-09-15) is this shape, and it is
+   why the design chose it: **liveness is `el.isConnected`.** A surface is live exactly while its
+   node is in the document. There is no list of live surfaces to maintain and no deregister call to
+   forget, because *membership is a property of the DOM, not a record we keep about the DOM*. A
+   deregister path must never be added back "for tidiness" — that would reintroduce the class this
+   whole lesson is about.
+3. **GATE ON THE CONTENT, NOT ON OUR BOOKKEEPING ABOUT THE CONTENT** (Lesson 86, restated because
+   it is the same disease). "Does this collection hold anything" cannot be wrong about him the way
+   "is there a places row" can.
+
+And when none of the three is available — the extraction cases, where the thing genuinely has no
+closed set of forms — **enumerate the HARMLESS side instead** (CLAUDE.md). A missing entry on the
+harmless list costs one wasted pass; a missing entry on the valuable list costs a fact the owner
+actually stated.
+
+### The tell, for next time
+
+You are looking at this defect whenever you find a literal collection — an array, a `Set`, a
+sequence of hand-written calls, an `if/else` chain over names — whose **correctness depends on
+completeness** and whose members are **discovered somewhere else**. Two of the four ends of the
+envelope bug were found by asking one question of that shape: *where else does a string become a
+bubble?* Ask it of the list, not of the instance, before fixing the instance you were handed.
