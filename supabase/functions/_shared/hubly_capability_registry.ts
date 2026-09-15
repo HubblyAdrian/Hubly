@@ -8154,7 +8154,9 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         // for it to predict.
         name: "showMe",
         description:
-          "Render one of the owner's own collections INSIDE THE CONVERSATION as real, clickable records — their day/schedule, their jobs, or their customers. " +
+          "Render one of the owner's own collections INSIDE THE CONVERSATION as real, clickable records — their day, their WEEK, their jobs, or their customers. " +
+          "\"day\" is today and tomorrow; \"week\" is a Monday-to-Sunday grid they can page through — use \"week\" whenever they say week " +
+          "(\"show me my schedule this week\", \"what does next week look like\"). " +
           "Invoke this whenever they ask to SEE or OPEN something of theirs (\"show me my schedule\", \"open my schedule\", \"take me to my schedule\", \"show me my jobs\", \"can I see my customers\"). " +
           "THE THREAD IS THE SURFACE: the records appear in the chat where they are reading, each one openable. " +
           "SAY NOTHING ABOUT IT. Do not announce that you are opening, showing, pulling up or fetching anything; do not say how many there are; do not predict what they will see. " +
@@ -8172,14 +8174,14 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             what: {
               type: "string",
               description: "Which of their collections to render in the conversation.",
-              enum: ["day", "jobs", "customers"] as const,
+              enum: ["day", "week", "jobs", "customers"] as const,
             },
           },
           required: ["what"],
         },
         handler: async (args) => {
           const what = String((args as any)?.what || "").trim();
-          const KNOWN = ["day", "jobs", "customers"];
+          const KNOWN = ["day", "week", "jobs", "customers"];
           if (!KNOWN.includes(what)) {
             return { ok: false, real: false, error: "no_view",
               summary: "There is no such view yet. Say what you CAN do about it instead, and do not describe any control." };

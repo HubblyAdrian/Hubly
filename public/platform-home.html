@@ -549,7 +549,25 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
    INHERITED permission to break inside a word, and that is what produced "Chec k my sales" and
    "Edit my webs ite". A label has no unbreakable tokens to rescue; it wraps at word boundaries
    or it truncates, and it never splits a word. */
+/* THE WEEK GRID — screen 2. A calm grid, not a dashboard: a day row, its date, and whatever is
+   actually in it. No colour blocks, no density, nothing per-day that is not a real row. */
+.hc-week{display:block;max-width:640px;padding:0;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel,#fff)}
+.hc-week-hd{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.hc-week-lbl{font-weight:700;font-size:14px}
+.hc-week-nav{display:flex;gap:6px}
+.hc-week-pg{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:transparent;cursor:pointer;font-size:16px;line-height:1;color:inherit}
+.hc-week-pg:hover{background:rgba(0,0,0,.04)}
+.hc-week-day{display:grid;grid-template-columns:76px 1fr;gap:10px;padding:8px 14px;border-bottom:1px solid var(--line)}
+.hc-week-day:last-child{border-bottom:0}
+.hc-week-day.is-today{background:rgba(47,93,69,.06)}
+.hc-week-dn{font-size:12px;font-weight:700;display:flex;flex-direction:column;gap:1px;padding-top:6px}
+.hc-week-dn small{font-weight:500;opacity:.65;font-size:11px}
+.hc-week-items{display:flex;flex-direction:column;gap:6px;min-width:0}
+.hc-week-none{font-size:13px;opacity:.5;padding:6px 0}
+.hc-week-item{margin:0!important;max-width:none!important;padding:8px 10px!important;font-size:13px!important;line-height:1.35!important}
+@media (max-width:560px){ .hc-week-day{grid-template-columns:1fr;gap:4px} .hc-week-dn{flex-direction:row;gap:6px;padding-top:0} }
 .hc-act-nm,.hc-act-ct,.hc-sugg,.hc-job-card-t,.hc-job-card-s,.hc-row-t,.hc-row-s,.hc-room-group,
+.hc-week-lbl,.hc-week-dn,.hc-week-none,
 .hc-idw-hi,.hc-idw-sub,.hc-chip-nm,.hc-rail-item,.hc-room-hd h2{
   overflow-wrap:normal;word-break:normal;hyphens:none}
 .hc-act-nm{display:block;font-size:15px;font-weight:700;letter-spacing:-.01em;line-height:1.3}
@@ -5187,6 +5205,31 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       open: function(j){ hcJobPanel(j); },
       empty: 'You have no jobs on record yet.'
     },
+    // ── THE WEEK, RENDERED IN THE CONVERSATION — screen 2, approved 2026-09-06 ──────────
+    //
+    // docs/design/owner-home-2026-09-06-flow.png screen 2: the owner types "show me my schedule
+    // this week", Hubly renders the week INLINE — a calm grid, one row per day, status dot +
+    // 12-hour time + service + customer, week paging — and then OFFERS to keep it:
+    // "Want me to keep this as a tab in your sidebar?" [Yes, add it] [No, not now].
+    //
+    // Approved 2026-09-06 and never built. It is declared here rather than as a parallel
+    // renderer: `groupBy` is the only thing the week needs that a flat list did not, and every
+    // appointment row is still hcRecordCard, so pressing one opens the job exactly as pressing
+    // a day row does.
+    week: {
+      title: 'Your schedule',
+      grouped: true,
+      load: async function(biz, offsetWeeks){
+        var r = hcWeekRange(offsetWeeks || 0);
+        return await hcLoadJobs(biz.id, r.from, r.to);
+      },
+      parts: function(j){
+        return [ [hcTimeUS(j.scheduled_time), j.is_block ? (j.service_name || 'Blocked time') : (j.service_name || 'Booking')].filter(Boolean).join('  '),
+                 j.is_block ? 'Blocked — not a customer' : (j.customer_name || '') ];
+      },
+      open: function(j){ hcJobPanel(j); },
+      empty: 'Nothing is booked that week.'
+    },
     customers: {
       title: 'Your customers',
       words: ['customers', 'clients', 'regulars'],
@@ -5204,6 +5247,46 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       empty: 'You have no customers on record yet.'
     }
   };
+  // ══ BAND WORDS, NEVER COLUMN NAMES ═══════════════════════════════════════════════════
+  //
+  // ADRIAN, 2026-09-15: "Band B" and "Lane: Work" are OUR column names and must never reach an
+  // owner. The words are the ones in docs/design/my-day-2026-09-15-approved.png:
+  // A — Must Do · B — Important · C — Nice to Do.
+  //
+  // Same treatment as the ISO date, the raw phone and the 24-hour clock: ONE PLACE, routed
+  // everywhere, checked. `tasks.band` and `tasks.lane` are storage; these are the only strings
+  // an owner is allowed to read, and scripts/check-no-machine-words.mjs fails the run if a raw
+  // band letter or "Lane:" reaches an owner-facing surface again.
+  var HC_BAND_WORDS = { A: 'Must Do', B: 'Important', C: 'Nice to Do' };
+  var HC_LANE_WORDS = { personal: 'Personal', work: 'Business', job: 'Job', business: 'Business' };
+  /** "A — Must Do". The heading a band gets, letter and words together, as the design draws it. */
+  function hcBandLabel(band){
+    var k = String(band || '').trim().toUpperCase();
+    var w = HC_BAND_WORDS[k];
+    return w ? (k + ' \u2014 ' + w) : null;          // an unknown band gets NO label, never "Band ?"
+  }
+  /** The words alone, for a line that already carries the letter in a disc. */
+  function hcBandWords(band){ return HC_BAND_WORDS[String(band || '').trim().toUpperCase()] || null; }
+  /** The quiet lane pill: Job · Business · Personal. Never "Work", which is a column value. */
+  function hcLaneLabel(lane){ return HC_LANE_WORDS[String(lane || '').trim().toLowerCase()] || null; }
+  try{ window.hublyWords = { band: hcBandLabel, bandWords: hcBandWords, lane: hcLaneLabel }; }catch(e){}
+
+  /** Monday-to-Sunday around today, offset by whole weeks. Local dates, never UTC — a week that
+   *  starts at UTC midnight is the previous Sunday west of Greenwich. */
+  function hcWeekRange(offsetWeeks){
+    var d = new Date();
+    d.setDate(d.getDate() + (offsetWeeks || 0) * 7);
+    var dow = (d.getDay() + 6) % 7;                 // 0 = Monday
+    var mon = new Date(d.getFullYear(), d.getMonth(), d.getDate() - dow);
+    var sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 6);
+    var iso = function(x){ return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
+    return { from: iso(mon), to: iso(sun), monday: mon, sunday: sun };
+  }
+  /** "Sep 15 – Sep 21, 2026" — the header of the week grid, through the one date path. */
+  function hcWeekLabel(r){
+    var f = function(x){ try{ return x.toLocaleDateString(undefined, { month:'short', day:'numeric' }); }catch(e){ return hcDateUS(x); } };
+    return f(r.monday) + ' \u2013 ' + f(r.sunday) + ', ' + r.sunday.getFullYear();
+  }
   /** Does this collection hold anything? One question, asked by the thread view, the cards and
    *  the chips — so a door is never offered to an empty room (Adrian, 2026-09-15: "check my
    *  sales shouldn't be there since there are no sales") and a full room is never reported as
@@ -5230,7 +5313,111 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     try{ console.log(line); }catch(e){}
     return line;
   }
-  async function hcShowInThread(kind){
+  /** THE WEEK GRID — screen 2, rendered into the thread. Real rows only; a day with nothing
+   *  says so; every appointment is a pressable record that opens the job. */
+  function hcRenderWeekGrid(kind, v, rows, thread, offsetWeeks){
+    var r = hcWeekRange(offsetWeeks);
+    var wrap = document.createElement('div');
+    wrap.className = 'hc-msg hubly hc-week';
+    wrap.setAttribute('data-hc-thread-view', kind);
+
+    var hd = document.createElement('div'); hd.className = 'hc-week-hd';
+    var lbl = document.createElement('span'); lbl.className = 'hc-week-lbl'; lbl.textContent = hcWeekLabel(r);
+    hd.appendChild(lbl);
+    var nav = document.createElement('span'); nav.className = 'hc-week-nav';
+    [['\u2039', -1, 'Previous week'], ['\u203a', 1, 'Next week']].forEach(function(b){
+      var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'hc-week-pg';
+      btn.textContent = b[0]; btn.setAttribute('aria-label', b[2]);
+      btn.setAttribute('data-hc-week-pg', String(b[1]));
+      btn.addEventListener('click', function(){ hcShowInThread(kind, offsetWeeks + b[1]); });
+      nav.appendChild(btn);
+    });
+    hd.appendChild(nav); wrap.appendChild(hd);
+
+    var todayIso = (function(){ var d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
+    for(var i = 0; i < 7; i++){
+      var d = new Date(r.monday.getFullYear(), r.monday.getMonth(), r.monday.getDate() + i);
+      var iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+      var mine = rows.filter(function(x){ return String(x.scheduled_date) === iso; })
+                     .sort(function(a,b){ return String(a.scheduled_time||'').localeCompare(String(b.scheduled_time||'')); });
+      var dayEl = document.createElement('div');
+      dayEl.className = 'hc-week-day' + (iso === todayIso ? ' is-today' : '');
+      dayEl.setAttribute('data-hc-week-day', iso);
+      var dn = document.createElement('div'); dn.className = 'hc-week-dn';
+      var dow = ''; try{ dow = d.toLocaleDateString(undefined, { weekday:'short' }); }catch(e){}
+      var md = ''; try{ md = d.toLocaleDateString(undefined, { month:'short', day:'numeric' }); }catch(e){ md = hcDateUS(iso); }
+      dn.innerHTML = ''; dn.appendChild(document.createTextNode(dow));
+      var sm = document.createElement('small'); sm.textContent = md; dn.appendChild(sm);
+      dayEl.appendChild(dn);
+      var list = document.createElement('div'); list.className = 'hc-week-items';
+      if(!mine.length){
+        var none = document.createElement('div'); none.className = 'hc-week-none';
+        none.textContent = 'No appointments';
+        list.appendChild(none);
+      }else{
+        mine.forEach(function(j){
+          var card = hcRecordCard({
+            parts: v.parts(j),
+            ariaPrefix: 'Open booking',
+            className: 'hc-week-item',
+            attr: 'data-hc-view-row', attrValue: kind,
+            onOpen: function(){ v.open(j); }
+          });
+          list.appendChild(card);
+        });
+      }
+      dayEl.appendChild(list);
+      wrap.appendChild(dayEl);
+    }
+    thread.appendChild(wrap);
+    hcOfferSidebarTab('planner', 'Schedule');
+    hcThreadScrollToEnd();
+  }
+  /** SCREEN 2's OFFER, AND SCREEN 3's ANNOUNCEMENT. The view is produced by the conversation and
+   *  only becomes furniture if the owner says so — "Nothing appears in navigation because we
+   *  guessed they would want it." And when it does, it is ANNOUNCED and said to be reversible,
+   *  because the interface may not change shape silently (prohibition 4). */
+  function hcOfferSidebarTab(kind, label){
+    try{ if(hcWorkspaces().some(function(w){ return w.id === kind; })) return false; }catch(e){}
+    if(hc._tabOfferShown) return false;              // one offer per session, not per render
+    hc._tabOfferShown = true;
+    var thread = hcThreadBody(); if(!thread) return false;
+    var q = hcAppendMessage('hubly', 'Want me to keep this as a tab in your sidebar?');
+    var acts = document.createElement('div'); acts.className = 'hc-msg hubly hc-arrival-actions';
+    acts.setAttribute('data-hc-tab-offer', kind);
+    var yes = document.createElement('button'); yes.type = 'button'; yes.className = 'hc-arrival-act';
+    yes.textContent = 'Yes, add it';
+    var no = document.createElement('button'); no.type = 'button'; no.className = 'hc-arrival-act';
+    no.textContent = 'No, not now';
+    yes.addEventListener('click', async function(){
+      yes.disabled = true; no.disabled = true;
+      var ok = false;
+      try{
+        var uid = await hcOwnerUid();
+        var c = await authGetClient();
+        var res = await c.rpc('add_business_place', { p_id: hc.draftBusiness.id, p_owner_id: uid, p_kind: kind, p_scope: 'workspace' });
+        ok = !!(res && !res.error && res.data && res.data.ok !== false);
+      }catch(e){ ok = false; }
+      try{ acts.remove(); }catch(e){}
+      if(ok){
+        try{ await hcLoadPlaces(hc.draftBusiness.slug); hcRenderRail(); }catch(e){}
+        // SCREEN 3, top half — announce, say it is reversible, teach the mechanic in one clause.
+        hcAppendMessage('hubly', 'Got it \u2014 I\u2019ve added ' + label + ' to your sidebar. You can always ask me to remove it, or add more tabs later.');
+      }else{
+        hcAppendMessage('hubly', 'I couldn\u2019t add that tab just now, so your sidebar hasn\u2019t changed.');
+      }
+      hcThreadScrollToEnd();
+    });
+    no.addEventListener('click', function(){
+      try{ acts.remove(); }catch(e){}
+      hcAppendMessage('hubly', 'No problem \u2014 it stays here in the conversation.');
+      hcThreadScrollToEnd();
+    });
+    acts.appendChild(yes); acts.appendChild(no);
+    thread.appendChild(acts);
+    return true;
+  }
+  async function hcShowInThread(kind, offsetWeeks){
     hcShowTrace('asked for ' + JSON.stringify(kind) + ' claimed=' + !!hc.draftClaimed +
                 ' biz=' + ((hc.draftBusiness && hc.draftBusiness.id) || 'none'));
     var v = HC_THREAD_VIEWS[kind];
@@ -5239,7 +5426,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var biz = hc.draftBusiness;
     if(!biz || !biz.id){ hcAppendMessage('hubly', 'No business is open, so there\u2019s nothing to show.'); return { ok:false, error:'no_business' }; }
     var rows = null;
-    try{ rows = await v.load(biz); }
+    try{ rows = await v.load(biz, offsetWeeks || 0); }
     catch(e){
       // A READ FAILURE IS NOT AN EMPTY LIST, and it is never dressed as a fact about his data.
       hcShowTrace('READ FAILED for ' + kind + ': ' + String((e && e.message) || e).slice(0,90));
@@ -5247,7 +5434,17 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       return { ok:false, error:'read_failed' };
     }
     if(!Array.isArray(rows)){ hcAppendMessage('hubly', 'I couldn\u2019t read that just now.'); return { ok:false, error:'read_failed' }; }
-    if(!rows.length){ hcShowTrace('read ok, 0 rows for ' + kind); hcAppendMessage('hubly', v.empty); return { ok:true, count:0 }; }
+    if(!rows.length && !v.grouped){ hcShowTrace('read ok, 0 rows for ' + kind); hcAppendMessage('hubly', v.empty); return { ok:true, count:0 }; }
+    if(!rows.length && v.grouped){
+      // AN EMPTY WEEK SAYS SO — and still shows the week, because "nothing booked" is a shape
+      // an owner needs to see, not a sentence to be told instead of it.
+      hcShowTrace('read ok, 0 rows for ' + kind + ' (empty week, grid still rendered)');
+      hcAppendMessage('hubly', v.empty);
+    }
+    // A GROUPED VIEW IS A GRID, NOT A LIST — one row per DAY, appointments inside it, and a day
+    // with nothing says "No appointments" rather than being omitted. Screen 2's whole point is
+    // that the owner can see the SHAPE of the week, and a week with holes in it is information.
+    if(v.grouped){ hcRenderWeekGrid(kind, v, rows, thread, offsetWeeks || 0); return { ok:true, count: rows.length }; }
     var head = document.createElement('div');
     head.className = 'hc-msg hubly hc-room-group';
     head.setAttribute('data-hc-thread-view', kind);
@@ -5489,6 +5686,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // The one seam, same reason as the job card: no authed session is reachable from a check,
   // and a proof of a copy is not a proof of the code.
   try{ window.hublyDayUI = { add: hcAddDayTask, line: hcAddDayTaskLine, addRow: hcDayAddRow }; }catch(e){}
+  // The task panel joins the other declared seams (hublyJobUI, hublyDayUI) so a check can drive
+  // THE PRODUCT'S panel with simulated task DATA — the alternative was a leg that reported it
+  // could not measure and passed nothing, which is honest but useless.
+  try{ window.hublyTaskUI = { panel: hcTaskPanel }; }catch(e){}
 
   /** The add row: a time, a thing, and where it is. Always present, in every state. */
   function hcDayAddRow(room, biz){
@@ -5640,8 +5841,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         room.appendChild(hcRoomRow({
           when: t.due_time ? (hcTimeUS(t.due_time) || hcHm(t.due_time)) : (t.band ? t.band : '—'),
           title: t.title,
-          sub: [ t.lane === 'personal' ? 'Personal' : null,
-                 t.band_source === 'owner' ? ('Band ' + t.band + ' — you set this') : (t.band_reason ? ('Band ' + t.band + ' — ' + t.band_reason) : ('Band ' + t.band)),
+          sub: [ hcLaneLabel(t.lane),
+                 // THE WORDS, NOT THE COLUMN. "Band B" was our schema leaking into his day.
+                 t.band_source === 'owner' ? (hcBandLabel(t.band) + ' \u2014 you set this')
+                   : (t.band_reason ? (hcBandLabel(t.band) + ' \u2014 ' + t.band_reason) : hcBandLabel(t.band)),
                  Number(t.roll_count) > 0 ? ('moved ' + t.roll_count + (Number(t.roll_count) === 1 ? ' time' : ' times') + ' already') : null,
                  (!t.due_date ? 'no day set' : null)
                ].filter(Boolean).join(' · '),
@@ -5656,8 +5859,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       var rows = [
         ['What', t.title],
         ['When', t.due_date ? (hcDayLabel(t.due_date) + (t.due_time ? ' at ' + (hcTimeUS(t.due_time) || hcHm(t.due_time)) : '')) : 'No day set — not overdue, just undated'],
-        ['Band', t.band + (t.band_source === 'owner' ? ' (you set this)' : (t.band_reason ? ' — ' + t.band_reason : ''))],
-        ['Lane', t.lane === 'personal' ? 'Personal' : 'Work'],
+        // "Band" and "Lane" are column names too — the row labels say what they MEAN.
+        ['Priority', hcBandLabel(t.band) ? (hcBandLabel(t.band) + (t.band_source === 'owner' ? ' (you set this)' : (t.band_reason ? ' \u2014 ' + t.band_reason : ''))) : null],
+        ['Kind', hcLaneLabel(t.lane)],
         ['Moved', Number(t.roll_count) > 0 ? (t.roll_count + (Number(t.roll_count) === 1 ? ' time' : ' times')) : null],
         ['Notes', t.notes || null]
       ].filter(function(r){ return r[1]; });
@@ -6888,6 +7092,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   async function hcRenderHome(){
     var thread = hcThreadBody(); if(!thread) return;
     thread.innerHTML = '';
+    // The thread has just been wiped, so the furniture is gone with it and may draw once more.
+    // This is the ONLY place that reopens it (see hcRenderHomeFurniture's guard).
+    hc._furnitureDrawn = false;
     var biz = hc.draftBusiness || {};
     // ── THE GREETING (L0). Computed from rows; see docs/L0_GREETING_COPY.md. ──────
     //
@@ -6956,6 +7163,22 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   /** Everything Home draws that is NOT an answer to something the owner just did. Called by
    *  hcRenderHome when the floor is clear, and again by the name handler once it is. */
   async function hcRenderHomeFurniture(biz, thread){
+    // ══ ONCE. NEVER MID-THREAD, NEVER TWICE. ═══════════════════════════════════════════
+    //
+    // 2026-09-15, Adrian: after "Opening your schedule." the page-view line, both cards and all
+    // four chips appeared AGAIN, below an exchange already in progress. Home's furniture is
+    // furniture — it belongs at the top of the screen he arrived on, not interleaved with a
+    // conversation he is in the middle of.
+    //
+    // The deferral fix (release after the reply) was necessary and not sufficient: nothing
+    // stopped a SECOND render. This is the guard. hcRenderHome clears it when it wipes the
+    // thread, because that is the one moment the furniture legitimately draws again.
+    if(hc._furnitureDrawn){
+      hc._furniturePending = false;
+      try{ hcArrivalTrace('furniture already drawn this screen \u2014 not drawing it again'); }catch(e){}
+      return;
+    }
+    hc._furnitureDrawn = true;
     hc._furniturePending = false;
     await hcLoadHomeCounts(biz);
     // THE UNBOOKED COUNT COMES FROM THE EVENT FEED, NOT A SECOND QUERY — hcLoadHomeCounts's own

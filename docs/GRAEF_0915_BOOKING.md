@@ -1,4 +1,23 @@
-# Graef's "clay and seal on 9/15" — measured 2026-09-15, the day of the job
+# Graef's "clay and seal on 9/15" — CLOSED. Not an incident.
+
+> **CLOSED BY ADRIAN, 2026-09-15.** The 9/15 clay and seal **was never a real booking**, and he
+> has already spoken with Austin about *"how come everything is different."* **Nothing is
+> outstanding on this customer.**
+>
+> This file stands as the record of **a question answered honestly** — not an open incident. The
+> measurement below is kept because it is the evidence for that, and because of what survives it.
+
+## What survives, and it is the point
+
+**The paste-a-job door is right, and here is the reason, on the record:** a home-service owner's
+work arrives by **phone, text and Instagram**. Austin uses all three. Until 2026-09-14 the product
+could accept **none** of it — a job could only enter Hubly through the booking widget or by being
+typed into the operator app, neither of which is where his work actually comes from.
+
+That is why `business.addJob` exists, and this is the customer evidence for it: the one time a
+real owner told us about a real job, the job had arrived somewhere we could not hear.
+
+---
 
 **Read-only throughout. Nothing of his was changed.**
 
@@ -45,7 +64,7 @@ and read different; small edits should only change the specific words or item yo
 changed that you didn't want changed?"* — and **he never replied**, so we do not know what he
 meant. That thread is unresolved, not mishandled.
 
-## (d) Is this a live incident? **No — but it is a live GAP, and today is the day.**
+## (d) Is this a live incident? **No.** (Confirmed by Adrian: never a real booking.)
 
 The booking never entered Hubly through any path. His site had 1–2 visitors on 6–8 September and
 no booking flow was started (the abandonment path demonstrably works — it recorded five test
@@ -60,9 +79,9 @@ too late:
 > through the booking path or was typed into the operator app; an owner holding a text has no way
 > in."* Shipped 2026-09-14/15. On 2026-09-08 it did not exist.
 
-**What is live today:** if that job is real, Austin is doing a clay and seal this morning with
-nothing about it in Hubly — no time, no address, no price, and it will not appear in his day, his
-revenue or his history.
+**RESOLVED:** there was no such job. The reasoning below was the right reasoning on the evidence
+available, and the conclusion it reached — "not lost data, a missing intake path" — is the part
+that turned out to matter.
 
 ## What I did not do, and what I would need
 

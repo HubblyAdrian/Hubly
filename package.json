@@ -108,7 +108,8 @@
     "check:service-stores:live": "node scripts/check-service-stores-agree.mjs --live",
     "check:surface": "node scripts/check-conversation-is-the-surface.mjs",
     "measure:squeeze": "node scripts/measure-squeeze.mjs",
-    "check:squeezed": "node scripts/check-nothing-squeezed.mjs"
+    "check:squeezed": "node scripts/check-nothing-squeezed.mjs",
+    "check:machine-words": "node scripts/check-no-machine-words.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
