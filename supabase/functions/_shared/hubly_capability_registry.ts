@@ -80,6 +80,7 @@ import {
   type HoursRow,
 } from "./hubly_contact.ts";
 import { addressGrounded, emailGrounded, phoneGrounded, phoneGroundedWhy, priceGrounded, reconcileServices } from "./hubly_grounding.ts";
+import { matchRows, requireCandidates, describeRow } from "./hubly_match.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
 // Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
 // "Invalid JWT". Both behaviours are load-bearing -- see supabase_admin.ts.
@@ -8069,28 +8070,33 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           if (!list.length) {
             return { ok: false, real: false, error: "no_jobs", summary: "There are no jobs on this business yet, so there is nothing to change." };
           }
-          const needle = which.toLowerCase();
-          const words = needle.match(/[a-z0-9]{3,}/g) || [];
-          const hit = (j: Record<string, unknown>) => {
-            const hay = [j.customer_name, j.service_name, j.address].filter(Boolean).join(" ").toLowerCase();
-            if (!hay) return false;
-            if (hay.includes(needle)) return true;
-            return words.length > 0 && words.every((w) => hay.includes(w));
-          };
-          const matches = list.filter(hit);
-          if (!matches.length) {
+          // WHICH ROW HE MEANT — one matcher, shared (hubly_match.ts). A word counts in
+          // proportion to how FEW OF HIS OWN ROWS contain it, so "job", "the", "appointment" and
+          // "booking" weigh nothing by the same mechanism, with no list to maintain. The old rule
+          // required EVERY word and so answered "I couldn't find a job matching 'driveway job'"
+          // to a man with one job printed three lines above him.
+          const outcome = matchRows(which, list as Record<string, unknown>[]);
+          if (outcome.kind === "none") {
+            // ZERO IS NOT A DISAMBIGUATION. It says there is no match AND says what he DOES have,
+            // because with one job on the books that is the entire answer. The old code asked
+            // "which job do you mean?" with nothing to choose between.
+            const have = list.slice(0, 5).map((j: Record<string, unknown>) => describeRow(j));
+            const more = list.length > 5 ? ` (and ${list.length - 5} more)` : "";
             return { ok: false, real: false, error: "no_match",
-              summary: `Nothing on this business matches "${which}". Say which job they mean; do not guess one.` };
+              summary: `Nothing on this business matches "${which}", so NOTHING was changed. ` +
+                (list.length === 1
+                  ? `The only job they have is: ${have[0]}. Ask whether they meant that one.`
+                  : `The jobs they have are: ${have.join("; ")}${more}. Ask which of those they meant.`) };
           }
-          if (matches.length > 1) {
-            // AMBIGUOUS IS A QUESTION, NOT A COIN FLIP. Changing the wrong job is worse than
-            // asking which — and the candidates are named so the owner can answer in one word.
-            const names = matches.slice(0, 4).map((m: Record<string, unknown>) =>
-              [m.customer_name, m.service_name, m.scheduled_date].filter(Boolean).join(" · ")).join("; ");
+          if (outcome.kind === "ask") {
+            // AMBIGUOUS IS A QUESTION, NOT A COIN FLIP — and requireCandidates makes it impossible
+            // to compose this refusal with fewer than two, so the zero-candidate version of this
+            // sentence cannot be written any more.
+            const names = requireCandidates(outcome.candidates).slice(0, 4).map(describeRow).join("; ");
             return { ok: false, real: false, error: "ambiguous",
-              summary: `"${which}" matches more than one job: ${names}. Ask which one — do not pick.` };
+              summary: `"${which}" matches more than one job: ${names}. Ask which one — do not pick, and nothing has been changed.` };
           }
-          const job = matches[0] as Record<string, unknown>;
+          const job = outcome.row as Record<string, unknown>;
 
           // GROUNDED OR DROPPED, exactly as addJob. A dropped field leaves the row untouched.
           const dropped: string[] = [];
@@ -8129,7 +8135,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const bits = [row.customer_name, row.service_name, when, row.address, row.amount ? `$${row.amount}` : ""].filter(Boolean);
           return {
             ok: true, real: true,
-            summary: `Job updated. It now reads: ${bits.join(" · ")}.` +
+            // IT NAMES WHAT IT ACTED ON, and that is not politeness. The matcher decides which
+            // row to change from his words; if it ever picks wrong, the ONLY protection he has is
+            // seeing immediately which job moved. So the reply names the row it touched, read back
+            // from the table, every time — never "done" and never "the job was updated".
+            summary: `Job updated — say WHICH job, so they can see it was the right one. It now reads: ${bits.join(" · ")}.` +
               (dropped.length ? ` The ${dropped.join(" and ")} could not be matched to what they typed, so ${dropped.length === 1 ? "it was" : "they were"} left as ${dropped.length === 1 ? "it was" : "they were"} — say so.` : ""),
             humanNote: `Changed the job.`,
             raw: { job: row, dropped },
