@@ -52,8 +52,15 @@ function body(name) {
 // The failing shape was hcAppendMessage('hubly', '• ' + n.text …). Match the bullet in an
 // appended message, in either quote style, however it is concatenated.
 const bulletCalls = [...src.matchAll(/hcAppendMessage\s*\([^)]*['"`]\s*[••]/g)];
+// THE DENOMINATOR FIRST. "No bullets" is an absence, and an absence is satisfied just as well by
+// the scan finding NOTHING TO SCAN — rename hcAppendMessage and this leg goes green over a file
+// full of bullets. A check that only proves the bad thing is gone cannot prove the good thing
+// arrived; this is the half that says the search was real. (Adrian's rule, 2026-09-15.)
+const allAppends = [...src.matchAll(/hcAppendMessage\s*\(/g)];
+say("0 the scan found owner-facing message calls at all", allAppends.length > 5,
+  `${allAppends.length} hcAppendMessage call(s) in the file — a count near zero means the scan is looking at the wrong name, not that the file is clean`);
 say("1 no bullets in owner-facing messages", bulletCalls.length === 0,
-  bulletCalls.length ? `${bulletCalls.length} hcAppendMessage call(s) composing a '•' line` : "none");
+  bulletCalls.length ? `${bulletCalls.length} hcAppendMessage call(s) composing a '•' line` : `none, across ${allAppends.length} call(s)`);
 
 // ── 2. ONE ASK ───────────────────────────────────────────────────────────────────
 const ask = body("hcMaybeAskNextGap");

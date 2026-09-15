@@ -147,6 +147,11 @@ for (const name of VOLUNTARY) {
     }
   }
 }
+// THE DENOMINATOR: `failed === 0` is satisfied by there being NOTHING TO CHECK. If the composer
+// names drift, callSites is empty, nothing fails, and the leg reports enforcement over a set of
+// zero. Same rule as the bullet scan — an absence needs a population.
+say("4a the call-site scan actually found composers to check", sites >= 3,
+  `${sites} call site(s) — near zero means the composer names moved, not that the gate is clean`);
 say("4 every named composer call site goes through the one door", failed === 0,
   `${sites} call site(s) examined across ${VOLUNTARY.length} composers`);
 

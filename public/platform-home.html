@@ -5258,6 +5258,20 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // an owner is allowed to read, and scripts/check-no-machine-words.mjs fails the run if a raw
   // band letter or "Lane:" reaches an owner-facing surface again.
   var HC_BAND_WORDS = { A: 'Must Do', B: 'Important', C: 'Nice to Do' };
+  // ── AN EMPTY BAND IS PERMISSION, NOT A FAILURE ────────────────────────────────────────
+  //
+  // MY_DAY.md §4, and Adrian's own drafts, approved 2026-09-15 and used verbatim. All three
+  // bands render every day, always, so the owner sees the SHAPE of the day before it has
+  // anything in it — and an empty A is the best news on the screen.
+  //
+  // DO NOT apologise for an empty band. DO NOT pad one. DO NOT add a fourth sentence that
+  // explains the other three.
+  var HC_BAND_EMPTY = {
+    A: 'Nothing has to happen today.',
+    B: 'Nothing waiting on you.',
+    C: 'Nothing on the maybe list.'
+  };
+  function hcBandEmptyLine(band){ return HC_BAND_EMPTY[String(band || '').trim().toUpperCase()] || null; }
   var HC_LANE_WORDS = { personal: 'Personal', work: 'Business', job: 'Job', business: 'Business' };
   /** "A — Must Do". The heading a band gets, letter and words together, as the design draws it. */
   function hcBandLabel(band){
@@ -5269,7 +5283,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   function hcBandWords(band){ return HC_BAND_WORDS[String(band || '').trim().toUpperCase()] || null; }
   /** The quiet lane pill: Job · Business · Personal. Never "Work", which is a column value. */
   function hcLaneLabel(lane){ return HC_LANE_WORDS[String(lane || '').trim().toLowerCase()] || null; }
-  try{ window.hublyWords = { band: hcBandLabel, bandWords: hcBandWords, lane: hcLaneLabel }; }catch(e){}
+  try{ window.hublyWords = { band: hcBandLabel, bandWords: hcBandWords, lane: hcLaneLabel, empty: hcBandEmptyLine }; }catch(e){}
 
   /** Monday-to-Sunday around today, offset by whole weeks. Local dates, never UTC — a week that
    *  starts at UTC midnight is the previous Sunday west of Greenwich. */
