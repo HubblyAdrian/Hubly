@@ -1,5 +1,72 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## HUBLY SAID ITS OWN WIRE PROTOCOL OUT LOUD — FIXED AT FOUR ENDS, SHIPPED (2026-09-15)
+
+Adrian was shown this, in a Hubly message bubble, above his week grid:
+
+```
+{"action":"reply","message":""}
+```
+
+**Cause.** The model's reply is JSON. `extractJson` slices first-`{` to **last**-`}`, so a single
+stray token after a valid envelope makes the slice unparseable — and both edge functions then fell
+back to *"use the raw text as the reply"*. The raw text **is** the envelope. The client composer
+printed it because `div.textContent = text` renders anything it is handed.
+
+**Not one bug. Four.** The class, in one sentence: *machine output reaches a person because a
+fallback preferred raw text to no text.*
+
+| # | Where | What it did | How it was found |
+|---|---|---|---|
+| 1 | `hubly-conversation/index.ts` | `message: rawText` on parse failure | Adrian's report |
+| 2 | `chatbot-message/index.ts` | identical fallback — at the owner's **customer** | **grep for the class** |
+| 3 | `platform-home.html` `hcAppendMessage` | printed whatever it was handed | Adrian's report |
+| 4 | `platform-home.html` `hcRenderTranscript` | the **replay** composer | **grep for the class** |
+
+**END 4 IS THE ONE THAT MATTERED, and it is the reason the class rule exists.** The envelope is
+**persisted** — it is a row in `business_conversations`, not a transient render. A server-only fix
+would have stopped new envelopes and left that one **printing on his page on every single reload,
+permanently**. Nothing in the report pointed at it; it was found by asking "where else does a
+string become a bubble?" and finding the second composer. Ends 2 and 4 both came from the grep,
+not from the list — and end 2 is worse in kind, because its audience is the owner's customer on
+the owner's public page, which is their reputation rather than ours.
+
+**Fix.** One shared predicate, `_shared/hubly_sayable.ts`, imported by both edge functions (the
+client holds the one copy it must — different runtime). It **salvages, then falls silent**: an
+envelope carrying a real `message`/`reply` still says that sentence, because refusing it would
+turn a cosmetic bug into a lost answer; one carrying nothing returns `""`, which hands the turn to
+the no-silence floor. The guard is on the **value that reaches a person**, not only on the parse
+failure, since a cleanly parsed envelope can nest another.
+
+**And silence is not the price.** Owner side: `hcEnsureTurnSpoke` speaks a true sentence about a
+failed turn. Customer side: `chatbot-message` returns a plain failure and writes **no** assistant
+row, rather than persisting an empty bubble into a transcript forever.
+
+**Red-proofed** at all four ends and at the over-correction (`scripts/check-no-envelope-said.mjs`,
+22 assertions): END 1 → FAIL 3 · END 2 → FAIL 3 · END 3 → FAIL 7, 8, 13 · END 4 → FAIL 9 ·
+no-salvage → FAIL 2.3, 2.4. **FAIL 13 on END 3 is worth reading twice:** with only the server
+fixed, the no-silence floor was reached *and the envelope printed underneath it*.
+
+**A third no-op leg this week.** The first draft of legs 1–2 sat inside a deno fallback node never
+reached: they asserted nothing, printed nothing, and the check read green. Leg 0 now proves the
+predicate actually ran and names which runtime ran it.
+
+**The corpus, read-only, counted not quoted.** Of **275** persisted assistant turns in
+`business_conversations`, exactly **1** is our wire format — the string above, on
+`hubly-classic-fixture` (`account_kind` **test**), 2026-09-15 20:25Z. 0 empty rows, 0
+`capabilityAction` rows. **The row is left alone** — the replay guard stops it rendering without
+touching the record, and deleting a record is Adrian's call. **I cannot prove that row is the one
+he saw**: it is a test fixture, not a market business.
+
+**SHIPPED AND VERIFIED ON THE RUNNING PRODUCT.** Edge: `hubly-conversation` v344, `chatbot-message`
+v60, both re-downloaded and confirmed to carry `sayableText` and no `reply: rawText`. Client:
+pushed, and the guards confirmed **in the bytes served from `https://myhubly.app/`** — the check
+re-run against the live URL shows the envelope producing no bubble, the replay dropping it while
+keeping the real line, and an ordinary sentence untouched.
+
+**What no human has verified:** a genuine model-produced parse failure in production. That cannot
+be forced from here; every input above was one I supplied.
+
 ## THE TWO SERVICE STORES DISAGREE ON 23 OF 41 CLAIMED BUSINESSES (2026-09-15, measured)
 
 Asked whether the arrival's service count should read the `services` table at all. **It should
