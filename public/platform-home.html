@@ -597,6 +597,16 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
 .hc-job-card:focus-visible{outline:2px solid var(--brand,#d9632d);outline-offset:2px}
 .hc-job-card-t{font-weight:650;font-size:15px}
 .hc-job-card-s{margin-top:3px;font-size:13px;opacity:.72}
+/* MY DAY'S ADD ROW. Plain controls, always visible, never behind a menu — the whole point is
+   that a person can type into their day. */
+.hc-day-add{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 14px}
+.hc-day-add input{font:inherit;padding:8px 10px;border:1px solid var(--hc-line,#e6e3dc);border-radius:9px;background:#fff}
+.hc-day-add-what{flex:1 1 220px;min-width:160px}
+.hc-day-add-where{flex:1 1 160px;min-width:120px}
+.hc-day-add-go{font:inherit;font-weight:600;padding:8px 16px;border-radius:9px;border:1px solid var(--brand,#d9632d);
+  background:var(--brand,#d9632d);color:#fff;cursor:pointer}
+.hc-day-add-go[disabled]{opacity:.6;cursor:default}
+.hc-day-add-msg{flex:1 1 100%;font-size:13px;opacity:.8;min-height:17px}
 .hc-event-fields{display:flex;flex-direction:column;gap:5px}
 .hc-event-row{display:flex;gap:12px;font-size:13px;line-height:1.4}
 .hc-event-k{flex:0 0 92px;color:#6b7280}
@@ -4951,6 +4961,111 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     });
   }
 
+  // ── MY DAY IS A MANUAL PLANNER FIRST ──────────────────────────────────────────────────
+  //
+  // MEASURED 2026-09-14: `tasks` holds ZERO rows across every business in the corpus — and
+  // `create_task`, `get_business_tasks`, `set_task_status` and `roll_task` have existed the
+  // whole time. The client reads tasks in one place and has NEVER written one. That is the
+  // same diagnosis as the jobs table earlier today (255 rows, no creator): not "nobody wants
+  // it" — NO WAY IN EXISTS. Zero is what a missing door looks like from the database.
+  //
+  // So this is the door, and it is hands-only: a time, a thing, and where it is. No model, no
+  // paste, no conversation. A planner an owner cannot type into is a report, not a planner.
+  //
+  // WHERE THE PLACE GOES, said plainly because it is a compromise: `tasks` has no address
+  // column, so "where" is stored in `notes`. That is honest storage of a real field, not a
+  // fabricated one — and when the column exists, this moves without the owner noticing.
+  async function hcAddDayTask(input){
+    var biz = hc.draftBusiness;
+    if(!biz || !biz.id) return { ok:false, error:'no_business' };
+    var title = String((input && input.title) || '').trim();
+    var time  = String((input && input.time) || '').trim();
+    var place = String((input && input.place) || '').trim();
+    var date  = String((input && input.date) || '').trim();
+    // AN ITEM WITH NOTHING IN IT IS NOT AN ITEM. Same refusal the writer makes; made here too
+    // so the owner hears it immediately instead of after a round trip.
+    if(!title) return { ok:false, error:'no_title' };
+    try{
+      var uid = await hcOwnerUid();
+      if(!uid) return { ok:false, error:'not_signed_in' };
+      var c = await authGetClient();
+      var r = await c.rpc('create_task', {
+        p_business_id: biz.id,
+        p_owner_id: uid,
+        p_title: title,
+        p_due_date: date || null,
+        p_due_time: time || null,
+        p_duration_minutes: null,
+        p_band: 'B',
+        p_band_reason: null,
+        p_lane: 'work',
+        p_notes: place ? ('Where: ' + place) : null
+      });
+      if(r && r.error) return { ok:false, error:String(r.error.message || 'write_failed') };
+      var row = r && r.data;
+      if(row && row.error) return { ok:false, error:String(row.error) };
+      // READ IT BACK FROM THE TABLE, not from the writer's return value. The writer telling us
+      // what it wrote is the writer's word; the table is the record (prohibition 3).
+      var back = await c.rpc('get_business_tasks', { p_business_id: biz.id, p_owner_id: uid, p_from: null, p_to: null });
+      var rows = (back && !back.error && Array.isArray(back.data)) ? back.data : [];
+      var found = rows.filter(function(t){ return row && t.id === row.id; })[0] || null;
+      if(!found) return { ok:false, error:'not_readable_back' };
+      return { ok:true, task: found, count: rows.length };
+    }catch(e){ return { ok:false, error:String((e && e.message) || e).slice(0, 120) }; }
+  }
+  /** The sentence for an add attempt. Pure, so a check runs it: every outcome says something,
+   *  and only a real write says it worked (prohibition 6 and prohibition 2, one line apart). */
+  function hcAddDayTaskLine(res){
+    if(!res) return 'I could not add that just now.';
+    if(res.ok){
+      var t = res.task || {};
+      var when = [t.due_date ? hcDayLabel(t.due_date) : '', hcHm(t.due_time)].filter(Boolean).join(' at ');
+      return 'Added' + (when ? (' — ' + when) : '') + ': ' + (t.title || '');
+    }
+    if(res.error === 'no_title') return 'Tell me what the thing is and I will put it on the day.';
+    if(res.error === 'not_signed_in') return 'You are signed out, so I cannot write to your day.';
+    if(res.error === 'not_readable_back') return "I saved that but could not read it back, so I am not going to tell you it is on your day.";
+    return 'I could not add that just now — nothing was saved.';
+  }
+  // The one seam, same reason as the job card: no authed session is reachable from a check,
+  // and a proof of a copy is not a proof of the code.
+  try{ window.hublyDayUI = { add: hcAddDayTask, line: hcAddDayTaskLine, addRow: hcDayAddRow }; }catch(e){}
+
+  /** The add row: a time, a thing, and where it is. Always present, in every state. */
+  function hcDayAddRow(room, biz){
+    var wrap = document.createElement('form');
+    wrap.className = 'hc-day-add';
+    wrap.setAttribute('data-hc-day-add', '1');
+    var t = document.createElement('input'); t.type = 'time'; t.className = 'hc-day-add-time';
+    t.setAttribute('aria-label', 'Time'); t.setAttribute('data-hc-day', 'time');
+    var w = document.createElement('input'); w.type = 'text'; w.className = 'hc-day-add-what';
+    w.placeholder = 'What is it?'; w.setAttribute('aria-label', 'What is it?'); w.setAttribute('data-hc-day', 'what');
+    var p = document.createElement('input'); p.type = 'text'; p.className = 'hc-day-add-where';
+    p.placeholder = 'Where (optional)'; p.setAttribute('aria-label', 'Where'); p.setAttribute('data-hc-day', 'where');
+    var b = document.createElement('button'); b.type = 'submit'; b.className = 'hc-day-add-go';
+    b.textContent = 'Add'; b.setAttribute('data-hc-day', 'add');
+    var msg = document.createElement('div'); msg.className = 'hc-day-add-msg'; msg.setAttribute('data-hc-day', 'msg');
+    wrap.appendChild(t); wrap.appendChild(w); wrap.appendChild(p); wrap.appendChild(b); wrap.appendChild(msg);
+    wrap.addEventListener('submit', async function(ev){
+      ev.preventDefault();
+      b.disabled = true;
+      var today = new Date();
+      var iso = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+      var res = await hcAddDayTask({ title: w.value, time: t.value, place: p.value, date: iso });
+      // EVERY OUTCOME SAYS SOMETHING, HERE, BESIDE THE CONTROL THEY PRESSED (prohibition 6).
+      msg.textContent = hcAddDayTaskLine(res);
+      b.disabled = false;
+      if(res && res.ok){
+        w.value = ''; p.value = '';
+        // RE-READ THE ROOM FROM THE RECORD rather than pushing the new row into the DOM: the
+        // list an owner sees is the list the table holds, or it is decoration.
+        try{ var canvas = document.getElementById('hcCanvas'); if(canvas){ canvas.innerHTML = ''; await hcRenderPlanner(canvas, biz); } }catch(e){}
+      }
+    });
+    room.appendChild(wrap);
+    return wrap;
+  }
+
   // ── PLANNER: the owner's day. ───────────────────────────────────────────────
   // Today and tomorrow, jobs and blocked time in ONE list, because a detailer does not
   // keep his jobs and his errands in separate apps and asking him to is why he uses
@@ -4982,6 +5097,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       canvas.appendChild(room0); return;
     }
     var room = hcRoomShell('Your day', null, null);
+    // THE HANDS COME FIRST. The add row is part of the room in EVERY state — including the
+    // empty one, which is the state every business in the corpus is in today. A planner whose
+    // only way in is "something else put it there" is a report.
+    hcDayAddRow(room, biz);
     var openTasks = Array.isArray(tasks) ? tasks : [];
     if(!jobs.length && !openTasks.length){
       hcRoomEmpty(room, 'Nothing booked today or tomorrow',

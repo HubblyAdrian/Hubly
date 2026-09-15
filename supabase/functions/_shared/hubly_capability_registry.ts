@@ -7590,6 +7590,17 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         // this and there must not be: "12 to 3", "noon till three", "a couple of hours
         // Thursday morning" and "Tues 9-11" are the same intent in four shapes, and a
         // list of the shapes we have already seen undercounts every single time.
+        // MY DAY'S DOORS, DECLARED WITH THE FIRST ONE THAT EXISTS (2026-09-14). Talk: this
+        // action. Do-it-yourself: the add row in the Your day room, which is the door that was
+        // missing while `tasks` sat at zero rows across every business in the corpus with a
+        // writer, a reader and a status setter all already built. No show door: nothing can
+        // take an owner to that row yet, and claiming otherwise is the count lying at the
+        // point of speech.
+        doors: {
+          talk: "business.capture",
+          diy: { file: "public/platform-home.html", marker: 'data-hc-day-add', what: "the add row in the Your day room (time · what · where)" },
+          show: null,
+        },
         name: "capture",
         description:
           "Capture ONE thing the owner just said into his day: a job, blocked time, or a task. This is the fast path — write it from what he gave you and do NOT ask for anything he did not mention.\n\n" +

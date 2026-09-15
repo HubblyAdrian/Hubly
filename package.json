@@ -95,7 +95,8 @@
     "check:chain": "node scripts/check-chain-acknowledgement.mjs",
     "check:doors-offered": "node scripts/check-doors-offered-exist.mjs",
     "check:job-card": "node scripts/check-job-card-opens.mjs",
-    "check:unreadiness": "node scripts/check-unreadiness-is-not-absence.mjs"
+    "check:unreadiness": "node scripts/check-unreadiness-is-not-absence.mjs",
+    "check:day-add": "node scripts/check-day-add-by-hand.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

@@ -227,6 +227,13 @@ const SET = [
     mutate: swapInCode("card.addEventListener('click', function(){ hcJobPanel(j); });",
                        "/* redproof: the door removed, the card left */") },
 
+  { check: "check-day-add-by-hand", tier: "slow", leg: "a write nobody read back",
+    ruled: "My Day floor (a) — only a write that read back from the table may say it is on the day",
+    file: "public/platform-home.html",
+    // The writer's own word, taken as the record. This is the shape prohibition 3 exists for.
+    mutate: swapInCode("if(res.error === 'not_readable_back') return \"I saved that but could not read it back, so I am not going to tell you it is on your day.\";",
+                       "if(res.error === 'not_readable_back') return 'Added to your day.';") },
+
   { check: "check-classic-claim", tier: "slow",
     ruled: "the two-store split, classic side — the sentence may not outlive the inability",
     file: "supabase/functions/_shared/hubly_owner_replies.ts",

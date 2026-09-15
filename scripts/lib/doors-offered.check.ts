@@ -38,6 +38,9 @@ const ROOT = "/Users/adriansmithee/Projects/Hubly";
 const TOPIC: { re: RegExp; capability: string; label: string }[] = [
   { re: /\bhours?\b|\bopening times?\b/i, capability: "business.setHours", label: "hours" },
   { re: /\bservices?\b|\bprices?\b|\bpricing\b/i, capability: "business.setServices", label: "services" },
+  // MY DAY (2026-09-14). Added BEFORE the first sentence about the planner was written, which
+  // is the order the rule asks for: the check covers the topic, then the copy gets written.
+  { re: /\bmy day\b|\byour day\b|\bplanner\b|\bschedule\b/i, capability: "business.capture", label: "my day" },
 ];
 
 /** A phrase that OFFERS a door. Each is a promise about a mechanism existing. */
