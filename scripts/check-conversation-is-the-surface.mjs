@@ -185,6 +185,13 @@ try {
     `offered: ${JSON.stringify(empties.labels)}`);
 
   // ══ 6. WHAT WE CALL HIM. ═════════════════════════════════════════════════════════════
+  //
+  // A FRESH BOOT, because the empty-day leg above begins `t.innerHTML = ""` and the greeting
+  // lives in that thread. Reading it afterwards measures a wiped surface — which is how leg 9
+  // came to pass vacuously the first time this file was written. Here it failed loudly instead,
+  // which is the better of the two outcomes and still the same mistake.
+  await boot({ uid: "u4", email: "adriansmithee+ever@gmail.com", displayName: "Adrian",
+               tables: { jobs: [], customers: [] }, hours: [] });
   const names = await rig.page.evaluate(() => {
     const N = window.hublyOwnerName;
     const chip = () => { const b = document.getElementById("navSignin"); return b ? b.innerText.replace(/\s+/g, " ").trim() : ""; };
@@ -196,6 +203,26 @@ try {
     names.withName.label === "Adrian" && names.withName.first === "Adrian" && names.withName.isEmail === false &&
     !/@/.test(names.withName.chip),
     `label=${JSON.stringify(names.withName.label)} chip=${JSON.stringify(names.withName.chip)}`);
+
+  // ══ AND EVERY SURFACE THAT NAMES HIM MUST ACTUALLY USE IT. ═══════════════════════════
+  //
+  // Adrian, 2026-09-15: "the name is captured and NOTHING USES IT. That is the entire point of
+  // asking." The header read "Good morning." and the chip read his email.
+  //
+  // AN EMAIL-ONLY CHECK WOULD HAVE PASSED BOTH. "Good morning." contains no email, so a leg
+  // asserting "no raw email on an owner-facing surface" is green while the name is silently
+  // dropped. So this asserts the POSITIVE: where a display name exists, the surfaces that name
+  // a person SAY IT.
+  const surfaces = await rig.page.evaluate(() => {
+    const t = (s) => { const e = document.querySelector(s); return e ? e.innerText.replace(/\s+/g, " ").trim() : null; };
+    return { greeting: t(".hc-idw-hi"), chip: t("#navSignin") };
+  });
+  say("10a the greeting uses the stored name, and does not silently drop it",
+    !!surfaces.greeting && /\bAdrian\b/.test(surfaces.greeting) && !/@/.test(surfaces.greeting),
+    JSON.stringify(surfaces.greeting));
+  say("10b the account chip uses it too",
+    !!surfaces.chip && /\bAdrian\b/.test(surfaces.chip) && !/@/.test(surfaces.chip),
+    JSON.stringify(surfaces.chip));
 
   await boot({ uid: "u3", email: "adriansmithee+ever@gmail.com", displayName: null,
                tables: { jobs: [], customers: [] }, hours: [] });
@@ -211,6 +238,25 @@ try {
   say("12 a name is never derived from the email local-part",
     noName.label.indexOf("@") >= 0 && !/^Adriansmithee$/i.test(noName.label),
     "the local-part heuristic is gone");
+  // WITH NOTHING ON RECORD, "Good morning." IS CORRECT — and it is the only case in which it is.
+  const bare = await rig.page.evaluate(() => {
+    const e = document.querySelector(".hc-idw-hi");
+    return e ? e.innerText.replace(/\s+/g, " ").trim() : null;
+  });
+  say("12a with no name on record the greeting drops it rather than using his email",
+    !!bare && !/@/.test(bare) && /^Good (morning|afternoon|evening)\.$/.test(bare),
+    JSON.stringify(bare));
+
+  // ══ AND THE CAPTURE DOES NOT DEPEND ON OUR QUESTION. ═════════════════════════════════
+  //
+  // hcOwner.awaitingName is set in ONE place — hcRenderArrival — which fires once per account
+  // against welcomed_at. His answer was dropped (the fix shipped 26 minutes later) and the
+  // window is now closed forever: a one-shot whose answer was lost leaves no way to ask again.
+  // So the model reports a stated name on ANY turn, and the client grounds it.
+  const idx2 = readFileSync(resolve(ROOT, "supabase/functions/hubly-conversation/index.ts"), "utf8");
+  say("16a a name stated on any turn is captured, not only an answer to our question",
+    /"ownerName" is optional[\s\S]{0,200}ANY turn/.test(idx2) && /never from their email/.test(idx2),
+    "the standing prompt rule, not only the nameAnswer turn");
 
   // ── SOURCE-SIDE: the pieces a rig cannot exercise without a real turn. ───────────────
   const src = readFileSync(resolve(ROOT, "public/platform-home.html"), "utf8");

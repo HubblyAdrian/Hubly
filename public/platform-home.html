@@ -3327,6 +3327,24 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // satisfy that. GROUNDED FIRST: the name must actually appear in the message he just
           // typed — the model is reading, not inventing, and this is the same guard that stops
           // a phone number being lifted from earlier in the chat.
+          // ON ANY TURN, NOT ONLY THE ONE WE ASKED ON.
+          //
+          // 2026-09-15, measured: he answered "Perfect, thank you for that! it's Adrian" at
+          // 16:58:41. The model understood and replied "Nice to meet you, Adrian." The capture
+          // fix shipped at 17:24:56 — TWENTY-SIX MINUTES LATER — so nothing wrote it, and
+          // hubly_owner_profile.display_name is still NULL with name_source 'unknown'.
+          //
+          // AND THE ASK CANNOT COME BACK. hcOwner.awaitingName is set in exactly ONE place, in
+          // hcRenderArrival, which fires once per ACCOUNT against welcomed_at — his is stamped.
+          // So the one chance to capture his name was spent on a turn whose answer was dropped,
+          // and the window is closed forever. That is the stranded-welcomed_at shape a second
+          // time: A ONE-SHOT WHOSE ANSWER WAS LOST LEAVES NO WAY TO EVER ASK AGAIN.
+          //
+          // The fix is not to re-ask — nagging is its own defect — it is to stop making the
+          // capture depend on OUR question. If he says his name at any point, the record holds
+          // it (CLAUDE.md: "if the person said it, the structured record holds it"). The model
+          // reports it on any turn; hcAcceptOwnerName still refuses anything it cannot find in
+          // the message he just typed, so a value lifted from the transcript is dropped.
           try{ if(typeof data.ownerName === 'string' && data.ownerName.trim()) hcAcceptOwnerName(data.ownerName.trim()); }catch(e){}
           // ── ONE VOLUNTARY ADDITION PER TURN, ENFORCED IN ONE PLACE ──────────────
           //
