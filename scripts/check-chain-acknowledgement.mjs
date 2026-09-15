@@ -48,14 +48,16 @@ const gapAsks = block(/var HC_GAP_ASKS\s*=\s*\[/, "[", "]");
 const gapDone = block(/var HC_GAP_DONE\s*=\s*\{/, "{", "}");
 const closedFn = block(/function hcClosedGaps\s*\(/, "{", "}");
 const chainFn = block(/function hcChainLine\s*\(/, "{", "}");
-if (!gapAsks || !gapDone || !closedFn || !chainFn) {
-  console.error("CANNOT RUN — the chain's pieces were not all found (HC_GAP_ASKS, HC_GAP_DONE, hcClosedGaps, hcChainLine). It may have been renamed or removed.");
+const writersMap = block(/var HC_GAP_WRITERS\s*=\s*\{/, "{", "}");
+const writesFn = block(/function hcTurnWrites\s*\(/, "{", "}");
+if (!gapAsks || !gapDone || !closedFn || !chainFn || !writersMap || !writesFn) {
+  console.error("CANNOT RUN — the chain's pieces were not all found (HC_GAP_ASKS, HC_GAP_DONE, HC_GAP_WRITERS, hcTurnWrites, hcClosedGaps, hcChainLine). It may have been renamed or removed.");
   process.exit(2);
 }
 
 let api;
 try {
-  api = new Function(`${gapAsks};\n${gapDone};\n${closedFn}\n${chainFn}\nreturn { HC_GAP_ASKS, HC_GAP_DONE, hcClosedGaps, hcChainLine };`)();
+  api = new Function(`${gapAsks};\n${gapDone};\n${writersMap};\n${writesFn}\n${closedFn}\n${chainFn}\nreturn { HC_GAP_ASKS, HC_GAP_DONE, HC_GAP_WRITERS, hcTurnWrites, hcClosedGaps, hcChainLine };`)();
 } catch (e) {
   console.error("CANNOT RUN — the chain would not execute: " + String(e.message).slice(0, 140));
   process.exit(2);
@@ -70,7 +72,7 @@ const PRAISE = /\b(great|nice|well done|good (job|work)|awesome|amazing|congrat)
 
 // 1. NOTHING CHANGED. The ask alone, with not one word of praise attached to it.
 {
-  const closed = api.hcClosedGaps(ALL_OPEN, ALL_OPEN);
+  const closed = api.hcClosedGaps(ALL_OPEN, ALL_OPEN, ["business.setHours"]);
   const gap = api.HC_GAP_ASKS[0];
   const line = api.hcChainLine(closed, gap);
   say("1 a turn that changed nothing gets no acknowledgement",
@@ -81,7 +83,7 @@ const PRAISE = /\b(great|nice|well done|good (job|work)|awesome|amazing|congrat)
 // 2. SOMETHING CHANGED. It is named — the actual thing, not a category — and exactly one ask
 //    follows it.
 {
-  const closed = api.hcClosedGaps(ALL_OPEN, HOURS_IN);
+  const closed = api.hcClosedGaps(ALL_OPEN, HOURS_IN, ["business.setHours"]);
   const gap = api.HC_GAP_ASKS.find((a) => a.key === "has_phone");
   const line = api.hcChainLine(closed, gap);
   const namesIt = /hours/i.test(line);
@@ -108,7 +110,7 @@ const PRAISE = /\b(great|nice|well done|good (job|work)|awesome|amazing|congrat)
 // 5. NO BASELINE IS NOT A CHANGE. The first turn of a session has nothing to compare against,
 //    and "we have no record of what was true before" must never become "you just did that".
 {
-  const closed = api.hcClosedGaps(null, HOURS_IN);
+  const closed = api.hcClosedGaps(null, HOURS_IN, ["business.setHours"]);
   say("5 with no before-state, nothing is claimed", closed.length === 0, JSON.stringify(closed));
 }
 
@@ -119,5 +121,97 @@ const PRAISE = /\b(great|nice|well done|good (job|work)|awesome|amazing|congrat)
   say("6 an unknown key produces no acknowledgement", unknown === "", JSON.stringify(unknown));
 }
 
-console.log(failed ? `\n${failed} assertion(s) failed.` : "\nThe chain says what happened, or says nothing — and it asks for one thing.");
+// ══ A REAL CHANGE MAY NOT BE ATTRIBUTED TO THE WRONG THING ═════════════════════════════
+//
+// THIS IS ADRIAN'S TRANSCRIPT, 2026-09-15, business hubly-classic-fixture, seq 7-8:
+//
+//   owner:  "I need a job added: Thursday at 2 to do the driveway, 14 Maple St, 555-0134,
+//            we said $180"
+//   Hubly:  "Added the driveway job … " and then, from the chain,
+//           "Your prices are on your page now."
+//
+// He had not touched his page. `jobs` is not `services`; a job's price is not a page price.
+// The old red-proof (1-6 above) covered the HOLLOW acknowledgement — nothing changed and we
+// claimed something. It could not catch this one, because something really did change: the
+// observation was true and the CAUSE was false. That is the worse defect, because it survives
+// every check that only asks whether a change occurred.
+
+// 7. THE EXACT TRANSCRIPT. A job write, a page-prices gap that closed, and the acknowledgement
+//    must be SILENT — the job did not put a price on his page.
+{
+  const before = { ...ALL_OPEN };
+  const after = { ...ALL_OPEN, has_priced_services: true };   // the gap genuinely closed
+  const jobTurn = api.hcTurnWrites([{ capability: "business", capabilityAction: "addJob", ok: true, real: true }]);
+  const closed = api.hcClosedGaps(before, after, jobTurn);
+  const line = api.hcChainLine(closed, null);
+  say("7 a job write is NOT reported as a change to his page prices",
+    closed.length === 0 && line === "",
+    `writes=${JSON.stringify(jobTurn)} closed=${JSON.stringify(closed)} line=${JSON.stringify(line)}`);
+}
+
+// 8. AND THE SAME CLOSE, BY THE WRITER THAT ACTUALLY CLOSES IT, IS STILL SAID. A guard that
+//    silences the true case as well as the false one has not fixed anything.
+{
+  const before = { ...ALL_OPEN };
+  const after = { ...ALL_OPEN, has_priced_services: true };
+  const svcTurn = api.hcTurnWrites([{ capability: "business", capabilityAction: "setServices", ok: true, real: true }]);
+  const closed = api.hcClosedGaps(before, after, svcTurn);
+  const line = api.hcChainLine(closed, null);
+  say("8 the writer that DOES close it is still acknowledged",
+    closed.length === 1 && closed[0] === "has_priced_services" && /price/i.test(line),
+    JSON.stringify(line).slice(0, 120));
+}
+
+// 9. A WRITER THAT FAILED CHANGED NOTHING, whatever the gaps now say. `ok:false` is not a
+//    receipt, and a gap that moved for some other reason may not borrow it.
+{
+  const before = { ...ALL_OPEN };
+  const after = { ...ALL_OPEN, has_priced_services: true };
+  const failedTurn = api.hcTurnWrites([{ capability: "business", capabilityAction: "setServices", ok: false, real: true }]);
+  const closed = api.hcClosedGaps(before, after, failedTurn);
+  say("9 a failed write earns no acknowledgement", failedTurn.length === 0 && closed.length === 0,
+    `writes=${JSON.stringify(failedTurn)} closed=${JSON.stringify(closed)}`);
+}
+
+// 10. NO RECEIPT IS NOT A LICENCE. A turn we have no actions array for must attribute nothing —
+//     the same rule as no before-state, one dimension over. This is the leg that keeps the fix
+//     from being quietly undone by a caller that forgets to pass the receipt.
+{
+  const before = { ...ALL_OPEN };
+  const after = { ...ALL_OPEN, has_hours: true };
+  say("10 with no receipt for the turn, nothing is attributed",
+    api.hcClosedGaps(before, after, undefined).length === 0 && api.hcClosedGaps(before, after, null).length === 0,
+    "undefined and null both attribute nothing");
+}
+
+// 11. EVERY DECLARED WRITER IS A REAL CAPABILITY ACTION. A map entry naming a writer that does
+//     not exist is a gap that can never be acknowledged — silent, and indistinguishable from
+//     working. Checked against the code rather than trusted.
+//
+//     IT LOOKS IN BOTH PLACES, because there are two, and the first version of this leg went
+//     red for the right reason with the wrong conclusion: `recordFacts` and `addPhoto` are real
+//     writes that emit their own action from hubly-conversation/index.ts rather than being
+//     registry entries. A checker that knows about one of the two lanes reports a working
+//     writer as missing — the same "Hubly has two of almost everything" rule, applied to the
+//     checker.
+{
+  const readOr = (rel) => { try { return readFileSync(resolve(ROOT, rel), "utf8"); } catch (_) { return ""; } };
+  const registry = readOr("supabase/functions/_shared/hubly_capability_registry.ts");
+  const edge = readOr("supabase/functions/hubly-conversation/index.ts");
+  const declared = [...new Set(Object.values(api.HC_GAP_WRITERS).flat())];
+  const missing = (registry && edge)
+    ? declared.filter((w) => {
+        const action = w.split(".")[1];
+        // A registry entry (`name: "setHours"`) or an action emitted directly by the edge
+        // (`capabilityAction: "recordFacts"`). Either is a real write.
+        return !new RegExp(`name:\\s*"${action}"`).test(registry) &&
+               !new RegExp(`capabilityAction:\\s*"${action}"`).test(edge);
+      })
+    : null;
+  say("11 every writer the chain trusts exists in the code",
+    missing !== null && missing.length === 0,
+    missing === null ? "sources unreadable" : `${declared.length} declared, missing: ${JSON.stringify(missing)}`);
+}
+
+console.log(failed ? `\n${failed} assertion(s) failed.` : "\nThe chain says what happened, names the gap that actually closed, and asks for one thing.");
 process.exit(failed ? 1 : 0);

@@ -1,5 +1,60 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## THE THREAD DOES NOT BLEED — MEASURED, AND THE ARRIVAL'S REAL CAUSE FOUND (2026-09-15)
+
+Reported as a privacy defect: *"THE OWNER'S THREAD IS RENDERING MESSAGES FROM ANOTHER
+CONVERSATION"* — a "hey" and a new-prospect intake script shown to a claimed owner with a live
+site. **Measured before anything was changed, and it is not a bleed.**
+
+All 16 rows Home rendered belong to ONE business: `5ebedc20-1061-46b9-b393-a6ef57225910`
+(`hubly-classic-fixture`), owner `f3f11707-783f-4cce-b4c3-dfdccfde2e57`, seq 1–16. No second
+business, no second account, no unkeyed thread. `get_my_business_conversation` gates on
+`business_id = p_business_id AND b.owner_id = auth.uid()` — **business AND owner, both present.**
+
+The `"hey"` -> intake pair is **seq 1–2, created 2026-09-14 05:52** — this business's own history
+from the sitting the day before. `business_conversations` has no conversation or session column
+**by design** (`WALK_ESTABLISH_20260913.md` §4), so Home renders the union of every turn a
+business has ever had, forever. It read as another conversation because it was another SITTING,
+correctly retrieved. **The reader is correctly keyed; there is no key to add.**
+
+**(7) IS CLOSED AS A HISTORICAL ARTIFACT.** The corrupted `": where would I add a service mysel"`
+is **seq 3, `2026-09-14 22:02:44`** — stored yesterday, re-rendered. Its clean twin is seq 5,
+`2026-09-15 03:39:52`. seq 3 above seq 5 is CORRECT ordering. Not a live corruption of the input
+box. The send-boundary capture stays as instrumentation only and is expected to stay silent.
+
+**WHAT WAS REAL IN THE SAME AREA: the thread was out of order by construction.**
+`hcRenderTranscript` APPENDED restored history to the END of the thread, so yesterday's turns
+landed underneath today's greeting, news line, event cards and suggestions. Fixed: Home plants a
+`data-hc-history-slot` boundary after identity and the arrival, history is INSERTED before it,
+and a second render cannot duplicate the block.
+
+**AND THE ARRIVAL HAD A CAUSE NONE OF THE THREE FIXES TOUCHED.**
+
+```
+hubly_owner_profile  owner f3f11707
+  welcomed_at = 2026-09-14 22:01:24.826016+00
+  created_at  = 2026-09-14 22:01:24.826016+00     <- the same instant
+```
+
+The gate is `hc._arrivalDue = !hcOwner.welcomedAt`. The row was stamped at 22:01:24 by the render
+that was then wiped, and **nothing ever cleared it** — so the gate has been permanently closed
+for that owner since. The 2026-09-14 commit fixed the render order and the marking order and
+never reset the row. **Three fixes to a mechanism that was never the mechanism**, and every one
+of them was unobservable in production by construction.
+
+Fixed three ways: `welcomed_at` is now written ONLY after `hcArrivalInDom()` confirms the words
+are in the thread (prohibition 3 applied to the one-shot); every gate decision is logged under
+the single `[arrival]` prefix; and `scripts/check-arrival-in-dom.mjs` drives the real page with a
+simulated signed-in owner, asserts THE WORDS IN THE DOM AFTER SETTLE, and goes red when each of
+the three already-fixed bugs is restored. The stranded row was cleared (1 profile of 10 had
+`welcomed_at` set; it was this one).
+
+**THE LESSON.** A one-shot whose flag outlives its render is unrecoverable and invisible: there
+is nothing left to notice, so the next three sessions debug the render path. Any once-per-account
+moment must write its flag against a READ-BACK of the thing the person can see, and any fix to
+one must ask whether the flag is already spent.
+
+
 ## BUILT, WANTED, AND UNREACHABLE — the five, by name (2026-09-14)
 
 The brief has carried *"63 with no caller anywhere"* for days. Measured and split

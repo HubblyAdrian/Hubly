@@ -1486,6 +1486,14 @@ Deno.serve(async (req) => {
   // instruction and not a selector: the client owns which element that means, because the
   // server cannot see the page and must not pretend to.
   let showMeWhereTarget: string | null = null;
+  // TAKE ME THERE — the place the model was asked to open. A PLACE NAME, not a route and not
+  // a control: the client owns which surface that is, whether this business has earned it, and
+  // what to say once it has moved. The server claims nothing about any of that.
+  let goPlaceTarget: string | null = null;
+  // A CAPABILITY THAT ASKED FOR A FACT SAYS SO, so the client's duplicate-ask guard can see it.
+  // addJob sets this when it refused a phone: the reply asks for the number, and without the
+  // flag the gap chain asked for a phone in the very next beat (2026-09-15).
+  let forcedAskedFor: string | null = null;
   // A JOB CREATED THIS TURN — the ROW, plucked like every other client-bound payload. The
   // client renders it as the thing itself rather than as a sentence about a thing.
   let createdJob: unknown = null;
@@ -2603,6 +2611,26 @@ Deno.serve(async (req) => {
           if (typeof t === "string" && t) showMeWhereTarget = t;
         }
 
+        // A CAPABILITY'S OWN ASK. Plucked like every other client-bound field; never the whole raw.
+        if (
+          result.ok && result.raw && typeof result.raw === "object" &&
+          "askedFor" in (result.raw as Record<string, unknown>)
+        ) {
+          const af = (result.raw as Record<string, unknown>).askedFor;
+          if (typeof af === "string" && ["services", "hours", "area", "phone", "logo", "photos"].includes(af)) forcedAskedFor = af;
+        }
+
+        // TAKE ME THERE — hand the client the place it was asked to open. Nothing is claimed
+        // here: the client decides whether the place is earned and reports what it found.
+        if (
+          capabilityName === "business" && actionName === "goToPlace" &&
+          result.ok && result.raw && typeof result.raw === "object" &&
+          "goPlace" in (result.raw as Record<string, unknown>)
+        ) {
+          const g = (result.raw as Record<string, unknown>).goPlace;
+          if (typeof g === "string" && g) goPlaceTarget = g;
+        }
+
         // A draft was created this turn — hand the browser its 10-minute claim
         // grant so it can be exchanged for an httpOnly cookie. Reads ONLY
         // draftGrant out of raw; draftToken sits beside it in the same object
@@ -2815,12 +2843,17 @@ Deno.serve(async (req) => {
         ...(decision?.askInspiration === true ? { askInspiration: true } : {}),
         ...(decision?.askLogo === true ? { askLogo: true } : {}),
         ...(decision?.openAccount === true ? { openAccount: true } : {}),
-        ...(["services", "hours", "area", "phone", "logo", "photos"].includes(decision?.askedFor) ? { askedFor: decision.askedFor } : {}),
+        // A capability's own declared ask WINS over the model's: the capability knows it refused
+        // a value and asked for it, and the model may simply not have set the flag.
+        ...(forcedAskedFor
+          ? { askedFor: forcedAskedFor }
+          : (["services", "hours", "area", "phone", "logo", "photos"].includes(decision?.askedFor) ? { askedFor: decision.askedFor } : {})),
         ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
         ...(draftBusiness ? { draftBusiness } : {}),
         ...(buildResumed ? { buildResumed } : {}),
         ...(bookingConfirmation ? { bookingConfirmation } : {}),
         ...(showMeWhereTarget ? { showMeWhere: showMeWhereTarget } : {}),
+        ...(goPlaceTarget ? { goPlace: goPlaceTarget } : {}),
         ...(createdJob ? { job: createdJob } : {}),
         ...(draftGrant ? { draftGrant } : {}),
         ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),
@@ -2845,6 +2878,7 @@ Deno.serve(async (req) => {
       // Also here: a turn that ran out of capability rounds still asked the page to move, and
       // dropping the field would leave the owner with a reply and a page that never moved.
       ...(showMeWhereTarget ? { showMeWhere: showMeWhereTarget } : {}),
+      ...(goPlaceTarget ? { goPlace: goPlaceTarget } : {}),
       ...(createdJob ? { job: createdJob } : {}),
       ...(draftGrant ? { draftGrant } : {}),
         ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),

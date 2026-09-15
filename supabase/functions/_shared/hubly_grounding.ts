@@ -37,9 +37,30 @@ function messageDigits(message: string): string {
  *  digits. Covers "(801) 888-8888", "801 888 8888", "8018888888", "+1 801…", and
  *  the spelled-out form; rejects "add my phone number" (no digits). */
 export function phoneGrounded(value: string, message: string): boolean {
+  return phoneGroundedWhy(value, message).ok;
+}
+
+/** WHY IT WAS REFUSED, because "didn't save" is not an answer.
+ *
+ *  On 2026-09-15 an owner typed "555-0134" into a job paste and Hubly told him "The phone
+ *  number didn't save, so send it again if you want it added." Sending it again would have
+ *  failed identically — the number is SEVEN DIGITS and this function requires ten. We knew
+ *  exactly why and said something that implied we did not, which sends the owner round a loop
+ *  that cannot terminate.
+ *
+ *  Two refusals live here and they are not the same thing, so they do not share a sentence:
+ *    too_short     the value is not a full number — the owner can fix it, and we can say how
+ *    not_in_message the value is a full number that is NOT in this message — the 801-888-8888
+ *                   lift, where the correct behaviour is to ask, never to hint at the number
+ *                   we refused (naming it would publish the very value we declined to write).
+ */
+export type GroundWhy = { ok: boolean; why?: "too_short" | "not_in_message"; digits?: number };
+export function phoneGroundedWhy(value: string, message: string): GroundWhy {
   const key = phoneDigitsKey(String(value || ""));
-  if (key.length < 10) return false;                 // not a full number
-  return messageDigits(message).includes(key);
+  const digits = String(value || "").replace(/\D/g, "").length;
+  if (key.length < 10) return { ok: false, why: "too_short", digits };
+  if (!messageDigits(message).includes(key)) return { ok: false, why: "not_in_message", digits };
+  return { ok: true, digits };
 }
 
 /** PRICE — grounded if the exact figure appears as a standalone number in the

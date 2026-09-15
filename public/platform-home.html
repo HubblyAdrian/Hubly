@@ -3295,6 +3295,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // and draftGrant — the actions log carries no `raw`, and reading a field that is
           // never sent is how a wired feature is dark on arrival.
           try{ if(typeof data.showMeWhere === 'string' && data.showMeWhere) hcShowMeWhere(data.showMeWhere); }catch(e){}
+          // TAKE ME THERE. Same mechanism, one field: the model asks for a place, the client
+          // moves and then says what is in it. The model says nothing about the move.
+          try{ if(typeof data.goPlace === 'string' && data.goPlace) hcGoToPlace(data.goPlace); }catch(e){}
           // ── ONE VOLUNTARY ADDITION PER TURN, ENFORCED IN ONE PLACE ──────────────
           //
           // Seven composers can append to a single turn (docs/WHAT_THE_MODEL_KNOWS.md §1).
@@ -3382,8 +3385,13 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // _gapAsked, each once — but the order is stated so the next reader does not have
           // to derive it.
           try{
+            // THE RECEIPT RIDES THE CALL. Without it the chain can only diff state, and a diff
+            // cannot tell which action closed the gap — which is how a job paste came to be
+            // acknowledged as a change to his page prices. (This comment sits ABOVE the gate on
+            // purpose: check-one-voluntary-addition reads a 3-line window, and putting prose
+            // between the gate and the call is the comment-as-code mistake for the fourth time.)
             if(!(hc.pendingCapture && hc.pendingCapture.askedFor) && hcTakeVoluntarySlot()){
-              hcMaybeAskNextGap();
+              hcMaybeAskNextGap(data.actions);
             }
           }catch(_e){}
           // THE DROPZONE COMES LAST, after the sentence that points at it.
@@ -4827,6 +4835,75 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     return b;
   }
   function hcHm(t){ var v = String(t || '').slice(0,5); return v || null; }
+  // ══ ONE DATE FUNCTION AND ONE PHONE FUNCTION. EVERY HUMAN-FACING DATE AND PHONE GOES
+  //    THROUGH THEM. ═══════════════════════════════════════════════════════════════════════
+  //
+  // "One person looked at your page on 2026-09-13" shipped to an owner on 2026-09-15. It was
+  // not a formatting slip in one string — it was `'on ' + top.day`, an ISO column concatenated
+  // straight into a sentence, and there were four more like it (two toLocaleString calls, two
+  // toLocaleDateString calls with no year, each with its own idea of the format). The lesson is
+  // the lexer's: THE FIX IS THE SINGLE PATH, NOT THE CAREFUL EDIT. Five careful edits is five
+  // places for the sixth to appear.
+  //
+  // So: two functions, used everywhere, and scripts/check-one-formatter.mjs fails the run if a
+  // raw ISO date or an unformatted phone reaches an owner-facing string again.
+  //
+  // hcPhoneHouse MIRRORS formatPhoneHouse in supabase/functions/_shared/hubly_contact.ts and
+  // formatPhoneValue in public/hubly.html. Three runtimes, so they cannot literally be one
+  // function; they MUST produce identical output. Change one, change all three.
+
+  /** MM/DD/YYYY — month/day/year, everywhere a date is shown to an owner or a customer.
+   *  Accepts 'YYYY-MM-DD', an ISO timestamp, or a Date. Returns '' for nothing, never a
+   *  guess and never today-by-default. A date-only string is read as a LOCAL date on purpose:
+   *  `new Date('2026-09-13')` is UTC midnight, which renders as the 12th west of Greenwich —
+   *  the owner's Thursday quietly becoming Wednesday. */
+  function hcDateUS(v){
+    if(!v) return '';
+    var y, m, d;
+    if(v instanceof Date){
+      if(isNaN(v.getTime())) return '';
+      y = v.getFullYear(); m = v.getMonth() + 1; d = v.getDate();
+    }else{
+      var str = String(v).trim();
+      var dOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str);
+      if(dOnly){ y = Number(dOnly[1]); m = Number(dOnly[2]); d = Number(dOnly[3]); }
+      else{
+        var t = new Date(str);
+        if(isNaN(t.getTime())) return '';
+        y = t.getFullYear(); m = t.getMonth() + 1; d = t.getDate();
+      }
+    }
+    return String(m).padStart(2,'0') + '/' + String(d).padStart(2,'0') + '/' + String(y);
+  }
+  /** MM/DD/YYYY at H:MM AM/PM — for a moment in time rather than a day. */
+  function hcDateTimeUS(v){
+    if(!v) return '';
+    var t = (v instanceof Date) ? v : new Date(String(v));
+    if(isNaN(t.getTime())) return '';
+    var h = t.getHours(), ap = h < 12 ? 'AM' : 'PM';
+    h = h % 12; if(h === 0) h = 12;
+    return hcDateUS(t) + ' at ' + h + ':' + String(t.getMinutes()).padStart(2,'0') + ' ' + ap;
+  }
+  /** House display format 888-888-8888 — displayed, stored for display, and asked for.
+   *  Best-effort for a partial number; '' for nothing. Never invents digits. */
+  function hcPhoneHouse(raw){
+    var dd = String(raw == null ? '' : raw).replace(/\D/g, '');
+    if(dd.length === 11 && dd.charAt(0) === '1') dd = dd.slice(1);
+    if(dd.length > 10) dd = dd.slice(-10);
+    dd = dd.slice(0, 10);
+    // TEN DIGITS IS 888-888-8888. SEVEN IS 888-8888 — one dash, not two.
+    // The old shape was `>=7 -> 3-3-rest`, which turned the seven-digit 5550134 into
+    // "555-013-4". Found by the check written for this rule, not by a person reading it, and
+    // the SAME line was wrong in all three runtimes (hubly_contact.ts formatPhoneHouse and
+    // hubly.html formatPhoneValue) because they were copied from each other. That is the
+    // "a bug is a CLASS" rule arriving on schedule: one shape, written three times.
+    if(dd.length === 10) return dd.slice(0,3) + '-' + dd.slice(3,6) + '-' + dd.slice(6);
+    if(dd.length > 7)    return dd.slice(0,3) + '-' + dd.slice(3,6) + '-' + dd.slice(6);
+    if(dd.length === 7)  return dd.slice(0,3) + '-' + dd.slice(3);
+    if(dd.length >= 4)   return dd.slice(0,3) + '-' + dd.slice(3);
+    return dd;
+  }
+  try{ window.hublyFormat = { date: hcDateUS, dateTime: hcDateTimeUS, phone: hcPhoneHouse }; }catch(e){}
   function hcDayLabel(d){
     if(!d) return 'No date';
     var today = new Date(); var iso = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
@@ -4834,7 +4911,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var tomorrow = t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
     if(d === iso) return 'Today';
     if(d === tomorrow) return 'Tomorrow';
-    return new Date(d + 'T00:00:00').toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' });
+    // Today/Tomorrow are RELATIVE LABELS, not dates, and they stay. Any other day carries
+    // the weekday plus the actual date, through the one formatter.
+    var wd = ''; try{ wd = new Date(d + 'T00:00:00').toLocaleDateString(undefined, { weekday:'long' }); }catch(e){}
+    return (wd ? wd + ' ' : '') + hcDateUS(d);
   }
   // TWO THINGS AT 2PM IS THE MOST USEFUL THING A CALENDAR CAN TELL AN OWNER, and nothing
   // in this product said it before. Computed from start + duration, the same arithmetic
@@ -4930,6 +5010,77 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // honest alternative available until a real authed session can be driven here.
   try{ window.hublyJobUI = { append: hcAppendJobCard, panel: hcJobPanel, line: hcJobCardLine }; }catch(e){}
 
+  // ── MY DAY, FLOOR (c): A TIME OR A PLACE ALREADY ON THE DAY IS CHANGED BY HAND ────────
+  //
+  // "I can't change an existing job from here yet." — what Hubly told the owner on
+  // 2026-09-15 when he said "on the job change it instead of drive way change it". It was
+  // TRUE: create_business_job only inserted, so a job could be put on the day by talking and
+  // then corrected by nothing. The writer is update_business_job (20260915040000) and this is
+  // its hand door.
+  //
+  // IT READS THE ROW BACK FROM THE TABLE, not from the writer's own return value. The writer
+  // returning a row is the writer's word; a separate select is the record's. Only the second
+  // one is allowed to produce "changed" (prohibition 3) — the same rule hcAddDayTask holds.
+  async function hcEditDayJob(jobId, fields){
+    var biz = hc.draftBusiness;
+    if(!biz || !biz.id) return { ok:false, error:'no_business' };
+    if(!jobId) return { ok:false, error:'no_job' };
+    var time = (fields && fields.time !== undefined) ? String(fields.time || '').trim() : null;
+    var place = (fields && fields.place !== undefined) ? String(fields.place || '').trim() : null;
+    // NOTHING ASKED FOR IS NOT A CHANGE. Said here so the owner hears it without a round trip.
+    if(time === null && place === null) return { ok:false, error:'no_change' };
+    try{
+      var uid = await hcOwnerUid();
+      if(!uid) return { ok:false, error:'not_signed_in' };
+      var c = await authGetClient();
+      var r = await c.rpc('update_business_job', {
+        p_business_id: biz.id, p_job_id: jobId, p_owner_id: uid,
+        p_scheduled_time: time, p_scheduled_date: null, p_address: place,
+        p_draft_token: null
+      });
+      if(r && r.error) return { ok:false, error:'rpc_failed', detail:String(r.error.message || '').slice(0,120) };
+      var row = Array.isArray(r && r.data) ? r.data[0] : (r && r.data);
+      if(!row || row.error || !row.id) return { ok:false, error:(row && row.error) || 'rpc_failed' };
+      // THE READ-BACK, from the table, as its own question.
+      var back = await c.from('jobs')
+        .select('id,customer_name,service_name,scheduled_date,scheduled_time,address,amount,is_block,duration_hours,phone,email,notes,status,paid')
+        .eq('id', jobId).maybeSingle();
+      var got = back && back.data;
+      if(!got) return { ok:false, error:'not_readable_back' };
+      // AND IT MUST ACTUALLY HOLD WHAT WAS ASKED FOR. A row that came back is not a row that
+      // changed — this is the difference the services placement kept getting wrong.
+      if(time !== null && String(got.scheduled_time || '').slice(0,5) !== String(time).slice(0,5) && !(time === '' && !got.scheduled_time)){
+        return { ok:false, error:'did_not_take', job:got };
+      }
+      if(place !== null && String(got.address || '') !== place){
+        return { ok:false, error:'did_not_take', job:got };
+      }
+      return { ok:true, job:got };
+    }catch(e){ return { ok:false, error:'threw', detail:String(e && e.message || e).slice(0,120) }; }
+  }
+  /** The sentence. Pure, so a check can EXECUTE it rather than read it (Lesson 83). Every
+   *  outcome gets its own words, and no failure borrows the word "changed". */
+  function hcEditDayJobLine(res){
+    if(!res) return 'I didn’t get an answer back, so I can’t tell you whether that changed.';
+    if(res.ok){
+      var j = res.job || {};
+      var bits = [];
+      if(j.scheduled_time) bits.push(hcDayLabel(j.scheduled_date) + ' at ' + hcHm(j.scheduled_time));
+      if(j.address) bits.push(j.address);
+      var what = j.is_block ? (j.service_name || 'Blocked time') : (j.customer_name || j.service_name || 'That job');
+      return what + ' is now ' + (bits.join(' · ') || 'updated') + '.';
+    }
+    if(res.error === 'no_change') return 'Nothing was different, so I left it as it was.';
+    if(res.error === 'no_job') return 'I couldn’t find that job to change.';
+    if(res.error === 'not_signed_in') return 'I can’t change a job while you’re signed out.';
+    if(res.error === 'not_owner') return 'That job isn’t on a business you own, so I didn’t touch it.';
+    if(res.error === 'not_readable_back') return 'I sent the change, but I could not read it back, so I can’t tell you it took.';
+    if(res.error === 'did_not_take') return 'The change did not take — the job still reads the way it did.';
+    if(res.error === 'no_business') return 'No business is open, so there’s nothing to change.';
+    return 'I couldn’t change that just now, and it has NOT changed.';
+  }
+  try{ window.hublyJobEditUI = { edit: hcEditDayJob, line: hcEditDayJobLine }; }catch(e){}
+
   function hcJobPanel(j){
     hcOpenPanel(j.is_block ? 'Blocked time' : 'Job', function(body){
       var rows = [
@@ -4937,7 +5088,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         ['Length', Number(j.duration_hours) > 0 ? Number(j.duration_hours) + (Number(j.duration_hours) === 1 ? ' hour' : ' hours') : null],
         [j.is_block ? 'Reason' : 'Service', j.service_name || null],
         ['Customer', j.is_block ? null : (j.customer_name || null)],
-        ['Phone', j.phone || null], ['Email', j.email || null],
+        ['Phone', j.phone ? hcPhoneHouse(j.phone) : null], ['Email', j.email || null],
         ['Address', j.address || null], ['Vehicle', j.vehicle || null],
         ['Price', (Number(j.amount) > 0 ? '$' + Number(j.amount) : null)],
         ['Paid', j.paid === true ? 'Yes' : (Number(j.amount) > 0 ? 'Not yet' : null)],
@@ -4956,8 +5107,45 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         var acts = document.createElement('div'); acts.className = 'hc-event-acts';
         var call = document.createElement('a'); call.className = 'hc-arrival-act';
         call.href = 'tel:' + String(j.phone).replace(/[^0-9+]/g,'');
-        call.textContent = 'Call ' + j.phone; acts.appendChild(call); body.appendChild(acts);
+        call.textContent = 'Call ' + hcPhoneHouse(j.phone); acts.appendChild(call); body.appendChild(acts);
       }
+      // ── CHANGE THE TIME OR THE PLACE, BY HAND ────────────────────────────────────────
+      //
+      // REAL CONTROLS, not a sentence describing where the controls are. Hubly never points at
+      // a control it cannot see, and that rule applies to us too: an owner who wants Thursday
+      // moved to 3 gets an input, here, on the thing he just opened.
+      //
+      // Prefilled with what the row actually holds, so Save with nothing touched sends the
+      // same values and the writer's no_change path is never reached by accident.
+      var ed = document.createElement('div'); ed.className = 'hc-day-add';
+      ed.setAttribute('data-hc-jobedit', '1');
+      var tIn = document.createElement('input'); tIn.type = 'time'; tIn.value = hcHm(j.scheduled_time) || '';
+      tIn.setAttribute('aria-label', 'Time'); tIn.setAttribute('data-hc-jobedit-field', 'time');
+      var pIn = document.createElement('input'); pIn.type = 'text'; pIn.value = j.address || '';
+      pIn.placeholder = 'Where'; pIn.setAttribute('aria-label', 'Where');
+      pIn.setAttribute('data-hc-jobedit-field', 'place');
+      var save = document.createElement('button'); save.type = 'button'; save.className = 'hc-day-add-go';
+      save.textContent = 'Save'; save.setAttribute('data-hc-jobedit-field', 'save');
+      var note = document.createElement('div'); note.className = 'hc-day-add-msg';
+      note.setAttribute('data-hc-jobedit-field', 'msg');
+      save.addEventListener('click', async function(){
+        save.disabled = true; note.textContent = '';
+        var res = await hcEditDayJob(j.id, { time: tIn.value, place: pIn.value });
+        // RULE 6: the owner asked for something and it worked, so they are told — in the
+        // panel they are looking at, from the row that was read back, never from the button.
+        note.textContent = hcEditDayJobLine(res);
+        save.disabled = false;
+        if(res && res.ok){
+          // The room is re-read so the day shows what the table now holds. Not patched in
+          // place: a local edit that drifts from the record is the next false green.
+          try{
+            var jj = res.job; if(jj) { j.scheduled_time = jj.scheduled_time; j.address = jj.address; }
+            if(hc.mode === 'planner'){ var cv = document.getElementById('hcCanvas'); if(cv){ cv.innerHTML = ''; await hcRenderPlanner(cv, hc.draftBusiness); } }
+          }catch(e){}
+        }
+      });
+      ed.appendChild(tIn); ed.appendChild(pIn); ed.appendChild(save);
+      body.appendChild(ed); body.appendChild(note);
     });
   }
 
@@ -5071,13 +5259,30 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // keep his jobs and his errands in separate apps and asking him to is why he uses
   // neither. Tasks join this list when the tasks tables exist; the union is the point,
   // so the shape is built for it rather than retrofitted.
+  // MY DAY, FLOOR (b): WHAT THE TABLES HOLD FOR HIM APPEARS ON IT.
+  //
+  // MEASURED 2026-09-15 on hubly-classic-fixture, the business he actually walked:
+  //   jobs  — 2 rows. A block, "doctor's appointment", 2026-09-16 07:00, 2 hours.
+  //           A job, "driveway", 2026-09-17 14:00, 14 Maple St, $180.
+  //   tasks — 0 rows.
+  // Both are real rows, both written by talking to Hubly, and the second one WAS INVISIBLE
+  // HERE: the window was today..tomorrow, and 2026-09-17 is Thursday. Hubly had already told
+  // him "you also have the driveway job Thursday at 2:00", so the room broke a promise Hubly
+  // made in the same breath — the loop breaking at the step he asked it to continue.
+  //
+  // So the read reaches a WEEK out and the day groups say which day they are. Today and
+  // tomorrow keep their place at the top, because "Your day" is a claim about today; anything
+  // further sits under "Later this week", which is the honest name for it. Nothing Hubly named
+  // is off-screen, and nothing further out is presented as today.
+  var HC_DAY_HORIZON = 7;
   async function hcRenderPlanner(canvas, biz){
     var today = new Date();
     var iso = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
     var from = iso(today), to = iso(new Date(today.getTime() + 864e5));
+    var horizon = iso(new Date(today.getTime() + HC_DAY_HORIZON * 864e5));
     var jobs, tasks = [];
     try{
-      jobs = await hcLoadJobs(biz.id, from, to);
+      jobs = await hcLoadJobs(biz.id, from, horizon);
       // TASKS JOIN THE SAME LIST. The union is the point: the 8:00 Full Detail sits
       // beside "order glass cleaner" and "gym", because a detailer does not keep his
       // jobs and his errands in separate apps and asking him to is why he uses neither.
@@ -5086,7 +5291,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       try{
         var uid = await hcOwnerUid();
         var c2 = await authGetClient();
-        var tr = await c2.rpc('get_business_tasks', { p_business_id: biz.id, p_owner_id: uid, p_from: null, p_to: to });
+        var tr = await c2.rpc('get_business_tasks', { p_business_id: biz.id, p_owner_id: uid, p_from: null, p_to: horizon });
         if(tr && !tr.error && Array.isArray(tr.data)) tasks = tr.data;
       }catch(_){ tasks = null; }
     }
@@ -5103,12 +5308,15 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     hcDayAddRow(room, biz);
     var openTasks = Array.isArray(tasks) ? tasks : [];
     if(!jobs.length && !openTasks.length){
-      hcRoomEmpty(room, 'Nothing booked today or tomorrow',
+      hcRoomEmpty(room, 'Nothing booked in the next ' + HC_DAY_HORIZON + ' days',
         'When a customer books, it lands here. You can also tell me things directly — "add tomorrow 12 to 3, Leslie, detailing", "dentist Thursday 2 to 4", "remind me to order glass cleaner" — and I’ll put them on the day.');
       canvas.appendChild(room); return;
     }
-    [from, to].forEach(function(day){
+    // Clashes are computed WITHIN a day, never across days — two things at 2pm on different
+    // days is not a clash, and saying it is would be a false alarm about a real calendar.
+    function renderDay(day, showEmpty){
       var dayJobs = jobs.filter(function(j){ return String(j.scheduled_date) === day; });
+      if(!dayJobs.length && !showEmpty) return;
       var g = document.createElement('div'); g.className = 'hc-room-group';
       g.textContent = hcDayLabel(day) + (dayJobs.length ? '' : ' — nothing booked');
       room.appendChild(g);
@@ -5132,7 +5340,20 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         n.textContent = 'Two of these overlap. Ask me to move one and I’ll find the next free slot.';
         room.appendChild(n);
       }
-    });
+    }
+    renderDay(from, true); renderDay(to, true);
+    // ANYTHING FURTHER OUT IS SHOWN, UNDER ITS OWN NAME. It is not "your day" and it is not
+    // hidden: an owner told about Thursday must be able to find Thursday.
+    var later = jobs.filter(function(j){ var d = String(j.scheduled_date || ''); return d && d > to; });
+    if(later.length){
+      var lh = document.createElement('div'); lh.className = 'hc-room-group';
+      lh.setAttribute('data-hc-day-later', '1');
+      lh.textContent = 'Later this week';
+      room.appendChild(lh);
+      var days = [];
+      later.forEach(function(j){ var d = String(j.scheduled_date); if(days.indexOf(d) < 0) days.push(d); });
+      days.sort().forEach(function(d){ renderDay(d, false); });
+    }
     // ── THE SAME LIST. Tasks after the timed things, banded, with undated ones last.
     // An undated task has not failed to happen — it simply has no day, and nothing here
     // may render it as late.
@@ -5276,7 +5497,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   function hcCustomerPanel(cu, biz){
     hcOpenPanel('Customer', function(body){
       var rows = [
-        ['Name', cu.name || null], ['Phone', cu.phone || null], ['Email', cu.email || null],
+        ['Name', cu.name || null], ['Phone', cu.phone ? hcPhoneHouse(cu.phone) : null], ['Email', cu.email || null],
         ['Vehicle', cu.vehicle || null],
         ['Last seen', cu.last_seen ? (String(cu.last_seen) + (cu.last_service ? ' — ' + cu.last_service : '')) : null],
         ['Jobs', Number(cu.visits) > 0 ? String(cu.visits) : null],
@@ -5299,7 +5520,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         var acts = document.createElement('div'); acts.className='hc-event-acts';
         var call = document.createElement('a'); call.className='hc-arrival-act';
         call.href = 'tel:' + String(cu.phone).replace(/[^0-9+]/g,'');
-        call.textContent = 'Call ' + cu.phone; acts.appendChild(call); body.appendChild(acts);
+        call.textContent = 'Call ' + hcPhoneHouse(cu.phone); acts.appendChild(call); body.appendChild(acts);
       }
     });
   }
@@ -5417,7 +5638,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var d = ev.event_date ? String(ev.event_date) : '';
     var t = ev.event_time ? String(ev.event_time).slice(0,5) : '';
     if(!d && !t) return null;
-    var day = d ? new Date(d + 'T00:00:00').toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' }) : '';
+    var day = d ? hcDayLabel(d) : '';
     return [day, t].filter(Boolean).join(' at ');
   }
   // Every line is a field. A field we do not have produces NO LINE — never a placeholder,
@@ -5428,7 +5649,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       ['Service', ev.service_name || null],
       ['Price', hcMoney(ev.amount)],
       ['Customer', ev.customer_name || null],
-      ['Phone', ev.customer_phone || null],
+      ['Phone', ev.customer_phone ? hcPhoneHouse(ev.customer_phone) : null],
       ['Email', ev.customer_email || null],
       ['Address', ev.address || null],
       ['Vehicle', ev.vehicle || null],
@@ -5473,7 +5694,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     head.textContent = hcEventHead(ev);
     wrap.appendChild(head);
     var when = document.createElement('div'); when.className = 'hc-event-sub';
-    when.textContent = 'Came in ' + new Date(ev.occurred_at).toLocaleString();
+    when.textContent = 'Came in ' + hcDateTimeUS(ev.occurred_at);
     wrap.appendChild(when);
     var dl = document.createElement('div'); dl.className = 'hc-event-fields';
     hcEventFields(ev).slice(0, 5).forEach(function(row){
@@ -5494,7 +5715,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(ev.customer_phone){
       var call = document.createElement('a'); call.className='hc-arrival-act';
       call.href = 'tel:' + String(ev.customer_phone).replace(/[^0-9+]/g,'');
-      call.textContent = 'Call ' + ev.customer_phone;
+      call.textContent = 'Call ' + hcPhoneHouse(ev.customer_phone);
       acts.appendChild(call);
     }
     wrap.appendChild(acts);
@@ -5592,7 +5813,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   function hcOpenEventPanel(ev){
     hcOpenPanel(hcEventPanelTitle(ev), function(body){
       var sub = document.createElement('div'); sub.className = 'hc-event-sub';
-      sub.textContent = 'Came in ' + new Date(ev.occurred_at).toLocaleString();
+      sub.textContent = 'Came in ' + hcDateTimeUS(ev.occurred_at);
       body.appendChild(sub);
       var dl = document.createElement('div'); dl.className = 'hc-event-fields';
       hcEventFields(ev).forEach(function(row){
@@ -5606,7 +5827,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         var acts = document.createElement('div'); acts.className = 'hc-event-acts';
         var call = document.createElement('a'); call.className = 'hc-arrival-act';
         call.href = 'tel:' + String(ev.customer_phone).replace(/[^0-9+]/g,'');
-        call.textContent = 'Call ' + ev.customer_phone;
+        call.textContent = 'Call ' + hcPhoneHouse(ev.customer_phone);
         acts.appendChild(call); body.appendChild(acts);
       }else if(!ev.customer_email){
         var none = document.createElement('div'); none.className = 'hc-event-sub';
@@ -5683,7 +5904,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       var top = rows[0];
       var today = new Date().toISOString().slice(0,10);
       var y = new Date(Date.now() - 86400000).toISOString().slice(0,10);
-      var when = top.day === today ? 'today' : (top.day === y ? 'yesterday' : ('on ' + top.day));
+      var when = top.day === today ? 'today' : (top.day === y ? 'yesterday' : ('on ' + hcDateUS(top.day)));
       return { people: Number(top.people) || 0, when: when };
     }catch(e){ return null; }
   }
@@ -5802,10 +6023,55 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     own_photos:          'Your photos are on your page now.',
     services_no_desc:    'Those service descriptions are on your page now.'
   };
-  /** Which asks were outstanding before and are satisfied now. Returns keys, in the ladder's
-   *  own order, so the sentence reads in the order the owner would have met them. */
-  function hcClosedGaps(before, after){
+  // ── WHICH WRITE CAN CLOSE WHICH GAP ────────────────────────────────────────────────
+  //
+  // THE CHAIN SAID SOMETHING FALSE, AND IT WAS TRUE ABOUT A DIFFERENT TABLE (2026-09-15).
+  // He pasted a JOB — "Thursday at 2 to do the driveway, 14 Maple St, we said $180" — and the
+  // chain answered "Your prices are on your page now." He had not touched his page. A job's
+  // price is not a page price; `jobs` is not `services`.
+  //
+  // WHY THE OLD SHAPE COULD NOT CATCH IT. The acknowledgement was a pure state DIFF: gaps
+  // before the turn versus gaps now. A diff knows something changed and cannot know WHAT DID
+  // IT — so any gap that closed between two reads was attributed to whatever the owner happened
+  // to have just done. The existing red-proof covered "nothing changed, and we claimed
+  // something" (the hollow acknowledgement). It did not cover "something changed, and we named
+  // the wrong one", which is worse: it is a true observation attached to a false cause, so it
+  // survives every check that only asks whether a change occurred.
+  //
+  // THE FIX IS ATTRIBUTION, NOT A FILTER ON TOP. A gap may be claimed only when THIS TURN's
+  // receipt (`data.actions` — what the capabilities actually did, server-side) contains a write
+  // that is capable of closing it. A turn whose only action is business.addJob can close
+  // nothing on this ladder, so it says nothing, and the diff it saw is carried into the
+  // baseline to be attributed to the turn that earns it.
+  //
+  // DERIVED FROM THE WRITERS, not hand-listed prose: each entry names capability actions that
+  // exist in hubly_capability_registry.ts. An action absent from this map closes nothing, which
+  // is the safe direction — a new writer is silent until it is declared, rather than
+  // automatically licensed to claim any gap that moved.
+  var HC_GAP_WRITERS = {
+    has_phone:           ['business.recordFacts', 'business.capture', 'business.setAddress', 'booking.recordContact'],
+    has_hours:           ['business.setHours', 'business.recordFacts', 'business.capture'],
+    has_priced_services: ['business.setServices', 'business.addServicesSection', 'website.patchDocument'],
+    own_photos:          ['business.addPhoto'],
+    services_no_desc:    ['business.setServices', 'business.addServicesSection']
+  };
+  /** The capability writes this turn actually performed, as 'capability.action' strings. Only
+   *  `ok` actions count: a writer that failed changed nothing, whatever the gaps now say. */
+  function hcTurnWrites(actions){
+    if(!Array.isArray(actions)) return [];
+    return actions.filter(function(a){ return a && a.ok; })
+                  .map(function(a){ return String(a.capability || '') + '.' + String(a.capabilityAction || ''); });
+  }
+  /** Which asks were outstanding before and are satisfied now AND were closed by something
+   *  this turn actually wrote. Returns keys, in the ladder's own order, so the sentence reads
+   *  in the order the owner would have met them.
+   *
+   *  `writes` absent (undefined) means "we have no receipt for this turn" — and with no
+   *  receipt nothing may be attributed, exactly as `before` absent means nothing may be
+   *  claimed. An empty array means "this turn wrote nothing", which is also nothing to claim. */
+  function hcClosedGaps(before, after, writes){
     if(!before || !after) return [];                    // nothing to compare: claim nothing
+    if(!Array.isArray(writes)) return [];               // no receipt: attribute nothing
     var out = [];
     for(var i = 0; i < HC_GAP_ASKS.length; i++){
       var a = HC_GAP_ASKS[i];
@@ -5815,7 +6081,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       var nowOpen = (a.want === false && after[a.key] === false) ||
                     (a.want === 0 && Number(after[a.key]) === 0) ||
                     (a.want === '>0' && Number(after[a.key]) > 0);
-      if(wasOpen && !nowOpen && HC_GAP_DONE[a.key]) out.push(a.key);
+      if(!(wasOpen && !nowOpen && HC_GAP_DONE[a.key])) continue;
+      // THE GAP CLOSED. Did anything THIS TURN do it? A write to one table may not be
+      // reported as a change to another.
+      var canClose = HC_GAP_WRITERS[a.key] || [];
+      var did = writes.some(function(w){ return canClose.indexOf(w) >= 0; });
+      if(did) out.push(a.key);
     }
     return out;
   }
@@ -5833,7 +6104,17 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     return ack + ' One more thing that would help: ' + ask.replace(/^./, function(ch){ return ch.toLowerCase(); });
   }
 
-  async function hcMaybeAskNextGap(){
+  /** The last gap asked for THIS business, across reloads. Falls back to the in-memory value
+   *  when storage is unavailable (a private window), so the guard degrades to what it was
+   *  rather than to nothing. */
+  function hcLastGapKey(bizId){
+    try{ var v = localStorage.getItem('hcLastGap:' + bizId); if(v) return v; }catch(e){}
+    return hc._lastGapKey || null;
+  }
+  function hcRememberGapKey(bizId, key){
+    try{ localStorage.setItem('hcLastGap:' + bizId, key); }catch(e){}
+  }
+  async function hcMaybeAskNextGap(actions){
     try{
       var biz = hc.draftBusiness;
       if(!biz || !biz.id || !hc.draftClaimed || !hcIsAuthed()) return;
@@ -5845,7 +6126,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       var r = await c.rpc('get_my_site_gaps', { p_business_id: biz.id });
       var now = r && r.data;
       if(!now) return;                                            // no reading, no claim
-      var closed = hcClosedGaps(hc._gapsSeen, now);
+      var closed = hcClosedGaps(hc._gapsSeen, now, hcTurnWrites(actions));
       hc._gapsSeen = now;                                         // the baseline for next turn
       // THE SESSION CAP STILL GOVERNS THE UNPROMPTED ASK (ruled 2026-09-13: an ask that
       // arrives as a ritual is worse than no ask). A turn that CLOSED something is not
@@ -5853,11 +6134,21 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       // the session's one ask has been spent. The same gap is never asked twice in a row.
       if(hc._gapAsked && !closed.length) return;
       var gap = hcPickNextGap(now);
-      if(gap && gap.key === hc._lastGapKey && !closed.length) return;
+      // NEVER THE SAME GAP TWICE RUNNING — AND A RELOAD IS NOT A NEW CONVERSATION.
+      //
+      // `hc._lastGapKey` is in-memory, so it died on every refresh and the next load asked the
+      // same thing again. That is one of the two ways the phone got asked twice across
+      // consecutive turns on 2026-09-15 (the other was the job turn's own ask, now declared via
+      // askedFor). The last gap asked is remembered PER BUSINESS, so a reload continues the
+      // conversation instead of restarting the ask — and so two businesses never speak for each
+      // other. Browser-local by design: it is a conversational courtesy, not a fact about the
+      // business, and it must never be the reason a real gap goes unasked forever, which is why
+      // ONE repeat is suppressed and the ladder still moves on.
+      if(gap && gap.key === hcLastGapKey(biz.id) && !closed.length) return;
       var line = hcChainLine(closed, gap);
       if(!line) return;
       hc._gapAsked = true;
-      if(gap) hc._lastGapKey = gap.key;
+      if(gap){ hc._lastGapKey = gap.key; hcRememberGapKey(biz.id, gap.key); }
       hcAppendMessage('hubly', line);
       hcThreadScrollToEnd();
     }catch(e){ /* an ask that cannot be composed is not said */ }
@@ -6285,7 +6576,19 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(hc._arrivalDue){
       hc._arrivalDue = false;
       hcRenderArrival(biz);
-      hcMarkWelcomed();
+      // THE ONE-SHOT IS SPENT AGAINST THE DOM, NEVER AGAINST THE CALL. hcRenderArrival
+      // returning is not evidence the owner can see anything; `welcomed_at` is a claim that
+      // this person has met Hubly, and it is written only once the words are in the thread
+      // the owner is looking at. When they are not, the row is LEFT ALONE so the next load
+      // can try again — the opposite of 2026-09-14, where the row outlived the render and
+      // closed the gate forever.
+      if(hcArrivalInDom()){
+        hcArrivalTrace('RENDERED and in the DOM — marking welcomed now');
+        hcMarkWelcomed();
+      }else{
+        hcArrivalTrace('NOT IN THE DOM after render — welcomed_at deliberately NOT written, so the next load retries');
+        console.error('[arrival] rendered but not in the DOM — one-shot left unspent');
+      }
     }
     hcRenderRailBiz(biz);
     await hcLoadHomeCounts(biz);
@@ -6296,6 +6599,22 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     //
     // Then only what no CARD will say. One event is owned by its card — repeating it as a
     // sentence is the same news twice, and an owner reading it in two registers skims both.
+    // ── THE BOUNDARY BETWEEN BEFORE AND TODAY ────────────────────────────────────────
+    //
+    // A thread out of order is its own lie about what was said when, and this one was out of
+    // order by construction: hcRenderTranscript APPENDED the restored history to the end of
+    // the thread, so yesterday's turns landed UNDERNEATH today's greeting, news line, event
+    // cards and suggestions. On 2026-09-15 that put "hey" (stored 2026-09-14 05:52) below a
+    // news line about 2026-09-13 — older text below newer text, in a surface whose entire
+    // convention is newest-at-the-bottom.
+    //
+    // So Home plants an anchor here, after identity and the arrival and before anything that
+    // describes TODAY. History is inserted BEFORE it (hcRenderTranscript), which is the one
+    // position that reads correctly top-to-bottom: who this is, then what was said, then what
+    // is true now.
+    var hist = document.createElement('div');
+    hist.setAttribute('data-hc-history-slot', '1');
+    thread.appendChild(hist);
     var greetLines = await hcBuildGreeting(biz);
     if(greetLines.length){
       var news = document.createElement('div'); news.className = 'hc-msg hubly hc-news';
@@ -6361,15 +6680,36 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     hcThreadScrollToEnd();
   }
   // The full thread, on demand (from the silently-loaded context) — reachable, not dumped.
+  //
+  // INSERTED AT THE HISTORY SLOT, NOT APPENDED. hc.messages is already in seq order (the rows
+  // are sorted in hcLoadConversation and the RPC orders by seq as well), so the only ordering
+  // question left is WHERE the block goes, and the answer is above everything that describes
+  // today — see the boundary note in hcRenderHome. Appending was the bug.
+  //
+  // Renders ONCE. A second call with the block already present would duplicate the whole
+  // history under itself, which is the same lie in a louder form.
   function hcRenderTranscript(){
-    var thread = hcThreadBody(); if(!thread || !hc.messages) return;
+    var thread = hcThreadBody(); if(!thread || !hc.messages) return 0;
+    var slot = thread.querySelector('[data-hc-history-slot]');
+    if(slot && slot.getAttribute('data-hc-history-rendered') === '1') return 0;
+    var n = 0;
     hc.messages.forEach(function(m){
       var txt = (typeof hcMessageToText === 'function') ? hcMessageToText(m.content) : (typeof m.content === 'string' ? m.content : '');
       if(!txt) return;
       if(hc.draftClaimed && m.role !== 'user' && typeof hcIsPreAccountMsg === 'function' && hcIsPreAccountMsg(txt)) return;
-      hcAppendMessage(m.role === 'user' ? 'user' : 'hubly', txt);
+      var div = document.createElement('div');
+      div.className = 'hc-msg ' + (m.role === 'user' ? 'user' : 'hubly');
+      div.setAttribute('data-hc-history', '1');
+      div.textContent = txt;
+      // Before the boundary when Home planted one; otherwise the end of the thread, which is
+      // the right answer for any surface that has no "today" block below it.
+      if(slot && slot.parentNode) slot.parentNode.insertBefore(div, slot);
+      else thread.appendChild(div);
+      n++;
     });
+    if(slot) slot.setAttribute('data-hc-history-rendered', '1');
     hcThreadScrollToEnd();
+    return n;
   }
   // Settings: a POPOUT off the gear, never a tab. Reuses the account menu (sign out)
   // and names the account, so the gear is a real door, not decoration.
@@ -7055,6 +7395,72 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(status === 'not_on_page') return target.not_on_page || '';
     return target.could_not_look || '';
   }
+  // ── TAKE ME THERE — the fourth door, and the sentence that says what it found ────────
+  //
+  // "take me to my schedule" -> "I can't take you to the schedule from here yet."
+  // Said to an owner on 2026-09-15, one message after Hubly had listed what was on his
+  // schedule. He could PUT things on his day and not LOOK at his day: the loop breaking at
+  // exactly the step he asked it to continue. And it was the missing-door shape again — the
+  // Planner room, hcRenderPlanner, HC_ROOMS and hcOpenWorkspace were all built and working.
+  // Nothing could reach them from a sentence.
+  //
+  // WHAT IT WILL NOT DO. It will not open a place this business has not earned (prohibition 5
+  // — desktop does not get to show empty rooms just because it has the space), and it will not
+  // name a control. It moves, then reads the room BACK and says what is actually in it.
+  var HC_GO_PLACES = {
+    planner:   { say: 'schedule',  what: 'day' },
+    jobs:      { say: 'jobs',      what: 'jobs' },
+    customers: { say: 'customers', what: 'customers' },
+    website:   { say: 'website',   what: 'website' }
+  };
+  /** What the room actually holds, read from the room after it rendered. Never a prediction:
+   *  "It should show you the services spot on the page" is us guessing at our own behaviour,
+   *  and it was said to an owner the same night. Report, or say we could not tell. */
+  function hcGoToPlaceLine(kind, counted){
+    var p = HC_GO_PLACES[kind];
+    if(!p) return 'I cannot take you there yet.';
+    if(counted == null) return 'You\u2019re on your ' + p.say + ' now. I could not read what\u2019s on it, so I won\u2019t guess.';
+    if(counted === 0) return 'You\u2019re on your ' + p.say + ' now. Nothing is on it.';
+    if(kind === 'planner'){
+      return 'You\u2019re on your ' + p.say + ' now \u2014 ' + counted + ' thing' + (counted === 1 ? '' : 's') + ' on it.';
+    }
+    return 'You\u2019re on your ' + p.say + ' now \u2014 ' + counted + ' ' + (counted === 1 ? p.what.replace(/s$/, '') : p.what) + '.';
+  }
+  async function hcGoToPlace(kind){
+    kind = String(kind || '').trim();
+    var p = HC_GO_PLACES[kind];
+    if(!p){ hcAppendMessage('hubly', 'I cannot take you there yet.'); return { ok:false, error:'unknown_place' }; }
+    // EARNED, OR SAID SO. A room this business has not earned is not opened behind the
+    // owner's back, and the refusal names the reason rather than going quiet.
+    var earned = false;
+    try{ earned = hcWorkspaces().some(function(w){ return w.id === kind; }); }catch(e){}
+    if(!earned){
+      hcAppendMessage('hubly', 'Your ' + p.say + ' isn\u2019t set up on this account yet, so there\u2019s nowhere for me to take you.');
+      return { ok:false, error:'not_earned' };
+    }
+    try{ hcOpenWorkspace(kind); }
+    catch(e){ hcAppendMessage('hubly', 'I could not open your ' + p.say + ' just now.'); return { ok:false, error:'open_threw' }; }
+    // THE POSTCONDITION IS READ, NOT ASSUMED (prohibition 3). hcOpenWorkspace kicks the room
+    // render off asynchronously, so the count is taken once the room has actually painted —
+    // and when it never does, the sentence says we could not tell instead of inventing a zero.
+    var counted = await new Promise(function(resolve){
+      var tries = 0;
+      (function poll(){
+        tries++;
+        var cv = document.getElementById('hcCanvas');
+        var room = cv && cv.querySelector('.hc-room');
+        if(room){ resolve(room.querySelectorAll('.hc-row').length); return; }
+        if(tries > 40){ resolve(null); return; }
+        setTimeout(poll, 50);
+      })();
+    });
+    hcAppendMessage('hubly', hcGoToPlaceLine(kind, counted));
+    hcThreadScrollToEnd();
+    return { ok:true, place:kind, counted:counted };
+  }
+  try{ window.hublyGoUI = { go: hcGoToPlace, line: hcGoToPlaceLine, places: Object.keys(HC_GO_PLACES) }; }catch(e){}
+  try{ window.hublyChainUI = { closed: hcClosedGaps, line: hcChainLine, writes: hcTurnWrites, writers: HC_GAP_WRITERS }; }catch(e){}
+
   var hcShowMeWhereWaiting = null;
 
   function hcShowMeWhere(what){
@@ -7389,16 +7795,58 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // is written AFTER it is in the DOM the owner is looking at, never before. Marking first
   // was copied from the localStorage flag it replaced, and it was wrong for the same reason
   // any other unearned green is wrong.
+  // ── THE GATE IS INSTRUMENTED, BECAUSE THREE FIXES SHIPPED WITHOUT BEING SEEN ──────
+  //
+  // The arrival has now failed on a human's screen three times, and each time the fix was
+  // reasoned out of the source. The fourth diagnosis was not a fix at all — it was ONE ROW:
+  //
+  //   hubly_owner_profile  owner f3f11707
+  //     welcomed_at = 2026-09-14 22:01:24.826016+00
+  //     created_at  = 2026-09-14 22:01:24.826016+00     <- the same instant
+  //
+  // The arrival rendered at 22:01:24, stamped welcomed_at, and was then erased by the other
+  // hcRenderHome call site. The 2026-09-14 fix corrected the render and the marking order and
+  // NEVER CLEARED THE ROW — so `!hcOwner.welcomedAt` has been false for that owner ever since,
+  // and all three fixes sat behind a one-shot that was already spent. Three fixes to a
+  // mechanism that was never the mechanism.
+  //
+  // So: every decision on this path is logged under ONE prefix, `[arrival]`, which is
+  // pasteable from the console and readable by the rig. A gate that cannot be observed is a
+  // gate that gets re-theorised instead of re-read.
+  var hcArrivalLog = [];
+  function hcArrivalTrace(what){
+    var line = '[arrival] ' + what;
+    try{ hcArrivalLog.push(line); }catch(e){}
+    try{ console.log(line); }catch(e){}
+    return line;
+  }
+  /** Is the arrival actually on the screen? Read the DOM, do not trust the call.
+   *  This is the postcondition welcomed_at is allowed to be written against, and nothing
+   *  else — prohibition 3, applied to the one-shot that got eaten. */
+  function hcArrivalInDom(){
+    try{
+      var thread = hcThreadBody(); if(!thread) return false;
+      var el = thread.querySelector('[data-hc-arrival="1"]');
+      return !!(el && document.contains(el) && String(el.textContent || '').trim().length > 20);
+    }catch(e){ return false; }
+  }
   async function hcMaybeShowArrival(biz, renderHomeIfNotDue){
-    if(!biz || !biz.id || !hc.draftClaimed) return;
+    if(!biz || !biz.id){ hcArrivalTrace('SKIP no business on the conversation'); return; }
+    if(!hc.draftClaimed){ hcArrivalTrace('SKIP biz=' + biz.id + ' draftClaimed=false (not a claimed site)'); return; }
+    hcArrivalTrace('gate biz=' + biz.id + ' draftClaimed=true authed=' + hcIsAuthed());
     await hcLoadOwnerProfile(true);
     if(!hcOwner.loaded){
       // Could not read the record. Say nothing rather than welcome them for the second time.
+      hcArrivalTrace('SKIP owner profile UNREADABLE — skipped rather than repeated');
       console.error('[arrival] owner profile unreadable — arrival skipped rather than repeated');
       if(renderHomeIfNotDue) hcRenderHome();
       return;
     }
     hc._arrivalDue = !hcOwner.welcomedAt;
+    hcArrivalTrace('profile loaded welcomedAt=' + (hcOwner.welcomedAt || 'null') +
+      ' name=' + (hcOwner.name || 'null') + ' source=' + (hcOwner.source || 'null') +
+      ' -> due=' + hc._arrivalDue +
+      (hc._arrivalDue ? '' : ' (ALREADY WELCOMED — this is the state that hid three fixes; if the owner never saw it, the row is stranded)'));
     // Home is the one render path either way: due or not, the screen is the same screen, and
     // two paths drawing the same screen is how the first version lost the welcome.
     hcRenderHome();
@@ -7438,13 +7886,17 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var first = hcOwnerFirstName();
     var intro = "I'm Hubly. I look after this site and the business behind it — tell me what you want changed and I'll change it.";
     var openLine = (first ? (first + ' — ' + name) : name) + ' is live. ' + host + ' is a real address. Anyone can visit it.';
+    var _el;
     if(first){
-      hcAppendMessage('hubly', openLine + '\n\n' + intro);
+      _el = hcAppendMessage('hubly', openLine + '\n\n' + intro);
     }else{
       // The one ask. Nothing else may be asked until it is answered (hcOwner.awaitingName).
       hcOwner.awaitingName = true;
-      hcAppendMessage('hubly', openLine + '\n\n' + intro + '\n\nWhat should I call you?');
+      _el = hcAppendMessage('hubly', openLine + '\n\n' + intro + '\n\nWhat should I call you?');
     }
+    // TAGGED, so the one-shot can be written against the DOM rather than against the fact
+    // that this function was called. hcArrivalInDom() reads this attribute and nothing else.
+    if(_el) _el.setAttribute('data-hc-arrival', '1');
     // THE SECOND LINE IS EARNED OR IT IS NOT SAID. It used to be unconditional:
     // "Your booking works too. Customers can pick a plan and book it, at the prices you
     // set." Three claims about product state, none of them checked — and on the walk that
@@ -7475,7 +7927,35 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // (hcRenderCanvas), which is ambient rather than blocking and is there every time
     // rather than only on the first visit.
     hcThreadScrollToEnd();
+    return _el || null;
   }
+  // ── THE SEAM THE ARRIVAL CHECK DRIVES ────────────────────────────────────────────────
+  //
+  // Adrian's instruction after the third failure was explicit: stop fixing this by reading
+  // code. So scripts/check-arrival-in-dom.mjs drives THIS page, through this seam, and asserts
+  // the arrival WORDS ARE IN THE DOM after Home has rendered and settled — not that a function
+  // ran, not that a flag was written.
+  //
+  // `simulate` only WRITES: it takes the business the caller supplies and the claimed flag and
+  // then runs the real hcMaybeShowArrival. It reads nothing back out, so unlike the builddiag
+  // hook it cannot expose hc.draftBusiness's draftToken, and setting draftClaimed grants no
+  // authority — every writer authorises server-side off the JWT or the token, never off this
+  // flag. Same posture as window.hublyDayUI / window.hublyJobUI.
+  try{
+    window.hublyArrivalUI = {
+      simulate: function(biz, claimed, messages){
+        hc.draftBusiness = biz; hc.draftClaimed = !!claimed;
+        // Restored history, as hcLoadConversation(silent) would have left it: seq-ordered
+        // {role, content}. Supplied here so the ORDERING of the thread is assertable without a
+        // session — the defect being guarded is where the block lands, not how it is fetched.
+        if(Array.isArray(messages)) hc.messages = messages.slice();
+        return hcMaybeShowArrival(biz, true);
+      },
+      inDom: hcArrivalInDom,
+      log: function(){ return hcArrivalLog.slice(); },
+      transcript: hcRenderTranscript,
+    };
+  }catch(e){}
   // Restore the builder conversation for the business now in hc.draftBusiness
   // (Block 3 — persistence). Read rules mirror the document gates exactly: before
   // a claim the draft token, after a claim the owner (auth.uid()), and never a

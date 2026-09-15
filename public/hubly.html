@@ -28851,10 +28851,16 @@ function phoneDigits(raw){
   if(d.length>10)d=d.slice(-10);
   return d.slice(0,10);
 }
-/** National format: 888-888-8888 */
+/** National format: 888-888-8888.
+ *  TEN DIGITS IS 888-888-8888. SEVEN IS 888-8888 — one dash, not two. `>=7` produced
+ *  "555-013-4" for the seven-digit 5550134, and the same line was wrong in all three runtimes
+ *  (platform-home.html hcPhoneHouse, hubly_contact.ts formatPhoneHouse) because they were
+ *  copied from each other. Caught by scripts/check-one-formatter.mjs, 2026-09-15.
+ *  The three MUST produce identical output; change one, change all three. */
 function formatPhoneValue(raw){
   const d=phoneDigits(raw);
-  if(d.length>=7)return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
+  if(d.length>7)return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
+  if(d.length===7)return d.slice(0,3)+'-'+d.slice(3);
   if(d.length>=4)return d.slice(0,3)+'-'+d.slice(3);
   return d;
 }

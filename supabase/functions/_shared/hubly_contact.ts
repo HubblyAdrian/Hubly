@@ -36,7 +36,12 @@ export function phoneDigitsKey(raw: string): string {
  *  Returns the best-effort format for a partial number, or "" for nothing. */
 export function formatPhoneHouse(raw: string): string {
   const d = phoneDigitsKey(raw);
-  if (d.length >= 7) return d.slice(0, 3) + "-" + d.slice(3, 6) + "-" + d.slice(6);
+  // TEN DIGITS IS 888-888-8888. SEVEN IS 888-8888 — one dash, not two. `>= 7` produced
+  // "555-013-4" for the seven-digit 5550134; the same line was wrong in all three runtimes
+  // (public/platform-home.html hcPhoneHouse, public/hubly.html formatPhoneValue) because they
+  // were copied from each other. Caught by scripts/check-one-formatter.mjs, 2026-09-15.
+  if (d.length > 7) return d.slice(0, 3) + "-" + d.slice(3, 6) + "-" + d.slice(6);
+  if (d.length === 7) return d.slice(0, 3) + "-" + d.slice(3);
   if (d.length >= 4) return d.slice(0, 3) + "-" + d.slice(3);
   return d;
 }

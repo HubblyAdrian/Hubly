@@ -79,7 +79,7 @@ import {
   placeContactHoursInFreeform,
   type HoursRow,
 } from "./hubly_contact.ts";
-import { addressGrounded, emailGrounded, phoneGrounded, priceGrounded, reconcileServices } from "./hubly_grounding.ts";
+import { addressGrounded, emailGrounded, phoneGrounded, phoneGroundedWhy, priceGrounded, reconcileServices } from "./hubly_grounding.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
 // Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
 // "Invalid JWT". Both behaviours are load-bearing -- see supabase_admin.ts.
@@ -6518,6 +6518,9 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         description:
           "The owner has asked WHERE they would do something on their own page. Invoke this instead of describing anything: you cannot see their screen, and naming a control claims a view you do not have. " +
           "Their page moves to the place and marks it, and it reports what it found in its own words — so do NOT say the page moved, do not say it is highlighted, and do not describe the control. " +
+          "AND DO NOT PREDICT WHAT WILL HAPPEN. \"It should show you the services spot on the page\" was said to an owner on 2026-09-15: " +
+          "\"should\" is us guessing at our own behaviour, and the page is about to say what actually happened one message later. " +
+          "Never use should/ought/will probably about anything Hubly does — report, or say nothing and let the page report. " +
           "Keep your own reply to a few words at most, or the owner reads two messages about one thing. " +
           "`what` currently has one value, 'services'. If they asked about anything else, do not invoke this — say plainly what you CAN do about it.",
         doors: {
@@ -7878,7 +7881,21 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             notes: str("notes"),
           };
           // GROUNDED OR DROPPED. Not refused — the rest of the job is still worth saving.
-          if (phone) { if (phoneGrounded(phone, userMessage)) job.phone = phone; else dropped.push("phone number"); }
+          // A NUMBER REFUSED FOR A REASON WE KNOW SAYS THE REASON. "the phone number could not
+          // be matched" is true for both refusals and useful for neither: a seven-digit number
+          // re-sent unchanged fails identically, so the owner loops. too_short names the fixable
+          // problem and asks for the rest; not_in_message asks without ever repeating the value
+          // we declined to write (saying it would publish the unstated number).
+          let phoneAsk: string | null = null;
+          if (phone) {
+            const g = phoneGroundedWhy(phone, userMessage);
+            if (g.ok) job.phone = phone;
+            else if (g.why === "too_short") {
+              phoneAsk = `that number is only ${g.digits} digit${g.digits === 1 ? "" : "s"} — ask them for the full one`;
+            } else {
+              phoneAsk = "that number was not in their message, so ask them for it rather than repeating one back";
+            }
+          }
           if (email) { if (emailGrounded(email, userMessage)) job.email = email; else dropped.push("email"); }
           if (address) { if (addressGrounded(address, userMessage)) job.address = address; else dropped.push("address"); }
           if (amount !== null) { if (priceGrounded(amount, userMessage)) job.amount = String(amount); else dropped.push("price"); }
@@ -7904,10 +7921,74 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           return {
             ok: true, real: true,
             summary: `Job saved: ${bits.join(" · ") || "(unnamed)"}.` +
-              (dropped.length ? ` The ${dropped.join(" and ")} in that message could not be matched to what they typed, so ${dropped.length === 1 ? "it was" : "they were"} left off — say so.` : ""),
+              (dropped.length ? ` The ${dropped.join(" and ")} in that message could not be matched to what they typed, so ${dropped.length === 1 ? "it was" : "they were"} left off — say so.` : "") +
+              // The phone's refusal carries its own reason, so it is stated instead of being
+              // folded into the generic "could not be matched" list above.
+              (phoneAsk ? ` No phone number was saved: ${phoneAsk}.` : ""),
             humanNote: `Added the job${row.customer_name ? " for " + row.customer_name : ""}.`,
-            raw: { job: row, dropped },
+            // THE PHONE WAS ASKED TWICE ACROSS CONSECUTIVE TURNS (2026-09-15), and the second
+            // asker was the gap chain, which had no way to know the reply already asked. It did
+            // have a way: `askedFor` is the existing mechanism — the client sets
+            // hc.pendingCapture from it and the chain's own gate already refuses to speak while
+            // a capture ask is on the floor. The door existed; nothing set the flag. So this
+            // turn DECLARES that it asked for a phone rather than leaving it to be inferred
+            // from the model's wording.
+            raw: { job: row, dropped, ...(phoneAsk ? { askedFor: "phone" } : {}) },
           };
+        },
+      },
+      {
+        // ── TAKE ME THERE — the model's end of the fourth door ─────────────────────────
+        //
+        // "take me to my schedule" -> "I can't take you to the schedule from here yet." Said
+        // to an owner on 2026-09-15, one turn after Hubly had read his schedule out to him. The
+        // Planner room existed, rendered, and had no way in from a sentence.
+        //
+        // THE ENUM HOLDS ONLY PLACES THAT RENDER. planner/jobs/customers/website are the four
+        // in HC_PLACE_SURFACES; leads and store are surfaces we have not built, so asking for
+        // them is refused here rather than handed to the client to fail at silently — the same
+        // re-validation showMeWhere does, for the same reason.
+        //
+        // AND THE CLIENT OWNS EVERYTHING ELSE: whether this business has EARNED the place
+        // (prohibition 5), the move itself, and the one sentence about what is actually in the
+        // room once it has painted. The model must not describe any of it.
+        name: "goToPlace",
+        description:
+          "Take the owner to one of their own places in Hubly — their schedule/day, their jobs, their customers, or their website. " +
+          "Invoke this whenever they ask to GO somewhere or SEE something of theirs (\"take me to my schedule\", \"show me my jobs\", " +
+          "\"open my customers\"), instead of saying you cannot. " +
+          "Their screen moves and then reports what it found in its own words — so do NOT say the screen moved, do NOT say what is on it, " +
+          "and do NOT name any control or tab. Keep your own reply to a few words at most, or the owner reads two messages about one thing. " +
+          "`place` has exactly four values. If they asked for somewhere else, do not invoke this — say plainly what you CAN do.",
+        doors: {
+          talk: "business.goToPlace",
+          diy: { file: "public/platform-home.html", marker: "function hcOpenWorkspace", what: "the rail tabs in the claimed shell" },
+          show: "hcGoToPlace",
+        },
+        argsSchema: {
+          type: "object",
+          properties: {
+            place: {
+              type: "string",
+              description: "Which of their places to open.",
+              enum: ["planner", "jobs", "customers", "website"] as const,
+            },
+          },
+          required: ["place"],
+        },
+        handler: async (args) => {
+          const place = String((args as any)?.place || "").trim();
+          const KNOWN = ["planner", "jobs", "customers", "website"];
+          if (!KNOWN.includes(place)) {
+            return { ok: false, real: false, error: "no_place",
+              summary: "There is no such place in Hubly yet. Say what you can do about it instead, and do not name any control." };
+          }
+          // NOTHING IS CLAIMED HERE. This action did no backend work and cannot know whether
+          // the owner has earned that place or what is in it — the client says that, once,
+          // after it has moved and read the room back.
+          return { ok: true, real: false,
+            summary: "Handed to their screen. It will say where they are and what is on it; nothing has happened yet that you can report.",
+            raw: { goPlace: place } };
         },
       },
       {

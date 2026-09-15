@@ -218,6 +218,39 @@ paying business on the product.**
 How established: `supabase db query --linked`, counts only, on 2026-09-13. No write of any
 kind was made to this business.
 
+### THE MAGIC SHOW WORKED — first end-to-end job paste watched by a human (2026-09-15)
+
+**Established: measured in the database, on `hubly-classic-fixture` (account_kind `test`, owner
+`f3f11707`), from the transcript in `business_conversations` seq 1–16.** Not a market business —
+this is Adrian's own walk fixture, and no number here describes users or adoption.
+
+He pasted *"I need a job added: Thursday at 2 to do the driveway, 14 Maple St, 555-0134, we said
+$180"* and got a row, a card in the thread, a click, and the right pane showing the job with
+address, price, paid and status. **Then he asked for a doctor's appointment on his day and got
+that too.** Both rows are real and both are correct:
+
+| row | table | what it holds | verified |
+|---|---|---|---|
+| doctor's appointment | `jobs`, `is_block = true` | 2026-09-16 07:00, 2 hours | measured |
+| driveway | `jobs`, `is_block = false` | 2026-09-17 14:00, 14 Maple St, $180 | measured |
+
+`tasks` holds **0 rows** for every business this owner has. **So My Day's two lanes are split:
+the hand door writes `tasks`, the conversation writes `jobs`** — a room that read only one of
+them would look empty for everything he had just added by talking. Both are read.
+
+**"tomorrow at 7" and "Thursday at 2" were both resolved correctly** — 2026-09-16 is a Wednesday
+(tomorrow, measured from a local date of 2026-09-14) and 2026-09-17 is a Thursday. Hubly's date
+arithmetic is not the problem in any of this.
+
+**The phone was dropped, and for a reason we knew and did not say.** `555-0134` is SEVEN digits;
+`phoneGrounded` requires ten. Hubly said *"The phone number didn't save, so send it again"* —
+advice that would have failed identically. The refusal now carries its reason
+(`phoneGroundedWhy` -> `too_short` with the digit count, or `not_in_message`), and a
+`not_in_message` refusal never repeats the value it declined to write.
+
+**Do not regress the job paste.** `scripts/check-job-card-opens.mjs` guards the row, the card and
+the click; `scripts/check-day-is-reachable.mjs` guards the day it lands on.
+
 ## PROSPECTS AND COMMITMENTS
 
 *Anyone who has said they would pay. What for, how much, by when, and where the

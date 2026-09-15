@@ -96,7 +96,10 @@
     "check:doors-offered": "node scripts/check-doors-offered-exist.mjs",
     "check:job-card": "node scripts/check-job-card-opens.mjs",
     "check:unreadiness": "node scripts/check-unreadiness-is-not-absence.mjs",
-    "check:day-add": "node scripts/check-day-add-by-hand.mjs"
+    "check:day-add": "node scripts/check-day-add-by-hand.mjs",
+    "check:arrival": "node scripts/check-arrival-in-dom.mjs",
+    "check:formatter": "node scripts/check-one-formatter.mjs",
+    "check:day-reachable": "node scripts/check-day-is-reachable.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
