@@ -44,7 +44,13 @@ const stripSql = (s) => s.replace(/--[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, 
 // ── 1. EVERY FUNCTION WE DEFINE, and where it was defined last. ────────────────────────
 const migDir = join(ROOT, "supabase/migrations");
 const migs = readdirSync(migDir).filter((f) => f.endsWith(".sql")).sort();
-const defined = new Map();   // name -> { migration, isTrigger, returnsTrigger }
+// A FUNCTION THAT WAS LATER DROPPED IS NOT A FUNCTION WE SHIP. Migrations are a LEDGER, read
+// in order — `set_business_name_unset` was created on 2026-09-09 and dropped on 2026-09-10, and
+// the first version of this file listed it as shipped-with-no-caller. Reporting a function that
+// does not exist as a missing door is the same defect as reporting a working cron job as dead:
+// it puts noise on a list whose whole value is that every line is worth acting on.
+const defined = new Map();   // name -> { migration, returnsTrigger }
+const createCount = new Map();  // name -> how many CREATE statements the ledger has for it
 for (const f of migs) {
   const src = stripSql(readFileSync(join(migDir, f), "utf8"));
   const re = /create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?([a-z0-9_]+)\s*\(([\s\S]*?)\)\s*returns\s+([a-z0-9_ .]+)/gi;
@@ -53,6 +59,32 @@ for (const f of migs) {
     const name = m[1].toLowerCase();
     const returns = (m[3] || "").trim().toLowerCase();
     defined.set(name, { name, migration: f, returnsTrigger: /^trigger\b/.test(returns) });
+    createCount.set(name, (createCount.get(name) || 0) + 1);
+  }
+  // ── A DROP IS BY SIGNATURE; THIS TRACKING IS BY NAME, AND THE DIFFERENCE MATTERS ──────
+  //
+  // `drop function public.update_business_job(uuid,uuid,uuid,text,text,text,uuid)` removes ONE
+  // OVERLOAD. The first version of this deletion deleted the NAME, so update_business_job —
+  // which exists in pg_proc right now and which the product calls — vanished from the sweep
+  // entirely. A sweep that silently forgets a live function is worse than one that lists a dead
+  // one: the dead entry is noise you can read past, the missing entry is a door you will never
+  // be told about.
+  //
+  // Comparing signatures properly means normalising Postgres type names on both sides, which is
+  // a parser. The rule here is cruder and states its own limit: a drop removes the name only
+  // when the ledger has EXACTLY ONE create for it — a single definition being dropped is a
+  // removal. Two or more creates means overloads exist and this drop is a cleanup, so the name
+  // stands. That is right for every case in this repo today (the _debug_* one-offs and
+  // set_business_name_unset each have one create; update_business_job has two), and it is
+  // deliberately biased toward KEEPING a name, because a false "dead" is the costlier error.
+  const dropRe = /drop\s+function\s+(?:if\s+exists\s+)?(?:public\.)?([a-z0-9_]+)\s*\(/gi;
+  let d;
+  while ((d = dropRe.exec(src))) {
+    const name = d[1].toLowerCase();
+    if ((createCount.get(name) || 0) > 1) continue;                 // an overload cleanup
+    const recreatedAfter = new RegExp(`create\\s+(?:or\\s+replace\\s+)?function\\s+(?:public\\.)?${name}\\s*\\(`, "i")
+      .test(src.slice(d.index));
+    if (!recreatedAfter) defined.delete(name);
   }
 }
 
@@ -78,7 +110,18 @@ const callerFiles = [
 ];
 // One concatenated haystack per LANE, so the report can say which side reaches it.
 const lanes = { edge: "", client: "", script: "" };
+// ── THIS SWEEP AND ITS CHECKER ARE NOT DOORS ──────────────────────────────────────────
+//
+// Both files NAME the functions they report as unreachable — check-rpc-doors.mjs carries them
+// in its BASELINE with the reason each is tolerated. Because the sweep scans scripts/, writing
+// that baseline gave every entry a "script" door, the doorless list emptied, and the check went
+// green while reporting nothing. An instrument that is silenced by being used is worse than no
+// instrument: it reads exactly like success.
+//
+// Naming a thing in order to say it is unreachable must never make it reachable.
+const SELF = ["measure-rpc-doors.mjs", "check-rpc-doors.mjs", "RPC_DOORS"];
 for (const f of callerFiles) {
+  if (SELF.some((x) => f.includes(x))) continue;
   let src = ""; try { src = readFileSync(f, "utf8"); } catch { continue; }
   const lane = f.includes("/supabase/functions/") ? "edge" : f.includes("/public/") ? "client" : "script";
   lanes[lane] += "\n" + src;
@@ -86,6 +129,7 @@ for (const f of callerFiles) {
 // SQL calls SQL: a function invoked only from another migration is an internal step.
 let sqlHay = "";
 for (const f of migs) sqlHay += "\n" + stripSql(readFileSync(join(migDir, f), "utf8"));
+const sqlLines = sqlHay.split("\n");
 
 // ── pg_cron IS A CALLER, AND IT LIVES IN THE DATABASE, NOT THE REPO ───────────────────
 //
@@ -118,33 +162,51 @@ for (const [name, def] of defined) {
   if (word.test(lanes.edge)) doors.push("edge");
   if (word.test(lanes.client)) doors.push("client");
   if (word.test(lanes.script)) doors.push("script");
-  // Calls from OTHER migrations, not counting this function's own definition(s).
-  const ownDefs = (sqlHay.match(new RegExp(`create\\s+(?:or\\s+replace\\s+)?function\\s+(?:public\\.)?${name}\\b`, "gi")) || []).length;
-  const mentions = (sqlHay.match(new RegExp(`\\b${name}\\b`, "g")) || []).length;
-  // Each definition also carries revoke/grant/comment lines naming it; 4 is the usual tail.
-  const calledFromSql = mentions > ownDefs * 5;
+  // ── IS IT CALLED FROM OTHER SQL? COUNTED LINE BY LINE, NOT BY A RATIO. ───────────────
+  //
+  // This was `mentions > ownDefs * 5` — a guess that each definition drags about five
+  // administrative lines with it. It was wrong in both directions and it MISSED FOUR REAL
+  // CALLERS: hubly_derive_slug (two trigger functions), hubly_slug_available (set_business_slug,
+  // twice), and names_corroborate (the supersede statement in its own migration). All four were
+  // reported as having no caller anywhere, which is how a list of six "worth reading" turned out
+  // to contain four that were already wired. A heuristic that cannot name WHICH line it counted
+  // is a heuristic nobody can check — so the administrative lines are identified and excluded,
+  // and what remains is a call.
+  const admin = new RegExp(
+    `^\\s*(?:create\\s+(?:or\\s+replace\\s+)?function|drop\\s+function|grant\\s|revoke\\s|comment\\s+on\\s+function)` +
+    `[^\\n]*\\b${name}\\b`, "i");
+  const sqlCallLines = sqlLines.filter((l) => new RegExp(`\\b${name}\\b`).test(l) && !admin.test(l));
+  const calledFromSql = sqlCallLines.length > 0;
   const scheduled = word.test(cronHay);
   if (scheduled) doors.push("cron");
+  // SQL CALLING SQL IS A DOOR TOO. Without this, hubly_derive_slug (two trigger functions),
+  // hubly_slug_available (set_business_slug) and names_corroborate (the supersede statement)
+  // were reported under "the product cannot use these" while being invoked on every write that
+  // touches a name. calledFromSql was already computed and simply never counted as a door.
+  if (calledFromSql) doors.push("sql");
   rows.push({ name, migration: def.migration, returnsTrigger: def.returnsTrigger, doors, calledFromSql, scheduled });
 }
 
-const withDoor = rows.filter((r) => r.doors.length);
-// SCHEDULED IS A PROPERTY, NOT A BUCKET. A purge is usually named by a measurement script too,
-// so "cron and nothing else" reported 0 while four jobs were running daily. Count the property.
-const scheduledOnly = rows.filter((r) => r.scheduled);
-const triggers = rows.filter((r) => !r.doors.length && r.returnsTrigger);
-const sqlOnly = rows.filter((r) => !r.doors.length && !r.returnsTrigger && r.calledFromSql);
-const doorless = rows.filter((r) => !r.doors.length && !r.returnsTrigger && !r.calledFromSql);
+// CLASSIFIED IN ORDER, AND A ROW LANDS IN EXACTLY ONE BUCKET. Triggers are identified FIRST:
+// once "called from SQL" became a door, every trigger function acquired one (a `create trigger`
+// names it), and the TRIGGERS line read 0 while 20 of them existed. A summary whose buckets
+// overlap is a summary that can be read three ways.
+const triggers = rows.filter((r) => r.returnsTrigger);
+const rest = rows.filter((r) => !r.returnsTrigger);
+const withDoor = rest.filter((r) => r.doors.some((d) => d !== "sql"));
+const scheduledOnly = rest.filter((r) => r.scheduled);
+const sqlOnly = rest.filter((r) => !r.doors.some((d) => d !== "sql") && r.calledFromSql);
+const doorless = rest.filter((r) => !r.doors.length);
 
 if (JSON_OUT) { console.log(JSON.stringify({ rows, doorless }, null, 2)); process.exit(0); }
 
 console.log(`database functions defined in supabase/migrations: ${rows.length}   (migrations scanned: ${migs.length})\n`);
-console.log(`  REACHABLE (named by edge, client, a script or cron) ${String(withDoor.length).padStart(4)}`);
+console.log(`  REACHABLE (edge, client, a script or cron)         ${String(withDoor.length).padStart(4)}`);
 console.log(`     scheduled in pg_cron (a cron is the caller)     ${String(scheduledOnly.length).padStart(4)}   <- maintenance, correctly has no UI`);
 console.log(`     edge                                           ${String(withDoor.filter((r) => r.doors.includes("edge")).length).padStart(4)}`);
 console.log(`     client (public/)                               ${String(withDoor.filter((r) => r.doors.includes("client")).length).padStart(4)}`);
 console.log(`     a script only                                  ${String(withDoor.filter((r) => r.doors.length === 1 && r.doors[0] === "script").length).padStart(4)}   <- measured, never used by the product`);
-console.log(`  TRIGGERS (correctly have no caller)                ${String(triggers.length).padStart(4)}`);
+console.log(`  TRIGGERS (a create trigger is the caller)         ${String(triggers.length).padStart(4)}`);
 console.log(`  CALLED FROM SQL ONLY (an internal step)            ${String(sqlOnly.length).padStart(4)}`);
 console.log(`  NOTHING NAMES THEM, ANYWHERE                       ${String(doorless.length).padStart(4)}   <- the missing-door list\n`);
 

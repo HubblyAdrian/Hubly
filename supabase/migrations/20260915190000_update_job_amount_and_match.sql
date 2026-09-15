@@ -155,3 +155,4 @@ comment on function public.get_business_jobs_for_match(uuid, uuid, uuid) is
   'Resolves the owner''s own words for a job ("the driveway job") to a row. Who/what/where/when '
   'only — a lookup for disambiguation, never a data export. Authorised exactly as '
   'update_business_job; returns zero rows rather than an error for a non-owner.';
+

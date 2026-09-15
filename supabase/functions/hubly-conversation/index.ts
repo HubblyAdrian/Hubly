@@ -1576,6 +1576,10 @@ Deno.serve(async (req) => {
   // the same thing twice in one breath. The value is what guard 2 exists to make
   // visible; if it is already there, this stays quiet. One acknowledgement per action.
   let recordChangeValues: string[] = [];
+  // A service was noticed and deliberately NOT published (Adrian's ruling: a job offers, it
+  // never publishes). Drives askedFor:"services" on the response so the client's one-ask floor
+  // holds the offer rather than letting it stack under another question.
+  let proposedServiceOffer = false;
 
   const flushExtractedFacts = async (id: string, token: string) => {
     if (factsApplied || !id) return;
@@ -1603,6 +1607,36 @@ Deno.serve(async (req) => {
         content:
           `CAPABILITY RESULT for business.recordFacts: saved from what they typed — ${applied.written.join(", ")}. ` +
           `Do NOT ask for any of these again. Mention them only if it is natural to; never list them back.`,
+      });
+    }
+    // ══ THE OFFER: A JOB NEVER PUBLISHES TO THE PAGE, IT ASKS ══════════════════════════
+    //
+    // Adrian's ruling, 2026-09-15. Extraction found a priced service in this message and did
+    // NOT write it, because this business has a live page a stranger can reach. Noticing the
+    // gap is exactly Hubly's job; publishing without being asked is never.
+    //
+    // ONE QUESTION, AND IT IS THE MODEL'S ONLY ASK THIS TURN. `askedFor: "services"` is set
+    // below so the client's floor machinery (hcAskOnFloor) treats this as a question on the
+    // floor — if something else is already asking, this waits its turn rather than stacking.
+    // The write happens on a yes, through business.setServices, which is an explicit decision.
+    if (applied.proposedServices.length) {
+      const named = applied.proposedServices
+        .map((s) => (typeof s.price === "number" ? `${s.name} at $${s.price}` : s.name))
+        .join(", ");
+      proposedServiceOffer = true;
+      actions.push({ capability: "business", capabilityAction: "proposeServices", args: {}, ok: true, real: false });
+      history.push({
+        role: "system",
+        content:
+          `CAPABILITY RESULT for business.proposeServices: NOTHING WAS PUBLISHED. You noticed a price in what they ` +
+          `typed — ${named} — and their page does not offer that as a service. Their site is LIVE, so adding a service ` +
+          `is a change strangers can see and book, and it is never done without asking.
+` +
+          `Do the work they actually asked for, then ASK, in the same breath, as ONE question, e.g. ` +
+          `"I notice ${applied.proposedServices[0].name} isn't one of your services — want me to put it on your page` +
+          `${typeof applied.proposedServices[0].price === "number" ? ` at $${applied.proposedServices[0].price}` : ""}?" ` +
+          `NEVER say it was added, is on the page, or is live. If they say yes, call business.setServices then. ` +
+          `If you already have another question on the floor this turn, do not ask this one as well — one ask at a time.`,
       });
     }
     if (applied.failed.length) {
@@ -2845,8 +2879,9 @@ Deno.serve(async (req) => {
         ...(decision?.openAccount === true ? { openAccount: true } : {}),
         // A capability's own declared ask WINS over the model's: the capability knows it refused
         // a value and asked for it, and the model may simply not have set the flag.
-        ...(forcedAskedFor
-          ? { askedFor: forcedAskedFor }
+        // A proposed service is an ask on the floor, declared rather than inferred from wording.
+        ...((forcedAskedFor || (proposedServiceOffer ? "services" : null))
+          ? { askedFor: forcedAskedFor || "services" }
           : (["services", "hours", "area", "phone", "logo", "photos"].includes(decision?.askedFor) ? { askedFor: decision.askedFor } : {})),
         ...(adapter.isEmpty(turnPatch) ? {} : { understanding: { patch: turnPatch } }),
         ...(draftBusiness ? { draftBusiness } : {}),

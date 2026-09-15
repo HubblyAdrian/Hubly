@@ -101,7 +101,9 @@
     "check:formatter": "node scripts/check-one-formatter.mjs",
     "check:day-reachable": "node scripts/check-day-is-reachable.mjs",
     "check:no-silence": "node scripts/check-no-silent-turn.mjs",
-    "measure:rpc-doors": "node scripts/measure-rpc-doors.mjs"
+    "measure:rpc-doors": "node scripts/measure-rpc-doors.mjs",
+    "check:rpc-doors": "node scripts/check-rpc-doors.mjs",
+    "check:job-publishes": "deno run --allow-env --allow-net --allow-read scripts/check-job-never-publishes.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

@@ -880,6 +880,17 @@ function chromeOverridesFrom(meta: unknown): ChromeOverrides | undefined {
 export type ExtractedFactWrite = {
   written: string[];
   skipped: string[];
+  /** SERVICES WE DID NOT PUBLISH, AND WOULD HAVE.
+   *
+   *  ADRIAN'S RULING, 2026-09-15: **a job never publishes to the page — it OFFERS.**
+   *  "Adding a job is internal work. Adding a service changes what the public sees and what
+   *   strangers can book. Those are different acts and a paste of one may not silently perform
+   *   the other." And the general form: **an inference may not write to what the public sees.**
+   *
+   *  So for a CLAIMED business — one with a live page a stranger can reach — extraction stops
+   *  writing new services and hands them here instead. The caller turns them into a question in
+   *  the same breath, and the write happens only on a yes. */
+  proposedServices: { name: string; price?: number; description?: string }[];
   // Facts we ATTEMPTED to write and the RPC REFUSED. Distinct from `skipped`
   // (already-present, nothing to do). This is the signal that lets the caller
   // never fall silent on a failed write — the false-"Done" defect (a write that
@@ -919,7 +930,8 @@ export async function applyExtractedFacts(
   const changed: { key: string; from: string; to: string }[] = [];
   const changes = new Set<RecordChange>();
   // Either a draft token OR a verified owner is required to write.
-  if (!draftId || (!draftToken && !ownerUid)) return { written, skipped, failed, changed, recordChange: [] };
+  const proposedServices: { name: string; price?: number; description?: string }[] = [];
+  if (!draftId || (!draftToken && !ownerUid)) return { written, skipped, failed, changed, recordChange: [], proposedServices };
   const p_owner_id = ownerUid || null;
 
   const row = await selectOne(
@@ -931,7 +943,12 @@ export async function applyExtractedFacts(
     // field in this list. Verified against the live schema before shipping:
     // a 400 means a bad column, a 401 means the list is fine and RLS stopped
     // the read. See the standing rule in KNOWN_ISSUES.
-    "phone,email,city,state,address,service_area_cities,travel_radius_miles,years_in_business,hours_note",
+    // owner_id: NOT a fact we write — it is how we know whether this page is live to the
+    // public, which decides whether a service may be published by inference at all.
+    // meta: the OTHER service store. Without it the catalog count below silently reads 0 and
+    // the two-store fix is a no-op that looks like a fix — the exact shape of the bug it is
+    // repairing. Verified present in the live schema (businesses.meta, text holding JSON).
+    "owner_id,meta,phone,email,city,state,address,service_area_cities,travel_radius_miles,years_in_business,hours_note",
   );
 
   const patch: Record<string, unknown> = {};
@@ -1086,12 +1103,56 @@ export async function applyExtractedFacts(
     }
   }
 
-  // Prices are the floor under setServices, not a replacement for it. Written
-  // only when the business has NO services at all -- the model's structured
-  // version, with descriptions and ordering, is better whenever it exists.
+  // ══ A PRICE MENTIONED IS NOT A SERVICE APPROVED ════════════════════════════════════════
+  //
+  // Prices are the floor under setServices, not a replacement for it. But on 2026-09-15 this
+  // block PUBLISHED A SERVICE FROM A JOB PASTE. The owner typed
+  //
+  //     "I need a job added: Thursday at 2 to do the driveway, 14 Maple St, 555-0134, we said $180"
+  //
+  // and four seconds before his job row existed, `driveway` $180 went live in both stores with
+  // flags.website, flags.marketplace and instant_book_eligible all true. A stranger could book it.
+  // He asked for a job.
+  //
+  // TWO CAUSES, BOTH FIXED HERE.
+  //
+  // (1) THE GUARD READ ONE STORE. "Has NO services at all" was asked of the `services` table,
+  //     which held 0 rows, while meta.service_catalog held THREE and is what the page and the
+  //     booking flow actually render. A business with services looked empty, so the floor fired.
+  //     Both stores are consulted now — the same two-reader defect that made the arrival say
+  //     "the 1 service you priced" when the customer sees four.
+  //
+  // (2) AN INFERENCE MAY NOT WRITE TO WHAT THE PUBLIC SEES. Adrian's ruling: a job never
+  //     publishes to the page, it OFFERS. Not implemented as a guess at whether a message is
+  //     "about a job" — enumerating the forms of a thing is the mistake CLAUDE.md names four
+  //     times over, and "we said $180" looks exactly like a price list. Implemented on the one
+  //     structural fact that decides the harm: IS THERE A LIVE PAGE A STRANGER CAN REACH.
+  //     A claimed business has one. A draft mid-intake does not, and there the owner is
+  //     answering "what do you charge" — that is an answer, not an inference, and it still
+  //     writes.
+  //
+  //     For a claimed business the services are PROPOSED instead, and the caller asks. The
+  //     asymmetry is Adrian's and it is not close: a service nobody approved is visible to
+  //     customers and takes a manual deletion to undo; one we failed to capture costs a
+  //     sentence to add.
   if (pricedServices && pricedServices.length) {
+    const claimed = !!(row && (row as Record<string, unknown>).owner_id);
+    if (claimed) {
+      for (const svc of pricedServices) proposedServices.push(svc);
+      skipped.push("services");
+    } else {
     const existing = await selectMany("services", "business_id", draftId, "id");
-    if (!Array.isArray(existing) || existing.length === 0) {
+    // BOTH STORES. `services` is the relational table; meta.service_catalog is what the page
+    // renders from. Either being non-empty means this business already has services.
+    const catalogCount = (() => {
+      try {
+        const meta = (row as Record<string, unknown> | null)?.meta;
+        const parsed = typeof meta === "string" ? JSON.parse(meta) : meta;
+        const list = (parsed as { service_catalog?: { services?: unknown[] } } | null)?.service_catalog?.services;
+        return Array.isArray(list) ? list.length : 0;
+      } catch { return 0; }
+    })();
+    if ((!Array.isArray(existing) || existing.length === 0) && catalogCount === 0) {
       const found = findAction("business", "setServices");
       if (found) {
         const res = await found.handler({
@@ -1107,9 +1168,10 @@ export async function applyExtractedFacts(
     } else {
       skipped.push("services");
     }
+    }
   }
 
-  return { written, skipped, failed, changed, recordChange: [...changes] };
+  return { written, skipped, failed, changed, recordChange: [...changes], proposedServices };
 }
 
 /** What to SAY after a header change — in terms of what moved, not the enum

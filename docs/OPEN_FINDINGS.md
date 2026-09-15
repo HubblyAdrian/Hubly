@@ -1,6 +1,30 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
-## A JOB PASTE PUBLISHED A SERVICE TO HIS LIVE PAGE (2026-09-15) — NEEDS A RULING
+## THE TWO SERVICE STORES DISAGREE ON 23 OF 41 CLAIMED BUSINESSES (2026-09-15, measured)
+
+Asked whether the arrival's service count should read the `services` table at all. **It should
+not, and neither store is the answer on its own.**
+
+| | `services` table | `meta.service_catalog` |
+|---|---|---|
+| graefs-autocare (**market**) | **1** | **8** |
+| bucket-mobile-detailing (**market, paying**) | **0** | **4** |
+| hubly-classic-fixture | 0 | 3 |
+| star-windows | 9 | 0 |
+| dawn-patrol-coffee | 7 | 0 |
+
+**23 of 41 claimed businesses have the two disagreeing**, and they disagree in BOTH directions —
+so there is no "just read the other one" fix. Reading the table would tell Graef he has one
+service; reading the catalog would tell star-windows it has none.
+
+**The ruling this implies:** anything Hubly tells an owner about what CUSTOMERS can see must be
+derived from what the customer-facing surface actually renders, and today no single store
+answers that question. The arrival's sentence is already gone and `hcBookableServices` is
+deleted; it stays gone until there is ONE reader that answers "what does a visitor see", and
+that reader must be shared with the page rather than invented for the greeting. A second reader
+is how this happened.
+
+## A JOB PASTE PUBLISHED A SERVICE TO HIS LIVE PAGE — RULED AND FIXED (2026-09-15)
 
 Asked to verify "the 1 service you priced" in the arrival. **The number is wrong and the row
 behind it should not exist.**
@@ -28,7 +52,36 @@ was **literally true** — a price really did land on his page. The chain was re
 write; the write itself was the defect. The receipt-attribution fix still stands (a job write
 may not claim a page change), but it is not what was wrong here.
 
-**Why this needs a ruling rather than a patch.** The extractor's whole job is to capture a fact
+**ADRIAN'S RULING, 2026-09-15: a job never publishes to the page — it OFFERS.** *"Adding a job
+is internal work. Adding a service changes what the public sees and what strangers can book.
+Those are different acts and a paste of one may not silently perform the other. Notice the gap:
+yes, that is exactly Hubly's job. Publish without being asked: never."*
+
+**FIXED, and there were two causes stacked.** (1) The floor that decides whether extraction may
+publish asked the `services` table — which held 0 — while `meta.service_catalog` held 3. A
+business with services looked empty. Both stores are counted now. (2) An inference may not write
+to what the public sees: for a CLAIMED business, extraction proposes instead of writing, and the
+model asks in the same breath through the one-ask floor. Not implemented as a guess at whether a
+message is "about a job" — "we said $180" looks exactly like a price list, and enumerating the
+forms of a thing is the mistake CLAUDE.md names four times over. Implemented on the one
+structural fact that decides the harm: **is there a live page a stranger can reach.**
+
+**BLAST RADIUS, MEASURED BEFORE ANYTHING WAS TOUCHED: exactly one row, on a test business.**
+Across the whole database, one `services` row was created within 120s of a job on the same
+business — `driveway` on `hubly-classic-fixture`. Widening to "a service whose name matches a
+job on the same business" found four, and the timestamps separate them: `adrians-lawn-service`
+predates its job by 24 days, and **Graef's two were created in a single bulk write** — all eight
+of his catalog services share the timestamp `2026-08-11T00:42:50`, and the matching jobs predate
+it by 5–6 days. **Graef is clean. Nothing of his was read beyond a count, and nothing was
+touched.**
+
+**The row is gone** from both stores on the fixture (`services` 1 -> 0, catalog 4 -> 3); both
+jobs survive. Guarded by `scripts/check-job-never-publishes.ts`, red-proofed by restoring each
+cause — and the first version of that check passed under a restored defect because a DIFFERENT
+guard caught it, so it now has a leg that isolates the claimed rule on a business with nothing
+in either store.
+
+**Why the original entry asked for a ruling rather than patching.** The extractor's whole job is to capture a fact
 the owner states, and he did state "driveway … $180". The question is whether a price stated as
 *what this job costs* may become *what this service costs on the page*, and that is a product
 decision about what a job paste means — not something to decide inside a handler. The
@@ -36,8 +89,7 @@ asymmetry that usually settles these points one way: a service nobody meant to p
 visible to customers and takes a manual deletion to undo, while a service we failed to capture
 costs one sentence to add.
 
-**Not touched:** the `driveway` service row is still on `hubly-classic-fixture` in both stores.
-It is a test business, and removing it would destroy the evidence.
+**Removed 2026-09-15 on Adrian's instruction**, after the blast radius was measured.
 
 
 ## THE THREAD DOES NOT BLEED — MEASURED, AND THE ARRIVAL'S REAL CAUSE FOUND (2026-09-15)
