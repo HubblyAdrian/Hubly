@@ -15336,12 +15336,41 @@ async function loadServicesFromDb(){
   if(S._serviceCatalog&&Array.isArray(S._serviceCatalog.services)&&S._serviceCatalog.services.length)return;
   if(S.editorSvcs&&S.editorSvcs.length&&S.editorSvcs.some(s=>s.name))return;
   if(S.services&&S.services.length){syncServicesToEditor();try{buildServiceCatalogFromEditor();}catch(e){}return;}
-  // Last-resort: relational `services` table → in-memory editor → catalog on next save.
-  const {data}=await db.from('services').select('*').eq('business_id',currentBusiness.id).order('sort_order');
+  // ══ ONE ANSWER TO "WHAT DOES THIS BUSINESS OFFER A VISITOR" ════════════════════════════
+  //
+  // This read `services` directly, and that is one half of a customer-facing split: on a
+  // FREEFORM page the site is baked HTML from business_documents while the booking wizard came
+  // here and read the relational table, so the two could offer different things. Measured
+  // 2026-09-15 across the 29 claimed freeform businesses: 4 services on 3 businesses (2 of them
+  // market) are offered by booking and never named on the page.
+  //
+  // get_public_business_services(slug) is the shared reader — the same one the classic page and
+  // the model answer from. Its rule: THE CATALOGUE IS THE PAGE, the table is the fallback when
+  // there is no catalogue, and duplicate rows collapse to one. It deliberately does NOT return
+  // the union of both stores: on Graef that would have offered a stranger "clay and seal" at $0,
+  // a service his page has never shown — the exact defect this is closing, reintroduced by the
+  // fix for it.
+  //
+  // FALLS BACK TO THE OLD READ, and says so. An RPC that fails must not empty a booking wizard
+  // that would otherwise have worked; a visitor seeing nothing is worse than a visitor seeing
+  // the table.
+  let data=null;
+  try{
+    const slug=currentBusiness.slug||null;
+    if(slug){
+      const r=await db.rpc('get_public_business_services',{p_slug:slug});
+      if(!r.error&&Array.isArray(r.data))data=r.data;
+      else if(r.error)console.warn('[services] public reader failed, falling back to the table',r.error.message);
+    }
+  }catch(e){console.warn('[services] public reader threw, falling back to the table',e);}
+  if(!data){
+    const fb=await db.from('services').select('*').eq('business_id',currentBusiness.id).order('sort_order');
+    data=fb.data;
+  }
   if(data&&data.length){
     S.services=data.map(s=>({
       name:s.name,price:s.price,dur:s.duration_hours,desc:s.description||'',
-      pricingType:'flat',varPrices:{},includes:'',popular:false,imgUrl:null,showPrice:true,
+      pricingType:'flat',varPrices:{},includes:'',popular:!!s.is_popular,imgUrl:null,showPrice:true,
     }));
   }
   syncServicesToEditor();

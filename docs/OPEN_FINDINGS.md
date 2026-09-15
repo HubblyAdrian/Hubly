@@ -751,6 +751,19 @@ The fix (deferred, not built — needs its own build):
 
 ## 11. The anchor pass stamped a service anchor on ANOTHER card's description — RECORDED, NOT FIXED
 
+> **2026-09-15 — THIS FINDING INVALIDATES ANY SERVICE COUNT TAKEN FROM ANCHORS, AND ONE WAS.**
+> A sweep of the freeform corpus reported service counts per page by counting
+> `data-hubly-service="` occurrences, and a conclusion was built on "crestview shows 6". It does
+> not. Those six are a section heading (`Clean windows`), three real services, and two
+> DUPLICATES of services already counted. This finding already said why — `allServiceAnchors`
+> returns a paragraph as if it were a service entry — and the sweep counted anyway.
+>
+> **An anchor count is not a service count, and there is no reliable way to derive "what
+> services does this baked page display" from the stored HTML today.** Anything that needs that
+> number must either ask a different question (see `docs/FREEFORM_BOOKING_SPLIT.md`, which tests
+> a NAMED service for presence rather than enumerating the page) or say it cannot tell.
+
+
 **Found 2026-09-02, live on evergreen, while adding "Leaf Removal" through the Edit-details
 panel.** This is the anchor system failing in the exact way it exists to prevent, so it is
 written down in full rather than patched in passing.

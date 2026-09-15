@@ -91,7 +91,41 @@ say("3 the one reader reads BOTH stores and states which wins",
 say("4 and it surfaces a disagreement rather than quietly resolving it",
   /conflicts/.test(readerSql) && /never quietly resolved/i.test(readerSql), "conflicts column");
 
-// ── 5. LIVE: the count, against the real database. ──────────────────────────────────────
+// ── 5. THE BOOKING FLOW GOES THROUGH THE SHARED READER. ─────────────────────────────────
+//
+// loadServicesFromDb selected `public.services` directly, which is one half of the freeform
+// page-vs-booking split: the site is baked HTML and the wizard read the table, so the two could
+// offer different things. It goes through get_public_business_services now — the same answer the
+// classic page and the model use.
+const pub = readFileSync(resolve(ROOT, "public/hubly.html"), "utf8");
+const loader = pub.slice(pub.indexOf("async function loadServicesFromDb"), pub.indexOf("function syncServicesToEditor"));
+say("5 the booking flow asks the shared public reader",
+  /rpc\('get_public_business_services'/.test(loader),
+  /db\.from\('services'\)\.select\('\*'\)/.test(loader) && !/get_public_business_services/.test(loader)
+    ? "still selecting the services table directly"
+    : "get_public_business_services(slug)");
+say("6 and a reader failure falls back rather than emptying the wizard",
+  /falling back to the table/.test(loader) && /if\(!data\)\{/.test(loader),
+  "a visitor seeing nothing is worse than a visitor seeing the table");
+
+// ── 7. THE VISITOR READER IS NOT THE UNION. ─────────────────────────────────────────────
+//
+// The first draft of it was get_business_services with the owner gate swapped for a slug — a
+// full outer join. On Graef that returns NINE, the ninth being "clay and seal" $0 from the
+// relational table: a service his page has never shown. Routing booking through THAT would have
+// offered a stranger something the page never advertised — the exact harm, reintroduced by the
+// fix for it. The owner reader answers "what is on record"; this one answers "what am I
+// offered", and they must not share a rule.
+const pubSql = readFileSync(resolve(ROOT, "supabase/migrations/20260915210000_public_services_reader.sql"), "utf8");
+say("7 the visitor reader takes the catalogue as the page, with the table only as a fallback",
+  /from cat c left join tbl t/.test(pubSql) && /where not exists \(select 1 from cat\)/.test(pubSql) &&
+  !/from tbl t full outer join cat c/.test(pubSql),
+  /full outer join/.test(pubSql) ? "IT IS A UNION AGAIN — it will offer services the page does not show" : "catalogue, else table");
+say("8 a hidden or inactive catalogue entry is not offered",
+  /coalesce\(x->>'status','active'\) = 'active'/.test(pubSql) && /flags'->>'website'/.test(pubSql),
+  "offering one would re-publish what the owner took down");
+
+// ── 9. LIVE: the count, against the real database. ──────────────────────────────────────
 if (!LIVE) {
   console.log("\n(--live not passed: the divergence COUNT was not measured this run.)");
 } else {
@@ -107,9 +141,9 @@ if (!LIVE) {
 
   const known = new Set(BASELINE);
   const added = slugs.filter((s) => !known.has(s));
-  say("5 no NEW business has diverged since the baseline", added.length === 0,
+  say("9 no NEW business has diverged since the baseline", added.length === 0,
     added.length ? `NEW: ${added.join(", ")} — a writer created a divergence` : `${slugs.length} divergent, all recorded`);
-  say("6 the divergence count has not gone up", slugs.length <= BASELINE.length,
+  say("10 the divergence count has not gone up", slugs.length <= BASELINE.length,
     `${slugs.length} now, baseline ${BASELINE.length}`);
   const healed = BASELINE.filter((s) => !slugs.includes(s));
   if (healed.length) console.log(`\nNOTE  ${healed.length} baseline entr${healed.length === 1 ? "y no longer diverges" : "ies no longer diverge"} — remove from BASELINE: ${healed.join(", ")}`);
