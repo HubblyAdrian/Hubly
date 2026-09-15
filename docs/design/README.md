@@ -5,9 +5,63 @@ plainly that it has none.
 
 | file | verdict |
 | --- | --- |
+| `my-day-2026-09-15-approved.png` | **Approved.** The My Day surface, in Adrian's own words and Hubly's own chrome |
 | `owner-home-2026-09-06-flow.png` | **Approved in part** — screens 1, 2, and the top half of 3 |
 | `owner-home-2026-09-06-advice-cards-rejected.png` | **Rejected.** The counter-example |
 | `owner-home-2026-09-06-early-single-card-unreviewed.png` | **No verdict.** Kept as history |
+
+---
+
+## APPROVED — `my-day-2026-09-15-approved.png`
+
+**Filed 2026-09-15, by Adrian, with the instruction: "replace the picture in the repo with this one
+… this one has the actual logo etc."** It supersedes any earlier My Day picture, pasted or
+described. The written specification it renders is `docs/MY_DAY.md`; where the two disagree, the
+spec is the requirement and this image is how it looks.
+
+**Do not redesign or reinterpret this. Do not build My Day from a paraphrase of it.** Adrian's
+standing rule: *"Do not redesign or invent the My Day interface from scratch if an existing
+design/mockup/spec already exists in the project. Find the existing design first."*
+
+### What the image rules
+
+**LEFT — the rail is short, and My Day is in it.** Home · My Day · Website · Settings. Nothing else.
+This is progressive navigation, `MY_DAY.md` §11: a capability appears when the owner enters it, not
+because a table holds rows.
+
+**LEFT PANEL — "Ask Hubly", the assistant beside the day, not buried under it.** It greets by name,
+says what it can do in one sentence, and offers five real openers: *Plan my day for today · Move
+this to tomorrow · Make this an A · Add a 15 min break · What should I do next?* Its footer is the
+honesty line, in the product, permanently: **"Hubly uses your real data. I won't make up
+information."** That sentence is a promise the rest of this repo is built to keep.
+
+**CENTRE — the day is the hero.** Date, then **Good morning, Adrian** by name, then the dynamic
+context line — *"You have 2 things that really matter today. Start with your A's. Everything else
+can wait."* Then two composers, each carrying its own examples: **Add a task…** (*e.g. Order
+supplies, Call Sarah, Update website…*) and **Move something…** (*e.g. Move to tomorrow, Make this a
+B, Reschedule…*). Then the bands.
+
+**THE BANDS CARRY WORDS, NOT COLUMN NAMES.** `A — Must Do`, `B — Important`, `C — Nice to Do`, each
+with its letter in a coloured disc, a tinted header strip, and an item count. **The row is not a
+coloured card.** A row is: checkbox · time (only when it has one) · icon · title · one line of
+detail · a quiet lane pill (`Job` / `Business` / `Personal`) · a chevron. `Band B` and `Lane: Work`
+are our column names and **must never reach an owner**.
+
+**RIGHT — context, not a second dashboard.** *Today at a glance* (Jobs · Personal · Total · Day
+complete as a ring). *Today's schedule* — a plain time-ordered list, 12-hour. *AI Suggestions* —
+each one an offer with its reason attached: *"Move website update to tomorrow? You have a busy
+afternoon."*
+
+### What it does not license
+
+Every figure in this image is **mock data for layout**. `MY_DAY.md` §9 and Adrian's product context
+are unchanged and absolute: **no invented jobs, customers, deadlines, statistics, urgency or
+reasons.** A suggestion's reason line is subject to the same rule as everything else in this file —
+*Hubly may suggest; Hubly may not manufacture a fact to support a suggestion.* "You have a busy
+afternoon" is allowed only when the afternoon is actually busy in the record.
+
+And per §4: no guilt. The ring is a glance, not a score. **"7/10 tasks completed" is forbidden**;
+"Nice work today. You got your A's done." is the tone, used sparingly.
 
 ---
 

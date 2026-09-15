@@ -134,6 +134,30 @@ try {
     const p = document.getElementById("hcPanel") || document.querySelector(".hc-panel");
     return { clicked: true, panel: p ? p.innerText.replace(/\s+/g, " ").trim() : "" };
   });
+  // ══ ONE MECHANISM: THE CARD AND THE SENTENCE DO THE SAME THING. ══════════════════════
+  //
+  // 2026-09-15, Adrian: typing "take me to my schedule" did nothing while the card worked. The
+  // card called hcOpenWorkspace('planner') — a ROOM in the right pane — and the sentence called
+  // hcShowInThread. Two code paths, two surfaces, two failure modes, for one request. Screen 2
+  // of owner-home-2026-09-06-flow.png (approved 2026-09-06) settles which wins: the view is
+  // rendered INSIDE THE CONVERSATION. So the card is now the same call.
+  const wiring = await rig.page.evaluate(() => {
+    const src = [...document.querySelectorAll("script")].map((s) => s.textContent).join("\n");
+    const i = src.indexOf("id:'schedule'");
+    // A WIDE ENOUGH WINDOW. 900 chars stopped short of `view:'day'` because the comment
+    // explaining the change sits between them — so the leg reported the fix absent while it was
+    // present twelve lines below. A window sized to yesterday's code is not a measurement.
+    const seg = i >= 0 ? src.slice(i, i + 2400) : "";
+    const j = src.indexOf("id:'customers'");
+    const seg2 = j >= 0 ? src.slice(j, j + 700) : "";
+    return { schedule: /view:'day'/.test(seg) && !/open:'planner'/.test(seg),
+             customers: /view:'customers'/.test(seg2) && !/open:'customers'/.test(seg2),
+             handler: /if\(p\.view\) hcShowInThread\(p\.view\)/.test(src) };
+  });
+  say("4a the schedule card renders in the conversation, the same call the sentence makes",
+    wiring.schedule && wiring.handler, `schedule=${wiring.schedule} handler=${wiring.handler}`);
+  say("4b and so does the customers card", wiring.customers, `customers=${wiring.customers}`);
+
   say("5 pressing a row opens that record in the right pane",
     opened.clicked && /driveway/i.test(opened.panel) && /14 Maple St/.test(opened.panel) && /2:00 PM/.test(opened.panel),
     JSON.stringify(opened.panel.slice(0, 130)));

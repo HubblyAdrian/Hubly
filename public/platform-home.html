@@ -5218,21 +5218,36 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
    *  are loaded, then drawn, and only then does one sentence describe what is there. The
    *  optimistic "Opening your schedule." that preceded a refusal on 2026-09-15 has no equivalent
    *  here by construction: there is no line to emit before the answer exists. */
+  // ONE PREFIX, PASTEABLE FROM THE CONSOLE. "take me to my schedule did nothing" could not be
+  // diagnosed from the database at all: neither this view's sentence nor the no-silence floor is
+  // persisted, so a turn that worked and a turn that died look identical in
+  // business_conversations. The same lesson as the arrival — instrument the path instead of
+  // theorising about it a second time.
+  var hcShowLog = [];
+  function hcShowTrace(what){
+    var line = '[showme] ' + what;
+    try{ hcShowLog.push(line); }catch(e){}
+    try{ console.log(line); }catch(e){}
+    return line;
+  }
   async function hcShowInThread(kind){
+    hcShowTrace('asked for ' + JSON.stringify(kind) + ' claimed=' + !!hc.draftClaimed +
+                ' biz=' + ((hc.draftBusiness && hc.draftBusiness.id) || 'none'));
     var v = HC_THREAD_VIEWS[kind];
     var thread = hcThreadBody();
-    if(!v || !thread){ hcAppendMessage('hubly', 'I can\u2019t show you that here yet.'); return { ok:false, error:'unknown_view' }; }
+    if(!v || !thread){ hcShowTrace('REFUSED unknown view or no thread element'); hcAppendMessage('hubly', 'I can\u2019t show you that here yet.'); return { ok:false, error:'unknown_view' }; }
     var biz = hc.draftBusiness;
     if(!biz || !biz.id){ hcAppendMessage('hubly', 'No business is open, so there\u2019s nothing to show.'); return { ok:false, error:'no_business' }; }
     var rows = null;
     try{ rows = await v.load(biz); }
     catch(e){
       // A READ FAILURE IS NOT AN EMPTY LIST, and it is never dressed as a fact about his data.
+      hcShowTrace('READ FAILED for ' + kind + ': ' + String((e && e.message) || e).slice(0,90));
       hcAppendMessage('hubly', 'I couldn\u2019t read your ' + v.title.toLowerCase() + ' just now \u2014 that\u2019s a problem reaching your records, not an empty list.');
       return { ok:false, error:'read_failed' };
     }
     if(!Array.isArray(rows)){ hcAppendMessage('hubly', 'I couldn\u2019t read that just now.'); return { ok:false, error:'read_failed' }; }
-    if(!rows.length){ hcAppendMessage('hubly', v.empty); return { ok:true, count:0 }; }
+    if(!rows.length){ hcShowTrace('read ok, 0 rows for ' + kind); hcAppendMessage('hubly', v.empty); return { ok:true, count:0 }; }
     var head = document.createElement('div');
     head.className = 'hc-msg hubly hc-room-group';
     head.setAttribute('data-hc-thread-view', kind);
@@ -5246,10 +5261,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         onOpen: function(){ v.open(row); }
       }));
     });
+    hcShowTrace('rendered ' + rows.length + ' row(s) for ' + kind);
     hcThreadScrollToEnd();
     return { ok:true, count: rows.length };
   }
-  try{ window.hublyThreadViews = { show: hcShowInThread, count: hcViewCount, kinds: Object.keys(HC_THREAD_VIEWS), card: hcRecordCard }; }catch(e){}
+  try{ window.hublyThreadViews = { show: hcShowInThread, count: hcViewCount, kinds: Object.keys(HC_THREAD_VIEWS), card: hcRecordCard, log: function(){ return hcShowLog.slice(); } }; }catch(e){}
 
   // THE ONE DELIBERATE SEAM IN THIS FILE, AND WHY IT EXISTS.
   //
@@ -6668,7 +6684,19 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       // CONTENT, NOT A PLACES ROW. ctx.has('planner') hid this for an account whose day held
       // two things, because business_places had never been seeded for it.
       needs:function(ctx){ return ctx.hasRows('jobsAny'); },
-      open:'planner' },
+      // ══ ONE MECHANISM, NOT TWO ═══════════════════════════════════════════════════════
+      //
+      // 2026-09-15, Adrian: typing "take me to my schedule" did nothing while pressing this
+      // card worked. Two mechanisms where there should be one — the card called
+      // hcOpenWorkspace('planner') and opened a ROOM in the right pane; the sentence called
+      // hcShowInThread and rendered in the conversation. Different code, different surface,
+      // different failure modes, for one request.
+      //
+      // docs/design/README.md settles which one wins, and it has been approved since
+      // 2026-09-06 (screen 2 of owner-home-2026-09-06-flow.png): "a generated view, rendered
+      // inside the conversation, offered". The conversation is the surface. So the card does
+      // exactly what the sentence does — it is the same call.
+      view:'day' },
     { kind:'card', id:'customers', label:'See my customers', icon:'customers',
       // REAL AS OF 2026-09-08. It did not render before because nothing read the
       // customers table; get_business_customers does now, folding on phone then email
@@ -6676,7 +6704,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       cap:'operations.read', slice:'customers', countKey:'customerCount', place:'customers',
       count:function(n){ return n === 1 ? '1 on record' : n + ' on record'; },
       needs:function(ctx){ return ctx.hasRows('customerCount'); },
-      open:'customers' },
+      view:'customers' },
     { kind:'card', id:'sales', label:'Check my sales', icon:'sales',
       // NO LONGER STORE-ONLY. It read commerce_orders, so it was blank for every
       // business without a Store while jobs.amount held the money he actually earned.
@@ -6827,7 +6855,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       }
       b.appendChild(ic); b.appendChild(tx);
       b.addEventListener('click', function(){
-        if(p.open) hcOpenWorkspace(p.open);
+        // `view` renders the records in the conversation (the approved screen 2 mechanism);
+        // `open` is still a real change of room for the website editor; `ask` puts a question
+        // to Hubly. One card, one of the three, and `view` is the default for a collection.
+        if(p.view) hcShowInThread(p.view);
+        else if(p.open) hcOpenWorkspace(p.open);
         else if(p.ask) hcAskHubly(p.ask);
       });
       wrap.appendChild(b);
