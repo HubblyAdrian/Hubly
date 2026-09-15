@@ -3007,3 +3007,44 @@ sequence of hand-written calls, an `if/else` chain over names — whose **correc
 completeness** and whose members are **discovered somewhere else**. Two of the four ends of the
 envelope bug were found by asking one question of that shape: *where else does a string become a
 bubble?* Ask it of the list, not of the instance, before fixing the instance you were handed.
+
+### Lesson 87, addendum: WE READ SUCCESS OUT OF SILENCE
+
+Four instances in a single turn, 2026-09-15, all mine, all caught in-session. One disease:
+**a command whose target was missing produced a confident-looking result instead of an error.**
+
+| What ran | What was missing | What it printed |
+|---|---|---|
+| A red-proof of the hand-written refresh list | my edit had broken the page, so the check couldn't parse it | **neither FAIL nor pass** — non-zero exit, no output, which reads like a clean run |
+| `git stash` before a baseline comparison | my code was already committed, so the stash took **63 proof artifacts** the checks rewrite | a "baseline" that was running my own changes |
+| `cd` into a worktree I had already deleted | the directory | `cd` failed, the `&&` chain carried on, and two `baseline=FAIL` readings described the current tree |
+| `grep BASE_PASS` on a results file | the run had produced **zero lines** | `(none — every one was already failing)` |
+
+And a fifth of the same family, one layer down: **three check legs that measured nothing and read
+green.** `window.hcOfferSidebarTab` was stubbed, but those functions live in the file's single
+closure and are not on `window`, so the stubs replaced nothing; a scroll leg watched
+`#hcThreadBody` while the scroll targets the outer `#hcThread`; and both were taken against
+`#hcApp` while it was still `display:none`, so every geometric measurement was against a
+zero-height element and could not fail.
+
+**THE HABIT: before reporting a count, assert the source produced any rows at all.** This is the
+leg-0 discipline already applied to checks, turned on the shell. Concretely:
+
+- A grep over a results file: assert the file has lines, and that the run finished, **before**
+  reading a zero as an answer.
+- A comparison against a baseline: assert the baseline is actually a different tree (a worktree at a
+  named commit, verified by the absence of the thing being tested) — never a stash, which takes
+  whatever happens to be dirty.
+- A `cd` in a chain: `set -e`, or make the failure the result.
+- A red-proof: require a **FAIL line**, not merely a non-zero exit. "No output" is not red.
+- A leg that measures geometry: assert the element has non-zero size first, and add a **control leg**
+  that would fail if the setup didn't take (leg 25b: "the thread WAS scrollable"; leg 27: "the
+  redraw DID run").
+
+The asymmetry is the argument, as always: a control leg costs one assertion, and a vacuous leg costs
+a defect shipped behind a green check. **Every one of the five above looked like evidence.**
+
+And the sibling on the data side is Lesson 86, which caught this same turn in real time: two SQL
+queries returned empty, the obvious reading was "there are no driveway jobs", and the empty reader
+was describing **itself** — a `503` maintenance window, not an absence. Same disease, different
+surface: *silence is not a value.*

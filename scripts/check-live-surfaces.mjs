@@ -59,6 +59,21 @@ catch (e) { console.error("CANNOT RUN — " + e.message); process.exit(2); }
 
 try {
   await rig.load("file://" + join(ROOT, "public/platform-home.html"));
+  // LEG 0 FIRST: #hcApp ships display:none until something reveals it, so every geometric
+  // measurement below (scrollTop, clientHeight) would be taken against a zero-height element and
+  // could not fail. This is the same trap that made the first squeeze measurement report "0
+  // findings" while nothing was on screen at all.
+  const revealed = await rig.page.evaluate(() => {
+    try { if (window.hublyArrivalUI && window.hublyArrivalUI.simulate) window.hublyArrivalUI.simulate(); } catch (e) { /* fall through */ }
+    const app = document.getElementById("hcApp");
+    if (app) { app.style.display = ""; app.hidden = false; app.classList.add("is-live"); }
+    const outer = document.getElementById("hcThread");
+    return { appShown: app ? getComputedStyle(app).display !== "none" : false,
+             threadH: outer ? outer.clientHeight : 0 };
+  });
+  say("0 the app is actually on screen, so a geometric leg can fail", revealed.appShown && revealed.threadH > 0,
+    `#hcApp shown=${revealed.appShown} thread height=${revealed.threadH}px`);
+
   const seam = await rig.page.evaluate(() =>
     !!(window.hublyLive && window.hublyLive.register && window.hublyLive.after && window.hublyLive.staleLine));
   if (!seam) { console.error("CANNOT RUN — window.hublyLive is not exposed."); await rig.close(); process.exit(2); }
@@ -178,6 +193,108 @@ try {
   say("17 the sentence names the surface and never says refresh/reload",
     /week of/i.test(fail.line) && !/refresh|reload/i.test(fail.line), JSON.stringify(fail.line));
 
+  // ── 24-27. A REDRAW REPLAYS NO SIDE EFFECTS ─────────────────────────────────────────
+  // THE GENERAL RULE, and it is a check because the next surface added will have its own side
+  // effect and nobody will remember. Only the DRAWING happens on a redraw. Offers, scrolls,
+  // announcements, sounds and writes do not.
+  //
+  // The two that were already there and would have fired silently: hcRenderWeekGrid ended with
+  // hcOfferSidebarTab (re-offering "want this as a tab?" on every single write — a second
+  // composer speaking while a question is on the floor) and hcThreadScrollToEnd (the page moving
+  // under the owner's hand, which is one of the four editor bugs of 2026-09-02, and one of the
+  // two that were invisible in every number collected and obvious in one screenshot).
+  //
+  // OBSERVED, NOT STUBBED — and the first version of these legs was a NO-OP because I stubbed
+  // `window.hcOfferSidebarTab` and friends. Those functions live in the file's single closure and
+  // are not on `window`, so the stubs replaced nothing and `seen` was empty no matter what the
+  // redraw did. Leg 25 also watched #hcThreadBody's scrollTop while hcThreadScrollToEnd scrolls
+  // the OUTER #hcThread. Three legs measuring nothing, and they read green.
+  //
+  // So this watches EFFECTS instead of names: a MutationObserver over the document records every
+  // node added outside the surface, the OUTER thread's scrollTop is compared, and fetch is
+  // counted. An effect cannot hide from that the way a name can.
+  const sideFx = await rig.page.evaluate(async () => {
+    const L = window.hublyLive, T = window.hublyLiveTest, F = window.hublyFormat;
+    const outer = document.getElementById("hcThread");
+    const thread = document.getElementById("hcThreadBody") || outer;
+    const at = (t) => [{ id: "J9", customer_name: "Driveway", service_name: "Driveway wash",
+                         scheduled_date: "2026-09-17", scheduled_time: t, address: "", amount: 0, is_block: false }];
+    const view = { title: "Your schedule", grouped: true,
+      parts: (j) => [F.time(j.scheduled_time) + "  " + j.service_name, j.customer_name || ""],
+      open: () => {}, empty: "Nothing is booked that week." };
+    const wrap = document.createElement("div"); wrap.className = "hc-msg hubly hc-week";
+    thread.appendChild(wrap);
+    const range = T.weekInto(wrap, "week", view, at("14:00:00"), 0);
+    L.register({ kind: "job", el: wrap, key: { from: range.from, to: range.to },
+      describe: () => "the week", redraw: (rows) => T.weekInto(wrap, "week", view, rows, 0) });
+
+    // Everything below this line is the REDRAW only. The first draw above may do as it likes.
+    // EVERY registered surface's own el is allowed to receive nodes — earlier legs in this file
+    // registered surfaces too, and one hcAfterWrite pass redraws all of them. The assertion is
+    // that a node lands inside SOME surface that owns it, never loose on the page. (The first
+    // version allowed only THIS leg's wrap and so failed on the other surfaces' legitimate
+    // redraws — a false positive, caught by reading what it printed rather than trusting the red.)
+    // Scroll setup BEFORE the observer starts, or the observer records my own filler node.
+    let scrollable = false;
+    if (outer) {
+      outer.style.maxHeight = "200px"; outer.style.overflowY = "auto";
+      const filler = document.createElement("div"); filler.style.height = "2000px";
+      filler.setAttribute("data-hc-scroll-filler", "1");
+      outer.insertBefore(filler, outer.firstChild);
+      outer.scrollTop = 120;
+      scrollable = outer.scrollHeight > outer.clientHeight && outer.scrollTop > 0;
+    }
+    const owned = window.hublyLive.of("job").map((e) => e.el)
+      .concat(window.hublyLive.of("ownerName").map((e) => e.el));
+    const outsideAdds = [];
+    const obs = new MutationObserver((recs) => {
+      for (const r of recs) for (const n of r.addedNodes) {
+        if (n.nodeType !== 1) continue;
+        if (owned.some((el) => el && (el === n || el.contains(n)))) continue;   // inside a surface
+        outsideAdds.push((n.className || n.tagName || "node").toString().slice(0, 40));
+      }
+    });
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+    // THE THREAD MUST ACTUALLY BE SCROLLABLE, or leg 25 cannot fail. In the rig nothing overflows,
+    // so scrollTop stays 0 whatever happens and the assertion is vacuous — which is exactly what
+    // the first version was: hcThreadScrollToEnd() planted in the redraw, leg 25 still green.
+    // Leg 25b is the control that says the setup took. A real owner is in this state too: scrolled
+    // part-way up, reading something above the surface.
+    const topBefore = outer ? outer.scrollTop : 0;
+    let fetches = 0;
+    const realFetch = window.fetch; window.fetch = function () { fetches++; return Promise.resolve({ ok: true, json: () => Promise.resolve({}) }); };
+
+    T.fakeLoad("job", () => at("15:00:00"));
+    await L.after("job", { id: "J9", dates: ["2026-09-17"] });
+    T.fakeLoad("job", null);
+
+    await new Promise((r) => setTimeout(r, 60));        // let the observer flush
+    obs.disconnect(); window.fetch = realFetch;
+    const after = outer ? outer.scrollTop : 0;
+    if (outer) { const f = outer.querySelector('[data-hc-scroll-filler]'); if (f) f.remove(); outer.style.maxHeight = ""; outer.style.overflowY = ""; }
+    return { outsideAdds, fetches, scrolled: after !== topBefore, scrollable,
+             from: topBefore, to: after,
+             redrew: /3:00\s*PM/.test(wrap.textContent), watchedOuter: !!outer };
+  });
+  say("24 a redraw adds NOTHING to the page outside its own surface", sideFx.outsideAdds.length === 0,
+    sideFx.outsideAdds.slice(0, 4).join(" | ") || "nothing appeared anywhere else");
+  say("25 a redraw does not scroll the thread", sideFx.scrolled === false,
+    `scrollTop ${sideFx.from} -> ${sideFx.to}; the page does not move under his hand`);
+  say("25b (control) the thread WAS scrollable, so leg 25 could have failed", sideFx.scrollable === true,
+    "real overflow and a non-zero starting position");
+  say("26 a redraw writes nothing (no network call)", sideFx.fetches === 0, `${sideFx.fetches} fetch(es)`);
+  say("27 (control) the redraw DID run, so 24-26 measured a redraw and not an inert function",
+    sideFx.redrew === true, "the grid reads 3:00 PM");
+  // RED-PROOF, AND ITS LIMIT (2026-09-15). Planted in the redraw one at a time:
+  //   hcThreadScrollToEnd()  -> FAIL 25 (scrollTop 120 -> 2927)
+  //   hcAppendMessage(...)   -> FAIL 24 and 25
+  //   hcOfferSidebarTab(...) -> STILL GREEN, and that is a stated limit, not a pass. Reading the
+  //     function rather than guessing: it returns early on `hc._tabOfferShown`, which the FIRST
+  //     draw in this same check already set, so the redraw's call is a no-op here. (That flag is a
+  //     real second safeguard — one offer per session, not per render — so a redraw could not
+  //     re-offer in production either. But leg 24's ability to catch it if the flag were absent is
+  //     inferred from the hcAppendMessage red-proof, not demonstrated, and is not claimed.)
+
   // ── 18-20. THE OWNER'S NAME: the greeting and the chip, one kind ─────────────────────
   const name = await rig.page.evaluate(async () => {
     const L = window.hublyLive;
@@ -213,9 +330,15 @@ try {
 // papered over: the wiring of the door is asserted by reading, and the PASS it triggers is
 // asserted by running.
 const page = readFileSync(join(ROOT, "public/platform-home.html"), "utf8");
+// COMMENTS STRIPPED FIRST. The first version of this leg matched one syntactic form
+// (`...(); }catch`) and the served page contains that string TWICE — both times inside a comment
+// explaining what the code used to say. A leg that can be satisfied or broken by prose is not
+// asserting anything about the code, and a sibling written without the trailing `}catch` would
+// have walked straight past it. Same too-narrow-pattern disease as Lesson 87.
+const code = page.replace(/\/\*[\s\S]*?\*\//g, "").split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
 say("21 hcAcceptOwnerName no longer carries a hand-written refresh list",
-  !/hcRenderRail\(\); hcReflectAuthState\(\);\s*\}catch/.test(page) && /hcAfterWrite\('ownerName'/.test(page),
-  "routed through hcAfterWrite");
+  !/hcRenderRail\(\);\s*hcReflectAuthState\(\);/.test(code) && /hcAfterWrite\('ownerName'/.test(code),
+  "routed through hcAfterWrite; asserted against code with comments stripped");
 say("22 the job edit door routes through hcAfterWrite", /hcAfterWrite\('job'/.test(page));
 say("23 and it passes BOTH dates, not just the new one", /dates:\s*\[wasDate,\s*nowDate\]/.test(page));
 

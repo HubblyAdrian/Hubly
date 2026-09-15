@@ -115,6 +115,21 @@ hcAfterWrite(kind, key)
    sentence names it: *"Moved it to 3:00 PM. The week grid above didn't refresh — open it again to
    see the change."* Honest, specific, **and it still does not say "reload the page."**
 
+**A REDRAW REPLAYS NO SIDE EFFECTS.** Only the drawing. **Offers, scrolls, announcements, sounds
+and writes do not fire on a redraw** — not one of them, ever. This is a rule rather than a note
+because the next surface added will have its own side effect and nobody will remember to strip it.
+
+Two were already sitting in the week grid's tail and would have fired on **every write**:
+`hcOfferSidebarTab` (re-offering "want this as a tab?" — a second composer speaking while a
+question is on the floor) and `hcThreadScrollToEnd` (the page moving under the owner's hand, one of
+the four editor bugs of 2026-09-02, and one of the two that were invisible in every number
+collected and obvious in one screenshot). Both now live only in the first-draw wrapper.
+
+**Enforced, not conventional:** `check-live-surfaces.mjs` legs 24–27 observe *effects* rather than
+names — a MutationObserver for any node landing outside a registered surface, the outer thread's
+`scrollTop`, and a `fetch` count — with control legs asserting the thread was genuinely scrollable
+and the redraw genuinely ran, so none of them can pass vacuously.
+
 **THE THREAD IS NEVER WIPED TO DO THIS.** `hcRenderHome` opens with `thread.innerHTML = ''` (line
 4744) and that wipe ate the arrival once already. Re-rendering a surface means writing into that
 surface's own `el` and nothing else. Concretely: **a surface's `redraw` may only touch nodes inside
