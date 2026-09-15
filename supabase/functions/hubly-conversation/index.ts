@@ -1490,6 +1490,29 @@ Deno.serve(async (req) => {
   // a control: the client owns which surface that is, whether this business has earned it, and
   // what to say once it has moved. The server claims nothing about any of that.
   let goPlaceTarget: string | null = null;
+  // SHOW ME — the room the model was asked to render IN THE THREAD. A view NAME, not a route:
+  // the client owns what that view is, whether it holds anything, and what to say about it.
+  let showInThreadTarget: string | null = null;
+  // THE OWNER JUST ANSWERED "what should I call you" and the client's shape list did not
+  // recognise the answer. The model has the whole message; it reports the name and the CLIENT
+  // writes it, because set_owner_display_name gates on auth.uid() and only the owner's own
+  // session can satisfy that.
+  const isNameAnswer = body?.nameAnswer === true;
+  // THE INSTRUCTION RIDES THE TURN, NOT THE SYSTEM PROMPT. It applies to exactly one message —
+  // the answer to "what should I call you?" — and the prompt builder runs in a different scope
+  // with no sight of the request body. Same channel the capability results use.
+  if (isNameAnswer) {
+    history.push({
+      role: "system",
+      content:
+        'THIS MESSAGE IS THE ANSWER TO "what should I call you?". Read the person\'s name out of it and return it as ' +
+        '"ownerName" on your reply — just the name, exactly as they wrote it ("Adrian", "Adrian Smith"), no greeting and ' +
+        'no punctuation. It is usually wrapped: "Perfect, thank you for that! it\'s Adrian" gives ownerName "Adrian". ' +
+        'If they did NOT give a name — they asked something else, or declined — OMIT ownerName entirely rather than ' +
+        'guessing. Never take a name from anywhere but THIS message, and never use their email or their business name. ' +
+        'Then reply naturally, and do not announce that you saved anything.',
+    });
+  }
   // A CAPABILITY THAT ASKED FOR A FACT SAYS SO, so the client's duplicate-ask guard can see it.
   // addJob sets this when it refused a phone: the reply asks for the number, and without the
   // flag the gap chain asked for a phone in the very next beat (2026-09-15).
@@ -2645,6 +2668,16 @@ Deno.serve(async (req) => {
           if (typeof t === "string" && t) showMeWhereTarget = t;
         }
 
+        // SHOW ME — hand the client the view it was asked to render in the thread.
+        if (
+          capabilityName === "business" && actionName === "showMe" &&
+          result.ok && result.raw && typeof result.raw === "object" &&
+          "showInThread" in (result.raw as Record<string, unknown>)
+        ) {
+          const v = (result.raw as Record<string, unknown>).showInThread;
+          if (typeof v === "string" && v) showInThreadTarget = v;
+        }
+
         // A CAPABILITY'S OWN ASK. Plucked like every other client-bound field; never the whole raw.
         if (
           result.ok && result.raw && typeof result.raw === "object" &&
@@ -2889,6 +2922,8 @@ Deno.serve(async (req) => {
         ...(bookingConfirmation ? { bookingConfirmation } : {}),
         ...(showMeWhereTarget ? { showMeWhere: showMeWhereTarget } : {}),
         ...(goPlaceTarget ? { goPlace: goPlaceTarget } : {}),
+        ...(showInThreadTarget ? { showInThread: showInThreadTarget } : {}),
+        ...(typeof decision?.ownerName === "string" && decision.ownerName.trim() ? { ownerName: decision.ownerName.trim() } : {}),
         ...(createdJob ? { job: createdJob } : {}),
         ...(draftGrant ? { draftGrant } : {}),
         ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),
@@ -2914,6 +2949,7 @@ Deno.serve(async (req) => {
       // dropping the field would leave the owner with a reply and a page that never moved.
       ...(showMeWhereTarget ? { showMeWhere: showMeWhereTarget } : {}),
       ...(goPlaceTarget ? { goPlace: goPlaceTarget } : {}),
+      ...(showInThreadTarget ? { showInThread: showInThreadTarget } : {}),
       ...(createdJob ? { job: createdJob } : {}),
       ...(draftGrant ? { draftGrant } : {}),
         ...(storefrontAstOut !== undefined ? { storefrontAst: storefrontAstOut } : {}),

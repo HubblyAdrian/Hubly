@@ -3298,6 +3298,16 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // TAKE ME THERE. Same mechanism, one field: the model asks for a place, the client
           // moves and then says what is in it. The model says nothing about the move.
           try{ if(typeof data.goPlace === 'string' && data.goPlace) hcGoToPlace(data.goPlace); }catch(e){}
+          // SHOW ME — the conversation is the surface. The room renders IN THE THREAD as real
+          // clickable records, the same thing the job card already is. Nothing is announced
+          // first: hcShowInThread loads, draws, and only then says what is there.
+          try{ if(typeof data.showInThread === 'string' && data.showInThread) hcShowInThread(data.showInThread); }catch(e){}
+          // THE NAME THE MODEL READ OUT OF HIS ANSWER. Written here, from the owner's own
+          // session, because set_owner_display_name gates on auth.uid() and the edge cannot
+          // satisfy that. GROUNDED FIRST: the name must actually appear in the message he just
+          // typed — the model is reading, not inventing, and this is the same guard that stops
+          // a phone number being lifted from earlier in the chat.
+          try{ if(typeof data.ownerName === 'string' && data.ownerName.trim()) hcAcceptOwnerName(data.ownerName.trim()); }catch(e){}
           // ── ONE VOLUNTARY ADDITION PER TURN, ENFORCED IN ONE PLACE ──────────────
           //
           // Seven composers can append to a single turn (docs/WHAT_THE_MODEL_KNOWS.md §1).
@@ -3428,6 +3438,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // nothing, they are told something true now. It reads hcTurn.said — what was
           // actually DISPLAYED — never what we intended to display.
           hcEnsureTurnSpoke(data);
+          // THE DEFERRED FURNITURE ARRIVES LAST. Home held it back while a question was on the
+          // floor; the answer has now been given AND replied to, so it lands after the reply
+          // rather than in the middle of the exchange (2026-09-15).
+          try{ hcReleaseHeldFurniture(); }catch(_e){}
         }
         showNext();
       })
@@ -3464,12 +3478,17 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // sentence instead of invisible forever.
     if(hcOwner.awaitingName){
       hcOwner.awaitingName = false;                 // answered, whatever they said
+      hc._lastUserText = text;                      // what hcAcceptOwnerName grounds against
       var _nm = hcLooksLikeAName(text);
       hcActivate();
       hcAppendMessage('user', text);
       hcPersist('user', text);
       if(_nm){
         hcSaveOwnerName(_nm).then(function(v){
+          // ITEM 5, 2026-09-15: the cards, chips and history button rendered BETWEEN his name
+          // answer and "Nice to meet you, Adrian." Deferred furniture arrives AFTER the reply
+          // it was waiting on, never in the middle of the exchange — so the release below sits
+          // at the END of this callback, after the sentence has been appended.
           // ADRIAN'S SECOND LINE, verbatim in shape: "Perfect, thank you for that ______."
           // Said only on a write that actually took — the name is read straight back so a
           // wrong one is correctable in one sentence instead of invisible forever.
@@ -3482,12 +3501,34 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         });
         return;
       }
-      // Not a name. Do not ask again (one ask, once) and do not guess: carry their message
-      // on to the model as the ordinary turn it is. The floor is clear either way, so the
-      // furniture Home held back is released here too.
-      hcReleaseHeldFurniture();
+      // ══ NOT A NAME BY OUR SHAPE LIST — WHICH IS NOT THE SAME AS NOT A NAME ═════════════
+      //
+      // 2026-09-15, measured: he answered "Perfect, thank you for that! it's Adrian", Hubly
+      // replied "Nice to meet you, Adrian." — and hubly_owner_profile.display_name stayed NULL
+      // with name_source 'unknown'. The MODEL understood him; the RECORD did not, so the
+      // account chip went on showing his email for the rest of the session.
+      //
+      // hcLooksLikeAName enumerates the SHAPES a name answer can take — the bare name, or one
+      // of six leading wrappers. Run against real answers it returns null for
+      // "Perfect, thank you for that! it's Adrian" and for "I'm Adrian, nice to meet you", and
+      // succeeds only when the message is essentially nothing but the name. That is the
+      // enumerate-the-forms mistake CLAUDE.md names four times over, and people do not answer
+      // in the forms we listed.
+      //
+      // IT STAYS AS THE FAST PATH — a bare "Adrian" is written here with no model round trip,
+      // and that is worth keeping. What changes is the FALLBACK: the turn now goes to the model
+      // carrying an explicit instruction to record the name if one was given, through
+      // business.setOwnerName, grounded in this message exactly like every other fact. The fix
+      // lives at extraction, not at the predicate: widening the regex would only move the line
+      // to the next form nobody listed.
+      //
+      // THE FURNITURE IS NOT RELEASED HERE. It used to be, and that is what put the cards,
+      // chips and history button BETWEEN his answer and Hubly's reply: this path hands the turn
+      // to the model, so releasing now draws the furniture while the reply is still in flight.
+      // It is released at the END of the turn instead (hcEnsureTurnSpoke's call site), after
+      // whatever Hubly says has been said.
       hc.messages.push({ role: 'user', content: text });
-      hcCall();
+      hcCall({ nameAnswer: true });
       return;
     }
     // A photo is held pending "is this your work?" — this message is the answer.
@@ -3500,6 +3541,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       return;
     }
     hcActivate();
+    hc._lastUserText = text;      // what hcAcceptOwnerName grounds against
     hcAppendMessage('user', text);
     hcPersist('user', text);
     hc.messages.push({ role: 'user', content: text });
@@ -5010,32 +5052,166 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // never "not specified", which is the same discipline the event cards already hold.
     return [j.customer_name || '', j.service_name || '', when, price].filter(Boolean);
   }
-  function hcAppendJobCard(j){
-    if(!j || !j.id) return null;
-    var thread = hcThreadBody(); if(!thread) return null;
+  // ══ THE CONVERSATION IS THE SURFACE ══════════════════════════════════════════════════
+  //
+  // ADRIAN'S RULING, 2026-09-15, in his words: "if someone says open my schedule or take me to
+  // my schedule the schedule should show up on this chat. that way they can see it easy. its
+  // the same thing as looking at leads jobs etc"
+  //
+  // "Show me X" renders X IN THE THREAD as a real, interactive thing — not a navigation, not a
+  // link, not a sentence describing X. goToPlace was the wrong shape for this whole family.
+  //
+  // THE PATTERN ALREADY EXISTED AND A HUMAN HAD ALREADY PROVED IT: the job card. It rendered in
+  // the thread carrying the job's own fields, he pressed it, the right pane became the job. So
+  // this is that card, generalised — ONE builder, and hcAppendJobCard becomes its first caller
+  // rather than a second implementation beside it.
+  //
+  // WHAT A CARD IS: a button whose accessible name is the RECORD, not "button"; a title line, an
+  // optional sub line, an optional tail; and a press that opens the record in the right pane.
+  // Everything that differs between a job, a customer and a booking is data, which is why this
+  // takes a line and a handler rather than a kind.
+  function hcRecordCard(opts){
     var card = document.createElement('button');
     card.type = 'button';
-    card.className = 'hc-msg hubly hc-job-card';
-    card.setAttribute('data-hc-job', String(j.id));
-    // The accessible name is the job itself, so the control is not "button" to a screen reader.
-    var parts = hcJobCardLine(j);
-    card.setAttribute('aria-label', 'Open job: ' + (parts.join(', ') || 'job'));
+    card.className = 'hc-msg hubly hc-job-card' + (opts.className ? ' ' + opts.className : '');
+    if(opts.attr && opts.attrValue) card.setAttribute(opts.attr, String(opts.attrValue));
+    var parts = (opts.parts || []).filter(Boolean);
+    card.setAttribute('aria-label', (opts.ariaPrefix || 'Open') + ': ' + (parts.join(', ') || 'record'));
     var t = document.createElement('div'); t.className = 'hc-job-card-t';
-    t.textContent = parts[0] || parts[1] || 'Job';
+    t.textContent = parts[0] || 'Record';
     card.appendChild(t);
     if(parts.length > 1){
       var sub = document.createElement('div'); sub.className = 'hc-job-card-s';
-      sub.textContent = parts.slice(1).join(' · ');
+      sub.textContent = parts.slice(1).join(' \u00b7 ');
       card.appendChild(sub);
     }
     // ITS OWN LISTENER, on the element the owner presses. Delegation would be fine too; this
     // is the pattern the other chat cards already use, and one pattern is worth more than a
     // marginally better second one.
-    card.addEventListener('click', function(){ hcJobPanel(j); });
+    if(opts.onOpen) card.addEventListener('click', opts.onOpen);
+    return card;
+  }
+  function hcAppendJobCard(j){
+    if(!j || !j.id) return null;
+    var thread = hcThreadBody(); if(!thread) return null;
+    var card = hcRecordCard({
+      parts: hcJobCardLine(j),
+      ariaPrefix: 'Open job',
+      attr: 'data-hc-job', attrValue: j.id,
+      onOpen: function(){ hcJobPanel(j); }
+    });
     thread.appendChild(card);
     hcThreadScrollToEnd();
     return card;
   }
+
+  // ── THE VIEWS THE THREAD CAN RENDER ──────────────────────────────────────────────────
+  //
+  // One entry per collection. `load` returns rows, `parts` turns one row into the card's lines,
+  // `open` is what the press does, `empty` is the sentence for a collection that genuinely has
+  // nothing in it. Adding leads or invoices later is an entry here, not a second mechanism.
+  //
+  // `has` is what item 4 turns on: whether this collection has ANYTHING. It is deliberately the
+  // same question the cards and chips ask before offering themselves — no door to an empty room,
+  // and no claim that a full room is "not set up".
+  var HC_THREAD_VIEWS = {
+    day: {
+      title: 'Your day',
+      words: ['schedule', 'day', 'planner', 'calendar'],
+      load: async function(biz){
+        var today = new Date();
+        var iso = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+        return await hcLoadJobs(biz.id, iso(today), iso(new Date(today.getTime() + HC_DAY_HORIZON * 864e5)));
+      },
+      parts: function(j){
+        return [
+          j.is_block ? (j.service_name || 'Blocked time') : (j.customer_name || j.service_name || 'Someone'),
+          [hcDayLabel(j.scheduled_date), hcTimeUS(j.scheduled_time)].filter(Boolean).join(' at '),
+          j.address || '',
+          (!j.is_block && Number(j.amount) > 0) ? ('$' + Number(j.amount)) : ''
+        ];
+      },
+      open: function(j){ hcJobPanel(j); },
+      empty: 'Nothing is on your day in the next ' + 7 + ' days.'
+    },
+    jobs: {
+      title: 'Your jobs',
+      words: ['jobs', 'job list'],
+      load: async function(biz){
+        var rows = await hcLoadJobs(biz.id, null, null);
+        return rows.filter(function(j){ return !j.is_block; });
+      },
+      parts: function(j){
+        return [ j.customer_name || j.service_name || 'Someone',
+                 [hcDayLabel(j.scheduled_date), hcTimeUS(j.scheduled_time)].filter(Boolean).join(' at '),
+                 Number(j.amount) > 0 ? ('$' + Number(j.amount) + (j.paid ? ' paid' : '')) : '' ];
+      },
+      open: function(j){ hcJobPanel(j); },
+      empty: 'You have no jobs on record yet.'
+    },
+    customers: {
+      title: 'Your customers',
+      words: ['customers', 'clients', 'regulars'],
+      // No hcLoadCustomers existed — hcRenderCustomers read the RPC inline. Extracted rather
+      // than duplicated, so the room and the thread view read the same rows through one call.
+      load: async function(biz){
+        var uid = await hcOwnerUid();
+        var c = await authGetClient();
+        var r = await c.rpc('get_business_customers', { p_business_id: biz.id, p_owner_id: uid, p_limit: 200 });
+        if(r && r.error) throw new Error(r.error.message);
+        return Array.isArray(r && r.data) ? r.data : [];
+      },
+      parts: function(c){ return [ c.name || 'Someone', hcPhoneHouse(c.phone) || c.email || '', c.jobs_count ? (c.jobs_count + ' job' + (c.jobs_count === 1 ? '' : 's')) : '' ]; },
+      open: function(c){ hcCustomerPanel(c, hc.draftBusiness); },
+      empty: 'You have no customers on record yet.'
+    }
+  };
+  /** Does this collection hold anything? One question, asked by the thread view, the cards and
+   *  the chips — so a door is never offered to an empty room (Adrian, 2026-09-15: "check my
+   *  sales shouldn't be there since there are no sales") and a full room is never reported as
+   *  not set up. */
+  async function hcViewCount(kind){
+    var v = HC_THREAD_VIEWS[kind]; var biz = hc.draftBusiness;
+    if(!v || !biz || !biz.id) return null;                 // null = could not tell, never 0
+    try{ var rows = await v.load(biz); return Array.isArray(rows) ? rows.length : null; }
+    catch(e){ return null; }
+  }
+  /** RENDER THE ROOM INTO THE THREAD. Nothing is said before the outcome is known — the rows
+   *  are loaded, then drawn, and only then does one sentence describe what is there. The
+   *  optimistic "Opening your schedule." that preceded a refusal on 2026-09-15 has no equivalent
+   *  here by construction: there is no line to emit before the answer exists. */
+  async function hcShowInThread(kind){
+    var v = HC_THREAD_VIEWS[kind];
+    var thread = hcThreadBody();
+    if(!v || !thread){ hcAppendMessage('hubly', 'I can\u2019t show you that here yet.'); return { ok:false, error:'unknown_view' }; }
+    var biz = hc.draftBusiness;
+    if(!biz || !biz.id){ hcAppendMessage('hubly', 'No business is open, so there\u2019s nothing to show.'); return { ok:false, error:'no_business' }; }
+    var rows = null;
+    try{ rows = await v.load(biz); }
+    catch(e){
+      // A READ FAILURE IS NOT AN EMPTY LIST, and it is never dressed as a fact about his data.
+      hcAppendMessage('hubly', 'I couldn\u2019t read your ' + v.title.toLowerCase() + ' just now \u2014 that\u2019s a problem reaching your records, not an empty list.');
+      return { ok:false, error:'read_failed' };
+    }
+    if(!Array.isArray(rows)){ hcAppendMessage('hubly', 'I couldn\u2019t read that just now.'); return { ok:false, error:'read_failed' }; }
+    if(!rows.length){ hcAppendMessage('hubly', v.empty); return { ok:true, count:0 }; }
+    var head = document.createElement('div');
+    head.className = 'hc-msg hubly hc-room-group';
+    head.setAttribute('data-hc-thread-view', kind);
+    head.textContent = v.title;
+    thread.appendChild(head);
+    rows.forEach(function(row){
+      thread.appendChild(hcRecordCard({
+        parts: v.parts(row),
+        ariaPrefix: 'Open ' + kind,
+        attr: 'data-hc-view-row', attrValue: kind,
+        onOpen: function(){ v.open(row); }
+      }));
+    });
+    hcThreadScrollToEnd();
+    return { ok:true, count: rows.length };
+  }
+  try{ window.hublyThreadViews = { show: hcShowInThread, count: hcViewCount, kinds: Object.keys(HC_THREAD_VIEWS), card: hcRecordCard }; }catch(e){}
 
   // THE ONE DELIBERATE SEAM IN THIS FILE, AND WHY IT EXISTS.
   //
@@ -6204,7 +6380,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // its own brand colour rather than a generic placeholder mark — a placeholder implies a
   // logo exists. The greeting uses the owner's first name only when we have one; with no
   // name it greets without one rather than inventing "there".
-  var hcIdentity = { loaded: false, logoUrl: null, brandColor: null, city: null, state: null, owner: null, email: null };
+  var hcIdentity = { loaded: false, logoUrl: null, brandColor: null, city: null, state: null, owner: null, authName: null, email: null };
 
   async function hcLoadIdentity(biz){
     hcIdentity.loaded = false;
@@ -6224,13 +6400,17 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       try{
         var u = await c.auth.getUser();
         var m = u && u.data && u.data.user && u.data.user.user_metadata;
+        // THE PROVIDER'S OWN METADATA, AND NOTHING DERIVED FROM THE CREDENTIAL.
+        //
+        // An email local-part heuristic stood here: it split the address, replaced separators,
+        // and accepted the result as a name when the first word was all letters. That is a name
+        // MANUFACTURED FROM A LOGIN, which is the thing Adrian objected to on 2026-09-15 — and
+        // it is only luck that it did not fire for him ("adriansmithee+ever…" has a "+", so the
+        // test failed and the chip fell through to the raw email instead of to an invented
+        // "Adriansmithee"). Either outcome is wrong. It is gone: the email is a fallback the
+        // chip may DISPLAY when there is nothing else, never a source a name is derived from.
         var nm = (m && (m.full_name || m.name)) || '';
-        // An email local-part is not a name. Only use it when it looks like one.
-        if(!nm){
-          var em = (u && u.data && u.data.user && u.data.user.email) || '';
-          var lp = String(em).split('@')[0].replace(/[._-]+/g, ' ').trim();
-          if(/^[a-z]{2,}$/i.test(lp.split(' ')[0] || '')) nm = lp;
-        }
+        hcIdentity.authName = nm ? String(nm).trim() : null;
         hcIdentity.owner = nm ? String(nm).trim().split(/\s+/)[0].replace(/^./, function(ch){ return ch.toUpperCase(); }) : null;
         hcIdentity.email = (u && u.data && u.data.user && u.data.user.email) || null;
       }catch(e){}
@@ -6431,6 +6611,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     return {
       biz: biz || {},
       has: function(id){ return !!ws[id]; },
+      /** DOES THIS COLLECTION HOLD ANYTHING? undefined (unread) is NOT yes — a door is offered
+       *  only on a count we actually got back and that was greater than zero. */
+      hasRows: function(key){ var n = hcHomeCounts[key]; return typeof n === 'number' && n > 0; },
       counts: hcHomeCounts
     };
   }
@@ -6444,7 +6627,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       count:function(n){ return n === 1 ? '1 job today' : n + ' jobs today'; },
       // Gated on the PLACE, not on nothing: a card must never open a room the rail does
       // not show. One rule, both surfaces.
-      needs:function(ctx){ return ctx.has('planner'); },
+      // CONTENT, NOT A PLACES ROW. ctx.has('planner') hid this for an account whose day held
+      // two things, because business_places had never been seeded for it.
+      needs:function(ctx){ return ctx.hasRows('jobsAny'); },
       open:'planner' },
     { kind:'card', id:'customers', label:'See my customers', icon:'customers',
       // REAL AS OF 2026-09-08. It did not render before because nothing read the
@@ -6452,14 +6637,16 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       // and never on name.
       cap:'operations.read', slice:'customers', countKey:'customerCount', place:'customers',
       count:function(n){ return n === 1 ? '1 on record' : n + ' on record'; },
-      needs:function(ctx){ return ctx.has('customers'); },
+      needs:function(ctx){ return ctx.hasRows('customerCount'); },
       open:'customers' },
     { kind:'card', id:'sales', label:'Check my sales', icon:'sales',
       // NO LONGER STORE-ONLY. It read commerce_orders, so it was blank for every
       // business without a Store while jobs.amount held the money he actually earned.
       // The sales slice sums jobs AND orders, over any period, past included.
       cap:'operations.read', slice:'sales',
-      needs:function(){ return true; },
+      // "check my sales shouldn't be there since there are no sales" — Adrian, 2026-09-15.
+      // A sale is money TAKEN: a paid job or an order. A scheduled unpaid job is not one.
+      needs:function(ctx){ return ctx.hasRows('salesAny'); },
       ask:'How are my sales doing?' },
     { kind:'card', id:'website', label:'Edit my website', icon:'website',
       // A workspace, not a question: the editor takes the CENTRE. Records go in the
@@ -6470,27 +6657,33 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
 
     // ── SUGGESTED QUESTIONS ──────────────────────────────────────────────
     { kind:'chip', id:'q-bookings', label:'Show me my bookings this week',
-      cap:'operations.read', slice:'bookings', needs:function(){ return true; } },
+      cap:'operations.read', slice:'bookings', needs:function(ctx){ return ctx.hasRows('bookingsAny'); } },
     { kind:'chip', id:'q-unbooked', label:'Who asked on my site and didn\u2019t book?',
-      cap:'operations.read', slice:'chat_leads', needs:function(){ return true; } },
+      cap:'operations.read', slice:'chat_leads', needs:function(ctx){ return ctx.hasRows('unbookedAny'); } },
     { kind:'chip', id:'q-regulars', label:'Who are my regulars?',
-      cap:'operations.read', slice:'customers', needs:function(){ return true; } },
+      cap:'operations.read', slice:'customers', needs:function(ctx){ return ctx.hasRows('customerCount'); } },
     { kind:'chip', id:'q-earned', label:'What did I make last month?',
-      cap:'operations.read', slice:'sales', needs:function(){ return true; } },
+      cap:'operations.read', slice:'sales', needs:function(ctx){ return ctx.hasRows('salesAny'); } },
     { kind:'chip', id:'q-popular', label:'Which service sells the most?',
       // Back, and only because it is now a GROUP BY over every row in SQL rather than
       // the model ranking a page of rows it was handed.
-      cap:'operations.read', slice:'service_stats', needs:function(){ return true; } },
+      // Which service sells the most needs BOTH services and sales; with neither it is a
+      // question about nothing.
+      cap:'operations.read', slice:'service_stats',
+      needs:function(ctx){ return ctx.hasRows('servicesAny') && ctx.hasRows('salesAny'); } },
     { kind:'chip', id:'q-hours', label:'What are my opening hours?',
-      cap:'operations.read', slice:'hours', needs:function(){ return true; } },
+      cap:'operations.read', slice:'hours', needs:function(ctx){ return ctx.hasRows('hoursAny'); } },
     { kind:'chip', id:'q-prices', label:'What do I charge for each service?',
-      cap:'operations.read', slice:'services', needs:function(){ return true; } },
+      cap:'operations.read', slice:'services', needs:function(ctx){ return ctx.hasRows('servicesAny'); } },
     { kind:'chip', id:'q-service', label:'Add a new service to my website',
       cap:'business.setServices', needs:function(){ return true; } },
     { kind:'chip', id:'q-photos', label:'Add photos of my own work',
       cap:'website.patchDocument', needs:function(ctx){ return ctx.has('website'); } },
     { kind:'chip', id:'q-traffic', label:'How many people visited my site?',
-      cap:'operations.read', slice:'traffic', needs:function(){ return true; } }
+      // Traffic is the one collection Home does not count here: hcLoadTraffic is a separate
+      // read on its own path. Gated on the WEBSITE existing, which is the honest precondition
+      // for "how many people visited my site" — stated rather than left as `return true`.
+      cap:'operations.read', slice:'traffic', needs:function(ctx){ return ctx.has('website'); } }
     // DELIBERATELY ABSENT, and it is a finding rather than an oversight:
     //   "Help me create a promotion" — nothing in the registry creates one. That is a
     //   feature that has not been built, NOT a table we cannot read; the two are
@@ -6522,10 +6715,41 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       // hcEvents.list, which is already in memory and already filtered by kind at :5383.
       // No new query. The event feed is the reader, and it reconciles row-for-row with
       // booking_requests (see docs/RAIL_COVERAGE.md).
+      // ══ NO DOORS TO EMPTY ROOMS ═══════════════════════════════════════════════════════
+      //
+      // ADRIAN, 2026-09-15: "check my sales shouldn't be there since there are no sales."
+      // Measured: money_taken $0, orders 0, paid jobs 0 — on BOTH his walk account and Graef.
+      // The card's gate was `needs: function(){ return true; }` — offered unconditionally.
+      //
+      // Six of the eleven promises were unconditional, and the ones that WERE gated were gated
+      // on `business_places` rows, which is the same seeding artefact that told an owner his
+      // full schedule "isn't set up" (see hcGoToPlace). So the rule cut both ways: empty rooms
+      // were advertised and full ones were hidden.
+      //
+      // ONE QUESTION FOR EVERY PROMISE: does this collection hold anything? Counted here, once
+      // per Home render, and read by `needs`. A count we could not READ stays undefined, and an
+      // undefined count does not offer the door — we cannot claim a room has something in it on
+      // a read that failed (prohibition 2: green is earned).
       var r = await Promise.all([
-        c.from('jobs').select('id', { count:'exact', head:true }).eq('business_id', biz.id).eq('scheduled_date', iso)
+        c.from('jobs').select('id', { count:'exact', head:true }).eq('business_id', biz.id).eq('scheduled_date', iso),
+        c.from('jobs').select('id', { count:'exact', head:true }).eq('business_id', biz.id),
+        c.from('jobs').select('id', { count:'exact', head:true }).eq('business_id', biz.id).eq('paid', true),
+        c.from('booking_requests').select('id', { count:'exact', head:true }).eq('business_id', biz.id),
+        c.from('services').select('id', { count:'exact', head:true }).eq('business_id', biz.id)
       ]);
       if(!r[0].error && r[0].count > 0) hcHomeCounts.jobsToday = r[0].count;
+      if(!r[1].error) hcHomeCounts.jobsAny = r[1].count || 0;
+      if(!r[2].error) hcHomeCounts.salesAny = r[2].count || 0;
+      if(!r[3].error) hcHomeCounts.bookingsAny = r[3].count || 0;
+      if(!r[4].error) hcHomeCounts.servicesAny = r[4].count || 0;
+      // HOURS ARE IN TWO STORES and the reader that knows both already exists. Counting
+      // settings_business_hours alone would hide the chip for Graef, whose hours live in meta —
+      // the two-store defect, one feature over, which is exactly how this class keeps recurring.
+      try{
+        var uidH = await hcOwnerUid();
+        var hr = await c.rpc('get_business_hours', { p_business_id: biz.id, p_owner_id: uidH });
+        if(hr && !hr.error && Array.isArray(hr.data)) hcHomeCounts.hoursAny = hr.data.length;
+      }catch(e){}
       // The customer count is the FOLDED one from SQL, never a raw row count: two rows
       // that share a phone are one person, and "5 customers" when three of them are
       // Dana is the same defect as a count over a truncated list.
@@ -6664,6 +6888,21 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   async function hcRenderHomeFurniture(biz, thread){
     hc._furniturePending = false;
     await hcLoadHomeCounts(biz);
+    // THE UNBOOKED COUNT COMES FROM THE EVENT FEED, NOT A SECOND QUERY — hcLoadHomeCounts's own
+    // comment rules that: "If Home needs a count of open or unfinished bookings, derive it from
+    // hcEvents.list... No new query. The event feed is the reader." Loaded here, BEFORE the
+    // cards and chips, because "Who asked on my site and didn't book?" is a door to a
+    // collection and must not be offered when that collection is empty (Adrian, 2026-09-15).
+    try{
+      if(biz && biz.id && hc.draftClaimed){
+        var _evs = hcEvents.loaded ? hcEvents.list : await hcLoadEvents(biz.id);
+        if(Array.isArray(_evs)){
+          hcHomeCounts.unbookedAny = _evs.filter(function(e){
+            return e && (e.kind === 'chat.asked' || e.kind === 'booking.abandoned');
+          }).length;
+        }
+      }
+    }catch(e){}
     // THE NEWS LINE. One line under the greeting, and the only thing on this screen that
     // changes shape day to day. It is NOT a chat bubble: a bubble says "Hubly just said
     // this to you", and the state of the business is not a remark. Rendered as a line so
@@ -7574,13 +7813,31 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     kind = String(kind || '').trim();
     var p = HC_GO_PLACES[kind];
     if(!p){ hcAppendMessage('hubly', 'I cannot take you there yet.'); return { ok:false, error:'unknown_place' }; }
-    // EARNED, OR SAID SO. A room this business has not earned is not opened behind the
-    // owner's back, and the refusal names the reason rather than going quiet.
-    var earned = false;
-    try{ earned = hcWorkspaces().some(function(w){ return w.id === kind; }); }catch(e){}
-    if(!earned){
-      hcAppendMessage('hubly', 'Your ' + p.say + ' isn\u2019t set up on this account yet, so there\u2019s nowhere for me to take you.');
-      return { ok:false, error:'not_earned' };
+    // ══ "NOT SET UP" WAS A FACT ABOUT OUR SEEDING, TOLD AS A FACT ABOUT HIS DATA ═════════
+    //
+    // 2026-09-15: "Your schedule isn't set up on this account yet, so there's nowhere for me to
+    // take you." — said to an owner whose day held a driveway job AND a doctor's appointment,
+    // which Hubly had read out loud to him the same morning from the same tables.
+    //
+    // THE CAUSE: this gated on hcWorkspaces(), which is a list of `business_places` ROWS. That
+    // account had exactly one row (website) because business_places is seeded by
+    // seed_business_places — an RPC my own sweep found is reachable only from a script. So a
+    // business created any other way has no places, and "no row" was reported as "not set up".
+    // Graef has all four rows and would have been told the opposite, from the same code.
+    //
+    // A SEEDING GAP IS AN UNREADINESS, NOT AN ABSENCE — the exact defect fixed for the services
+    // section three days ago, one feature over. The gate is now the CONTENT: does this
+    // collection hold anything? Same question item 4 makes the cards and chips ask, so a door is
+    // never offered to an empty room and a full room is never called missing.
+    var n = await hcViewCount(kind === 'planner' ? 'day' : kind);
+    if(n === 0){
+      hcAppendMessage('hubly', 'There\u2019s nothing on your ' + p.say + ' yet, so there\u2019s nothing to show you.');
+      return { ok:false, error:'empty' };
+    }
+    // n === null means we could not read it — never dressed as an absence.
+    if(n === null && kind !== 'website'){
+      hcAppendMessage('hubly', 'I couldn\u2019t read your ' + p.say + ' just now, so I won\u2019t guess at what\u2019s on it.');
+      return { ok:false, error:'unreadable' };
     }
     try{ hcOpenWorkspace(kind); }
     catch(e){ hcAppendMessage('hubly', 'I could not open your ' + p.say + ' just now.'); return { ok:false, error:'open_threw' }; }
@@ -7874,14 +8131,45 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     }catch(e){ console.error('[owner-profile] threw', e); }
     return hcOwner;
   }
+  // ══ ONE ANSWER TO "WHAT DO WE CALL THIS PERSON" ══════════════════════════════════════
+  //
+  // 2026-09-15: we asked his name, he gave it, and the account chip went on reading
+  // "adriansmithee+ever…" — a login credential, shown to him as his name, all session.
+  // (The capture had also failed; that is fixed separately. Both had to be wrong for him to
+  // see this, and both were.)
+  //
+  // Same discipline as the date, phone and time formatters: ONE function, used everywhere a
+  // person is named, with a stated order of preference. It never invents, and it never reads a
+  // name out of the transcript — that is the 801-888-8888 scar, one fact over.
+  //
+  // THE ORDER, and why: the profile first, because that is where the owner's OWN answer lands
+  // and set_owner_display_name refuses to let a provider overwrite it; then the identity the
+  // business record carries; then the auth provider's metadata, which is a guess we did not
+  // make; and the email LAST and only when there is genuinely nothing else. Signing in with an
+  // email does not make the email your name.
+  function hcOwnerLabel(){
+    var n = (hcOwner && hcOwner.name) || hcIdentity.owner || hcIdentity.authName || '';
+    n = String(n).trim();
+    if(n) return n;
+    var em = String(hcIdentity.email || '').trim();
+    return em || '';                     // '' means we genuinely do not know — never a guess
+  }
+  /** True when the only thing we have is the email. The chip uses this to decide whether it is
+   *  showing a NAME or a fallback, so a check can tell the difference. */
+  function hcOwnerLabelIsEmail(){
+    var l = hcOwnerLabel();
+    return !!l && l.indexOf('@') >= 0;
+  }
   /** The name Hubly uses out loud. First name only — "Good morning, Austin Graef" is a form
-   *  letter. The profile wins over the auth provider's guess: it is where an owner's own
-   *  correction lands, and set_owner_display_name refuses to let a provider overwrite it. */
+   *  letter. Derived from the one reader, never a second opinion about which source wins.
+   *  Returns null when all we have is an email: Hubly does not greet someone by their login. */
   function hcOwnerFirstName(){
-    var n = hcOwner.name || hcIdentity.owner || '';
-    n = String(n).trim().split(/\s+/)[0] || '';
+    var l = hcOwnerLabel();
+    if(!l || l.indexOf('@') >= 0) return null;
+    var n = l.split(/\s+/)[0] || '';
     return n ? n.replace(/^./, function(ch){ return ch.toUpperCase(); }) : null;
   }
+  try{ window.hublyOwnerName = { label: hcOwnerLabel, first: hcOwnerFirstName, isEmail: hcOwnerLabelIsEmail }; }catch(e){}
   async function hcMarkWelcomed(){
     try{
       var c = await authGetClient();
@@ -7893,6 +8181,29 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       hcOwner.welcomedAt = (r && r.data) || new Date().toISOString();
       return true;
     }catch(e){ console.error('[owner-profile] welcome threw', e); return false; }
+  }
+  /** THE MODEL READ A NAME OUT OF THE ANSWER. Accept it only if it is really in the message.
+   *
+   *  hcLooksLikeAName is a list of SHAPES and people do not answer in them — "Perfect, thank you
+   *  for that! it's Adrian" returned null on 2026-09-15 while the model understood it perfectly
+   *  and replied "Nice to meet you, Adrian." The record stayed NULL, so the account chip went on
+   *  showing his email all session. The predicate stays as the fast path; this is the fallback.
+   *
+   *  GROUNDED IN THE MESSAGE HE JUST TYPED. A name is a fact about a person and it is written
+   *  only from what they said in THIS exchange — never from the transcript, never from the
+   *  email local-part, never from the business name. Same rule as the phone number, and the
+   *  same scar. `hc._lastUserText` is the message the answer came in on. */
+  function hcAcceptOwnerName(name){
+    var nm = String(name || '').trim().replace(/^[\s"'\u201c]+|[\s"'\u201d.,!]+$/g, '');
+    if(!nm || nm.length > 40) return false;
+    if(HC_NOT_A_NAME.indexOf(nm.toLowerCase()) >= 0) return false;
+    if(!/^[A-Za-z][A-Za-z'\u2019-]{1,20}( [A-Za-z][A-Za-z'\u2019-]{1,20}){0,2}$/.test(nm)) return false;
+    var said = String(hc._lastUserText || '');
+    if(!said || said.toLowerCase().indexOf(nm.toLowerCase()) < 0) return false;   // not in this message
+    hcSaveOwnerName(nm).then(function(v){
+      if(v === 1){ try{ hcRenderRail(); hcReflectAuthState(); }catch(e){} }
+    });
+    return true;
   }
   /** A NAME IS A FACT ABOUT A PERSON, so it is written only from what they just typed —
    *  the same rule as every other fact (CLAUDE.md), and the reason nothing here guesses
@@ -8074,6 +8385,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     window.hublyArrivalUI = {
       simulate: function(biz, claimed, messages){
         hc.draftBusiness = biz; hc.draftClaimed = !!claimed;
+        // THE PLACES TOO. hcEnterClaimed loads them and the rail, the cards and hcGoToPlace all
+        // read them — a simulation that skips the load leaves hc.places null, hcWorkspaces()
+        // FAILS OPEN, and every place looks earned. A red-proof for the earned-gate defect then
+        // passes with the defect restored, which is what happened on the first attempt.
+        try{ if(biz && biz.slug) hcLoadPlaces(biz.slug); }catch(e){}
         // Restored history, as hcLoadConversation(silent) would have left it: seq-ordered
         // {role, content}. Supplied here so the ORDERING of the thread is assertable without a
         // session — the defect being guarded is where the block lands, not how it is fetched.
@@ -8631,7 +8947,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       // on the record means initials from the email, and no email means no text at all.
       // We do not invent a display name to fill the chip out.
       btn.classList.add('is-authed'); btn.classList.add('is-chip');
-      var nm = hcIdentity.owner || '';
+      // ONE READER. This used to be `hcIdentity.owner || hcIdentity.email`, which skipped the
+      // owner profile entirely — so a name he had given us was not even consulted.
+      var nm = hcOwnerLabelIsEmail() ? '' : hcOwnerLabel();
       var em = hcIdentity.email || '';
       var seed = nm || em.split('@')[0] || '';
       btn.innerHTML = '';

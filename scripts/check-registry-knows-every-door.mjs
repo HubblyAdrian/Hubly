@@ -62,6 +62,12 @@ const NOT_FOR_MODEL = {
   understanding:           "a request field, not an action",
   selection:               "a request field — what the owner has clicked on the canvas",
   entryIntent:             "a request field set by the shell",
+  // The client asked "what should I call you?" and its own shape list did not recognise the
+  // answer ("Perfect, thank you for that! it's Adrian" -> null, 2026-09-15). This flag says
+  // "this one message is that answer", so the model is asked to read the name out of it. It is
+  // a statement about WHICH TURN THIS IS, which only the client knows — the model cannot set it,
+  // and giving it an action would let it decide it had asked a question it never asked.
+  nameAnswer:              "a request field: the client says this message answers ITS name question",
   event:                   "telemetry ingest, not an owner action",
   logoUpload:              "a file the owner dropped; the model must never invoke an upload it cannot supply bytes for",
   photoUpload:             "same — a file arrives with the request or not at all",

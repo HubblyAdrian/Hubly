@@ -8137,6 +8137,61 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         },
       },
       {
+        // ── SHOW ME — THE CONVERSATION IS THE SURFACE ──────────────────────────────────
+        //
+        // ADRIAN'S RULING, 2026-09-15, in his words: "if someone says open my schedule or take
+        // me to my schedule the schedule should show up on this chat. that way they can see it
+        // easy. its the same thing as looking at leads jobs etc"
+        //
+        // goToPlace was the wrong shape for this whole family — it NAVIGATES, and he wants the
+        // room brought to him. This renders the records IN THE THREAD as real clickable cards,
+        // which is exactly what the job card already does and what a human has already used.
+        //
+        // AND IT ANNOUNCES NOTHING. On the walk the model said "Opening your schedule." and the
+        // client then said "Your schedule isn't set up on this account yet" — one turn that
+        // announced an action and then denied it. The client loads, draws, and says one true
+        // sentence about what is there; there is nothing for the model to add and no outcome
+        // for it to predict.
+        name: "showMe",
+        description:
+          "Render one of the owner's own collections INSIDE THE CONVERSATION as real, clickable records — their day/schedule, their jobs, or their customers. " +
+          "Invoke this whenever they ask to SEE or OPEN something of theirs (\"show me my schedule\", \"open my schedule\", \"take me to my schedule\", \"show me my jobs\", \"can I see my customers\"). " +
+          "THE THREAD IS THE SURFACE: the records appear in the chat where they are reading, each one openable. " +
+          "SAY NOTHING ABOUT IT. Do not announce that you are opening, showing, pulling up or fetching anything; do not say how many there are; do not predict what they will see. " +
+          "The screen renders the rows and then says one sentence about what is actually there — if you speak first you will contradict it, which is what happened on 2026-09-15 " +
+          "(\"Opening your schedule.\" followed immediately by \"your schedule isn't set up\"). Reply with nothing, or at most a couple of words that are not about the outcome. " +
+          "`what` has exactly three values. For anything else, do not invoke this.",
+        doors: {
+          talk: "business.showMe",
+          diy: { file: "public/platform-home.html", marker: "HC_THREAD_VIEWS", what: "the rail tabs, which open the same records as a room" },
+          show: "hcShowInThread",
+        },
+        argsSchema: {
+          type: "object",
+          properties: {
+            what: {
+              type: "string",
+              description: "Which of their collections to render in the conversation.",
+              enum: ["day", "jobs", "customers"] as const,
+            },
+          },
+          required: ["what"],
+        },
+        handler: async (args) => {
+          const what = String((args as any)?.what || "").trim();
+          const KNOWN = ["day", "jobs", "customers"];
+          if (!KNOWN.includes(what)) {
+            return { ok: false, real: false, error: "no_view",
+              summary: "There is no such view yet. Say what you CAN do about it instead, and do not describe any control." };
+          }
+          // NOTHING IS CLAIMED HERE. This action did no backend work and cannot know whether the
+          // collection holds anything — the client reads it, renders it, and says so, once.
+          return { ok: true, real: false,
+            summary: "Handed to their screen. It will render the records and say what is there; nothing has happened yet that you can report, and you must not describe it.",
+            raw: { showInThread: what } };
+        },
+      },
+      {
         // ── TAKE ME THERE — the model's end of the fourth door ─────────────────────────
         //
         // "take me to my schedule" -> "I can't take you to the schedule from here yet." Said
@@ -8154,8 +8209,11 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
         name: "goToPlace",
         description:
           "Take the owner to one of their own places in Hubly — their schedule/day, their jobs, their customers, or their website. " +
-          "Invoke this whenever they ask to GO somewhere or SEE something of theirs (\"take me to my schedule\", \"show me my jobs\", " +
-          "\"open my customers\", \"can I see it somewhere\"), instead of saying you cannot. " +
+          "USE business.showMe INSTEAD FOR ANYTHING THEY WANT TO SEE. \"Show me my schedule\", \"open my schedule\", \"take me to my " +
+          "schedule\", \"show me my jobs\", \"can I see my customers\" all render IN THE CONVERSATION and are showMe, not this. " +
+          "This one is only for a genuine change of ROOM — the website editor, or a place they asked to be taken to and work in. " +
+          "If you are unsure which, it is showMe: bringing the records to them is never wrong, and navigating away from the " +
+          "conversation usually is. " +
           "THE SCHEDULE / THE DAY / THE PLANNER ARE ALL place=\"planner\". Do NOT call business.places.add for any of these — " +
           "that adds a room they already have, and on 2026-09-15 it answered a request to GO to a schedule with \"I can't open a " +
           "schedule place yet\" while the schedule was working. " +

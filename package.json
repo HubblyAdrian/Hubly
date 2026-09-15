@@ -105,7 +105,8 @@
     "check:rpc-doors": "node scripts/check-rpc-doors.mjs",
     "check:job-publishes": "deno run --allow-env --allow-net --allow-read scripts/check-job-never-publishes.ts",
     "check:service-stores": "node scripts/check-service-stores-agree.mjs",
-    "check:service-stores:live": "node scripts/check-service-stores-agree.mjs --live"
+    "check:service-stores:live": "node scripts/check-service-stores-agree.mjs --live",
+    "check:surface": "node scripts/check-conversation-is-the-surface.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
