@@ -67,6 +67,22 @@ keeping the real line, and an ordinary sentence untouched.
 **What no human has verified:** a genuine model-produced parse failure in production. That cannot
 be forced from here; every input above was one I supplied.
 
+**NOW COUNTABLE (2026-09-15).** Adrian: add the one thing that WOULD tell us. Migration
+`20260915213000_envelope_suppression_events.sql` — a row every time `sayableText` refuses
+something, from all three surfaces. Two outcomes recorded separately because they are different
+bugs: **`salvaged`** (the envelope carried a real sentence, the person got it — the *parser* needs
+fixing) and **`silenced`** (nothing sayable, the floor spoke, a person lost a turn — a *defect*).
+`parsed` separates the other axis: a nested envelope inside cleanly parsed JSON is a *prompt*
+problem, an unparseable payload is a *parser* problem. The raw text is **not** stored — it is model
+output about a real business's conversation and can carry the owner's own facts; a length and a
+120-char prefix are kept for triage.
+
+**The instrument was proved before it was trusted**, end to end against the real database from the
+live page: `salvaged` and `silenced` rows landed with correct lengths and truncated samples.
+**Those two rows are MINE** — `2026-09-15 21:02:23Z`, `surface = 'client'`, `business_id = null`,
+the salvaged one sampled `PROOF OF INSTRUMENT`. **Subtract them from any future count.** They are
+left in place because deleting them would remove the only evidence the instrument works.
+
 ## THE TWO SERVICE STORES DISAGREE ON 23 OF 41 CLAIMED BUSINESSES (2026-09-15, measured)
 
 Asked whether the arrival's service count should read the `services` table at all. **It should
