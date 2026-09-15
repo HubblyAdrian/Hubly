@@ -42,6 +42,39 @@ MAX makes that a tie, and a tie is a question. Changing the wrong job is worse t
 
 Six of six, against one of six today.
 
+## HIS REAL ROWS, read from the database at 2026-09-15 22:11Z
+
+The maintenance window closed, so this replaces the reconstruction above as the authority. **He has
+two jobs on `hubly-classic-fixture` (`account_kind` test), and the second one matters:**
+
+| service_name | address | time |
+|---|---|---|
+| `driveway` | 14 Maple St | 15:00:00 |
+| `doctor’s appointment` | — | — |
+
+| `which` | today | the rule, on his real rows |
+|---|---|---|
+| `driveway job` | none | **act** — driveway |
+| `the driveway job` | none | **act** — driveway |
+| `driveway` | act | act — driveway |
+| `the driveway` | none | **act** — driveway |
+| `driveway appointment` | none | **ask** — driveway / doctor’s appointment |
+| `my driveway booking` | none | **act** — driveway |
+| `the maple st one` | **none** | **act** — driveway |
+| `appointment` | act | act — doctor’s appointment |
+
+**`driveway appointment` asks rather than acts on his real corpus, and the reconstruction said it
+would act.** The reason is real, not a bug: his other job is literally *"doctor's appointment"*, so
+`appointment` genuinely discriminates on **this** business — the query names one word from each row.
+Asking with both named is the safe answer and the rule reaches it for the right reason. But it is a
+difference from the table above, and the real corpus is the one that counts.
+
+**And the rule fixes a second defect nobody reported: `the maple st one` fails today.** That is the
+capability's **own documented example** — its description tells the model to invoke it for *"the
+Maple St one is $200 now"* — and `words.every` kills it on `one`, which appears in no row. A
+documented example that cannot work is the same class as copy offering an action with no path
+behind it.
+
 ## The adversarial corpus — the cases that must not regress
 
 | corpus | every phrasing does | correct? |
@@ -72,9 +105,8 @@ The fix is structural, so zero and one are unreachable by construction:
 
 ## What I have NOT verified
 
-- **His real row.** Still unread — the database was in a maintenance window (`503`, completion
-  21:45Z) when D was measured. The table above uses plausible reconstructions; the rule's behaviour
-  is a property of the scoring, not of his row, but **which** line it lands on is not confirmed.
+- ~~His real row.~~ **Now read** (22:11Z, after the maintenance window closed) and reported above.
+  The reconstruction was right about five of six phrasings and wrong about `driveway appointment`.
 - **Nothing is wired.** This rule exists only in a scratch harness. No change to
   `hubly_capability_registry.ts` yet, per your instruction to bring the rule first.
 - **Adrian has walked none of today's work** since the envelope fix went live.
