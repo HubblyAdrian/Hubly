@@ -3069,6 +3069,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   async function hcCall(extra){
     if(hc.busy) return;
     hc.busy = true;
+    // ONE TURN, ONE SLOT. Opened here so the counter covers everything this turn produces —
+    // including a composer that speaks from a callback long after the response was rendered.
+    hcBeginTurn();
     if(!hc.draftBusiness) hcRenderCanvasThinking();
     var typingEl = hcAppendTyping();
     // ── CONTINUE AN IN-PROGRESS DRAFT, NEVER SPAWN A DUPLICATE ─────────────────
@@ -3295,19 +3298,20 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // other is not enforced — that is the whole lesson of tonight. One counter, one
           // gate, and scripts/check-one-voluntary-addition.mjs fails the build if a second
           // composer is added without going through it.
-          var hcVoluntary = 0;
-          function hcMayAddVoluntary(){
-            // The floor: Hubly said something this turn, it was not a question, and nothing
-            // is already waiting on the person. Computed ONCE, from what was actually shown.
-            if(hcVoluntary > 0) return false;
-            var _said = (Array.isArray(interim) ? interim.slice() : []);
-            if(_reply) _said.push(_reply);
-            var _last = _said.length ? String(_said[_said.length - 1]) : '';
-            if(!_last) return false;
-            if(/\?\s*["'\u201d\u2019)]*\s*$/.test(_last)) return false;
-            return true;
-          }
-          function hcTookVoluntary(){ hcVoluntary++; }
+          // THE COUNTER USED TO LIVE HERE, AND THAT WAS THE BUG (fixed 2026-09-14).
+          //
+          // `var hcVoluntary = 0` inside this handler is a counter sampled at ONE MOMENT of
+          // the turn. On the walk a fourth composer — the show-me-where result — spoke from a
+          // postMessage callback that arrived AFTER this block had run and passed, so the
+          // gate was green, the slot was never taken, and Adrian read three things in one
+          // turn: an offer to add a service, an offer to add a services area, and a question
+          // about his phone number.
+          //
+          // The counter is module state now (hcTurn), held for the whole turn, and every
+          // voluntary addition — synchronous or late — goes through the same door. See
+          // hcTakeVoluntarySlot.
+          hcNoteSaid(Array.isArray(interim) && interim.length ? interim[interim.length - 1] : '');
+          if(_reply) hcNoteSaid(_reply);
 
           // THE CAPTURE GUARD, after the reply so the re-ask lands last. Check the ask
           // that was pending from last turn; if it wasn't recorded, own the miss and
@@ -3316,8 +3320,13 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // IT IS A VOLUNTARY ADDITION AND IT NOW COUNTS AS ONE. A re-ask is Hubly choosing
           // to speak again about something the person did not raise this turn — the same
           // shape as the offer and the gap ask, and it was the one that yielded to nothing.
-          var hcReasked = hcMayAddVoluntary() ? hcCheckCaptureMiss(hcPriorCapture, data) : false;
-          if(hcReasked) hcTookVoluntary();
+          // CHECK AND TAKE ARE ONE OPERATION. Asking "may I" and then "I did" as two steps is
+          // what let a late speaker slip between them.
+          var hcReasked = false;
+          if(hcMayAddVoluntary()){
+            hcReasked = hcCheckCaptureMiss(hcPriorCapture, data);
+            if(hcReasked) hcTakeVoluntarySlot();
+          }
           if(!hcReasked && ['services','hours','area','phone','logo','photos'].indexOf(data.askedFor) >= 0){
             hc.pendingCapture = { askedFor: data.askedFor, tries: 0 };
           }
@@ -3343,8 +3352,8 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
               // it wasn't a question, and no capture ask/re-ask is on the floor.
               // ONE PREDICATE, NOT A SECOND OPINION. This used to recompute the floor
               // itself; it now asks the same function the re-ask and the gap ask ask.
-              if(hcMayAddVoluntary() && !(hc.pendingCapture && hc.pendingCapture.askedFor)){
-                hc.accountOfferShown = true; hcAppendAccountOffer(); hcTookVoluntary();
+              if(!(hc.pendingCapture && hc.pendingCapture.askedFor) && hcTakeVoluntarySlot()){
+                hc.accountOfferShown = true; hcAppendAccountOffer();
               }
             }
           }
@@ -3363,8 +3372,8 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // _gapAsked, each once — but the order is stated so the next reader does not have
           // to derive it.
           try{
-            if(hcMayAddVoluntary() && !(hc.pendingCapture && hc.pendingCapture.askedFor)){
-              hcMaybeAskNextGap(); hcTookVoluntary();
+            if(!(hc.pendingCapture && hc.pendingCapture.askedFor) && hcTakeVoluntarySlot()){
+              hcMaybeAskNextGap();
             }
           }catch(_e){}
           // THE DROPZONE COMES LAST, after the sentence that points at it.
@@ -3459,6 +3468,14 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   }
 
   function hcSend(inputEl){
+    // ── THE SEND-BOUNDARY CAPTURE (2026-09-14) ──────────────────────────────────────────
+    // On the walk, "where would I add a service myself?" was STORED as
+    // ": where would I add a service mysel" — a stray leading ": " and the final character
+    // gone — and that corrupted text is what reached the model. Nothing in this file composes
+    // a ": " prefix or drops a trailing character; I could not reproduce it from the source,
+    // so nothing is being "fixed" here. This records the exact value at the moment of send so
+    // the NEXT walk names the cause instead of the symptom. Measure before fixing.
+    try{ console.log('[hc-send] raw=' + JSON.stringify(inputEl && inputEl.value)); }catch(e){}
     var text = (inputEl.value || '').trim();
     if(!text || hc.busy) return;
     // WORDS-PATH UNDO. "put that back" / "undo that" is the SAME action as the Undo
@@ -5559,6 +5576,14 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       var c = await authGetClient();
       var r = await c.rpc('get_my_site_gaps', { p_business_id: businessId });
       var g = r && r.data;
+      // SEED THE CHAIN'S BEFORE-STATE FROM THE READ WE ARE ALREADY DOING (2026-09-14).
+      //
+      // The chain fired on the walk and correctly said nothing, because nothing had recorded
+      // what was true BEFORE the turn: hcClosedGaps(undefined, now) is [] by design — "we have
+      // no record of what was true" must never become "you just did that". That was right, and
+      // it meant the first action of every session could never be acknowledged. Home reads the
+      // gaps anyway; this is the same read, kept.
+      if(g) hc._gapsSeen = g;
       return !!(g && Number(g.services) > 0);
     }catch(e){ return false; }
   }
@@ -6136,6 +6161,13 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // is Hubly forgetting something it was told.
     await hcLoadOwnerProfile();
     hcRenderIdentity(biz, thread);
+    // THE ARRIVAL, IN THE SCREEN IT BELONGS TO. Rendered here so nothing clears it after the
+    // fact, and recorded only once it is actually in this thread.
+    if(hc._arrivalDue){
+      hc._arrivalDue = false;
+      hcRenderArrival(biz);
+      hcMarkWelcomed();
+    }
     hcRenderRailBiz(biz);
     await hcLoadHomeCounts(biz);
     // THE NEWS LINE. One line under the greeting, and the only thing on this screen that
@@ -6773,11 +6805,15 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // CLASSIC PATH: say plainly what is and is not editable rather than leaving a
     // missing affordance to be discovered. "details yes, headline no" — stated, not
     // smoothed over. Said once per session; a repeated line becomes a banner.
-    if(hc.hasDocument === false && !hc._saidClassicScope){
-      hc._saidClassicScope = true;
-      hcAppendMessage('hubly', hcClassicScopeLine());
-      return;
-    }
+    // RULED 2026-09-14, REVERSING "say it plainly on mount". The ruling was right about the
+    // problem — a silent missing affordance is discovered the hard way — and wrong about the
+    // placement. On the walk this was the FIRST thing a signed-in owner read, before he had
+    // typed anything: a limitation notice standing where the welcome goes.
+    //
+    // It is an ANSWER now. hcClassicScopeLine still exists and is still said — when he asks
+    // to change wording, and at the two other call sites that are answers to actions he took.
+    // Nothing is lost except the ambush.
+    if(hc.hasDocument === false) return;
     if(r && r.failed){
       // Rule 6, pointed at a background task: it did not happen, so say so once. The
       // editor works; the section arrows are what is missing, and naming that is more
@@ -6814,6 +6850,50 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     try{ if(frame && frame.contentWindow) frame.contentWindow.postMessage({ type:'hcEditorFlash', text: text }, origin); }catch(e){}
   }
 
+  // ── ONE VOLUNTARY ADDITION PER TURN, HELD FOR THE WHOLE TURN ──────────────────────────
+  //
+  // Hubly may choose to say ONE more thing per turn beyond the answer: the capture re-ask,
+  // the account offer, the next-gap ask, the show-me-where result. Four composers, one slot.
+  //
+  // THE COUNTER IS MODULE STATE, NOT A LOCAL IN THE RESPONSE HANDLER. A local is a sample of
+  // one moment, and the composer that broke this on the 2026-09-14 walk spoke from a
+  // postMessage callback that arrived after that moment had passed.
+  //
+  // AND TAKING THE SLOT IS THE SAME OPERATION AS CHECKING IT. Every hand-written list of
+  // things allowed to speak or act has now bitten us three times — DRAFT_INJECTED_ACTIONS,
+  // the registry's door list, and this gate's list of composer names. The list is not the
+  // bug; hand-writing it is. There is no list here: a slot can only be taken through
+  // hcTakeVoluntarySlot, so anything that speaks voluntarily either goes through it or is
+  // visibly not going through it.
+  var hcTurn = { n: 0, voluntary: 0, said: '' };
+  function hcBeginTurn(){ hcTurn.n++; hcTurn.voluntary = 0; hcTurn.said = ''; return hcTurn.n; }
+  /** What Hubly last actually SHOWED this turn — the floor predicate is computed from what
+   *  was displayed, never from what we intended to display. */
+  function hcNoteSaid(text){ var t = String(text || '').trim(); if(t) hcTurn.said = t; }
+  function hcMayAddVoluntary(){
+    if(hcTurn.voluntary > 0) return false;          // the slot is spent
+    var last = hcTurn.said;
+    if(!last) return false;                          // nothing was said: this would be the answer
+    if(/\?\s*["'\u201d\u2019)]*\s*$/.test(last)) return false;   // a question is already on the floor
+    if(hcOwner && hcOwner.awaitingName) return false;                 // and so is this one
+    return true;
+  }
+  /** CHECK AND TAKE, ATOMICALLY. The two-step version is what a late speaker slipped through. */
+  function hcTakeVoluntarySlot(){
+    if(!hcMayAddVoluntary()) return false;
+    hcTurn.voluntary++;
+    return true;
+  }
+  /** Say one voluntary thing, or say nothing. Returns whether it spoke. */
+  function hcSayVoluntary(text){
+    var t = String(text || '').trim();
+    if(!t) return false;
+    if(!hcTakeVoluntarySlot()) return false;
+    hcAppendMessage('hubly', t);
+    hcThreadScrollToEnd();
+    return true;
+  }
+
   // ── SHOW ME WHERE ─────────────────────────────────────────────────────────────────────
   //
   // THE THIRD DOOR, BUILT ONCE AS A MECHANISM. Every capability in Hubly has had at most two
@@ -6839,10 +6919,23 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     services: {
       // The owner's own service rows first (stamped at generation), then the add tile.
       selector: '[data-hubly-service],[data-pe="add-service"]',
-      found:    'Here — that is where your services live. I have marked it on your page.',
-      missing:  'There is no services area on your page yet. I can add one with your services in it — say the word.'
+      found:       'Here — that is where your services live. I have marked it on your page.',
+      not_on_page: 'There is no services area on your page yet. I can add one with your services in it — tell me and I will.',
+      // THE THIRD SENTENCE, AND THE REASON IT EXISTS. On the 2026-09-14 walk the canvas
+      // answered "not found" because it looked before the frame was ready, and the owner was
+      // told his page had no services area. It has six. A sentence about OUR timing may never
+      // be dressed as a fact about HIS page.
+      could_not_look: 'I could not get a look at your page just then — try me again in a moment.'
     }
   };
+  /** The sentence for an answer. Pure, so a check can run it rather than read it: the only
+   *  status that may assert absence is not_on_page. */
+  function hcShowMeWhereLine(target, status){
+    if(!target) return '';
+    if(status === 'found') return target.found || '';
+    if(status === 'not_on_page') return target.not_on_page || '';
+    return target.could_not_look || '';
+  }
   var hcShowMeWhereWaiting = null;
 
   function hcShowMeWhere(what){
@@ -6865,13 +6958,13 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       timer: setTimeout(function(){
         if(!hcShowMeWhereWaiting || hcShowMeWhereWaiting.id !== id) return;
         hcShowMeWhereWaiting = null;
-        hcAppendMessage('hubly', 'I could not move your page just now. Tell me what to change and I will do it here.');
+        hcSayVoluntary('I could not move your page just now. Tell me what to change and I will do it here.');
       }, 4000)
     };
     try{ frame.contentWindow.postMessage({ type:'hcShowMeWhere', selector: target.selector, id: id }, origin); }
     catch(e){
       clearTimeout(hcShowMeWhereWaiting.timer); hcShowMeWhereWaiting = null;
-      hcAppendMessage('hubly', 'I could not move your page just now. Tell me what to change and I will do it here.');
+      hcSayVoluntary('I could not move your page just now. Tell me what to change and I will do it here.');
     }
   }
 
@@ -6889,7 +6982,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var w = hcShowMeWhereWaiting;
     clearTimeout(w.timer);
     hcShowMeWhereWaiting = null;
-    hcAppendMessage('hubly', d.found ? w.target.found : w.target.missing);
+    // THE CANVAS'S OWN WORD FOR WHAT HAPPENED. An older canvas that only sends `found` is
+    // read as could_not_look rather than as absence — the safe direction, and the one that
+    // cannot lie about his page.
+    var status = (typeof d.status === 'string' && d.status) ? d.status : (d.found ? 'found' : 'could_not_look');
+    hcSayVoluntary(hcShowMeWhereLine(w.target, status));
   });
 
   // ADD ONE SERVICE, from the grid the owner is looking at.
@@ -7160,6 +7257,19 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     return t;
   }
 
+  // THE ARRIVAL IS PART OF HOME, NOT A MESSAGE APPENDED BESIDE IT (fixed 2026-09-14).
+  //
+  // IT FIRED AND WAS ERASED. On the walk it rendered, marked itself welcomed at 22:01:24 —
+  // and hcRenderHome ran seconds later from the OTHER call site, whose first statement is
+  // `thread.innerHTML = ''`. The owner saw the Home header and no welcome, and because the
+  // row was already written it could never fire again: a one-shot consumed by a wipe is
+  // worse than one that never fires, because nothing is left to notice.
+  //
+  // Two changes, and the second is the rule: the arrival is now RENDERED BY hcRenderHome as
+  // part of the screen it belongs to, so nothing can clear it afterwards; and `welcomed_at`
+  // is written AFTER it is in the DOM the owner is looking at, never before. Marking first
+  // was copied from the localStorage flag it replaced, and it was wrong for the same reason
+  // any other unearned green is wrong.
   async function hcMaybeShowArrival(biz, renderHomeIfNotDue){
     if(!biz || !biz.id || !hc.draftClaimed) return;
     await hcLoadOwnerProfile(true);
@@ -7169,11 +7279,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       if(renderHomeIfNotDue) hcRenderHome();
       return;
     }
-    if(hcOwner.welcomedAt){ if(renderHomeIfNotDue) hcRenderHome(); return; }
-    // RECORDED BEFORE IT IS SHOWN, exactly as the old localStorage flag was set before the
-    // render: a welcome that renders and fails to record would repeat forever.
-    await hcMarkWelcomed();
-    hcRenderArrival(biz);
+    hc._arrivalDue = !hcOwner.welcomedAt;
+    // Home is the one render path either way: due or not, the screen is the same screen, and
+    // two paths drawing the same screen is how the first version lost the welcome.
+    hcRenderHome();
   }
   /** CAN THIS BUSINESS ACTUALLY BE BOOKED? Read the record, do not assume.
    *
@@ -7864,7 +7973,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // Rule 3: CONFIRM or REPORT. Post to the live frame and retry, but stop the
     // moment the preview ACKs; if it never acks (and a frame was actually there),
     // say so rather than let editing silently not work.
-    var acked = false, frameSeen = false, tries = 0, MAX = 8;
+    var acked = false, frameSeen = false, tries = 0, MAX = 16;   // 8s of retries, silent
     function onAck(ev){
       if(ev.origin !== origin) return;
       var d = ev.data; if(!d || d.type !== 'hcAuthStateAck') return;
@@ -7892,14 +8001,19 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
              reselectLabel: rs ? rs.label : null, reselectOn: rs ? rs.on : null }, origin); }catch(e){}
       }
       if(++tries < MAX){ setTimeout(send, 500); return; }
-      // Exhausted retries. If a frame was there but never acked, the editor didn't
-      // come up — report it instead of leaving them tapping a dead page.
+      // RETRY OR STAY SILENT — ruled 2026-09-14. This used to speak: "the live editor didn't
+      // respond just now — tap the part of the page you want to change". A failure report
+      // about a handshake the OWNER NEVER ASKED FOR is not something to say out loud; it is
+      // Hubly narrating its own plumbing, and it named a control it cannot see while doing it.
+      // On the walk it landed unprompted, seconds after sign-in, beside the welcome.
+      //
+      // The retries are what matters and they are longer now. The failure is recorded where
+      // failures belong — the auth trace — and the owner hears nothing, because nothing they
+      // did failed. If they then try to edit and it genuinely does not work, THAT is the
+      // moment with a request behind it, and the answer belongs there.
       if(!acked){
         try{ window.removeEventListener('message', onAck); }catch(e){}
-        if(frameSeen){
-          hcAuthTrace('preview-authed', 'NO ACK after ' + MAX + ' tries -> editor may not be live');
-          hcAppendMessage('hubly', "You're signed in and your site is saved. The live editor didn't respond just now — tap the part of the page you want to change, or reload if it doesn't open.");
-        }
+        if(frameSeen) hcAuthTrace('preview-authed', 'NO ACK after ' + MAX + ' tries -> editor may not be live (silent by ruling)');
       }
     })();
   }

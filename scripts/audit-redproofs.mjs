@@ -109,6 +109,24 @@ const SET = [
     mutate: swapInCode('say:"What hours are you open?"',
                        'say:"What hours are you open? I can show you where they go."') },
 
+  { check: "check-unreadiness-is-not-absence", tier: "fast", leg: "the case that bit him",
+    ruled: "an unreadiness may not be said as a fact about the owner's page",
+    file: "public/platform-home.html",
+    // The walk, exactly: the canvas could not look, and the reply asserted absence.
+    mutate: swapInCode("      could_not_look: 'I could not get a look at your page just then — try me again in a moment.'",
+                       "      could_not_look: 'There is no services area on your page yet.'") },
+
+  { check: "check-one-voluntary-addition", tier: "fast", leg: "the late speaker",
+    ruled: "one voluntary addition per turn, held across the whole turn",
+    file: "public/platform-home.html",
+    // Put the counter back inside the moment: a turn-scoped reset before every check makes
+    // the gate green again for a composer that arrives late.
+    // The anchor carries no trailing comment on purpose: swapInCode masks comments to find
+    // code, so an anchor that includes one can never match. Fourth comment-shaped mistake
+    // today, and the first one the tooling caught before I did.
+    mutate: swapInCode("if(hcTurn.voluntary > 0) return false;",
+                       "hcTurn.voluntary = 0;") },
+
   { check: "check-denominator-rule", tier: "fast",
     ruled: "every rate quoted this week — that it carries its market/internal/test split",
     file: "scripts/__redproof_rate.mjs", create: true,

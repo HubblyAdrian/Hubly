@@ -17839,17 +17839,39 @@ var hcClearSelectionFromBuilder = null;
 // THE DOCUMENT THAT SCROLLS IS NOT THIS ONE on a freeform page (see hcWireScrollReporting
 // above: this shell is a fixed full-height frame and the page lives in a srcdoc iframe). A
 // scrollIntoView on the wrong document is a feature that reports success by existing.
+// NOT-FOUND IS NOT ONE VALUE — and treating it as one told a paying customer a lie about his
+// own page (2026-09-14 walk). His site renders six data-hubly-service anchors and a "What we
+// offer" section; the canvas answered `found:false` because it looked before the frame was
+// ready, and the composer turned that into "there is no services area on your page yet."
+//
+// THREE ANSWERS, because three different things are true:
+//   found          — it is there, and the page has moved to it.
+//   not_on_page    — the document is loaded, has content, and does not contain it.
+//   could_not_look — nothing to look at yet (no document, empty body, a frame still loading).
+//
+// The third may NEVER become a claim about the owner's page. This is the record rule one
+// dimension over: an ungrounded absence may not overwrite what exists — there it was the
+// record's services, here it is the page's own section.
 function hcShowMeWhereOnCanvas(sel){
   var doc = document, win = window;
   try{ var f = hcFreeformFrame(); if(f && f.contentDocument && f.contentWindow){ doc = f.contentDocument; win = f.contentWindow; } }catch(e){}
+  // IS THERE ANYTHING TO LOOK AT? A document that is still loading, or whose body has no
+  // rendered content, answers nothing about what the page contains.
+  var ready = false;
+  try{
+    ready = !!(doc && doc.body) && doc.readyState !== 'loading' &&
+            (doc.body.children.length > 0) && (doc.body.getBoundingClientRect().height > 40);
+  }catch(e){ ready = false; }
+  if(!ready) return { found:false, status:'could_not_look', why:'not-ready' };
   var el = null;
   try{ el = doc.querySelector(sel); }catch(e){ el = null; }
-  if(!el) return { found:false, why:'no-target' };
+  if(!el) return { found:false, status:'not_on_page', why:'no-target' };
   // A target that exists but has no box is not somewhere we can show anyone — a display:none
-  // node would scroll to nothing and mark nothing, and we would report success for it.
+  // node would scroll to nothing and mark nothing, and we would report success for it. It is
+  // ALSO not evidence of absence: an element mid-render has no box either.
   var box = null;
   try{ box = el.getBoundingClientRect(); }catch(e){}
-  if(!box || box.width < 2 || box.height < 2) return { found:false, why:'no-box' };
+  if(!box || box.width < 2 || box.height < 2) return { found:false, status:'could_not_look', why:'no-box' };
   try{
     if(!doc.getElementById('hc-smw-style')){
       var st = doc.createElement('style');
@@ -17863,17 +17885,20 @@ function hcShowMeWhereOnCanvas(sel){
   }catch(e){}
   try{ el.scrollIntoView({ behavior:'smooth', block:'center' }); }
   catch(e){ try{ el.scrollIntoView(); }catch(_e){} }
-  return { found:true };
+  return { found:true, status:'found' };
 }
 window.addEventListener('message', function(ev){
   if(ev.source !== window.parent) return;
   var d = ev.data;
   if(!d || d.type !== 'hcShowMeWhere' || typeof d.selector !== 'string' || !d.selector) return;
-  var out = { found:false, why:'threw' };
-  try{ out = hcShowMeWhereOnCanvas(d.selector); }catch(e){ out = { found:false, why:'threw' }; }
+  // A THROW IS NOT AN ABSENCE EITHER. Whatever went wrong in here, it is not evidence about
+  // what is on the owner's page.
+  var out = { found:false, status:'could_not_look', why:'threw' };
+  try{ out = hcShowMeWhereOnCanvas(d.selector); }catch(e){ out = { found:false, status:'could_not_look', why:'threw' }; }
   // ALWAYS ANSWER. A silent canvas is indistinguishable from a canvas that did the thing, and
   // the parent has a sentence to say either way.
-  try{ window.parent.postMessage({ type:'hcShowMeWhereResult', id: d.id || null, found: !!out.found, why: out.why || null }, hcBuilderOrigin()); }catch(e){}
+  try{ window.parent.postMessage({ type:'hcShowMeWhereResult', id: d.id || null, found: !!out.found,
+       status: out.status || (out.found ? 'found' : 'could_not_look'), why: out.why || null }, hcBuilderOrigin()); }catch(e){}
 });
 
 // Report where the owner is looking, so a reload can put them back. The builder is a
