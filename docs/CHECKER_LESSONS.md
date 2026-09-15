@@ -2878,3 +2878,56 @@ For "nine businesses are quoting prices their pages never show", one sentence wo
 it: *"this depends on the price being formatted into the page exactly as we format it for the
 search; if either side formats differently the number is meaningless."* That is the whole
 failure, stated in advance, in the time it takes to write it.
+
+---
+
+## Lesson 86
+
+**WE REPORT OUR OWN MISSING SETUP AS THE OWNER'S MISSING DATA.**
+
+Adrian's words, 2026-09-15, after the fourth instance in one week. The tell is consistent enough
+to name, and once named it is recognisable in seconds.
+
+**The shape.** Some piece of OUR machinery is absent, stale, or not yet ready — a reader that
+only knows one of two stores, a canvas that has not finished mounting, a table nothing ever
+seeded. The code asks it a question, gets back nothing, and converts nothing into a **confident
+statement about the owner's business**. The sentence is always about HIM and the cause is always
+about US.
+
+**The four, this week, all shipped to a screen:**
+
+| what we said to an owner | what was actually missing |
+|---|---|
+| "clay and seal, price 0" as Graef's only service | `get_business_services` read the `services` table; his eight live in `meta.service_catalog` |
+| "the 1 service you priced" | `hcBookableServices`, the same one-store read, on the arrival |
+| "there is no services area on your page yet" | the canvas answered before the frame was ready; his page renders six anchors |
+| "your schedule isn't set up on this account yet" | `business_places` had never been seeded for that business — by `seed_business_places`, an RPC this repo's own sweep had already flagged as reachable only from a script |
+
+The last one is the sharpest, because **the missing piece had already been found and written
+down**. The sweep named `seed_business_places` as script-only days earlier; nobody connected that
+to a sentence an owner would read.
+
+**THE RULE.** A reader that comes back empty has told you about ITSELF. Before that becomes a
+sentence, three questions:
+
+1. **Did I ask everywhere it could be?** Two stores is the standing shape here — `services` and
+   `meta.service_catalog`, `settings_business_hours` and `meta.hours`. One-store readers have
+   produced two of these four.
+2. **Was the thing I asked ready to answer?** Not-found and could-not-look are different values
+   and must not share a branch (`check-unreadiness-is-not-absence.mjs`).
+3. **Is the emptiness ABOUT HIM, or about a row WE were supposed to create?** A seeded table, a
+   backfill, a places row, a stamped anchor — every one of these is our setup, and its absence is
+   our defect wearing his name.
+
+**If you cannot answer all three, the sentence is not "you don't have one." It is "I can't tell",
+or there is no sentence.** Silence beats a confident wrong statement about someone's own
+business — and it costs us nothing, because the owner already knows what he has.
+
+**THE STRUCTURAL FORM, which is what actually fixed the fourth one:** gate on the CONTENT, never
+on our bookkeeping about the content. `hcGoToPlace` asked "is there a `business_places` row" and
+now asks "does this collection hold anything". The second question cannot be wrong about him,
+because it reads the thing he owns rather than the thing we forgot to create.
+
+**And it cuts both ways, which is easy to miss.** The same places-row gate that told him his full
+schedule was missing ALSO hid "See my customers" from Graef, who has four. A bookkeeping gate is
+not merely over-strict; it is uncorrelated with the truth in both directions.

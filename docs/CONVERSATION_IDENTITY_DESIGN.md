@@ -125,6 +125,31 @@ own earlier turns reachable by scrolling the thread it is already in.
 The ordering fix from `f30064f` (history inserted above today's furniture, rendered once) stays
 either way — it is about where a block lands, not about what produced it.
 
+## ANSWERED 2026-09-15 — Adrian's rulings, and what changed in this design
+
+1. **MANY PER TAB, ONE FOR HOME.** *"Every non-Home surface works like ChatGPT: a current
+   conversation, the ability to start a new one, and past ones saved and reopenable. The Website
+   tab is not one eternal website conversation — it is a series of them. HOME IS THE EXCEPTION
+   and stays one continuous thread forever, because Home is the daily relationship… A
+   relationship does not get archived."*
+   → §2's open question is closed: Website is a SERIES. The partial unique index therefore
+   constrains `scope = 'home'` only, which is what it already does.
+
+2. **BACKFILL AS PROPOSED.** *"All 482 rows, all 67 businesses, Graef's 4 included. Nothing
+   orphaned, nothing guessed… 11 gaps over six hours corpus-wide is not enough signal to infer
+   boundaries, and inferring them would fabricate a history that never happened — the same
+   offence as an invented price."*
+
+3. **"SEE EARLIER CONVERSATION" BECOMES TWO THINGS.** *"On Home it stays a fold: load more of the
+   one thread. On every other surface it becomes 'Past conversations' — the saved list, titled,
+   reopenable. Do not force one control to mean both."*
+   → §5 is superseded: it is NOT one control that becomes the list. Home keeps its fold; the
+   other surfaces get a different control with a different name.
+
+**The migration is written and NOT applied:**
+`supabase/migrations/PROPOSED_20260916000000_conversation_identity.sql` — the `PROPOSED_` prefix
+keeps it out of anything that globs the directory.
+
 ## What I need from you before writing anything
 
 1. **The surface list in §2** — especially whether `website` is one continuous thread or many.

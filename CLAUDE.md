@@ -175,6 +175,18 @@ acts, or it says what will happen — it never gives directions to something it 
   was corrected. One sentence would have caught it: "this holds only if the page formats the price
   exactly as the search does." Say that sentence first, or do not report the number yet. (And when
   two measurements agree, establish what they SHARE before calling it corroboration — Lesson 85.)
+- **An empty reader has told you about ITSELF — never report our missing setup as his missing
+  data.** Four times in the week of 2026-09-15: "clay and seal, price 0" as Graef's only service
+  and "the 1 service you priced" (a one-store reader, twice); "there is no services area on your
+  page yet" (the canvas answered before the frame was ready, on a page with six anchors); and
+  "your schedule isn't set up on this account yet" (`business_places` was never seeded, by an RPC
+  our own sweep had already flagged as script-only). Before an emptiness becomes a sentence, ask:
+  did I look in BOTH stores; was the thing ready to answer; and is the missing row HIS, or one WE
+  were supposed to create? If all three cannot be answered, the sentence is "I can't tell" or
+  there is none. Structurally: **gate on the content, never on our bookkeeping about the
+  content** — "does this collection hold anything" cannot be wrong about him the way "is there a
+  places row" can. And it is wrong in BOTH directions: the same gate hid Graef's customers, which
+  he has four of. (Lesson 86.)
 - **Measure before fixing when a failure is unnamed.** Don't mask a bug with a fix
   before there's evidence naming which bug it is.
 - **Hubly records what it asks for and misses what it overhears — so ask.** Measured:
