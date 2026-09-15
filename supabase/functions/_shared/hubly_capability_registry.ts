@@ -8519,12 +8519,36 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           // reply said the page is built a different way — true, and the end of it. A
           // business with no document renders from businesses.meta.service_catalog, and
           // that store has a writer now, so take the second door before reporting a wall.
+          // ══ BOTH STORES, EVERY TIME — THE DIVERGENCE IS CREATED HERE ═══════════════════
+          //
+          // MEASURED 2026-09-15: 23 of 41 claimed businesses disagree between the `services`
+          // table and `meta.service_catalog`, IN BOTH DIRECTIONS — Graef 1 vs 8, star-windows
+          // 9 vs 0, Bucket 0 vs 4. Both directions have a writer, and each writes one store:
+          //
+          //   THIS PATH (chat/model) on a FREEFORM page wrote the services table and patched
+          //   the page's HTML, and — because of the `if (!isFreeform)` gate that stood here —
+          //   never touched the catalogue. That is why 29 freeform businesses read
+          //   table>0, catalogue=0.
+          //
+          //   THE OPERATOR EDITOR (public/hubly.html buildBizMeta) writes the catalogue and
+          //   deliberately does NOT mirror to the table — "Phase 6 freeze: persist Service
+          //   Engine only — no dual-write to editorSvcs / services mirrors." That is why the
+          //   classic businesses read catalogue>0, table stale. It is a stated decision and
+          //   reversing it is Adrian's call, not a side effect of this one.
+          //
+          // The gate is gone: one call, one list, both stores. This changes FUTURE writes only
+          // — no existing row is touched, and reconciling the 23 is a separate decision that
+          // has not been taken.
+          //
+          // WHAT IT IS NOT ALLOWED TO CHANGE IS THE SENTENCE. On a freeform page the thing the
+          // owner SEES is the patched HTML; the catalogue is a record, not a surface. Writing
+          // it must never be reported as "the page shows them now" — that is the split this
+          // summary block already exists to prevent (Lesson 11), and it is why `classicWrote`
+          // stays gated on !isFreeform below rather than on whether the write happened.
           let classic: ClassicServicesWrite | null = null;
-          if (!isFreeform) {
-            try { classic = await applyServicesToClassic(draftId, draftToken, services, ownerUid); }
-            catch (e) { classic = { status: "failed", added: [], updated: [], preserved: 0, detail: String((e as Error)?.message || e).slice(0, 120) }; }
-          }
-          const classicWrote = classic?.status === "written";
+          try { classic = await applyServicesToClassic(draftId, draftToken, services, ownerUid); }
+          catch (e) { classic = { status: "failed", added: [], updated: [], preserved: 0, detail: String((e as Error)?.message || e).slice(0, 120) }; }
+          const classicWrote = !isFreeform && classic?.status === "written";
           return {
             ok: true,
             real: true,

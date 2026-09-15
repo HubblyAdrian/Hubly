@@ -2771,3 +2771,54 @@ the check's own output, so the next person knows what its green is worth.
 **And the tell, which is cheap:** ask what the smallest edit is that would break the product and
 keep the check green. If you can name one in under a minute, the check is reading a receipt. All
 four of these took under a minute.
+
+---
+
+## Lesson 84
+
+**A SCANNER THAT READS THE FOLDER ITS OWN BASELINE LIVES IN WILL BE SILENCED BY ITS OWN BASELINE.**
+
+`measure-rpc-doors.mjs` finds database functions nothing calls. It looks for each function's name
+across `supabase/functions/`, `public/` and `scripts/` — a mention anywhere is a door.
+
+`check-rpc-doors.mjs` turns that into a check. It holds the currently-doorless functions in a
+`BASELINE` set, each with a written reason it is tolerated, so the number cannot go up without a
+person naming the new entry. It lives in `scripts/`.
+
+**So the act of recording "nothing calls `get_task_progress`" put the string `get_task_progress`
+into a file the sweep scans, and the sweep concluded that something calls it.** All three
+baseline entries acquired a "script" door. The missing-door list emptied. The check reported
+zero and passed.
+
+**It read exactly like success.** Not a crash, not an empty file, not a suspicious zero — a green
+check saying "no database function has shipped with no caller", which was the sentence we wanted
+to be true. It was caught only because the number had been 2 four minutes earlier and was now 0
+with nothing in between that should have moved it.
+
+**The shape, stated so it is recognisable elsewhere: A CHECK'S OWN TEXT BECAME EVIDENCE AGAINST
+THE THING IT CHECKS.** It recurs anywhere a scanner reads the directory its own configuration,
+baseline, allow-list or documentation lives in, and it is worst where the recorded item is a
+NAME — because naming is how both the defect and the record are expressed, and the scanner cannot
+tell a citation from a use. Watch for it in:
+
+- a dead-code sweep whose exclusions file lists the dead symbols
+- a "no TODOs" check whose own source contains the word TODO
+- a banned-API scan whose allow-list spells the banned API
+- a secret scanner whose test fixtures are secrets
+- `check-no-db-push.mjs`, which must name `supabase db push` in order to ban it — already handled
+  there by excluding itself, which is why that one has never bitten us
+
+**The fix is one line and the principle is one sentence: NAMING A THING IN ORDER TO SAY IT IS
+UNREACHABLE MUST NEVER MAKE IT REACHABLE.** The sweep excludes itself and its checker from the
+caller scan, and says why at the exclusion.
+
+**The tell is the same one Lesson 83 ends with, pointed at the instrument instead of the
+product:** ask what the smallest edit is that would make this check green while the defect is
+live. Here it was "write the check" — which is not an edit anyone would think to test, and is
+precisely why this class survives. A stronger habit than the tell: **when a count you are
+watching moves to zero, find the change that moved it before you believe it.** A number that
+improves the moment you start measuring it has usually been measured wrong.
+
+**Related and NOT the same:** Lesson 83 is a check reading the receipt instead of the goods — the
+instrument looks at the wrong object. This is the instrument CHANGING the object by looking at
+it. The first is a bad reading; the second is contamination.
