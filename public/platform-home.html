@@ -372,9 +372,22 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 .hcmd-loca{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hcmd-tip{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#f6f3ff;font-size:13px;color:var(--muted)}
 .hcmd-tiph{font-weight:700;color:var(--ink);margin-bottom:4px}
-/* The day rendered INSIDE the conversation thread — same renderer, narrower home. */
+/* The day rendered INSIDE the conversation thread — same renderer, narrower home.
+   IT CHANGES SHAPE RATHER THAN TRUNCATING. The thread pane is 380px and narrower; a two-column
+   "Later this week" row there put the date and the job side by side and ellipsised BOTH, which is
+   mangling, not fitting (caught by check-nothing-squeezed at all five widths). Stacked, the date
+   sits above the job and the job text wraps at a word boundary — the same rule the card labels
+   follow. */
 .hc-inthread-day .hcmd{padding:0;flex-direction:column}
 .hc-inthread-day .hcmd-ctx{flex:1 1 100%}
+.hc-inthread-day .hcmd-laterrow{grid-template-columns:minmax(0,1fr);gap:2px}
+.hc-inthread-day .hcmd-laterwhen{white-space:normal;font-size:12px}
+.hc-inthread-day .hcmd-laterwhat{white-space:normal;overflow-wrap:break-word}
+/* Same for the band rows: four columns do not fit a chat pane, so What/When/Where/Type stack. */
+.hc-inthread-day .hcmd-cols{display:none}
+.hc-inthread-day .hcmd-row{grid-template-columns:minmax(0,1fr);gap:2px}
+.hc-inthread-day .hcmd-row>span{white-space:normal;overflow-wrap:break-word}
+.hc-inthread-day .hcmd-whatmain,.hc-inthread-day .hcmd-whatsub{white-space:normal}
 /* WEBSITE: the site is the large canvas; chat becomes a narrow assistant panel beside it.
    Fixed proportions (no draggable divider until asked). */
 .hc-app.hc-claimed[data-mode="website"] .hc-app-left{flex:0 0 380px;min-width:0;border-right:1px solid var(--line)}
@@ -6079,9 +6092,71 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     thread.appendChild(acts);
     return true;
   }
+  /** MY DAY, IN THE CONVERSATION — the whole surface, not a picture of it.
+   *
+   *  Adrian, 2026-09-16: "ALL OF IT FROM THE THREAD: add, change, make recurring, right there in
+   *  the conversation. Some people will never walk over to the tab."
+   *
+   *  THE SAME RENDERER Home uses, into a node in the thread. Not a second, smaller day: a second
+   *  renderer is how two surfaces come to disagree about the same rows, and the day's add row, its
+   *  job panels and its recurring control all come along because they are part of it.
+   *
+   *  AND IT IS REGISTERED LIVE, so a write anywhere — the thread, Home, the job panel — repaints
+   *  it in place. Nobody refreshes to see their own change; that is the rule, and a day drawn into
+   *  a transcript is exactly where a stale copy would go unnoticed longest.
+   *
+   *  It FILLS the node it is given and never replaces it (hcWeekGridInto's lesson): replacing the
+   *  element would strand the registry's handle and the surface would quietly stop updating. */
+  async function hcShowDayInThread(){
+    var thread = hcThreadBody();
+    var biz = hc.draftBusiness;
+    if(!thread){ return { ok:false, error:'no_thread' }; }
+    if(!biz || !biz.id){ hcAppendMessage('hubly', 'No business is open, so there\u2019s nothing to show.'); return { ok:false, error:'no_business' }; }
+    var host = document.createElement('div');
+    host.className = 'hc-msg hubly hc-inthread-day';
+    thread.appendChild(host);
+    try{ await hcRenderMyDay(host, biz); }
+    catch(e){
+      host.remove();
+      hcAppendMessage('hubly', 'I couldn\u2019t draw your day just now \u2014 that\u2019s a problem reaching your records, not an empty day.');
+      return { ok:false, error:'render_failed' };
+    }
+    hcLiveRegister({
+      el: host, kind: 'job', key: null,
+      redraw: async function(el){ await hcRenderMyDay(el, hc.draftBusiness); },
+      describe: function(){ return 'your day here in the conversation'; }
+    });
+    hcThreadScrollToEnd();
+    // WHAT IS ACTUALLY ON IT, read from the surface that just drew — never predicted. Same rule
+    // as hcGoToPlace's postcondition: report, or say we could not tell.
+    // TODAY AND LATER ARE NOT THE SAME NUMBER, and saying they are is a false statement about his
+    // day. Caught the first time this ran: the fixture's two jobs are both LATER in the week, so
+    // the day itself was empty and the sentence read "2 things on it" over an empty set of bands.
+    var today = host.querySelectorAll('.hcmd-row').length;
+    var later = host.querySelectorAll('.hcmd-laterrow').length;
+    var n = today + later;
+    var line;
+    if(today > 0){
+      line = 'Here\u2019s your day \u2014 ' + today + (today === 1 ? ' thing on it' : ' things on it') +
+             (later ? ', and ' + later + ' more later this week.' : '.');
+    } else if(later > 0){
+      line = 'Nothing on today. ' + later + (later === 1 ? ' thing is' : ' things are') + ' further out this week \u2014 they\u2019re below.';
+    } else {
+      line = 'Here\u2019s your day. Nothing on it yet \u2014 ' + hcWaysClause('day');
+    }
+    hcAppendMessage('hubly', line); hcPersist('assistant', line); hcNoteSaid(line);
+    return { ok:true, counted:n };
+  }
+  try{ window.hublyDayUI = Object.assign(window.hublyDayUI || {}, { inThread: hcShowDayInThread }); }catch(e){}
+
   async function hcShowInThread(kind, offsetWeeks){
     hcShowTrace('asked for ' + JSON.stringify(kind) + ' claimed=' + !!hc.draftClaimed +
                 ' biz=' + ((hc.draftBusiness && hc.draftBusiness.id) || 'none'));
+    // "show me my day" DRAWS MY DAY, not a list that resembles it. The day is one surface; a
+    // second, thinner copy in the thread is how two views of the same rows come to disagree, and
+    // it is the copy the owner would be looking at when he acts. hcShowDayInThread renders the
+    // real thing, with its add row and its controls, and registers it live.
+    if(String(kind) === 'day') return await hcShowDayInThread();
     var v = HC_THREAD_VIEWS[kind];
     var thread = hcThreadBody();
     if(!v || !thread){ hcShowTrace('REFUSED unknown view or no thread element'); hcAppendMessage('hubly', 'I can\u2019t show you that here yet.'); return { ok:false, error:'unknown_view' }; }
@@ -7142,7 +7217,13 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         var row = hcEl('div', 'hcmd-laterrow');
         row.appendChild(hcEl('span', 'hcmd-laterwhen',
           [hcDayLabel(d), it.when ? hcTimeUS(it.when) : ''].filter(Boolean).join(' at ')));
-        row.appendChild(hcEl('span', 'hcmd-laterwhat', it.what + (it.detail ? ' \u2014 ' + it.detail : '')));
+        // THE ROW CARRIES THE RECORD'S OWN FIELDS, including WHERE. A later row that drops the
+        // address is a row the owner cannot act on — he has to open it to find out if it is the
+        // Maple St one. Same fields as a band row, one line instead of four columns.
+        var bits = [it.what];
+        if(it.detail) bits.push(it.detail);
+        if(it.where) bits.push(it.where);
+        row.appendChild(hcEl('span', 'hcmd-laterwhat', bits.join(' \u00b7 ')));
         if(it.kind === 'job' && it.raw) { row.addEventListener('click', function(){ try{ hcJobPanel(it.raw); }catch(e){} }); }
         later.appendChild(row);
       });

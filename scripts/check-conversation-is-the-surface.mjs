@@ -98,12 +98,20 @@ try {
     const t = document.getElementById("hcThreadBody") || document.getElementById("hcThread");
     const before = t.innerText;
     const r = await window.hublyThreadViews.show("day");
-    return { r, before, cards: t.querySelectorAll('[data-hc-view-row="day"]').length,
+    return { r, before,
+      // BOTH ROW SHAPES: the old thread view's rows, and My Day's — today's band rows and the
+      // "Later this week" rows, which is where a job dated past today correctly lands.
+      cards: t.querySelectorAll('[data-hc-view-row="day"], .hcmd-row, .hcmd-laterrow').length,
              head: !!t.querySelector('[data-hc-thread-view="day"]'),
              text: t.innerText.replace(/\s+/g, " ").trim() };
   });
-  say("1 'show me my day' renders the day IN THE THREAD", shown.r.ok === true && shown.head && shown.cards === 2,
-    `header=${shown.head} cards=${shown.cards} (expected 2)`);
+  // RETARGETED 2026-09-16, INTENT UNCHANGED. "Show me my day" now renders MY DAY into the thread —
+  // the same renderer Home uses — rather than a thinner list built only for the conversation. Two
+  // views of the same rows is how they come to disagree, and the copy in the transcript is the one
+  // the owner would be looking at when he acts. The rule these legs assert is unchanged: the day
+  // appears IN THE CONVERSATION, its rows are real records, and pressing one opens the job.
+  say("1 'show me my day' renders the day IN THE THREAD", shown.r.ok === true && shown.cards >= 2,
+    `rows=${shown.cards} (expected the 2 real rows, in bands or under Later this week)`);
   say("2 each row is a real record carrying its own fields, in 12-hour time",
     /doctor’s appointment/.test(shown.text) && /7:00 AM/.test(shown.text) && /driveway/.test(shown.text) &&
     /2:00 PM/.test(shown.text) && /14 Maple St/.test(shown.text) && /\$180/.test(shown.text),
@@ -114,20 +122,44 @@ try {
   // IT IS THE JOB CARD, NOT A SECOND THING BESIDE IT.
   const oneMechanism = await rig.page.evaluate(() => {
     const t = document.getElementById("hcThreadBody") || document.getElementById("hcThread");
-    const viewCard = t.querySelector('[data-hc-view-row="day"]');
+    // RETARGETED: My Day's own rows are the day's rows now. The RULE is unchanged — the thing the
+    // owner presses on the day must open the job, not sit beside a second card that does.
+    const viewCard = t.querySelector('[data-hc-view-row="day"], .hc-inthread-day .hcmd-row, .hc-inthread-day .hcmd-laterrow');
     window.hublyJobUI.append({ id: "j9", customer_name: "Dana", service_name: "windows", scheduled_date: "2026-09-18", scheduled_time: "09:30:00", amount: 180 });
     const jobCard = t.querySelector("[data-hc-job]");
     return { viewCls: viewCard && viewCard.className, jobCls: jobCard && jobCard.className,
              viewTag: viewCard && viewCard.tagName, jobTag: jobCard && jobCard.tagName };
   });
-  say("4 the day's rows ARE the job card, not a second card beside it",
-    oneMechanism.viewTag === "BUTTON" && oneMechanism.jobTag === "BUTTON" &&
-    /hc-job-card/.test(oneMechanism.viewCls) && /hc-job-card/.test(oneMechanism.jobCls),
-    `${oneMechanism.viewCls} | ${oneMechanism.jobCls}`);
+  // RETARGETED 2026-09-16, AND THE OLD LEG ENCODED A COMPONENT, NOT A RULE. It asserted the day's
+  // row IS literally an `hc-job-card` BUTTON, which was true while the thread view was a list of
+  // job cards. The approved design specifies a ROW — `What | When | Where | Type` (ruling 4) — so
+  // My Day's rows cannot be that component, and "make them job cards again" would be the check
+  // arguing for the wrong product (Lesson 92).
+  //
+  // THE RULE UNDERNEATH SURVIVES INTACT: one mechanism. Pressing a row on the day and pressing a
+  // job card must open THE SAME PANEL — not two surfaces for one record. That is what is asserted
+  // now, by opening each and comparing the element that answered.
+  const oneP = await rig.page.evaluate(() => {
+    const t = document.getElementById("hcThreadBody") || document.getElementById("hcThread");
+    const panelOf = () => document.getElementById("hcPanel") || document.querySelector(".hc-panel");
+    const row = t.querySelector('.hc-inthread-day .hcmd-row, .hc-inthread-day .hcmd-laterrow');
+    if (!row) return { ok: false, why: "no day row" };
+    row.click();
+    const a = panelOf();
+    const aTxt = a ? a.innerText.replace(/\s+/g, " ").trim().slice(0, 60) : "";
+    const card = t.querySelector("[data-hc-job]");
+    if (!card) return { ok: false, why: "no job card" };
+    card.click();
+    const b = panelOf();
+    return { ok: true, same: !!a && a === b, aTxt, bTxt: b ? b.innerText.replace(/\s+/g, " ").trim().slice(0, 60) : "" };
+  });
+  say("4 a day row and a job card open the SAME panel — one mechanism, not two",
+    oneP.ok === true && oneP.same === true,
+    oneP.ok ? `row -> ${JSON.stringify(oneP.aTxt)} · card -> ${JSON.stringify(oneP.bTxt)}` : oneP.why);
 
   // PRESSING ONE OPENS THE RECORD IN THE RIGHT PANE — the thing a human already did.
   const opened = await rig.page.evaluate(() => {
-    const rows = [...document.querySelectorAll('[data-hc-view-row="day"]')];
+    const rows = [...document.querySelectorAll('[data-hc-view-row="day"], .hc-inthread-day .hcmd-row, .hc-inthread-day .hcmd-laterrow')];
     const target = rows.find((r) => /driveway/i.test(r.innerText));
     if (!target) return { clicked: false };
     target.click();
@@ -197,10 +229,20 @@ try {
     const r = await window.hublyThreadViews.show("day");
     return { r, text: t.innerText.replace(/\s+/g, " ").trim() };
   });
-  say("8 an genuinely empty day says so plainly, and renders no cards",
-    emptyRes.r.ok === true && emptyRes.r.count === 0 && /Nothing is on your day/i.test(emptyRes.text) &&
-    !/not set up/i.test(emptyRes.text),
-    JSON.stringify(emptyRes.text));
+  // RETARGETED, AND THE OLD LEG NOW CONTRADICTS A RULING. "renders no cards" was true of the old
+  // thin list; My Day renders THREE BANDS ALWAYS — "every day has an A, a B and a C" (Adrian,
+  // 2026-09-16). What must still hold is the honest part: an empty day SAYS it is empty, offers
+  // the ways that work, and renders NO GHOST ROWS — ruling 2, "grey placeholder rows read as
+  // loading and make an empty state look broken."
+  const emptyRows = await rig.page.evaluate(() =>
+    document.querySelectorAll('.hc-inthread-day .hcmd-row, .hc-inthread-day .hcmd-laterrow').length);
+  say("8 a genuinely empty day says so plainly, and renders NO ghost rows",
+    emptyRes.r.ok === true && emptyRows === 0
+      && /Nothing on it yet/i.test(emptyRes.text) && !/not set up/i.test(emptyRes.text),
+    `${emptyRows} row(s) · ${JSON.stringify(emptyRes.text.slice(-120))}`);
+  say("8b and it offers the ways that actually exist, composed rather than typed",
+    /Tell me what’s coming up/.test(emptyRes.text) && !/screenshot/i.test(emptyRes.text),
+    "no screenshot clause — that route is not wired");
 
   say("9 with no jobs, no customers, no sales and no bookings, none of those doors is offered",
     !empties.labels.includes("schedule") && !empties.labels.includes("customers") &&

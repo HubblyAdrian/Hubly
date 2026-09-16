@@ -84,7 +84,7 @@ try {
   await rig.page.evaluate((b) => { window.hublyArrivalUI.simulate(b, true); }, BIZ);
   await rig.settle(() => document.querySelectorAll("[data-promise]").length, "furniture", { stableMs: 800, ceilingMs: 9000 });
   await rig.page.evaluate(() => window.hublyThreadViews.show("day"));
-  await rig.settle(() => document.querySelectorAll('[data-hc-view-row="day"]').length, "day rows", { stableMs: 500, ceilingMs: 6000 });
+  await rig.settle(() => document.querySelectorAll('[data-hc-view-row="day"], .hcmd-row, .hcmd-laterrow').length, "day rows", { stableMs: 500, ceilingMs: 6000 });
 
   // ══ LEG 0 FOR THE HARNESS, AT THE MOMENT OF MEASUREMENT ══════════════════════════════
   //
@@ -109,7 +109,7 @@ try {
   const present = await rig.page.evaluate(() => ({
     cards: document.querySelectorAll(".hc-act").length,
     chips: document.querySelectorAll(".hc-sugg").length,
-    rows: document.querySelectorAll('[data-hc-view-row="day"]').length,
+    rows: document.querySelectorAll('[data-hc-view-row="day"], .hcmd-row, .hcmd-laterrow').length,
     paneW: Math.round((document.querySelector(".hc-app-left") || { getBoundingClientRect: () => ({ width: 0 }) }).getBoundingClientRect().width),
   }));
   say("0 the surface actually rendered, so everything below is measuring something",
@@ -155,7 +155,11 @@ try {
         && getComputedStyle(e).overflowX === "visible" && e.clientWidth > 0)
         .map((e) => (e.className || e.tagName) + " " + e.scrollWidth + ">" + e.clientWidth);
       // A column crushed to nothing is the min-content collapse.
+      // A HIDDEN ELEMENT IS NOT A CRUSHED ONE. In the thread the column headers are display:none —
+      // four columns do not fit a chat pane, so the row STACKS and the headers go, which is the
+      // shape change the rule asks for. Measuring them as 0-wide reported the fix as the defect.
       const crushed = [...host.querySelectorAll(".hcmd-cols span, .hcmd-tile, .hcmd-calh")]
+        .filter((e) => e.offsetParent !== null && getComputedStyle(e).display !== "none")
         .filter((e) => e.getBoundingClientRect().width < 8)
         .map((e) => e.textContent.trim() || e.className);
       out.push({ w, over: over.slice(0, 3), crushed: crushed.slice(0, 3) });
@@ -197,6 +201,12 @@ try {
   // rescue. Asserted on the computed style, because the CSS file is not the browser.
   const wraps = await rig.page.evaluate(() => {
     const get = (s) => { const e = document.querySelector(s); return e ? getComputedStyle(e).overflowWrap : null; };
+    // A JOB CARD HAS TO BE ON SCREEN FOR ITS RULE TO BE TESTED. The day view used to render job
+    // cards, so one was always present here; My Day renders rows instead, and `.hc-job-card-t`
+    // became null — which would have made this clause vacuous rather than failing. So the card is
+    // appended through the PRODUCT's own seam and then measured.
+    try { window.hublyJobUI.append({ id: "sq1", customer_name: "Dana", service_name: "windows",
+      scheduled_date: "2026-09-18", scheduled_time: "09:30:00", amount: 120, address: "9 Oak Rd" }); } catch (_) {}
     return { label: get(".hc-act-nm"), chip: get(".hc-sugg"), card: get(".hc-job-card-t"), bubble: get(".hc-msg.hubly") };
   });
   say("3 labels may not split a word; a chat bubble still may",
