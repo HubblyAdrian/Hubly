@@ -6563,8 +6563,25 @@ html{scroll-behavior:smooth}
 .ws-manual-review{border:1px solid var(--ws-border,#e2e8f0);border-radius:var(--ws-radius,18px);padding:20px;background:var(--ws-surface,#fff);margin-bottom:12px}
 .ws-theme-dark .ws-manual-review{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
 .ws-svc-desc{font-size:14px;color:#64748b;line-height:1.55;margin-bottom:12px}
-.ws-svc-more{font-size:13px;color:#475569;line-height:1.5;margin-bottom:14px;display:none}
-.ws-svc-card.expanded .ws-svc-more{display:block}
+/* "View details" WAS REMOVED 2026-09-16 (Adrian). It rendered on only 2 of 4 cards — because it
+   was conditional on a card HAVING an includes list — so the row of cards was visually ragged, and
+   it rendered underneath the account pill.
+   REMOVING THE CONTROL MUST NOT REMOVE THE CONTENT. What it toggled was this block, which was
+   display:none by default; it is now simply shown. The owner's own words about what a package
+   includes are the most useful thing on the card, and hiding them behind an inconsistent button
+   was the defect — not the words. */
+.ws-svc-more{font-size:13px;color:#475569;line-height:1.5;margin-bottom:14px}
+/* The placeholder a broken image becomes. Same visual weight as the never-had-one state, so a
+   card whose photo died reads as "no photo yet" rather than as damage. */
+.ws-img-fallback{display:flex;align-items:center;justify-content:center;width:100%;height:100%;
+  min-height:120px;font-size:28px;color:#cbd5e1;background:#f1f5f9}
+/* CARDS SHARE A BASELINE (Adrian, 2026-09-16). A card's body is as tall as its own words — one
+   package has three lines of includes and the next has none — so the Book Now buttons sat at four
+   different heights across a row and the row read as broken rather than as varied. The body is a
+   column that grows, and the button is pushed to the bottom of it, so every card's action sits on
+   one line whatever is above it. Nothing is truncated to achieve it. */
+.ws-svc-body{display:flex;flex-direction:column;height:100%}
+.ws-svc-book{margin-top:auto}
 .ws-svc-toggle{font-size:12px;font-weight:600;color:#64748b;background:none;border:none;cursor:pointer;padding:0;margin-bottom:12px;font-family:inherit}
 .ws-svc-book{width:100%;padding:12px;border-radius:var(--ws-btn-radius,12px);border:none;background:var(--ws-accent);color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}
 .ws-svc-card-bookable{cursor:pointer}
@@ -35385,6 +35402,17 @@ function markWebsitePreviewEditable(root){
     card.classList.add('ws-pe-target');
     if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS.service;
   });
+  // THE PARTS ARE TARGETS TOO, because they are what he presses. The price is the thing he wants
+  // to change, and it was not a target at all — only the card around it was, so the affordance
+  // never appeared over the number itself. Their label names the field, so the hover says what
+  // pressing it will do rather than "Edit service".
+  root.querySelectorAll('[data-pe="svc-price"], [data-pe="svc-name"], [data-pe="svc-dur"]').forEach(part=>{
+    part.classList.add('ws-pe-target');
+    if(!part.dataset.peLabel){
+      part.dataset.peLabel = part.dataset.pe === 'svc-price' ? 'Edit price'
+                           : part.dataset.pe === 'svc-dur' ? 'Edit length' : 'Edit name';
+    }
+  });
   root.querySelectorAll('.ws-membership-card[data-pe="membership"]').forEach(card=>{
     card.classList.add('ws-pe-target');
     if(!card.dataset.peLabel)card.dataset.peLabel=WS_PE_LABELS.membership;
@@ -35518,8 +35546,42 @@ function showWsPePop(anchor,html,wide){
   pop.style.top=Math.max(12,top)+'px';
   pop.style.left=Math.max(12,left)+'px';
 }
+// ══ WHAT THE CARD RENDERS IS WHAT HE CAN CHANGE ═════════════════════════════════════════
+//
+// ADRIAN WALKED INTO THIS: he added a service and could not set its price.
+//
+// THE CAUSE, and it is the shape of the rule he then gave. The page renders `data-pe="svc-price"`,
+// `svc-name` and `svc-dur` on the parts of a service card. handleWsPeClick below is an if-chain —
+// A HAND-MAINTAINED LIST OF EDITABLE TYPES — and it has a branch for `service` and NO BRANCH FOR
+// ANY OF THE THREE PARTS. It also ends with a plain `}`: an unhandled type returns silently. So
+// clicking the PRICE, which is the thing he wanted to change, did nothing at all and said nothing
+// at all. Clicking the name happened to work, because the card's own `service` branch caught it.
+//
+// "The editable set is DERIVED FROM WHAT THE CARD RENDERS. Not a list — a list is how this broke."
+//
+// So: a marker that names a PART of a record resolves to the record's own editor, and focuses the
+// field it names. The mapping is derived from the marker itself (`svc-*` belongs to the service
+// card that contains it), not from a second list that would drift the same way.
+const WS_PE_PART_FIELD = { 'svc-price': 'ws-pe-svc-price', 'svc-name': 'ws-pe-svc-name',
+                           'svc-dur': 'ws-pe-svc-dur' };
+function wsPeResolvePart(type, el){
+  if(!/^svc-/.test(String(type||''))) return null;
+  var card = el && el.closest ? el.closest('.ws-svc-card[data-pe="service"], [data-pe="service"]') : null;
+  if(!card) return null;
+  return { card: card, focus: WS_PE_PART_FIELD[type] || null };
+}
 function handleWsPeClick(type,el){
   closeWsPePop();
+  // A PART OF A CARD OPENS THE CARD, focused on the part he pressed.
+  var part = wsPeResolvePart(type, el);
+  if(part){
+    editServiceFromPreview(part.card.dataset.svcId, part.card);
+    if(part.focus) setTimeout(function(){
+      var f = document.getElementById(part.focus);
+      if(f){ f.focus(); if(f.select) try{ f.select(); }catch(e){} }
+    }, 40);
+    return;
+  }
   if(type==='biz-name'){
     const raw=getEditorBizName()||'';
     const val=isPlaceholderBizName(raw)?'':raw;
@@ -35856,6 +35918,20 @@ function handleWsPeClick(type,el){
     setTimeout(()=>document.getElementById('ws-pe-inp')?.focus(),30);
     return;
   }
+  // ── NOTHING HANDLED IT, AND THAT IS NEVER SILENCE. ────────────────────────────────────
+  //
+  // This function used to end with a bare `}`. A marker the chain had no branch for — which is
+  // exactly what `svc-price` was — returned without doing anything and without saying anything, so
+  // the owner pressed the price and the product simply did not respond. An operation that fails
+  // silently is indistinguishable from one that was never heard, and it is the one failure a
+  // person cannot report usefully.
+  //
+  // It is also the loud half of the derived rule: when the page starts rendering a marker nobody
+  // has wired, the owner is TOLD rather than ignored, and check-editable-set-is-derived goes red.
+  try{
+    console.warn('[pe] no editor for data-pe="' + type + '"');
+    toast('I can\u2019t change that one from here yet — tell me what you want it to say and I\u2019ll do it.');
+  }catch(e){}
 }
 function liveWsPeBizName(val){
   const ed=document.getElementById('ed-name');
@@ -38766,12 +38842,9 @@ function closePublicBooking(){
   }
   window.scrollTo(0,0);
 }
-function toggleWsSvcCard(btn){
-  const card=btn?.closest('.ws-svc-card');
-  if(!card)return;
-  card.classList.toggle('expanded');
-  btn.textContent=card.classList.contains('expanded')?'Show less':'View details';
-}
+// toggleWsSvcCard() was deleted with the "View details" button it served — its only caller. An
+// uncalled function reads to the next person as evidence that a path exists (the openSmartQuote
+// lesson, one file over and two hours earlier).
 function toggleWsFaq(btn){
   const item=btn?.closest('.ws-faq-item');
   if(!item)return;
@@ -38849,11 +38922,48 @@ function wsServiceCardHtml(s,idx){
       <div class="ws-svc-meta">${price}${dur}</div>
       ${s.desc?`<p class="ws-svc-desc">${s.desc}</p>`:''}
       ${inc?`<div class="ws-svc-more">${inc}</div>`:''}
-      ${inc?`<button type="button" class="ws-svc-toggle" onclick="event.stopPropagation();toggleWsSvcCard(this)">${t('wsViewDetails')}</button>`:''}
       <button type="button" class="ws-svc-book" onclick="event.stopPropagation();${editing?'':`openBookingPage('${esc}')`}">${ctaSafe}</button>
     </div>
   </div>`;
 }
+// ══ A BROKEN IMAGE FALLS BACK TO THE PLACEHOLDER, NEVER A BROKEN GLYPH ═══════════════════
+//
+// Measured 2026-09-16 across the 41 claimed businesses (29 with stored HTML): ZERO pages serve a
+// structurally dead src — no empty, no "undefined". But 25 of the 29 carry <img> tags with NO
+// fallback of any kind, so the day a real URL stops resolving — a moved bucket object, an expired
+// signed link, a host that goes down — the customer sees a torn-page glyph on the business's own
+// site. That is a guard, not a repair, and it is stated as one.
+//
+// DELEGATED, NOT PER CALL SITE. Every <img> in a generated page would otherwise need its own
+// onerror, which is a hand-maintained set spread across a dozen template literals — and the next
+// image someone adds is the one that misses it. `error` does not bubble, so this listens in the
+// CAPTURE phase at the document, which catches every image in the preview and in the live page
+// alike, including ones added later.
+//
+// IT REPLACES, IT DOES NOT HIDE. Hiding the image collapses the card's layout and makes a broken
+// photo look like a card that never had one; the placeholder keeps the shape and reads as
+// "nothing here yet", which is what it now truthfully is.
+(function installBrokenImageFallback(){
+  try{
+    document.addEventListener('error', function(e){
+      var el = e && e.target;
+      if(!el || el.tagName !== 'IMG') return;
+      if(el.dataset.hublyImgFallback) return;              // already swapped; never loop
+      el.dataset.hublyImgFallback = '1';
+      var box = el.parentElement;
+      var ph = document.createElement('span');
+      ph.className = 'ws-img-fallback';
+      ph.setAttribute('aria-hidden', 'true');
+      ph.textContent = '\u25C6';
+      // Keep the alt text reachable to a screen reader — the picture is gone, the meaning is not.
+      if(el.alt){ ph.setAttribute('aria-hidden', 'false'); ph.setAttribute('role', 'img'); ph.setAttribute('aria-label', el.alt); }
+      if(box){ box.replaceChild(ph, el); } else { el.style.visibility = 'hidden'; }
+      try{ console.warn('[img] fell back to the placeholder:', el.getAttribute('src')); }catch(_e){}
+    }, true);
+  }catch(e){}
+})();
+try{ window.hublyImgUI = { fallbackClass: 'ws-img-fallback' }; }catch(e){}
+
 function wsPageEl(id){
   const page=document.getElementById('ws-page');
   if(page){

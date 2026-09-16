@@ -187,6 +187,19 @@ acts, or it says what will happen — it never gives directions to something it 
   content** — "does this collection hold anything" cannot be wrong about him the way "is there a
   places row" can. And it is wrong in BOTH directions: the same gate hid Graef's customers, which
   he has four of. (Lesson 86.)
+- **Every new check leg declares [RULE] or [SHAPE] at write time.** Lesson 92 has cost roughly
+  three legs a round — including one written an hour after Lesson 92 itself went into a
+  neighbouring file. **A [RULE] leg must never go red when the product improves**; if it does, the
+  leg was encoding a shape and the leg is what is wrong. **A [SHAPE] leg legitimately goes red when
+  the shape moves, and that is not an alarm** — it is the shape moving, and the fix is to confirm
+  the change was intended and update the leg, never to undo the improvement. Labelling at birth is
+  what stops the next person rediscovering which kind it was, from a red result, under pressure.
+  (Same spirit as the `[TRIPWIRE]` labels on the milestone certifications.)
+- **A probe must know ABSENT from BROKEN, or it reports the fix as the defect.** The squeeze sweep
+  measured `display:none` column headers as "crushed" and failed the very change that stopped them
+  being squeezed — the headers were hidden *because* four columns do not fit a chat pane. Any probe
+  that measures geometry, presence or emptiness gets this direction red-proofed: make the thing
+  legitimately absent and confirm the probe stays quiet.
 - **A SWEEP PRODUCES CANDIDATES, NEVER FINDINGS. A candidate graduates by being ACTED ON, never
   by being re-read.** Six wrong findings across two sweeps on 2026-09-16, from one method error:
   a grep window around a branch structurally cannot see the surface around it, so it reports a
