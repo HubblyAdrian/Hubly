@@ -7021,8 +7021,19 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     });
     if(!timed.length){
       var ce = hcEl('div', 'hcmd-empty');
-      ce.appendChild(hcEl('div', 'hcmd-emptyh', 'No events yet'));
-      ce.appendChild(hcEl('div', null, 'Add a job, task, or event to see it on your calendar.'));
+      // AN EMPTY STATE IS THE BEST PLACE IN THE PRODUCT TO OFFER THE WAYS — Adrian, 2026-09-16.
+      // The old line only described an absence. This one offers the ways that ACTUALLY work, and
+      // no others: "tell me" is business.addJob, live; "add it yourself" is the add row, live.
+      //
+      // TWO CLAUSES OF HIS PROPOSED LINE WERE CUT BECAUSE THEY ARE NOT TRUE TODAY, and shipping
+      // copy that offers an action before a working path exists is a rule we already have:
+      //   · "send me a screenshot of it" — an image dropped here becomes a price list, a logo or
+      //     a work photo (hcHandleIncomingFile). THERE IS NO SCREENSHOT-TO-SCHEDULE PATH. It is
+      //     item A and it is not built.
+      //   · "I can show you where" — there is no show-me-where target for the day; hcShowMeWhere
+      //     addresses page elements. The bands already say where, in the line below them.
+      ce.appendChild(hcEl('div', 'hcmd-emptyh', 'Nothing on your calendar yet'));
+      ce.appendChild(hcEl('div', null, 'Tell me what\u2019s coming up, or add it yourself.'));
       grid.appendChild(ce);
     }
     cal.appendChild(grid);
@@ -7039,8 +7050,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       loc.appendChild(list);
     } else {
       var le = hcEl('div', 'hcmd-empty');
+      // "your route shows up here" WAS CUT: this card renders a LIST of the addresses on today's
+      // records. Nothing computes a route, so offering one is a promise we cannot keep — the same
+      // defect as the old line's "see your route", which claimed it too.
       le.appendChild(hcEl('div', 'hcmd-emptyh', 'No locations yet'));
-      le.appendChild(hcEl('div', null, 'Add an address to see your route and locations here.'));
+      le.appendChild(hcEl('div', null, 'Put an address on a job and it shows up here.'));
       loc.appendChild(le);
     }
     ctx.appendChild(loc);

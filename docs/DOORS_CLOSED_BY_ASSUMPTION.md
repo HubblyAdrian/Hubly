@@ -94,9 +94,21 @@ cross-referenced against every `id`-bearing control whose id is manipulated for 
 | the JS | `getElementById('bar-qq-btn')?.classList.toggle('hidden', v === 'quotes')` — still runs, every time |
 | the CSS | `#p-app.jos-pixel .jos-legacy-bar { display:none !important }` — unconditional |
 
-The toggle is live code maintaining a state nobody can observe. **Nothing deleted**, per
-instruction — recorded so the decision is made deliberately: either the stylesheet stops hiding it
-and the toggle means something again, or the toggle goes and the control is honestly retired.
+The toggle is live code maintaining a state nobody can observe. **RESOLVED 2026-09-16 — it gets DELETED, and here is the paragraph Adrian asked for before deciding.**
+
+Quick Quote is a real, shipped feature: **177KB of JavaScript in three files** — `/smart-quote/engine.js`,
+`/smart-quote/ui.js`, `/smart-quote/booking.js` — loaded by `hubly.html` on every page view. It builds a
+priced quote for a customer and can turn it into a booking. **It works if reached, and it IS reached:** the
+rail carries a live nav row, `<div class="ni" data-v="quotes" title="Quick Quote">`, with no `hidden`
+attribute and no rule against it in `operate-pixel.css`; inside that view sits a `New Quick Quote` button
+(`:11415`) calling the same `HublySmartQuoteUI.openNew()` that `#bar-qq-btn` calls. `openSmartQuote()` is
+only a **shortcut** — it switches to the quotes view and opens the composer in one click.
+
+**So there is nothing to open.** The feature has its own door and that door works. What is left is a dead
+shortcut whose JS still toggles it every time the view changes, against a stylesheet that overrules the
+toggle — telling every future reader that a control exists and is conditional when it is neither. **Delete
+the button and its toggle; the feature is untouched.** (Not done in this round — it is a deletion in
+`hubly.html`, and the list came first.)
 
 **Why only one:** the sweep requires an *unconditional* hiding rule. A rule guarded by `:not()` or
 an extra state class is a real conditional, and JS toggling against it is ordinary behaviour, not a

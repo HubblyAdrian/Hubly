@@ -70,7 +70,28 @@ try {
 
   // ── 1. THE REAL WIDTH RANGE, MEASURED FROM THE RENDERED BOXES. ───────────────────────
   console.log("── the widths each surface actually reaches ──\n");
-  const modes = ["home", "website", "planner", "jobs", "customers"];
+  // ── THE MODES ARE DERIVED FROM THE PRODUCT, NEVER RESTATED ────────────────────────────
+  //
+  // This was a literal list, and on 2026-09-16 it went stale in the worst possible direction:
+  // `planner` stopped being a surface and a new one could be added without ever appearing here.
+  // THIS LOOP IS THE SWEEP — a surface missing from the list is a screen that is never measured,
+  // and the run still prints a clean result. A fixture does not go red when it rots; IT GOES
+  // GREEN ABOUT THE WRONG WORLD, and we have been quoting that green to each other.
+  //
+  // `home` is added explicitly because it is not a rail surface — it is the default mode, and
+  // My Day is what it renders. Everything else comes from HC_PLACE_SURFACES, the same registry
+  // the rail itself reads, exposed at window.hublyNavUI.surfaces.
+  const modes = await rig.page.evaluate(() => {
+    const n = window.hublyNavUI;
+    if (!n || !n.surfaces) return null;
+    return ["home", ...Object.keys(n.surfaces)];
+  });
+  if (!modes || modes.length < 2) {
+    console.error("CANNOT RUN — window.hublyNavUI.surfaces is not exposed, so the surface list "
+      + "cannot be derived. Measuring a hardcoded list is how a screen goes unswept; refusing.");
+    await rig.close(); process.exit(2);
+  }
+  console.log(`  surfaces derived from the product: ${modes.join(", ")}\n`);
   const widths = [];
   for (const mode of modes) {
     // Three viewports: a wide desktop, a 13" laptop, and the narrowest before the mobile

@@ -3332,3 +3332,92 @@ covers it — is the other one still there?"*
 
 **The check:** when a control is removed with a rationale that names another control, that other
 control is a dependency. The sweep for existing instances is `docs/DOORS_CLOSED_BY_ASSUMPTION.md`.
+
+---
+
+## Lesson 93
+
+**A STATED LIMIT DOES NOT LICENSE A CONCLUSION THAT EXCEEDS IT. WRITING THE CAVEAT IS NOT THE SAME
+AS HONOURING IT.**
+
+`docs/DOORS_CLOSED_BY_ASSUMPTION.md`, first version, said in its own Method section:
+
+> *"a control listed below as never-revealed is high-confidence, not certain"*
+
+and then listed **three** as **CONFIRMED**. Two of the three were wrong.
+
+The caveat was accurate. It was also doing no work: it sat in a paragraph above a table whose rows
+said CONFIRMED, and nobody — including the person who wrote both — read the table through the
+caveat. **A limit stated beside a conclusion does not weaken the conclusion; it decorates it.**
+
+**The rule: a conclusion must be inside the reach of the method that produced it.** If the method
+can only support "probably", the finding says *probably* — in the finding, not in a note nearby. A
+caveat is not a permission slip to state more than you know.
+
+**The practical form:** when you catch yourself writing a limit, go back and re-read every claim the
+limit touches. If any of them is stronger than the limit allows, the claim is wrong — not
+"qualified". Either strengthen the method until the claim fits, or weaken the claim until it does.
+
+---
+
+## Lesson 94
+
+**THE REASSURING FINDING IS THE ONE NOBODY RE-CHECKS. RE-DERIVE THE FINDING THAT FLATTERS THE
+FINDER FIRST.**
+
+"I found three doorless features" is a good story. It makes the sweep look productive and the
+sweeper look sharp, so it got repeated — into a report, into a commit message, and back from Adrian
+in capitals — instead of re-derived. **Two of the three were wrong, and the amplification travelled
+further than the evidence ever had.**
+
+This is Lesson 89 pointed at **findings** rather than instruments. There, the direction to
+red-proof hardest is the one that says *"this is fine"*, because a clean report is never
+investigated. Here the direction is the one that says *"look what I found"*, because a productive
+report is never re-run either. **Both are the same asymmetry: the pleasant answer is load-bearing
+and unexamined.**
+
+**What actually caught it:** trying to OPEN the doors. Not a re-read, not a second grep — an
+attempt to use the finding for something. A finding you act on gets tested; a finding you only
+report does not.
+
+**So: before a finding leaves the session, spend the scepticism on the flattering half.** The
+finding that says we did badly will be investigated by whoever has to fix it. The finding that says
+we did well has no such reader.
+
+---
+
+## Lesson 95
+
+**THE ENVIRONMENT THAT MAKES A CHECK CONVENIENT IS THE ENVIRONMENT THAT MAKES IT VACUOUS. EASIER
+THAN THE PRODUCT MEANS MEASURING A DIFFERENT PROGRAM.**
+
+Twice in two rounds, and both times the rig was the comfortable choice:
+
+1. **`authGetClient` caches its client.** `check-day-hours-derived` reinstalled its backend fake
+   after the first render, so the product went on answering from the *previous* fake. A leg passed
+   against the wrong fixture and printed a number that looked right.
+2. **`file://` never loads `hubly.html`'s stylesheets.** That page links them root-absolutely
+   (`/journey-os/operate-pixel.css`), which resolves to `file:///journey-os/…` and 404s in silence.
+   `check-job-door-open` therefore asserted "the browser paints this button" **on a page with no
+   stylesheet at all** — and the six CSS rules that hid the button were the entire subject of the
+   check.
+
+Neither failed. Both produced confident green output about a program that was not the product.
+
+**NOT A RULE EACH CHECK REMEMBERS — A PRECONDITION NONE OF THEM CAN SKIP.** Both are now enforced in
+`scripts/lib/browser-rig.mjs`:
+
+- `load()` asserts that **every same-origin stylesheet the page asked for actually arrived**, and
+  throws if not. Cross-origin sheets (fonts) are expected to be unreadable and are not counted — the
+  question is whether OUR css is there.
+- `settle()` asserts that a declared backend fake, if one is installed, **is still the one
+  answering**. It is a no-op until a check installs one, and unskippable from then on.
+
+It throws rather than warns. **A warning in a check's output is a thing nobody reads until after
+they have quoted the green.**
+
+**Measured honestly:** `platform-home.html` carries its CSS inline and links **zero** local
+stylesheets, so the stylesheet precondition is a no-op for the 24 checks that load it. **Exactly one
+check ever navigated to a page with local stylesheets — `check-job-door-open`, written this round.**
+So this did not uncover a pile of rotten checks; it closed the hole that had just swallowed one, in
+the only place where closing it is structural rather than remembered.
