@@ -3269,3 +3269,66 @@ Two consequences that bind:
 **And the cheap tell:** when a claim about a row does not name the table and column it came from, it
 has already lost its provenance. Re-run it. Reading one row costs a second; the report built on a
 misread one costs a day and reaches a customer.
+
+---
+
+## Lesson 92
+
+**A CHECK CAN ARGUE FOR THE BUG. A CHECK ASSERTS THE RULE, NEVER THE CURRENT SHAPE.**
+
+`scripts/check-navigation-destinations.mjs` shipped on 2026-09-16 with this leg:
+
+> *every place a sentence can take someone to is a real **surface***
+
+It was green, it was red-proofed, and it was **encoding the broken shape**. It was true only
+because every destination happened to be a rail row at the moment it was written. The rule it meant
+to assert is *a destination opens something*; what it actually asserted is *a destination is a rail
+row*.
+
+Hours later Adrian ruled that **My Day is not a rail row — My Day is what Home renders.** The
+product got more correct and **the check went red.** And the cheapest way to green was to put My Day
+back in the rail.
+
+**That is the whole lesson. The check would have argued for the defect, from a green baseline, with
+a red-proof behind it.** Every property we trust in a check — it fails on the broken version, it
+executes rather than greps, it was seen red — was satisfied. None of them protects against encoding
+the shape instead of the rule, because the broken shape *is* the shape it was written against.
+
+**The tell, and it is reliable:** a check goes red on a change that made the product better. That is
+not a regression; it is the check telling you what it actually believes. Read the leg and ask *"is
+this the rule, or is this what the code looked like on the day I wrote it?"*
+
+**The fix, in both directions:** the leg now asserts a destination **opens** something — a surface,
+or Home — and it **executes the product's own resolver** rather than knowing where `planner` goes.
+A second leg names which destinations resolve to Home, so nobody can quietly route an unbuilt place
+there and call it reachable.
+
+**And when it happens, sweep.** One check encoding a shape means the habit was present that week,
+not that one file was careless — the sweep is in `docs/CHECKS_ENCODING_SHAPE.md`.
+
+---
+
+## The failure shape: DOORS CLOSED BY MUTUAL ASSUMPTION
+
+Named 2026-09-16. **Not** built-and-doorless — that is a feature that never had an entrance. This is
+worse to find and cheaper to fix:
+
+> **Two entrances to the same working feature, each removed because the other existed. Neither
+> removal is wrong on its own. The feature is intact and unreachable.**
+
+The instance: `ead44be` (2026-07-27) hid the Jobs-tab **New Job** button with
+`hidden aria-hidden="true"`, stating its reason plainly — *"it duplicated the header CTA … Keep New
+Job in the page header only."* Correct de-duplication. The header CTA it deferred to is
+`.jos-legacy-bar`, which the Journey OS pixel redesign later set to `display:none !important` as
+legacy chrome. Also defensible in isolation.
+
+`openJobsNew()` still works today and **its only caller in the entire codebase is the button that
+`ead44be` hid.**
+
+**Why it survives review:** each commit is individually right, each has a written rationale, and
+neither author was wrong about the world at the time. Nothing was deleted, so no grep for a missing
+function finds it. It is only visible by asking the question the rationale invites: *"the other one
+covers it — is the other one still there?"*
+
+**The check:** when a control is removed with a rationale that names another control, that other
+control is a dependency. The sweep for existing instances is `docs/DOORS_CLOSED_BY_ASSUMPTION.md`.

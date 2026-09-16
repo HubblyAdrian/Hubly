@@ -41,7 +41,12 @@ const iso = (d) => { const x = new Date(Date.now() + d * 864e5);
 /** A FULL account. An empty one offers no cards and would hide the very things he screenshotted. */
 const FULL = {
   uid: "u", email: "adriansmithee+ever@gmail.com", displayName: "Adrian",
-  places: ["website", "planner", "jobs", "customers"].map((k, i) => ({ kind: k, scope: "workspace", visible: true, sort_order: (i + 1) * 10 })),
+  // THE PLACES A BUSINESS CAN ACTUALLY HAVE. `planner` was in this list and stopped being a
+  // surface on 2026-09-16 (My Day is what Home renders), so the fixture was claiming a place the
+  // product no longer has — harmless here because hcWorkspaces filters unknown kinds, and
+  // exactly the kind of stale fixture that later "proves" a surface exists. A fake must describe
+  // the world owners live in (owner-rig.mjs), including when that world changes.
+  places: ["website", "jobs", "customers"].map((k, i) => ({ kind: k, scope: "workspace", visible: true, sort_order: (i + 1) * 10 })),
   hours: [{ weekday: 1, open: "08:00", close: "17:00", closed: false }],
   tables: {
     jobs: [

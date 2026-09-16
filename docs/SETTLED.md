@@ -134,3 +134,53 @@ limits — and never given a website. It is the thinnest possible input to the c
 Graef's page looks good through the same renderer because his fields are full: 11,809 bytes of
 `meta.website`, 8 services, 26 portfolio URLs. **Do not read that fixture as a sample of what
 Hubly builds.**
+
+---
+
+**14. THE JOB CREATOR IS NOT "255 ROWS WITH NO WRITER". IT IS NINE REAL JOBS.**
+*Measured 2026-09-16; corrects a number that had been repeated for weeks, including by Adrian.*
+
+**250 of the 259 job rows are `hubly-paging-fixture`** — our own paging instrument, created
+deliberately on 2026-09-13 at 250 rows per table and documented in `docs/PAGING_FIXTURE.md`.
+`account_kind = test`, 250 evenly-spaced create-seconds.
+
+The real corpus of jobs created by anything, ever:
+
+| source | jobs |
+|---|---|
+| the booking wizard (`graefs-autocare`, **market**) | **2** |
+| the model's `business.addJob`, on test businesses | **7** |
+
+**And it DOES have a writer** — `create_business_job`, reached by `business.addJob`. What it does
+not have is a **form**. So the doorless-list entry was wrong twice: the writer exists, and the
+evidence of heavy silent use was our own fixture.
+
+**A doorless-feature claim that is counting our own test instrument is exactly the rumour Lesson 91
+is about.** Anywhere "255" appears against jobs, it is this fixture. Re-measure before quoting it.
+
+---
+
+**15. THE apollo-weeds RENAME BURST WAS NOT KEYSTROKES. A GUESS, CORRECTED BY ROWS.**
+*2026-09-16. The hypothesis was Adrian's; the rows disproved it, which is the point of having them.*
+
+The guess was that a rename fires on every keystroke of a name edit. It does not. Three renames,
+**three distinct user messages**, each ~5 seconds before its rename:
+
+| he typed | at | slug became | at |
+|---|---|---|---|
+| "Apollow" | 03:06:59 | `apollow` | 03:07:04 |
+| "APOLLOWEEDS" | 03:07:15 | `apolloweeds` | 03:07:20 |
+| "change business name to Apollo Weeds" | 03:08:48 | `apollo-weeds` | 03:08:52 |
+
+**He changed his mind three times in under two minutes, which is a person using a product.**
+
+**What the rows found instead is the real defect:** `set_business_slug` REQUIRES `p_confirmed` for a
+**claimed** business — the function's own comment says the owner must have "seen and accepted the
+cost" — and **skips that gate entirely for a draft, including after we have put the address in
+writing.** The promise is what creates the obligation, not the claim. Ruled and built 2026-09-16.
+
+---
+
+**16. HOME RENDERS MY DAY. THIS EXPLICITLY SUPERSEDES THE 2026-09-13 RULING** that put the site
+preview in Home. See `docs/design/README.md` for the reversal in full. A superseded ruling that is
+only superseded *implicitly* gets restored by a future session reading the older comment.

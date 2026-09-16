@@ -47,6 +47,24 @@ Four rulings Adrian gave on 2026-09-16, all now drawn:
    itself requires it. Existing customers and services are selectable. Ask only for what is missing,
    through the one-ask floor. *My Day = fast daily entry. Job workspace = complete management.*
 
+### THIS RULING REVERSES THE 2026-09-13 RULING — stated explicitly, with the reason
+
+**Superseded: "Home shows the site too" (Adrian, 2026-09-13).** That ruling put the site preview
+back into Home's right-hand pane, reversing an even earlier choice to hide it. Its reasoning is
+recorded in `public/platform-home.html` and was sound at the time: *"the preview they had been
+watching build vanished at the exact moment the site became theirs, and the first screen of
+ownership was a full-width chat with no product in it."*
+
+**Superseded by: "MY DAY IS NOT A RAIL ROW. MY DAY IS WHAT HOME RENDERS" (Adrian, 2026-09-16).**
+Home's right-hand pane is now the day. The problem the 2026-09-13 ruling solved does not come back:
+the first screen of ownership is no longer an empty chat, it is the owner's day, and **the site is
+one rail row away under Website** rather than hidden entirely.
+
+**It is written here rather than left implicit because an implicitly superseded ruling gets
+restored.** A future session reads the 2026-09-13 comment beside the CSS, finds a well-argued rule
+that the code no longer follows, and "fixes" it back. Both rulings are Adrian's; this one is later
+and it wins.
+
 ### Verified against the image itself, 2026-09-16
 
 **The file was opened and read, not trusted from this description** — the scar at the foot of this

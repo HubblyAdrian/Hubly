@@ -81,7 +81,15 @@ try {
   // ── 1-2. THE REGISTRY EXISTS AND KNOWS BOTH KINDS ────────────────────────────────────
   const kinds = await rig.page.evaluate(() => window.hublyLive.kinds);
   say("1 the registry knows the two kinds in this slice", kinds.includes("job") && kinds.includes("ownerName"), kinds.join(", "));
-  say("2 and nothing else is claimed live yet", kinds.length === 2, `${kinds.length} kinds`);
+  // A DELIBERATE TRIPWIRE, LABELLED AS ONE (Lesson 92). This leg asserts the CURRENT SHAPE on
+  // purpose: the registry is a promise that a write repaints what is on screen, and a kind added
+  // without its repaint wired is a promise we do not keep. So it is MEANT to go red when a third
+  // kind appears, and the correct response is to WIRE the repaint and update this number —
+  // never to delete the kind. It is written here because a shape assertion that does not say it
+  // is a tripwire is indistinguishable from one that encodes yesterday's layout by accident, and
+  // the cheapest way to green the second kind is to undo the improvement.
+  say("2 [TRIPWIRE] nothing else is claimed live yet — a new kind must wire its repaint, not lose it",
+    kinds.length === 2, `${kinds.length} kinds`);
 
   // ── 3-5. MEMBERSHIP IS STRUCTURAL: el.isConnected, no deregister ─────────────────────
   const live = await rig.page.evaluate(() => {
