@@ -79,7 +79,7 @@ import {
   placeContactHoursInFreeform,
   type HoursRow,
 } from "./hubly_contact.ts";
-import { addressGrounded, emailGrounded, phoneGrounded, phoneGroundedWhy, priceGrounded, reconcileServices, timeGroundedWhy, type TimeContext } from "./hubly_grounding.ts";
+import { addressGrounded, cadenceGroundedWhy, emailGrounded, phoneGrounded, phoneGroundedWhy, priceGrounded, reconcileServices, timeGroundedWhy, type TimeContext } from "./hubly_grounding.ts";
 import { matchRows, requireCandidates, describeRow } from "./hubly_match.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
 // Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
@@ -8015,6 +8015,113 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             // turn DECLARES that it asked for a phone rather than leaving it to be inferred
             // from the model's wording.
             raw: { job: row, dropped, ...(phoneAsk ? { askedFor: "phone" } : {}) },
+          };
+        },
+      },
+      {
+        // ── MAKE AN EXISTING JOB REPEAT ───────────────────────────────────────────────
+        //
+        // THE OWNER IS THE PERSON WITH THE STANDING WEEKLY MOW AND HE COULD NOT SAY SO.
+        // Measured 2026-09-16: recurring_schedules held 0 rows, and NOT because the engine was
+        // missing — hubly_booking_execution already creates a schedule when a booking carries a
+        // frequency, and createBooking already passes it. But that is the CUSTOMER path. There was
+        // no owner capability and no by-hand control, so the one person most likely to have a
+        // repeating job had nowhere to put it.
+        //
+        // IT BUILDS NO SECOND ENGINE. set_job_recurring computes no interval math at all: it
+        // points the schedule at the job's own date and lets hubly-recurring-maintain — which
+        // already owns the cadence arithmetic and already refuses to duplicate a job that exists
+        // for a schedule+date — take the first step. The existing job becomes occurrence #1.
+        name: "makeJobRecurring",
+        description:
+          "Makes an EXISTING job repeat on a schedule. Use when the owner says a job repeats — " +
+          "\"the Maple St mow is every week\", \"make that one monthly\". Identify the job the way " +
+          "they said it (`which`), exactly as updateJob does. ONLY set frequency when they SAID how " +
+          "often — never infer it and never default it. If they say something repeats but not how " +
+          "often, ASK how often instead of calling this.",
+        argsSchema: {
+          type: "object",
+          properties: {
+            draftId: { type: "string", description: "Supplied by the system; put any placeholder." },
+            which: { type: "string", description: "The job in the owner's own words, e.g. \"the driveway job\"." },
+            frequency: { type: "string", description: "weekly | biweekly | monthly | quarterly | custom. Only if they said it." },
+            customIntervalDays: { type: "number", description: "Only with frequency:custom, and only if they said a number of days." },
+          },
+          required: ["which", "frequency"],
+        },
+        handler: async (args) => {
+          const a = args as Record<string, any>;
+          const draftId = String(a?.draftId || "").trim();
+          const draftToken = String(a?.draftToken || "").trim();
+          const ownerUid = injectedOwnerUid(args);
+          const userMessage = String(a?._userMessage || "");
+          if (!draftId || (!draftToken && !ownerUid)) {
+            return { ok: false, real: false, error: "missing_draft", summary: "No business is connected to this conversation." };
+          }
+          const which = String(a?.which || "").trim();
+          if (!which) return { ok: false, real: false, error: "no_which", summary: "Ask which job they mean — do not guess." };
+
+          // GROUNDED LIKE EVERY OTHER FACT, with the SAME mechanism — not a second one. A repeat
+          // the owner did not ask for is a standing commitment nobody made, and the difference
+          // between weekly and monthly is four times the work and four times the bill.
+          const freq = String(a?.frequency || "").trim().toLowerCase();
+          const days = typeof a?.customIntervalDays === "number" ? a.customIntervalDays : null;
+          const cg = cadenceGroundedWhy(freq, userMessage, days);
+          if (!cg.ok) {
+            const say: Record<string, string> = {
+              vague: "They said it repeats but NOT how often, and guessing is not available here — weekly and monthly are four times apart. Ask how often, and do not call this again until they say.",
+              not_in_message: "NOTHING WAS CHANGED. That cadence is not in what they just said. Ask how often they want it, in their words.",
+              not_a_cadence: "NOTHING WAS CHANGED. That is not a cadence this can write. Ask how often — weekly, every other week, monthly or quarterly.",
+            };
+            return { ok: false, real: false, error: "cadence_ungrounded", summary: say[cg.why || "not_in_message"] };
+          }
+
+          const rows = await callBusinessRpc("get_business_jobs_for_match", {
+            p_business_id: draftId, p_owner_id: ownerUid, p_draft_token: draftToken || null,
+          });
+          const list = Array.isArray(rows) ? rows : [];
+          if (!list.length) return { ok: false, real: false, error: "no_jobs", summary: "There are no jobs on this business yet, so there is nothing to repeat." };
+          const outcome = matchRows(which, list as Record<string, unknown>[]);
+          if (outcome.kind === "none") {
+            const have = list.slice(0, 5).map((j: Record<string, unknown>) => describeRow(j));
+            return { ok: false, real: false, error: "no_match",
+              summary: `Nothing on this business matches "${which}", so NOTHING was changed. ` +
+                (list.length === 1 ? `The only job they have is: ${have[0]}. Ask whether they meant that one.`
+                                   : `The jobs they have are: ${have.join("; ")}. Ask which of those they meant.`) };
+          }
+          if (outcome.kind === "ask") {
+            const names = requireCandidates(outcome.candidates).slice(0, 4).map(describeRow).join("; ");
+            return { ok: false, real: false, error: "ambiguous",
+              summary: `"${which}" matches more than one job: ${names}. Ask which one — do not pick, and nothing has been changed.` };
+          }
+          const job = outcome.row as Record<string, unknown>;
+
+          const r = await callBusinessRpc("set_job_recurring", {
+            p_business_id: draftId, p_job_id: job.id, p_owner_id: ownerUid,
+            p_frequency: cg.frequency, p_custom_interval_days: cg.customIntervalDays ?? null,
+            p_draft_token: draftToken || null,
+          }) as Record<string, unknown> | null;
+          if (!r) return { ok: false, real: false, error: "rpc_failed", summary: "That could not be saved just now. The job has NOT been made recurring." };
+          if (r.ok !== true) {
+            const why = String(r.error || "unknown");
+            const say: Record<string, string> = {
+              already_recurring: `That job already repeats ${r.frequency ? String(r.frequency) : ""}. Say so; nothing was changed.`,
+              already_scheduled: `They already have an active ${r.frequency || "recurring"} schedule for ${r.service_name || "that service"}. Say so and ask if they want that one changed instead; nothing was changed.`,
+              no_date: "That job has no date, so there is nothing to repeat from. Ask when it is first.",
+              no_job: "That job is not on this business, so nothing was changed.",
+              not_owner: "That business is not theirs, so nothing was changed.",
+              bad_frequency: "That cadence could not be written. Ask how often — weekly, every other week, monthly or quarterly.",
+              needs_interval: "A custom repeat needs a number of days, and they did not say one. Ask.",
+            };
+            return { ok: false, real: false, error: why, summary: say[why] || "That could not be saved. The job has NOT been made recurring." };
+          }
+          const every = r.frequency === "custom" ? `every ${r.custom_interval_days} days` : String(r.frequency);
+          return {
+            ok: true, real: true,
+            summary: `Saved: ${r.service_name || "that job"}${r.customer_name ? " for " + r.customer_name : ""} now repeats ${every}, ` +
+              `starting from the one on ${r.start_date}. The job they already have is the first one — say that, and do not claim new dates are on the calendar yet.`,
+            humanNote: `${r.service_name || "That job"} repeats ${every} now.`,
+            raw: r,
           };
         },
       },

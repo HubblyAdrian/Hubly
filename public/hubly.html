@@ -11293,7 +11293,12 @@ document.addEventListener('DOMContentLoaded', function() {
             <span class="pulse-stars" id="jos-pulse-stars">★★★★★</span>
           </button>
           <button class="btn btn-brand btn-sm btn-newjob jos-legacy-bar" onclick="HublyJourneyOS?.openJobCustomerPicker?.()">+ New Job</button>
-          <button type="button" class="btn btn-out btn-sm jos-legacy-bar" id="bar-qq-btn" onclick="openSmartQuote()">Quick Quote</button>
+          <!-- THE QUICK QUOTE SHORTCUT IS DELETED. THE FEATURE IS NOT. Quick Quote ships as
+               /smart-quote/{engine,ui,booking}.js and is reached by its own live rail row
+               (data-v="quotes") and the "New Quick Quote" button inside that view. This button was
+               only a shortcut, and .jos-legacy-bar display:none'd it while its JS toggle kept
+               running — dead code that looks alive, which lies to the next reader about whether a
+               control exists. See docs/DOORS_CLOSED_BY_ASSUMPTION.md. -->
           <button type="button" class="btn btn-out btn-sm jos-legacy-bar" onclick="openBlockTimeModal()">🚫 <span data-i18n="blockTimeBtn">Block time</span></button>
           <button type="button" class="btn btn-out btn-sm theme-bar-btn jos-legacy-bar" id="theme-btn-app" onclick="toggleHublyTheme()" title="Day / Night mode" aria-label="Toggle day and night mode">
             <span class="theme-ico" id="theme-ico-app" aria-hidden="true">🌙</span>
@@ -41455,8 +41460,11 @@ function switchV(el,opts){
   const tabLabel=titles[v]||v;
   document.getElementById('bar-title').textContent=tabLabel;
   setHublyDocTitle(tabLabel);
-  // Already on Quick Quote — page has “New Quick Quote”; hide the duplicate app-bar shortcut.
-  document.getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes');
+  // The app-bar Quick Quote shortcut and this toggle were deleted together on 2026-09-16. The
+  // comment that stood here — "page has 'New Quick Quote'; hide the duplicate app-bar shortcut" —
+  // was the right instinct, and the shortcut had ALSO been display:none'd wholesale by
+  // .jos-legacy-bar, so this line spent every view change maintaining the visibility of something
+  // permanently invisible. Quick Quote itself is untouched: its rail row and its own New button.
   // dashboard/jobs/leads/customers/calendar all used to call their JourneyOS
   // renderer directly here AND get rendered again a few lines down by
   // onSwitchView(v)'s own map (dashboard:enhanceDashboard, jobs:renderJobs,

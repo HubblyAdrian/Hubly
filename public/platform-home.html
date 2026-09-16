@@ -4059,16 +4059,95 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // list (import-offers, the primary target — this is the path a PHONE user reaches, since
   // a phone can't drag). Waiting on the logo → it's the logo. On photos → a photo. Nothing
   // pending → the model asks one open question.
+  /** WHAT A SENT FILE CAN BECOME. One table, and the only place that knows.
+   *
+   *  Adding a subject here is what makes "send me a screenshot of it" TRUE for that subject —
+   *  the router uses it and so does the copy (HC_WAYS below), so the offer and the capability
+   *  cannot drift apart. There is no second list to remember. */
+  var HC_FILE_ROUTES = {
+    services: { send: function(f){ hcExtractPricesFromImage(f); }, acceptsPdf: true },
+    logo:     { send: function(f){ hcSendLogo(f); } },
+    photos:   { send: function(f){ hcSendPhoto(f); } }
+    // day: NOT HERE YET. There is no screenshot-to-schedule path, which is why the calendar's
+    // empty state does not offer one. When it lands, add it here and the offer appears by itself.
+  };
+
+  /** ══ THE WAYS ARE DERIVED, NEVER WRITTEN BY HAND ══════════════════════════════════════
+   *
+   *  Adrian, 2026-09-16: "'offer every way that honestly exists and none that do not' is a rule
+   *  a person has to remember every time they write a sentence. That is the hand-maintained-set
+   *  disease pointed at copy."
+   *
+   *  It had already cost us: the calendar's empty state was about to ship "send me a screenshot
+   *  of it" when no screenshot-to-schedule path exists, and it was caught by hand, once, by
+   *  reading the router. The next sentence would have needed the same read.
+   *
+   *  So a way is offered IFF ITS IMPLEMENTATION IS REACHABLE, tested against the real thing:
+   *
+   *    screenshot  the subject is in HC_FILE_ROUTES — the table the router itself dispatches on
+   *    self        the named by-hand renderer is a live function in this page
+   *    showme      the subject is a real destination (HC_GO_PLACES, via hcResolvePlace)
+   *    tell        the composer exists, which it does for every subject — you can always SAY a
+   *                thing to Hubly. Honest as a constant: this claims only that the sentence
+   *                reaches the model, and the no-silence floor now tells the truth when the
+   *                model cannot act on it. It is the one way that is not subject-specific.
+   *
+   *  AN OFFER WE CANNOT KEEP IS NOW UNWRITEABLE rather than merely forbidden: there is no string
+   *  to edit, so there is nothing to get wrong. */
+  var HC_WAYS = {
+    tell:       { clause: function(subj){ return subj.tell; },
+                  wired: function(){ return true; } },
+    screenshot: { clause: function(){ return 'send me a screenshot of it'; },
+                  wired: function(subj){ return !!HC_FILE_ROUTES[subj.key]; } },
+    self:       { clause: function(subj){ return subj.self || 'add it yourself'; },
+                  wired: function(subj){ return typeof window[subj.byHand] === 'function'
+                                           || (subj.byHandFn && typeof subj.byHandFn() === 'function'); } },
+    showme:     { clause: function(){ return 'I can show you where'; },
+                  wired: function(subj){ return !!(subj.place && HC_GO_PLACES[subj.place]); } }
+  };
+  var HC_WAY_ORDER = ['tell', 'screenshot', 'self', 'showme'];
+
+  /** The subjects copy can offer ways for. `key` is what a sent file would be routed as. */
+  var HC_SUBJECTS = {
+    day: { key: 'day', tell: 'Tell me what\u2019s coming up', self: 'add it yourself',
+           byHandFn: function(){ return hcDayAddRow; } },
+    services: { key: 'services', tell: 'Tell me your services and prices', self: 'add them yourself',
+                byHandFn: function(){ return null; } }
+  };
+
+  /** The offer sentence for a subject, composed from what is actually wired. */
+  function hcWaysClause(subjectName){
+    var subj = HC_SUBJECTS[subjectName];
+    if(!subj) return '';
+    var parts = [];
+    HC_WAY_ORDER.forEach(function(w){
+      var way = HC_WAYS[w];
+      var ok = false;
+      try{ ok = !!way.wired(subj); }catch(e){ ok = false; }
+      if(!ok) return;
+      var c = way.clause(subj);
+      if(c) parts.push(c);
+    });
+    if(!parts.length) return '';
+    if(parts.length === 1) return parts[0] + '.';
+    return parts.slice(0, -1).join(', ') + ', or ' + parts[parts.length - 1] + '.';
+  }
+  try{ window.hublyWaysUI = { clause: hcWaysClause, routes: HC_FILE_ROUTES,
+                              subjects: Object.keys(HC_SUBJECTS) }; }catch(e){}
+
   function hcHandleIncomingFile(file){
     if(!file) return;
     if(hc.busy){ hcAppendMessage('hubly', "One moment — still working on the last thing."); return; }
     var isPdf = /pdf$/i.test(file.type || '') || /\.pdf$/i.test(file.name || '');
     var isImage = /^image\//i.test(file.type || '');
     if(!isImage && !isPdf){ hcAppendMessage('hubly', "I can work with images and PDFs — that one I can't read."); return; }
+    // ROUTED BY A TABLE, NOT BY THREE IFS — and the table is the SAME ONE THE COPY READS.
+    // Before this, "which things can you send me a picture of" was knowable only by reading
+    // these branches, so a sentence offering a screenshot for something unrouted was merely
+    // forbidden rather than impossible. See HC_WAYS.
     var pending = hc.pendingCapture && hc.pendingCapture.askedFor;
-    if(pending === 'services'){ hcExtractPricesFromImage(file); return; }   // price list (handles PDF too)
-    if(pending === 'logo' && isImage){ hcSendLogo(file); return; }
-    if(pending === 'photos' && isImage){ hcSendPhoto(file); return; }
+    var route = pending && HC_FILE_ROUTES[pending];
+    if(route && (isImage || route.acceptsPdf)){ route.send(file); return; }
     // Nothing pending, and it's an IMAGE — almost always their work or their
     // logo. Hold it and ask which, rather than handing it to the model where it
     // evaporates. A PDF with nothing pending still goes to the model.
@@ -6178,7 +6257,53 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(res.error === 'no_business') return 'No business is open, so there’s nothing to change.';
     return 'I couldn’t change that just now, and it has NOT changed.';
   }
-  try{ window.hublyJobEditUI = { edit: hcEditDayJob, line: hcEditDayJobLine }; }catch(e){}
+  /** MAKE AN EXISTING JOB REPEAT — the by-hand door, through the SAME rpc the capability uses.
+   *  Returns what actually happened; never a claim composed from the button being pressed. */
+  async function hcMakeJobRecurring(jobId, frequency, customDays){
+    try{
+      var biz = hc.draftBusiness; if(!biz || !biz.id) return { ok:false, error:'no_business' };
+      var uid = await hcOwnerUid();
+      var c = await authGetClient();
+      var r = await c.rpc('set_job_recurring', {
+        p_business_id: biz.id, p_job_id: jobId, p_owner_id: uid,
+        p_frequency: frequency, p_custom_interval_days: customDays || null, p_draft_token: null
+      });
+      if(r && r.error) return { ok:false, error:'rpc_failed', detail:String(r.error.message || '').slice(0,120) };
+      var out = r && r.data;
+      if(!out || out.ok !== true) return { ok:false, error:(out && out.error) || 'rpc_failed',
+                                           frequency:(out && out.frequency) || null,
+                                           serviceName:(out && out.service_name) || null };
+      return { ok:true, scheduleId: out.schedule_id, frequency: out.frequency,
+               customIntervalDays: out.custom_interval_days, startDate: out.start_date,
+               serviceName: out.service_name };
+    }catch(e){ return { ok:false, error:'threw', detail:String((e && e.message) || e).slice(0,120) }; }
+  }
+  var HC_CADENCE_WORDS = { weekly:'every week', biweekly:'every other week',
+                           monthly:'every month', quarterly:'every quarter' };
+  /** EVERY OUTCOME SAYS SOMETHING, AND SOMETHING DIFFERENT — and none of them claims future
+   *  jobs are on the calendar, because none are yet: the schedule's first occurrence is the job
+   *  he is already looking at, and the worker creates the next one when it comes due. */
+  function hcMakeJobRecurringLine(res){
+    if(!res) return 'I couldn’t tell whether that saved, so don’t rely on it yet.';
+    if(res.ok){
+      var every = res.frequency === 'custom'
+        ? ('every ' + res.customIntervalDays + ' days')
+        : (HC_CADENCE_WORDS[res.frequency] || String(res.frequency));
+      return 'Saved — this one repeats ' + every + '. The job you’re looking at is the first one; ' +
+             'I’ll add the next when it comes due.';
+    }
+    if(res.error === 'already_recurring') return 'This one already repeats' +
+      (res.frequency ? ' ' + (HC_CADENCE_WORDS[res.frequency] || res.frequency) : '') + ' — nothing changed.';
+    if(res.error === 'already_scheduled') return 'There’s already a repeat running for ' +
+      (res.serviceName || 'this service') + ', so I left both alone. Change that one instead.';
+    if(res.error === 'no_date') return 'This job has no date yet, so there’s nothing to repeat from. Give it a date first.';
+    if(res.error === 'bad_frequency') return 'I couldn’t read that as a repeat, so nothing changed.';
+    if(res.error === 'needs_interval') return 'A custom repeat needs a number of days, and I don’t have one — nothing changed.';
+    if(res.error === 'not_owner') return 'I couldn’t save that on this account, so nothing changed.';
+    return 'That didn’t save, so this job does NOT repeat yet. Try again in a moment.';
+  }
+  try{ window.hublyJobEditUI = { edit: hcEditDayJob, line: hcEditDayJobLine,
+                                 recur: hcMakeJobRecurring, recurLine: hcMakeJobRecurringLine }; }catch(e){}
 
   function hcJobPanel(j){
     hcOpenPanel(j.is_block ? 'Blocked time' : 'Job', function(body){
@@ -6259,6 +6384,49 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       });
       ed.appendChild(tIn); ed.appendChild(pIn); ed.appendChild(save);
       body.appendChild(ed); body.appendChild(note);
+
+      // ── AND MAKE IT REPEAT, BY HAND ──────────────────────────────────────────────────
+      //
+      // THE SAME WRITER THE TALKING PATH USES (set_job_recurring), not a second one — so the
+      // conflict rules, the "already recurring" refusal and the no-interval-math design are
+      // shared, and neither door can drift from the other.
+      //
+      // NO DEFAULT SELECTED. The cadence is never inferred and never defaulted anywhere else
+      // (createBooking's own instruction, and cadenceGrounded on the talking path); a select
+      // that arrives pre-set to "Weekly" would be this rule broken by a UI control. The first
+      // option is a prompt, not a value.
+      var rec = document.createElement('div'); rec.className = 'hc-day-add';
+      rec.setAttribute('data-hc-jobrec', '1');
+      var rSel = document.createElement('select');
+      rSel.setAttribute('aria-label', 'How often this repeats');
+      rSel.setAttribute('data-hc-jobrec-field', 'frequency');
+      [['', 'Repeats… (not set)'], ['weekly', 'Every week'], ['biweekly', 'Every other week'],
+       ['monthly', 'Every month'], ['quarterly', 'Every quarter']].forEach(function(o){
+        var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1];
+        rSel.appendChild(op);
+      });
+      var rSave = document.createElement('button'); rSave.type = 'button'; rSave.className = 'hc-day-add-go';
+      rSave.textContent = 'Save'; rSave.setAttribute('data-hc-jobrec-field', 'save');
+      var rNote = document.createElement('div'); rNote.className = 'hc-day-add-msg';
+      rNote.setAttribute('data-hc-jobrec-field', 'msg');
+      if(j.recurring_schedule_id){
+        rSel.disabled = true; rSave.disabled = true;
+        rNote.textContent = 'This one already repeats.';
+      }
+      rSave.addEventListener('click', async function(){
+        if(!rSel.value){ rNote.textContent = 'Pick how often first — I won’t guess at a repeat.'; return; }
+        rSave.disabled = true; rNote.textContent = '';
+        var res = await hcMakeJobRecurring(j.id, rSel.value);
+        rNote.textContent = hcMakeJobRecurringLine(res);
+        rSave.disabled = false;
+        if(res && res.ok){
+          j.recurring_schedule_id = res.scheduleId || 'set';
+          rSel.disabled = true; rSave.disabled = true;
+          try{ await hcAfterWrite('job', { id: j.id, dates: [String(j.scheduled_date || '').slice(0,10)] }); }catch(e){}
+        }
+      });
+      rec.appendChild(rSel); rec.appendChild(rSave);
+      body.appendChild(rec); body.appendChild(rNote);
     });
   }
 
@@ -7033,7 +7201,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       //   · "I can show you where" — there is no show-me-where target for the day; hcShowMeWhere
       //     addresses page elements. The bands already say where, in the line below them.
       ce.appendChild(hcEl('div', 'hcmd-emptyh', 'Nothing on your calendar yet'));
-      ce.appendChild(hcEl('div', null, 'Tell me what\u2019s coming up, or add it yourself.'));
+      // COMPOSED FROM WHAT IS WIRED, never typed. hcWaysClause reads HC_FILE_ROUTES — the same
+      // table the file router dispatches on — so the screenshot clause is absent because there is
+      // no screenshot-to-schedule path, and it will appear the day one is added. No copy edit.
+      ce.appendChild(hcEl('div', null, hcWaysClause('day')));
       grid.appendChild(ce);
     }
     cal.appendChild(grid);

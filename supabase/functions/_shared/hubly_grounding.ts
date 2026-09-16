@@ -370,6 +370,70 @@ export function timeGrounded(value: string, message: string, ctx?: TimeContext):
   return timeGroundedWhy(value, message, ctx).ok;
 }
 
+/** ── CADENCE ──────────────────────────────────────────────────────────────────────────
+ *
+ *  A REPEAT THE OWNER DID NOT ASK FOR IS A STANDING COMMITMENT NOBODY MADE. `createBooking`
+ *  already carries the instruction in words — "Only set frequency when the customer explicitly
+ *  said they want this to repeat; never infer or default it" — and an instruction is a thing the
+ *  model can forget. This is the same mechanism that grounds time, price and address, pointed at
+ *  the same problem: the value must be derivable from what he actually said.
+ *
+ *  It is stricter than the others in one way, on purpose: THERE IS NO PARTIAL CREDIT. "every
+ *  week" is weekly, "every other week" is biweekly, and anything that only gestures at repetition
+ *  ("regularly", "often", "keep it going") grounds NOTHING — because the difference between
+ *  weekly and monthly is four times the work, and guessing it wrong bills someone four times.
+ */
+const CADENCE_FORMS: Array<[RegExp, string]> = [
+  [/\bevery\s+other\s+week\b|\bevery\s+two\s+weeks\b|\bevery\s+2\s+weeks\b|\bbi-?weekly\b|\bfortnight(?:ly)?\b/i, "biweekly"],
+  [/\bevery\s+week\b|\bweekly\b|\bonce\s+a\s+week\b|\beach\s+week\b/i, "weekly"],
+  [/\bevery\s+month\b|\bmonthly\b|\bonce\s+a\s+month\b|\beach\s+month\b/i, "monthly"],
+  [/\bevery\s+quarter\b|\bquarterly\b|\bevery\s+three\s+months\b|\bevery\s+3\s+months\b/i, "quarterly"],
+];
+
+export type CadenceWhy = { ok: boolean; frequency?: string; customIntervalDays?: number;
+                           why?: "not_a_cadence" | "not_in_message" | "vague" };
+
+/** What cadence the message STATES, or null. Never a guess. */
+export function statedCadence(message: string): { frequency: string; customIntervalDays?: number } | null {
+  const m = String(message || "");
+  // "every 10 days" — an explicit interval, which is the one numeric form that is unambiguous.
+  const custom = m.match(/\bevery\s+(\d{1,3})\s*days?\b/i);
+  if (custom) {
+    const d = Number(custom[1]);
+    if (d >= 1 && d <= 365) return { frequency: "custom", customIntervalDays: d };
+  }
+  for (const [re, freq] of CADENCE_FORMS) if (re.test(m)) return { frequency: freq };
+  return null;
+}
+
+/** Does the message SAY something repeats, without saying how often? That is a real intent we
+ *  must not act on, and it deserves its own answer — "how often?" rather than "say that again". */
+const VAGUE = /\brecurring\b|\brepeat(?:s|ing|ed)?\b|\bregular(?:ly)?\b|\bstanding\b|\bongoing\b|\bevery\s+time\b|\bkeep\s+(?:it|this)\s+going\b/i;
+
+export function cadenceGroundedWhy(value: string, message: string, customDays?: number | null): CadenceWhy {
+  const want = String(value || "").trim().toLowerCase();
+  if (!["weekly", "biweekly", "monthly", "quarterly", "custom"].includes(want)) {
+    return { ok: false, why: "not_a_cadence" };
+  }
+  const said = statedCadence(message);
+  if (said && said.frequency === want) {
+    if (want === "custom") {
+      // The interval has to match too — "every 10 days" does not ground "every 30 days".
+      if (said.customIntervalDays && Number(customDays) === said.customIntervalDays) {
+        return { ok: true, frequency: want, customIntervalDays: said.customIntervalDays };
+      }
+      return { ok: false, why: "not_in_message" };
+    }
+    return { ok: true, frequency: want };
+  }
+  if (VAGUE.test(message)) return { ok: false, why: "vague" };
+  return { ok: false, why: "not_in_message" };
+}
+
+export function cadenceGrounded(value: string, message: string, customDays?: number | null): boolean {
+  return cadenceGroundedWhy(value, message, customDays).ok;
+}
+
 export type GroundableFact = "phone" | "email" | "address" | "price";
 
 /** One entry point. Returns the value UNCHANGED when it is grounded in the
