@@ -4733,7 +4733,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
 
   // Bring one owned business INTO the builder — the same end state as building it.
   function hcOpenOwnedBusiness(biz){
-    hc.draftBusiness = { id: biz.id, slug: biz.slug, name: biz.name, draftToken: biz.draftToken || null, url: biz.url };
+    // claimedAt RIDES ALONG, and it is the last link in the chain. businesses.claimed_at and the
+    // conversation reader's created_at both exist, and without this line the client holds no date
+    // to compare them against — the derivation would silently never fire and the content regex
+    // would keep deciding which of his own messages he may see. A fix present in the database and
+    // absent in behaviour is the missing-door shape, so it is wired here, not assumed.
+    hc.draftBusiness = { id: biz.id, slug: biz.slug, name: biz.name, draftToken: biz.draftToken || null, url: biz.url, claimedAt: biz.claimedAt || null };
     hc.draftClaimed = true;
     hc.active = true;
     // Settle the edit affordance BEFORE anything renders. Not awaited elsewhere on
@@ -9298,7 +9303,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // history seed AND by the render below, so the two cannot drift apart — which is the whole
     // reason this bug existed: the same rule written once, applied in one place.
     hc.messages = rows
-      .filter(function(m){ return !hcHiddenFromOwner(m.role, hcMessageToText(m.content)); })
+      .filter(function(m){ return !hcHiddenFromOwner(m.role, hcMessageToText(m.content), m.created_at); })
       .map(function(m){ return { role: m.role, content: m.content }; });
     // Context loaded; Home wants it silent so it can open on a calm greeting instead of the
     // tail of the last conversation. hcRenderHome exposes the full thread on demand.
@@ -9309,7 +9314,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       // "reserved for you — make an account" line is a lie in the history. Don't
       // re-render it on reload (it's matched by content because a restored message
       // has no data-hc-msg tag). The site being live is confirmed elsewhere.
-      if(hcHiddenFromOwner(rows[i].role, txt)) continue;      // the same predicate the model reads through
+      if(hcHiddenFromOwner(rows[i].role, txt, rows[i].created_at)) continue;   // the same predicate the model reads through
       var _el = hcAppendMessage(rows[i].role === 'user' ? 'user' : 'hubly', txt);
       // Re-attach the account button to the reserved-for-you offer on reload (the
       // transcript stores only text, so the button would otherwise evaporate).
@@ -9328,12 +9333,34 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
    *  lines and the model's history did not, so Hubly could answer from messages the owner had
    *  no way to see or correct (found 2026-09-16). A rule applied in one of two places is the
    *  defect; making it one function is the fix. */
-  function hcHiddenFromOwner(role, txt){
+  function hcHiddenFromOwner(role, txt, writtenAt){
     if(role === 'user') return false;                 // never hide what the person themselves said
     if(!hc.draftClaimed) return false;                // before a claim the offer is true
+    // ══ DERIVED, NOT MATCHED ═══════════════════════════════════════════════════════════
+    //
+    // A pre-account message IS one written before the business was claimed. That is a timestamp
+    // comparison against businesses.claimed_at (migration 20260916040000), and it cannot be
+    // wrong the way a content regex can: /that takes an account/i hid window-washing seq 10, a
+    // message explaining HOW TO EDIT, from its owner — 1 wrong hide in 3 on the market set.
+    var claimedAt = hc.draftBusiness && hc.draftBusiness.claimedAt;
+    if(claimedAt && writtenAt){
+      return String(writtenAt) < String(claimedAt);   // ISO-8601 compares correctly as text
+    }
+    // ── NULL claimed_at: 41 businesses were claimed before the column existed and NOTHING
+    //    INVENTS A DATE FOR THEM. What to do here is a ruling, not a default, and until it is
+    //    made this keeps TODAY'S behaviour exactly — no regression either way.
+    //    HC_UNDATED_CLAIM_HIDES = false will un-hide all 19 the moment that is ruled; it is one
+    //    line so the ruling is a one-line change rather than a rewrite.
+    if(!HC_UNDATED_CLAIM_HIDES) return false;
     return typeof hcIsPreAccountMsg === 'function' && hcIsPreAccountMsg(txt);
   }
-  try{ window.hublyHistoryUI = { hidden: hcHiddenFromOwner }; window.__setClaimed = function(v){ hc.draftClaimed = !!v; }; }catch(e){}
+  /** PENDING A RULING (2026-09-16). With no claimed_at we cannot date the claim honestly, and the
+   *  19 undated rows are therefore judged by the old regex. Adrian's stated default is to hide
+   *  NOTHING when the date is unknown — flipping this to false does that — but 18 of those 19 say
+   *  "it goes live the moment you make an account", which reads to a CLAIMED owner as "your site
+   *  is not live". That is not merely stale, so it was brought to him rather than applied. */
+  var HC_UNDATED_CLAIM_HIDES = true;
+  try{ window.hublyHistoryUI = { hidden: hcHiddenFromOwner, undatedHides: function(v){ if(v !== undefined) HC_UNDATED_CLAIM_HIDES = !!v; return HC_UNDATED_CLAIM_HIDES; } }; window.__setClaimed = function(v){ hc.draftClaimed = !!v; }; window.__setClaimedAt = function(t){ if(!hc.draftBusiness) hc.draftBusiness = {}; hc.draftBusiness.claimedAt = t || null; }; }catch(e){}
   // True for the pre-account "reserved for you — make an account" follow-up. Matched
   // by CONTENT (not just the data-hc-msg tag) so it also catches messages restored
   // from the transcript on reload, which carry no attribute. One source of truth for

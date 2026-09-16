@@ -62,6 +62,32 @@ const PRE = "This site is reserved for you — make an account and it's yours.";
     "we do not edit their side of the conversation");
   say("4 before a claim, nothing is hidden — the offer is true then", r.unclaimedAssistant === false);
 
+  // ── 4b-4e. DERIVED FROM claimed_at, NOT MATCHED ─────────────────────────────────────
+  // A pre-account message IS one written before the claim. With businesses.claimed_at present
+  // (migration 20260916040000) that is a timestamp comparison, and it cannot be wrong the way the
+  // content regex was: /that takes an account/i hid `window-washing` seq 10 — a message explaining
+  // HOW TO EDIT — from its owner. 1 wrong hide in 3 on the market set.
+  const WINDOW_WASHING = "You can edit by just telling me what to change here — text, prices, " +
+    "services, contact info, or which photo should be swapped. If you want to click directly on " +
+    "the page and edit it yourself, that takes an account, and I can open that for you now.";
+  const derived = await rig.page.evaluate((WW) => {
+    const H = window.hublyHistoryUI.hidden;
+    window.__setClaimed(true);
+    window.__setClaimedAt("2026-09-10T00:00:00Z");
+    return {
+      before: H("assistant", "anything at all", "2026-09-01T00:00:00Z"),   // written before the claim
+      after:  H("assistant", "anything at all", "2026-09-12T00:00:00Z"),   // written after it
+      // THE ROW THAT MATTERS: written AFTER the claim, so it comes back, regex or no regex.
+      windowWashing: H("assistant", WW, "2026-09-12T00:00:00Z"),
+      userBefore: H("user", "anything", "2026-09-01T00:00:00Z"),
+    };
+  }, WINDOW_WASHING);
+  say("4b a message written BEFORE the claim is hidden", derived.before === true);
+  say("4c a message written AFTER the claim is shown, whatever it says", derived.after === false);
+  say("4d THE window-washing MESSAGE COMES BACK once the claim is dated", derived.windowWashing === false,
+    "the how-to-edit message its owner could not see");
+  say("4e the person's own words are never hidden, date or no date", derived.userBefore === false);
+
 } catch (e) {
   console.error("FAIL — " + String(e.message).slice(0, 240)); failed++;
 } finally { try { await rig.close(); } catch (_) {} }
@@ -97,5 +123,16 @@ const inlineHide = /[^!]hc\.draftClaimed && rows\[i\]\.role !== 'user' && hcIsPr
 say("7 no reader re-implements the HIDING test inline (the negated CTA form is fine)", !inlineHide,
   inlineHide ? "an inline hiding condition is back" : "hiding is decided in one place only");
 
-console.log(failed ? `\n${failed} assertion(s) failed.` : "\nThe model reads exactly what the owner can see.");
+// ── 8-9. THE WHOLE CHAIN EXISTS, FROM SOURCE ───────────────────────────────────────────
+// Three migrations and one client line have to ALL be present or the derivation never fires:
+// businesses.claimed_at, the conversation reader returning created_at, get_my_businesses carrying
+// claimedAt, and hcOpenOwnedBusiness putting it on hc.draftBusiness. A fix present in the database
+// and absent in behaviour is the missing-door shape, and it is exactly what this leg catches.
+say("8 the client carries claimedAt onto the business it holds",
+  /hc\.draftBusiness = \{[^}]*claimedAt: biz\.claimedAt/.test(code),
+  "hcOpenOwnedBusiness -> hc.draftBusiness.claimedAt");
+say("9 the predicate compares the row's date against it",
+  /String\(writtenAt\) < String\(claimedAt\)/.test(code), "row.created_at < business.claimed_at");
+
+console.log(failed ? `\n${failed} assertion(s) failed.` : "\nThe model reads exactly what the owner can see, and the claim is dated rather than guessed.");
 process.exit(failed ? 1 : 0);
