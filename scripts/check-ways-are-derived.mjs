@@ -48,8 +48,26 @@ try {
   }));
 
   // ── 1-2. TODAY'S TRUTH, BOTH WAYS ROUND. ────────────────────────────────────────────────
-  say("1 the day does NOT offer a screenshot — no screenshot-to-schedule path exists",
-    !/screenshot/i.test(base.day), JSON.stringify(base.day));
+  //
+  // RETARGETED 2026-09-16, THE SAME DAY IT WAS WRITTEN, AND THAT IS THE POINT. Leg 1 used to read
+  // "the day does NOT offer a screenshot — no screenshot-to-schedule path exists". True when
+  // written; false the moment import-schedule shipped and HC_FILE_ROUTES.day appeared. The check
+  // went red because the PRODUCT GOT MORE CORRECT, which is Lesson 92's tell, and the cheapest way
+  // back to green would have been to unwire the import.
+  //
+  // The rule was never "the day has no screenshot". It is "a subject offers a screenshot IFF its
+  // route exists", and that is what these legs assert now — on whichever subject happens to be
+  // wired, by moving the route rather than by knowing the answer.
+  say("1 a subject with NO route offers no screenshot",
+    !/screenshot/i.test(await rig.page.evaluate(() => {
+      const keep = window.hublyWaysUI.routes.day;
+      delete window.hublyWaysUI.routes.day;
+      const c = window.hublyWaysUI.clause("day");
+      window.hublyWaysUI.routes.day = keep;
+      return c;
+    })), "with the day's route removed, the clause is gone");
+  say("1b and the day, which IS routed now, offers it",
+    /screenshot/i.test(base.day), JSON.stringify(base.day));
   say("2 and services DOES — a price list is a routed subject",
     /screenshot/i.test(base.services) && base.routes.includes("services"),
     JSON.stringify(base.services));
@@ -77,10 +95,11 @@ try {
   //       structural rather than remembered — "when screenshot-to-schedule lands, the offer
   //       appears by itself" (Adrian). ─────────────────────────────────────────────────────
   const wired = await rig.page.evaluate(() => {
+    const keep = window.hublyWaysUI.routes.day;
+    delete window.hublyWaysUI.routes.day;                       // back to un-routed
     const before = window.hublyWaysUI.clause("day");
-    window.hublyWaysUI.routes.day = { send: function () {} };   // the day becomes routable
+    window.hublyWaysUI.routes.day = keep;                       // the day becomes routable again
     const after = window.hublyWaysUI.clause("day");
-    delete window.hublyWaysUI.routes.day;
     return { before, after };
   });
   say("5 wiring screenshot-to-schedule makes the day OFFER it, with no copy edit",

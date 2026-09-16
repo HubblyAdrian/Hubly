@@ -240,9 +240,17 @@ try {
     emptyRes.r.ok === true && emptyRows === 0
       && /Nothing on it yet/i.test(emptyRes.text) && !/not set up/i.test(emptyRes.text),
     `${emptyRows} row(s) · ${JSON.stringify(emptyRes.text.slice(-120))}`);
-  say("8b and it offers the ways that actually exist, composed rather than typed",
-    /Tell me what’s coming up/.test(emptyRes.text) && !/screenshot/i.test(emptyRes.text),
-    "no screenshot clause — that route is not wired");
+  // WRITTEN STALE AND CAUGHT THE SAME DAY. This leg first read "…and NOT a screenshot clause,
+  // because that route is not wired" — a statement about the state on the hour it was written. The
+  // hour import-schedule shipped it went red against a correct product: Lesson 92, by the person
+  // who had just written Lesson 92 into a check one file over.
+  //
+  // The rule is that the sentence is COMPOSED, not typed. So it is compared against what the
+  // registry composes, which stays true through every wiring change in either direction.
+  const composed = await rig.page.evaluate(() => window.hublyWaysUI.clause("day"));
+  say("8b the empty state's offer IS the composed one, not a typed copy of it",
+    emptyRes.text.includes(composed) && composed.length > 12,
+    JSON.stringify(composed));
 
   say("9 with no jobs, no customers, no sales and no bookings, none of those doors is offered",
     !empties.labels.includes("schedule") && !empties.labels.includes("customers") &&

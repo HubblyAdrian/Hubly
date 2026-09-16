@@ -346,6 +346,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 .hcmd-add{display:flex;align-items:center;gap:10px;width:100%;border:0;border-top:1px solid var(--line);background:transparent;padding:14px 16px;font:inherit;font-size:14px;color:var(--muted);cursor:pointer;text-align:left}
 .hcmd-add:hover{background:rgba(0,0,0,.02)}
 .hcmd-plus{font-size:17px;line-height:1}
+.hc-import-prop{display:flex;flex-direction:column;gap:6px}
+.hc-import-h{font-weight:600;margin-bottom:4px}
+.hc-import-row{display:flex;flex-direction:column;gap:1px;padding:7px 0;border-top:1px solid var(--line)}
+.hc-import-when{font-size:12px;color:var(--muted)}
+.hc-import-what{font-size:14px;overflow-wrap:break-word}
+.hc-import-src{font-size:12px;color:var(--muted);font-style:italic;overflow-wrap:break-word}
+.hc-import-badh{margin-top:8px;font-size:13px;font-weight:600}
+.hc-import-bad{font-size:12px;color:var(--muted);overflow-wrap:break-word}
 .hcmd-later{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:14px 16px}
 .hcmd-laterrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;cursor:pointer;align-items:center}
 .hcmd-laterrow:first-of-type{border-top:0}
@@ -4082,9 +4090,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   var HC_FILE_ROUTES = {
     services: { send: function(f){ hcExtractPricesFromImage(f); }, acceptsPdf: true },
     logo:     { send: function(f){ hcSendLogo(f); } },
-    photos:   { send: function(f){ hcSendPhoto(f); } }
-    // day: NOT HERE YET. There is no screenshot-to-schedule path, which is why the calendar's
-    // empty state does not offer one. When it lands, add it here and the offer appears by itself.
+    photos:   { send: function(f){ hcSendPhoto(f); } },
+    // ADDED 2026-09-16, and this one line is what makes the calendar's empty state start offering
+    // "send me a screenshot of it". No copy was edited — hcWaysClause reads this table, so wiring
+    // the route IS wiring the offer. check-ways-are-derived asserts exactly that transition.
+    day:      { send: function(f){ hcImportScheduleFromImage(f); }, acceptsPdf: true }
   };
 
   /** ══ THE WAYS ARE DERIVED, NEVER WRITTEN BY HAND ══════════════════════════════════════
@@ -4149,6 +4159,126 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   }
   try{ window.hublyWaysUI = { clause: hcWaysClause, routes: HC_FILE_ROUTES,
                               subjects: Object.keys(HC_SUBJECTS) }; }catch(e){}
+
+  /** READ A SCHEDULE OUT OF A PICTURE — and PROPOSE it. Never write from it.
+   *
+   *  A model reading a blurry photo of a diary will occasionally produce a customer who does not
+   *  exist at a time nobody booked, and a job is a commitment someone gets driven to. So this
+   *  shows what it read and writes nothing until the owner says go — the same posture as "a job
+   *  offers, it never publishes", with more force, because the failure here ends with an owner at
+   *  a stranger's door.
+   *
+   *  AND IT SAYS WHAT IT COULD NOT READ. An importer that reports the seven rows it parsed and
+   *  drops the three it did not is the empty-reader defect wearing a helpful face: the owner
+   *  believes his week is in, and three visits are missing. */
+  function hcImportScheduleFromImage(file){
+    if(hc.busy){ hcAppendMessage('hubly', "One moment — I'm still working on the last thing. Send that schedule again in a second."); return; }
+    hc.pendingCapture = null;
+    var lbl = '📎 ' + (file.name || 'schedule');
+    hcAppendMessage('user', lbl); hcPersist('user', lbl);
+    var typingEl = hcAppendTyping();
+    function done(msg){
+      if(typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+      if(msg){ hcAppendMessage('hubly', msg); hcPersist('assistant', msg); hcNoteSaid(msg); }
+    }
+    hcFileToBase64(file).then(function(b64){
+      var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var to = setTimeout(function(){ try{ if(ctrl) ctrl.abort(); }catch(e){} }, 45000);
+      var media = file.type || (/\.pdf$/i.test(file.name || '') ? 'application/pdf' : 'image/jpeg');
+      return fetch(SUPA_URL + '/functions/v1/import-schedule', {
+        method: 'POST',
+        headers: { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' },
+        body: JSON.stringify({ files: [{ media_type: media, data: b64 }] }),
+        signal: ctrl ? ctrl.signal : undefined
+      }).then(function(r){ clearTimeout(to); return r.ok ? r.json() : null; });
+    }).then(function(o){
+      var jobs = (o && Array.isArray(o.jobs)) ? o.jobs : [];
+      var bad  = (o && Array.isArray(o.unreadable)) ? o.unreadable : [];
+      if(!o){ done("I couldn’t read that one just now, so nothing was added. Try it again, or tell me what’s on it."); return; }
+      if(!jobs.length && !bad.length){ done("I couldn’t find a schedule in that, so nothing was added. Tell me what’s coming up and I’ll put it on your day."); return; }
+      done(null);
+      hcProposeImportedJobs(jobs, bad);
+    }).catch(function(){
+      done("I couldn’t read that one just now, so nothing was added. Try it again, or tell me what’s on it.");
+    });
+  }
+
+  /** THE PROPOSAL. Every row it read, with the words it read them from, and one button. */
+  function hcProposeImportedJobs(jobs, bad){
+    var thread = hcThreadBody(); if(!thread) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'hc-msg hubly hc-import-prop';
+    wrap.setAttribute('data-hc-import', 'schedule');
+    var h = hcEl('div', 'hc-import-h',
+      jobs.length ? ('I read ' + jobs.length + (jobs.length === 1 ? ' thing' : ' things') + ' off that. Nothing is on your day yet — have a look first.')
+                  : 'I couldn’t pin any of it down well enough to add.');
+    wrap.appendChild(h);
+    jobs.forEach(function(j){
+      var row = hcEl('div', 'hc-import-row');
+      row.appendChild(hcEl('span', 'hc-import-when',
+        [hcDayLabel(j.scheduled_date), j.scheduled_time ? hcTimeUS(j.scheduled_time) : ''].filter(Boolean).join(' at ')));
+      var what = [j.customer_name, j.service_name, j.address, (Number(j.amount) > 0 ? '$' + Number(j.amount) : '')]
+        .filter(Boolean).join(' · ');
+      row.appendChild(hcEl('span', 'hc-import-what', what || '(no details)'));
+      // THE WORDS IT READ, so he can check it against the picture rather than trust it.
+      if(j.source_text) row.appendChild(hcEl('span', 'hc-import-src', '“' + j.source_text + '”'));
+      wrap.appendChild(row);
+    });
+    if(bad.length){
+      wrap.appendChild(hcEl('div', 'hc-import-badh',
+        bad.length + (bad.length === 1 ? ' line I couldn’t read' : ' lines I couldn’t read') + ' — these are NOT included:'));
+      bad.forEach(function(b){
+        wrap.appendChild(hcEl('div', 'hc-import-bad', (b.source_text ? '“' + b.source_text + '” — ' : '') + (b.why || 'unclear')));
+      });
+    }
+    if(jobs.length){
+      var go = hcEl('button', 'hc-day-add-go', 'Add ' + (jobs.length === 1 ? 'it' : 'all ' + jobs.length) + ' to my day');
+      go.type = 'button'; go.setAttribute('data-hc-import-go', '1');
+      var note = hcEl('div', 'hc-day-add-msg');
+      go.addEventListener('click', async function(){
+        go.disabled = true; note.textContent = '';
+        var res = await hcCreateImportedJobs(jobs);
+        note.textContent = res.added
+          ? ('Added ' + res.added + (res.added === 1 ? ' thing' : ' things') + ' to your day' +
+             (res.failed ? '. ' + res.failed + " didn’t save — they’re still listed above." : '.'))
+          : 'None of those saved, so your day is unchanged. Try again in a moment.';
+        if(res.added){ try{ await hcAfterWrite('job', { id: null, dates: res.dates }); }catch(e){} }
+        go.disabled = !!res.added ? true : false;
+      });
+      wrap.appendChild(go); wrap.appendChild(note);
+    }
+    thread.appendChild(wrap);
+    hcThreadScrollToEnd();
+  }
+
+  /** WRITES THROUGH create_business_job — the writer that already exists, one row at a time, and
+   *  it counts what actually landed rather than assuming the loop worked. */
+  async function hcCreateImportedJobs(jobs){
+    var out = { added: 0, failed: 0, dates: [] };
+    try{
+      var biz = hc.draftBusiness; if(!biz || !biz.id) return out;
+      var uid = await hcOwnerUid();
+      var c = await authGetClient();
+      for(var i = 0; i < jobs.length; i++){
+        var j = jobs[i];
+        try{
+          var r = await c.rpc('create_business_job', {
+            p_business_id: biz.id, p_owner_id: uid,
+            p_job: { customer_name: j.customer_name, service_name: j.service_name,
+                     scheduled_date: j.scheduled_date, scheduled_time: j.scheduled_time,
+                     address: j.address, amount: j.amount, notes: j.notes },
+            p_draft_token: null
+          });
+          var row = Array.isArray(r && r.data) ? r.data[0] : (r && r.data);
+          if(r && !r.error && row && row.id && !row.error){
+            out.added++; if(out.dates.indexOf(j.scheduled_date) < 0) out.dates.push(j.scheduled_date);
+          } else out.failed++;
+        }catch(e){ out.failed++; }
+      }
+    }catch(e){}
+    return out;
+  }
+  try{ window.hublyImportUI = { propose: hcProposeImportedJobs, create: hcCreateImportedJobs }; }catch(e){}
 
   function hcHandleIncomingFile(file){
     if(!file) return;
