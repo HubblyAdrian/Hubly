@@ -62,6 +62,7 @@
 
 import { HublyAI, type HublyMessage } from "../_shared/hubly_ai.ts";
 import { sayable, recordEnvelopeSuppression } from "../_shared/hubly_sayable.ts";
+import { auditRecordClaim } from "../_shared/hubly_record_claims.ts";
 import { composeServicesTruth, andList, type ServicesPlacementLike, type ClassicWriteLike, type ServicesOmissions } from "../_shared/hubly_owner_replies.ts";
 import { dedupeConversationMessages } from "../_shared/hubly_dedupe.ts";
 import { extractByPattern, extractPricedServices, extractRecordFacts, mergeFacts, mergePricedServices, messageHasPriceSignal } from "../_shared/hubly_extract.ts";
@@ -1368,6 +1369,11 @@ Deno.serve(async (req) => {
   }
 
   const actions: Array<{ capability: string; capabilityAction: string; args: unknown; ok: boolean; real: boolean }> = [];
+  // EVERYTHING READ OR RETURNED THIS TURN, as one blob, for the record-claim audit below. It is
+  // never sent anywhere and never stored — only searched, so that a figure in the reply can be
+  // shown to have come from somewhere. An empty blob means NOTHING WAS READ, which is the sharper
+  // of the two verdicts: a figure in that reply arrived from outside the record by construction.
+  const turnEvidence: string[] = [];
 
   // ONE ROW PER FIRST TURN — the counter that replaces buying snapshots with quota.
   //
@@ -2355,6 +2361,52 @@ Deno.serve(async (req) => {
         decision.message = nested.text;
       }
 
+      // ══ THE RECORD-CLAIM AUDIT — REPORT ONLY, REFUSES NOTHING ═════════════════════════════
+      //
+      // One choke point, beside the envelope guard, because that is where the sentence a person
+      // will read finally exists. Measured 2026-09-16: 89 of 284 stored assistant turns make a
+      // claim about the record, and 79 of those are STATE claims whose commonest form is "on your
+      // page" — unanswerable today, since the two service stores disagree on 23 of 41 claimed
+      // businesses and neither is the page. So this is one assertion rather than ~40 composers,
+      // and the expensive composers would have been the unwritable ones.
+      //
+      // NOTHING IS BLOCKED, EDITED OR SUPPRESSED HERE. Rows before enforcement, the same order as
+      // envelope_suppression_events — which earned itself within hours by catching a real
+      // occurrence. A rule that can refuse before it has been sized will refuse something real
+      // for the wrong reason.
+      if (decision && typeof decision.message === "string" && decision.message.trim()) {
+        try {
+          const evidence = turnEvidence.join(" \n ");
+          // Everything the MODEL was shown of this conversation, so "a reader established it
+          // earlier" can be told apart from "invented now". This is the caveat that decides
+          // whether no_reader needs conversation scope instead of turn scope.
+          const prior = Array.isArray(history)
+            ? history.map((h: unknown) => {
+                const m = h as { content?: unknown };
+                return typeof m?.content === "string" ? m.content : JSON.stringify(m?.content ?? "");
+              }).join(" ")
+            : "";
+          const verdict = auditRecordClaim(decision.message, evidence, prior);
+          if (verdict.claims && (verdict.unsupported.length > 0 || verdict.noReader)) {
+            void createAdminClient().rpc("record_claim_audit", {
+              p_business_id: businessId || null,
+              p_verdict: verdict.noReader ? "no_reader" : "unsupported_figure",
+              p_markers: verdict.markers,
+              p_figures: verdict.unsupported,
+              p_prior_evidence: verdict.priorEvidence,
+              p_had_reader: !verdict.noReader,
+              p_sample: decision.message.slice(0, 160),
+            }).then(
+              (r: { error?: unknown }) => { if (r && r.error) console.error("[claim-audit] could not record:", r.error); },
+              (e: unknown) => console.error("[claim-audit] threw:", e),
+            );
+          }
+        } catch (e) {
+          // An instrument may never break the turn it is measuring.
+          console.error("[claim-audit] skipped:", e);
+        }
+      }
+
       if (decision?.understanding?.patch && typeof decision.understanding.patch === "object") {
         turnPatch = adapter.merge(turnPatch, decision.understanding.patch);
       }
@@ -2673,6 +2725,14 @@ Deno.serve(async (req) => {
           ok: !!result.ok,
           real: !!result.real,
         });
+        // The summary AND the raw payload: a count or a name often lives only in `raw` (the job
+        // row, the customer list), and the audit must credit the model for a figure it genuinely
+        // had in front of it. Generous on purpose — an audit that cries wolf on rephrasing would
+        // bury the real cases in noise.
+        try {
+          if (result.summary) turnEvidence.push(String(result.summary));
+          if (result.raw !== undefined) turnEvidence.push(JSON.stringify(result.raw));
+        } catch { /* evidence is best-effort; never fail the turn for the instrument */ }
 
         // #188: pluck ONLY the confirmation payload out of a successful
         // website booking — never the whole raw result.
