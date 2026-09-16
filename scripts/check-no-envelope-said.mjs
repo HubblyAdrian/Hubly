@@ -179,6 +179,31 @@ try {
       JSON.stringify(floor.after.trim()).slice(0, 140));
     say("13 and that sentence is not the envelope", !floor.after.includes('"action"'));
   }
+  // ── 4b. AND IT IS NEVER STORED EITHER ─────────────────────────────────────────────────
+  // THE GAP THE INSTRUMENT FOUND, 2026-09-16 02:27:54Z, on Adrian's own walk. hcAppendMessage
+  // refused to say the envelope and recorded the suppression; 0.5s later hcPersist WROTE THAT
+  // SAME STRING into business_conversations (seq 47). Silenced on screen, stored anyway, waiting
+  // for the next reload. A guard on display is not a guard on the record.
+  const stored = await rig.page.evaluate((THE_STRING) => {
+    const P = window.hublyPersistUI;
+    if (!P) return null;
+    return {
+      envelope: P.filter("assistant", THE_STRING),
+      salvageable: P.filter("assistant", '{"action":"reply","message":"Added it to Friday."}'),
+      ordinary: P.filter("assistant", "Your Tuesday is clear."),
+      theirs: P.filter("user", THE_STRING),
+    };
+  }, THE_STRING);
+  if (stored) {
+    say("4b.1 an envelope is never written to the conversation record", stored.envelope === "",
+      JSON.stringify(stored.envelope));
+    say("4b.2 a salvageable one is stored as the SENTENCE, not the envelope",
+      stored.salvageable === "Added it to Friday.", JSON.stringify(stored.salvageable));
+    say("4b.3 ordinary text is stored unchanged", stored.ordinary === "Your Tuesday is clear.");
+    say("4b.4 and a person's own JSON is stored verbatim", stored.theirs === THE_STRING,
+      "we never edit what they typed");
+  }
+
   // ── 5. AND THE SUPPRESSION IS COUNTABLE ───────────────────────────────────────────────
   // A guard that keeps no record is indistinguishable from a defect that never recurred, and a
   // real model parse failure cannot be forced in production — this table is the only way we will

@@ -9345,6 +9345,17 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   }
   function hcPersist(role, text){
     text = (text || '').trim();
+    // AND THE WRITER, NOT JUST THE COMPOSERS. Caught by the instrument on 2026-09-16 at
+    // 02:27:54Z, on Adrian's own walk: hcAppendMessage refused to SAY {"action":"reply",
+    // "message":""} and recorded the suppression — and 0.5s later hcPersist WROTE THAT SAME
+    // STRING into business_conversations (seq 47). The envelope was silenced on screen and
+    // stored anyway, where the next reload would meet it.
+    //
+    // The class question I asked when fixing this was "where else does a string become a
+    // BUBBLE", and it found the two composers. The question I did not ask was "where else does
+    // a string become a STORED MESSAGE" — and that is this line. A guard on display is not a
+    // guard on the record.
+    if(role !== 'user') text = hcSayable(text);
     if(!text) return;
     if(hcIsFallbackReply(text)) return;
     if(typeof hcIsBuildFiller === 'function' && hcIsBuildFiller(text)) return; // "building now…" status
@@ -9352,6 +9363,20 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(hc._persistTimer) clearTimeout(hc._persistTimer);
     hc._persistTimer = setTimeout(hcFlushPersist, 600);
   }
+  /** THE REAL hcPersist, DRIVEN — not a copy of its rules.
+   *
+   *  The first version of this seam reimplemented the filter, so removing the guard from
+   *  hcPersist left the check green: it was asserting against a copy that still had the guard.
+   *  That is the same vacuous-seam defect as stubbing a closure-scoped function from outside.
+   *  So this CALLS hcPersist and reports what actually landed in the queue. */
+  try{ window.hublyPersistUI = { filter: function(role, text){
+    var before = hc.pendingPersist.length;
+    hcPersist(role, text);
+    var added = hc.pendingPersist.slice(before);
+    hc.pendingPersist.length = before;            // leave the real queue as we found it
+    if(hc._persistTimer){ clearTimeout(hc._persistTimer); hc._persistTimer = null; }
+    return added.length ? String(added[0].content) : '';
+  } }; }catch(e){}
   async function hcFlushPersist(){
     var d = hc.draftBusiness;
     // No business yet (early pre-draft turns): keep buffered. The moment a draft
