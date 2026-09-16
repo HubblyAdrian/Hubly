@@ -54,3 +54,75 @@ side being wrong is a customer acting on one.
 PERSISTS it.** Two of the four in this table were symmetric by luck of being written at the same
 moment; one was not, and the one that was not shipped a defect that survived the fix, the check and
 the deploy.
+
+---
+
+# RULING A — answered, fixed, and the data decision measured
+
+## The question: does the history handed to the model filter them? **NO — it did not.**
+
+`public/platform-home.html`, the restore:
+
+```js
+hc.messages = rows.map(function(m){ return { role: m.role, content: m.content }; });   // ← every row
+…six lines later…
+if(hc.draftClaimed && rows[i].role !== 'user' && hcIsPreAccountMsg(txt)) continue;      // ← display only
+```
+
+`hc.messages` is handed to the model verbatim as `messages:`. **So the model read them and the
+owner could not see them.** Hubly could reason about, and answer from, messages the owner believes
+are gone — and an owner cannot correct a fact they cannot see. The severe reading, confirmed.
+
+## Fixed at the history reader, with one predicate
+
+`hcHiddenFromOwner(role, txt)` is now consulted by **both** the history seed and the render, so they
+cannot drift — which is exactly how this arose: one rule, written once, applied in one of the two
+places that needed it. `scripts/check-model-sees-what-owner-sees.mjs`, 7 assertions.
+
+**Red-proofed** — and the first attempt at leg 5 was a **no-op**: it searched 200 characters forward
+from `hc.messages = rows` for `hcHiddenFromOwner`, and the *render's* call sits six lines below,
+inside that window. Removing the filter from the seed left the leg green because it was matching a
+different line. Tightened to the seed expression alone; now: seed unfiltered → FAIL 5, render given
+its own inline copy → FAIL 6, 7.
+
+## The data decision — READ-ONLY, nothing deleted, yours to make
+
+**19 rows, on 19 claimed businesses — exactly one each. 3 of those businesses are `market`.**
+Those businesses carry 12.4 conversation rows on average.
+
+The three market rows, verbatim:
+
+| business | seq | content |
+|---|---|---|
+| `detailing-chemicals-equipment-courses` | 3 | *"That's your site. The address …myhubly.app is reserved for you — it goes live the moment you make an account."* |
+| `mobile-auto-detailing-in-los-angeles` | 3 | *"That's your site. The address …myhubly.app is reserved for you — it goes live the moment you make an account."* |
+| `window-washing` | 10 | *"You can edit by just telling me what to change here — text, prices, services, contact info, or which photo should be swapped. If you want to click directly on the page and edit it yourself, **that takes an account**, and I can open that for you now."* |
+
+### The third one is a false positive, and it changes the decision
+
+**`window-washing` seq 10 is not a pre-account offer.** It is a genuinely useful message explaining
+how to edit, which happens to contain the phrase *"that takes an account"*. The matcher is
+content-based, so **it hides a real message** — from the owner's screen today, and now from the
+model as well, because I made the two agree.
+
+Making them agree was still right: a reader that sees what the owner cannot is the worse defect.
+But it means the fix propagated an existing over-match rather than introducing one, and **1 of 3
+market instances is a wrong hide** — a 33% false-positive rate on the market set, off a sample of 3.
+
+### What breaks: filter vs delete
+
+| | filter (today) | delete |
+|---|---|---|
+| the two genuine offers | invisible to owner and model — correct | gone; same outcome, less machinery |
+| **`window-washing` seq 10** | **wrongly hidden, recoverably** — a better matcher restores it | **wrongly destroyed, irrecoverably** |
+| the conversation's `seq` continuity | untouched | gaps, and `_append_conversation_rows` allocates `max(seq)+1`, so gaps are survivable but the record no longer shows what was said |
+| audit / support | the row is still there to read | nothing to read |
+
+**My reading, for what it is worth:** deleting is the destructive option and the tie does not go to
+it — the standing rule. And the false positive is the argument: a filter that is wrong once in three
+is a filter to *improve*, not a delete to *run*. A content matcher that decides what is destroyed is
+the wrong mechanism; if these rows should not survive a claim, the right marker is one stamped at
+write time (as `data-hc-msg="preaccount"` already is on the live path), not a regex applied years
+later.
+
+**Nothing deleted. Nothing reclassified. Awaiting your ruling.**

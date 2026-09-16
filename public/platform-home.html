@@ -9284,9 +9284,22 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     try{ hcAuthTrace('conv', 'branch=' + _branch + ' authed=' + hcIsAuthed() + ' sess=' + _sess + ' rows=' + (Array.isArray(rows) ? rows.length : 'null') + (_err ? (' err=' + _err) : '')); }catch(_){}
     if(!Array.isArray(rows) || rows.length === 0) return false;
     rows.sort(function(a, b){ return (a.seq || 0) - (b.seq || 0); });
-    // Seed model context with the clean restored transcript (the edge slices it
-    // to MAX_HISTORY next turn). Cleaner than the polluted in-memory history.
-    hc.messages = rows.map(function(m){ return { role: m.role, content: m.content }; });
+    // ══ WHAT THE OWNER CANNOT SEE, THE MODEL DOES NOT READ ═══════════════════════════
+    //
+    // This line used to seed hc.messages with EVERY restored row, and hc.messages is handed to
+    // the model verbatim as `messages:`. Six lines below, the DISPLAY loop skips the
+    // pre-account "reserved for you — make an account" messages once the business is claimed,
+    // because they are a lie in the history. So the owner could not see them and the model
+    // could — and the model can then reason about, and answer from, messages the owner believes
+    // are gone. An owner cannot correct a fact they cannot see. Same family as the phone scar:
+    // the model treating as known something the record does not show the person.
+    //
+    // ONE PREDICATE, BOTH CALL SITES. The filter is hcHiddenFromOwner and it is used by the
+    // history seed AND by the render below, so the two cannot drift apart — which is the whole
+    // reason this bug existed: the same rule written once, applied in one place.
+    hc.messages = rows
+      .filter(function(m){ return !hcHiddenFromOwner(m.role, hcMessageToText(m.content)); })
+      .map(function(m){ return { role: m.role, content: m.content }; });
     // Context loaded; Home wants it silent so it can open on a calm greeting instead of the
     // tail of the last conversation. hcRenderHome exposes the full thread on demand.
     if(silent) return true;
@@ -9296,7 +9309,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       // "reserved for you — make an account" line is a lie in the history. Don't
       // re-render it on reload (it's matched by content because a restored message
       // has no data-hc-msg tag). The site being live is confirmed elsewhere.
-      if(hc.draftClaimed && rows[i].role !== 'user' && hcIsPreAccountMsg(txt)) continue;
+      if(hcHiddenFromOwner(rows[i].role, txt)) continue;      // the same predicate the model reads through
       var _el = hcAppendMessage(rows[i].role === 'user' ? 'user' : 'hubly', txt);
       // Re-attach the account button to the reserved-for-you offer on reload (the
       // transcript stores only text, so the button would otherwise evaporate).
@@ -9308,6 +9321,19 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // A stored message's content is a string (usual) or a parts array (a photo
   // turn: a text part plus an attachment part whose raw bytes were stripped
   // before storage). Flatten to the line the person saw.
+  /** IS THIS ROW HIDDEN FROM THE OWNER? One predicate, consulted by every reader of the
+   *  transcript — the render AND the history handed to the model.
+   *
+   *  It exists because those two disagreed: the render skipped claimed-account pre-account
+   *  lines and the model's history did not, so Hubly could answer from messages the owner had
+   *  no way to see or correct (found 2026-09-16). A rule applied in one of two places is the
+   *  defect; making it one function is the fix. */
+  function hcHiddenFromOwner(role, txt){
+    if(role === 'user') return false;                 // never hide what the person themselves said
+    if(!hc.draftClaimed) return false;                // before a claim the offer is true
+    return typeof hcIsPreAccountMsg === 'function' && hcIsPreAccountMsg(txt);
+  }
+  try{ window.hublyHistoryUI = { hidden: hcHiddenFromOwner }; window.__setClaimed = function(v){ hc.draftClaimed = !!v; }; }catch(e){}
   // True for the pre-account "reserved for you — make an account" follow-up. Matched
   // by CONTENT (not just the data-hc-msg tag) so it also catches messages restored
   // from the transcript on reload, which carry no attribute. One source of truth for
