@@ -1,5 +1,19 @@
 #!/usr/bin/env node
 /**
+ * [TRIPWIRE] LEGS IN THIS FILE ASSERT A FROZEN SHAPE, ON PURPOSE.
+ *
+ * A milestone certification's job is to freeze a DELIVERED shape so it cannot silently erode, so
+ * legs of the form `X.length === N` here are not encoding yesterday's layout by accident — they
+ * are the certification itself.
+ *
+ * WHICH MATTERS BECAUSE THE TWO WANT OPPOSITE RESPONSES (Lesson 92). A check that encodes a shape
+ * by accident goes red when the product IMPROVES, and the fix is the check. A tripwire goes red
+ * when the certified shape CHANGES, and the fix is to confirm the change was intended and update
+ * the number — never to delete the addition to get back to green.
+ *
+ * So: a red [TRIPWIRE] is a question, not a defect. Answer it deliberately.
+ */
+/**
  * Milestone 2 · Epic 4 — Hubly Architect (Recommend → Build → Show)
  */
 import fs from "node:fs";
@@ -47,10 +61,10 @@ const evaled = evaluateCreativeBuildHtml(html);
 check("Hubly Architect module", HublyCreativeBuildExperience.version === "2.0.0");
 check("Label", CREATIVE_BUILD_LABEL === "Hubly Architect");
 check("Version", CREATIVE_BUILD_VERSION === "2.0.0");
-check("Seven stages", CREATIVE_BUILD_STAGES.length === 7);
+check("[TRIPWIRE] Seven stages", CREATIVE_BUILD_STAGES.length === 7);
 check("Transition copy", CREATIVE_BUILD_TRANSITION.includes("proud of"));
 check("Recommend three directions", /three directions/.test(CREATIVE_BUILD_CHOICE_PROMPT));
-check("Three core intents", ARCHITECT_INTENTS.length === 3);
+check("[TRIPWIRE] Three core intents", ARCHITECT_INTENTS.length === 3);
 
 console.log("\nPage structure\n");
 check("Creative Canvas exists", evaled.checks.creativeCanvas);
@@ -91,7 +105,7 @@ check("HVAC emphasizes booking/plans", hvac.sequence.includes("booking") && hvac
 check("Distinct industry builds", creativeBuildExperiencesAreDistinct(pw, photo));
 check("All stages explained from reasoning", pw.stages.every((s) => s.explain && s.source === "strategy_creative_critic"));
 check("No instant finished reveal", pw.fakeInstantReveal === false);
-check("Three directions per pack", pw.directions?.length === 3 && pw.directions[0].id === "minimal");
+check("[TRIPWIRE] Three directions per pack", pw.directions?.length === 3 && pw.directions[0].id === "minimal");
 
 console.log("\nFounder acceptance tests\n");
 check(
@@ -110,7 +124,7 @@ check(
   interrupted.direction === "bold" && interrupted.updates.some((u) => /premium/i.test(u.text)),
 );
 check(
-  "Test4: progressive stages (not sudden final site)",
+  "[TRIPWIRE] Test4: progressive stages (not sudden final site)",
   pw.stages.length === 7 && pw.sequence.length === 7,
 );
 check(

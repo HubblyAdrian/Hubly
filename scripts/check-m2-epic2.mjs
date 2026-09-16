@@ -1,5 +1,19 @@
 #!/usr/bin/env node
 /**
+ * [TRIPWIRE] LEGS IN THIS FILE ASSERT A FROZEN SHAPE, ON PURPOSE.
+ *
+ * A milestone certification's job is to freeze a DELIVERED shape so it cannot silently erode, so
+ * legs of the form `X.length === N` here are not encoding yesterday's layout by accident — they
+ * are the certification itself.
+ *
+ * WHICH MATTERS BECAUSE THE TWO WANT OPPOSITE RESPONSES (Lesson 92). A check that encodes a shape
+ * by accident goes red when the product IMPROVES, and the fix is the check. A tripwire goes red
+ * when the certified shape CHANGES, and the fix is to confirm the change was intended and update
+ * the number — never to delete the addition to get back to green.
+ *
+ * So: a red [TRIPWIRE] is a question, not a defect. Answer it deliberately.
+ */
+/**
  * Milestone 2 · Epic 2 — Business Discovery Conversation (Release Gate)
  *
  * Adaptive consulting conversation — not a questionnaire.
@@ -93,12 +107,12 @@ const ruled = enforceDiscoveryQuestionRules({
   confidence: 40,
   previouslyAsked: [],
 });
-check("Rules cap at 3 questions", ruled.shown.length === 3 && ruled.actions.includes("capped_questions_at_3"));
+check("[TRIPWIRE] Rules cap at 3 questions", ruled.shown.length === 3 && ruled.actions.includes("capped_questions_at_3"));
 const high = enforceDiscoveryQuestionRules({
   questions: ["q1"],
   confidence: 90,
 });
-check("High confidence suppresses questions", high.shown.length === 0);
+check("[TRIPWIRE] High confidence suppresses questions", high.shown.length === 0);
 
 console.log("\nFounder acceptance tests\n");
 

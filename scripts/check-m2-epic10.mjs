@@ -1,5 +1,19 @@
 #!/usr/bin/env node
 /**
+ * [TRIPWIRE] LEGS IN THIS FILE ASSERT A FROZEN SHAPE, ON PURPOSE.
+ *
+ * A milestone certification's job is to freeze a DELIVERED shape so it cannot silently erode, so
+ * legs of the form `X.length === N` here are not encoding yesterday's layout by accident — they
+ * are the certification itself.
+ *
+ * WHICH MATTERS BECAUSE THE TWO WANT OPPOSITE RESPONSES (Lesson 92). A check that encodes a shape
+ * by accident goes red when the product IMPROVES, and the fix is the check. A tripwire goes red
+ * when the certified shape CHANGES, and the fix is to confirm the change was intended and update
+ * the number — never to delete the addition to get back to green.
+ *
+ * So: a red [TRIPWIRE] is a question, not a defect. Answer it deliberately.
+ */
+/**
  * Milestone 2 · Epic 10 — Hubly Daily (Release Gate)
  */
 import fs from "node:fs";
@@ -49,8 +63,8 @@ check("Label", DAILY_LABEL === "Hubly Daily");
 check("Version", DAILY_VERSION === "1.0.0");
 check("Overnight systems", OVERNIGHT_SYSTEMS.length >= 12);
 check("Expert voices (merged)", EXPERT_VOICES.length >= 6);
-check("Wrap-up kinds", WRAP_UP_KINDS.length === 4);
-check("Stage cadence", Object.keys(STAGE_CADENCE).length === 3);
+check("[TRIPWIRE] Wrap-up kinds", WRAP_UP_KINDS.length === 4);
+check("[TRIPWIRE] Stage cadence", Object.keys(STAGE_CADENCE).length === 3);
 
 console.log("\nPage structure\n");
 Object.entries(evaled.checks).forEach(([k, v]) => check(k, v));
@@ -81,7 +95,7 @@ check("Overnight review systems", sample.overnight.systems.length >= 12);
 
 console.log("\nSeven unique days\n");
 const week = simulateSevenDays({ industry: "pressure washing", ownerName: "Adrian", bookingCount: 10 });
-check("Seven days simulated", week.length === 7);
+check("[TRIPWIRE] Seven days simulated", week.length === 7);
 check(
   "No duplicated headlines in a week",
   new Set(week.map((d) => d.headline)).size === 7,
@@ -126,7 +140,7 @@ console.log("\nArchive + wrap-ups + return\n");
 const tue = searchDailyArchive(sample.archive, "last Tuesday");
 check("Archive searchable for Tuesday", tue.length >= 1 || sample.archive.some((a) => /Tue/i.test(a.weekday)));
 const wraps = buildWrapUps({ forceFriday: true, forceMonthStart: true, forceQuarter: true, forceAnniversary: true });
-check("All wrap-up kinds generatable", wraps.length === 4);
+check("[TRIPWIRE] All wrap-up kinds generatable", wraps.length === 4);
 const away = orchestrateHublyDaily({
   industry: "hvac",
   daysAway: 14,

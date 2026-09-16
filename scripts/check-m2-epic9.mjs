@@ -1,5 +1,19 @@
 #!/usr/bin/env node
 /**
+ * [TRIPWIRE] LEGS IN THIS FILE ASSERT A FROZEN SHAPE, ON PURPOSE.
+ *
+ * A milestone certification's job is to freeze a DELIVERED shape so it cannot silently erode, so
+ * legs of the form `X.length === N` here are not encoding yesterday's layout by accident — they
+ * are the certification itself.
+ *
+ * WHICH MATTERS BECAUSE THE TWO WANT OPPOSITE RESPONSES (Lesson 92). A check that encodes a shape
+ * by accident goes red when the product IMPROVES, and the fix is the check. A tripwire goes red
+ * when the certified shape CHANGES, and the fix is to confirm the change was intended and update
+ * the number — never to delete the addition to get back to green.
+ *
+ * So: a red [TRIPWIRE] is a question, not a defect. Answer it deliberately.
+ */
+/**
  * Milestone 2 · Epic 9 — Creative Workspace (Release Gate)
  */
 import fs from "node:fs";
@@ -52,7 +66,7 @@ check("Label", WORKSPACE_LABEL === "Creative Workspace");
 check("Version", WORKSPACE_VERSION === "1.0.0");
 check("Conversation starters", CONVERSATION_STARTERS.length >= 6);
 check("Creative directions", CREATIVE_DIRECTIONS.length >= 8);
-check("Playground concepts", PLAYGROUND_CONCEPTS.length === 4);
+check("[TRIPWIRE] Playground concepts", PLAYGROUND_CONCEPTS.length === 4);
 check("Advanced controls", ADVANCED_CONTROLS.length >= 8);
 
 console.log("\nPage structure\n");
@@ -92,9 +106,9 @@ check("Memory remembers darker", /darker/i.test(sample.memory.line));
 check("Eight versions", sample.versions.length >= 8);
 check("Suggestions proactive", sample.suggestions.length >= 3);
 check("Playgrounds intro", sample.playgrounds.intro === PLAYGROUND_INTRO);
-check("Four playground concepts", sample.playgrounds.concepts.length === 4);
+check("[TRIPWIRE] Four playground concepts", sample.playgrounds.concepts.length === 4);
 check("Advanced Studio available", sample.advancedStudio.available === true);
-check("Builder pipeline", sample.builderTransparency.length === 4);
+check("[TRIPWIRE] Builder pipeline", sample.builderTransparency.length === 4);
 check("No refresh/publish/reload", sample.livePreview.noRefresh && sample.livePreview.noPublish && sample.livePreview.noReload);
 
 console.log("\nIntent + compare + versions\n");

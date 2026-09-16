@@ -1,5 +1,19 @@
 #!/usr/bin/env node
 /**
+ * [TRIPWIRE] LEGS IN THIS FILE ASSERT A FROZEN SHAPE, ON PURPOSE.
+ *
+ * A milestone certification's job is to freeze a DELIVERED shape so it cannot silently erode, so
+ * legs of the form `X.length === N` here are not encoding yesterday's layout by accident — they
+ * are the certification itself.
+ *
+ * WHICH MATTERS BECAUSE THE TWO WANT OPPOSITE RESPONSES (Lesson 92). A check that encodes a shape
+ * by accident goes red when the product IMPROVES, and the fix is the check. A tripwire goes red
+ * when the certified shape CHANGES, and the fix is to confirm the change was intended and update
+ * the number — never to delete the addition to get back to green.
+ *
+ * So: a red [TRIPWIRE] is a question, not a defect. Answer it deliberately.
+ */
+/**
  * Milestone 2 · Epic 0 — Hubly Experience Layer (Release Gate)
  *
  * Customer's emotional experience — not infrastructure.
@@ -134,7 +148,7 @@ const qHigh = enforceConversationRules({
   questions: ["A?", "B?", "C?", "D?"],
   confidence: 90,
 });
-check("High confidence suppresses questions", qHigh.shown.length === 0);
+check("[TRIPWIRE] High confidence suppresses questions", qHigh.shown.length === 0);
 const qLow = enforceConversationRules({
   questions: ["A?", "B?", "C?", "D?"],
   confidence: 40,
@@ -183,9 +197,9 @@ check("Empty portfolio teaches", /Upload/i.test(buildEmptyState("portfolio").tex
 check("Empty reviews teach", /remind you/i.test(buildEmptyState("reviews").text));
 
 console.log("\n10. Transition System\n");
-check("Pipeline complete", TRANSITION_PIPELINE.length === 7);
+check("[TRIPWIRE] Pipeline complete", TRANSITION_PIPELINE.length === 7);
 const narr = transitionNarration();
-check("Transition narration", narr.length === 7);
+check("[TRIPWIRE] Transition narration", narr.length === 7);
 check("Deployment transition", /Deploying carefully/i.test(buildTransition("deployment").text));
 
 console.log("\n11. Visual Personality\n");
@@ -193,7 +207,7 @@ check("Motion tokens", EXPERIENCE_VISUAL.motion.celebrationMs > 0);
 check("Wordmark path", /hubly-wordmark/.test(EXPERIENCE_VISUAL.wordmark));
 
 console.log("\n12. Emotional Timeline\n");
-check("Timeline length", EMOTIONAL_TIMELINE.length === 8);
+check("[TRIPWIRE] Timeline length", EMOTIONAL_TIMELINE.length === 8);
 check("Starts curiosity ends partnership", EMOTIONAL_TIMELINE[0] === "curiosity" && EMOTIONAL_TIMELINE.at(-1) === "partnership");
 
 console.log("\nFounder Acceptance Tests\n");

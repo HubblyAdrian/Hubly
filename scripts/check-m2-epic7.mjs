@@ -1,5 +1,19 @@
 #!/usr/bin/env node
 /**
+ * [TRIPWIRE] LEGS IN THIS FILE ASSERT A FROZEN SHAPE, ON PURPOSE.
+ *
+ * A milestone certification's job is to freeze a DELIVERED shape so it cannot silently erode, so
+ * legs of the form `X.length === N` here are not encoding yesterday's layout by accident — they
+ * are the certification itself.
+ *
+ * WHICH MATTERS BECAUSE THE TWO WANT OPPOSITE RESPONSES (Lesson 92). A check that encodes a shape
+ * by accident goes red when the product IMPROVES, and the fix is the check. A tripwire goes red
+ * when the certified shape CHANGES, and the fix is to confirm the change was intended and update
+ * the number — never to delete the addition to get back to green.
+ *
+ * So: a red [TRIPWIRE] is a question, not a defect. Answer it deliberately.
+ */
+/**
  * Milestone 2 · Epic 7 — Business Launch Experience (Release Gate)
  */
 import fs from "node:fs";
@@ -52,8 +66,8 @@ check("Label", LAUNCH_LABEL === "Business Launch Experience");
 check("Version", LAUNCH_VERSION === "1.0.0");
 check("Animation title", LAUNCH_ANIMATION_TITLE === "Launching your business...");
 check("Celebration", LAUNCH_CELEBRATION.includes("officially launched"));
-check("Deploy steps", LAUNCH_DEPLOY_STEPS.length === 6);
-check("Next steps", NEXT_STEPS.length === 4);
+check("[TRIPWIRE] Deploy steps", LAUNCH_DEPLOY_STEPS.length === 6);
+check("[TRIPWIRE] Next steps", NEXT_STEPS.length === 4);
 check("Future timeline milestones", FUTURE_TIMELINE.length >= 9);
 
 console.log("\nPage structure\n");

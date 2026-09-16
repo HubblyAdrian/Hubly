@@ -1,5 +1,19 @@
 #!/usr/bin/env node
 /**
+ * [TRIPWIRE] LEGS IN THIS FILE ASSERT A FROZEN SHAPE, ON PURPOSE.
+ *
+ * A milestone certification's job is to freeze a DELIVERED shape so it cannot silently erode, so
+ * legs of the form `X.length === N` here are not encoding yesterday's layout by accident — they
+ * are the certification itself.
+ *
+ * WHICH MATTERS BECAUSE THE TWO WANT OPPOSITE RESPONSES (Lesson 92). A check that encodes a shape
+ * by accident goes red when the product IMPROVES, and the fix is the check. A tripwire goes red
+ * when the certified shape CHANGES, and the fix is to confirm the change was intended and update
+ * the number — never to delete the addition to get back to green.
+ *
+ * So: a red [TRIPWIRE] is a question, not a defect. Answer it deliberately.
+ */
+/**
  * Milestone 2 · Epic 11 — Living Business (Release Gate)
  */
 import fs from "node:fs";
@@ -43,8 +57,8 @@ const evaled = evaluateLivingHtml(html);
 check("Living Business module", HublyLivingBusiness.version === "1.0.0");
 check("Label", LIVING_LABEL === "Living Business");
 check("Systems evaluated", EVOLUTION_SYSTEMS.length >= 10);
-check("Categories", EVOLUTION_CATEGORIES.length === 6);
-check("Approval workflow steps", APPROVAL_WORKFLOW.length === 4);
+check("[TRIPWIRE] Categories", EVOLUTION_CATEGORIES.length === 6);
+check("[TRIPWIRE] Approval workflow steps", APPROVAL_WORKFLOW.length === 4);
 
 console.log("\nPage structure\n");
 Object.entries(evaled.checks).forEach(([k, v]) => check(k, v));
@@ -70,7 +84,7 @@ check("Approval workflow", sample.approvalWorkflow.map((s) => s.label).join("→
 
 console.log("\nMonth simulation — no weekly repetition\n");
 const month = simulateMonthOfEvolution({ industry: "pressure washing" });
-check("Four weeks", month.length === 4);
+check("[TRIPWIRE] Four weeks", month.length === 4);
 check(
   "Different recommendations each week",
   new Set(month.map((w) => w.signature)).size === 4,

@@ -1,5 +1,19 @@
 #!/usr/bin/env node
 /**
+ * [TRIPWIRE] LEGS IN THIS FILE ASSERT A FROZEN SHAPE, ON PURPOSE.
+ *
+ * A milestone certification's job is to freeze a DELIVERED shape so it cannot silently erode, so
+ * legs of the form `X.length === N` here are not encoding yesterday's layout by accident — they
+ * are the certification itself.
+ *
+ * WHICH MATTERS BECAUSE THE TWO WANT OPPOSITE RESPONSES (Lesson 92). A check that encodes a shape
+ * by accident goes red when the product IMPROVES, and the fix is the check. A tripwire goes red
+ * when the certified shape CHANGES, and the fix is to confirm the change was intended and update
+ * the number — never to delete the addition to get back to green.
+ *
+ * So: a red [TRIPWIRE] is a question, not a defect. Answer it deliberately.
+ */
+/**
  * Milestone 2 · Epic 6 — Delayed Account Creation (Release Gate)
  */
 import fs from "node:fs";
@@ -49,8 +63,8 @@ check("Delayed Account module", HublyDelayedAccount.version === "1.0.0");
 check("Label", DELAYED_ACCOUNT_LABEL === "Delayed Account Creation");
 check("Version", DELAYED_ACCOUNT_VERSION === "1.0.0");
 check("Save headline", SAVE_BUSINESS_HEADLINE.includes("save everything"));
-check("Three auth options", AUTH_OPTIONS.length === 3);
-check("Manifest has 7 items", SAVE_MANIFEST.length === 7);
+check("[TRIPWIRE] Three auth options", AUTH_OPTIONS.length === 3);
+check("[TRIPWIRE] Manifest has 7 items", SAVE_MANIFEST.length === 7);
 
 console.log("\nPage structure\n");
 check("Save Business canvas", evaled.checks.saveCanvas);

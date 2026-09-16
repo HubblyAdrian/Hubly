@@ -1,5 +1,19 @@
 #!/usr/bin/env node
 /**
+ * [TRIPWIRE] LEGS IN THIS FILE ASSERT A FROZEN SHAPE, ON PURPOSE.
+ *
+ * A milestone certification's job is to freeze a DELIVERED shape so it cannot silently erode, so
+ * legs of the form `X.length === N` here are not encoding yesterday's layout by accident — they
+ * are the certification itself.
+ *
+ * WHICH MATTERS BECAUSE THE TWO WANT OPPOSITE RESPONSES (Lesson 92). A check that encodes a shape
+ * by accident goes red when the product IMPROVES, and the fix is the check. A tripwire goes red
+ * when the certified shape CHANGES, and the fix is to confirm the change was intended and update
+ * the number — never to delete the addition to get back to green.
+ *
+ * So: a red [TRIPWIRE] is a question, not a defect. Answer it deliberately.
+ */
+/**
  * Milestone 2 · Epic 8 — Business Home (Release Gate)
  */
 import fs from "node:fs";
@@ -91,10 +105,10 @@ check("Greeting", sample.brief.greeting.includes("Adrian"));
 check("Single Today's Focus", !!sample.focus.action && sample.focus.impact);
 check("Focus has why + impact + next", !!(sample.focus.why && sample.focus.impact && sample.focus.nextStep));
 check("Health overall", sample.health.overall >= 1 && sample.health.overall <= 100);
-check("Five health dimensions", sample.health.dimensions.length === 5);
-check("Website actions", sample.website.actions.length === 4);
-check("Growth has three with impact", sample.growth.length === 3 && sample.growth.every((g) => g.impact && g.why && g.nextStep));
-check("Four questions answered", sample.answersFourQuestions.length === 4);
+check("[TRIPWIRE] Five health dimensions", sample.health.dimensions.length === 5);
+check("[TRIPWIRE] Website actions", sample.website.actions.length === 4);
+check("[TRIPWIRE] Growth has three with impact", sample.growth.length === 3 && sample.growth.every((g) => g.impact && g.why && g.nextStep));
+check("[TRIPWIRE] Four questions answered", sample.answersFourQuestions.length === 4);
 check("Ask dock continuous", sample.askDock.continuous === true);
 
 console.log("\nIndustry-distinct homes\n");
@@ -134,7 +148,7 @@ const webHome = orchestrateBusinessHome({ industry: "pressure washing", workspac
 check("Jobs workspace reorders", jobsHome.sectionOrder[2] === "today");
 check("Sales workspace reorders", salesHome.sectionOrder[2] === "growth");
 check("Website workspace reorders", webHome.sectionOrder[2] === "website");
-check("Workspace modes exist", Object.keys(WORKSPACE_MODES).length === 4);
+check("[TRIPWIRE] Workspace modes exist", Object.keys(WORKSPACE_MODES).length === 4);
 
 const newHome = orchestrateBusinessHome({ industry: "cleaning", businessStage: "new" });
 const growHome = orchestrateBusinessHome({ industry: "cleaning", businessStage: "growing", bookingCount: 10 });
@@ -142,7 +156,7 @@ const estHome = orchestrateBusinessHome({ industry: "cleaning", businessStage: "
 check("New stage emphasizes booking page", /booking page/i.test(newHome.stage.emphasis));
 check("Growing emphasizes Growth", /Growth/i.test(growHome.stage.emphasis));
 check("Established emphasizes Optimization", /Optimization/i.test(estHome.stage.emphasis));
-check("Stage packs", Object.keys(STAGE_EMPHASIS).length === 3);
+check("[TRIPWIRE] Stage packs", Object.keys(STAGE_EMPHASIS).length === 3);
 
 const weekAway = buildWeekReturnSummary({ daysAway: 7, awayBookings: 3, awaySiteChanges: 2 });
 check("Week return summary", !!weekAway && /what changed/i.test(weekAway.headline));

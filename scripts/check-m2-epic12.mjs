@@ -113,7 +113,7 @@ check(
   FORBIDDEN_LOADING.every((f) => isForbiddenLoading(f)),
 );
 check(
-  "Test4: cross-device conversation-first",
+  "[TRIPWIRE] Test4: cross-device conversation-first",
   sample.conversationFirstEverywhere === true && sample.crossDevice.length === 3,
 );
 check(
