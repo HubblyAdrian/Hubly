@@ -8161,6 +8161,9 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
             p_address: sendAddr,
             p_amount: sendAmount,
             p_draft_token: draftToken || null,
+            // WHICH HAND WROTE THIS. The owner's own job editor calls the same rpc with the same
+            // arguments, so 'who set this' exists nowhere but here (migration 20260916150100).
+            p_via: "model",
           });
           const row = Array.isArray(upd) ? upd[0] : upd;
           if (!row || row.error || !row.id) {

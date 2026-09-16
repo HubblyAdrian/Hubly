@@ -128,6 +128,48 @@ try {
         : "clean");
   }
 
+  // ── 1b. MY DAY — HOME'S OWN SURFACE, at every width the pane can reach. ────────────
+  //
+  // Added 2026-09-16 with the surface itself, because the rule is "nothing renders squeezed at
+  // any width, ON ANY SURFACE" and a sweep that only ever looks at the card rail is a sweep that
+  // certifies one corner. My Day is a three-column layout with a four-column grid inside it —
+  // exactly the shape that collapses to min-content first.
+  const dayProbe = await rig.page.evaluate(async (widths) => {
+    if (!(window.hublyDayUI && window.hublyDayUI.render)) return { skipped: "no hublyDayUI.render" };
+    const host = document.createElement("div");
+    host.className = "hc-inthread-day";
+    host.style.position = "fixed"; host.style.top = "0"; host.style.left = "0";
+    document.body.appendChild(host);
+    const out = [];
+    for (const w of widths) {
+      host.style.width = w + "px";
+      await window.hublyDayUI.render(host, { id: "B", slug: "s", name: "N", url: "https://s.myhubly.app" });
+      await new Promise((r) => setTimeout(r, 60));
+      // A box wider than its own container is clipped or overflowing, either way unreadable.
+      const over = [...host.querySelectorAll("*")].filter((e) => e.scrollWidth > e.clientWidth + 2
+        && getComputedStyle(e).overflowX === "visible" && e.clientWidth > 0)
+        .map((e) => (e.className || e.tagName) + " " + e.scrollWidth + ">" + e.clientWidth);
+      // A column crushed to nothing is the min-content collapse.
+      const crushed = [...host.querySelectorAll(".hcmd-cols span, .hcmd-tile, .hcmd-calh")]
+        .filter((e) => e.getBoundingClientRect().width < 8)
+        .map((e) => e.textContent.trim() || e.className);
+      out.push({ w, over: over.slice(0, 3), crushed: crushed.slice(0, 3) });
+    }
+    host.remove();
+    return { out };
+  }, [1280, 1024, 900, 760, 620]);
+  if (dayProbe.skipped) {
+    say("1b My Day was reachable to sweep", false, dayProbe.skipped);
+  } else {
+    dayProbe.out.forEach((r) => {
+      say(`1b@${r.w}px My Day: nothing overflows, no column crushed`,
+        r.over.length === 0 && r.crushed.length === 0,
+        r.over.length || r.crushed.length
+          ? `over: ${JSON.stringify(r.over)} crushed: ${JSON.stringify(r.crushed)}`
+          : "clean");
+    });
+  }
+
   // ── 2. AND THE LABELS DID NOT CRUSH. One line is the point of the stacking rule. ────
   await rig.page.evaluate(() => { document.querySelector(".hc-app-left").style.flex = "0 0 380px"; });
   await rig.page.waitForTimeout(160);

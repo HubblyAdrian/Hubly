@@ -96,6 +96,35 @@ try {
       JSON.stringify(rendered.panel.slice(0, 140)));
   }
 
+  // ── 5b. MY DAY, RENDERED. Home's own surface, added 2026-09-16, and every string on it is
+  //        new — so it is scanned here rather than trusted. Adrian's instruction with the
+  //        ruling: "Run check-no-machine-words over every string you add." ─────────────────
+  const day = await rig.page.evaluate(async () => {
+    if (!(window.hublyDayUI && window.hublyDayUI.render)) return null;
+    const host = document.createElement("div");
+    host.className = "hc-inthread-day";
+    document.body.appendChild(host);
+    try {
+      await window.hublyDayUI.render(host, { id: "sim-biz", slug: "sim", name: "Sim", url: "https://sim.myhubly.app" });
+    } catch (_) { /* reported by the leg below, never swallowed into a pass */ }
+    const text = host.innerText.replace(/\s+/g, " ").trim();
+    host.remove();
+    return text;
+  });
+  const dayDrove = !!(day && day.length > 20);
+  say("5b My Day was reachable to measure", dayDrove,
+    dayDrove ? `${day.length} chars` : "NOT DRIVEN — window.hublyDayUI.render did not produce a surface");
+  if (dayDrove) {
+    const dayHits = MACHINE.filter((m) => m.re.test(day));
+    say("5c no machine vocabulary anywhere on My Day", dayHits.length === 0,
+      dayHits.length ? dayHits.map((h) => h.what).join(" | ") + " in " + JSON.stringify(day.slice(0, 140)) : "clean");
+    // AND THE POSITIVE HALF. Absence is not presence: a My Day that rendered no bands at all
+    // would pass the scan above and show the owner nothing. Every day has an A, a B and a C.
+    say("5d and it SAYS the band words — every day has an A, a B and a C",
+      /Must Do/.test(day) && /Important/.test(day) && /Nice to Do/.test(day),
+      JSON.stringify(day.slice(0, 120)));
+  }
+
   // ── 6. SOURCE: the strings that build those lines go through the mappers. ───────────
   const src = readFileSync(resolve(ROOT, "public/platform-home.html"), "utf8");
   const bad = [];

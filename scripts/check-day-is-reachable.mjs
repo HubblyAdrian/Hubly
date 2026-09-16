@@ -21,6 +21,16 @@
  *       The Planner room was built, rendered, and unreachable from a sentence. A missing door,
  *       not a missing feature — the fourth time that diagnosis has been the right one.
  *
+ * UPDATED 2026-09-16, AND SAYING WHY RATHER THAN QUIETLY RETARGETING. Adrian ruled that MY DAY
+ * IS NOT A RAIL ROW — My Day is what HOME renders — so `planner` is now an alias that opens Home,
+ * and the surface these legs read is hcRenderMyDay rather than the Planner room. Every assertion
+ * below keeps its INTENT: the door opens, both rows are visible (including the one past today),
+ * a block says it is a block, a time reads as a person reads it, and a row opens real controls.
+ * A check rewritten to agree with new code stops guarding; a check retargeted at the surface the
+ * same rule now lives on still guards. The one thing that genuinely changed is WHERE a future row
+ * appears — today's rows are in the bands, later ones under "Later this week" — and that
+ * distinction is itself asserted, because it is the fix for the defect this file was written for.
+ *
  * SIMULATED AND SAID SO: no session. `window.supabase` is a declared fake returning the two REAL
  * rows measured above, and the renderers, the room, the sentences and the door are the shipping
  * code in public/platform-home.html. The WRITE itself was exercised against the live database
@@ -132,6 +142,10 @@ try {
   say("1 the schedule door opens, and counts what it found",
     went && went.ok === true && went.place === "planner" && went.counted === 2,
     `ok=${went && went.ok} counted=${went && went.counted} (expected 2 rows)`);
+  // AND IT LANDS ON HOME, because Home is the day now. A door that reported success while
+  // opening a mode that renders nothing is the false green this whole file exists to refuse.
+  const landedHome = await rig.page.evaluate(() => document.getElementById("hcApp").getAttribute("data-mode"));
+  say("1b and it lands on Home, which is where the day is", landedHome === "home", `data-mode=${landedHome}`);
 
   const afterGo = await rig.settle(() => {
     const cv = document.getElementById("hcCanvas");
@@ -153,8 +167,13 @@ try {
     /Later this week/i.test(afterGo.final.room), "'Later this week' group present");
   say("5 a block is marked as a block, never as a customer",
     /Blocked — not a customer/i.test(afterGo.final.room), "block labelled");
-  say("6 the room is never empty while rows exist",
-    !/Nothing booked in the next/i.test(afterGo.final.room), "no empty state over 2 rows");
+  // EVERY DAY HAS AN A, A B AND A C (Adrian, 2026-09-16) — so "empty" is not a state the day
+  // can be in, and leg 6's old empty-state string cannot appear. The thing that must not
+  // happen now is the bands rendering while the rows they should hold are nowhere.
+  say("6 the three bands are there, and the rows are not lost between them",
+    /Must Do/.test(afterGo.final.room) && /Important/.test(afterGo.final.room)
+      && /Nice to Do/.test(afterGo.final.room) && /driveway/i.test(afterGo.final.room),
+    "A/B/C present with the rows visible");
 
   // ── WHAT IT SAID. Report, never predict — no "should", and no invented count. ─────────
   say("7 the sentence reports what is there and does not predict",
@@ -163,7 +182,9 @@ try {
 
   // ── (c) A TIME AND A PLACE, CHANGED BY HAND. Real controls, then the write. ───────────
   const controls = await rig.page.evaluate(() => {
-    const rows = document.querySelectorAll("#hcCanvas .hc-row");
+    // BOTH ROW SHAPES. A job today is a band row; a job later this week is a "Later this week"
+    // row. Either one must open the job, or a person cannot act on what they can see.
+    const rows = document.querySelectorAll("#hcCanvas .hc-row, #hcCanvas .hcmd-row, #hcCanvas .hcmd-laterrow");
     // The driveway row is the one carrying the price.
     let target = null;
     rows.forEach((r) => { if (/driveway/i.test(r.innerText)) target = r; });

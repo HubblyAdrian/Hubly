@@ -87,10 +87,28 @@ try {
   say("2 and nothing renders a room that can never appear in the rail",
     noSurface.length === 0, noSurface.length ? `no surface for: ${noSurface.join(", ")}` : `${reg.rooms.length} rooms`);
 
-  // ── 3. A SENTENCE CANNOT OFFER A PLACE THE RAIL HAS NEVER HEARD OF. ─────────────────────
-  const orphanDoors = reg.goPlaces.filter((k) => !reg.surfaces.includes(k));
-  say("3 every place a sentence can take someone to is a real surface",
-    orphanDoors.length === 0, orphanDoors.length ? `offered but not a surface: ${orphanDoors.join(", ")}` : `${reg.goPlaces.length} doors`);
+  // ── 3. A SENTENCE CANNOT OFFER A PLACE THAT OPENS NOTHING. ──────────────────────────────
+  //
+  // THIS LEG USED TO ASSERT SOMETHING WRONG, and it is worth saying why rather than quietly
+  // editing it. It read "every place a sentence can take someone to is a real SURFACE" — which
+  // was true only while every destination was a rail row. On 2026-09-16 Adrian ruled that MY DAY
+  // IS NOT A RAIL ROW; My Day is what Home renders. `planner` is still a destination a sentence
+  // may ask for, and it now opens HOME. The old leg would have failed a correct product and, far
+  // worse, the obvious way to "fix" it is to put My Day back in the rail — the check would have
+  // argued for the bug. A check that encodes yesterday's layout as a law does that.
+  //
+  // So it asserts the thing that actually matters: a destination OPENS SOMETHING. It executes
+  // the product's own resolver rather than knowing where planner goes.
+  const resolved = await rig.page.evaluate((ks) => ks.map((k) => [k, window.hublyNavUI.resolve(k)]), reg.goPlaces);
+  const deadDoors = resolved.filter(([, to]) => to !== "home" && !reg.surfaces.includes(to)).map(([k, to]) => `${k}->${to}`);
+  say("3 every place a sentence can take someone to opens something — a surface, or Home",
+    deadDoors.length === 0, deadDoors.length ? `opens nothing: ${deadDoors.join(", ")}` : resolved.map(([k, t]) => `${k}->${t}`).join(", "));
+  // AND HOME IS NOT A DUMPING GROUND. A destination that resolves to Home must be one Home can
+  // actually answer for — today that is the day. If a second such alias appears, it is named
+  // here so nobody can quietly route an unbuilt place to Home and call it reachable.
+  const toHome = resolved.filter(([k, to]) => to === "home" && k !== "home").map(([k]) => k);
+  say("3b the only destination that opens Home is the day",
+    toHome.length === 1 && toHome[0] === "planner", `-> home: ${toHome.join(", ") || "(none)"}`);
 
   // ── 4. AND EVERY DOOR CAN COUNT ITS ROOM BEFORE IT MOVES ANYONE. This is the leg that
   //       catches "your schedule isn't set up" said about a room with two jobs on it: the

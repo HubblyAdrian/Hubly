@@ -295,13 +295,80 @@ body.hc-active .footer,body.hc-active .hero{display:none}
    NO DRAFT, NO PANE. The pane is bound to .hc-has-draft, so a claimed account with
    nothing built still gets the centred column rather than an empty frame — a panel that
    appears with nothing in it is the same unearned claim as a green checkmark. */
-.hc-app.hc-claimed[data-mode="home"] .hc-app-left{flex:1 1 auto;min-width:0}
-.hc-app.hc-claimed[data-mode="home"] .hc-thread-inner{max-width:720px;margin-left:auto;margin-right:auto;width:100%}
-.hc-app.hc-claimed[data-mode="home"] .hc-input-bar{display:flex;justify-content:center}
-.hc-app.hc-claimed[data-mode="home"] .hc-input-bar .ask-wrap{max-width:720px;width:100%}
-.hc-app.hc-claimed[data-mode="home"] .hc-app-right{display:none}
-.hc-app.hc-claimed.hc-has-draft[data-mode="home"] .hc-app-left{flex:0 0 380px;min-width:0;border-right:1px solid var(--line)}
-.hc-app.hc-claimed.hc-has-draft[data-mode="home"] .hc-app-right{display:flex;flex:1 1 auto;min-width:0;animation:hcCanvasArrive .5s cubic-bezier(.22,.61,.36,1) both}
+/* HOME IS THE DAY, so the conversation is the left column and the day fills the rest — for
+   EVERY claimed owner, not only one with a site. The day exists before the website does. */
+.hc-app.hc-claimed[data-mode="home"] .hc-app-left{flex:0 0 380px;min-width:0;border-right:1px solid var(--line)}
+.hc-app.hc-claimed[data-mode="home"] .hc-app-right{display:flex;flex:1 1 auto;min-width:0}
+/* ── MY DAY IS WHAT HOME RENDERS (Adrian, 2026-09-16) ────────────────────────────────────
+   Home keeps the conversation on the left and puts THE DAY beside it, where the site preview
+   used to sit. That reverses the 2026-09-13 ruling which put the site there; the approved
+   2026-09-16 design supersedes it and the site is one rail row away under Website.
+   NOTHING RENDERS SQUEEZED: the centre and the context column both have a min-width and the
+   context column drops below the day rather than crushing it. */
+.hcmd{display:flex;gap:20px;align-items:flex-start;width:100%;height:100%;overflow:auto;padding:22px 24px 40px;box-sizing:border-box}
+.hcmd-main{flex:1 1 560px;min-width:340px}
+.hcmd-ctx{flex:0 0 320px;min-width:260px;display:flex;flex-direction:column;gap:14px}
+@media (max-width:1100px){ .hcmd{flex-wrap:wrap} .hcmd-ctx{flex:1 1 100%} }
+.hcmd-head{margin:0 0 18px}
+.hcmd-date{font-size:14px;color:var(--muted)}
+.hcmd-title{font-size:38px;line-height:1.1;margin:2px 0 6px;font-weight:800;letter-spacing:-.02em}
+.hcmd-sub{margin:0;color:var(--muted);font-size:14px}
+.hcmd-bands{display:flex;flex-direction:column;gap:16px}
+.hcmd-band{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
+.hcmd-bandhead{display:flex;align-items:center;gap:12px;padding:14px 16px}
+.hcmd-band[data-band="A"] .hcmd-bandhead{background:#fdf0f0}
+.hcmd-band[data-band="B"] .hcmd-bandhead{background:#fdf6e8}
+.hcmd-band[data-band="C"] .hcmd-bandhead{background:#eef8f1}
+.hcmd-disc{flex:0 0 auto;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:17px}
+.hcmd-band[data-band="A"] .hcmd-disc{background:#d92d20}
+.hcmd-band[data-band="B"] .hcmd-disc{background:#f0900a}
+.hcmd-band[data-band="C"] .hcmd-disc{background:#0f9d58}
+.hcmd-bandnames{flex:1 1 auto;min-width:0}
+.hcmd-bandname{font-weight:700;font-size:17px}
+.hcmd-banddesc{font-size:13px;color:var(--muted)}
+.hcmd-more{flex:0 0 auto;border:0;background:transparent;color:var(--muted);font-size:18px;cursor:pointer;padding:4px 8px;border-radius:8px;line-height:1}
+.hcmd-more:hover{background:rgba(0,0,0,.05)}
+/* ONE ROW SHAPE FOR EVERYTHING: What | When | Where | Type (ruling 4). The header and the rows
+   share the same grid template, so a column can never drift out of line with its heading. */
+.hcmd-cols,.hcmd-row{display:grid;grid-template-columns:minmax(0,2.2fr) minmax(0,1fr) minmax(0,1.4fr) minmax(0,.9fr);gap:12px;padding:10px 16px;align-items:center}
+.hcmd-cols{font-size:12px;font-weight:600;color:var(--muted);border-top:1px solid var(--line);background:rgba(0,0,0,.015)}
+.hcmd-row{border-top:1px solid var(--line);font-size:14px;cursor:pointer}
+.hcmd-row:hover{background:rgba(0,0,0,.02)}
+.hcmd-row>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hcmd-what{display:flex;flex-direction:column;gap:2px;white-space:normal!important}
+.hcmd-whatmain{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hcmd-whatsub{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hcmd-when,.hcmd-where,.hcmd-type{color:var(--muted)}
+.hcmd-add{display:flex;align-items:center;gap:10px;width:100%;border:0;border-top:1px solid var(--line);background:transparent;padding:14px 16px;font:inherit;font-size:14px;color:var(--muted);cursor:pointer;text-align:left}
+.hcmd-add:hover{background:rgba(0,0,0,.02)}
+.hcmd-plus{font-size:17px;line-height:1}
+.hcmd-later{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:14px 16px}
+.hcmd-laterrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:14px;cursor:pointer;align-items:center}
+.hcmd-laterrow:first-of-type{border-top:0}
+.hcmd-laterrow:hover{background:rgba(0,0,0,.02)}
+.hcmd-laterwhen{color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hcmd-laterwhat{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hcmd-card{border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:14px 16px}
+.hcmd-cardh{margin:0 0 10px;font-size:15px;font-weight:700}
+.hcmd-glance{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.hcmd-tile{border:1px solid var(--line);border-radius:12px;padding:12px 6px;text-align:center;min-width:0}
+.hcmd-tilen{font-size:22px;font-weight:800;line-height:1.1}
+.hcmd-tilel{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.hcmd-cal{display:flex;flex-direction:column;max-height:340px;overflow:auto}
+.hcmd-calrow{display:grid;grid-template-columns:62px minmax(0,1fr);gap:8px;align-items:center;border-top:1px solid var(--line);min-height:28px}
+.hcmd-calrow:first-child{border-top:0}
+.hcmd-calh{font-size:12px;color:var(--muted);padding:4px 0}
+.hcmd-calslot{display:flex;flex-wrap:wrap;gap:4px;min-width:0;padding:3px 0}
+.hcmd-calitem{font-size:12px;background:rgba(0,0,0,.05);border-radius:6px;padding:2px 7px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hcmd-empty{text-align:center;color:var(--muted);font-size:13px;padding:18px 8px}
+.hcmd-emptyh{font-weight:700;color:var(--ink);margin-bottom:3px}
+.hcmd-locs{display:flex;flex-direction:column;gap:6px}
+.hcmd-loc{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hcmd-tip{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#f6f3ff;font-size:13px;color:var(--muted)}
+.hcmd-tiph{font-weight:700;color:var(--ink);margin-bottom:4px}
+/* The day rendered INSIDE the conversation thread — same renderer, narrower home. */
+.hc-inthread-day .hcmd{padding:0;flex-direction:column}
+.hc-inthread-day .hcmd-ctx{flex:1 1 100%}
 /* WEBSITE: the site is the large canvas; chat becomes a narrow assistant panel beside it.
    Fixed proportions (no draggable divider until asked). */
 .hc-app.hc-claimed[data-mode="website"] .hc-app-left{flex:0 0 380px;min-width:0;border-right:1px solid var(--line)}
@@ -3041,6 +3108,61 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // The account/"reserved for you" offer — kept CLIENT-side because the supersede-on-sign-in
   // logic keys off its data-hc-msg="preaccount" tag (Rule 6: a signed-in owner must never be
   // told their live site isn't live). Services are the model's job now; this is just the door.
+  /** WHAT WE LAST TOLD HIM HIS ADDRESS WAS. Session state, re-derived on reload from the
+   *  transcript (hcNoteToldAddressFromHistory) so a refresh between the promise and the rename
+   *  does not lose it. Empty means we have never named an address to him — in which case a
+   *  rename is not a broken promise and there is nothing to correct. */
+  function hcNoteToldAddress(host){
+    var h = String(host || '').replace(/^https?:\/\//, '').replace(/\/$/, '').trim();
+    // AN EMPTY NOTE CLEARS IT, and that is not tidiness. hc._toldAddress is session state, and
+    // an owner with more than one site switches between them in one session (hcRenderBusinessPicker
+    // exists precisely because they do). Left standing, the address promised for ONE business
+    // would be named as the dead link of ANOTHER — a correction that is itself wrong, about a
+    // link that still works. Found by the check's own leg 7, on the first run.
+    hc._toldAddress = h || '';
+  }
+  function hcNoteToldAddressFromHistory(messages){
+    try{
+      for(var i = (messages || []).length - 1; i >= 0; i--){
+        var m = messages[i];
+        if(!m || m.role === 'user') continue;
+        var hit = /([a-z0-9][a-z0-9-]*\.myhubly\.app)/i.exec(String(m.content || ''));
+        if(hit){ hcNoteToldAddress(hit[1]); return; }
+      }
+    }catch(e){}
+  }
+  /** WE SAY SO, IN THE SAME TURN, IN WORDS — composed by the MECHANISM, never by the model.
+   *
+   *  apollo-weeds, 2026-09-16: Hubly wrote "The address apollow.myhubly.app is reserved for
+   *  you" at 03:07:08 and the slug was apollo-weeds by 03:08:52. Zero rows hold `apollow`, so
+   *  that address resolves to nothing — and across the WHOLE corpus, the only turn that ever
+   *  mentions an address is the promise itself. Three businesses, three dead addresses, not one
+   *  sentence about any of them.
+   *
+   *  The detection already existed (`addressMoved`, a few hundred lines below) and ended in a
+   *  canvas redraw. A missing door, not a missing feature — the diagnosis that has been right
+   *  every time this month.
+   *
+   *  NOT A VOLUNTARY ADDITION, and deliberately not routed through hcMayAddVoluntary. The
+   *  voluntary gate is for things Hubly CHOOSES to say; this is a disclosure about a change the
+   *  owner did not ask for and can be harmed by (prohibition 6 — a state change may not
+   *  complete invisibly). It is additive and it is never a question, so it takes no floor and
+   *  cannot leave an ask unanswered — which is what separates it from the seq 44/45 defect,
+   *  where a second composer CONTRADICTED the first in the same beat. */
+  function hcSayAddressMoved(nextUrl){
+    var next = String(nextUrl || '').replace(/^https?:\/\//, '').replace(/\/$/, '').trim();
+    var told = String(hc._toldAddress || '').trim();
+    if(!next || !told || told === next) return false;
+    var line = 'One thing \u2014 the address changed to ' + next + ', so ' + told + ' won\u2019t work any more.';
+    hcAppendMessage('hubly', line);
+    hcPersist('assistant', line);          // a floor on display is not a floor on the record
+    hcNoteSaid(line);
+    hcNoteToldAddress(next);
+    return true;
+  }
+  try{ window.hublyAddressUI = { told: function(){ return hc._toldAddress || ''; },
+                                 note: hcNoteToldAddress, fromHistory: hcNoteToldAddressFromHistory,
+                                 say: hcSayAddressMoved }; }catch(e){}
   function hcAppendAccountOffer(){
     var claimed = !!hc.draftClaimed;
     var host = String((hc.draftBusiness && hc.draftBusiness.url) || '').replace(/^https?:\/\//, '');
@@ -3053,6 +3175,15 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var el = hcAppendMessage('hubly', msg);
     if(!claimed && el){ el.setAttribute('data-hc-msg', 'preaccount'); hcAttachAccountCta(el); }
     hcPersist('assistant', msg);
+    // THE ADDRESS WE PUT IN WRITING, REMEMBERED HERE — at the turn that promised it.
+    // Adrian's ruling, 2026-09-16: if we change an address we told an owner to expect, we say
+    // so, and the told-address comes from THE TURN THAT PROMISED IT — never from
+    // business_slug_history, which is not a complete record (it holds site-915f21 ->
+    // toms-gutters-more and nothing else for that business, while this very sentence had
+    // already named toms-clean-gutters.myhubly.app; its reconstructed rows lose the states in
+    // between). This line is the only source that cannot be wrong about what he was told,
+    // because it IS what he was told.
+    hcNoteToldAddress(host);
   }
   // A block-level "Create your account" button inside the reserved-for-you offer, so
   // the person can ACT on it instead of having to type "let's sign up". The button IS
@@ -3349,7 +3480,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         // loading an address that had stopped resolving. Detect the move and redraw.
         var addressMoved = false;
         if(data.draftBusiness && data.draftBusiness.id && data.draftBusiness.url){
-          addressMoved = !!(hc.draftBusiness && hc.draftBusiness.url && hc.draftBusiness.url !== data.draftBusiness.url);
+          // A DIFFERENT BUSINESS IS NOT A MOVED ADDRESS. Switching sites changes the url too,
+          // and calling that a rename would tell him a live link is dead.
+          var sameBiz = !!(hc.draftBusiness && hc.draftBusiness.id === data.draftBusiness.id);
+          addressMoved = !!(sameBiz && hc.draftBusiness.url && hc.draftBusiness.url !== data.draftBusiness.url);
+          if(!sameBiz) hcNoteToldAddress('');          // the promise belonged to the other site
           hc.draftBusiness = data.draftBusiness;
         }
         // Exchange the claim grant the moment a draft appears, so whoever just
@@ -3523,6 +3658,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // hcTakeVoluntarySlot.
           hcNoteSaid(Array.isArray(interim) && interim.length ? interim[interim.length - 1] : '');
           if(_reply) hcNoteSaid(_reply);
+
+          // THE ADDRESS MOVED AND HE IS TOLD, IN THE SAME TURN, IN WORDS (Adrian, 2026-09-16).
+          // Placed AFTER the reply so the answer to what he asked comes first and this trails
+          // it — the same ordering rule as every other addition. It is a disclosure, not an
+          // offer, so it does not take the voluntary slot; see hcSayAddressMoved.
+          try{ if(addressMoved && hc.draftBusiness) hcSayAddressMoved(hc.draftBusiness.url); }catch(_e){}
 
           // THE CAPTURE GUARD, after the reply so the re-ask lands last. Check the ask
           // that was pending from last turn; if it wasn't recorded, own the miss and
@@ -4943,9 +5084,14 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   //    A business that has ALREADY earned `jobs` or `customers` keeps them: hcWorkspaces reads
   //    business_places, and this map only decides what a place is CALLED and whether a surface
   //    exists for it — so Graef, who holds all four rows, loses nothing.
+  // MY DAY IS NOT A RAIL ROW — Adrian, 2026-09-16. The rail is Home · Website · Settings, and
+  // MY DAY IS WHAT HOME RENDERS (hcRenderMyDay). It also fits the standing rule that every tab
+  // has its own conversation EXCEPT home: Home is special because Home is the day.
+  //
+  // `planner` therefore is not a SURFACE any more. It survives as a DESTINATION — "take me to
+  // my schedule" still has to go somewhere — and that somewhere is Home. See HC_GO_PLACES.
   var HC_PLACE_SURFACES = {
     website:   { label:'Website',   icon:HC_RAIL_ICONS.website },
-    planner:   { label:'My Day',    icon:HC_RAIL_ICONS.planner },
     jobs:      { label:'Jobs',      icon:HC_RAIL_ICONS.jobs },
     customers: { label:'Customers', icon:HC_RAIL_ICONS.customers },
     // leads — pending: the unbooked-lead list
@@ -4954,7 +5100,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   /** WHICH PLACES A NEW BUSINESS IS OFFERED IN THE RAIL BY DEFAULT. Everything else is reached
    *  by asking and earns its row through the screen-2 offer. Jobs and Customers are deliberately
    *  absent — they are thread views until the owner says otherwise. */
-  var HC_RAIL_DEFAULT = { website: true, planner: true };
+  var HC_RAIL_DEFAULT = { website: true };
   function hcWorkspaces(){
     var ws = [];
     var biz = hc.draftBusiness;
@@ -4992,6 +5138,22 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       });
     return ws;
   }
+  /** WHERE A REQUESTED PLACE ACTUALLY OPENS — DERIVED, not an alias table.
+   *
+   *  MY DAY IS WHAT HOME RENDERS (Adrian, 2026-09-16), so `planner` stopped being a rail
+   *  surface and became a request that lands on Home. The temptation is a `{planner:'home'}`
+   *  map; that is a hand-maintained set and it drifts the first time a surface is renamed.
+   *
+   *  The derivation instead: a place that is not a SURFACE opens HOME. Nothing is listed, and
+   *  removing a surface automatically routes its old name home rather than to a dead mode.
+   *  Unknown names never reach here — HC_GO_PLACES is the gate for what a sentence may ask
+   *  for, and hcGoToPlace refuses anything outside it by name. */
+  function hcResolvePlace(id){
+    var k = String(id || '').trim();
+    if(!k || k === 'home') return 'home';
+    return HC_PLACE_SURFACES[k] ? k : 'home';
+  }
+
   // hc.mode is the current surface: 'home' (default) or a workspace id.
   function hcRenderRail(){
     var rail = document.getElementById('hcRail'); if(!rail) return;
@@ -5965,7 +6127,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       var r = await c.rpc('update_business_job', {
         p_business_id: biz.id, p_job_id: jobId, p_owner_id: uid,
         p_scheduled_time: time, p_scheduled_date: null, p_address: place,
-        p_draft_token: null
+        p_draft_token: null,
+        // THE OWNER'S OWN HAND. Same rpc, same arguments as the model path — this is the only
+        // place the difference exists (migration 20260916150100). It is the value that would
+        // have answered the 17:00 question in one line instead of one session.
+        p_via: 'hand'
       });
       if(r && r.error) return { ok:false, error:'rpc_failed', detail:String(r.error.message || '').slice(0,120) };
       var row = Array.isArray(r && r.data) ? r.data[0] : (r && r.data);
@@ -6548,7 +6714,363 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   }
   // ONE ENTRY POINT for the three rooms, so hcOpenWorkspace stays a switch and not a
   // second implementation of each.
-  var HC_ROOMS = { planner: hcRenderPlanner, jobs: hcRenderJobs, customers: hcRenderCustomers };
+  /* ══ MY DAY — WHAT HOME RENDERS ══════════════════════════════════════════════════════════
+   *
+   *  Adrian, 2026-09-16: "MY DAY IS NOT A RAIL ROW. MY DAY IS WHAT HOME RENDERS. The rail is
+   *  Home · Website · Settings." It also fits the standing rule that every tab has its own
+   *  conversation EXCEPT home — Home is special because Home is the day.
+   *
+   *  Drawn from docs/design/my-day-2026-09-16-final.png (APPROVED, CURRENT) and specified by
+   *  docs/MY_DAY.md. Where they disagree the spec is the requirement and the image is how it
+   *  looks. Every earlier schedule image is history, not instructions.
+   *
+   *  ONE READER, TWO PROJECTIONS — never a second loader. docs/MY_DAY_AUDIT_20260915.md:
+   *  "Today there is exactly one loader that returns both kinds ... do not write a second
+   *  loader. If a second `load` appears, that is the two-store mistake in a new costume."
+   *  hcLoadDayItems IS that reader, lifted out of hcRenderPlanner so both surfaces share it.
+   */
+
+  /** THE ONE READER. Jobs and tasks for a window, merged, with the read failure of EACH kind
+   *  reported rather than flattened into an empty list — an empty reader that has told you
+   *  about ITSELF must never be reported as his empty day (Lesson 86). */
+  async function hcLoadDayItems(biz, fromISO, toISO){
+    var out = { jobs: [], tasks: [], jobsFailed: false, tasksFailed: false };
+    try{ out.jobs = await hcLoadJobs(biz.id, fromISO, toISO) || []; }
+    catch(e){ out.jobsFailed = true; }
+    try{
+      var uid = await hcOwnerUid();
+      var c2 = await authGetClient();
+      var tr = await c2.rpc('get_business_tasks', { p_business_id: biz.id, p_owner_id: uid, p_from: null, p_to: toISO });
+      if(tr && tr.error) out.tasksFailed = true;
+      else if(Array.isArray(tr && tr.data)) out.tasks = tr.data;
+    }catch(e){ out.tasksFailed = true; }
+    return out;
+  }
+
+  /** THE HOURS ARE DERIVED, NEVER TRANSCRIBED.
+   *
+   *  Adrian's ruling, 2026-09-16: the approved image's calendar column reads 6 AM … 4 PM,
+   *  5 PM, 7 PM, 8 PM — FOURTEEN labels across a FIFTEEN-hour span. 6 PM is missing. That is a
+   *  slip in the drawing, and transcribing it would be the hand-maintained-set disease wearing
+   *  a design costume: a fixed list of hours drifts from the data the first time an item lands
+   *  on the hour nobody typed.
+   *
+   *  So the sequence is GENERATED. Every hour between the first and the last exists because a
+   *  loop put it there; there is no list to omit one from. The default window is the drawing's
+   *  6 AM - 8 PM (a sensible empty day), and it WIDENS to hold anything outside it — the
+   *  README already warns that "an item at 5 AM or 9 PM must be visible without scrolling past
+   *  an empty band", and we have shipped the day-window version of that defect once already.
+   *
+   *  scripts/check-day-hours-derived.mjs fails if any hour in the rendered range has no row. */
+  /** "Tuesday, September 16, 2026" — the day heading the approved design draws. Derived from
+   *  Intl, never a hand-kept array of weekday and month names: a twelve-entry list is a
+   *  hand-maintained set and it is the same disease as a transcribed hour column. Falls back to
+   *  the house MM/DD/YYYY formatter if Intl is unavailable, rather than inventing a format. */
+  function hcDateLong(v){
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v || '').trim());
+    if(!m) return '';
+    try{
+      var d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return d.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+    }catch(e){ return ''; }
+  }
+  var HC_DAY_HOUR_MIN = 6, HC_DAY_HOUR_MAX = 20;
+  function hcDayHourRange(times){
+    var lo = HC_DAY_HOUR_MIN, hi = HC_DAY_HOUR_MAX;
+    (times || []).forEach(function(t){
+      var hm = hcHm(t); if(!hm) return;
+      var h = parseInt(hm.slice(0, 2), 10);
+      if(!isFinite(h) || h < 0 || h > 23) return;
+      if(h < lo) lo = h;
+      if(h > hi) hi = h;
+    });
+    var out = [];
+    for(var h = lo; h <= hi; h++) out.push(h);   // GENERATED: no hour can be missing
+    return out;
+  }
+  function hcHourLabel(h){
+    var ampm = h < 12 ? 'AM' : 'PM';
+    var h12 = h % 12; if(h12 === 0) h12 = 12;
+    return h12 + ' ' + ampm;
+  }
+
+  /** WHICH BAND AN ITEM IS IN — structural, from the record, never a guess.
+   *
+   *  A TASK carries its own `band`; that is storage the owner set or the planner set, and it is
+   *  read, not decided here. A JOB is an A by the spec's own definition (MY_DAY.md section 4:
+   *  "A - Must Do ... Examples: customer appointment, complete today's job"). A scheduled
+   *  commitment to a customer IS the must-do case, so this is derived from what the record is,
+   *  not from a per-item judgement we would then have to maintain. */
+  function hcItemBand(it){
+    if(it && it.kind === 'job') return 'A';
+    var b = String((it && it.band) || '').trim().toUpperCase();
+    return (b === 'A' || b === 'B' || b === 'C') ? b : 'C';
+  }
+  var HC_BAND_DESC = {
+    A: 'Critical tasks that move your business forward.',
+    B: 'Important, but not time-sensitive.',
+    C: 'Great to do if you have time.'
+  };
+  /** THE ADD LINE, one phrasing, everywhere the gesture appears — the subtitle, the empty band
+   *  and the Pro tip all say the same words because it is the same gesture. Ruling 2 of
+   *  2026-09-16: an empty band shows EXACTLY this one line and never a grey placeholder row,
+   *  because a ghost row reads as loading and makes an empty day look broken. */
+  var HC_DAY_ADD_LINE = 'Double-click to add something…';
+
+  /** One item, flattened from a job or a task, so the row renderer has no idea which it was. */
+  function hcDayItems(loaded, dayISO){
+    var items = [];
+    (loaded.jobs || []).forEach(function(j){
+      if(dayISO && String(j.scheduled_date) !== dayISO) return;
+      // A BLOCK IS SAID TO BE A BLOCK. "doctor's appointment" in a Jobs list reads as a
+      // CUSTOMER called doctor's appointment; the owner has to be told which it is, in words.
+      var jWhat = j.is_block ? (j.service_name || 'Blocked time') : (j.customer_name || j.service_name || 'Job');
+      var bits = [];
+      if(j.is_block) bits.push('Blocked \u2014 not a customer');
+      else if(j.service_name && j.service_name !== jWhat) bits.push(j.service_name);
+      if(!j.is_block && Number(j.amount) > 0) bits.push('$' + Number(j.amount));
+      items.push({
+        kind: 'job', id: j.id, raw: j,
+        what: jWhat,
+        detail: bits.join(' \u00b7 '),
+        when: j.scheduled_time || '', where: j.address || '',
+        type: j.is_block ? 'Personal' : 'Job'
+      });
+    });
+    (loaded.tasks || []).forEach(function(t){
+      if(dayISO && t.due_date && String(t.due_date) !== dayISO) return;
+      items.push({
+        kind: 'task', id: t.id, raw: t, band: t.band,
+        what: t.title || t.what || 'Task', detail: t.detail || '',
+        when: t.due_time || '', where: t.where || '',
+        type: hcLaneLabel ? (hcLaneLabel(t.lane) || 'Task') : 'Task'
+      });
+    });
+    return items;
+  }
+
+  function hcEl(tag, cls, text){
+    var e = document.createElement(tag);
+    if(cls) e.className = cls;
+    if(text != null) e.textContent = text;
+    return e;
+  }
+
+  /** MY DAY, rendered into the Home canvas. */
+  async function hcRenderMyDay(canvas, biz){
+    var today = new Date();
+    var iso = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+    var dayISO = hc._dayISO || iso(today);
+    // READ THE WHOLE HORIZON, RENDER TODAY. The bands and the calendar are today's — the day is
+    // the hero — but a job Hubly already told him about must never become invisible because of a
+    // window. That is the defect Adrian hit on 2026-09-15: the room's window was today+tomorrow
+    // and his Thursday driveway job vanished, two messages after Hubly named it out loud. So the
+    // reader takes the horizon and anything past today is listed below, under its own heading,
+    // rather than silently dropped. One reader, two projections (MY_DAY_AUDIT_20260915.md).
+    var horizonISO = iso(new Date(today.getTime() + HC_DAY_HORIZON * 864e5));
+    var loaded = await hcLoadDayItems(biz, dayISO, horizonISO);
+    var items = hcDayItems(loaded, dayISO);
+    var laterItems = hcDayItems(loaded, null).filter(function(it){
+      var d = it.kind === 'job' ? String(it.raw.scheduled_date || '') : String((it.raw && it.raw.due_date) || '');
+      return d && d > dayISO;
+    });
+
+    canvas.innerHTML = '';
+    var wrap = hcEl('div', 'hcmd');
+
+    // ── CENTRE: the day is the hero ──────────────────────────────────────────────────────
+    var main = hcEl('main', 'hcmd-main');
+    var head = hcEl('div', 'hcmd-head');
+    head.appendChild(hcEl('div', 'hcmd-date', hcDateLong(dayISO) || hcDateUS(dayISO) || ''));
+    head.appendChild(hcEl('h1', 'hcmd-title', 'My Day'));
+    head.appendChild(hcEl('p', 'hcmd-sub', 'Get things done. ' + HC_DAY_ADD_LINE.replace('…', ', or just start typing.')));
+    main.appendChild(head);
+
+    // EVERY DAY HAS AN A, A B AND A C. Not some days — Adrian, 2026-09-16. The three are
+    // rendered from a generated sequence, so "a band is missing" is not a state that exists.
+    var bands = hcEl('div', 'hcmd-bands');
+    ['A', 'B', 'C'].forEach(function(b){
+      var sec = hcEl('section', 'hcmd-band');
+      sec.setAttribute('data-band', b);
+      var bh = hcEl('header', 'hcmd-bandhead');
+      bh.appendChild(hcEl('span', 'hcmd-disc', b));
+      var names = hcEl('div', 'hcmd-bandnames');
+      names.appendChild(hcEl('div', 'hcmd-bandname', hcBandWords(b) || ''));
+      names.appendChild(hcEl('div', 'hcmd-banddesc', HC_BAND_DESC[b] || ''));
+      bh.appendChild(names);
+      var more = hcEl('button', 'hcmd-more', '⋯');
+      more.type = 'button';
+      more.setAttribute('aria-label', 'More for ' + (hcBandWords(b) || b));
+      bh.appendChild(more);
+      sec.appendChild(bh);
+
+      var cols = hcEl('div', 'hcmd-cols');
+      ['What', 'When', 'Where', 'Type'].forEach(function(c){ cols.appendChild(hcEl('span', null, c)); });
+      sec.appendChild(cols);
+
+      var body = hcEl('div', 'hcmd-rows');
+      var mine = items.filter(function(it){ return hcItemBand(it) === b; });
+      if(!mine.length){
+        // ONE LINE, NEVER A GHOST ROW.
+        var add = hcEl('button', 'hcmd-add');
+        add.type = 'button';
+        add.appendChild(hcEl('span', 'hcmd-plus', '+'));
+        add.appendChild(hcEl('span', null, HC_DAY_ADD_LINE));
+        body.appendChild(add);
+      } else {
+        mine.forEach(function(it){
+          var row = hcEl('div', 'hcmd-row');
+          row.setAttribute('data-kind', it.kind);
+          var what = hcEl('span', 'hcmd-what');
+          what.appendChild(hcEl('span', 'hcmd-whatmain', it.what));
+          if(it.detail) what.appendChild(hcEl('span', 'hcmd-whatsub', it.detail));
+          row.appendChild(what);
+          row.appendChild(hcEl('span', 'hcmd-when', it.when ? (hcTimeUS(it.when) || '') : ''));
+          row.appendChild(hcEl('span', 'hcmd-where', it.where || ''));
+          row.appendChild(hcEl('span', 'hcmd-type', it.type || ''));
+          // MY DAY -> CLICK JOB -> JOB WORKSPACE (MY_DAY.md section 5). My Day never becomes a
+          // second Jobs application; it hands the record to the surface that manages it.
+          if(it.kind === 'job' && it.raw) row.addEventListener('click', function(){ try{ hcJobPanel(it.raw); }catch(e){} });
+          body.appendChild(row);
+        });
+      }
+      sec.appendChild(body);
+      bands.appendChild(sec);
+    });
+    main.appendChild(bands);
+
+    // LATER THIS WEEK — named, not hidden. It is deliberately quiet and deliberately NOT a
+    // second Jobs application (MY_DAY.md section 13): a line per item, under its own date, so
+    // the owner can see that it exists and open it. The complete job system is still Jobs.
+    if(laterItems.length){
+      var later = hcEl('section', 'hcmd-later');
+      later.appendChild(hcEl('h3', 'hcmd-cardh', 'Later this week'));
+      laterItems.sort(function(a, b){
+        var da = a.kind === 'job' ? String(a.raw.scheduled_date || '') : String((a.raw && a.raw.due_date) || '');
+        var db = b.kind === 'job' ? String(b.raw.scheduled_date || '') : String((b.raw && b.raw.due_date) || '');
+        return da < db ? -1 : da > db ? 1 : String(a.when).localeCompare(String(b.when));
+      }).forEach(function(it){
+        var d = it.kind === 'job' ? String(it.raw.scheduled_date || '') : String((it.raw && it.raw.due_date) || '');
+        var row = hcEl('div', 'hcmd-laterrow');
+        row.appendChild(hcEl('span', 'hcmd-laterwhen',
+          [hcDayLabel(d), it.when ? hcTimeUS(it.when) : ''].filter(Boolean).join(' at ')));
+        row.appendChild(hcEl('span', 'hcmd-laterwhat', it.what + (it.detail ? ' \u2014 ' + it.detail : '')));
+        if(it.kind === 'job' && it.raw) { row.addEventListener('click', function(){ try{ hcJobPanel(it.raw); }catch(e){} }); }
+        later.appendChild(row);
+      });
+      main.appendChild(later);
+    }
+    wrap.appendChild(main);
+
+    // ── RIGHT: context, never a second dashboard ────────────────────────────────────────
+    var ctx = hcEl('aside', 'hcmd-ctx');
+
+    // TODAY AT A GLANCE — three honest counts. No ring, no percentage, no colour that moves
+    // with progress (ruling 3, 2026-09-16). A count we could not read is NOT rendered as 0.
+    var glance = hcEl('section', 'hcmd-card');
+    glance.appendChild(hcEl('h3', 'hcmd-cardh', 'Today at a glance'));
+    var tiles = hcEl('div', 'hcmd-glance');
+    var jobCount = loaded.jobsFailed ? null : items.filter(function(i){ return i.kind === 'job' && i.type === 'Job'; }).length;
+    var evCount  = loaded.jobsFailed ? null : items.filter(function(i){ return i.kind === 'job' && i.type !== 'Job'; }).length;
+    var taskCount = loaded.tasksFailed ? null : items.filter(function(i){ return i.kind === 'task'; }).length;
+    [['Jobs', jobCount], ['Events', evCount], ['Tasks', taskCount]].forEach(function(pair){
+      var tile = hcEl('div', 'hcmd-tile');
+      tile.appendChild(hcEl('div', 'hcmd-tilen', pair[1] == null ? '—' : String(pair[1])));
+      tile.appendChild(hcEl('div', 'hcmd-tilel', pair[0]));
+      if(pair[1] == null) tile.title = 'I could not read this just now — it is not a zero.';
+      tiles.appendChild(tile);
+    });
+    glance.appendChild(tiles);
+    ctx.appendChild(glance);
+
+    // CALENDAR — hours GENERATED, never a transcribed list. See hcDayHourRange.
+    var cal = hcEl('section', 'hcmd-card');
+    cal.appendChild(hcEl('h3', 'hcmd-cardh', 'Calendar'));
+    var grid = hcEl('div', 'hcmd-cal');
+    var timed = items.filter(function(i){ return hcHm(i.when); });
+    var hours = hcDayHourRange(timed.map(function(i){ return i.when; }));
+    hours.forEach(function(h){
+      var rowEl = hcEl('div', 'hcmd-calrow');
+      rowEl.setAttribute('data-hour', String(h));
+      rowEl.appendChild(hcEl('span', 'hcmd-calh', hcHourLabel(h)));
+      var slot = hcEl('span', 'hcmd-calslot');
+      timed.filter(function(i){ return parseInt(hcHm(i.when).slice(0, 2), 10) === h; })
+        .forEach(function(i){ slot.appendChild(hcEl('span', 'hcmd-calitem', i.what)); });
+      rowEl.appendChild(slot);
+      grid.appendChild(rowEl);
+    });
+    if(!timed.length){
+      var ce = hcEl('div', 'hcmd-empty');
+      ce.appendChild(hcEl('div', 'hcmd-emptyh', 'No events yet'));
+      ce.appendChild(hcEl('div', null, 'Add a job, task, or event to see it on your calendar.'));
+      grid.appendChild(ce);
+    }
+    cal.appendChild(grid);
+    ctx.appendChild(cal);
+
+    // TODAY'S LOCATIONS — the addresses actually on today's records, never a guess.
+    var loc = hcEl('section', 'hcmd-card');
+    loc.appendChild(hcEl('h3', 'hcmd-cardh', 'Today’s locations'));
+    var addrs = [];
+    items.forEach(function(i){ if(i.where && addrs.indexOf(i.where) < 0) addrs.push(i.where); });
+    if(addrs.length){
+      var list = hcEl('div', 'hcmd-locs');
+      addrs.forEach(function(a){ list.appendChild(hcEl('div', 'hcmd-loc', a)); });
+      loc.appendChild(list);
+    } else {
+      var le = hcEl('div', 'hcmd-empty');
+      le.appendChild(hcEl('div', 'hcmd-emptyh', 'No locations yet'));
+      le.appendChild(hcEl('div', null, 'Add an address to see your route and locations here.'));
+      loc.appendChild(le);
+    }
+    ctx.appendChild(loc);
+
+    var tip = hcEl('section', 'hcmd-tip');
+    tip.appendChild(hcEl('div', 'hcmd-tiph', 'Pro tip'));
+    tip.appendChild(hcEl('div', null, HC_DAY_ADD_LINE));
+    tip.appendChild(hcEl('div', null, 'Keep it simple — Hubly handles the details.'));
+    ctx.appendChild(tip);
+
+    wrap.appendChild(ctx);
+    canvas.appendChild(wrap);
+  }
+
+  /** NOBODY REFRESHES TO SEE THEIR OWN CHANGE. Any write that touches the day repaints it,
+   *  in place, wherever it is showing — Home's canvas and any copy of the day rendered inside
+   *  the conversation thread. It is a no-op when the day is not on screen. */
+  async function hcRepaintDay(){
+    try{
+      var biz = hc.draftBusiness;
+      if(!biz || !biz.id || !hc.draftClaimed) return false;
+      var painted = false;
+      if(hc.mode === 'home'){
+        var canvas = document.getElementById('hcCanvas');
+        if(canvas){ await hcRenderMyDay(canvas, biz); painted = true; }
+      }
+      // THE THREAD VIEW IS LIVE, NOT A PICTURE. Some people will never walk over to Home.
+      var inThread = document.querySelectorAll('.hc-inthread-day');
+      for(var i = 0; i < inThread.length; i++){
+        await hcRenderMyDay(inThread[i], biz);
+        painted = true;
+      }
+      return painted;
+    }catch(e){ return false; }
+  }
+  // EXTEND THE SEAM, NEVER REPLACE IT. This was written as a fresh assignment and it CLOBBERED
+  // the existing window.hublyDayUI (add / line / addRow, defined above) — check-day-add-by-hand
+  // went straight to CANNOT RUN, which is the only reason it was caught. A seam is a shared
+  // surface: two owners assigning the same global is the two-of-everything pattern arriving in
+  // the harness, and the one that loads second silently wins.
+  try{
+    window.hublyDayUI = Object.assign(window.hublyDayUI || {}, {
+      render: hcRenderMyDay, hours: hcDayHourRange, label: hcHourLabel,
+      repaint: hcRepaintDay, addLine: HC_DAY_ADD_LINE, band: hcItemBand
+    });
+  }catch(e){}
+
+  // `planner` is NOT here any more: Home renders the day (hcRenderMyDay), and hcOpenWorkspace
+  // aliases planner -> home. hcRenderPlanner still serves the in-thread day view.
+  var HC_ROOMS = { jobs: hcRenderJobs, customers: hcRenderCustomers };
   async function hcRenderRoom(id){
     var canvas = document.getElementById('hcCanvas'); if(!canvas) return;
     var biz = hc.draftBusiness;
@@ -6561,6 +7083,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
 
   function hcOpenWorkspace(id, filter, fromUrl){
     if(!id) id = 'home';
+    id = hcResolvePlace(id);
     var changed = (hc.mode !== id);
     hc.mode = id;
     if(!fromUrl) hcSyncModeToUrl(id, changed);
@@ -6589,9 +7112,13 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // back; without this the pane would appear EMPTY, because only 'website' ever rendered
     // the canvas. A visible empty frame is worse than the full-width chat it replaced, so
     // the render is part of the same change, not a follow-up.
-    if(id === 'home' && hc.draftBusiness && hc.draftBusiness.url){
-      hcSetView('site');
-      hcRenderCanvas();
+    // HOME IS THE DAY (Adrian, 2026-09-16). This REVERSES the 2026-09-13 ruling that put the
+    // site preview here; the approved 2026-09-16 design supersedes it and the site is one rail
+    // row away under Website. The day is rendered for every claimed owner — a day exists
+    // before a website does, so it is NOT gated on having a draft.
+    if(id === 'home' && hc.draftBusiness && hc.draftClaimed){
+      var homeCanvas = document.getElementById('hcCanvas');
+      if(homeCanvas) hcRenderMyDay(homeCanvas, hc.draftBusiness).catch(function(e){ console.error('[myday]', e); });
     }
     if(id === 'website'){
       // Hold the canvas only when there is something to wait for — an owner whose page
@@ -8717,7 +9244,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // The real door, executed — an unknown place must be refused, never guessed at.
     goTo: hcGoToPlace,
     // The real mapping hcGoToPlace uses to count a place before offering it.
-    countKeyFor: function(kind){ return kind === 'planner' ? 'day' : kind; }
+    countKeyFor: function(kind){ return kind === 'planner' ? 'day' : kind; },
+    // The REAL resolver, executed by the check — a destination that is not a surface opens Home.
+    resolve: hcResolvePlace
   }; }catch(e){}
   /** What the room actually holds, read from the room after it rendered. Never a prediction:
    *  "It should show you the services spot on the page" is us guessing at our own behaviour,
@@ -8772,8 +9301,17 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       (function poll(){
         tries++;
         var cv = document.getElementById('hcCanvas');
+        // TWO SURFACES ANSWER THIS NOW. A workspace paints a `.hc-room` of `.hc-row`s; HOME
+        // paints My Day, whose items are `.hcmd-row` (today) and `.hcmd-laterrow` (past today).
+        // The counter knew only the first, so the moment Home became the day it read NOTHING and
+        // Hubly correctly said "I could not read what's on it" about a day with two things on it.
+        // A postcondition that does not know the surface reports OUR gap as HIS emptiness —
+        // Lesson 86, and the exact sentence that rule was written for. Counting both is the fix;
+        // it still returns null when nothing has painted, which is the honest answer.
         var room = cv && cv.querySelector('.hc-room');
         if(room){ resolve(room.querySelectorAll('.hc-row').length); return; }
+        var day = cv && cv.querySelector('.hcmd');
+        if(day){ resolve(day.querySelectorAll('.hcmd-row, .hcmd-laterrow').length); return; }
         if(tries > 40){ resolve(null); return; }
         setTimeout(poll, 50);
       })();
@@ -9397,6 +9935,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     hc.messages = rows
       .filter(function(m){ return !hcHiddenFromOwner(m.role, hcMessageToText(m.content), m.created_at); })
       .map(function(m){ return { role: m.role, content: m.content }; });
+    // THE ADDRESS WE PROMISED SURVIVES A REFRESH. Read from the TRANSCRIPT — the turn that
+    // promised it — and not from business_slug_history, which is not a complete record. Without
+    // this, a reload between the promise and a rename loses what he was told and the disclosure
+    // below would either stay silent or name an address we never gave him.
+    try{ hcNoteToldAddressFromHistory(rows.map(function(m){ return { role: m.role, content: hcMessageToText(m.content) }; })); }catch(e){}
     // Context loaded; Home wants it silent so it can open on a calm greeting instead of the
     // tail of the last conversation. hcRenderHome exposes the full thread on demand.
     if(silent) return true;
