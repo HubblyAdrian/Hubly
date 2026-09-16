@@ -78,6 +78,42 @@ becomes a reviewable commit with a diff.
   makes dev and prod agree for the first time; vendoring "latest" by hand reintroduces the drift
   with extra steps.
 
+## RULED AND SHIPPED (2026-09-15): the pin
+
+`@supabase/supabase-js@2` → **`@2.110.5`** in all three shells. Dev and prod now agree for the first
+time, and the bytes only change when we change them. Since SRI is unavailable on this URL, **an
+exact version is the only control we have**, which is why this was the live risk and not the
+availability one.
+
+Enforced by `scripts/check-no-floating-pin.mjs`, and it is **derived, not a list**: it enumerates
+every URL on any package CDN in every shell under `public/` and demands an exact `name@1.2.3` of
+each. A bare name, `@2`, `@^2.1`, `@latest` and `@next` all fail. A new shell, or a new dependency
+in an old shell, is covered the day it is added — a hand-written list of "deps we remember to pin"
+would be the same disease one layer up (Lesson 87).
+
+It also asserts the pin equals what `node_modules` has, because pinning to a version nobody runs
+locally swaps unreviewed drift for a version skew we chose, which is not better.
+
+Red-proofed four ways: one shell floating again (`@2`) → FAIL 2, 4; `@latest` → FAIL 2, 4, 5; shells
+disagreeing with each other and with `node_modules` → FAIL 4, 5; and **a brand-new unversioned
+dependency on a different CDN** (`unpkg.com/some-new-lib/dist/x.js`) → FAIL 2, 3, which is the case
+that proves the check is derived rather than watching one known URL.
+
+Measured while pinning: **Leaflet was already exact** (`unpkg.com/leaflet@1.9.4`), so supabase-js
+was the only floating dependency in the product — 5 package-CDN references across 3 shells, all now
+exact.
+
+## Self-hosting — NOT RULED ON, and the question that decides it
+
+The ruling: *"'security fixes stop arriving on their own' needs an OWNER and a cadence, not a file.
+Who checks, how often, and what tells them? Without that answer, self-hosting trades a visible risk
+for an invisible one."*
+
+That is the right test and I cannot answer it from the repo. **The version-drift risk is closed by
+the pin either way**, so self-hosting is now only about availability, and it should not be decided
+until there is a named person, an interval, and a signal that reaches them. Open question, not a
+task.
+
 ## The version-pinning story, if we do nothing else
 
 Even without self-hosting, `@supabase/supabase-js@2` → `@supabase/supabase-js@2.110.5` is a
