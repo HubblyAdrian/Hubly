@@ -201,6 +201,175 @@ export function reconcileServices(model: SvcIn[], existing: SvcRow[], message: s
   return { allowed, droppedLift, changed, removed, keptBack };
 }
 
+/** ── TIME ──────────────────────────────────────────────────────────────────────────────
+ *
+ *  THE ONE FIELD ON A JOB THAT CAN SEND A PERSON TO A CUSTOMER AT THE WRONG HOUR, and until
+ *  2026-09-16 it was the only field on that writer nothing checked. `updateJob` grounded the
+ *  address and grounded the price and passed `scheduled_time` straight through to a raw
+ *  `::time` cast. A wrong address on a record is embarrassing; a wrong time is a missed
+ *  appointment, and the owner finds out from the customer.
+ *
+ *  UNAMBIGUOUS OR NOTHING. A time is grounded only if the message STATES it in a form that
+ *  cannot mean two things. "2 PM" states 14:00. A bare "2" does not — it is 02:00 or 14:00 and
+ *  the difference is twelve hours. Reading a bare hour as the convenient one is the direction
+ *  that says "this is fine" and it is silent when it is wrong (Lesson 89), so it refuses.
+ *
+ *  12 IS THE TRAP AND IT IS HANDLED EXPLICITLY: 12 AM is 00:00 and 12 PM is 12:00, which is the
+ *  one place where "add 12 for PM" gives the wrong answer twice.
+ *
+ *  THE ONE WIDENING, AND ITS BOUNDARY. When Hubly ITSELF put the candidate times on the floor
+ *  one turn ago — "should that be at 8:00 PM or 2:00 PM?" — and the owner answers "i meant 8",
+ *  he HAS stated it: the meridiem came from our own question, not from anywhere in the
+ *  transcript. So a bare hour resolves against the times named in the IMMEDIATELY PRECEDING
+ *  assistant message, and only when exactly one of them has that hour. It cannot reach a
+ *  different job's time from three turns back, because it cannot see three turns back. Without
+ *  this the walk's one correct disambiguation ("i meant 8" -> 20:00) would now be refused, and
+ *  re-asking a question he just answered is its own defect.
+ */
+export type TimeWhy = {
+  ok: boolean;
+  why?: "unparseable" | "no_time_in_message" | "ambiguous_hour" | "not_in_message";
+  /** The hour the message named without saying morning or evening — so the ask can be
+   *  specific ("8 in the morning or the evening?") instead of "say that again". */
+  ambiguousHour?: number;
+};
+
+/** Normalise a written time to "HH:MM", or null when it is not a time at all.
+ *  Returning null matters on its own: Postgres THROWS on `'4 pm'::time`, so an unparseable
+ *  value used to reach the database and blow up the call rather than be refused. */
+export function normalizeTimeValue(value: string | null | undefined): string | null {
+  const v = String(value == null ? "" : value).trim().toLowerCase();
+  if (!v) return null;
+  let m = v.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(a\.?m\.?|p\.?m\.?)?$/);
+  if (m) {
+    let h = Number(m[1]); const mi = Number(m[2]);
+    if (mi > 59) return null;
+    const mer = m[3] ? m[3][0] : "";
+    if (mer) {
+      if (h < 1 || h > 12) return null;
+      h = mer === "a" ? (h === 12 ? 0 : h) : (h === 12 ? 12 : h + 12);
+    } else if (h > 23) return null;
+    return String(h).padStart(2, "0") + ":" + String(mi).padStart(2, "0");
+  }
+  m = v.match(/^(\d{1,2})\s*(a\.?m\.?|p\.?m\.?)$/);
+  if (m) {
+    let h = Number(m[1]); const mer = m[2][0];
+    if (h < 1 || h > 12) return null;
+    h = mer === "a" ? (h === 12 ? 0 : h) : (h === 12 ? 12 : h + 12);
+    return String(h).padStart(2, "0") + ":00";
+  }
+  return null;
+}
+
+/** Every time the message states UNAMBIGUOUSLY, as "HH:MM". */
+export function statedTimes(message: string): Set<string> {
+  const src = String(message || "").toLowerCase();
+  const out = new Set<string>();
+  const add = (h: number, mi: number) => { out.add(String(h).padStart(2, "0") + ":" + String(mi).padStart(2, "0")); };
+  // "8 pm", "8:30pm", "8 p.m." — a meridiem settles it. 12am -> 00, 12pm -> 12.
+  for (const m of src.matchAll(/\b(\d{1,2})(?::([0-5]\d))?\s*(a\.?m\.?|p\.?m\.?)/g)) {
+    const h12 = Number(m[1]); if (h12 < 1 || h12 > 12) continue;
+    const mi = m[2] ? Number(m[2]) : 0;
+    const pm = m[3][0] === "p";
+    add(pm ? (h12 === 12 ? 12 : h12 + 12) : (h12 === 12 ? 0 : h12), mi);
+  }
+  // "20:00", "00:30" — a 24-hour clock reading. An hour of 1-12 with a colon and NO meridiem
+  // is deliberately NOT read here: "9:30" is 09:30 or 21:30 and we do not get to choose.
+  for (const m of src.matchAll(/\b(\d{1,2}):([0-5]\d)\b(?!\s*(?:a\.?m\.?|p\.?m\.?))/g)) {
+    const h = Number(m[1]); if (!(h === 0 || (h >= 13 && h <= 23))) continue;
+    add(h, Number(m[2]));
+  }
+  if (/\bnoon\b|\bmidday\b/.test(src)) add(12, 0);
+  if (/\bmidnight\b/.test(src)) add(0, 0);
+  return out;
+}
+
+/** The hours the message names WITHOUT saying morning or evening. These ground nothing on
+ *  their own; they are what the widening above resolves against our own preceding question. */
+export function ambiguousHours(message: string): Set<number> {
+  const src = String(message || "").toLowerCase();
+  const out = new Set<number>();
+  for (const m of src.matchAll(/\b(\d{1,2})(?::([0-5]\d))?\b/g)) {
+    const h = Number(m[1]);
+    if (h < 1 || h > 12) continue;
+    const after = src.slice((m.index || 0) + m[0].length, (m.index || 0) + m[0].length + 6);
+    if (/^\s*(a\.?m\.?|p\.?m\.?)/.test(after)) continue;   // settled, not ambiguous
+    out.add(h);
+  }
+  return out;
+}
+
+/** THE SOURCE SET, and why it is not just "this message".
+ *
+ *  Measured on the real corpus, 2026-09-16 (canyon-ridge-tree-care, seq 18-20):
+ *
+ *    owner  "add a job for tomorrow at 2:00 PM"
+ *    Hubly  "What's the job for?"
+ *    owner  "window cleaning"          <- the job is written here, at 14:00
+ *
+ *  HUBLY SPLIT THAT STATEMENT ITSELF. He said the time; our own question forced the service
+ *  name into a separate message. A strict "it must be in THIS message" rule refuses a time the
+ *  owner plainly stated, and punishes him for our follow-up question. So the source set is:
+ *
+ *    - this message, always
+ *    - the owner's immediately PRECEDING message, but ONLY when Hubly's turn in between was a
+ *      QUESTION. That is the one case where the split is ours. It cannot reach further back,
+ *      and it cannot reach back at all when Hubly's last turn was a statement.
+ *
+ *  A bare hour ("i meant 8") additionally resolves against the times HUBLY ITSELF offered in
+ *  that question — the meridiem came from our own words, not from the transcript.
+ *
+ *  THE LIMIT, NAMED RATHER THAN HIDDEN (Lesson 89, the false-negative surface): this checks
+ *  that the VALUE came from him. It cannot check that the model assigned it to the right job
+ *  or the right field. "Move the 3pm to 4pm" contains both times and no grounding rule can tell
+ *  which is the new one — that is the matcher's job and the reply's read-back, not this. What
+ *  this makes impossible is a time that he never said at all.
+ */
+export type TimeContext = {
+  /** Hubly's immediately preceding message. Used ONLY to resolve a bare hour against times
+   *  Hubly itself offered, and to decide whether the split below was ours. */
+  priorAsk?: string;
+  /** The owner's message before this one. Supplied only when `priorAsk` was a question. */
+  priorOwnerSaid?: string;
+};
+
+function looksLikeQuestion(text: string): boolean {
+  return /\?\s*["'\u201d\u2019)]*\s*$/.test(String(text || "").trim());
+}
+
+export function timeGroundedWhy(value: string, message: string, ctx?: TimeContext): TimeWhy {
+  const want = normalizeTimeValue(value);
+  if (!want) return { ok: false, why: "unparseable" };
+
+  const here = statedTimes(message);
+  if (here.has(want)) return { ok: true };
+
+  // OUR OWN SPLIT, and only ours: the extra message counts only when we interrupted him.
+  const askedInBetween = !!(ctx?.priorAsk && looksLikeQuestion(ctx.priorAsk));
+  const carried = askedInBetween && ctx?.priorOwnerSaid ? statedTimes(ctx.priorOwnerSaid) : new Set<string>();
+  if (carried.has(want)) return { ok: true };
+
+  // A BARE HOUR, resolved against the times WE offered in that question — never against the
+  // transcript. Exactly one of the offered times may have that hour, or it stays ambiguous.
+  const hours = new Set<number>([...ambiguousHours(message), ...(askedInBetween && ctx?.priorOwnerSaid ? ambiguousHours(ctx.priorOwnerSaid) : [])]);
+  if (hours.size && ctx?.priorAsk) {
+    const offered = [...statedTimes(ctx.priorAsk)];
+    const wantH12 = ((Number(want.slice(0, 2)) + 11) % 12) + 1;
+    if (hours.has(wantH12)) {
+      const sameHour = offered.filter((t) => ((Number(t.slice(0, 2)) + 11) % 12) + 1 === wantH12);
+      if (sameHour.length === 1 && sameHour[0] === want) return { ok: true };
+    }
+  }
+
+  if (hours.size) return { ok: false, why: "ambiguous_hour", ambiguousHour: [...hours][0] };
+  if (!here.size && !carried.size) return { ok: false, why: "no_time_in_message" };
+  return { ok: false, why: "not_in_message" };
+}
+
+export function timeGrounded(value: string, message: string, ctx?: TimeContext): boolean {
+  return timeGroundedWhy(value, message, ctx).ok;
+}
+
 export type GroundableFact = "phone" | "email" | "address" | "price";
 
 /** One entry point. Returns the value UNCHANGED when it is grounded in the

@@ -3222,3 +3222,50 @@ restating in its most compact form:
 `scripts/check-no-silent-turn.mjs` now carries leg 5b (no sentence claims failure over a change that
 landed), 5c, and 12–14 (the floor reaches the record, and the record and the screen say the same
 thing). All red-proofed by removal.
+
+---
+
+## Lesson 91
+
+**A CLAIM ABOUT A SPECIFIC ROW CARRIES THE QUERY THAT PRODUCED IT, OR IT IS NOT A FACT. A SESSION
+INHERITS A PREVIOUS SESSION'S CONCLUSION AND TREATS IT AS A MEASUREMENT.**
+
+2026-09-15. A session read the driveway job's `scheduled_time` as `17:00` and wrote, in a commit
+message: *"the driveway job now reads 17:00 — which is the 4 PM seq 40 asked for."* **17:00 is 5
+PM.** The arithmetic was wrong in the sentence itself.
+
+Nobody re-derived it. The next session inherited that line, and the line had by then stopped being
+a reading of a row and become a premise: *the write landed*. It was built into a report, and it
+became a headline — "the write landed and he was told nothing" — with an alarm attached.
+
+**The data turned out to be fine.** Adrian had set that time by hand himself, after the walk. There
+was no defect. Nothing broke, and that is exactly why this is worth writing down: **the mechanism
+fired cleanly and produced a false headline, and only luck about the underlying data kept it
+cheap.** The same chain over a real row produces a real false alarm, and a correction never travels
+as far as the alarm did.
+
+This is the folklore failure the booking-count scar already records — *"a scar note is a memory of a
+measurement, not a measurement, and the moment it is repeated instead of re-run it becomes folklore
+with a citation"* — arriving one level down, on a single row rather than a corpus count, and from
+one session to the next rather than across months. It is not rarer down there. It is more common,
+because a single row feels too small to be worth re-reading.
+
+**The rule, checkable:**
+
+> **A number or a value about a specific row, written in a doc or a commit message, carries the
+> query that produced it. If a later session cannot re-run the line that produced it, it is a
+> rumour and must be re-measured before anything is built on it.**
+
+Two consequences that bind:
+
+- **Quote the row, not your reading of it.** `scheduled_time = 17:00` is a fact. "which is the 4 PM
+  he asked for" is an inference, it belongs in a separate clause, and it is the half that must be
+  re-derived. The commit message above fused them into one sentence and the fused sentence was
+  inherited whole.
+- **An inherited conclusion gets the same scepticism as an inherited green.** We already refuse to
+  trust a checkmark we did not earn. A previous session's conclusion is a checkmark we did not
+  earn — written by someone with the same failure modes, working from context we can no longer see.
+
+**And the cheap tell:** when a claim about a row does not name the table and column it came from, it
+has already lost its provenance. Re-run it. Reading one row costs a second; the report built on a
+misread one costs a day and reaches a customer.

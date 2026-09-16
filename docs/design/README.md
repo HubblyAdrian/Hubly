@@ -47,6 +47,38 @@ Four rulings Adrian gave on 2026-09-16, all now drawn:
    itself requires it. Existing customers and services are selectable. Ask only for what is missing,
    through the one-ask floor. *My Day = fast daily entry. Job workspace = complete management.*
 
+### Verified against the image itself, 2026-09-16
+
+**The file was opened and read, not trusted from this description** — the scar at the foot of this
+file is a ruling that travelled further than the artifact it described. Every point above is present
+in `my-day-2026-09-16-final.png`: the rail is **Home · Website · Settings** with the account at the
+foot and no chats; each band shows exactly one *"Double-click to add something…"* line and no ghost
+rows; *Today at a glance* is **Jobs 0 · Events 0 · Tasks 0** with no ring and no percentage; the row
+header is **What | When | Where | Type**; the honesty line and all four Quick examples are as quoted.
+
+**It also answers the rail question that was being held.** **My Day is not a rail row.** The rail is
+three items, `Home` is the selected one, and **My Day is what Home renders** — the date, the title,
+the bands. The 2026-09-15 image put My Day *in* the rail; this one does not, and the conversation
+panel beside it is the active conversation rather than a destination (ruling 1). Today the code has
+`HC_PLACE_SURFACES = website, planner("My Day"), jobs, customers` with `HC_RAIL_DEFAULT = website,
+planner` — so the rail currently shows a **My Day** row this design does not have. Adrian to confirm
+before anything moves; `scripts/check-navigation-destinations.mjs` holds either way.
+
+### TWO THINGS IN THE IMAGE THAT THE WRITTEN RULINGS DO NOT COVER
+
+1. **The calendar column skips 6 PM.** The hours read 6 AM … 4 PM, 5 PM, **7 PM**, 8 PM — fourteen
+   labels across a fifteen-hour span. Built literally, a 6 PM item has no row to land on. This is a
+   slip in the drawing, not a ruling, and it sits directly on top of the one thing this file already
+   says the image does **not** decide (*"the calendar's hour range follows the data, not this
+   drawing"*). Worth naming because a missing hour is exactly the class of defect that ships when a
+   mockup is transcribed rather than read — and we have already shipped the day-window version of it
+   once.
+2. **"Your AI business partner"** sits under *Ask Hubly* as the panel's subtitle. The rejected
+   mockups in this file include *"Hubly is your AI business partner — here to help you get more
+   customers and grow"* as **marketing copy inside the product**. The short form here is not the
+   same sentence and carries no growth promise, but it is the same register, in a working tool, and
+   it is flagged rather than quietly built.
+
 ### The rest of the screen
 
 **LEFT — the assistant, beside the day.** *"Hey Adrian! 👋"*, one sentence of what it can do, four

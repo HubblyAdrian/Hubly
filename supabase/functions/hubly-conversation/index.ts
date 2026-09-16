@@ -1289,6 +1289,23 @@ Deno.serve(async (req) => {
   // message, not new input, so the relevance signal shouldn't shift mid-turn.
   const lastIncomingUser = [...incoming].reverse().find((m) => m.role === "user");
   const latestUserMessage = typeof lastIncomingUser?.content === "string" ? lastIncomingUser.content : null;
+  // ── THE TWO MESSAGES A TIME MAY BE GROUNDED IN, AND NO OTHERS ──────────────────────────
+  //
+  // A job's time is now grounded like its address and its price (hubly_grounding.timeGrounded).
+  // "This message" alone is too narrow for one measured reason: HUBLY SPLITS THE STATEMENT.
+  // canyon-ridge-tree-care, seq 18-20 — "add a job for tomorrow at 2:00 PM" / "What's the job
+  // for?" / "window cleaning". He said the time; our own question pushed the service name into
+  // a separate message, and a one-message rule would refuse a time he plainly gave.
+  //
+  // So exactly two extra strings travel, and the boundary is what keeps this from being a lift
+  // from history: the owner's PREVIOUS message counts only when OUR turn in between was a
+  // QUESTION, and a bare hour ("i meant 8") resolves only against times WE named in it.
+  // Neither can reach a third turn back, which is where a different job's time lives.
+  const priorAskMessage = priorAssistantSaid.length ? priorAssistantSaid[priorAssistantSaid.length - 1] : "";
+  const priorOwnerMessage = (() => {
+    const users = incoming.filter((m) => m.role === "user" && typeof m.content === "string");
+    return users.length >= 2 ? (users[users.length - 2].content as string) : "";
+  })();
 
   // ── THE SELECTED ELEMENT ───────────────────────────────────────────────────
   //
@@ -2474,6 +2491,8 @@ Deno.serve(async (req) => {
               dispatchArgs.conversationId = String(visitorConversationId || body.conversationId);
             }
             dispatchArgs._userMessage = latestUserMessage || "";
+            dispatchArgs._priorAsk = priorAskMessage;
+            dispatchArgs._priorOwnerSaid = priorOwnerMessage;
           }
           // Structural, engine-decided execution target — never something
           // the model sees or controls (same treatment as businessId just
@@ -2516,6 +2535,8 @@ Deno.serve(async (req) => {
           // written). Both structural; redacted from the logged args below.
           dispatchArgs.ownerUid = await getOwnerUid();
           dispatchArgs._userMessage = latestUserMessage || "";
+          dispatchArgs._priorAsk = priorAskMessage;
+          dispatchArgs._priorOwnerSaid = priorOwnerMessage;
         }
         // THE SELECTED ELEMENT, INJECTED — never transcribed. The model is told the
         // element's NAME (so it can talk about it and say it back as a checksum) and
@@ -2719,6 +2740,7 @@ Deno.serve(async (req) => {
           args: (() => {
             if (!dispatchArgs.draftToken && !dispatchArgs._ownerToken && dispatchArgs._storefrontAst === undefined
                 && dispatchArgs.ownerUid === undefined && dispatchArgs._userMessage === undefined
+                && dispatchArgs._priorAsk === undefined && dispatchArgs._priorOwnerSaid === undefined
                 && dispatchArgs._selection === undefined
                 && dispatchArgs._clientIp === undefined) return dispatchArgs;
             const a: Record<string, unknown> = { ...dispatchArgs };
@@ -2727,6 +2749,8 @@ Deno.serve(async (req) => {
             if (a._storefrontAst !== undefined) a._storefrontAst = "[omitted]";
             if (a.ownerUid !== undefined) a.ownerUid = "[redacted]";       // verified identity, not display data
             if (a._userMessage !== undefined) a._userMessage = "[omitted]"; // structural (grounding), not display data
+            if (a._priorAsk !== undefined) a._priorAsk = "[omitted]";            // structural (grounding)
+            if (a._priorOwnerSaid !== undefined) a._priorOwnerSaid = "[omitted]";
             // The selection is a label, a node path and a fingerprint — structural, and
             // long. Keep the NAME, because that is the one part worth reading back in a
             // log ("which element did this turn act on"), and drop the rest.

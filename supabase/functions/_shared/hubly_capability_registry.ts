@@ -79,7 +79,7 @@ import {
   placeContactHoursInFreeform,
   type HoursRow,
 } from "./hubly_contact.ts";
-import { addressGrounded, emailGrounded, phoneGrounded, phoneGroundedWhy, priceGrounded, reconcileServices } from "./hubly_grounding.ts";
+import { addressGrounded, emailGrounded, phoneGrounded, phoneGroundedWhy, priceGrounded, reconcileServices, timeGroundedWhy, type TimeContext } from "./hubly_grounding.ts";
 import { matchRows, requireCandidates, describeRow } from "./hubly_match.ts";
 // adminHeaders() THROWS when no service/secret key resolves, and omits the
 // Authorization header for non-JWT sb_secret_ keys, which PostgREST rejects as
@@ -7936,11 +7936,29 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           const address = str("address");
           const amountRaw = (args as any)?.amount;
           const amount = typeof amountRaw === "number" && Number.isFinite(amountRaw) && amountRaw > 0 ? amountRaw : null;
+          // THE TIME IS GROUNDED LIKE EVERY OTHER FIELD (2026-09-16). It was the only one on
+          // this writer that was not: address and price were checked against his own words and
+          // the time went straight through to a raw `::time` cast. A wrong address on a record
+          // is embarrassing; a wrong time is a missed appointment he hears about from the
+          // customer. Refused means NOT WRITTEN and asked about — never written and mentioned.
+          const timeCtx: TimeContext = {
+            priorAsk: String((args as any)?._priorAsk || ""),
+            priorOwnerSaid: String((args as any)?._priorOwnerSaid || ""),
+          };
+          const timeRaw = str("scheduled_time");
+          let sendTime = "";
+          if (timeRaw) {
+            const tw = timeGroundedWhy(timeRaw, userMessage, timeCtx);
+            if (tw.ok) sendTime = timeRaw;
+            else dropped.push(tw.why === "ambiguous_hour"
+              ? `time (they said "${tw.ambiguousHour}" without saying morning or evening \u2014 ASK WHICH, do not guess)`
+              : "time");
+          }
           const job: Record<string, unknown> = {
             customer_name: str("customer_name"),
             service_name: str("service_name"),
             scheduled_date: str("scheduled_date"),
-            scheduled_time: str("scheduled_time"),
+            scheduled_time: sendTime,
             notes: str("notes"),
           };
           // GROUNDED OR DROPPED. Not refused — the rest of the job is still worth saving.
@@ -8107,12 +8125,38 @@ export const HUBLY_CAPABILITY_REGISTRY: Capability[] = [
           let sendAddr: string | null = null, sendAmount: string | null = null;
           if (addr) { if (addressGrounded(addr, userMessage)) sendAddr = addr; else dropped.push("address"); }
           if (amount !== null) { if (priceGrounded(amount, userMessage)) sendAmount = String(amount); else dropped.push("price"); }
+          // THE TIME, GROUNDED — the field this writer exists to change, and the one it never
+          // checked. See addJob above for why.
+          const uTimeCtx: TimeContext = {
+            priorAsk: String(a?._priorAsk || ""),
+            priorOwnerSaid: String(a?._priorOwnerSaid || ""),
+          };
+          const uTimeRaw = str("scheduled_time");
+          let sendTime: string | null = null;
+          let timeWhy: string | null = null;
+          if (uTimeRaw) {
+            const tw = timeGroundedWhy(uTimeRaw, userMessage, uTimeCtx);
+            if (tw.ok) sendTime = uTimeRaw;
+            else { timeWhy = tw.why || "not_in_message"; dropped.push("time"); }
+          }
+          // A REFUSED TIME ON A TIME-ONLY TURN IS A QUESTION, NOT A "NOTHING CHANGED". Without
+          // this the RPC gets no fields, returns no_change, and the owner is told "they did not
+          // actually change anything" — which is false and unanswerable. He asked; we could not
+          // tell which hour he meant; so we say that and ask.
+          if (timeWhy && !sendTime && !sendAddr && !sendAmount && !str("scheduled_date")) {
+            return { ok: false, real: false, error: "time_ungrounded",
+              summary: timeWhy === "ambiguous_hour"
+                ? "NOTHING WAS CHANGED. They gave an hour without saying morning or evening, and guessing twelve hours wrong is a missed appointment. Ask which one they mean."
+                : timeWhy === "unparseable"
+                ? "NOTHING WAS CHANGED. That time could not be read. Ask them for it plainly, e.g. \"3:30 PM\"."
+                : "NOTHING WAS CHANGED. No time they actually said could be found in this message. Ask what time they want it at \u2014 never repeat a time back at them as if they said it." };
+          }
 
           const upd = await callBusinessRpc("update_business_job", {
             p_business_id: draftId,
             p_job_id: job.id,
             p_owner_id: ownerUid,
-            p_scheduled_time: str("scheduled_time") || null,
+            p_scheduled_time: sendTime || null,
             p_scheduled_date: str("scheduled_date") || null,
             p_address: sendAddr,
             p_amount: sendAmount,
