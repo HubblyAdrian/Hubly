@@ -3048,3 +3048,25 @@ And the sibling on the data side is Lesson 86, which caught this same turn in re
 queries returned empty, the obvious reading was "there are no driveway jobs", and the empty reader
 was describing **itself** — a `503` maintenance window, not an absence. Same disease, different
 surface: *silence is not a value.*
+
+### Lesson 87, second addendum: TWO MORE SHAPES OF THE SAME DISEASE
+
+**A SWEEP IS ONLY AS EXHAUSTIVE AS THE THING IT ENUMERATES, AND A FUNCTION NAME IS A PROXY FOR
+BEHAVIOUR, NEVER THE BEHAVIOUR.** 2026-09-16: asked to find every check that installs a fake
+backend, I grepped `installOwnerFake` and found 3 files — missing that three more checks carry
+their own **inline** fakes. The sweep whose entire job was exhaustiveness enumerated one function
+name instead of the behaviour. Enumerate what the thing *does* (here: replaces `window.supabase`),
+and cross-check the count against something independent before reporting it.
+
+**A REGEX WINDOW THAT REACHES PAST ITS SUBJECT FINDS THE NEXT ONE AND CALLS IT PROOF.** Same day,
+the fourth window-too-wide no-op of the week: a leg asserting that the model's history is filtered
+searched 200 characters forward from `hc.messages = rows` for `hcHiddenFromOwner` — and the
+*render's* call to it sits six lines below, inside that window. With the defect restored the leg
+matched a different line and stayed green. **Scope a window to its own subject** — here, the single
+assignment expression, terminated at `.map(` — and red-proof it, because a window that is too wide
+fails silently and looks exactly like a window that is correct.
+
+Running tally of the hand-maintained-set family: **12 instances.** The newest is a *heuristic
+standing in for a fact we already hold* — a content regex deciding which messages predate a claim,
+when "written before the claim" is a timestamp comparison. Same fix as always: derive the set, or
+make membership structural.

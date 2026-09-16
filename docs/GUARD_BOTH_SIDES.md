@@ -126,3 +126,54 @@ write time (as `data-hc-msg="preaccount"` already is on the live path), not a re
 later.
 
 **Nothing deleted. Nothing reclassified. Awaiting your ruling.**
+
+---
+
+# Does a claim date exist? **NO — and none can be derived reliably.**
+
+Measured read-only, 2026-09-16, before proposing anything.
+
+| candidate | verdict |
+|---|---|
+| **`draft_claims.claimed_at`** | the column exists. **The table holds 0 rows** against 41 claimed businesses. The live claim RPC — `claim_draft_business`, read from `pg_proc` — does `update public.businesses … owner_id = v_uid` and **never touches `draft_claims`**. The table belongs to a superseded path (the `claim-draft-business` edge function). A dated claim we never recorded. |
+| **`hubly_owner_profile.created_at`** | covers **17 of 41** claimed businesses (10 profiles, 29 distinct owners). And it is **per-owner, not per-business**: 4 owners hold 2 businesses and 2 hold 5, so one date cannot date two claims made months apart. |
+| **a claim event in `business_events`** | none exists — zero rows matching claim/signup/account. |
+| **`businesses.updated_at`** | moves on every later update, so it dates the most recent edit, not the claim. |
+
+**So the branch is the second one: say so plainly.** There is no fact to derive from today.
+
+## But it is one column away, and that is cheaper than a per-row marker
+
+The write-time marker is the fallback you named, and it works. **I think there is a better version
+of the same idea**, and it is strictly less machinery:
+
+**`businesses.claimed_at`, written by `claim_draft_business` at the moment it sets `owner_id`.**
+
+Then hidden-from-owner becomes `row.created_at < business.claimed_at` — **a timestamp comparison,
+derived from a fact we hold, exactly as ruled.** The regex goes.
+
+| | per-message marker | `businesses.claimed_at` |
+|---|---|---|
+| storage | one column on every conversation row, forever | one column, once per business |
+| written by | every writer of a message, correctly, every time | one RPC, at the one moment the fact becomes true |
+| can be wrong | yes — a writer that forgets | no — if the claim happened, the timestamp is the claim |
+| fixes the 19 existing rows | no | no |
+
+Neither fixes the existing 19: a business claimed before the column existed has no date. **That
+backfill is a separate decision and it is yours.** A defensible backfill exists — the claim
+necessarily happened at or before the first *post*-claim behaviour on the record — but it is an
+inference, and an inference deciding what an owner can see is the thing we are trying to stop.
+
+**Nothing built. Nothing written. Recommending `businesses.claimed_at`; awaiting the ruling.**
+
+## The window-washing row, tracked so it is returned
+
+Until a claim date exists, `window-washing` seq 10 stays wrongly hidden — from the owner and now
+from the model. It is one of the few places we teach the three doors:
+
+> *"You can edit by just telling me what to change here — text, prices, services, contact info, or
+> which photo should be swapped. If you want to click directly on the page and edit it yourself,
+> that takes an account, and I can open that for you now."*
+
+**When the derivation lands, this row must become visible again, and the report will say so
+explicitly** — the mechanism changing is not the same as the message being returned.
