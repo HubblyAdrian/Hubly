@@ -74,17 +74,39 @@ try {
       someFailed: L([{ capability: "business", capabilityAction: "addJob", ok: true, real: true },
                      { capability: "business", capabilityAction: "setHours", ok: false, real: false }]),
       noReceipt: L(null),
+      // THE OUTCOME THE FIRST VERSION OF THIS FILE NEVER BUILT: everything ran and everything
+      // WORKED, and only the reply was lost. It used to fall through to "nothing happened".
+      succeeded: L([{ capability: "business", capabilityAction: "updateJob", ok: true, real: true }]),
+      // ok WITHOUT real — proposeServices noticed something and published NOTHING. Nothing
+      // changed, so this one must NOT claim a save.
+      okNotReal: L([{ capability: "business", capabilityAction: "proposeServices", ok: true, real: false }]),
     };
   });
   const all = Object.values(lines);
+  // The outcomes in which NOTHING was really changed. Claiming success in any of these is the
+  // unearned green; that is what leg 5 has always tested.
+  const noChange = [lines.nothingRan, lines.allFailed, lines.noReceipt, lines.okNotReal];
   say("2 every outcome says something", all.every((s) => s && s.length > 12), `${all.length} sentences`);
   say("3 a turn where everything failed says nothing changed",
     /nothing changed/i.test(lines.allFailed), JSON.stringify(lines.allFailed));
   say("4 a partly-failed turn does not claim to know which half",
     /can.t tell you which/i.test(lines.someFailed) && !/nothing changed/i.test(lines.someFailed),
     JSON.stringify(lines.someFailed));
-  say("5 no sentence claims success", !all.some((s) => /\b(done|added|changed it|updated|saved)\b/i.test(s)),
-    JSON.stringify(all.filter((s) => /\b(done|added|changed it|updated|saved)\b/i.test(s))));
+  say("5 no sentence claims success when nothing was really changed",
+    !noChange.some((s) => /\b(done|added|changed it|updated|saved)\b/i.test(s)),
+    JSON.stringify(noChange.filter((s) => /\b(done|added|changed it|updated|saved)\b/i.test(s))));
+  // ── 5b. AND THE MIRROR, WHICH DID NOT EXIST AND IS THE REASON THIS BUG SHIPPED. ─────────
+  //
+  // Leg 5 guards one direction only: never claim a success we did not earn. An instrument that
+  // can be wrong in two directions must be red-proofed hardest in the direction that reads as
+  // fine, and "I couldn't do it" over a write that LANDED reads as fine to every sweep we run —
+  // nobody investigates a product that admits failure. It is not fine: he redoes the work, or
+  // he stops believing the record. (Lesson 89, applied to the floor itself.)
+  say("5b no sentence claims failure over a change that really landed",
+    !/(nothing happened|nothing changed|didn.t go through|couldn.t work out)/i.test(lines.succeeded),
+    JSON.stringify(lines.succeeded));
+  say("5c a turn that really changed something says so",
+    /\b(done|saved)\b/i.test(lines.succeeded), JSON.stringify(lines.succeeded));
   // AND IT MUST NOT SEND THEM ROUND A LOOP THAT CANNOT TERMINATE. "Tell me again" is what was
   // said about the seven-digit phone, and repeating it verbatim would have failed identically.
   say("6 it never asks for the same words back verbatim",
@@ -131,6 +153,46 @@ try {
   say("11 an ambiguous job name is refused with the candidates named",
     /error:\s*"ambiguous"/.test(reg) && /do not pick/i.test(reg),
     "refuses and names them");
+
+  // ── 12-14. AND THE FLOOR REACHES THE RECORD, NOT ONLY THE SCREEN. ───────────────────────
+  //
+  // Adrian's walk, 2026-09-16 02:23-02:25Z: seq 38, 39 and 40 are three consecutive owner
+  // messages with NO assistant row stored under any of them — and the floor had been live on
+  // that page for twenty minutes (fb25916, pushed 02:04:23Z). Both things are true because the
+  // floor called hcAppendMessage and stopped: it spoke to the thread and never to the record.
+  //
+  // So the record could not answer the only question that mattered — was he told something, or
+  // nothing? That is an empty reader telling you about itself (Lesson 86), and it is why "the
+  // write landed and he was told nothing" could not be established from the rows at the time.
+  //
+  // The reload is the real cost. The thread IS the record on reload, so a rescued turn came
+  // back as an unanswered message the moment he refreshed.
+  await rig.load(PAGE);                               // fresh turn state: hcTurn.said is empty again
+  const record = await rig.page.evaluate(() => {
+    const t = document.getElementById("hcThreadBody") || document.getElementById("hcThread");
+    t.innerHTML = "";
+    // A TURN THAT WRITES AND SAYS NOTHING. The write SUCCEEDED (ok + real) and the reply was
+    // the filler, so it was suppressed — the exact shape of a silent success.
+    const spoke = window.hublySilenceUI.ensure({
+      reply: "I've gathered what I can for now — what would you like to do next?",
+      actions: [{ capability: "business", capabilityAction: "updateJob", args: {}, ok: true, real: true }],
+    });
+    const shown = t.innerText.replace(/\s+/g, " ").trim();
+    const queued = window.hublySilenceUI.queued().filter((m) => m.role === "assistant").map((m) => String(m.content));
+    return { spoke, shown, queued };
+  });
+  say("12 a turn that writes and says nothing still puts a sentence on the SCREEN",
+    record.spoke === true && record.shown.length > 12, JSON.stringify(record.shown.slice(0, 100)));
+  say("13 and the same sentence reaches the RECORD",
+    record.queued.length === 1 && record.queued[0] === record.shown,
+    `${record.queued.length} queued: ${JSON.stringify((record.queued[0] || "").slice(0, 100))}`);
+  // THE ONE THAT WOULD HAVE CAUGHT IT AT THE SOURCE. The stored sentence must not tell him the
+  // change failed, because the receipt it was composed from says it succeeded.
+  // NOT VACUOUS WHEN THE ROW IS MISSING: an assertion that passes because there is nothing to
+  // read is the empty-reader defect inside the instrument. It requires the row AND its content.
+  say("14 and it does not tell the record the write failed",
+    record.queued.length === 1 && !/(nothing happened|nothing changed|didn.t go through)/i.test(record.queued[0] || ""),
+    JSON.stringify((record.queued[0] || "").slice(0, 100)));
 
 } catch (e) {
   console.error("FAIL — " + String(e.stack || e.message).slice(0, 400));

@@ -1815,13 +1815,14 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     for(var i=hc.messages.length-1;i>=0;i--){ if(hc.messages[i] && hc.messages[i].role==='user') return String(hc.messages[i].content||''); }
     return '';
   }
-  function hcRecordCaptureMiss(askedFor){
+  function hcRecordCaptureMiss(askedFor, outcome){
     try{
       if(!hc.draftBusiness || !hc.draftBusiness.id) return;
       fetch(SUPA_URL + '/rest/v1/rpc/record_capture_miss', {
         method:'POST',
         headers:{ apikey:SUPA_ANON_KEY, authorization:'Bearer '+SUPA_ANON_KEY, 'content-type':'application/json' },
-        body: JSON.stringify({ p_business_id: hc.draftBusiness.id, p_asked_for: askedFor })
+        body: JSON.stringify({ p_business_id: hc.draftBusiness.id, p_asked_for: askedFor,
+                               p_outcome: outcome === 'quiet' ? 'quiet' : 'reasked' })
       }).catch(function(){});
     }catch(e){}
   }
@@ -1840,15 +1841,48 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // the client's to catch. This is the "one turn, one truth" half of the fix.
     var attempted = relevant.length > 0;
     var present = cfg.answerLooksPresent(hcLastUserMessage());
-    if(present && !captured && !attempted && pc.tries < 2){
-      hcRecordCaptureMiss(pc.askedFor);
-      hcAppendMessage('hubly', "I didn't get those down — say them again?");
-      hcPersist('assistant', "I didn't get those down — say them again?");
-      hc.pendingCapture = { askedFor: pc.askedFor, tries: pc.tries + 1 };   // re-arm, capped at 2
-      return true;
+    if(!present || captured || attempted) return false;   // nothing to report about this fact
+    // ── A DETECTED MISS. WHETHER TO SAY IT IS A SECOND QUESTION. ──────────────────────────
+    //
+    // 2026-09-16, Adrian's walk, seq 44 and 45 in one batch to the microsecond:
+    //   "Window washing is saved for September 17 at 8:00 PM."   <- the truth composer
+    //   "I didn't get those down — say them again?"              <- this guard
+    // The job row was written two seconds earlier. The turn succeeded and this sentence told
+    // him it had not.
+    //
+    // `attempted` above was the intended defence — "if the server tried, it already told the
+    // truth this turn, so stay quiet" — and it only ever looked at actions that write THIS
+    // fact. The turn ran addJob. An empty filtered list means "nothing I know how to look
+    // for"; it was read as "nothing happened". That is the empty reader telling you about
+    // itself (Lesson 86), inside a guard.
+    //
+    // ENUMERATE THE HARMLESS SIDE. There is no closed list of actions that mean "his message
+    // was already dealt with" — the next capability added is another silent miss from this
+    // list. The closed set is the other one: a turn that changed NOTHING real cannot have
+    // consumed his answer, and only then is this guard the one voice that should speak.
+    var changed = actions.some(function(a){ return a && a.ok === true && a.real === true; });
+    if(changed || pc.tries >= 2){
+      // AND IT IS COUNTED. Staying quiet is the direction that reads as fine and is therefore
+      // the one that goes uninvestigated forever (Lesson 89), so it is a row, not a judgement
+      // call made once and forgotten. A rising `quiet` count is a fact going uncaptured.
+      hcRecordCaptureMiss(pc.askedFor, 'quiet');
+      return false;
     }
-    return false;
+    hcRecordCaptureMiss(pc.askedFor, 'reasked');
+    hcAppendMessage('hubly', "I didn't get those down — say them again?");
+    hcPersist('assistant', "I didn't get those down — say them again?");
+    hc.pendingCapture = { askedFor: pc.askedFor, tries: pc.tries + 1 };   // re-arm, capped at 2
+    return true;
   }
+  // The REAL guard, driven by scripts/check-no-contradicting-reask.mjs — not a copy of its
+  // rules. hcRecordCaptureMiss's fetch is fire-and-forget and already swallows its own
+  // failures, so a check can run this with no network.
+  try{ window.hublyCaptureUI = { check: hcCheckCaptureMiss,
+        // the real array the real guard reads — not a stand-in for it
+        saidByOwner: function(t){ hc.messages.push({ role:'user', content: String(t == null ? '' : t) }); },
+        // hcRecordCaptureMiss refuses to record without a business, exactly as it should —
+        // so a check that wants to see it record has to give it one. Real state, real reader.
+        withBusiness: function(id){ hc.draftBusiness = hc.draftBusiness || {}; hc.draftBusiness.id = id; } }; }catch(e){}
 
   function hcMergePatch(base, patch){
     if(!patch || typeof patch !== 'object') return base;
@@ -8534,6 +8568,30 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(ran && failed){
       return "Part of that didn\u2019t go through, and I can\u2019t tell you which \u2014 check it before you rely on it.";
     }
+    // ── A TURN THAT SUCCEEDED AND SAID NOTHING IS NOT A TURN THAT DID NOTHING. ────────
+    //
+    // The three branches above cover nothing-ran and something-failed. Everything else fell
+    // to the sentence below, which says "nothing happened" — and that INCLUDES the turn where
+    // every action SUCCEEDED and only the reply was lost. So the floor built to end silence
+    // was, in exactly that case, telling the owner his change had not been made while the row
+    // sat written in the database. A false green is a checkmark we did not earn; this was a
+    // false RED over a write that landed, which is the same defect pointed the other way and
+    // the more expensive one, because he will redo the work or stop trusting the record.
+    //
+    // Found 2026-09-16 auditing the floor for the false-negative direction (Lesson 89): the
+    // check above it asserted "no sentence claims success" and never once asked whether a
+    // sentence could claim FAILURE over a success. One direction guarded, the other open.
+    //
+    // ok WITHOUT real IS NOT A CHANGE. proposeServices returns ok:true, real:false precisely
+    // because nothing was published; saying "saved" on that would be the unearned green this
+    // branch exists to avoid. The success sentence requires a REAL change.
+    var changed = list.some(function(a){ return a && a.ok === true && a.real === true; });
+    if(changed){
+      // It does NOT name what changed: the actions log carries capability names, not a human
+      // sentence, and inventing one here is the fabrication rule. It says the true thing it
+      // knows — a real change landed — and asks him to look, because we could not describe it.
+      return "That\u2019s done and saved. Take a look and tell me if it isn\u2019t what you meant.";
+    }
     return "I couldn\u2019t work out how to do that one, so nothing happened. Say it a different way and I\u2019ll have another go.";
   }
   function hcEnsureTurnSpoke(data){
@@ -8541,13 +8599,33 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       if(hcTurn.said) return false;                       // something was displayed: no floor needed
       var line = hcSilenceLine(data && data.actions);
       hcAppendMessage('hubly', line);
+      // ── AND THE RECORD, NOT JUST THE SCREEN. ───────────────────────────────────────────
+      //
+      // The floor spoke to the thread and stopped there, so the turn it rescued left NO
+      // assistant row behind it. On Adrian's walk (2026-09-16 02:23-02:25Z, seq 38/39/40)
+      // three consecutive messages have no reply stored under them — and because the floor
+      // does not persist, that record cannot tell "he was told nothing" from "he was told
+      // something and we did not keep it". The reload is where it bites: the thread IS the
+      // record on reload, so the floor's promise held until he refreshed and then his
+      // messages sat there unanswered again.
+      //
+      // THIS IS THE MIRROR OF THE BUG FIXED IN hcPersist YESTERDAY, in the same seam. That
+      // one was silenced on screen and stored anyway; this one is spoken on screen and never
+      // stored. The class named then was "a guard on display is not a guard on the record" —
+      // and the other half of that sentence is this: A FLOOR ON DISPLAY IS NOT A FLOOR ON THE
+      // RECORD. Both halves are now closed at the one seam that decides each.
+      hcPersist('assistant', line);
       hcNoteSaid(line);
       hcThreadScrollToEnd();
       try{ console.warn('[silence] a turn produced no visible reply; the floor spoke instead'); }catch(e){}
       return true;
     }catch(e){ return false; }
   }
-  try{ window.hublySilenceUI = { line: hcSilenceLine, ensure: hcEnsureTurnSpoke, said: function(){ return hcTurn.said; } }; }catch(e){}
+  // `queued` reports the REAL persist buffer (not a copy of its rules) so a check can assert
+  // that what the floor said also reached the record. Same discipline as hublyPersistUI: the
+  // seam drives the shipping function and reports what actually landed.
+  try{ window.hublySilenceUI = { line: hcSilenceLine, ensure: hcEnsureTurnSpoke, said: function(){ return hcTurn.said; },
+                                 queued: function(){ return hc.pendingPersist.slice(); } }; }catch(e){}
   /** CHECK AND TAKE, ATOMICALLY. The two-step version is what a late speaker slipped through. */
   function hcTakeVoluntarySlot(){
     if(!hcMayAddVoluntary()) return false;
@@ -8627,6 +8705,20 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     customers: { say: 'customers', what: 'customers' },
     website:   { say: 'website',   what: 'website' }
   };
+  /** THE FOUR REGISTRIES THAT HAVE TO AGREE ABOUT WHERE A PERSON CAN BE SENT, exposed so
+   *  scripts/check-navigation-destinations.mjs can execute them rather than read them. They are
+   *  the real objects, not descriptions of them: a surface added to one and forgotten in another
+   *  is a row in the rail that opens nothing, or a sentence that offers a place the rail can
+   *  never show. `planner` answers to "day" in the counting registry, which is precisely the kind
+   *  of seam a text assertion cannot see. */
+  try{ window.hublyNavUI = {
+    surfaces: HC_PLACE_SURFACES, rooms: HC_ROOMS, goPlaces: HC_GO_PLACES,
+    threadViews: HC_THREAD_VIEWS, railDefault: HC_RAIL_DEFAULT,
+    // The real door, executed — an unknown place must be refused, never guessed at.
+    goTo: hcGoToPlace,
+    // The real mapping hcGoToPlace uses to count a place before offering it.
+    countKeyFor: function(kind){ return kind === 'planner' ? 'day' : kind; }
+  }; }catch(e){}
   /** What the room actually holds, read from the room after it rendered. Never a prediction:
    *  "It should show you the services spot on the page" is us guessing at our own behaviour,
    *  and it was said to an owner the same night. Report, or say we could not tell. */

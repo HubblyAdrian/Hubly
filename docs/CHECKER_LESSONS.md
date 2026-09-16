@@ -3166,3 +3166,59 @@ past the end of the audit, and the leg failed on an unrelated `decision.message`
 down. **Anchor a region between two markers the file actually contains**, never a character count —
 and note that this one failed *loudly*, which is the only reason it was cheap. The same mistake in
 the reassuring direction would have passed.
+
+---
+
+## Lesson 90
+
+**A GUARD ON DISPLAY IS NOT A GUARD ON THE RECORD — AND A FLOOR ON DISPLAY IS NOT A FLOOR ON THE
+RECORD. THE SAME SEAM HAS TWO SIDES AND FIXING ONE IS NOT FIXING IT.**
+
+Yesterday's fix closed one half: `hcAppendMessage` refused to *show* the raw envelope
+`{"action":"reply","message":""}` and `hcPersist` *stored it anyway*, so the thing that was silenced
+on screen came back on the next reload (seq 47, caught by `envelope_suppression_events` on Adrian's
+own walk). The class was named then — *a guard on display is not a guard on the record* — and the
+fix went into `hcPersist`.
+
+**The other half of that same sentence was live in the same file and was not looked for.** The
+no-silence floor, `hcEnsureTurnSpoke`, called `hcAppendMessage` and stopped. It spoke to the thread
+and never to the record. So on Adrian's walk, seq 38, 39 and 40 are three consecutive owner messages
+with **no assistant row under any of them** — while the floor had been live on that page for twenty
+minutes (`fb25916`, pushed 02:04:23Z; the turns are 02:23–02:25Z).
+
+Two consequences, and the second is the one that matters:
+
+1. **The record could not answer the question being asked of it.** "He was told nothing" and "he was
+   told something and we did not keep it" produce byte-identical rows. That is an empty reader
+   telling you about itself (Lesson 86) — and it meant the walk's headline finding could not be
+   established from the rows at the time it was reported.
+2. **The thread IS the record on reload.** A turn the floor rescued came back as an unanswered
+   message the moment he refreshed. The floor's promise held until F5.
+
+**The knowledge was already in the file.** A comment three hundred lines above the floor reads:
+*"neither this view's sentence nor the no-silence floor is persisted, so a turn that worked and a
+turn that died look identical in `business_conversations`."* Someone saw it, wrote it down beside the
+code, and did not fix it. **A defect recorded in a comment is not a defect that is handled** — it is
+a defect with a witness. When the class question gets asked ("where else does a string become a
+stored message?"), the answer includes every place the *inverse* is true, and the comments already in
+the file are the cheapest place to find them.
+
+**AND THE FLOOR'S OWN SENTENCE HAD LESSON 89 IN IT.** `hcSilenceLine` had three branches —
+nothing-ran, all-failed, some-failed — and everything else fell through to *"I couldn't work out how
+to do that one, so nothing happened."* That final branch covered `ran > 0 && failed === 0`: **a turn
+where every action SUCCEEDED and only the reply was lost.** The floor built to end silence was, in
+exactly that case, telling the owner his change had not been made while the row sat written in the
+database.
+
+The check above it asserted *"no sentence claims success"* and had never once asked whether a
+sentence could claim **failure over a success**. One direction guarded, the other open, in the
+instrument whose whole job is to tell the truth about a turn. That is Lesson 89 again and it is worth
+restating in its most compact form:
+
+> **Every assertion of the form "we never claim X" needs its mirror written the same day.** A false
+> green wastes a day. A false red over work that landed makes him redo it, or stop believing the
+> record — and it reads as a product being honest about its limits, so nobody investigates it.
+
+`scripts/check-no-silent-turn.mjs` now carries leg 5b (no sentence claims failure over a change that
+landed), 5c, and 12–14 (the floor reaches the record, and the record and the screen say the same
+thing). All red-proofed by removal.
