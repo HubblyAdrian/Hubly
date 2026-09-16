@@ -317,3 +317,35 @@ instance of the tab mechanic — an owner asking for a capability, Hubly adding 
 announcing it — and it arrives with a paying customer attached. The `capabilities.storefront`
 chicken-and-egg in #46 (the flag is only earned by using the Store UI, which is only reachable with
 the flag) is precisely the question screen 2 answers: **the owner asks, and Hubly adds it.**
+
+---
+
+## THE STRING AUDIT — Adrian's sourcing test, applied to every string on My Day (2026-09-16)
+
+**The rule:** *"If you cannot name the sentence in MY_DAY.md or in Adrian's own words that a string
+comes from, it is a picture artifact. Derive it or drop it."*
+
+**A mention in this file does not count as a source unless it is inside a quoted ruling.** Most of
+this README's prose is a *description of the picture* written by a session, so citing it back would
+be circular — the same trap as the ruling that travelled further than its artifact.
+
+| string | source | verdict |
+|---|---|---|
+| "My Day" | `MY_DAY.md` §1 | **SOURCED** |
+| `A` / `B` / `C`, "Must Do" / "Important" / "Nice to Do" | `MY_DAY.md` §4 | **SOURCED** |
+| `What \| When \| Where \| Type` | Adrian's ruling 4, verbatim | **SOURCED** |
+| "Double-click to add something…" | Adrian's ruling 2, verbatim | **SOURCED** |
+| "Jobs · Events · Tasks" | Adrian's ruling 3, verbatim | **SOURCED** |
+| "Calendar" | `MY_DAY.md` §6 | **SOURCED** |
+| the date heading, the hour labels | derived (Intl / generated) | **DERIVED** |
+| band descriptions — *"Critical tasks that move your business forward."* etc. | the drawing only | **FAILED → DERIVED.** Replaced with `MY_DAY.md` §4's own definitions: *"If this doesn't happen today, there is a real consequence."* / *"Should get done, but can move if necessary."* / *"Good to accomplish, but completely okay if it doesn't happen."* |
+| subtitle — *"Get things done. … or just start typing."* | the drawing only | **FAILED → DERIVED.** The subtitle is now exactly the one sourced gesture sentence, so the phrasing is identical everywhere the gesture appears |
+| "Today at a glance" | the drawing only | **FAILED → DERIVED** to "Today". The three tile labels under it are Adrian's and are unchanged |
+| "Today's locations" | the drawing only | **FAILED → DERIVED** to "Where you're going" |
+| **"Pro tip" + "Keep it simple — Hubly handles the details."** | the drawing only | **FAILED → DROPPED**, on Adrian's explicit ruling. Its only other content was the gesture sentence, which the subtitle already carries in the same words |
+| "No events yet — Add a job, task, or event…" / "No locations yet — Add an address…" | **borderline** | **KEPT, FLAGGED.** Quoted in this file's "What it does not license" section as the approved empty states, but that section is a session's description of the image, not a quoted ruling. Adrian to confirm or replace |
+| "Later this week" | not from the drawing — written for the fix that stops a job past today disappearing | **DERIVED** |
+
+**Two strings on the surface come from neither the spec nor Adrian and were kept deliberately:**
+"Where you're going" and "Later this week" are headings naming their own content rather than
+captions copied from a picture. They are flagged here rather than smuggled.

@@ -6810,10 +6810,22 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var b = String((it && it.band) || '').trim().toUpperCase();
     return (b === 'A' || b === 'B' || b === 'C') ? b : 'C';
   }
+  /** THE BAND DESCRIPTIONS, TAKEN FROM MY_DAY.md SECTION 4 — not from the mockup.
+   *
+   *  Adrian's rule, 2026-09-16: "If you cannot name the sentence in MY_DAY.md or in my own words
+   *  that a string comes from, it is a picture artifact. Derive it or drop it."
+   *
+   *  The drawing said "Critical tasks that move your business forward." / "Important, but not
+   *  time-sensitive." / "Great to do if you have time." None of those three appears in the spec
+   *  or in anything Adrian wrote — a designer's paraphrase, and transcribing it is the same
+   *  mistake as transcribing fourteen hour labels.
+   *
+   *  The spec defines each band in its own sentence, and these are those sentences, trimmed only
+   *  of the leading label that the disc and the name already carry. */
   var HC_BAND_DESC = {
-    A: 'Critical tasks that move your business forward.',
-    B: 'Important, but not time-sensitive.',
-    C: 'Great to do if you have time.'
+    A: 'If this doesn\u2019t happen today, there is a real consequence.',
+    B: 'Should get done, but can move if necessary.',
+    C: 'Good to accomplish, but completely okay if it doesn\u2019t happen.'
   };
   /** THE ADD LINE, one phrasing, everywhere the gesture appears — the subtitle, the empty band
    *  and the Pro tip all say the same words because it is the same gesture. Ruling 2 of
@@ -6887,7 +6899,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var head = hcEl('div', 'hcmd-head');
     head.appendChild(hcEl('div', 'hcmd-date', hcDateLong(dayISO) || hcDateUS(dayISO) || ''));
     head.appendChild(hcEl('h1', 'hcmd-title', 'My Day'));
-    head.appendChild(hcEl('p', 'hcmd-sub', 'Get things done. ' + HC_DAY_ADD_LINE.replace('…', ', or just start typing.')));
+    // ONE GESTURE, ONE PHRASING, and it is the one Adrian ruled (design README ruling 2). The
+    // drawing's "Get things done. … or just start typing." is a picture artifact; this is his.
+    head.appendChild(hcEl('p', 'hcmd-sub', HC_DAY_ADD_LINE));
     main.appendChild(head);
 
     // EVERY DAY HAS AN A, A B AND A C. Not some days — Adrian, 2026-09-16. The three are
@@ -6972,7 +6986,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // TODAY AT A GLANCE — three honest counts. No ring, no percentage, no colour that moves
     // with progress (ruling 3, 2026-09-16). A count we could not read is NOT rendered as 0.
     var glance = hcEl('section', 'hcmd-card');
-    glance.appendChild(hcEl('h3', 'hcmd-cardh', 'Today at a glance'));
+    // The heading names what the card holds. "Today at a glance" is the drawing's caption and is
+    // in neither the spec nor Adrian's words; the three tile labels below ARE his (ruling 3).
+    glance.appendChild(hcEl('h3', 'hcmd-cardh', 'Today'));
     var tiles = hcEl('div', 'hcmd-glance');
     var jobCount = loaded.jobsFailed ? null : items.filter(function(i){ return i.kind === 'job' && i.type === 'Job'; }).length;
     var evCount  = loaded.jobsFailed ? null : items.filter(function(i){ return i.kind === 'job' && i.type !== 'Job'; }).length;
@@ -7014,7 +7030,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
 
     // TODAY'S LOCATIONS — the addresses actually on today's records, never a guess.
     var loc = hcEl('section', 'hcmd-card');
-    loc.appendChild(hcEl('h3', 'hcmd-cardh', 'Today’s locations'));
+    loc.appendChild(hcEl('h3', 'hcmd-cardh', 'Where you’re going'));
     var addrs = [];
     items.forEach(function(i){ if(i.where && addrs.indexOf(i.where) < 0) addrs.push(i.where); });
     if(addrs.length){
@@ -7029,11 +7045,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     }
     ctx.appendChild(loc);
 
-    var tip = hcEl('section', 'hcmd-tip');
-    tip.appendChild(hcEl('div', 'hcmd-tiph', 'Pro tip'));
-    tip.appendChild(hcEl('div', null, HC_DAY_ADD_LINE));
-    tip.appendChild(hcEl('div', null, 'Keep it simple — Hubly handles the details.'));
-    ctx.appendChild(tip);
+    // THE "PRO TIP" CARD IS GONE. Adrian, 2026-09-16: "Band words come from MY_DAY.md section 4
+    // — sourced, they stay. 'Pro tip' came from a drawing — it goes." Its only content was the
+    // gesture sentence, which the subtitle already says in the same words, and "Keep it simple —
+    // Hubly handles the details", which is marketing copy inside a working tool.
 
     wrap.appendChild(ctx);
     canvas.appendChild(wrap);
