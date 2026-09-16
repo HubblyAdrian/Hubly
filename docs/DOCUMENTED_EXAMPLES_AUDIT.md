@@ -73,6 +73,73 @@ of an instruction to the model ("never say a change *was performed*") that my qu
 as a user phrase. A reminder that this sweep measures **quoted strings in descriptions**, not
 verified intents — stated so the 73 is read for what it is.
 
+
+## THE SPLIT, ranked (2026-09-15) — reported before any testing
+
+Adrian: *"do not test all 62. Rank them — which sit on capabilities an owner can actually reach
+today, versus ones behind a door that does not exist. Report the split before you start."*
+
+**42 reachable · 20 behind a door.**
+
+**The ranking is derived, not judged.** The authority is `CONTEXT_CAPABILITY_ALLOWLIST` in
+`hubly-conversation/index.ts`, read from source by the sweep — because a capability absent from the
+context the owner is in is **filtered out of the model's prompt AND blocked at dispatch**, so it
+cannot be invoked at all. A context change re-ranks this on its own.
+
+```
+dashboard = [website, online_presence, business, places, operations]   ← the owner's ordinary conversation
+operate   = [storefront, places]
+customer  = [booking]
+```
+
+### Behind a door the owner's conversation cannot open — 20 examples
+
+Every one belongs to the **`storefront`** group, which appears **only** in the `operate` context. And
+`operate` is reached only through the editor hub's **`store` tab**, inside the **`?hcEdit=1`**-gated
+editor that `platform-home.html` opens — traced 2026-09-15 (`hubly.html:38241` → `edStoreAiSend` →
+`S._edHubTab==='store'`). An owner talking to Hubly normally can never invoke any of them.
+
+`createProduct` · `setProductVisibility` (5) · `addVariant` (2) · `updateVariant` ·
+`createCollection` · `addProductsToCollection` · `configureStore` (2) · `generateStorefront` (2) ·
+`patchStorefront` (5)
+
+**These are not worth testing yet** — a documented example on an unreachable capability is a promise
+nobody can call in. (It also lines up with OPEN_FINDINGS #14, "the storefront capability is invisible
+to the model in the claimed shell".)
+
+### Reachable today — 42 examples, test these first
+
+These are the ones where "a promise in our own description the code does not keep" can actually reach
+an owner, which is exactly how `the maple st one` survived.
+
+**Highest suspicion, and in this order:**
+
+1. **`places` (7 of 7) and `business/goToPlace` (3 of 3)** — their examples are phrasings an owner
+   literally says: *"Take me to my schedule"*, *"show me my jobs"*, *"open my customers"*,
+   *"can I get a store in my sidebar"*. This is the **same shape** as the `updateJob` defect —
+   natural phrasings resolved against a matcher — so it is the likeliest second instance, and it is
+   two capabilities that overlap in wording, which is its own risk.
+2. **`business/showMe` (9 of 11)** — the third door, built 2026-09-14 *because* it had none. A new
+   door whose documented invocations are unexercised is a door nobody has walked.
+3. **`website/restyleElement` (8), `website/setDesignKnob` (7)** — freeform phrasings
+   (*"make this bigger"*, *"make this feel more premium"*, *"bold that"*) against a live page. High
+   example count, and the blast radius is an owner's actual website.
+4. **`business/capture` (1), `business/setAddress` (1), `website/moveSection` (2), `website/showMeWhere` (1)** — small, and worth doing because they are cheap.
+
+### One correction to the count itself
+
+`moveSection` lists `"was performed"`, which is **not an example** — it is a fragment of an
+instruction to the model (*never say a change "was performed"*) that my quote-extractor read as a
+user phrase. So 42 is at most 41 real reachable examples. Left in the number rather than silently
+adjusted, because the extractor's limit is the honest thing to report: **this sweep measures quoted
+strings in descriptions, not verified intents.**
+
+### What I have not done
+
+**Not tested any of the 42.** The split was the deliverable. Each needs the capability's backend and
+an authed session against a real business, which is the same constraint that stops every other
+owner-path verification here.
+
 ## What this does not do
 
 - **It does not test any of the 62.** Running them needs each capability's backend and, for most,

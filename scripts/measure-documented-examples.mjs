@@ -69,6 +69,37 @@ for (const c of caps) {
 const scripts = readdirSync(join(ROOT, "scripts")).filter((f) => f.startsWith("check-") && f.endsWith(".mjs"));
 const allChecks = scripts.map((f) => { try { return readFileSync(join(ROOT, "scripts", f), "utf8"); } catch { return ""; } }).join("\n");
 
+// ── REACHABILITY, DERIVED FROM THE ALLOWLIST ──────────────────────────────────────────
+// Adrian: "rank them — which sit on capabilities an owner can actually reach today, versus ones
+// behind a door that does not exist."
+//
+// The authority is CONTEXT_CAPABILITY_ALLOWLIST in hubly-conversation/index.ts, because a
+// capability absent from the context the owner is actually in is filtered out of the model's
+// prompt AND blocked at dispatch — it cannot be invoked at all. Read from the source, not listed
+// here, so a context change moves the ranking on its own.
+const conv = readFileSync(join(ROOT, "supabase/functions/hubly-conversation/index.ts"), "utf8");
+const allowBlock = conv.slice(conv.indexOf("const CONTEXT_CAPABILITY_ALLOWLIST"));
+const ctx = {};
+for (const m of allowBlock.slice(0, 2600).matchAll(/^\s*(dashboard|customer|operate):\s*\[([^\]]*)\]/gm)) {
+  ctx[m[1]] = [...m[2].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
+}
+// The owner's ordinary conversation is `dashboard`. `operate` is reached ONLY through the editor
+// hub's `store` tab, which lives inside the ?hcEdit=1-gated editor — measured 2026-09-15.
+const REACHABLE = new Set(ctx.dashboard || []);
+const GATED = new Set((ctx.operate || []).filter((g) => !REACHABLE.has(g)));
+
+// Which GROUP owns each capability: the nearest preceding top-level `name:` that is in a context.
+const groupOf = {};
+{
+  let current = null;
+  lines.forEach((l, i) => {
+    const mm = /^\s*name: "([a-zA-Z.]+)",\s*$/.exec(l);
+    if (!mm) return;
+    if (REACHABLE.has(mm[1]) || GATED.has(mm[1]) || (ctx.customer || []).includes(mm[1])) current = mm[1];
+    groupOf[mm[1]] = current;
+  });
+}
+
 let total = 0, tested = 0;
 const untested = [];
 console.log("CAPABILITY                     EXAMPLES  TESTED  UNTESTED");
@@ -87,5 +118,27 @@ console.log(`     same intent in different words, which would make the untested 
 console.log(`   · the description regex may miss capabilities whose block is shaped differently,`);
 console.log(`     which would make both numbers too LOW. ${caps.length} parsed is the denominator to sanity-check.`);
 console.log(`   · an example appearing in a check is not proof the check ASSERTS on it.`);
-console.log(`\n  UNTESTED, by capability:`);
-for (const x of untested) for (const e of x.u) console.log(`   ${x.name.padEnd(26)} "${e}"`);
+// ── THE SPLIT ────────────────────────────────────────────────────────────────────────
+const bucket = (n) => {
+  const g = groupOf[n];
+  if (!g) return "UNKNOWN";
+  if (REACHABLE.has(g)) return "REACHABLE";
+  if (GATED.has(g)) return "GATED";
+  return "OTHER(" + g + ")";
+};
+const tally = {};
+for (const x of untested) {
+  const b = bucket(x.name);
+  tally[b] = (tally[b] || 0) + x.u.length;
+}
+console.log(`\n  ── THE SPLIT of the ${total - tested} untested examples ──`);
+console.log(`     contexts read from source: dashboard=[${(ctx.dashboard||[]).join(",")}] operate=[${(ctx.operate||[]).join(",")}] customer=[${(ctx.customer||[]).join(",")}]`);
+for (const [b, n] of Object.entries(tally).sort((a, b2) => b2[1] - a[1])) console.log(`     ${b.padEnd(18)} ${String(n).padStart(3)}`);
+console.log(`\n  REACHABLE TODAY — test these first:`);
+for (const x of untested.filter((x) => bucket(x.name) === "REACHABLE")) for (const e of x.u) console.log(`   ${(groupOf[x.name]+"/"+x.name).padEnd(34)} "${e}"`);
+console.log(`\n  BEHIND A DOOR THE OWNER'S CONVERSATION CANNOT OPEN (capability group only in \`operate\`,`);
+console.log(`  which is reached only via the editor hub's store tab inside ?hcEdit=1):`);
+for (const x of untested.filter((x) => bucket(x.name) === "GATED")) for (const e of x.u) console.log(`   ${(groupOf[x.name]+"/"+x.name).padEnd(34)} "${e}"`);
+const other = untested.filter((x) => !["REACHABLE","GATED"].includes(bucket(x.name)));
+if (other.length) { console.log(`\n  UNCLASSIFIED (no owning capability group found — the denominator to check):`);
+  for (const x of other) for (const e of x.u) console.log(`   ${(x.name).padEnd(34)} "${e}"  [${bucket(x.name)}]`); }
