@@ -9367,9 +9367,25 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // both the live supersede (hcConfirmSignedIn) and the reload filter.
   function hcIsPreAccountMsg(text){
     var t = String(text || '');
+    // NARROWED 2026-09-16, ONE CLAUSE, MEASURED FROM THE ROWS. `/that takes an account/i` used to
+    // be here and it was over-matching: of the 19 stored rows this predicate catches on claimed
+    // businesses, 18 are caught by the OFFER language ("reserved for you" — all 18 of them) and
+    // exactly ONE is caught by that clause alone. That one is window-washing seq 10, which is not
+    // an offer at all:
+    //
+    //   "You can edit by just telling me what to change here — text, prices, services, contact
+    //    info, or which photo should be swapped. If you want to click directly on the page and
+    //    edit it yourself, that takes an account, and I can open that for you now."
+    //
+    // A message teaching the three doors, invisible to its owner because it mentioned an account
+    // in a subordinate clause. Dropping the clause un-hides exactly that row and keeps all 18.
+    //
+    // This predicate is being RETIRED — hcHiddenFromOwner prefers
+    // `row.created_at < business.claimed_at` whenever the claim is dated, and this is only the
+    // undated fallback. So it gets one targeted narrowing and no rewrite.
     return /reserved for you/i.test(t) ||
            /goes live the moment you make an account/i.test(t) ||
-           /that takes an account/i.test(t);
+           /puts it live/i.test(t);
   }
   function hcMessageToText(content){
     if(typeof content === 'string') return content;

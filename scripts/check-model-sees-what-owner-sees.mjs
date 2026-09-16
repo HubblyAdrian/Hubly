@@ -88,6 +88,31 @@ const PRE = "This site is reserved for you — make an account and it's yours.";
     "the how-to-edit message its owner could not see");
   say("4e the person's own words are never hidden, date or no date", derived.userBefore === false);
 
+  // ── 4f-4h. THE UNDATED FALLBACK, ON REAL ROWS ───────────────────────────────────────
+  // 41 businesses were claimed before claimed_at existed, so the regex is still the fallback for
+  // them and WILL BE until they are dated. Measured from the rows: of the 19 it catches on claimed
+  // businesses, 18 are caught by the OFFER language and exactly ONE by `that takes an account`
+  // alone — window-washing seq 10, a message teaching the three doors, invisible to its owner
+  // because it mentioned an account in a subordinate clause. That clause is gone.
+  //
+  // These are the REAL stored texts, copied verbatim, so the leg cannot pass on a paraphrase that
+  // happens to match.
+  const REAL = await rig.page.evaluate(() => {
+    const H = window.hublyHistoryUI.hidden;
+    window.__setClaimed(true); window.__setClaimedAt(null);       // undated: the shipping fallback
+    const at = "2026-09-01T00:00:00Z";
+    return {
+      windowWashing: H("assistant", "You can edit by just telling me what to change here — text, prices, services, contact info, or which photo should be swapped. If you want to click directly on the page and edit it yourself, that takes an account, and I can open that for you now.", at),
+      goesLive: H("assistant", "That's your site. The address detailing-chemicals-equipment-courses.myhubly.app is reserved for you — it goes live the moment you make an account.", at),
+      putsItLive: H("assistant", "The address canyon-ridge-tree-care.myhubly.app is reserved for you. Making an account takes about ten seconds and puts it live.", at),
+    };
+  });
+  say("4f UNDATED: the window-washing message is VISIBLE — the clause that hid it is gone",
+    REAL.windowWashing === false, "its owner can see how to edit again");
+  say("4g UNDATED: a real 'goes live the moment' row stays hidden", REAL.goesLive === true,
+    "to a claimed owner that says their site is not live — false, not stale");
+  say("4h UNDATED: a real 'puts it live' row stays hidden", REAL.putsItLive === true);
+
 } catch (e) {
   console.error("FAIL — " + String(e.message).slice(0, 240)); failed++;
 } finally { try { await rig.close(); } catch (_) {} }

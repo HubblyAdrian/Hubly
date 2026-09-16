@@ -3070,3 +3070,50 @@ Running tally of the hand-maintained-set family: **12 instances.** The newest is
 standing in for a fact we already hold* — a content regex deciding which messages predate a claim,
 when "written before the claim" is a timestamp comparison. Same fix as always: derive the set, or
 make membership structural.
+
+## Lesson 88
+
+**A FIX PRESENT IN THE DATABASE AND ABSENT IN BEHAVIOUR IS NOT A FIX. A MIGRATION IS NOT A FIX — A
+FIX IS THE WHOLE CHAIN FROM THE ROW TO THE BEHAVIOUR.**
+
+This is *built-and-doorless* (the "look for the missing door" rule) pointed at a **fix** rather than
+a feature, and it is more dangerous in that direction, because a fix comes with the conviction that
+the problem is now solved.
+
+**2026-09-16.** Replacing a content regex with a derived fact took **three migrations**, each one
+applied, each postcondition asserted:
+
+1. `businesses.claimed_at`, written by `claim_draft_business` in the same statement as `owner_id`.
+2. `get_my_business_conversation` returning `created_at`.
+3. `get_my_businesses` carrying `claimedAt`.
+
+All three were correct and verified in the database. **And the derivation would never have fired
+once**, because `hcOpenOwnedBusiness` did not put `claimedAt` on the business object the client
+holds — so `claimedAt` was always `undefined`, the comparison was always skipped, and the regex went
+on deciding which of an owner's own messages he was allowed to see. Three green postconditions, one
+missing assignment, zero behaviour change.
+
+### The habit
+
+**After any schema change, assert the LAST LINK: the client actually reads it, and the behaviour
+actually changes.** Not that the column exists. Not that the function returns it. That the thing a
+person experiences is different.
+
+`scripts/check-model-sees-what-owner-sees.mjs` legs 8–9 are the model for this:
+
+```
+8  the client carries claimedAt onto the business it holds     (grep the assignment)
+9  the predicate compares the row's date against it            (grep the comparison)
+```
+
+Both are red-proofed by deleting exactly that one line. A check that asserts only the migration is a
+check that would have passed on a fix that did nothing.
+
+### And a note on red-proofing a multi-clause predicate
+
+While red-proofing the narrowed regex, removing **one** of its three clauses fired only one leg, and
+that looked at first like two vacuous legs. It was not: the other two clauses still matched those
+rows, correctly. **A mutation that removes one branch of an OR is not a red-proof of the OR** — it
+tests that branch. Remove the whole thing to prove the legs bite, and remove each branch separately
+to learn which leg covers which. Both runs are useful; confusing them is how a sound leg gets
+rewritten for no reason.
