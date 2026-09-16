@@ -37125,10 +37125,61 @@ function applyWsPeService(){
   try{scheduleEditorCatalogPersist();}catch(e){
     try{if(typeof syncEditorPackagesToServices==='function')syncEditorPackagesToServices();}catch(e2){}
   }
-  renderSvcEditorList();
-  renderWebsitePreview();
+  repaintServicePriceSurfaces();
   toast('Service saved');
 }
+
+/** ══ A PRICE HE TYPES UPDATES IN FRONT OF HIM, EVERYWHERE IT IS SHOWING ══════════════════
+ *
+ *  This save used to call renderSvcEditorList() and renderWebsitePreview() — two surfaces, named
+ *  by hand. A service price is rendered in SIX places, all of them through the one formatter
+ *  `svcDisplayPrice`: the packages list, the packages preview, the service editor list, the
+ *  website preview, the phone preview and the booking landing's cards. So an owner editing a price
+ *  with the packages hub open watched the number stay wrong on the surface he was looking at, and
+ *  the only way to see the truth was to refresh — which is the rule this breaks.
+ *
+ *  DERIVED FROM WHAT IS ON SCREEN, not from what the save happens to remember. Each entry pairs a
+ *  ROOT with its renderer, and a surface whose root is not in the DOM is skipped — so this is safe
+ *  to call from anywhere and repaints exactly the surfaces that exist right now.
+ *
+ *  check-price-updates-everywhere.mjs derives the list of price-rendering functions from the call
+ *  sites of svcDisplayPrice and fails when one of them is not covered here, so the next surface
+ *  that starts showing a price cannot quietly go stale. */
+var HC_PRICE_SURFACES = [
+  { root: '#ed-pkg-list',         fn: 'renderPkgHubList' },
+  { root: '#ed-pkg-live-preview', fn: 'renderPkgHubPreview' },
+  { root: '#svc-editor-list',     fn: 'renderSvcEditorList' },
+  { root: '#ed-ws-preview',       fn: 'renderWebsitePreview' },
+  { root: '#ws-page',             fn: 'renderWebsite' },
+  { root: '#bkland-services',     fn: 'renderThemedBookingLanding' },
+  { root: '#obs-headline',        fn: 'updatePrev' },
+  { root: '#bkland-svc-grid',     fn: 'renderBookingLanding' }
+  //
+  // ── DELIBERATELY NOT REPAINTED, each with its reason. The check reads these lines, so an
+  //    omission must be argued for here rather than silently left out.
+  // NOT-REPAINTED: updateStickyPrice — the running total inside a booking a CUSTOMER is part-way
+  //   through, not the owner's catalogue. Repricing under someone mid-checkout is worse than a
+  //   stale number, and it is not this rule's job.
+  // NOT-REPAINTED: answerServiceQuiz — transient output produced in answer to a question just
+  //   asked. There is nothing standing on screen to go stale; the next answer re-renders it.
+  // NOT-REPAINTED: leadPackageOptionsHtml — the package <select> inside a lead modal, built when
+  //   the modal opens. A modal open at the moment of an edit is re-populated on its next open.
+];
+function repaintServicePriceSurfaces(){
+  var painted = [];
+  HC_PRICE_SURFACES.forEach(function(sfc){
+    try{
+      if(!document.querySelector(sfc.root)) return;        // not on screen: nothing to repaint
+      var f = window[sfc.fn];
+      if(typeof f !== 'function') return;
+      f();
+      painted.push(sfc.fn);
+    }catch(e){ try{ console.warn('[price] repaint failed for ' + sfc.fn, e); }catch(_e){} }
+  });
+  try{ window.__lastPriceRepaint = painted; }catch(e){}
+  return painted;
+}
+try{ window.hublyPriceUI = { repaint: repaintServicePriceSurfaces, surfaces: HC_PRICE_SURFACES }; }catch(e){}
 function deletePeSvc(){
   const id=S._peSvcId;
   closeWsPePop();

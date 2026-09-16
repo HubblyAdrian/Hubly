@@ -29,6 +29,27 @@ const CAP = Number(process.env.CONFIRM_CAP || 40);
 const GAP_MS = Number(process.env.CONFIRM_GAP_MS || 4000);
 const want = markers.map((m) => (m.startsWith("!") ? { s: m.slice(1), present: false } : { s: m, present: true }));
 
+// ── AN ABSENCE MARKER NAMES A CODE CONSTRUCT, NEVER A BARE IDENTIFIER ───────────────────────
+//
+// Fired twice on 2026-09-16. `openSmartQuote` and `toggleWsSvcCard` were both genuinely deleted,
+// and both names survived in the COMMENT EXPLAINING THE DELETION — so `!openSmartQuote` reported
+// NOT CONFIRMED against a correct deploy, twice, and the second time it burned 40 fetches first.
+//
+// A false NOT CONFIRMED is worse than no check: it teaches you to doubt the confirm and then to
+// skip it. So the tool refuses the ambiguous form rather than answering it. `!function foo(` and
+// `!;foo(this)` are unambiguous; `!foo` is a name that a comment, a string or a log line can carry
+// long after the code is gone.
+const bareAbsence = want.filter((w) => !w.present && /^[A-Za-z_$][\w$]*$/.test(w.s));
+if (bareAbsence.length) {
+  console.error("REFUSING — an absence marker must name a CODE CONSTRUCT, not a bare identifier:");
+  for (const b of bareAbsence) {
+    console.error(`  !${b.s}  ->  try  !"function ${b.s}("  or  !";${b.s}("  or another form that cannot appear in a comment`);
+  }
+  console.error("  A deleted function's NAME survives in the comment explaining its deletion, so a bare");
+  console.error("  identifier reports NOT CONFIRMED against a correct deploy. Fired twice on 2026-09-16.");
+  process.exit(2);
+}
+
 let fetches = 0, bytes = 0, last = [];
 const t0 = Date.now();
 while (fetches < CAP) {
