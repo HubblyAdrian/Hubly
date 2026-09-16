@@ -187,6 +187,21 @@ acts, or it says what will happen — it never gives directions to something it 
   content** — "does this collection hold anything" cannot be wrong about him the way "is there a
   places row" can. And it is wrong in BOTH directions: the same gate hid Graef's customers, which
   he has four of. (Lesson 86.)
+- **A SWEEP PRODUCES CANDIDATES, NEVER FINDINGS. A candidate graduates by being ACTED ON, never
+  by being re-read.** Six wrong findings across two sweeps on 2026-09-16, from one method error:
+  a grep window around a branch structurally cannot see the surface around it, so it reports a
+  control in an empty state without noticing the permanent button in the header six lines up. It
+  will keep producing plausible false positives, and they are all the flattering kind — "I found
+  three doorless features" is a good story, so it gets repeated rather than re-derived (Lesson 94).
+  **Both corrections came from trying to USE the finding** — opening the door, moving the control —
+  and neither from reading it again. So: sweep output is a **candidate list**; report it as
+  *"N candidates, M verified by use"*, never *"N confirmed"*; and the verification is an attempt to
+  do the thing, not a second look.
+- **Do not background a long until-loop waiting on a batch of browser checks.** Derive the answer
+  and spot-check instead. A loop holding a slot open for 25 browser launches gets reaped for memory
+  and returns nothing, and the answer was usually available analytically (2026-09-16: "how many
+  checks load a page with local stylesheets" was one grep, not 25 launches). If a wait is genuinely
+  unavoidable, run ONE check and reason from it.
 - **Measure before fixing when a failure is unnamed.** Don't mask a bug with a fix
   before there's evidence naming which bug it is.
 - **Hubly records what it asks for and misses what it overhears — so ask.** Measured:

@@ -367,7 +367,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 .hcmd-empty{text-align:center;color:var(--muted);font-size:13px;padding:18px 8px}
 .hcmd-emptyh{font-weight:700;color:var(--ink);margin-bottom:3px}
 .hcmd-locs{display:flex;flex-direction:column;gap:6px}
-.hcmd-loc{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hcmd-loc{display:flex;gap:8px;align-items:baseline;font-size:13px;min-width:0}
+.hcmd-locn{flex:0 0 auto;width:18px;color:var(--muted);font-variant-numeric:tabular-nums}
+.hcmd-loca{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hcmd-tip{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:#f6f3ff;font-size:13px;color:var(--muted)}
 .hcmd-tiph{font-weight:700;color:var(--ink);margin-bottom:4px}
 /* The day rendered INSIDE the conversation thread — same renderer, narrower home. */
@@ -7212,12 +7214,37 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
 
     // TODAY'S LOCATIONS — the addresses actually on today's records, never a guess.
     var loc = hcEl('section', 'hcmd-card');
-    loc.appendChild(hcEl('h3', 'hcmd-cardh', 'Where you’re going'));
+    loc.appendChild(hcEl('h3', 'hcmd-cardh', 'Your stops, in order'));
+    // ── YOUR STOPS, IN THE ORDER YOU'LL HIT THEM ────────────────────────────────────────
+    //
+    // Adrian's ruling, 2026-09-16: "List the addresses, in the order of the day. No maps provider,
+    // no routing math. His day already has an order — A, then B, then C. That is a route in the
+    // only sense that matters to someone with five jobs."
+    //
+    // AND NO CLAIM BEYOND IT. Nothing here computes distance, drive time or an optimal sequence,
+    // so nothing says any of those words. The copy already lied about this once — the design's
+    // "see your route" promised something that does not exist — and the fix is not better wording,
+    // it is that the only thing said is the thing done: these are his stops, in his own order.
+    //
+    // The order is the day's own: timed items first by clock time, then the untimed ones in band
+    // order, which is exactly how the bands above are read top to bottom.
+    var ordered = items.slice().sort(function(a, b){
+      var ta = hcHm(a.when), tb = hcHm(b.when);
+      if(ta && tb) return ta < tb ? -1 : ta > tb ? 1 : 0;
+      if(ta) return -1;                                  // a timed stop comes before an untimed one
+      if(tb) return 1;
+      return String(hcItemBand(a)).localeCompare(String(hcItemBand(b)));
+    });
     var addrs = [];
-    items.forEach(function(i){ if(i.where && addrs.indexOf(i.where) < 0) addrs.push(i.where); });
+    ordered.forEach(function(i){ if(i.where && addrs.indexOf(i.where) < 0) addrs.push(i.where); });
     if(addrs.length){
       var list = hcEl('div', 'hcmd-locs');
-      addrs.forEach(function(a){ list.appendChild(hcEl('div', 'hcmd-loc', a)); });
+      addrs.forEach(function(a, n){
+        var row = hcEl('div', 'hcmd-loc');
+        row.appendChild(hcEl('span', 'hcmd-locn', String(n + 1)));
+        row.appendChild(hcEl('span', 'hcmd-loca', a));
+        list.appendChild(row);
+      });
       loc.appendChild(list);
     } else {
       var le = hcEl('div', 'hcmd-empty');

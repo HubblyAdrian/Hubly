@@ -12635,6 +12635,20 @@ document.addEventListener('DOMContentLoaded', function() {
               </div>
               <p class="bk-slot-hint" id="bk-slot-hint" aria-live="polite"></p>
               <input type="hidden" id="bk-time" value="">
+              <!-- DOES IT REPEAT? Optional, and NEVER DEFAULTED. 507 ?book=1 links reached this
+                   form with no such field, so a customer who wanted a standing weekly visit could
+                   only get one by typing it in chat — and none ever did (recurring_schedules held
+                   0 rows). The first option is a prompt, not a value: a select arriving pre-set to
+                   "Every week" would be the never-infer rule broken by a widget, which is the same
+                   reason the owner's own control has no preselection. -->
+              <div class="bk-lbl" id="bk-repeat-lbl">Does this repeat?</div>
+              <select id="bk-repeat" aria-labelledby="bk-repeat-lbl">
+                <option value="">Just this once</option>
+                <option value="weekly">Every week</option>
+                <option value="biweekly">Every other week</option>
+                <option value="monthly">Every month</option>
+                <option value="quarterly">Every quarter</option>
+              </select>
             </div>
           </div>
         </div>
@@ -41603,17 +41617,22 @@ function unmountEdChrome(){
 }
 
 // ═══ INSTANT QUOTE / SMART QUOTE ═══
-function openSmartQuote(){
-  try{
-    const active=document.querySelector('.ni.active')?.getAttribute('data-v');
-    S._sqReturnNav=active||'dashboard';
-  }catch(e){S._sqReturnNav='dashboard';}
-  const nav=document.querySelector('[data-v="quotes"]');
-  if(nav)switchV(nav);
-  setTimeout(()=>{
-    try{HublySmartQuoteUI.openNew();}catch(e){toast('Quick Quote loading…');}
-  },40);
-}
+// openSmartQuote() WAS DELETED 2026-09-16 — THE SHORTCUT, NOT THE FEATURE.
+//
+// It existed only to serve the app-bar "Quick Quote" button, which was removed in the same commit
+// family: .jos-legacy-bar had made that button display:none while its JS toggle kept running, so
+// it was dead code that looked alive. With the button gone this function had NO CALLER, which is
+// orphaned code — and orphaned code is read by the next person as evidence that a path exists.
+//
+// QUICK QUOTE ITSELF IS UNTOUCHED AND SHIPPING: /smart-quote/{engine,ui,booking}.js load on every
+// page view, the rail row `data-v="quotes"` is live and carries no hiding rule, and the "New Quick
+// Quote" button inside that view calls HublySmartQuoteUI.openNew() directly.
+//
+// AND ONE CONSEQUENCE, CHECKED RATHER THAN ASSUMED: this function was the ONLY writer of
+// S._sqReturnNav, so closeSmartQuoteToReturn below now always reads it as undefined and takes its
+// `ret||'dashboard'` fallback. That is NOT a behaviour change, because the rail row — now the only
+// way in — never set it either: arriving that way already closed to the dashboard. The
+// "return to where you came from" branch only ever worked for the shortcut that has been deleted.
 function closeSmartQuoteToReturn(){
   try{
     if(typeof HublySmartQuoteUI!=='undefined')HublySmartQuoteUI.closeWorkspace();
@@ -43453,6 +43472,11 @@ async function submitBooking(){
         condition: needsV?(S.bkCondName||null):null,
         requested_date: date||null,
         requested_time: S.bkTimeVal||null,
+        // WHAT THE CUSTOMER ASKED FOR, or null. Never inferred, never defaulted — an empty select
+        // is "just this once", which is almost every booking, and it stays distinguishable from
+        // every cadence. Honoured on accept by set_job_recurring, the SAME writer the owner's two
+        // doors use, so there is no second path from a cadence to a schedule.
+        requested_frequency: (document.getElementById('bk-repeat')?.value||'')||null,
         address: addr||null,
         notes: notesWithRp||null,
         status: 'pending',
@@ -44713,6 +44737,8 @@ function filtJ(el,f){
 // on the calendar. Guarding here, not per-button, closes both entry
 // points -- and any future one -- with a single change.
 const _acceptingReqIds=new Set();
+// The cadence in the owner's words, one place, so the toast and any future surface agree.
+const HUBLY_CADENCE_SAID={weekly:'every week',biweekly:'every other week',monthly:'every month',quarterly:'every quarter'};
 async function acceptBookingRequest(reqId,opts={}){
   if(_acceptingReqIds.has(reqId))return;
   _acceptingReqIds.add(reqId);
@@ -44843,6 +44869,37 @@ async function _acceptBookingRequestInner(reqId,opts={}){
   if(result.error){if(!silent)toast('❌ '+result.error.message);return;}
   const data=result.job;
   await realtimeAwareWrite({table:'booking_requests',id:reqId,write:()=>db.from('booking_requests').update({status:'accepted'}).eq('id',reqId)});
+  // ── THE CUSTOMER ASKED FOR A REPEAT, SO THE JOB REPEATS ────────────────────────────────
+  //
+  // The wizard's optional cadence waited on booking_requests.requested_frequency between the
+  // customer asking and the owner accepting. Now that a real job exists it becomes a schedule —
+  // through set_job_recurring, THE SAME WRITER the owner's talking and by-hand doors use. Not a
+  // second path from a cadence to a schedule: the conflict rules, the already-recurring refusal
+  // and the no-interval-math design are all shared, and none of them can drift from the others.
+  //
+  // BEST-EFFORT ON PURPOSE, AND SAID OUT LOUD WHEN IT FAILS. The booking is accepted and the job
+  // exists either way; a schedule that could not be written must never quietly un-accept a real
+  // booking. But it also must not be silent — an owner who was told "repeats every week" and got
+  // one job is worse off than one who was told nothing.
+  try{
+    const {data:freqRow}=await db.from('booking_requests')
+      .select('requested_frequency,requested_interval_days').eq('id',reqId).maybeSingle();
+    const wantFreq=String(freqRow?.requested_frequency||'').trim();
+    if(wantFreq&&data?.id){
+      const {data:recOut,error:recErr}=await db.rpc('set_job_recurring',{
+        p_business_id:currentBusiness.id,p_job_id:data.id,p_owner_id:currentUser?.id||null,
+        p_frequency:wantFreq,p_custom_interval_days:freqRow?.requested_interval_days||null,
+        p_draft_token:null
+      });
+      if(!silent){
+        if(recErr||recOut?.ok!==true){
+          toast('Booked — but the repeat did NOT save, so this is a one-off for now.');
+        }else{
+          toast('Booked, and repeating '+(HUBLY_CADENCE_SAID[wantFreq]||wantFreq)+'.');
+        }
+      }
+    }
+  }catch(e){ if(!silent)toast('Booked — but the repeat did NOT save, so this is a one-off for now.'); }
   // Leave Leads — accepted work lives on Jobs until complete → Customers.
   try{
     removeLeadFromBoard('br:'+reqId);
