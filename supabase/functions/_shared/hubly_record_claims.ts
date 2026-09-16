@@ -132,6 +132,19 @@ export function makesRecordClaim(text: string): string[] {
  *  that undercounts, because the first thing it would do is bury the Store Walk case in noise. */
 function supported(figure: string, evidence: string): boolean {
   const f = String(figure).replace(/,/g, "").toLowerCase();
+  // ══ THE DANGEROUS DIRECTION ══════════════════════════════════════════════════════════════
+  //
+  // Every other detector failure this week was a FALSE POSITIVE — the dollar-anchored scan, the
+  // to_char trailing dot, the regex window that reached six lines past its subject. Those are
+  // noise you eventually investigate. THIS FUNCTION CAN FAIL THE OTHER WAY: returning `true` says
+  // "that figure is fine", and a false `true` in a safety instrument is a green light over a real
+  // defect, silent forever. `includes("no")` matching inside the word "note" was exactly that —
+  // invented figures looked supported by a conversation that never mentioned them.
+  //
+  // So every cheap path to `true` is suspect and named. An empty figure cannot occur by
+  // construction (money needs a digit, a name needs 2+ characters, a count is filtered non-null),
+  // and returning true for one would be the silent direction — so it is asserted by a leg rather
+  // than trusted.
   if (!f) return true;
   const ev = evidence.replace(/,/g, "").toLowerCase();
   // BOUNDED, NOT `includes`. A bare `includes("no")` matched inside "note" and made an invented
@@ -151,6 +164,10 @@ export function auditRecordClaim(
   priorEvidenceText = "",
 ): ClaimVerdict {
   const markers = makesRecordClaim(reply);
+  // KNOWN FALSE-NEGATIVE SURFACE #1, named rather than hidden: a claim phrased with none of the
+  // markers ("everything you added is showing") is a silent pass. The marker list is form-based
+  // and CLAUDE.md's own scar says a form list undercounts. This is the direction that says "fine",
+  // so it is the one to widen when the rows come in — not the comparison.
   if (!markers.length) {
     return { claims: false, markers, unsupported: [], noReader: false, priorEvidence: false };
   }
@@ -181,6 +198,11 @@ export function auditRecordClaim(
     unsupported,
     // NOTHING WAS READ. Not "the figure disagreed" — there was no reader at all, so every figure
     // in the reply arrived from somewhere other than the record.
+    // KNOWN FALSE-NEGATIVE SURFACE #2: any capability pushing even a trivial summary makes this
+    // false, so a turn where a reader ran but read nothing RELEVANT counts as "had a reader". A
+    // tighter test would need to know which reader answers which claim, which is the ~40-composer
+    // problem this instrument exists to avoid. Named so a spike in unsupported_figure with
+    // had_reader = true is read as this, not as a model getting worse.
     noReader: ev.trim().length === 0,
     priorEvidence: all.length > 0 && all.some((f) => supported(f, prior)),
   };

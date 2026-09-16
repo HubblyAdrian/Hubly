@@ -3117,3 +3117,52 @@ rows, correctly. **A mutation that removes one branch of an OR is not a red-proo
 tests that branch. Remove the whole thing to prove the legs bite, and remove each branch separately
 to learn which leg covers which. Both runs are useful; confusing them is how a sound leg gets
 rewritten for no reason.
+
+## Lesson 89
+
+**WHEN AN INSTRUMENT CAN BE WRONG IN TWO DIRECTIONS, RED-PROOF THE DIRECTION THAT SAYS "THIS IS
+FINE" FIRST AND HARDEST.**
+
+Every detector failure this week was a **false positive**: the dollar-anchored price scan, the
+`to_char` trailing dot that produced `220.`, the regex window that reached six lines past its
+subject. A false positive is noise — it is loud, someone investigates it, and the investigation
+finds the bug.
+
+**2026-09-16 produced the other kind, in a safety instrument.** The record-claim audit's `supported()`
+used a bare `includes()`, so:
+
+- `includes("no")` matched inside the word **"note"** — in a sentence about opening hours. An
+  invented `Store Walk, $24.99` therefore looked **supported** by a conversation that never mentioned
+  it.
+- `includes("5")` matches inside `"2500"`, so an invented `$5` looked supported by an unrelated
+  `$2500`.
+
+**A false negative in a guard is a green light over a real defect, and it is silent forever.** Nobody
+investigates a clean report. The bug does not announce itself; it removes the announcement.
+
+### The habit
+
+For any instrument with a verdict, list every **cheap path to the reassuring answer** and put a leg
+on each one *before* the legs that prove it catches things:
+
+| the reassuring path | the leg |
+|---|---|
+| `if (!f) return true` — an empty figure is "supported" | 20: a state-only claim is still a claim |
+| the empty string as evidence | 21: no evidence cannot support anything |
+| an exception → no row at all | 22: a broken audit writes an `audit_error` row |
+| no marker matched → whole audit skipped | named in the source as known false-negative surface #1 |
+| any trivial summary → `had_reader = true` | named as surface #2 |
+
+The last two are **named rather than fixed**, because fixing them properly needs what the instrument
+exists to avoid (knowing which reader answers which claim). Naming them is the difference between a
+known limit and a silent one: a spike in `unsupported_figure` with `had_reader = true` now reads as
+surface #2 rather than as the model getting worse.
+
+### And a third instance of the window bug, this time in a leg
+
+A source leg asserting "the audit changes nothing" took **900 characters forward** from its anchor
+and looked for a closing brace. Adding the `audit_error` branch made the block longer, the window ran
+past the end of the audit, and the leg failed on an unrelated `decision.message` assignment further
+down. **Anchor a region between two markers the file actually contains**, never a character count —
+and note that this one failed *loudly*, which is the only reason it was cheap. The same mistake in
+the reassuring direction would have passed.

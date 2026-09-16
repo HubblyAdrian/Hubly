@@ -2402,8 +2402,20 @@ Deno.serve(async (req) => {
             );
           }
         } catch (e) {
-          // An instrument may never break the turn it is measuring.
+          // AN INSTRUMENT THAT FAILS SILENTLY IS THE FALSE-NEGATIVE DIRECTION AGAIN. A thrown
+          // audit used to mean simply no row — indistinguishable from a clean turn, forever. So
+          // the failure writes its own row: a spike in 'audit_error' is a broken instrument, and
+          // an instrument nobody can tell is broken is worse than none.
           console.error("[claim-audit] skipped:", e);
+          try {
+            void createAdminClient().rpc("record_claim_audit", {
+              p_business_id: businessId || null,
+              p_verdict: "audit_error",
+              p_markers: null, p_figures: null,
+              p_prior_evidence: null, p_had_reader: null,
+              p_sample: String((e as { message?: string })?.message || e).slice(0, 160),
+            });
+          } catch { /* nothing further is available */ }
         }
       }
 

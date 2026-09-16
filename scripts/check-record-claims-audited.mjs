@@ -102,6 +102,19 @@ say("19 an absence claim IS a record claim but is not a figure to verify",
   absence.claims === true && absence.unsupported.length === 0,
   `claims=${absence.claims} unsupported=${JSON.stringify(absence.unsupported)}`);
 
+// ── 20-22. THE FALSE-NEGATIVE DIRECTION, RED-PROOFED FIRST AND HARDEST ───────────────
+// Every other detector failure this week was a false positive — noise you investigate. This
+// instrument can fail the other way: concluding "supported" is a green light over a real defect,
+// and it is silent forever. So every cheap path to `true` gets a leg.
+say("20 an empty figure list does not make a claim 'supported' by accident",
+  auditRecordClaim("It is live.", "").claims === true, "a state-only claim is still a claim");
+say("21 a figure is never supported by the EMPTY string",
+  auditRecordClaim("You owe $77.", "").unsupported.includes("77"),
+  "no evidence cannot support anything");
+say("22 a broken audit writes its own row rather than vanishing",
+  /p_verdict: "audit_error"/.test(readFileSync(join(ROOT, "supabase/functions/hubly-conversation/index.ts"), "utf8")),
+  "an instrument nobody can tell is broken is worse than none");
+
 // ── 14-16. FROM SOURCE: wired, and report-only ───────────────────────────────────────
 const conv = readFileSync(join(ROOT, "supabase/functions/hubly-conversation/index.ts"), "utf8");
 const code = conv.replace(/\/\*[\s\S]*?\*\//g, "").split("\n").filter((l) => !/^\s*(\/\/|\*)/.test(l)).join("\n");
@@ -109,9 +122,18 @@ say("14 the audit runs at the choke point and records", /auditRecordClaim\(/.tes
 say("15 the turn's evidence is collected from capability results", /turnEvidence\.push\(String\(result\.summary\)\)/.test(code)
   && /turnEvidence\.push\(JSON\.stringify\(result\.raw\)\)/.test(code));
 // REPORT-ONLY IS THE WHOLE POINT. If this ever starts editing the message, this leg goes red.
-const auditBlock = (code.match(/const verdict = auditRecordClaim[\s\S]{0,900}?\n      \}/) || [""])[0];
+// ANCHORED TO A REAL BOUNDARY, NOT A CHARACTER COUNT. The first version took 900 characters
+// forward from `const verdict =` and looked for a closing brace; adding the audit_error branch made
+// the block longer, the window ran past the end of the audit, and the leg failed on a
+// `decision.message` assignment that belongs to an unrelated statement further down. That is the
+// THIRD window-too-wide defect this week (Lesson 87's second addendum), this time in a leg rather
+// than in a sweep — so it is anchored between two markers the file actually contains.
+const auditStart = code.indexOf("const verdict = auditRecordClaim");
+const auditEnd = code.indexOf("if (decision?.understanding", auditStart);
+const auditBlock = auditStart >= 0 && auditEnd > auditStart ? code.slice(auditStart, auditEnd) : "";
 say("16 the audit changes nothing — no assignment to decision.message inside it",
-  !!auditBlock && !/decision\.message\s*=/.test(auditBlock), "report only, refuses nothing");
+  !!auditBlock && !/decision\.message\s*=/.test(auditBlock),
+  auditBlock ? `report only, refuses nothing (${auditBlock.length} chars checked)` : "COULD NOT LOCATE the audit block");
 
 console.log(failed ? `\n${failed} assertion(s) failed.` : "\nRecord claims are audited against what was actually read — and nothing is refused yet.");
 process.exit(failed ? 1 : 0);
