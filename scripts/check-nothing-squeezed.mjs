@@ -26,7 +26,7 @@
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openRig } from "./lib/browser-rig.mjs";
-import { installOwnerFake, squeezeProbe } from "./lib/owner-rig.mjs";
+import { installOwnerFake, fakeIntact, squeezeProbe } from "./lib/owner-rig.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PAGE = "file://" + join(ROOT, "public/platform-home.html");
@@ -80,6 +80,21 @@ try {
   await rig.settle(() => document.querySelectorAll("[data-promise]").length, "furniture", { stableMs: 800, ceilingMs: 9000 });
   await rig.page.evaluate(() => window.hublyThreadViews.show("day"));
   await rig.settle(() => document.querySelectorAll('[data-hc-view-row="day"]').length, "day rows", { stableMs: 500, ceilingMs: 6000 });
+
+  // ══ LEG 0 FOR THE HARNESS, AT THE MOMENT OF MEASUREMENT ══════════════════════════════
+  //
+  // Not at install time — that proves nothing, because the page has not asked for a client yet.
+  // HERE, after everything has rendered, is where "was the backend I declared the backend that
+  // answered?" is a real question.
+  //
+  // 2026-09-16: the real supabase-js arrives as a DEFERRED script from the CDN and overwrites
+  // window.supabase, so a fake installed before load is replaced, every read fails, and the app
+  // renders its unreadiness paths. A room that could not read anything then looks exactly like a
+  // room that works. Refuse to report rather than measure a broken app.
+  {
+    const why = await rig.page.evaluate(fakeIntact);
+    if (why) { console.error("CANNOT RUN — " + why); await rig.close(); process.exit(2); }
+  }
 
   // ── 0. THE PROBE MUST BE LOOKING AT SOMETHING. ──────────────────────────────────────
   //

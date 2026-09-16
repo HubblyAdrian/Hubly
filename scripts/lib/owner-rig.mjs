@@ -67,7 +67,30 @@ export function installOwnerFake(opts) {
     channel: () => ({ on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}) }),
     removeChannel: () => {},
   };
-  W.supabase = { createClient: () => client };
+  // ══ THE FAKE MUST STILL BE THE FAKE WHEN WE MEASURE ══════════════════════════════════
+  //
+  // 2026-09-16: the real supabase-js arrives from the CDN as a DEFERRED script, so it runs
+  // AFTER anything installed via page.addInitScript and OVERWRITES window.supabase. Every read
+  // then failed with "supabaseKey is required", and the planner correctly rendered its
+  // unreadiness message — so the room LOOKED like it was working while the success path was
+  // never once exercised. A whole measurement reported off a broken app.
+  //
+  // Installing after load avoids it (authGetClient polls for window.supabase.createClient), and
+  // every shipped check already does. But "already does" is a fact about today, so the fake now
+  // SAYS whether it is still the one in place, and a check can refuse to run rather than measure
+  // an app whose backend is a stranger. Leg-0 discipline, applied to the harness itself.
+  const marker = "rig-" + Math.random().toString(36).slice(2, 10);
+  const factory = () => { W.__rig.clientHandouts = (W.__rig.clientHandouts || 0) + 1; return client; };
+  factory.__rigMarker = marker;
+  W.supabase = { createClient: factory };
+  W.__rigFake = {
+    marker,
+    /** Is OUR createClient still the one the page would get? */
+    intact: () => !!(W.supabase && W.supabase.createClient && W.supabase.createClient.__rigMarker === marker),
+    /** Did the page actually take a client from us? A fake nobody asked for proves nothing. */
+    used: () => (W.__rig.clientHandouts || 0) > 0,
+    rpcCount: () => (W.__rig.rpc || []).length,
+  };
   try {
     localStorage.setItem("sb-rtwxxkxpkqdrhclkozma-auth-token",
       JSON.stringify({ access_token: "sim", expires_at: Math.floor(Date.now() / 1000) + 3600 }));
@@ -87,6 +110,22 @@ export function installOwnerFake(opts) {
  * each WORD, and asks the browser where that word actually is. A word whose rects sit on two
  * different lines was broken mid-word. Nothing here reads CSS or guesses at wrapping.
  */
+/** ONE LINE A CHECK CAN CALL BEFORE IT BELIEVES ANYTHING IT MEASURED.
+ *
+ *  Returns null when all is well, or a sentence saying what is wrong. A check that ignores this
+ *  is measuring an app whose backend may be a stranger — which is exactly how a room that could
+ *  not read anything was mistaken for a room that worked. */
+export function fakeIntact() {
+  const F = window.__rigFake;
+  if (!F) return "the owner fake was never installed on this page";
+  if (!F.intact()) return "the owner fake was REPLACED after installation — the real supabase-js " +
+    "loads deferred from the CDN and overwrites window.supabase, so every read failed and the app " +
+    "rendered its unreadiness paths. Install the fake AFTER load.";
+  if (!F.used()) return "the fake is intact but the page never took a client from it — nothing " +
+    "measured here went through the declared backend";
+  return null;
+}
+
 export function squeezeProbe() {
   const out = { brokenWords: [], clipped: [], overflowing: [] };
   const seen = new Set();

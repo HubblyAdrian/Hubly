@@ -5,10 +5,78 @@ plainly that it has none.
 
 | file | verdict |
 | --- | --- |
-| `my-day-2026-09-15-approved.png` | **Approved.** The My Day surface, in Adrian's own words and Hubly's own chrome |
+| `my-day-2026-09-16-final.png` | **APPROVED — CURRENT.** The My Day surface. Supersedes every earlier My Day/schedule image |
+| `my-day-2026-09-15-approved.png` | **Superseded** by `my-day-2026-09-16-final.png`. Kept as history, not as instructions |
 | `owner-home-2026-09-06-flow.png` | **Approved in part** — screens 1, 2, and the top half of 3 |
 | `owner-home-2026-09-06-advice-cards-rejected.png` | **Rejected.** The counter-example |
 | `owner-home-2026-09-06-early-single-card-unreviewed.png` | **No verdict.** Kept as history |
+
+---
+
+## APPROVED — CURRENT — `my-day-2026-09-16-final.png`
+
+**Filed 2026-09-16. THIS IS THE ONE TO BUILD.** It supersedes `my-day-2026-09-15-approved.png` and
+every earlier schedule mockup. Those are kept as history; do not read them as instructions. The
+written specification is `docs/MY_DAY.md`; where the two disagree, the spec is the requirement and
+this image is how it looks.
+
+**Do not redesign or reinterpret this.** Adrian's standing rule: *"Do not redesign or invent the My
+Day interface from scratch if an existing design/mockup/spec already exists in the project. Find the
+existing design first."*
+
+### What it settles that the earlier versions did not
+
+Four rulings Adrian gave on 2026-09-16, all now drawn:
+
+1. **NO CHATS IN THE RAIL.** Home · Website · Settings, and the account at the foot. Saved
+   conversations depend on the conversation-identity migration and do not appear until it is live.
+   The panel on the left is the **active** conversation, not a navigation destination.
+2. **NO GHOST ROWS.** An empty band shows exactly one line: *"Double-click to add something…"*.
+   Grey placeholder rows read as loading and make an empty state look broken. **Never populate fake
+   or example items.**
+3. **NO PROGRESS METER, AND NO COUNT WHEN EMPTY.** The band header carries the letter, the name, the
+   description and an overflow menu — nothing else. The "0% Day complete" ring is **gone** from
+   *Today at a glance*, which is now three honest zeros: Jobs · Events · Tasks. When items exist, a
+   lightweight count only ("2 complete" / "2 of 4 complete"). Adrian's rule governs the section:
+   *"The A/B/C priority hierarchy is about deciding what matters, not measuring how productive the
+   owner was."* No bars, rings, percentages, streaks, or colour that moves with progress.
+4. **ONE ROW FOR EVERYTHING.** `What | When | Where | Type`. A task or event needs no more. Choosing
+   **Type = Job** reveals the minimum job fields *inline* — Customer, Service, When, Where — using
+   the **existing Job model and the existing Job workspace**. My Day must never become a second job
+   system. Price only if known, never fabricated, never required to create the item unless the model
+   itself requires it. Existing customers and services are selectable. Ask only for what is missing,
+   through the one-ask floor. *My Day = fast daily entry. Job workspace = complete management.*
+
+### The rest of the screen
+
+**LEFT — the assistant, beside the day.** *"Hey Adrian! 👋"*, one sentence of what it can do, four
+actions (Plan my day · Add a job or task · Move tasks to tomorrow · Show my schedule), the composer,
+and the honesty line pinned beneath it: **"Hubly uses your real data. I won't make up information."**
+Then **Quick examples** — *"Move my B tasks to next week"*, *"Add a call with a customer tomorrow at
+2pm"*, *"What should I focus on today?"*, *"Show me my open jobs"*. **Every one of those is a
+promise: it works before it ships.**
+
+**CENTRE — the day is the hero.** Date, **My Day**, and one line of instruction that matches the
+gesture everywhere else: *"Get things done. Double-click to add something, or just start typing."*
+One gesture, one phrasing, in the subtitle, the rows and the Pro tip.
+
+**RIGHT — context, never a second dashboard.** *Today at a glance*; a **Calendar** column;
+*Today's locations*; and the Pro tip that teaches the gesture.
+
+### One thing the image does not decide
+
+**The calendar's hour range follows the data, not this drawing.** It reads 6 AM – 8 PM here because
+that is a sensible default for an empty day. It is **not a rule**: an item at 5 AM or 9 PM must be
+visible without scrolling past an empty band. We have already shipped this exact defect once — the
+day window was today+tomorrow and hid a real Thursday job until it was widened to a week.
+
+### What it does not license
+
+Every figure is **zero** because the day is empty, and that is the point: the mockup shows the
+honest empty state rather than a populated fantasy. `MY_DAY.md` §9 and Adrian's product context are
+unchanged and absolute — **no invented jobs, customers, deadlines, statistics, urgency or reasons.**
+The empty states are invitations, not apologies: *"No events yet — Add a job, task, or event to see
+it on your calendar."* / *"No locations yet — Add an address to see your route and locations here."*
 
 ---
 

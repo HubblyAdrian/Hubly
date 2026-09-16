@@ -1893,8 +1893,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // anything that changes it returns there.
   function hcSetView(view){
     hc.canvasView = view;
-    var pane = document.getElementById('hcCanvasPane');
-    if(pane) pane.setAttribute('data-view', view);
+    // `data-view` USED TO BE WRITTEN HERE AND READ BY NOTHING — no CSS rule, no JS, in any shell
+    // (measured 2026-09-16 while tracing why My Day appeared not to open; it was a suspect and it
+    // was innocent). An attribute that is written and never read is a false lead waiting for the
+    // next person debugging this path, which is exactly what it was for me. Removed rather than
+    // kept "in case": hc.canvasView is the real state and hcMountViewBar is what acts on it.
     hcMountViewBar();
   }
 

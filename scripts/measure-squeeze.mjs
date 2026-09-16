@@ -22,7 +22,7 @@
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openRig } from "./lib/browser-rig.mjs";
-import { installOwnerFake, squeezeProbe } from "./lib/owner-rig.mjs";
+import { installOwnerFake, fakeIntact, squeezeProbe } from "./lib/owner-rig.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PAGE = "file://" + join(ROOT, "public/platform-home.html");
@@ -107,7 +107,11 @@ try {
     await rig.page.setViewportSize({ width: w.vw, height: 900 });
     await rig.page.evaluate((m) => { try { document.getElementById("hcApp").setAttribute("data-mode", m); } catch (_) {} }, mode);
     await rig.page.waitForTimeout(150);
-    const r = await rig.page.evaluate(squeezeProbe);
+    {
+    const why = await rig.page.evaluate(fakeIntact);
+    if (why) { console.error("CANNOT RUN — " + why); await rig.close(); process.exit(2); }
+  }
+  const r = await rig.page.evaluate(squeezeProbe);
     const n = r.brokenWords.length + r.clipped.length;
     console.log(`${mode}  (thread ${w.thread}px @ viewport ${w.vw})  — ${n === 0 ? "clean" : n + " problem(s)"}`);
     for (const b of r.brokenWords) {

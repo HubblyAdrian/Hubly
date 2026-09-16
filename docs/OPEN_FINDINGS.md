@@ -27,7 +27,22 @@ find out today?* If the answer is no, it is this shape.
 | 1 | **The booking path** — a notification that failed to send | a delivery-attempt row; the in-product record is the source of truth and the send is best-effort, but a failed send wrote nothing | scoped; the notification standard in CLAUDE.md now requires the failure to be *visible*, never silent |
 | 2 | **The turn outcome** — a turn that produced nothing sayable | this one is now **closed**: `envelope_suppression_events` (migration `20260915213000`) writes a row for every suppression, `salvaged` and `silenced` separately, and the instrument was proved against the real database before being trusted | **closed 2026-09-15** |
 | 3 | **A failed third-party script load** — `supabase-js` not arriving from the CDN | nothing. No row, no counter, no client-side beacon. If this has already cost an owner a sign-in, we would not know, and we cannot find out retrospectively | **open** — see `docs/AUTH_CDN_DEPENDENCY.md` |
+| 4 | **A job change** — `jobs` has **no `updated_at` column**, so a row that moved carries no record of when, or that it moved at all. Found 2026-09-16 while trying to tell a successful time-change from a failed one on Adrian's walk — the question could not be answered from the row | **the cheapest honest record: an `updated_at timestamptz` with a trigger.** One column, one trigger, no new table. It does not say *what* changed, but it answers "did this move, and when", which is the question that could not be answered | **open** |
 | — | *(related, and already written down)* the `meta` lost-update race — "a lost update leaves no trace" | a compare-and-swap gate, which would turn the loss into a refusal | dated exposure accepted 2026-09-06, `docs/STATE.md` |
+
+### The cheapest honest record for each
+
+Asked for explicitly, and deliberately *cheapest* rather than best — an instrument nobody ships is
+worth nothing:
+
+| # | cheapest honest record | why not more |
+|---|---|---|
+| 1 | a `delivered`/`failed` column on the notification attempt, written by the sender | a full delivery-event table is the right answer eventually; one column answers "did it go" today |
+| 2 | **done** — `envelope_suppression_events`, two outcomes, no raw text stored | — |
+| 3 | a script-tag `onerror` posting to an endpoint that does **not** depend on the library | anything richer needs the library that failed to load, which is circular |
+| 4 | `updated_at` + trigger on `jobs` | an audit table answers *what* changed, but nothing today asks that; "did it move" is the unanswered question |
+
+**None of these are built.** Reported, as instructed.
 
 ### Why instance 3 is the awkward one
 
