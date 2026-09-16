@@ -4468,11 +4468,12 @@ html[data-theme="night"] .jos-mem-form select{
   width:var(--nav);background:linear-gradient(180deg,var(--jos-sidebar) 0%,#0C111A 100%);
 }
 #p-app.jos-pixel.jos-jobs-mode .ni.active{background:var(--jos-brand);box-shadow:none}
-#p-app.jos-pixel.jos-nav-expanded.jos-jobs-mode .nav-jobs-new{
-  display:none!important;
-}
-#p-app.jos-pixel:not(.jos-nav-expanded).jos-jobs-mode .nav-jobs-new{display:none!important}
-#p-app.jos-pixel.jos-jobs-mode .nav-jobs-new{display:none!important}
+/* REOPENED 2026-09-16 — see docs/DOORS_CLOSED_BY_ASSUMPTION.md. Four rules stood here and every
+   one of them HID this button; nothing anywhere showed it. What is left is the original intent
+   ead44be described: New Job belongs in the Jobs view, in an expanded rail where a labelled
+   button fits. Shown in jobs mode with the rail expanded; hidden elsewhere by the two rules
+   below, which are layout, not a closed door. */
+#p-app.jos-pixel.jos-nav-expanded.jos-jobs-mode .nav-jobs-new{display:inline-flex!important}
 #p-app.jos-pixel:not(.jos-jobs-mode) .nav-jobs-new{display:none}
 
 .jos-jobs-shell{
@@ -6063,8 +6064,10 @@ input.jos-ld-cell-inline:focus{
 /* operate-nav-unify: one sidebar chrome everywhere — last-wins lock */
 #p-app.jos-pixel .app-nav .ni[title]{/* titles kept for collapsed a11y */}
 #p-app.jos-pixel.jos-nav-expanded .ni{position:relative}
-#p-app.jos-pixel .nav-jobs-new{display:none!important}
-#p-app.jos-pixel.jos-nav-expanded.jos-jobs-mode .nav-jobs-new{display:none!important}
+/* REOPENED 2026-09-16. This "last-wins lock" hid the button in EVERY state, which is what made
+   the six rules above unrecoverable — a later blanket rule silently defeating an earlier
+   conditional one. The lock now defers to the jobs-mode rule rather than overruling it. */
+#p-app.jos-pixel.jos-nav-expanded.jos-jobs-mode .nav-jobs-new{display:inline-flex!important}
 #p-app.jos-pixel.jos-nav-expanded{
   --nav:260px!important;
 }

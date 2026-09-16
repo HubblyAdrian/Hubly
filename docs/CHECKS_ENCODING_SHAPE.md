@@ -98,3 +98,29 @@ No other check asserted the composition of `HC_PLACE_SURFACES`, `HC_ROOMS`, `HC_
 rail. `check-day-is-reachable` and `check-conversation-is-the-surface` both reference `planner`, but
 as a *destination they ask for* — a request that still resolves — not as a claim about what the rail
 contains. Those are rules, and they survived the ruling unchanged.
+
+---
+
+## 5. THE FIXTURE SWEEP — count and the worst three (2026-09-16)
+
+**The rule Adrian set:** *a fixture that names a product surface DERIVES it from the product; it
+does not restate it.* A fixture is a claim about the product, and it rots silently — **it does not
+go red, it goes green about the wrong world.**
+
+**Count: 7 files restate a surface, place or route name as a literal; 48 literal occurrences.**
+
+`backfill-business-places.mjs` · `check-conversation-is-the-surface.mjs` ·
+`check-nothing-squeezed.mjs` · `measure-squeeze.mjs` · `shot-owner-rooms.mjs` ·
+`lib/personality.mjs` · `lib/owner-rig.mjs`
+
+### The worst three, and why
+
+| file | what it restates | why it is the worst kind |
+|---|---|---|
+| **`scripts/measure-squeeze.mjs:73`** | `const modes = ["home","website","planner","jobs","customers"]` | It **iterates** this list to measure every surface. `planner` is no longer a mode, so it now measures a surface that does not exist — and worse, **any surface added later is silently not measured at all.** A layout sweep that quietly skips a surface reports "clean" about a screen it never looked at |
+| **`scripts/shot-owner-rooms.mjs`** | the same five, plus a hardcoded `places:[{kind:'website',…}]` seed | It produces the **screenshots we look at and judge design from**. A stale list here means the pictures show a world that no longer matches the product, and a picture is believed harder than a number |
+| **`scripts/lib/owner-rig.mjs`** | `places` defaults to a literal `[{ kind: "website", … }]` | It is the **shared** fake — every check that installs it inherits the claim. Its own header argues that a fake which differs between checks is "a second opinion about what the product's world looks like"; a fake that differs from the *product* is the same defect one level up |
+
+**Not rewritten, as instructed — the count and the three are the deliverable.** The fix shape for
+all of them is the same and is already available: `window.hublyNavUI.surfaces` exposes the real
+registry, so a fixture can derive the list instead of asserting one.

@@ -11,95 +11,105 @@ written rationale.
 
 ---
 
-## Method, and what it cannot see
+## CORRECTED 2026-09-16 — two of the three "confirmed" entries in the first version were WRONG
 
-Commit-message archaeology was tried first and was useless — the phrasing ("duplicated",
-"already", "instead") is too common. **This sweep is structural instead**, which is also derived
-rather than a hand-kept list:
+**The first version of this sweep reported three confirmed instances. Only one survives.** The
+method was the defect, and it is worth keeping the wreckage visible rather than quietly editing it.
 
-1. Find every `<button|a|div|span>` in `public/*.html` carrying an `onclick="fn()"` **and** either a
-   `hidden` attribute or a class a stylesheet sets to `display:none !important`.
-2. For each `fn`, count callers across all shipped HTML.
-3. Flag where **the only caller is the hidden control**.
-4. Then the discriminator that separates a defect from correct behaviour: **does anything ever
-   un-hide it?** A "Clear" button hidden until a file is attached is correct. A control nothing can
-   ever reveal is a closed door.
+Step 4 — *does anything ever un-hide it?* — was implemented as a grep for
+`getElementById('<id>')` and `remove('hidden')`. **That greps a CALL SHAPE, not the id.** It cannot
+see a reveal through:
 
-**The limit, stated:** step 4 traces un-hiding by element id. Where a control is revealed through a
-local variable (`btn.classList.remove('hidden')`), the trace cannot follow it, so **a control listed
-below as never-revealed is high-confidence, not certain**. Every entry says which evidence it rests
-on.
+- a **helper**: `wsPageEl('ws-quiz-entry')`
+- an **array literal**: `['nc-pick-contact'].forEach(id => document.getElementById(id))`
+- a **variable**: `btn.classList.remove('hidden')`
 
-**Scope:** `public/hubly.html`, `public/platform-home.html`, `public/get-done.html`,
-`public/enter.html`, and `public/journey-os/operate-pixel.css`. 40 hidden controls with a named
-handler; 7 where the only caller is the hidden control; **3 confirmed, 1 of a related shape,
-3 cleared.**
+**I wrote that limit into this file** — *"a control listed below as never-revealed is
+high-confidence, not certain"* — **and then listed three as CONFIRMED anyway. Stating a limit and
+then reporting past it is the same defect as not stating it.** It is Lesson 89's direction, too: the
+reassuring finding here is "I found three doorless features", and nobody re-greps a good story.
+
+| first version said | actually |
+|---|---|
+| `openServiceQuiz()` — CONFIRMED closed | **WRONG.** `hubly.html:40229` — `quizBtn.classList.toggle('hidden', !hasTaggedServices \|\| isEditorViewOpen())`. It is revealed when the business **has tagged services**, which is a correct content gate — the very "gate on the content, never on our bookkeeping" rule |
+| `pickContactInto('customer')` — CONFIRMED closed | **WRONG.** `refreshContactImportButtons()` toggles it on the Contacts Picker feature test, and is called from `openM('m-new-lead')` and `openM('m-new-cust')`. It is correctly gated: offered only where the browser supports it. **And I told Adrian it was "a door that already exists for not typing a phone number twice" — it exists and it is already open** |
+
+**The corrected discriminator** is to search for the id **as a string, anywhere**, and then read
+every hit. Re-run with that, plus a fix to the CSS extractor (the first pass read `.ni[hidden]` as
+"`.ni` is hidden", which is a different claim and produced 27 false positives):
+
+> **43** hidden controls with a handler · **1** conditional at render · **33** referenced by id
+> somewhere · **9** never referenced at all.
 
 ---
 
-## CONFIRMED — the feature works and nothing can reach it
+## CONFIRMED — after the correction
 
-### 1. `openJobsNew()` — the New Job drawer. The original instance.
-
-| | |
-|---|---|
-| control | `public/hubly.html:11179`, `class="nav-jobs-new" hidden aria-hidden="true"` |
-| hidden by | **`ead44be`, 2026-07-27** — *"It only appeared in Jobs & Calendar and duplicated the header CTA … Keep New Job in the page header only."* |
-| the other door | `public/hubly.html:11290`, `.jos-legacy-bar` — set `display:none !important` by the Journey OS pixel redesign as legacy chrome |
-| evidence | `openJobsNew()` is defined at `:41418`, **its only caller is the hidden button**, and `nav-jobs-new` is referenced **zero times** in JS, so nothing can un-hide it |
-
-**Both rationales were right. The header CTA did duplicate it; the legacy bar was legacy.** Each
-removal assumed the other door was open.
-
-### 2. `openServiceQuiz()` — "Not sure what you need? Answer one question"
+### 1. `openJobsNew()` — the New Job drawer, and the third door is worse than no door
 
 | | |
 |---|---|
-| control | `public/hubly.html:12377`, `id="ws-quiz-entry" class="ws-quiz-btn hidden"` |
-| evidence | `getElementById('ws-quiz-entry')` appears **zero times**; no `remove('hidden')` targets it by id |
+| door A | `hubly.html:11179` `class="nav-jobs-new" hidden aria-hidden="true"` — plus **six** CSS rules in `operate-pixel.css` (`:171`, `:4471`, `:4474`, `:4475`, `:4476`, `:6066`), **none of which ever shows it** |
+| door B | `hubly.html:11290` — the header CTA `ead44be` deferred to. `.jos-legacy-bar` → `display:none !important` under `jos-pixel` |
+| door C | `hubly.html:49447` — **`+ Add a job`, and it is LIVE** |
 
-A service-picker quiz on the customer-facing site, built, styled, and permanently `hidden`. **No
-second door was found for it at all** — so this may be built-and-doorless rather than this shape.
-Recorded here because it surfaced in the same sweep; the distinction needs the commit that added
-the class, which is not yet traced.
+**Door C is the finding.** It is rendered inside the dashboard's *empty bookings* state:
+`if(!pending.length){ … onclick="openDashNewJob()" … }`.
 
-### 3. `pickContactInto('customer')` — "From phone"
+**So the only surviving way to create a job by hand disappears the moment the owner has a pending
+booking** — that is, exactly when they are busy enough to need it. A door that is open only while
+the business is idle is not a door; it is a tutorial.
+
+`openJobsNew()` itself remains defined at `:41418` with its only caller the hidden button.
+
+### 2. `openBlockTimeModal()` — no live door at all
 
 | | |
 |---|---|
-| control | `public/hubly.html:12916`, `id="nc-pick-contact" class="btn btn-out btn-sm hidden"` |
-| evidence | `getElementById('nc-pick-contact')` appears **zero times** |
+| door A | `hubly.html:11292`, `.jos-legacy-bar` → `display:none !important` |
+| door B | `openDashBlockTime()` at `:49835` — **defined, and never called by anything** |
 
-Pull a customer's details from the device's contact picker instead of typing them. **This is
-directly relevant to A2's carry-forward** — "he should not type a phone number twice" — and it is a
-door that already exists, hidden.
+Blocking out time has **no reachable entrance** in that shell. (In `platform-home.html` the day's
+add row can create a block, so the capability is not lost to owners who live there — but the shell
+that has the modal cannot open it.)
 
 ---
 
-## A RELATED SHAPE — the opener still runs, the stylesheet overrules it
+## A SEPARATE SHAPE — DEAD CODE THAT LOOKS ALIVE
 
-### 4. `openSmartQuote()` — Quick Quote
+**A closed door is honest about being closed. This lies to the next reader.**
+
+Named by Adrian, 2026-09-16, and distinct from everything above: **the JS still manages the
+control's visibility, and a stylesheet has permanently overruled it.** Anyone reading the
+JavaScript concludes the control is reachable and conditional; it is neither.
+
+**Swept:** 13 classes carry an unconditional `display:none !important` in `operate-pixel.css`;
+cross-referenced against every `id`-bearing control whose id is manipulated for visibility in JS.
+
+### The one instance
 
 | | |
 |---|---|
-| control | `public/hubly.html:11291`, `id="bar-qq-btn" class="btn btn-out btn-sm jos-legacy-bar"` |
-| JS | **still manages it**: `getElementById('bar-qq-btn')?.classList.toggle('hidden', v==='quotes')` |
-| CSS | `.jos-legacy-bar { display:none !important }` under `jos-pixel` |
+| control | `hubly.html:11296` — `#bar-qq-btn`, **Quick Quote**, `class="… jos-legacy-bar"` |
+| the JS | `getElementById('bar-qq-btn')?.classList.toggle('hidden', v === 'quotes')` — still runs, every time |
+| the CSS | `#p-app.jos-pixel .jos-legacy-bar { display:none !important }` — unconditional |
 
-Not two doors — **one door whose opener is still wired and still runs, nailed shut by a later
-stylesheet.** The JS toggling it is dead code that looks alive, and anyone reading only the JS would
-conclude the control is reachable. Worth naming as a sibling: the same end state (feature intact,
-unreachable) reached by CSS outliving JS rather than by two removals.
+The toggle is live code maintaining a state nobody can observe. **Nothing deleted**, per
+instruction — recorded so the decision is made deliberately: either the stylesheet stops hiding it
+and the toggle means something again, or the toggle goes and the control is honestly retired.
+
+**Why only one:** the sweep requires an *unconditional* hiding rule. A rule guarded by `:not()` or
+an extra state class is a real conditional, and JS toggling against it is ordinary behaviour, not a
+lie. That distinction is what separates this list from noise — and it is the same distinction the
+first version of this document got wrong when it read `.ni[hidden]` as "`.ni` is hidden".
 
 ---
 
-## CLEARED — hidden until state, which is correct
+## RETIRED ON PURPOSE — not this shape
 
-| control | why it is fine |
-|---|---|
-| `jd-map-link` / `openJobMapsById()` | hidden at render time only when the job has no address: `` class="jd-map-link${addr?'':' hidden'}" `` — correct by construction |
-| `ws-chat-teaser` / `wsChatTeaserClick()` | `wsChatShowNudge()` calls `teaser.classList.remove('hidden')` at `:17070` after real preconditions |
-| `ed-share-image-clear` / `clearShareImage()` | managed by `syncShareImagePreview()`; a Clear button for an image that may not exist yet |
+`hubly.html:11211, 11243–11246` — nav items `marketing`, `opportunities`, `activity`, `growth`,
+`marketplace`, all `class="ni jos-nav-hidden" hidden aria-hidden="true"`. The class name *says* it:
+these are deliberately retired destinations, not doors closed by accident.
 
 ---
 

@@ -98,22 +98,25 @@ call. The label is part of the row, not a badge that a later renderer can drop.
 
 ---
 
-## The line for the visitor — WORDING COMES TO ADRIAN FIRST, NOT SHIPPED
+## The line for the visitor — RULED 2026-09-16
 
-One short line on the booking form. Proposed, in Hubly's voice:
+**Adrian chose option 1. This is the line:**
 
-> *"If you don't finish, whatever you've filled in goes to {business} so they can follow up."*
+> **"If you don't finish, whatever you've filled in goes to {business} so they can follow up."**
 
-Two alternatives if that reads too transactional:
+### The two that were rejected, and the reasoning, so they are not re-proposed
 
-> *"Leave your name and number and {business} can pick this up with you if you don't finish."*
+**Option 3 — *"{business} can see what you started, so they can help if you get stuck."* — REJECTED
+PERMANENTLY.** Adrian: *"'so they can help if you get stuck' describes lead capture as customer
+support. A euphemism in the one sentence whose entire job is honesty is the wrong instinct."*
 
-> *"{business} can see what you started, so they can help if you get stuck."*
+That is the rule, not just the verdict: **this sentence exists to be honest about what we do with
+what they typed.** Softening it into a story about helping them is worse than saying nothing,
+because it spends the credibility that the disclosure was supposed to earn.
 
-It is the same rule we apply everywhere else — **we say what we did, in words** — and it makes the
-lead better, because the visitor is expecting the call.
-
----
+**Option 2 — *"Leave your name and number and {business} can pick this up with you if you don't
+finish."* — REJECTED.** It is an **ask, not a disclosure**, and it says nothing about what they have
+*already typed* — which is the whole fact being disclosed.
 
 ## Grounding does not apply here, and that is deliberate
 
