@@ -1,5 +1,53 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## THE SHAPE: FAILURES THAT LEAVE NO TRACE — three instances, one finding (2026-09-15)
+
+Adrian: *"That is the third instance this week of a failure that leaves no trace — the booking path,
+the turn outcome, and now this. Add it to that list; the shape is one finding, not three."*
+
+**I looked for an existing list and there is not one.** The two earlier instances are scoped in
+different documents, which is itself part of the problem — a recurring shape recorded three times in
+three places reads as three unrelated gaps. This is that list.
+
+### The shape
+
+**A failure whose only record is that something did not happen.** Nothing is written, so the failure
+is invisible to every query we could think to run, and its frequency is not merely unknown but
+**unknowable after the fact**. It is the exact inverse of the unearned green: instead of claiming a
+success we did not verify, we fail to claim a failure we did not record — and the second one is
+harder to catch, because a missing row looks identical to a healthy system.
+
+**The test for whether something belongs here:** *if this failed for a real owner last week, could I
+find out today?* If the answer is no, it is this shape.
+
+### The instances
+
+| # | The failure | What would have recorded it | Status |
+|---|---|---|---|
+| 1 | **The booking path** — a notification that failed to send | a delivery-attempt row; the in-product record is the source of truth and the send is best-effort, but a failed send wrote nothing | scoped; the notification standard in CLAUDE.md now requires the failure to be *visible*, never silent |
+| 2 | **The turn outcome** — a turn that produced nothing sayable | this one is now **closed**: `envelope_suppression_events` (migration `20260915213000`) writes a row for every suppression, `salvaged` and `silenced` separately, and the instrument was proved against the real database before being trusted | **closed 2026-09-15** |
+| 3 | **A failed third-party script load** — `supabase-js` not arriving from the CDN | nothing. No row, no counter, no client-side beacon. If this has already cost an owner a sign-in, we would not know, and we cannot find out retrospectively | **open** — see `docs/AUTH_CDN_DEPENDENCY.md` |
+| — | *(related, and already written down)* the `meta` lost-update race — "a lost update leaves no trace" | a compare-and-swap gate, which would turn the loss into a refusal | dated exposure accepted 2026-09-06, `docs/STATE.md` |
+
+### Why instance 3 is the awkward one
+
+Instances 1 and 2 are server-side: we own the code at the moment of failure, so recording it is a
+row. Instance 3 fails **in the browser, before our code exists** — the whole point is that the file
+that would have let us report anything is the file that did not arrive. So the fix is not a table;
+it is either a client-side beacon that runs without the library (an `onerror` on the script tag,
+posting to an endpoint that does not depend on the library), or removing the dependency.
+
+**The pin shipped today does not address this.** Pinning closed the *version-drift* risk; the
+availability risk and its untraceability are untouched, and that is stated in the CDN finding rather
+than quietly folded into "we fixed the CDN thing".
+
+### What this finding is for
+
+When the next failure with no record turns up, it goes here as instance 4 rather than into a fourth
+document. And the standing question for any new failure path — **"if this failed for a real owner
+last week, could I find out today?"** — belongs in the same place as the question we already ask
+about successes.
+
 ## THE THREE THINGS THE DESIGN DID NOT KNOW — ANSWERED BY MEASUREMENT (2026-09-15)
 
 Section 6 of `docs/LIVE_SURFACES_DESIGN.md` listed three unknowns. They were measured as the first

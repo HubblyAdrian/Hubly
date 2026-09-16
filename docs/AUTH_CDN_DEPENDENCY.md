@@ -128,7 +128,11 @@ and only one of them is live today.
   figure is a warm, good-bandwidth reading and should not be quoted as typical.
 - **Whether any owner has ever been affected.** We have no record that would show it — a failed
   script load leaves no row anywhere in Hubly. That absence is itself part of the finding: **if this
-  has already cost someone a sign-in, we would not know.**
+  has already cost someone a sign-in, we would not know.** This is instance 3 of *failures that
+  leave no trace* — see the collected finding at the top of `docs/OPEN_FINDINGS.md`. It is the
+  awkward one, because it fails in the browser BEFORE our code exists: the file that would let us
+  report anything is the file that did not arrive. So the fix is a beacon that does not depend on
+  the library (a script-tag `onerror`), or removing the dependency — not a table.
 - **Whether the two versions differ in any way that matters.** 2.110.5 → 2.116.0 has not been diffed.
 - **Mobile and cold connections**, where a third-party origin costs most. Not measurable here.
 
