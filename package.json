@@ -116,7 +116,8 @@
     "check:list-surfaces": "node scripts/check-list-surfaces.mjs",
     "check:lead-gate": "node scripts/check-lead-gate.mjs",
     "check:quote-mode": "node scripts/check-quote-mode.mjs",
-    "check:ics-door": "node scripts/check-ics-door.mjs"
+    "check:ics-door": "node scripts/check-ics-door.mjs",
+    "check:page-price-drift": "node scripts/check-page-price-drift.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

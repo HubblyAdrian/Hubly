@@ -3479,7 +3479,12 @@ type ServicesPlacement = {
   leakedAttrText?: number;                         // INVARIANT: our own data-hubly- markup that ended up as visible text (must be 0; non-zero = a replacement-string bug shipped)
 };
 
-function fmtServicePrice(n: number): string {
+/** EXPORTED SO THE DRIFT CHECK USES THE REAL ONE. The 2026-09-15 scar was two detectors agreeing
+ *  because they shared a BROKEN formatter, and the sentence that would have caught it was "this holds
+ *  only if the page formats the price exactly as the search does." A checker that re-implements this
+ *  is not checking the page against the product, it is checking the page against a second opinion —
+ *  so `scripts/check-page-price-drift.mjs` imports this function rather than copying its two lines. */
+export function fmtServicePrice(n: number): string {
   // Mirror buildBusinessRecordBlock's money(): integer dollars, no cents unless real.
   return Number.isInteger(n) ? `$${n}` : `$${n.toFixed(2)}`;
 }

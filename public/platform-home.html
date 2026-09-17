@@ -1013,6 +1013,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     /* THE MODE CHIP. Same visual family as the selection chip so it reads as the same kind of
        thing — a piece of state attached to what you are about to type — but it is unmistakably a
        MODE: it names itself, and the way out is a control beside the name, never a hidden gesture. */
+    .hc-mng-note{display:block;flex-basis:100%;font-size:11px;opacity:.8;margin:2px 0 0}
     .hc-mode-chip-row{display:flex;gap:8px;align-items:center;margin:0 0 6px;flex-wrap:wrap}
     .hc-mode-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 8px 5px 10px;border-radius:999px;
       background:var(--hc-accent-soft,#eef2ff);border:1px solid var(--hc-accent-line,#c7d2fe);
@@ -9451,6 +9452,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(!biz || !biz.id || !hc.draftClaimed) return hcHomeCounts;
     try{
       var c = await authGetClient();
+      // The owner's uid, for the readers that authorise by ownership rather than by RLS. A missing
+      // uid is not zero services — get_business_services refuses without it, and the count below
+      // treats a refusal as UNKNOWN (undefined), never as an empty room.
+      var uidForCounts = await hcOwnerUid();
       var today = new Date(); var iso = today.getFullYear() + '-' +
         String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
       // TWO QUERIES DELETED HERE, NOT FIXED (2026-09-13).
@@ -9487,13 +9492,20 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         c.from('jobs').select('id', { count:'exact', head:true }).eq('business_id', biz.id),
         c.from('jobs').select('id', { count:'exact', head:true }).eq('business_id', biz.id).eq('paid', true),
         c.from('booking_requests').select('id', { count:'exact', head:true }).eq('business_id', biz.id),
-        c.from('services').select('id', { count:'exact', head:true }).eq('business_id', biz.id)
+        // SERVICES LIVE IN TWO STORES AND THIS COUNTED ONE. Measured 2026-09-16: 3 businesses have a
+        // catalogue and NO table rows at all (one of them market), so this count was 0 while their
+        // page showed services — and Graef's was 1 ("clay and seal", $0) while his page shows eight.
+        // Either way the door was decided by the wrong store. `get_business_services` is the union
+        // reader that already exists; counting its rows asks about the CONTENT rather than about our
+        // bookkeeping, which is the standing rule and the reason this keeps recurring.
+        c.rpc('get_business_services', { p_business_id: biz.id, p_owner_id: uidForCounts })
       ]);
       if(!r[0].error && r[0].count > 0) hcHomeCounts.jobsToday = r[0].count;
       if(!r[1].error) hcHomeCounts.jobsAny = r[1].count || 0;
       if(!r[2].error) hcHomeCounts.salesAny = r[2].count || 0;
       if(!r[3].error) hcHomeCounts.bookingsAny = r[3].count || 0;
-      if(!r[4].error) hcHomeCounts.servicesAny = r[4].count || 0;
+      // A COUNT WE COULD NOT READ STAYS UNDEFINED. An RPC error is not zero services.
+      if(!r[4].error) hcHomeCounts.servicesAny = Array.isArray(r[4].data) ? r[4].data.length : 0;
       // HOURS ARE IN TWO STORES and the reader that knows both already exists. Counting
       // settings_business_hours alone would hide the chip for Graef, whose hours live in meta —
       // the two-store defect, one feature over, which is exactly how this class keeps recurring.
@@ -9938,10 +9950,41 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   async function hcReadRecord(){
     var id = hc.draftBusiness && hc.draftBusiness.id; if(!id) return;
     var c = await authGetClient();
-    var svc = await c.from('services').select('id,name,price,description,sort_order').eq('business_id', id).order('sort_order',{ascending:true});
+    // ══ BOTH STORES, THROUGH THE READER THAT ALREADY KNOWS BOTH. ═══════════════════════════
+    //
+    // THIS READ `from('services')` AND IT IS THE 2026-09-15 REPORT. Measured 2026-09-16: Graef's
+    // relational table holds ONE row — "clay and seal", price 0 — while his catalogue holds EIGHT
+    // services with per-vehicle prices, and it is the catalogue his page renders. So this panel
+    // showed a market owner one $0 service he does not sell and none of the eight he does. That is
+    // the sentence "clay and seal, price 0 as Graef's only service" arriving from a one-store reader,
+    // and it is Lesson 86 exactly: our bookkeeping reported as his missing data.
+    //
+    // `get_business_services` is the OWNER reader and it already answers the right question — "what
+    // does this business HAVE on record" — as the union of both stores, with `source` and
+    // `conflicts` per row. It is deliberately not the same rule as the visitor reader
+    // (get_public_business_services), which answers "what does this business OFFER ME" and returns
+    // the catalogue alone; two readers answering DIFFERENT questions is correct, and two answering
+    // the same question differently is the defect.
+    //
+    // A read failure is not an empty list. It leaves the previous value in place and says so, rather
+    // than rendering "you have no services" off a query that did not run.
+    var uid = await hcOwnerUid();
+    var svc = await c.rpc('get_business_services', { p_business_id: id, p_owner_id: uid });
     var biz = await c.from('businesses').select('phone,email,address,hours_note').eq('id', id).maybeSingle();
     var hrs = await c.from('settings_business_hours').select('weekday,open_time,close_time,closed').eq('business_id', id);
-    hcManage.services = (svc && svc.data) || [];
+    if(svc && svc.error){
+      try{ console.warn('[manage] services read failed:', svc.error.message); }catch(e){}
+      hcManageStatus('I couldn\u2019t read your services just now \u2014 that\u2019s a read failure, not an empty list.', false);
+    } else {
+      // THE RPC HAS NO `id` COLUMN — it is a union of two stores and a row can exist in both, so
+      // there is no single id to give. The panel keys on the NAME it is editing (data-prev), which
+      // is what the writer matches on anyway; an id read off this list would have been undefined and
+      // every row would have carried data-id="undefined".
+      hcManage.services = Array.isArray(svc && svc.data) ? svc.data.map(function(r){
+        return { id: null, name: r.name, price: r.price, description: r.description,
+                 source: r.source, conflicts: r.conflicts === true };
+      }) : [];
+    }
     hcManage.contact = (biz && biz.data) || {};
     hcManage.note = (biz && biz.data && biz.data.hours_note) || '';
     hcManage.hours = {}; ((hrs && hrs.data) || []).forEach(function(r){ hcManage.hours[r.weekday] = r; });
@@ -9970,12 +10013,18 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var body = document.getElementById('hcMngBody'); if(!body) return;
     var ct = hcManage.contact || {};
     var svcRows = (hcManage.services||[]).map(function(s){
-      return '<div class="hc-mng-svc" data-id="'+hcEscA(s.id)+'" data-prev="'+hcEscA(s.name)+'">'+
+      // A ROW THE TWO STORES DISAGREE ABOUT SAYS SO, IN WORDS, ON THE ROW. `conflicts` comes from
+      // the reader; hiding it would leave him editing one of two different prices with no way to
+      // know the other exists. Never a badge or a colour on its own — a colour is not a sentence.
+      var note = s.conflicts ? '<span class="hc-mng-note">two different prices on file for this one \u2014 saving sets both</span>' : '';
+      return '<div class="hc-mng-svc" data-id="'+hcEscA(s.id == null ? '' : s.id)+'" data-prev="'+hcEscA(s.name)+'"'+
+        (s.conflicts ? ' data-conflicts="1"' : '')+'>'+
         '<input class="hc-mng-in mng-sn" value="'+hcEscA(s.name)+'" placeholder="Service name">'+
         '<input class="hc-mng-in mng-sp" value="'+hcEscA(s.price!=null?s.price:'')+'" placeholder="Price" inputmode="decimal" style="max-width:88px">'+
         '<input class="hc-mng-in mng-sd" value="'+hcEscA(s.description||'')+'" placeholder="Short description">'+
         '<button type="button" class="hc-mng-btn mng-ssave">Save</button>'+
         '<button type="button" class="hc-mng-btn danger mng-srem">Remove</button>'+
+        note+
       '</div>';
     }).join('');
     var hrsRows = HC_DAYS.map(function(d){
