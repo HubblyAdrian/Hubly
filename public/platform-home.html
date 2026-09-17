@@ -1010,6 +1010,20 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
    thing typed will apply to, so it has to look like part of the same object. Brand
    tint because it is a live constraint on the box below it, not a passive label. */
 .hc-sel-chip-row{display:flex;align-items:center;gap:8px;padding:0 2px 8px;min-width:0}
+    /* THE MODE CHIP. Same visual family as the selection chip so it reads as the same kind of
+       thing — a piece of state attached to what you are about to type — but it is unmistakably a
+       MODE: it names itself, and the way out is a control beside the name, never a hidden gesture. */
+    .hc-mode-chip-row{display:flex;gap:8px;align-items:center;margin:0 0 6px;flex-wrap:wrap}
+    .hc-mode-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 8px 5px 10px;border-radius:999px;
+      background:var(--hc-accent-soft,#eef2ff);border:1px solid var(--hc-accent-line,#c7d2fe);
+      font-size:12px;font-weight:600;line-height:1.2;max-width:100%}
+    .hc-mode-chip-name{white-space:nowrap}
+    .hc-mode-chip-hint{font-weight:450;opacity:.8;white-space:nowrap}
+    .hc-mode-chip-x{appearance:none;border:none;background:transparent;cursor:pointer;font:inherit;
+      font-weight:600;padding:2px 6px;border-radius:999px;line-height:1}
+    .hc-mode-chip-x:hover{background:rgba(0,0,0,.06)}
+    @media (max-width:520px){ .hc-mode-chip-hint{display:none} }
+
 .hc-sel-chip{
   display:inline-flex;align-items:center;gap:8px;max-width:100%;min-width:0;
   background:rgba(217,99,45,.10);border:1px solid rgba(217,99,45,.34);
@@ -1576,6 +1590,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
            one state, two surfaces. Above the box rather than inside it: the box centres
            its controls on its own height, and a second row in there moves them. -->
       <div class="hc-sel-chip-row" id="hcSelChipRow" hidden></div>
+      <!-- THE MODE, VISIBLE, WITH ITS OWN WAY OUT. A mode the owner cannot see is a mode he cannot
+           leave, and a mode he cannot leave will eat a message meant for something else. It sits
+           ABOVE the box for the same reason the selection chip does: the box centres its controls on
+           its own height and a second row in there moves them. Rendered by hcRenderModeChip(), and
+           absent — not empty — when there is no mode. -->
+      <div class="hc-mode-chip-row" id="hcModeChipRow" hidden></div>
       <div class="ask-wrap">
         <div class="ask-glow" aria-hidden="true"></div>
         <div class="ask-box">
@@ -3798,6 +3818,15 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // floor; the answer has now been given AND replied to, so it lands after the reply
           // rather than in the middle of the exchange (2026-09-15).
           try{ hcReleaseHeldFurniture(); }catch(_e){}
+          // AND THE MODE OFFER, LAST OF ALL, THROUGH THE SAME DISCIPLINE. He mentioned a quote
+          // inside a sentence; he has now had his answer, so the offer can be made without two
+          // composers speaking in the same beat. It is released only when no question is on the
+          // floor and the turn did not end in one of ours — the same test the voluntary line uses,
+          // because an offer IS a second ask and "one ask at a time" does not exempt buttons.
+          try{
+            var _mo = hc._modeOfferAfterTurn; hc._modeOfferAfterTurn = null;
+            if(_mo && !hcAskOnFloor() && !/\?\s*["'\u201d\u2019)]*\s*$/.test(String(hcTurn.said || ''))) hcOfferMode(_mo);
+          }catch(_e){}
         }
         showNext();
       })
@@ -3814,9 +3843,295 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // pane anyway.
   var HC_SHOW_PAGE_RE = /^(?:can (?:i|we) )?(?:i )?(?:c(?:a|')?n'?t see|show me|go back to|back to|see|view|where is|wheres|where's|open)\s+(?:the |my |our )?(?:page|site|website|preview)\b/i;
 
+  /** A ROW OF REAL CONTROLS IN THE THREAD. Hubly never names a button it cannot see, so when a
+   *  choice is offered it is offered as PRESSABLE THINGS — and there was already one hand-rolled
+   *  copy of this markup (hcOfferSidebarTab's `hc-arrival-actions` block). This is the shared one;
+   *  hcOfferSidebarTab keeps its own for now because it carries an await-and-report flow of its own
+   *  and moving it is a change to a path a green check already covers — named here rather than left
+   *  as an undocumented second copy (public/platform-home.html, hcOfferSidebarTab). */
+  function hcAppendActionRow(actions){
+    var thread = hcThreadBody(); if(!thread) return null;
+    var row = document.createElement('div');
+    row.className = 'hc-msg hubly hc-arrival-actions';
+    row.setAttribute('data-hc-actions', '1');
+    (actions || []).forEach(function(a){
+      if(!a || !a.label) return;
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'hc-arrival-act'; b.textContent = a.label;
+      b.addEventListener('click', function(){
+        // ONE PRESS. A row of choices that stays live after a choice is a row that can be answered
+        // twice, and the second answer arrives against state the first one already changed.
+        Array.prototype.forEach.call(row.querySelectorAll('button'), function(x){ x.disabled = true; });
+        try{ a.onClick && a.onClick(); }catch(e){}
+      });
+      row.appendChild(b);
+    });
+    thread.appendChild(row);
+    try{ hcThreadScrollToEnd(); }catch(e){}
+    return row;
+  }
+
+  // ══ MODES — VISIBLE · LEAVEABLE · AND THEY NEVER SWALLOW A MESSAGE ═══════════════════════════
+  //
+  // ADRIAN, 2026-09-16: "He says 'quick quote' and the AI becomes a quoter in the chat. VISIBLE ·
+  // LEAVEABLE (say so, or finish a quote) · NEVER SILENTLY SWALLOWS a message meant for something
+  // else · 'can you quick quote this?' mid-conversation must not fire it by accident. RED-PROOF THE
+  // 'THIS IS FINE' DIRECTION — a false start while he is on the phone with a customer is worse than
+  // a missed one."
+  //
+  // THAT LAST SENTENCE DECIDES THE WHOLE DESIGN, and it removes the need for a heuristic:
+  //
+  //   ENTERING is the valuable, dangerous act.  It happens ONLY when the message IS the command —
+  //     a closed set, which a command legitimately is ("quick quote", "new quick quote", "start a
+  //     quote"). Nothing inside a longer sentence enters.
+  //   OFFERING is the harmless act.  Any other mention of a quote produces an OFFER — a real
+  //     button he can press — and nothing else happens.
+  //
+  // This is the standing rule about enumerating the harmless side rather than the valuable one,
+  // applied to an intent rather than to a fact. The alternative was a list of phrasings that "mean
+  // he wants to start one", and every time we have written such a list it has undercounted — except
+  // here the cost of a miss is not a lost fact, it is a DERAILED CONVERSATION. So the list we keep
+  // closed is the one that acts, and everything else asks. An unnecessary offer costs one line of
+  // chat; a false entry costs him the thread while a customer is on the phone.
+  //
+  // NOTHING BELOW CLAIMS THE MODE CAN PRODUCE A QUOTE. It can be entered, seen, and left. What it
+  // says on entry is exactly what it can do, and the quote itself is a separate build.
+  var HC_MODES = {
+    quote: {
+      label: 'Quick Quote',
+      // THE COMMAND. Anchored at both ends: the message IS this and nothing else.
+      enter: /^\s*(?:new\s+|start\s+(?:a\s+)?|begin\s+(?:a\s+)?)?(?:quick\s*quote|quote)\s*[.!?]?\s*$/i,
+      // ANY OTHER MENTION. Produces an offer, never an entry.
+      mention: /\bquick\s*quotes?\b|\bquotes?\b|\bquoting\b|\bquoted\b/i,
+      enterLine: 'Quick Quote. Tell me who it’s for and what they want, and I’ll price it from your own list. Say “never mind” to leave.',
+      leaveLine: 'Out of Quick Quote. Nothing was saved.',
+      offerLine: 'Do you want me to start a Quick Quote?',
+      offerCta: 'Start a Quick Quote',
+      hint: 'say “never mind” to leave'
+    }
+  };
+  // LEAVING, IN HIS WORDS. One list, shared by every mode, because "never mind" means the same
+  // thing in all of them — and a mode with its own private way out is a mode he has to learn twice.
+  var HC_MODE_LEAVE_RE = /^\s*(?:never\s*mind|nevermind|forget\s+it|cancel|stop|quit|exit|leave|no\s+thanks|not\s+now|done)\s*[.!]?\s*$/i;
+  /** ══ EVERY WAY IN THAT HONESTLY EXISTS, DERIVED — AND NONE THAT DO NOT. ═══════════════════
+   *
+   *  ADRIAN'S DEFINITION OF DONE: "every way that honestly exists and none that do not, DERIVED from
+   *  what is wired." He named three for this — say it, press the tab, press a button — and in THIS
+   *  shell only two of them exist: there is no `quotes` place in HC_PLACE_SURFACES, so there is no
+   *  tab to press. The classic app's `data-v="quotes"` rail row is a different shell.
+   *
+   *  So the ways are computed from what is actually wired, not listed. Each entry asks a question
+   *  about the code rather than asserting a fact about it, which is the same reason HC_WAYS exists:
+   *  a tab added later makes this sentence grow by itself, and a tab removed makes it shrink. No one
+   *  has to remember.
+   *
+   *  NOTHING HERE OFFERS THE BUTTON AS A WAY IN when the button only appears in response to a
+   *  mention — that would be circular. The button is how an OFFER is accepted, and the offer line
+   *  says so itself by being a button. */
+  function hcModeWays(key){
+    var m = HC_MODES[key]; if(!m) return [];
+    var ways = [];
+    // SAY IT — wired iff there is an entry pattern and the composer routes through hcSendText.
+    if(m.enter instanceof RegExp && typeof hcSendText === 'function')
+      ways.push({ id:'say', clause: 'say \u201c' + String(m.label).toLowerCase() + '\u201d' });
+    // PRESS THE TAB — wired iff this shell has a place surface for it AND a room to open.
+    if(HC_PLACE_SURFACES[key] && HC_ROOMS[key])
+      ways.push({ id:'tab', clause: 'press the ' + HC_PLACE_SURFACES[key].label + ' tab' });
+    // PRESS A BUTTON — wired iff a control can be put in the thread at all.
+    if(typeof hcAppendActionRow === 'function')
+      ways.push({ id:'button', clause: 'press the button when I offer it' });
+    return ways;
+  }
+  /** The clause, in prose, from the ways that exist. Empty string when none do — which would itself
+   *  be a defect, and an empty clause reads as one rather than inventing a way. */
+  function hcModeWaysClause(key){
+    var w = hcModeWays(key).map(function(x){ return x.clause; });
+    if(!w.length) return '';
+    if(w.length === 1) return w[0];
+    return w.slice(0, -1).join(', ') + ' or ' + w[w.length - 1];
+  }
+  /** Which mode is on, or null. One reader; hc.mode is the storage. */
+  function hcMode(){ var k = hc.mode; return (k && HC_MODES[k]) ? k : null; }
+  /** THE CHIP. Absent when there is no mode — not an empty row, which reads as something loading. */
+  function hcRenderModeChip(){
+    var row = document.getElementById('hcModeChipRow');
+    if(!row) return null;
+    var k = hcMode();
+    row.innerHTML = '';
+    if(!k){ row.hidden = true; return null; }
+    var m = HC_MODES[k];
+    var chip = document.createElement('div'); chip.className = 'hc-mode-chip';
+    chip.setAttribute('data-hc-mode', k);
+    var nm = document.createElement('span'); nm.className = 'hc-mode-chip-name'; nm.textContent = m.label;
+    var hint = document.createElement('span'); hint.className = 'hc-mode-chip-hint'; hint.textContent = m.hint || '';
+    var x = document.createElement('button'); x.type = 'button'; x.className = 'hc-mode-chip-x';
+    x.textContent = 'Leave'; x.setAttribute('aria-label', 'Leave ' + m.label);
+    x.addEventListener('click', function(){ hcLeaveMode('pressed'); });
+    chip.appendChild(nm); chip.appendChild(hint); chip.appendChild(x);
+    row.appendChild(chip); row.hidden = false;
+    return chip;
+  }
+  /** ENTER. Announced in words, every time — the interface may not change shape silently, and a
+   *  mode is the biggest shape change there is: it changes what the next thing you type means. */
+  function hcEnterMode(key, how){
+    var m = HC_MODES[key];
+    if(!m) return false;
+    if(hc.mode === key){ hcRenderModeChip(); return false; }   // already in it; never announced twice
+    hc.mode = key;
+    hc.modeEnteredBy = String(how || 'said');
+    hcRenderModeChip();
+    hcAppendMessage('hubly', m.enterLine);
+    hcPersist('assistant', m.enterLine);
+    return true;
+  }
+  /** LEAVE. Also announced, because a mode that vanishes quietly leaves him typing into a different
+   *  program than the one he thinks he is in. Says that nothing was saved, since nothing was. */
+  function hcLeaveMode(how){
+    var k = hcMode();
+    if(!k) return false;
+    var m = HC_MODES[k];
+    hc.mode = null; hc.modeEnteredBy = null;
+    hcRenderModeChip();
+    hcAppendMessage('hubly', m.leaveLine);
+    hcPersist('assistant', m.leaveLine);
+    try{ hcRecordModeEvent(k, 'left', how); }catch(e){}
+    return true;
+  }
+  /** THE OFFER — a real control, not a description of one, and it enters only when pressed.
+   *  ONE ASK AT A TIME: if a question of ours is already on the floor, the offer is not made. */
+  function hcOfferMode(key){
+    var m = HC_MODES[key];
+    if(!m) return false;
+    if(hcMode()) return false;                                  // already in a mode
+    if(hcOwner && hcOwner.awaitingName) return false;            // our question is unanswered
+    if(hc.pendingCapture) return false;                          // ditto
+    // THE OFFER NAMES THE OTHER WAYS IN, derived — so he learns the command from the offer and
+    // never has to be told about a tab this shell does not have.
+    var ways = hcModeWaysClause(key);
+    var line = m.offerLine + (ways ? (' You can ' + ways + '.') : '');
+    hcAppendMessage('hubly', line);
+    hcPersist('assistant', line);
+    hcAppendActionRow([{ label: m.offerCta, onClick: function(){ hcEnterMode(key, 'offered'); } }]);
+    return true;
+  }
+  /** WOULD THIS MESSAGE MEAN SOMETHING ELSE? Derived from the registries that already exist —
+   *  HC_THREAD_VIEWS' own trigger words, the page-showing regex and the go-places table — so a
+   *  capability added later is protected without anyone remembering to add it to a list here.
+   *  Returns the name of the thing it would have meant, or null. */
+  function hcMeansSomethingElse(text){
+    var t = String(text || '').trim();
+    if(!t) return null;
+    if(HC_SHOW_PAGE_RE.test(t)) return 'your page';
+    for(var k in HC_THREAD_VIEWS){
+      if(!Object.prototype.hasOwnProperty.call(HC_THREAD_VIEWS, k)) continue;
+      var words = HC_THREAD_VIEWS[k].words || [];
+      for(var i = 0; i < words.length; i++){
+        // The whole message being the word, or the message clearly asking for it. A word appearing
+        // inside a sentence is NOT enough — that is the same false-positive trap as mode entry, and
+        // it would make the mode refuse half of what he types.
+        var w = String(words[i]).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        // THE PREFIXES CHAIN. A single optional group matched "show me jobs" and "my jobs" but not
+        // "show me MY jobs" — two prefixes in a row, which is how a person actually types it — so
+        // the no-swallow guard let the commonest phrasing straight through to the quoter. Two
+        // optional groups, verb then article, and a bare word still matches.
+        if(new RegExp('^\\s*(?:(?:show\\s+me|show|open|go\\s+to|pull\\s+up|see|list)\\s+)?(?:(?:my|the|our)\\s+)?' + w + '\\s*[.!?]?\\s*$', 'i').test(t))
+          return HC_THREAD_VIEWS[k].title || k;
+      }
+    }
+    return null;
+  }
+  /** THE MODE'S TURN AT A MESSAGE. Returns true when it has HANDLED the message — and it never
+   *  handles one silently: every branch here either answers or says why it is not going to. */
+  function hcModeHandled(text){
+    var k = hcMode();
+    if(!k) return false;
+    var m = HC_MODES[k];
+    if(HC_MODE_LEAVE_RE.test(text)){ hcLeaveMode('said'); return true; }
+    // NEVER SILENTLY SWALLOWS. A message that plainly means something else is not fed to the
+    // quoter and is not silently acted on either — it gets ONE question, and his answer decides.
+    var other = hcMeansSomethingElse(text);
+    if(other){
+      var line = 'You’re in ' + m.label + ', so I didn’t take that as “' + other +
+                 '”. Do you want me to leave ' + m.label + ' and do that instead?';
+      hcAppendMessage('hubly', line);
+      hcPersist('assistant', line);
+      try{ hcAppendActionRow([
+        { label: 'Leave ' + m.label, onClick: function(){ hcLeaveMode('switched'); hcSendText(text); } },
+        { label: 'Stay in ' + m.label, onClick: function(){
+            var stay = 'Staying in ' + m.label + '.';
+            hcAppendMessage('hubly', stay); hcPersist('assistant', stay); } }
+      ]); }catch(e){}
+      return true;
+    }
+    return false;    // the mode has nothing to say about this message; the normal turn runs
+  }
+  /** THE COUNTABLE RECORD. A mode that starts when it should not is a defect we must be able to
+   *  count rather than wait to be told about — same reason capture misses are a table. Fire and
+   *  forget, and its own failure is never the owner's problem. */
+  function hcRecordModeEvent(mode, what, how){
+    try{
+      if(!hc.draftBusiness || !hc.draftBusiness.id) return;
+      var body = { business_id: hc.draftBusiness.id, mode: String(mode), event: String(what),
+                   how: String(how || '') };
+      if(window.__hcModeEvents) window.__hcModeEvents.push(body);
+    }catch(e){}
+  }
+  try{ window.__hcModeEvents = window.__hcModeEvents || []; }catch(e){}
+  // THE SEAM. The real registry and the real functions, so a check drives the product's mode and
+  // not a copy of its rules. Extended, never assigned fresh.
+  try{
+    window.hublyModeUI = Object.assign(window.hublyModeUI || {}, {
+      // THE REAL ASK STATE, not a copy of it. hcOfferMode refuses while one of our own questions is
+      // unanswered, and a check must be able to CREATE that state to watch the refusal happen — an
+      // assertion that only ever sees the permissive branch has not tested the guard.
+      armOurQuestion: function(v){ hc.pendingCapture = v ? { askedFor:'services', tries:0 } : null; return !!hc.pendingCapture; },
+      modes: HC_MODES, current: hcMode, enter: hcEnterMode, leave: hcLeaveMode,
+      offer: hcOfferMode, handled: hcModeHandled, chip: hcRenderModeChip,
+      meansSomethingElse: hcMeansSomethingElse, leaveRe: HC_MODE_LEAVE_RE,
+      ways: hcModeWays, waysClause: hcModeWaysClause
+    });
+  }catch(e){}
+
   function hcSendText(text){
     text = (text || '').trim();
     if(!text || hc.busy) return;
+    // ══ MODES GET THE MESSAGE FIRST, AND THEY ARE THE NARROWEST THING IN THIS FUNCTION. ══════
+    //
+    // ORDER MATTERS AND IT IS DELIBERATE:
+    //   1. Already in a mode -> the mode decides, and if it decides not to handle the message the
+    //      normal turn still runs. It never swallows one silently.
+    //   2. Not in a mode -> the message ENTERS one only if the whole message is the command.
+    //   3. Any other mention -> an OFFER, and the message continues to the normal turn, because
+    //      "can you quick quote this?" is still a sentence he expects an answer to.
+    //
+    // Step 3 is the one that keeps a false start from costing him the thread: the offer is additive,
+    // never a redirect. He asked something; he gets an answer AND a button.
+    if(hcMode()){
+      hcActivate();
+      hcAppendMessage('user', text); hcPersist('user', text);
+      if(hcModeHandled(text)) return;
+    } else {
+      var _mk = null;
+      for(var _k in HC_MODES){
+        if(!Object.prototype.hasOwnProperty.call(HC_MODES, _k)) continue;
+        if(HC_MODES[_k].enter.test(text)){ _mk = _k; break; }
+      }
+      if(_mk){
+        hcActivate();
+        hcAppendMessage('user', text); hcPersist('user', text);
+        hcEnterMode(_mk, 'said');
+        return;
+      }
+      // ANY OTHER MENTION IS AN OFFER, AND THE MESSAGE STILL GOES THROUGH. "can you quick quote
+      // this?" is a sentence he expects an answer to, so the offer is ADDITIVE, never a redirect —
+      // he gets his answer and a button. The offer is queued rather than appended here because the
+      // model's reply has not been composed yet, and two composers speaking in the same beat read
+      // like two people talking over each other (2026-08-26).
+      for(var _k2 in HC_MODES){
+        if(!Object.prototype.hasOwnProperty.call(HC_MODES, _k2)) continue;
+        if(HC_MODES[_k2].mention.test(text)){ hc._modeOfferAfterTurn = _k2; break; }
+      }
+    }
     if(HC_SHOW_PAGE_RE.test(text) && hc.draftBusiness){
       hcActivate();
       hcAppendMessage('user', text);

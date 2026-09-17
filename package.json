@@ -114,7 +114,8 @@
     "check:band-rule": "node scripts/check-band-rule-is-one-place.mjs",
     "check:offer-type": "node scripts/check-offer-type-one-reader.mjs",
     "check:list-surfaces": "node scripts/check-list-surfaces.mjs",
-    "check:lead-gate": "node scripts/check-lead-gate.mjs"
+    "check:lead-gate": "node scripts/check-lead-gate.mjs",
+    "check:quote-mode": "node scripts/check-quote-mode.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
