@@ -317,6 +317,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 .hcmd-date{font-size:14px;color:var(--muted)}
 .hcmd-title{font-size:38px;line-height:1.1;margin:2px 0 6px;font-weight:800;letter-spacing:-.02em}
 .hcmd-sub{margin:0;color:var(--muted);font-size:14px}
+.hcmd-progress{margin:4px 0 0;color:var(--muted);font-size:13px;font-weight:600}
 .hcmd-bands{display:flex;flex-direction:column;gap:16px}
 .hcmd-band{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--panel)}
 .hcmd-bandhead{display:flex;align-items:center;gap:12px;padding:14px 16px}
@@ -9122,6 +9123,33 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
    *  because a ghost row reads as loading and makes an empty day look broken. */
   var HC_DAY_ADD_LINE = 'Double-click to add something…';
 
+  /** THE COMPLETION LINE. Appended asynchronously so a slow read never holds up the day.
+   *  It is the ONLY caller of get_task_progress, and the words are the migration's own intent. */
+  async function hcDayProgressLine(head, biz, dayISO){
+    try{
+      var uid = await hcOwnerUid();
+      if(!uid || !biz || !biz.id) return null;
+      var c = await authGetClient();
+      var r = await c.rpc('get_task_progress', { p_business_id: biz.id, p_owner_id: uid, p_day: dayISO });
+      if(r && r.error) return null;                      // a read failure says nothing, rather than 0 of 0
+      var row = Array.isArray(r && r.data) ? r.data[0] : (r && r.data);
+      if(!row) return null;
+      var total = Number(row.total) || 0, done = Number(row.done) || 0;
+      if(total <= 0) return null;                        // nothing to do is not a score
+      var el = hcEl('p', 'hcmd-progress', hcDayProgressWords(done, total));
+      el.setAttribute('data-hc-progress', done + '/' + total);
+      head.appendChild(el);
+      return el;
+    }catch(e){ return null; }
+  }
+  /** Pure, so a check runs every state without a session. NEVER "0 of 5". */
+  function hcDayProgressWords(done, total){
+    done = Number(done) || 0; total = Number(total) || 0;
+    if(total <= 0) return '';
+    if(done <= 0) return total + (total === 1 ? ' thing to do.' : ' things to do.');
+    if(done >= total) return 'That\u2019s everything done.';
+    return done + ' of ' + total + ' done.';
+  }
   /** One item, flattened from a job or a task, so the row renderer has no idea which it was. */
   function hcDayItems(loaded, dayISO){
     var items = [];
@@ -9199,6 +9227,22 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // ONE GESTURE, ONE PHRASING, and it is the one Adrian ruled (design README ruling 2). The
     // drawing's "Get things done. … or just start typing." is a picture artifact; this is his.
     head.appendChild(hcEl('p', 'hcmd-sub', HC_DAY_ADD_LINE));
+    // ══ COMPLETION — THE LAST DOORLESS TASK FUNCTION. ════════════════════════════════════════════
+    //
+    // `get_task_progress` was written with the tasks table on 2026-09-09 and had no caller until now.
+    // Its own migration says what it is for, and the sentence is a constraint on the surface:
+    //
+    //   "COMPLETION IS VISIBLE AND REAL: completed over total, nothing invented. At 7am with nothing
+    //    done this returns 0 of N — WHICH THE SURFACE MUST RENDER AS THE START OF A DAY, NEVER AS
+    //    FAILURE."
+    //
+    // So 0 of 5 reads "5 to do" — the work ahead, not a score of nought. Only once something is done
+    // does it count up, and only at the end does it congratulate. This owner has abandoned planners
+    // for exactly the monument-to-failure reason the roll rule names.
+    //
+    // A READ FAILURE PRINTS NOTHING AT ALL. A progress line is a claim about his day, and "0 of 0"
+    // off a query that did not run is the unearned checkmark with the sign flipped.
+    hcDayProgressLine(head, biz, dayISO);
     main.appendChild(head);
 
     // EVERY DAY HAS AN A, A B AND A C. Not some days — Adrian, 2026-09-16. The three are
@@ -9458,6 +9502,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     window.hublyDayUI = Object.assign(window.hublyDayUI || {}, {
       render: hcRenderMyDay, hours: hcDayHourRange, label: hcHourLabel,
       repaint: hcRepaintDay, repaints: function(){ return hcRepaintDayCount; },
+      progressWords: hcDayProgressWords, progressLine: hcDayProgressLine,
       nameForDisplay: hcNameForDisplay,
       addLine: HC_DAY_ADD_LINE, band: hcItemBand,
       // THE RULE ITSELF, not just its answer — a check has to be able to ask WHY a thing is a B.

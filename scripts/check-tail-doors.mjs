@@ -126,6 +126,44 @@ try {
   say("12 it calls the roll_task RPC that has existed since 20260909160000 — not a new writer",
       !!roller && /rpc\('roll_task'/.test(roller) && !/\.from\('tasks'\)/.test(roller),
       "roll_task, and no direct table write");
+  // ══ get_task_progress — THE LAST DOORLESS TASK FUNCTION. ═══════════════════════════════════
+  //
+  // Written with the tasks table on 2026-09-09, no caller until now. Its migration states the
+  // constraint on the surface, not just the shape of the return: "At 7am with nothing done this
+  // returns 0 of N — WHICH THE SURFACE MUST RENDER AS THE START OF A DAY, NEVER AS FAILURE."
+  //
+  // So leg 15 is the one that matters: 0 of 5 must never read "0 of 5". This owner has abandoned
+  // planners for exactly the monument-to-failure reason the roll rule names.
+  const prog = await rig.page.evaluate(() => {
+    const w = window.hublyDayUI.progressWords;
+    return { none5: w(0, 5), none1: w(0, 1), some: w(1, 5), nearly: w(4, 5),
+             all: w(5, 5), nothing: w(0, 0), odd: w(3, 0) };
+  });
+  say("13 nothing done yet reads as WORK AHEAD — never \"0 of 5\", never a score of nought",
+      /^5 things to do/.test(prog.none5) && !/\b0\b/.test(prog.none5) &&
+      /^1 thing to do/.test(prog.none1),
+      `${JSON.stringify(prog.none5)} · ${JSON.stringify(prog.none1)}`);
+  say("14 once something is done it counts UP, and finishing is said as finishing",
+      prog.some === "1 of 5 done." && prog.nearly === "4 of 5 done." && /everything done/i.test(prog.all),
+      `${JSON.stringify(prog.some)} -> ${JSON.stringify(prog.all)}`);
+  say("15 no tasks at all is not a score — it prints nothing rather than 0 of 0",
+      prog.nothing === "" && prog.odd === "", "empty, not a zero");
+  const readFail = await rig.page.evaluate(async () => {
+    // A READ FAILURE IS NOT "0 of 0". The fake answers this RPC with null, which is what a failed read
+    // looks like to the caller — the line must simply not appear.
+    const head = document.createElement("div");
+    head.id = "progtest";
+    document.body.appendChild(head);
+    // THE REAL FUNCTION, against the fake's null answer for get_task_progress — which is exactly what
+    // a failed read looks like to this caller. The first version of this leg counted elements that had
+    // never been created by anything, which is true of every possible product.
+    await window.hublyDayUI.progressLine(head, { id: "5ebedc20-1061-46b9-b393-a6ef57225910" }, "2026-09-16");
+    const any = head.querySelectorAll("[data-hc-progress]").length;
+    head.remove();
+    return { any };
+  });
+  say("16 a progress line is a claim about his day, so a read that did not run prints nothing",
+      readFail.any === 0, "no [data-hc-progress] from a null read");
 } finally { await rig.close(); }
 
 console.log(failed ? `\n${failed} FAILED\n` : "\nALL PASS — the name is his in the record and capitalised on screen, and a task can be moved.\n");

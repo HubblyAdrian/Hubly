@@ -50,7 +50,11 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
  *                       the rows. Verified by grep, not assumed: the 16 rows of the 2026-09-15
  *                       walk were written by the client pair.
  */
-const BASELINE = new Set(["get_task_progress", "mark_business_test", "append_business_conversation"]);
+// get_task_progress CAME OFF THIS LIST 2026-09-16 — it has a caller now (My Day's completion line).
+// THE BASELINE IS A DEBT AND THE DEBT SHRANK, so it shrinks here too: leaving it would let a future
+// change quietly re-doorless the function and stay green, which is the whole failure this file exists
+// to prevent, pointed at its own record of the past.
+const BASELINE = new Set(["mark_business_test", "append_business_conversation"]);
 
 let out = "";
 try {
