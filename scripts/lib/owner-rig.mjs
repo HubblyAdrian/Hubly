@@ -108,7 +108,13 @@ export function installOwnerFake(opts) {
                      amount: j.amount ?? null, notes: j.notes ?? null,
                      status: "scheduled", error: null }]);
       }
-      if (name === "get_business_events") return ok(tables.events || []);
+      // MUTABLE ON PURPOSE. A check that asks "does this arrive without a refresh" has to be
+      // able to make the server's answer CHANGE between two reads — a fixed array can only ever
+      // prove that a reload renders what was always there.
+      if (name === "get_business_events") {
+        if (!W.__rig.events) W.__rig.events = (tables.events || []).slice();
+        return ok(W.__rig.events.slice());
+      }
       if (name === "get_public_business") return ok([{ brand_color: null, city: null, state: null, meta: null }]);
       // THE PLACES ROWS MATTER MORE THAN THEY LOOK. Returning [] leaves hc.places null, which
       // makes hcWorkspaces() fail open and treat every place as earned. Default to the shape a
@@ -144,7 +150,24 @@ export function installOwnerFake(opts) {
       if (name === "update_business_job" || name === "create_task") { W.__rig.writes.push({ name, args }); return ok([{ id: null, error: null }]); }
       return ok(null);
     },
-    channel: () => ({ on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}) }),
+    // ══ THE SOCKET IS A REAL PATH INTO THE APP, SO THE FAKE KEEPS ITS HANDLERS ═══════════
+    //
+    // This returned a stub that swallowed every `.on(...)`, which made "does a booking reach
+    // him without a refresh" unanswerable: the check could only call the app's own handler,
+    // and calling a handler is not the arrival of an event. The handlers are recorded now, so
+    // a check can deliver a postgres_changes payload the way Realtime would and watch what the
+    // product does with it. Still simulated — nothing here proves the DB publishes the row.
+    channel: (name) => {
+      const entry = { name, handlers: [], subscribed: false };
+      W.__rig.channels = W.__rig.channels || [];
+      W.__rig.channels.push(entry);
+      const ch = {
+        on: (kind, opts, cb) => { entry.handlers.push({ kind, opts, cb }); return ch; },
+        subscribe: () => { entry.subscribed = true; return ch; },
+        unsubscribe: () => { entry.subscribed = false; return ch; },
+      };
+      return ch;
+    },
     removeChannel: () => {},
   };
   // ══ THE FAKE MUST STILL BE THE FAKE WHEN WE MEASURE ══════════════════════════════════

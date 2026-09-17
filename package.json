@@ -132,7 +132,8 @@
     "check:quote-tab": "node scripts/check-quote-tab-after-removal.mjs",
     "measure:page-claims": "node scripts/measure-page-claims.mjs",
     "check:day-controls": "node scripts/check-day-controls-work.mjs",
-    "check:my-day-sequence": "node scripts/check-my-day-sequence.mjs"
+    "check:my-day-sequence": "node scripts/check-my-day-sequence.mjs",
+    "check:booking-reaches-him": "node scripts/check-a-booking-reaches-him.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

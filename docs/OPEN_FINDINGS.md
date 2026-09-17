@@ -1,5 +1,71 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## WHEN A CUSTOMER BOOKS, DOES THE OWNER FIND OUT? — measured 2026-09-17
+
+Adrian: *"if someone books a job how are they supposed to see it if my day is there?"* Four
+questions were asked; here are the four answers, with what would make each of them wrong.
+
+### (a) How he is told, outside the product
+
+**One path, and it is email only.** A trigger on `booking_requests` reaching `status='pending'`
+(`20260822140000`) writes a `notification_deliveries` row as **`pending` BEFORE the call** — that
+row is the evidence if the call never lands — then POSTs `booking-notify`, which sends a Resend
+email: *"🔔 New booking request"* (or *"✅ New booking — paid"*), with service, vehicle, when,
+address, contact, payment and notes, and a one-tap **Open Hubly** CTA to the front door. It then
+updates the ledger row to `sent`, `failed` or `skipped`. **There is no SMS and no push.**
+
+**THE LEDGER HAS NEVER RECORDED A SENT BOOKING EMAIL.** Before that number is acted on, here is
+what would make it wrong, and it matters:
+
+- **The ledger only exists from 2026-08-21/22.** Anything before that sent or failed with no row.
+- **A row is only written when a booking REACHES `pending`.** An abandoned booking correctly
+  notifies nobody; a booking inserted straight to `accepted` never trips the trigger.
+- So the population that *should* have produced an owner email since the ledger began is **not
+  266 bookings — it is one.** Since 2026-08-22, by `account_kind`: **market 10** (9 abandoned,
+  1 pending, 0 accepted), test 255, internal 1.
+
+**With that denominator, the finding is small and sharp:** the one eligible market booking —
+`lugnuts-regulators`, 2026-09-01 — has a delivery row reading **`skipped`, error `no recipient
+address`**, and the booking is **still `pending` sixteen days later**. `booking-notify` now falls
+back to `auth.users.email` when `businesses.email` is empty (its own comment records this exact
+incident), so the code is fixed; **the booking it happened to is still unanswered**, and nothing
+has exercised the fixed path since.
+
+Two further rows, both **`pending`**, on `adrians-lawn-service` (test) at 2026-09-17 02:35 — the
+pre-call row written and never updated, which means `booking-notify` did not complete. Their
+`subject_id` no longer joins to a `booking_requests` row. **Unexplained; worth one look.**
+
+**Not tried live, and that is a choice, not an omission.** Firing a real booking writes a
+production row and sends a real email. Say the word and it is one insert against a test business.
+
+### (b) Does platform-home show a pending booking? — YES, and he cannot accept it
+
+Home's stream renders a `booking.created` card: *"New booking from Dana Whitlock"*, five fields,
+**View details** (opens the record panel) and a real **Call 801-555-0188** link. What is missing is
+the decision: **`acceptBookingRequest` exists only in `public/hubly.html`** — the shell a claimed
+owner is not in. He can read it and ring her; he cannot accept it where he lives.
+
+### (c) Does it arrive without a refresh? — ONLY IF HE IS STANDING ON HOME
+
+`hcSubscribeEvents` subscribes to INSERTs on `booking_requests` and `jobs`, and on a signal
+re-reads the RPC (the socket is a signal, never a source of truth). But `hcOnEventSignal` opens
+with `if(hc.mode !== 'home') return;` — so in **My Day, Website, Jobs or Customers** a booking
+lands and **nothing on his screen changes**: no card, no badge, no sound, and nothing tells him
+when he comes back except the card being there next time Home renders.
+
+This is the sharpest thing under Adrian's own argument. HOME answers *"what's new?"* — and today
+the news only arrives if he is already looking at it.
+
+### (d) Does it say what it is, in words? — yes, on Home
+
+*"One new booking came in."* in the conversation, the card headline naming the customer, and the
+greeting names the most actionable item. Counts are said separately per kind, never blended.
+
+**All four answers are held by `scripts/check-a-booking-reaches-him.mjs`** — 7 legs, the socket
+handler the product registered is delivered to the way Realtime would, every leg seen red. Legs 5
+and 7 are `[SHAPE]` on purpose: they assert TODAY's gaps so neither can close in silence.
+
+
 ## MY DAY ON A PHONE WAS A BLANK SCREEN — FIXED, NOT VERIFIED ON A HANDSET (2026-09-17)
 
 Two rules, each correct alone, cancelling each other out:
