@@ -7786,8 +7786,24 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   function hcOfferSidebarTab(kind, label){
     try{ if(hcWorkspaces().some(function(w){ return w.id === kind; })) return false; }catch(e){}
     if(hcTabOfferDeclined(kind)) return false;       // he said no. That is an answer.
-    if(hc._tabOfferShown) return false;              // and not twice in one sitting either
-    hc._tabOfferShown = true;
+    // ══ ONE OFFER PER PLACE PER SITTING, NOT ONE OFFER PER SITTING ═════════════════════════════
+    //
+    // `hc._tabOfferShown` was a single boolean, so the FIRST place offered in a sitting was the only
+    // one that could ever be offered. Measured 2026-09-17 by pressing it: accept My Day, then ask for
+    // Jobs in the same sitting, and the second offer does not happen — `offerTab('jobs') -> false`,
+    // no button on screen, nothing said. The owner asks for Jobs, sees it rendered in the thread, and
+    // the one mechanism that would give it a rail row never fires.
+    //
+    // That is prohibition 4 and prohibition 6 in one line: the interface declines to change shape,
+    // silently, after a request that otherwise succeeded. And it made the "earned rail" reachable at
+    // a rate of one place per session, which is not what earning means.
+    //
+    // PER KIND, like its neighbour. `hcTabOfferDeclined(kind)` above already takes a kind — "he said
+    // no to THIS place" was per place from the start, and only the "not twice" guard was global. Two
+    // guards for one question, disagreeing about what the question was.
+    hc._tabOfferShown = hc._tabOfferShown || {};
+    if(hc._tabOfferShown[kind]) return false;        // and not twice for the same place in one sitting
+    hc._tabOfferShown[kind] = true;
     var thread = hcThreadBody(); if(!thread) return false;
     var q = hcAppendMessage('hubly', 'Want me to keep this as a tab in your sidebar?');
     var acts = document.createElement('div'); acts.className = 'hc-msg hubly hc-arrival-actions';
