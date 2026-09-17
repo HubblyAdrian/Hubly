@@ -129,7 +129,8 @@
     "check:every-check-runnable": "node scripts/check-every-check-is-runnable.mjs",
     "pretest": "node scripts/check-no-db-push.mjs",
     "check:quote-pipeline": "node scripts/check-quote-pipeline.mjs",
-    "check:quote-tab": "node scripts/check-quote-tab-after-removal.mjs"
+    "check:quote-tab": "node scripts/check-quote-tab-after-removal.mjs",
+    "measure:page-claims": "node scripts/measure-page-claims.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

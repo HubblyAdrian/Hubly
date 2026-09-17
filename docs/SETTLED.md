@@ -417,3 +417,37 @@ guard so the claim is true of the command everybody types.
 defect count — `check-hubly-syntax` opens `hubly.html` with a relative path and only works from
 `public/`, and several are `[SHAPE]` legs about old milestones. **But `check-rpc-doors` caught this
 session's own `set_quote_status` shipping with no caller.** The remaining reds are recorded as work.
+
+**46. NOTHING GROUNDS A GENERATED PAGE. Proven by trying it, 2026-09-17.**
+`validateHublyDocument` was handed a shape-perfect page for a real market business containing *"Trusted
+by 200 customers"*, *"Rated 4.9 stars from 312 reviews"*, *"Licensed, bonded and insured since 2009"*,
+*"$4,999"*, *"guaranteed, or your money back"*, a fabricated address and a fabricated phone. It returned
+**`ok: true`, zero errors, zero warnings.**
+
+What it checks is **shape** and **emptiness**. The Content Value Rule rejects a section with no
+"concrete content" — *a price, a number, a list…* — and on the first attempt it DID reject the
+fabricated hero, **for having no number in it**. Adding *"15 years serving Utah County"*, itself a
+fabrication, satisfied the rule and the page passed. **The emptiness rule requires a number; it does not
+care whether the number is true.**
+
+Live corpus: **185 pages, 438 detected claims, 73 ungrounded across 21 businesses** — 27 of 27 "years in
+business", 20 of 20 availability promises, 13 of 280 phone numbers. **`saltmarsh-bindery`'s page shows
+`801-555-9001`, which is `copperwick-kilns`'s number.** All test fixtures; the mechanism is identical on
+a market page.
+
+**And "market: 0 ungrounded" must never be quoted as reassurance:** only 6 market businesses have a
+generated document and four of those hold under 50 characters. The four market businesses with real
+pages are **classic** and have no `business_documents` row at all, so they are invisible to the
+measurement. It means "we have almost no market freeform pages", not "the guardrail works".
+
+**47. THE RENDERER ALREADY HAS COMPOSITIONAL PRIMITIVES, NOT SECTIONS.** The closed four-section list
+was removed 2026-08-18. `ALLOWED_TAGS` is semantic HTML; layout is real tokens — `grid` + `grid-cols-*`,
+`columns-2/3/4` + `break-inside-avoid` (true masonry), `overflow-x-auto` + `snap-*`, `aspect-*`,
+`absolute`/`inset-0`. **A "Customer Photo Mosaic" is composable today** as
+`section > div.columns-3 > figure > img + figcaption`. Primitives are reachable now, not a later
+rewrite — the gap is grounding, not vocabulary.
+
+**48. THE GENERATOR IS JSON-MODE, NOT STRUCTURED OUTPUTS.**
+`response_format: { type: "json_object" }`; the shape is enforced afterwards by a hand-written validator
+plus one retry that carries the errors back. Moving `document_generate` to `json_schema` + `strict`
+would make the shape unrepresentable rather than rejected. Small, safe, **not done**.
