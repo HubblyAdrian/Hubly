@@ -38,7 +38,7 @@ for publishing a stranger's phone number at all (the confirmed L97 candidate).
 
 ---
 
-### 3. A page rebuild would discard 403 of 623 patched versions — RE-DERIVED: 460 of 648
+### 3. A page rebuild would discard hand-patched work — RE-DERIVED, AND THE CORRECTION WAS WRONG ONCE
 **Established: MEASURED 2026-09-17, because a scar note is a memory of a measurement and quoting it
 instead of re-running it is how "zero public bookings" survived for months while the answer was 17.**
 
@@ -47,9 +47,35 @@ select count(*), count(distinct business_id), sum((version > 1)::int) from busin
 -- 648 versions · 188 businesses · 460 above version 1 · 2026-08-10 → 2026-09-17
 ```
 
-**The claim holds and the numbers have moved: 460 of 648, not 403 of 623.** Same shape, 57 more
-versions and 25 more of them patched — which is what two more weeks of owners editing their pages
-looks like. The prohibition it supports is unchanged and better supported than when it was written.
+**THE CLAIM HOLDS. THE FIRST CORRECTION OF IT DID NOT, AND THAT IS THE LESSON IN THIS ROW.**
+
+On 2026-09-17 I re-derived this as *"460 of 648, not 403 of 623"* and Adrian adopted 460/648 as the
+standing figure. **Both halves of that were a definition error.** Counted again the same day:
+
+```
+select created_by, count(*) from business_documents group by 1;
+--  patch 403  ·  ai 222  ·  system 23  ·  TOTAL 648
+select count(*), sum((version > 1)::int) from business_documents;
+--  648 total  ·  460 above version 1
+```
+
+- **`403` was never stale. It is still exactly 403.** It counts `created_by = 'patch'`.
+- **`623` was the stale half** — the corpus has grown to 648.
+- **`460` is a DIFFERENT MEASUREMENT**: versions above v1, which includes regenerations, not just
+  patches. I substituted one definition for another and reported it as a correction to the same
+  number, which is the very error this file is a list of.
+
+**The figure that actually answers "what would a rebuild discard":** a rebuild replaces the live
+page, so what is lost is the patch work standing on it —
+
+```
+164 of 188 businesses have a LIVE PAGE whose latest version was created by `patch`.
+403 patch-authored versions exist, of 648 total.
+```
+
+**164 of 188 is the number to quote**, because it is the one whose units are *owners whose page
+would lose hand-corrections*, and it is the strongest support this prohibition has ever had. The
+prohibition is unchanged.
 
 **If wrong, it is load-bearing for a prohibition.** "No rebuild" constrains every page fix into a
 targeted patch, which is slower and harder. If the real figure were small, the cheapest repair for

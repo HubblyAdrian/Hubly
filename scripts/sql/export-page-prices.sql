@@ -10,7 +10,8 @@
 -- as an attribute. No "look forward 400 characters" guess is involved — a containment window sized
 -- to a guess has already produced two false greens this week, and here there is no need for one.
 --
--- ONLY THE LATEST VERSION PER TAG. business_documents holds 633 rows across 179 businesses (403 of
+-- ONLY THE LATEST VERSION PER TAG. The corpus size is deliberately NOT written here — see the same
+-- note in export-page-claims.sql; it was 633/179 and is 648/188. Re-derive rather than quote. (403 of
 -- them patched versions); an older version is history, not a live page, and comparing one would
 -- report drift that no customer can see.
 --

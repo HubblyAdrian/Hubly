@@ -4,7 +4,10 @@
 -- Feeds scripts/measure-page-claims.mjs, which asks the question nothing in the product asks:
 -- does every factual assertion on a generated page trace to a row?
 --
--- LATEST VERSION PER (business, tag) ONLY. 633 documents across 179 businesses, 403 of them patched
+-- LATEST VERSION PER (business, tag) ONLY. The corpus SIZE IS NOT WRITTEN HERE ON PURPOSE: a count in
+-- a comment goes stale silently and this one had (633 -> 648 across 179 -> 188 businesses between
+-- 2026-09-15 and 2026-09-17). Re-derive it when you need it:
+--   select count(*), count(distinct business_id), created_by from business_documents group by created_by;
 -- versions; an older version is history, not a page anyone can read.
 --
 -- THE HTML IS FLATTENED TO TEXT HERE so the measurer never parses markup: tags out, entities for the

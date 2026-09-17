@@ -23,7 +23,7 @@
 > grep -o '^## Lesson [0-9b]*' docs/CHECKER_LESSONS.md | tail -1   # the highest, for the next number
 > ```
 >
-> **90 headings, running 4 → 97**, plus lessons **1–3**, which are the three instances described
+> **91 headings, running 4 → 98**, plus lessons **1–3**, which are the three instances described
 > narratively in the opening section and have no heading — which is why a later count read the file
 > as starting at 4. **11 and 11b** are both present: two lessons written with the same number on
 > different days, and renumbering would invalidate every citation in the commit history since, so
@@ -3544,3 +3544,61 @@ renders a calm greeting), so that string could never have appeared. The leg was 
 thing the wipe actually destroys: Website's own saved message. **Six tabs correctly enumerated and
 the leg that mattered was still vacuous** — deriving the instances is necessary and not sufficient,
 and only the break tells you which you have.
+
+## Lesson 98
+
+**A CHECK WRITTEN FOR A REPORTED DEFECT IS THE ONE MOST LIKELY TO BE VACUOUS.** When the defect
+arrives described in words, the check tends to assert the absence of THE WORDS rather than the
+absence of THE CONDITION — and a negative assertion about a string the correct code never produces
+either is **unfalsifiable**.
+
+### Adrian, 2026-09-17, on BREAK 1
+
+> *"You wrote a leg for my exact reported defect — Home's message must not appear in the Website
+> tab. You removed the fix. THE LEG PASSED."*
+
+The leg asserted that `HOME-ONLY-TRANSCRIPT-LINE`, a line of Home's transcript, was absent from the
+Website thread. **Home does not render a transcript.** It renders a calm greeting, by design, and has
+since 2026-09-13. So that string could not appear whether the fix was present or absent, and the leg
+was green under every possible state of the product.
+
+### Why L97 did not prevent it, and this is the whole point
+
+Everything L97 asks for had been done, an hour earlier, by the same hand:
+
+- the instance list was **derived from the product** (`window.hublyListUI.surfaces`);
+- **all six** places were enumerated and pressed;
+- the derived count was printed in the output — *"derived 6 place(s) from HC_PLACE_SURFACES"*;
+- the leg was labelled `[RULE]` at write time.
+
+**Six tabs correctly enumerated and the leg that mattered was still vacuous.** L97 is about which
+INSTANCES a check visits. L98 is about whether the ASSERTION can fail at all. They are independent,
+and coverage is the one that looks like rigour, so it is the one that gets mistaken for it.
+
+### Why the reported-defect case is the dangerous one specifically
+
+1. **The words are handed over, so they get asserted.** A bug report is prose. "Home's conversation
+   is going into the Website tab" turns into "assert Home's text is not here", and the check inherits
+   the reporter's model of the product instead of testing the product's own behaviour.
+2. **The fix is usually written first.** The leg is then written against a working system, where
+   every negative assertion is true, and green feels like confirmation. Nothing distinguishes *"true
+   because the fix works"* from *"true because it was never false"*.
+3. **It is the leg quoted back.** "The check for your bug passes" closes the report. A vacuous leg
+   anywhere else wastes a slot; a vacuous leg here ends the investigation.
+
+### The rule
+
+- **EVERY leg whose assertion is negative** — a string, class, element, attribute or row is ABSENT —
+  **must be individually red-proofed by a break aimed at that leg alone.**
+- **A compound break that turns six legs red has proved nothing about any one of them.** Read WHICH
+  legs went red, name the ones that did not, and break again for each. (This is the per-leg rule from
+  CLAUDE.md, and L98 is the reason it applies hardest to negatives: a positive assertion usually
+  fails when you break its subject, while a negative one can be satisfied by the subject not
+  existing.)
+- **A leg written from a bug report gets its break FIRST, before the fix exists.** Reproduce the real
+  defect, watch the leg go red against it, and only then write the fix. Shown red against the real
+  condition, not against a simulation of it — which also settles Lesson 68 (*a fix proposed after
+  testing the bug and not the fix*) from the other end.
+- **Prefer a positive assertion whenever one exists.** "Website's own saved message is still in the
+  thread" cannot be vacuous: something has to be there for it to pass. That is what the leg was
+  re-anchored on, and it goes red on exactly the break that had left it green.

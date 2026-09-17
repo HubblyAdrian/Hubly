@@ -108,6 +108,9 @@ discount data to reuse.** Whatever the discount model is, it is new.
 
 633 document versions across 179 businesses: **403 `patch`**, 207 `ai`, 23 `system`.
 
+> **RE-DERIVED 2026-09-17, and the correction is not the one it looks like.** Counted live: **648 versions across 188 businesses — 403 `patch`, 222 `ai`, 23 `system`.** The `403` above was NEVER STALE; it is still exactly 403 today. **The total was.** Two definitions were in circulation under one phrase: `created_by='patch'` (403) and `version > 1` (460). Quoting either without its definition is what let a corrected figure be corrected wrongly — see docs/RANKED_EXAMPLES_20260917.md.
+
+
 **What a patch changes:** sampled `hearth-and-iron` v2 — the prices are byte-identical before and
 after (`$9 | $11 | $5.50 | $6 | $8.50 | $22`) while the document doubled in size. That patch is
 structural, not factual.

@@ -30,7 +30,7 @@ Cost: a day. Risk: low — measurement only until the list is read.
 
 ### A2. The 623 GENERATED PAGES — a corpus sweep, not a page check
 
-**623 stored documents across 174 businesses**, and every one is a different layout the model
+**623 stored documents across 174 businesses** *(as measured then; 648 across 188 on 2026-09-17 — the corpus grows, so any sweep quoting a total must re-derive it)*, and every one is a different layout the model
 wrote. There is no single page to check.
 
 **The machinery already exists and must be reused rather than rebuilt:**

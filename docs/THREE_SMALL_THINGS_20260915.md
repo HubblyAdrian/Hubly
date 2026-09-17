@@ -117,7 +117,10 @@ defect."* A rebuild to reconcile services is precisely that pass. **This is not 
 it is the answer to "what would a rebuild change": it changes a rule we already decided.**
 
 **2. A rebuild discards every patch, and patches are most of what exists.** Corpus-wide:
-**403 of 623 document versions were created by `patch`, 200 by `ai`.** For larkspur that is v2 and
+**403 of 623 document versions were created by `patch`, 200 by `ai`.**
+
+> **RE-DERIVED 2026-09-17, and the correction is not the one it looks like.** Counted live: **648 versions across 188 businesses — 403 `patch`, 222 `ai`, 23 `system`.** The `403` above was NEVER STALE; it is still exactly 403 today. **The total was.** Two definitions were in circulation under one phrase: `created_by='patch'` (403) and `version > 1` (460). Quoting either without its definition is what let a corrected figure be corrected wrongly — see docs/RANKED_EXAMPLES_20260917.md.
+ For larkspur that is v2 and
 v3 — a word change and a restyle, small; for a business like `crestview-window-cleaning`
 (9 versions in 1h44m) it is most of the page.
 
