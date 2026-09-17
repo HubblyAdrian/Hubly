@@ -176,6 +176,22 @@ const SVG_TAGS = new Set(["svg", "path", "circle", "rect", "line", "polyline", "
 /** Opaque to the AI — configured presentationally, implemented by Hubly. */
 export const HUBLY_RESERVED_TAGS = new Set([
   "HublyBooking", "HublyReviews", "HublyCustomerPortal", "HublyContactForm", "HublyMap",
+  // ══ THE THIRD OPTION THE CONTENT VALUE RULE NEVER HAD — ADRIAN'S RULING, 2026-09-17 ═══════
+  //
+  // The rule rejects a section that carries no concrete content and tells the model to "remove or
+  // fill" it. A model that WANTS the section and has no data has exactly two ways out of that
+  // error: delete it, or INVENT A NUMBER. Nothing in the rule asks whether the number is true, so
+  // the rule MANUFACTURES FABRICATION — proved by trying it: a page rejected for having no
+  // number was accepted the moment a made-up one was added.
+  //
+  // Adrian's ruling gives the honest third way: "a section the AI wants but cannot ground renders
+  // as an EMPTY SLOT the owner fills or deletes. AN EMPTY SECTION NEVER REACHES A CUSTOMER; IT
+  // ABSOLUTELY REACHES THE OWNER, AS AN OFFER."
+  //
+  // It rides the split that already exists rather than inventing one: the slot renders with
+  // data-hd-placeholder, which hcStripPlaceholders already removes on the public page and the
+  // builder preview already keeps (public/hubly.html, ?hcEdit=1).
+  "HublySlot",
   // Ported from the classic renderer on 2026-08-18. Real customers use the
   // classic ws-chat-widget today, and it had NO element in this schema at all —
   // so every site regenerated as a Document silently lost its chatbot. Backed by
@@ -674,6 +690,10 @@ function validateReservedAttrs(tag: string, attrs: Record<string, unknown>, path
     HublyCustomerPortal: ["variant", "class"],
     HublyContactForm: ["variant", "class"],
     HublyMap: ["variant", "class"],
+    // `for` is what the slot is FOR, in the owner's words — "photos of your work", "your prices".
+    // It is the one reserved prop that carries copy, because a slot with no subject is a grey box
+    // nobody knows what to do with. `kind` lets the client offer the right ways to fill it.
+    HublySlot: ["variant", "class", "for", "kind"],
   };
   const allowed = ALLOWED[tag] || [];
   const clean: Record<string, string> = {};
@@ -798,6 +818,13 @@ function sectionCarriesContent(node: HublyDocumentNode): boolean {
     if (HUBLY_RESERVED_TAGS.has(n.tag)) {
       // ...except HublyReviews, whose whole point when empty is to say nothing
       // is there. It cannot be the thing that justifies a section existing.
+      //
+      // A HublySlot DOES justify it, and that is the entire point of the ruling: the section is
+      // legitimate, it has nothing real in it yet, and the owner is the one who decides. It never
+      // reaches a customer — the public render drops the slot and then drops the section — so
+      // "this section carries nothing" stays true of the PUBLIC page, which is what the rule is
+      // for. What changes is that the model no longer has to invent a number to keep a section it
+      // has an honest reason to want.
       if (n.tag !== "HublyReviews") { found = true; return; }
     }
     if (n.tag === "img" || n.tag === "video") { found = true; return; }
@@ -864,7 +891,7 @@ export function validateHublyDocument(raw: unknown, meta: { businessId: string; 
       errors.push({
         path: "$",
         message:
-          `these sections carry no concrete content and must be removed or filled: ${hollow.join(", ")}. A section earns its place with something a visitor can use — a price, a number, a list of two or more items, a table, an expandable question, an image, or a Hubly element. Headings and paragraphs about the business are not enough. If a section has nothing real yet (no reviews, no photos, no prices on record), DELETE IT rather than writing copy explaining that it is empty.`,
+          `these sections carry no concrete content: ${hollow.join(", ")}. A section earns its place with something a visitor can use — a price, a number, a list of two or more items, a table, an expandable question, an image, or a Hubly element. Headings and paragraphs about the business are not enough. YOU HAVE THREE OPTIONS AND INVENTING A FIGURE IS NOT ONE OF THEM: fill it with something you were actually told; DELETE it; or, if this business genuinely needs the section and you have not been given the content, put a <HublySlot for="..." kind="..."/> in it — an empty space only the OWNER sees, which he fills or removes. A number you made up is worse than an empty section, because a section the owner has not filled never reaches a customer and a made-up number does.`,
       });
     }
   }
@@ -1001,6 +1028,24 @@ ${phone}
 <p class="hd-ph-title">Space for real customer reviews</p>
 <p class="hd-ph-sub">Once reviews come in through Hubly they appear here, in the customer's own words.</p>
 </div>`);
+    case "HublySlot": {
+      // AN OFFER TO THE OWNER, AND NOTHING AT ALL TO A CUSTOMER.
+      //
+      // data-hd-placeholder is the whole mechanism: hcStripPlaceholders removes it from the public
+      // page and then removes the section it leaves empty, while the builder preview keeps both.
+      // Nothing here invents content — it names what the slot is for and says who it is for.
+      //
+      // IT DOES NOT TYPE THE WAYS TO FILL IT. The ways an owner actually has are a client-side
+      // registry (HC_FILE_ROUTES / hcWaysClause in platform-home.html) and they change; a sentence
+      // baked in here would be a second, stale copy of that list. The client composes the offer
+      // against this element's `kind`, which is why `kind` is a prop.
+      const forWhat = escHtml(String(node.attrs["for"] || "").trim() || "something here");
+      const kind = escAttr(String(node.attrs.kind || "").trim());
+      return wrap(`<div class="hd-empty-island hd-slot" data-hd-empty="slot" data-hd-placeholder="1"${kind ? ` data-hd-slot-kind="${kind}"` : ""} data-hd-slot-for="${escAttr(forWhat)}">
+<p class="hd-ph-title">Space for ${forWhat}</p>
+<p class="hd-ph-sub">Only you can see this. Add it and it appears on your page; remove it and the space goes.</p>
+</div>`);
+    }
     case "HublyCustomerPortal":
       return wrap(`<div class="hd-empty-island" data-hd-empty="portal" data-hd-placeholder="1"><p>Existing customers will be able to sign in here.</p></div>`);
     case "HublyContactForm":
@@ -1520,6 +1565,7 @@ Never write your own <form> or interactive markup for these — place the reserv
 - HublyCustomerPortal — sign-in for existing customers. Only for businesses with ongoing client relationships.
 - HublyChat — a real assistant that answers visitor questions about THIS business, backed by the business's own services and details. Place it once, near the end of the page; it renders as a collapsed launcher, not a panel that covers the content. Almost every service business benefits from it: it answers the questions that would otherwise be a phone call the owner has to take.
 - HublyMap — a real embedded map of the service area. It renders an actual map when the business has a city or service-area on record, and an honest empty state when it does not. Place it in the service-area section.
+- HublySlot — AN EMPTY SPACE ONLY THE OWNER SEES. Use it when this business genuinely needs a section and you were not given the content for it: <HublySlot for="photos of your work" kind="photos"/>. The owner fills it or removes it; a customer never sees it, because the public page drops the slot and the section around it. THIS IS WHAT YOU USE INSTEAD OF INVENTING A FIGURE, a fake statistic, a made-up years-in-business, a sample review or a placeholder price to make a section survive validation. The "for" prop is what belongs there in the owner's own words. Do not fill a page with these — one or two, where a real business really does need the section.
 Booking and the contact form are not alternatives to each other and a page may carry both: booking for the customer who already knows what they want, the form for the one who has a question first. Choose on what this business's customers need — not on how much data happens to exist at this moment.
 
 STYLING — every value must be one of these exact tokens (space-separated in "class"), nothing invented:

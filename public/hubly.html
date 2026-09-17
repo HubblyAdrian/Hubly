@@ -17757,6 +17757,20 @@ function hcMountDocumentHtml(root,html){
       _toTop(w);
       requestAnimationFrame(function(){ try{ _toTop(w); }catch(e){} });
       setTimeout(function(){ try{ _toTop(w); }catch(e){} }, 120);
+      // ══ THE PUBLIC STRIP HAD NEVER REACHED 187 OF 188 PAGES ═════════════════════════════════
+      //
+      // hcStripPlaceholders is called with the MOUNT ROOT. For a full document that root holds
+      // ONE THING — this iframe — so `root.querySelectorAll('[data-hd-placeholder]')` matched
+      // nothing and the strip was a no-op. Measured 2026-09-17: 187 of the 188 stored pages are
+      // format='html', i.e. exactly this branch. The mechanism the placeholder ruling depends on
+      // ("an empty section never reaches a customer") existed and did not run where the pages are.
+      //
+      // The srcdoc is same-origin on purpose — the editing layer reads into it — so the strip can
+      // reach the document. It runs on load, for a public visitor only, exactly as it does for the
+      // AST branch.
+      if(typeof hcBuilderPreview === 'function' && !hcBuilderPreview()){
+        try{ var d = frame.contentDocument; if(d && d.body) hcStripPlaceholders(d.body); }catch(e){}
+      }
     }catch(e){}
   });
   return frame;
@@ -17769,7 +17783,17 @@ function hcStripPlaceholders(root){
   if(!root) return;
   var marked = root.querySelectorAll('[data-hd-placeholder], .is-placeholder');
   for(var i=0;i<marked.length;i++){ if(marked[i].parentNode) marked[i].parentNode.removeChild(marked[i]); }
-  var sections = root.querySelectorAll('.hd-doc-body > section, .hd-doc-body > article');
+  // ══ AND IT LOOKED FOR SECTIONS WHERE THERE ARE NONE ═════════════════════════════════════════
+  //
+  // This selected `.hd-doc-body > section`. NO MOUNTED PAGE HAS AN ELEMENT WITH THAT CLASS: the
+  // AST branch sets innerHTML to the fragment (whose own root div is the top element) and the
+  // full-document branch is an iframe. `hd-doc-body` appears exactly once in this entire file —
+  // in the selector below — so the second half of this function had never removed anything.
+  //
+  // It is a DESCENDANT search now, deepest-first so a nested empty section is removed before its
+  // parent is judged, and the emptiness test is unchanged: a section with an image, a link, a
+  // working element or any text beyond its own headings stays.
+  var sections = Array.prototype.slice.call(root.querySelectorAll('section, article')).reverse();
   for(var j=0;j<sections.length;j++){
     var sec = sections[j];
     // Keep anything that still has real content: text, an image, or a working
