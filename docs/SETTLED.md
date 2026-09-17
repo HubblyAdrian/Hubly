@@ -372,3 +372,20 @@ paths straight to filenames, so `/platform-home` — which `api/router.js` answe
 platform-home.html — returned *"not found"*, and the check then reported **"no seam on the page"**.
 That is a check failing to find a page and blaming the product. It now knows the router's
 extensionless routes (`/`, `/home`, `/platform`, `/platform-home`).
+
+**43. A NEW ROOT-LEVEL SCRIPT UNDER `public/` DID NOT SERVE — AND IT DID NOT 404.**
+`api/router.js` served root scripts from a **hand-written list of three**
+(`/website-ast.js`, `/landing-intent.js`, `/hubly-session.js`). `public/contact-pick.js` shipped, was
+not on the list, and the catch-all answered it with **hubly.html** — 3,064,347 bytes of HTML delivered
+where a script was expected.
+
+**The failure mode is the expensive one:** the browser loads a document as a script, the parse fails,
+and whatever the script defined is silently `undefined`. `HublyContactPick` was missing in **both**
+shells — including `hubly.html`'s own `pickContactInto`, which had just been changed to delegate to it.
+**A working feature broken by a file that deployed and did not serve.**
+
+Fixed by deriving: any root-level `.js` that exists under `public/` is served, with a resolved-path
+guard confirming it is inside `public/` (the prefixed branches above it never checked). `check:root-scripts`
+reads every root script off the DISK and asserts the router would serve each one — so adding a script
+makes it green by itself. And platform-home now **logs** when the module is missing, so "the module did
+not load" is distinguishable from "this device has no contacts picker".

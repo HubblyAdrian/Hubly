@@ -221,12 +221,31 @@ module.exports = async (req, res) => {
       urlPath.startsWith('/booking-wizard/') ||
       urlPath.startsWith('/smart-quote/') ||
       urlPath.startsWith('/journey-os/') ||
-      urlPath === '/website-ast.js' ||
-      urlPath === '/landing-intent.js' ||
-      urlPath === '/hubly-session.js'
+      // ══ ANY ROOT-LEVEL SCRIPT UNDER public/, DERIVED — NOT A LIST OF THREE. ══════════════════
+      //
+      // This was `urlPath === '/website-ast.js' || '/landing-intent.js' || '/hubly-session.js'`, and
+      // that is a hand-maintained set with a silent failure: a NEW root-level script is not served,
+      // the catch-all below answers with **hubly.html**, and the browser receives 3 MB of HTML with a
+      // `application/javascript` expectation. It does not 404 — it loads a document as a script, the
+      // parse fails, and whatever the script defined is simply undefined.
+      //
+      // FOUND THE HARD WAY, 2026-09-16: `/contact-pick.js` shipped, served hubly.html, and
+      // `HublyContactPick` was undefined in BOTH shells — including hubly.html's own
+      // `pickContactInto`, which had just been changed to delegate to it. A working feature broken by
+      // a file that deployed and did not serve.
+      //
+      // `fs.existsSync` + `isFile()` already decide whether a path is real, so the allowlist was
+      // adding nothing but the chance to forget. Scoped to ROOT-LEVEL .js only (no slash after the
+      // first), so this does not become a general file server for public/.
+      /^\/[A-Za-z0-9._-]+\.js$/.test(urlPath)
     ) {
-      const filePath = path.join(__dirname, '../public', urlPath);
-      if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      const publicRoot = path.resolve(__dirname, '../public');
+      const filePath = path.resolve(publicRoot, '.' + urlPath);
+      // AND THE PATH IS VERIFIED TO BE INSIDE public/. The prefixed branches above never checked, so
+      // `/themes/../../something` was resolved and read. The pattern above already forbids a slash,
+      // but the guard covers every branch in this condition rather than trusting one regex.
+      if (filePath.startsWith(publicRoot + path.sep) &&
+          fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
         const ext = path.extname(filePath).toLowerCase();
         res.setHeader('Content-Type', MIME[ext] || 'application/octet-stream');
         // Blueprint/theme/layout JS+JSON change often; avoid sticky CDN caches breaking Runtime helpers.

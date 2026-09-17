@@ -8037,6 +8037,13 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     var row = mk('div', 'hc-jf-row');
     row.appendChild(field('Name', name));
     try{
+      // AND IF THE SHARED MODULE DID NOT LOAD, THAT IS OUR FAILURE AND IT IS LOGGED. It shipped once
+      // and served hubly.html instead of itself (api/router.js had a hand-written allowlist of three
+      // root scripts), so `HublyContactPick` was undefined and the button was simply absent — which
+      // looks exactly like a device that does not support contacts. The two must be distinguishable.
+      if(typeof HublyContactPick === 'undefined'){
+        try{ console.warn('[a2] /contact-pick.js did not load — the "From my phone" button is absent for that reason, not because the device lacks contacts'); }catch(e2){}
+      }
       if(typeof HublyContactPick !== 'undefined' && HublyContactPick.available()){
         var pick = mk('button', 'hc-jf-pick', { type:'button' });
         pick.textContent = 'From my phone';
