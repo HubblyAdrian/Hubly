@@ -1,5 +1,51 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## A CORRECTED RECORD DOES NOT CORRECT THE PAGE — and nothing notices (2026-09-17)
+
+This is what the cross-business leak turned out to be, traced through the rows rather than guessed.
+
+**The timeline, from `business_documents` and `businesses`:**
+
+| when | what |
+| --- | --- |
+| 2026-08-20 19:12 | `saltmarsh-bindery` v1 — a freeform page, `created_by='ai'`, **no phone at all** |
+| 19:14:56 | **v2, `created_by='patch'`, same byte length** — a FACT WRITE put `data-hc="contact.phone"` **801-555-9001** into the existing contact row |
+| 19:16 | v3, a fresh AST generation, carries the same number in its chrome |
+| **2026-09-09 20:56:19** | **`businesses.phone` updated for saltmarsh AND copperwick in the same second** — a bulk write. Saltmarsh's row has said **801-555-2277** ever since |
+| 2026-09-13 01:06 | v4, `created_by='patch'` — and it still carries 9001 |
+
+**Two independent paths emitted the same wrong number four minutes apart** — a fact writer and a
+full generation, both of which read `businesses.phone`. The simplest explanation the rows support is
+that **the record itself held copperwick's number in August**, and it was corrected by the
+2026-09-09 bulk write. **WHO wrote it there is not recoverable**: there is no audit of
+`businesses` column writes from that date (`record_claim_audit_events` was created 2026-09-16), and
+a plausible mechanism written down as the cause is how a story becomes folklore with a citation.
+
+### The finding that is bigger than the leak
+
+**The record was corrected on 2026-09-09. The page was never corrected, and nothing anywhere
+noticed.** `saltmarsh-bindery` has published a number belonging to a different business for four
+weeks with a correct record sitting behind it.
+
+**The repair path EXISTS and has one door.** `rebuildDocumentFromRecord` → `syncFreeformFacts` does
+exactly this — a targeted value-swap, never a regeneration. Its only caller is
+`hubly-conversation/index.ts:2939`, **inside a conversation turn**, when the model records a change.
+A record corrected any other way — a bulk update, an admin fix, a migration, a support action —
+never reaches the page.
+
+So: **any fact fixed on a record stays wrong on the published page indefinitely.** That is not
+specific to a phone number and not specific to this business.
+
+**What stands between us and it:** `scripts/check-page-facts-are-this-business.mjs`, which re-reads
+every stored page against the record and fails when a page publishes a number belonging to a
+different business. It is RED right now, for saltmarsh, correctly. It is the only thing that looks
+again.
+
+**Not fixed here, and the reason is stated:** repairing the page means invoking the owner path for
+that business, which this environment has no session for — and a page rebuild is forbidden. The
+value-swap is the sanctioned operation and it needs a turn.
+
+
 ## 2026-09-17 — I RAISED AN ALARM ABOUT A REAL CUSTOMER. THERE WAS NO CUSTOMER. THE CORRECTION GOES FIRST.
 
 **What I reported yesterday, and what Adrian acted on:** *"A REAL MARKET BOOKING HAS BEEN SITTING

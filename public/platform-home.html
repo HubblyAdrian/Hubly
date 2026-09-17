@@ -611,6 +611,15 @@ body.hc-active .footer,body.hc-active .hero{display:none}
   .hc-app.hc-claimed{flex-direction:row}
   .hc-app.hc-claimed .hc-rail{display:none}
 }
+/* The overflow list. It sits above the bar it came from, is one screen's width at most, and is
+   dismissed by pressing More again, choosing a place, or tapping anywhere else. */
+.hc-more-sheet{position:fixed;left:8px;right:8px;bottom:calc(58px + env(safe-area-inset-bottom,0px));z-index:60;
+  background:var(--panel,#fff);border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 44px -12px rgba(0,0,0,.35);
+  padding:6px;display:flex;flex-direction:column;gap:2px}
+.hc-more-item{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;padding:0 12px;border:0;border-radius:10px;
+  background:transparent;font:inherit;font-size:15px;font-weight:650;color:var(--ink);cursor:pointer;text-align:left}
+.hc-more-item:hover{background:rgba(0,0,0,.05)}
+.hc-more-item svg{width:20px;height:20px;flex-shrink:0;color:var(--ink-3,#8a909c)}
 .hc-bottom{display:none}
 @media (max-width:900px){
   .hc-app.hc-claimed .hc-bottom{display:flex;position:absolute;left:0;right:0;bottom:0;z-index:5;
@@ -6294,6 +6303,7 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     planner: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4M8 14h3M8 17.5h6"/></svg>',
     customers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c1.3-3.2 3.8-4.8 6.5-4.8s5.2 1.6 6.5 4.8"/><path d="M16.5 5.4a2.9 2.9 0 0 1 0 5.2M18 20c-.3-1.7-1-3.1-2-4.2"/></svg>',
     home:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
+    more:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>',
     website: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><circle cx="6" cy="6.5" r=".6" fill="currentColor"/><circle cx="8" cy="6.5" r=".6" fill="currentColor"/></svg>',
     // Store and Jobs had no icon, so both fell back to the website one and a new
     // tab arrived wearing the wrong picture — undercutting the exact moment the
@@ -6633,20 +6643,71 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   // is the cap, which is a mobile-only rule (prohibition 5) and not a different opinion
   // about the places. Positions are the list's positions — never reordered here.
   var HC_MOBILE_PLACE_CAP = 4;
+  /** ══ THE FIFTH PLACE HAD NO DOOR AT ALL ═════════════════════════════════════════════════════
+   *
+   *  Measured at 390px, 2026-09-17: an owner with five earned places could reach THREE. The bar
+   *  holds four (prohibition 5, and the cap is right — a phone bar with seven icons is a bar
+   *  nobody reads), the rail is not rendered below 900px, and nothing anywhere said the other
+   *  places existed. Earned, invisible, and unmentioned.
+   *
+   *  THE SMALLEST HONEST FIX, and the two alternatives are named in docs/PHONE_NAVIGATION.md:
+   *  the last slot becomes **More** when there are more places than fit, and it opens the rest.
+   *  The cap stays four. NOTHING REORDERS — the first three keep their positions forever and the
+   *  overflow keeps its own order — so prohibition 5 holds in both halves. (Reordering by
+   *  frequency is the option that is FORBIDDEN, and it is named as forbidden rather than left
+   *  looking available.) */
   function hcRenderBottomBar(dests){
     var bar = document.getElementById('hcBottom'); if(!bar) return;
     if(!hc.draftClaimed || !dests || !dests.length){ bar.hidden = true; bar.innerHTML = ''; return; }
     bar.hidden = false;
-    bar.innerHTML = dests.slice(0, HC_MOBILE_PLACE_CAP).map(function(t){
+    var overflow = dests.length > HC_MOBILE_PLACE_CAP ? dests.slice(HC_MOBILE_PLACE_CAP - 1) : [];
+    var shown = overflow.length ? dests.slice(0, HC_MOBILE_PLACE_CAP - 1) : dests.slice(0, HC_MOBILE_PLACE_CAP);
+    var btn = function(t){
       var on = (t.id === hc.mode);
       return '<button type="button" class="hc-btab' + (on ? ' is-on' : '') + '" data-tab="' + t.id + '"'
         + ' aria-current="' + (on ? 'page' : 'false') + '"' + hcUnseenLabel(t.id, t.label) + '>'
         + t.icon + '<span class="hc-rail-lbl">' + t.label + '</span>'
         + hcUnseenBadge(t.id) + '</button>';
-    }).join('');
+    };
+    var html = shown.map(btn).join('');
+    if(overflow.length){
+      // The count is in the label, so "More" is never a mystery: he can see how many are behind it.
+      var onMore = overflow.some(function(t){ return t.id === hc.mode; });
+      html += '<button type="button" class="hc-btab hc-btab-more' + (onMore ? ' is-on' : '') + '" data-hc-more="1"'
+        + ' aria-haspopup="true" aria-label="' + overflow.length + ' more places">'
+        + HC_RAIL_ICONS.more + '<span class="hc-rail-lbl">More</span></button>';
+    }
+    bar.innerHTML = html;
     Array.prototype.forEach.call(bar.querySelectorAll('.hc-btab'), function(b){
+      if(b.getAttribute('data-hc-more')){
+        b.addEventListener('click', function(){ hcOpenMorePlaces(overflow, b); });
+        return;
+      }
       b.addEventListener('click', function(){ hcOpenWorkspace(b.getAttribute('data-tab')); });
     });
+  }
+  /** The overflow, as a real list of real destinations. One at a time on screen — pressing More
+   *  again closes it, and choosing a place closes it and goes there. */
+  function hcOpenMorePlaces(places, anchor){
+    var existing = document.getElementById('hcMoreSheet');
+    if(existing){ existing.remove(); return; }
+    var sheet = document.createElement('div');
+    sheet.id = 'hcMoreSheet'; sheet.className = 'hc-more-sheet';
+    sheet.setAttribute('role', 'menu');
+    places.forEach(function(t){
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'hc-more-item'; b.setAttribute('data-tab', t.id);
+      b.setAttribute('role', 'menuitem');
+      b.innerHTML = t.icon + '<span class="hc-rail-lbl">' + hcEsc(t.label) + '</span>';
+      b.addEventListener('click', function(){ sheet.remove(); hcOpenWorkspace(t.id); });
+      sheet.appendChild(b);
+    });
+    document.body.appendChild(sheet);
+    setTimeout(function(){
+      document.addEventListener('click', function onDoc(e){
+        if(!sheet.contains(e.target) && e.target !== anchor){ try{ sheet.remove(); }catch(_){} document.removeEventListener('click', onDoc); }
+      });
+    }, 0);
   }
   // THE MODE SWITCH — generic. Every workspace is entered the same way; a new one is a
   // new case here, nothing else. `filter` is carried so a chat action can open a

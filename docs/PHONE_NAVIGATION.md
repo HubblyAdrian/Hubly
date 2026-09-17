@@ -81,7 +81,35 @@ the most work: it changes what a room IS on a phone rather than where it sits.
 closes the stranding immediately. C is the right long-term answer and is a design change, not a
 patch.
 
-## 5. The fifth place — three options, none chosen
+## 5. The fifth place — BUILT, 2026-09-17 (option 1)
+
+**Adrian: "bring me the smallest honest fix."** The last slot becomes **More** when there are more
+places than fit, and it opens the rest by name. Measured at 390px: the bar reads
+`Home · Website · My Day · More`, and More opens `Jobs, Customers, Quotes`.
+
+- **The cap stays four.** Prohibition 5 is untouched.
+- **NOTHING REORDERS.** The first three keep their positions forever; the overflow keeps its own
+  order. Both halves of the prohibition hold.
+- **It says how many are behind it** — `aria-label="3 more places"` — so the dots are not a mystery
+  to someone who cannot see them.
+- **It does not appear when it would save nothing.** Four destinations fit, so at four there is no
+  More: it costs a slot and only earns one when it saves two. (Red-proofing found the first version
+  could not tell — with three destinations both behaviours look identical. Leg 8 tests the boundary.)
+
+Held by `scripts/check-every-earned-place-has-a-door-on-a-phone.mjs`, 8 legs, every control pressed
+at a real 390px viewport. **NOT VERIFIED ON A HANDSET** — the standing rule.
+
+### The options that were not taken, and why
+
+1. **taken** — More in the fourth slot.
+2. **the bar shows the four he uses most.** *Forbidden.* Prohibition 5: positions are stable and
+   navigation never reorders by frequency or recency. Named as forbidden so it does not look
+   available.
+3. **the rest are reached by ASKING.** Defensible — every place is reachable in the conversation —
+   but only honest if Hubly SAYS so when a place is earned on a phone and cannot be shown. That is
+   a sentence nobody has written, so it is not the smallest fix; it is a second one.
+
+## 5b. The original three options, kept as the record
 
 1. **A "More" item in the fourth slot** opening a list of the rest. Keeps the cap honest, gives
    every earned place a door, costs one tap for places 4+.
