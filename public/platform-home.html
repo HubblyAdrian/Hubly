@@ -4576,7 +4576,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // ADRIAN'S SECOND LINE, verbatim in shape: "Perfect, thank you for that ______."
           // Said only on a write that actually took — the name is read straight back so a
           // wrong one is correctable in one sentence instead of invisible forever.
-          if(v === 1){ hcAppendMessage('hubly', 'Perfect \u2014 thank you for that, ' + _nm.split(/\s+/)[0] + '.'); try{ hcRenderRail(); }catch(e){} }
+          // CAPITALISED HERE, NOT IN THE WRITE ABOVE. hcSaveOwnerName stored exactly what he typed;
+          // this is the display, and the display is where a name is made to look like a name.
+          if(v === 1){ hcAppendMessage('hubly', 'Perfect \u2014 thank you for that, ' + hcNameForDisplay(_nm.split(/\s+/)[0]) + '.'); try{ hcRenderRail(); }catch(e){} }
           // 0 = a higher-trust name is already stored; -1 = the write failed. Neither may
           // pass in silence (prohibition 6), and neither may claim it was saved.
           else if(v === 0) hcAppendMessage('hubly', "I already had a name for you, so I've kept that one.");
@@ -7867,7 +7869,8 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     });
     return box;
   }
-  try{ window.hublyTaskUI = { panel: hcTaskPanel, tick: hcTaskCheckbox, set: hcSetTaskDone, line: hcTaskTickLine }; }catch(e){}
+  try{ window.hublyTaskUI = { panel: hcTaskPanel, tick: hcTaskCheckbox, set: hcSetTaskDone, line: hcTaskTickLine,
+                             roll: function(t){ return hcRollTask(t); }, rollLine: hcRollTaskLine }; }catch(e){}
 
   /** The add row: a time, a thing, and where it is. Always present, in every state. */
   function hcDayAddRow(room, biz){
@@ -8318,7 +8321,63 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         line.appendChild(k); line.appendChild(v); dl.appendChild(line);
       });
       body.appendChild(dl);
+      // ══ THE DOOR TO roll_task. ═══════════════════════════════════════════════════════════════
+      //
+      // `roll_task` has existed since 20260909160000 and had NO CALLER. Its own comment says why it
+      // exists: "NEVER A GROWING PILE OF RED. An undone task is ROLLED, not accumulated as overdue
+      // shame" — and without a door, that is exactly what it becomes, because the only thing an owner
+      // can do with a task he did not get to is tick it or leave it red.
+      //
+      // TOMORROW IS THE ONLY OFFER HERE, on purpose. A date picker is a bigger control than the
+      // decision deserves at this size, and "move it to tomorrow" is what he actually does. It says
+      // what it did, and it says when the same task has moved before — which is the sentence the roll
+      // count was recorded for.
+      var acts = document.createElement('div'); acts.className = 'hc-event-acts';
+      var roll = document.createElement('button'); roll.type = 'button'; roll.className = 'hc-arrival-act';
+      roll.setAttribute('data-hc-task', 'roll');
+      roll.textContent = 'Move to tomorrow';
+      var note = document.createElement('div'); note.className = 'hc-event-sub';
+      roll.addEventListener('click', async function(){
+        roll.disabled = true;
+        var res = await hcRollTask(t);
+        note.textContent = hcRollTaskLine(res, t);
+        roll.disabled = false;
+        if(res && res.ok){ try{ await hcRepaintDay(); }catch(e){} }
+      });
+      acts.appendChild(roll);
+      body.appendChild(acts); body.appendChild(note);
     });
+  }
+  /** MOVE A TASK TO TOMORROW. Tomorrow is computed from HIS clock, by parts — never `new Date(iso)`,
+   *  which reads a bare date as UTC midnight and can land on the wrong day. */
+  async function hcRollTask(t){
+    if(!t || !t.id) return { ok:false, error:'no_task' };
+    var d = new Date(Date.now() + 864e5);
+    var pad = function(n){ return String(n).padStart(2, '0'); };
+    var to = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    try{
+      var uid = await hcOwnerUid();
+      if(!uid) return { ok:false, error:'not_signed_in' };
+      var c = await authGetClient();
+      var r = await c.rpc('roll_task', { p_task_id: t.id, p_owner_id: uid, p_to: to });
+      if(r && r.error) return { ok:false, error:String(r.error.message || 'write_failed') };
+      var row = r && r.data;
+      if(!row || row.ok !== true) return { ok:false, error:String((row && row.error) || 'refused') };
+      return { ok:true, to: row.due_date || to, rolls: Number(row.roll_count) || 0 };
+    }catch(e){ return { ok:false, error:String((e && e.message) || e).slice(0, 100) }; }
+  }
+  /** THE SENTENCE. Pure, so a check runs it — and the third roll is the one that says something more
+   *  than "moved", because a task that has moved three times is a decision he has not made yet. */
+  function hcRollTaskLine(res, t){
+    if(!res) return 'I couldn\u2019t move that just now.';
+    if(!res.ok){
+      if(res.error === 'not_signed_in') return 'You\u2019re signed out, so I couldn\u2019t move that.';
+      if(res.error === 'no_task') return 'I don\u2019t have that task to move.';
+      return 'I couldn\u2019t move that just now \u2014 nothing changed.';
+    }
+    var base = 'Moved to ' + (hcDayLabel(res.to) || res.to) + '.';
+    if(res.rolls >= 3) return base + ' That\u2019s ' + res.rolls + ' times now \u2014 want to do it today, or drop it?';
+    return base;
   }
 
   // ── JOBS: everything, recent first. ─────────────────────────────────────────
@@ -9074,6 +9133,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     window.hublyDayUI = Object.assign(window.hublyDayUI || {}, {
       render: hcRenderMyDay, hours: hcDayHourRange, label: hcHourLabel,
       repaint: hcRepaintDay, repaints: function(){ return hcRepaintDayCount; },
+      nameForDisplay: hcNameForDisplay,
       addLine: HC_DAY_ADD_LINE, band: hcItemBand,
       // THE RULE ITSELF, not just its answer — a check has to be able to ask WHY a thing is a B.
       deriveBand: hcDeriveBand, bandRule: HC_BAND_RULE
@@ -11733,9 +11793,29 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // business record carries; then the auth provider's metadata, which is a guess we did not
   // make; and the email LAST and only when there is genuinely nothing else. Signing in with an
   // email does not make the email your name.
+  /** ══ CAPITALISED AT DISPLAY, NEVER AT STORAGE. ════════════════════════════════════════════════
+   *
+   *  ADRIAN, 2026-09-16: "name capitalised at display." The two halves of that are the whole rule:
+   *
+   *    · WHAT HE TYPED IS WHAT IS STORED. "austin" is saved as "austin", because rewriting a person's
+   *      own name on the way into the record is the same act as correcting his phone number — a value
+   *      nobody gave us. And if his name genuinely is "k.d. lang" we would have destroyed it.
+   *    · WHAT IS SHOWN IS CAPITALISED. "Nice to meet you, austin." reads like we were not paying
+   *      attention, and the greeting is the first sentence he ever gets.
+   *
+   *  IT ONLY EVER RAISES THE FIRST LETTER OF A WORD. It does NOT lowercase the rest, so "McDonald",
+   *  "O'Brien", "van der Berg" and "JT" survive — a title-caser that forced the tail to lowercase
+   *  would turn "JT" into "Jt", which is worse than the problem it fixes. An already-capitalised name
+   *  passes through untouched, and a name we cannot parse is returned exactly as given. */
+  function hcNameForDisplay(name){
+    var n = String(name == null ? '' : name).trim();
+    if(!n) return '';
+    if(n.indexOf('@') >= 0) return n;            // an email is not a name and is never title-cased
+    return n.replace(/(^|[\s'\u2019-])([a-z])/g, function(_, pre, ch){ return pre + ch.toUpperCase(); });
+  }
   function hcOwnerLabel(){
     var n = (hcOwner && hcOwner.name) || hcIdentity.owner || hcIdentity.authName || '';
-    n = String(n).trim();
+    n = hcNameForDisplay(n);
     if(n) return n;
     var em = String(hcIdentity.email || '').trim();
     return em || '';                     // '' means we genuinely do not know — never a guess

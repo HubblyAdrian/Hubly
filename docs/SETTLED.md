@@ -343,3 +343,32 @@ this round.**
 **38. `hubly_brain_builder_expert.ts` FAILS `deno check` ON MAIN** — 15 errors, starting with
 `Cannot find name 'BuilderConfidenceExplanation'`. Confirmed pre-existing by stashing this round's
 change and re-running. Recorded so it is not rediscovered as new.
+
+**39. "September 17 at 3:00" WAS NOT A PROMPT PROBLEM.** Adrian's walk, seq 37: *"Driveway is now set
+for September 17 at 3:00 — 14 Maple St, $180."* No AM/PM. The model did nothing wrong — it was handed
+`2026-09-17 15:00` by `when()` in `hubly_operational_state.ts`, turned the date into prose, and
+repeated the time as it found it. **The fix is the single path, not a prompt line:** the model is now
+handed `September 17, 2026 at 3:00 PM` and has no 24-hour clock to echo. Same class as
+*"on 2026-09-13"*. And the date is parsed BY PARTS — `new Date("2026-09-17")` is UTC midnight and
+prints **the day before** in any negative-offset timezone, which would turn a Thursday job into
+Wednesday from a change made purely for formatting. `check:human-time` runs under `TZ=America/Denver`
+so that trap cannot hide.
+
+**40. A NAME IS CAPITALISED AT DISPLAY, NEVER AT STORAGE.** *"Nice to meet you, austin."* is the first
+sentence he ever gets. But rewriting a person's name on the way INTO the record is the same act as
+correcting his phone number, and it would destroy "k.d. lang". So the record keeps exactly what he
+typed and `hcNameForDisplay` raises first letters only — a title-caser that lowercases the tail turns
+**"JT" into "Jt"**, which is worse than the problem it fixes.
+
+**41. `roll_task` HAD NO CALLER.** Written 20260909160000, door opened 2026-09-16. Its own comment
+says why it exists — *"NEVER A GROWING PILE OF RED. An undone task is ROLLED, not accumulated as
+overdue shame"* — and without a door that is precisely what it became: the only thing an owner could
+do with a task he did not get to was tick it or leave it red. **The third roll gets a different
+sentence**, because a task that has moved three times is a decision he has not made yet, which is what
+the roll count was recorded for.
+
+**42. A HARNESS BUG WORTH KNOWING: `servePublic` served 404 BODIES FOR REAL ROUTES.** It mapped URL
+paths straight to filenames, so `/platform-home` — which `api/router.js` answers with
+platform-home.html — returned *"not found"*, and the check then reported **"no seam on the page"**.
+That is a check failing to find a page and blaming the product. It now knows the router's
+extensionless routes (`/`, `/home`, `/platform`, `/platform-home`).

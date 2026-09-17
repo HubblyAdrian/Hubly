@@ -161,11 +161,54 @@ const money = (cents: unknown): string | null => {
   return Number.isFinite(n) && n > 0 ? `$${(n / 100).toFixed(2).replace(/\.00$/, "")}` : null;
 };
 
+/** ══ THE MODEL NEVER SEES A 24-HOUR CLOCK OR AN ISO DATE. ══════════════════════════════════════
+ *
+ *  THE DEFECT, VERBATIM, FROM ADRIAN'S OWN WALK (2026-09-15 20:28, seq 37):
+ *
+ *      "Driveway is now set for September 17 at 3:00 — 14 Maple St, $180."
+ *
+ *  No AM/PM. The model did nothing wrong: it was handed `2026-09-17 15:00`, turned the date into
+ *  prose, and repeated the time as it found it — a 24-hour string with nothing to say whether 3:00 is
+ *  morning or afternoon. A detailer reading that to a customer has to guess.
+ *
+ *  THIS IS THE SAME CLASS AS "on 2026-09-13" and the fix is the same one: **the single path, not the
+ *  careful edit.** A prompt line telling the model to add AM/PM is an instruction it will follow most
+ *  of the time; a record block that contains no 24-hour clock is a defect it cannot make. So the
+ *  formatting happens HERE, once, before the model ever reads it.
+ *
+ *  THE DATE IS PARSED BY PARTS, NEVER BY `new Date("2026-09-17")`. That constructor reads a bare date
+ *  as UTC midnight, so in any negative-offset timezone it prints the DAY BEFORE — a job on Thursday
+ *  described as Wednesday, from a "formatting" change. The time needs no timezone at all: it is a
+ *  local wall-clock string and turning "15:00" into "3:00 PM" is pure string work. */
+const MONTHS = ["January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"];
+export const humanDate = (d: unknown): string | null => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d ?? "").trim());
+  if (!m) return null;
+  const mi = Number(m[2]) - 1;
+  if (mi < 0 || mi > 11) return null;
+  return `${MONTHS[mi]} ${Number(m[3])}, ${m[1]}`;
+};
+export const humanTime = (t: unknown): string | null => {
+  const m = /^(\d{1,2}):(\d{2})/.exec(String(t ?? "").trim());
+  if (!m) return null;
+  let h = Number(m[1]);
+  const min = Number(m[2]);
+  if (!Number.isFinite(h) || h < 0 || h > 23 || !Number.isFinite(min) || min < 0 || min > 59) return null;
+  const ap = h < 12 ? "AM" : "PM";
+  h = h % 12; if (h === 0) h = 12;
+  return `${h}:${String(min).padStart(2, "0")} ${ap}`;
+};
 const when = (d: unknown, t: unknown): string => {
-  const date = String(d ?? "").trim();
-  const time = String(t ?? "").trim();
-  if (!date) return "no date on record";
-  return time ? `${date} ${time}` : date;
+  const rawDate = String(d ?? "").trim();
+  const rawTime = String(t ?? "").trim();
+  if (!rawDate) return "no date on record";
+  // A VALUE WE CANNOT PARSE IS PASSED THROUGH, NOT DROPPED. An unreadable date is still the only date
+  // we have, and hiding it would be reporting our formatting failure as his missing data.
+  const date = humanDate(rawDate) ?? rawDate;
+  if (!rawTime) return date;
+  const time = humanTime(rawTime) ?? rawTime;
+  return `${date} at ${time}`;
 };
 
 const contact = (r: OperationalRow): string => {
