@@ -42903,13 +42903,36 @@ async function bkNext(step){
     goToStep(3,4);
   }
 }
+/** ══ THE TWO LEGAL LINKS UNDER THE SMS BOX. ══════════════════════════════════════════════════
+ *
+ *  BOTH OF THESE WERE CLAIMS WE CANNOT KEEP, and they sit under a consent checkbox, which is the
+ *  worst place in the product for a sentence that is not true.
+ *
+ *    privacy -> "privacy details are on the website footer"
+ *               Hubly pointing at a control it cannot see, at a footer it has not read, on a page it
+ *               did not check. There is no published privacy notice — the draft is in
+ *               docs/legal/PRIVACY_DRAFT.md and is explicitly not published.
+ *    terms   -> "you can reschedule or cancel before your appointment"
+ *               A promise about the BUSINESS'S policy that the business never made. Hubly does not
+ *               know his cancellation terms and has never asked him for them.
+ *
+ *  Both also fell back to "this business" when the name had not loaded — the slot-filled placeholder
+ *  in the one place it is least acceptable.
+ *
+ *  SO EACH ONE NOW SAYS WHAT IS ACTUALLY TRUE AND CHECKABLE, and nothing else. What the consent
+ *  covers is true because we store the exact sentence and the timestamp; STOP is true because it is
+ *  a carrier-level keyword; and the rest is referred to the business, which is who actually decides
+ *  it. When a reviewed notice exists, THIS is the function that links to it — one place. */
 function openBookingLegal(kind){
-  const biz=S.biz||'this business';
+  const biz=String((typeof currentBusiness!=='undefined'&&currentBusiness&&currentBusiness.name)||S.biz||'').trim();
+  const who=biz||null;
   if(kind==='privacy'){
-    toast(`${biz}: privacy details are on the website footer — or text STOP anytime to opt out`);
+    // ONLY WHAT WE DO AND CAN SHOW. No claim about a footer, no claim about a page we have not read.
+    toast((who?who+' keeps':'They keep')+' what you type here to contact you about this booking. Texts only if you tick the box — reply STOP any time to stop them.');
     return;
   }
-  toast(`${biz}: booking terms — you can reschedule or cancel before your appointment`);
+  // NO INVENTED CANCELLATION POLICY. We do not know it, so we say who does.
+  toast('Booking terms are '+(who?who+'\u2019s':'the business\u2019s')+' \u2014 ask them about changes or cancellations. Ticking the box only covers texts about this booking.');
 }
 function phoneDigits(p){
   return String(p||'').replace(/\D/g,'').slice(-10);

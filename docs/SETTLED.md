@@ -303,3 +303,25 @@ Three other markers said absent, so it failed loudly — four bare names would h
 refusal is now **symmetric**: a marker names a code construct in both directions. Routes:
 platform-home.html is served at `/`, `/home`, `/platform`, `/platform-home` — **not**
 `/platform-home.html`.
+
+**36. THE BOOKING FORM'S TWO LEGAL LINKS WERE BOTH CLAIMS WE CANNOT KEEP** — under a consent
+checkbox, which is the worst place in the product for a sentence that is not true.
+
+- *privacy* → *"privacy details are on the website footer"*: Hubly pointing at a control it cannot
+  see, at a footer it has not read. **There is no published privacy notice** — the draft is
+  `docs/legal/PRIVACY_DRAFT.md` and is explicitly not published.
+- *terms* → *"you can reschedule or cancel before your appointment"*: a promise about the
+  **business's** policy that the business never made. We have never asked him for it.
+
+Both also fell back to `'this business'`. Each now says only what is true and checkable, and refers
+the rest to the business, which is who actually decides it.
+
+**37. `draft_creation_events` KEEPS EVERY IP FOREVER FOR A ONE-HOUR PURPOSE.** The rate limit looks
+at the last hour; **no row is ever deleted. 315 rows back to 2026-08-21.** Every row older than an
+hour serves no purpose and is still held — and a privacy notice cannot honestly promise a retention
+the code does not implement. Fix is small: delete rows older than 24 hours on a schedule. **Not built
+this round.**
+
+**38. `hubly_brain_builder_expert.ts` FAILS `deno check` ON MAIN** — 15 errors, starting with
+`Cannot find name 'BuilderConfidenceExplanation'`. Confirmed pre-existing by stashing this round's
+change and re-running. Recorded so it is not rediscovered as new.
