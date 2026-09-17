@@ -10243,10 +10243,22 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
    *  changing shape without saying so (prohibition 4). */
   async function hcLoadPlaceConversation(place){
     var thread = hcThreadBody(); if(!thread) return false;
-    if(hcPlaceChat.loading) return false;
+    // ══ THE OTHER HALF OF THE SAME CLASS ═══════════════════════════════════════════════════════
+    //
+    // `if(hcPlaceChat.loading) return false;` stood here, and it is the silently-discarded-owner-
+    // action shape we have already paid for twice (the style queue, the second tap): tap Website
+    // then Jobs quickly and the Jobs load was DROPPED, leaving Jobs showing Website's thread with
+    // no error and nothing to retry. And symmetrically, a slow first load could land its paint
+    // after the owner had already moved to a third tab.
+    //
+    // So the guard is not "one at a time" — it is "paint only if this is still the open tab",
+    // re-asked after EVERY await, because every await is a place the owner can move.
+    var mine = function(){ return hc.mode === place; };
+    if(!mine()) return false;
     hcPlaceChat.loading = true;
     try{
       var id = await hcConversationFor(place);
+      if(!mine()) return false;                       // he left while we were asking
       hcPlaceChat.place = place; hcPlaceChat.id = id;
       if(!id){
         // NOT "there are no messages" — we could not establish a conversation at all. The
@@ -10259,6 +10271,7 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
       var res = await c.from('ask_hubly_messages')
         .select('role,content,created_at').eq('conversation_id', id)
         .order('created_at', { ascending: true }).limit(200);
+      if(!mine()) return false;                       // …or while we were reading the messages
       var rows = (res && !res.error && Array.isArray(res.data)) ? res.data : [];
       thread.innerHTML = '';
       var label = (HC_PLACE_SURFACES[place] && HC_PLACE_SURFACES[place].label) || place;
@@ -11542,6 +11555,27 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
 
   async function hcRenderHome(){
     var thread = hcThreadBody(); if(!thread) return;
+    // ══ HOME'S RENDERER DOES NOT PAINT INTO ANOTHER TAB ════════════════════════════════════════
+    //
+    // ADRIAN, 2026-09-17: "Home's conversation is going into the Website tab."
+    //
+    // HIS HYPOTHESIS WAS THAT WEBSITE WAS NEVER WIRED TO ITS OWN CONVERSATION. It is wired —
+    // hcOpenWorkspace calls hcLoadPlaceConversation for every key in HC_PLACE_SURFACES, website
+    // included, and the read is correct. The defect is on the other side: this function is Home's
+    // renderer, it WIPES the thread, and it was reachable while another tab was open.
+    //
+    // THE ORDERING, measured in hcOpenOwnedBusiness: `hc.mode='home'` ->
+    // `hcOpenWorkspace(hcModeFromUrl())`, which for a reload carrying '#website' sets mode='website'
+    // and starts that room's conversation load -> and THEN, on a promise that resolves later,
+    // `hcLoadConversation(true).then(hcMaybeShowArrival)`, whose last line is an unconditional
+    // `hcRenderHome()`. Website's thread loaded correctly and was overwritten by Home's a moment
+    // afterwards. Nobody saw it because the two conversations used to be the same conversation.
+    //
+    // THE CLASS IS "A THREAD PAINT THAT LANDS AFTER THE TAB HAS MOVED ON", and it has two instances:
+    // this one, and the place loader's own awaits (guarded there the same way). The guard is the
+    // POSTCONDITION, not a call-site fix: five call sites reach this function and the next one will
+    // not remember to ask.
+    if(hc.mode && hc.mode !== 'home') return;
     thread.innerHTML = '';
     // The thread has just been wiped, so the furniture is gone with it and may draw once more.
     // This is the ONLY place that reopens it (see hcRenderHomeFurniture's guard).
