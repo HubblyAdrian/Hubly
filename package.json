@@ -110,7 +110,9 @@
     "measure:squeeze": "node scripts/measure-squeeze.mjs",
     "check:squeezed": "node scripts/check-nothing-squeezed.mjs",
     "check:machine-words": "node scripts/check-no-machine-words.mjs",
-    "check:tick": "node scripts/check-tick-never-lies.mjs"
+    "check:tick": "node scripts/check-tick-never-lies.mjs",
+    "check:band-rule": "node scripts/check-band-rule-is-one-place.mjs",
+    "check:offer-type": "node scripts/check-offer-type-one-reader.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

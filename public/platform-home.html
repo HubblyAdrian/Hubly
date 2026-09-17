@@ -6661,6 +6661,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // AN ITEM WITH NOTHING IN IT IS NOT AN ITEM. Same refusal the writer makes; made here too
     // so the owner hears it immediately instead of after a round trip.
     if(!title) return { ok:false, error:'no_title' };
+    // WHICH BAND — from the one place, on the thing about to be written, before it is written.
+    // The pseudo-item is shaped exactly as hcDayItems shapes a task, so the rule sees the same
+    // fields on the way in as it will on the way out and the two cannot disagree.
+    var band = hcDeriveBand({ kind:'task', raw:{ due_date: date || null, band_source:'proposed' } }, date || null);
+    if(!band.band) return { ok:false, error:'no_band', why: band.why };
     try{
       var uid = await hcOwnerUid();
       if(!uid) return { ok:false, error:'not_signed_in' };
@@ -6672,8 +6677,14 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         p_due_date: date || null,
         p_due_time: time || null,
         p_duration_minutes: null,
-        p_band: 'B',
-        p_band_reason: null,
+        // THE BAND IS STAMPED BY THE RULE, NEVER HARDCODED HERE. This said p_band:'B' with no
+        // reason, which is how every task in the corpus came to carry the old default — and it
+        // is the shape Adrian forbade: "hcDayAddRow must set a band." One function decides
+        // (hcDeriveBand); the write records what it decided and why, so the row can be argued
+        // with. A caller that cannot derive one refuses rather than picking a letter: an
+        // unplaced band is a sentence to him, not a silent C.
+        p_band: band.band,
+        p_band_reason: band.why || null,
         p_lane: 'work',
         p_notes: place ? ('Where: ' + place) : null
       });
@@ -6700,6 +6711,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     }
     if(res.error === 'no_title') return 'Tell me what the thing is and I will put it on the day.';
     if(res.error === 'not_signed_in') return 'You are signed out, so I cannot write to your day.';
+    // THE BAND REFUSAL SPEAKS IN ITS OWN WORDS, carrying the reason the rule gave — because the
+    // alternative to this branch is picking a letter for him, which is the defect.
+    if(res.error === 'no_band') return 'I did not save that: ' + (res.why || 'I could not work out how urgent it is') + ', and I am not going to guess where it goes on your day.';
     if(res.error === 'not_readable_back') return "I saved that but could not read it back, so I am not going to tell you it is on your day.";
     return 'I could not add that just now — nothing was saved.';
   }
@@ -7173,18 +7187,93 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     return h12 + ' ' + ampm;
   }
 
-  /** WHICH BAND AN ITEM IS IN — structural, from the record, never a guess.
+  /** ══ THE BAND RULE. ONE PLACE. ═══════════════════════════════════════════════════════════
    *
-   *  A TASK carries its own `band`; that is storage the owner set or the planner set, and it is
-   *  read, not decided here. A JOB is an A by the spec's own definition (MY_DAY.md section 4:
-   *  "A - Must Do ... Examples: customer appointment, complete today's job"). A scheduled
-   *  commitment to a customer IS the must-do case, so this is derived from what the record is,
-   *  not from a per-item judgement we would then have to maintain. */
-  function hcItemBand(it){
-    if(it && it.kind === 'job') return 'A';
-    var b = String((it && it.band) || '').trim().toUpperCase();
-    return (b === 'A' || b === 'B' || b === 'C') ? b : 'C';
+   *  ADRIAN, 2026-09-16, VERBATIM — this is the rule, and these three sentences are the whole
+   *  of it:
+   *
+   *    A — work a CUSTOMER IS EXPECTING TODAY. He committed to it; must-do by definition.
+   *    B — his own work WITH A DEADLINE. Important, but nobody is waiting on him.
+   *    C — everything else.
+   *
+   *  "AND IT IS A DEFAULT, NOT A FIELD HE FILLS IN." So nothing asks him to triage. The rule
+   *  decides, he can overrule it in one sentence, and the overrule STICKS.
+   *
+   *  WHY THIS IS ONE FUNCTION AND NOT A FIELD WE TRUST. `tasks.band` exists and every row
+   *  written so far carries 'B' with `band_source = 'proposed'` — the OLD default, stamped
+   *  before this rule was written. If the reader trusted that column, changing the rule would
+   *  cost a data migration over every task in the corpus; Adrian asked for the opposite
+   *  ("changing the rule costs a line, not a rebuild"). So:
+   *    · `band_source = 'owner'`    — HIS word. Read from the record, never re-decided.
+   *    · `band_source = 'proposed'` — OUR word. Re-derived here every read, so the rule is live.
+   *  The writer still stamps the derived band and its reason onto the row (hcDayAddRow), because
+   *  a record that cannot say why it is a B is a record that cannot be argued with — but the
+   *  stamp is a TRACE of the decision, not the source of it.
+   *
+   *  AND IT NEVER FALLS THROUGH TO C IN SILENCE (Adrian, same message: "An unbanded thing must
+   *  not silently become C — if it genuinely cannot be derived, say so on the row rather than
+   *  defaulting in silence."). C is not a neutral bucket: it MEANS "completely okay if it
+   *  doesn't happen", which is a claim about his work. Guessing it for something we could not
+   *  read is the unearned-checkmark defect wearing a planner's clothes. An underivable item
+   *  returns band:null with a reason IN WORDS, and the surface prints that reason on the row.
+   *
+   *  Returns { band, source, why } — never a bare letter, because every caller that shows a
+   *  band is also allowed to show why it is that band.
+   *    source: 'owner'    — he said so
+   *            'rule'     — derived from the three sentences above
+   *            'other-day' — real item, not on the day being banded (bands are TODAY's)
+   *            'unknown'  — could not be derived; `why` is shown to him
+   */
+  var HC_BAND_RULE = {
+    A: 'a customer is expecting it today',
+    B: 'your own work, with a deadline',
+    C: 'everything else'
+  };
+  function hcBandResult(band, source, why){ return { band: band, source: source, why: why }; }
+  function hcDeriveBand(it, dayISO){
+    if(!it) return hcBandResult(null, 'unknown', 'I have no record behind this row');
+    var raw = it.raw || {};
+    // ── 1. HIS WORD, AND IT STICKS. ────────────────────────────────────────────────────────
+    // A proposal that silently re-decides itself the next morning is worse than no proposal.
+    if(String(raw.band_source || '').trim() === 'owner'){
+      var his = String(raw.band || it.band || '').trim().toUpperCase();
+      if(his === 'A' || his === 'B' || his === 'C')
+        return hcBandResult(his, 'owner', 'you put this in ' + his);
+      // He overrode it and the letter is unreadable. That is OUR storage problem, and the
+      // honest move is to say so — not to quietly re-band the thing he just moved.
+      return hcBandResult(null, 'unknown', 'you moved this one yourself and I can\u2019t read which band you put it in');
+    }
+    // ── 2. WHICH DAY IS THIS. ──────────────────────────────────────────────────────────────
+    // "TODAY" is load-bearing in rule A, so an item with no date cannot be banded at all —
+    // and saying "I can't tell" is the only honest answer, because both A and C are claims.
+    var when = String((it.kind === 'job' ? raw.scheduled_date : raw.due_date) || '').trim();
+    if(it.kind === 'job' && !when)
+      return hcBandResult(null, 'unknown', 'this job has no date on it, so I can\u2019t tell whether someone is expecting it today');
+    if(when && dayISO && when !== dayISO)
+      return hcBandResult(null, 'other-day', 'this is ' + (hcDayLabel ? (hcDayLabel(when) || when) : when) + ', not today');
+    // ── 3. A — A CUSTOMER IS EXPECTING IT TODAY. ───────────────────────────────────────────
+    // A booked job IS the committed-to-a-customer case. A BLOCK is not: "doctor’s
+    // appointment" sits in the same jobs table and it is his own time, not a customer’s.
+    // Banding a block as A because the table it lives in is called jobs is exactly the
+    // "the row looks real" inference the standing rules forbid.
+    if(it.kind === 'job' && raw.is_block !== true)
+      return hcBandResult('A', 'rule', 'a customer is expecting this today');
+    // ── 4. B — HIS OWN WORK, WITH A DEADLINE. ──────────────────────────────────────────────
+    // A block held on today’s calendar is his own commitment with a time on it. A task with a
+    // due date is the same shape. Neither has a customer waiting, and both can move.
+    if(it.kind === 'job' && raw.is_block === true)
+      return hcBandResult('B', 'rule', 'your own time, held on today\u2019s calendar');
+    if(when) return hcBandResult('B', 'rule', 'your own work, due today');
+    // ── 5. C — EVERYTHING ELSE. ────────────────────────────────────────────────────────────
+    // Reached ONLY by an item we successfully read and that genuinely has no deadline. This is
+    // a derivation, not a fall-through: everything we could not read left above with a reason.
+    return hcBandResult('C', 'rule', 'no deadline on it');
   }
+  /** The letter alone, for the callers that only sort. null when it could not be derived —
+   *  and a caller that turns null into 'C' has broken the rule above, so the sort puts
+   *  unbanded items last rather than pretending they are anything. */
+  function hcItemBand(it, dayISO){ return hcDeriveBand(it, dayISO).band; }
+
   /** THE BAND DESCRIPTIONS, TAKEN FROM MY_DAY.md SECTION 4 — not from the mockup.
    *
    *  Adrian's rule, 2026-09-16: "If you cannot name the sentence in MY_DAY.md or in my own words
@@ -7212,7 +7301,15 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   function hcDayItems(loaded, dayISO){
     var items = [];
     (loaded.jobs || []).forEach(function(j){
-      if(dayISO && String(j.scheduled_date) !== dayISO) return;
+      // A DATELESS JOB IS UNPLACED, NOT ABSENT. `jobs.scheduled_date` is nullable (checked
+      // against the live schema 2026-09-16; 0 rows carry a null today, so this is a door nobody
+      // has walked through yet, not a live defect). But the old filter compared `String(null)`
+      // against the day, which is never equal — so such a job appeared on NO day at all, and an
+      // item that exists in his table and nowhere on his screen is the worst version of the
+      // silent fall-through: not even a wrong band, just gone. It now reaches the day and the
+      // band rule says out loud that it cannot place it. Tasks have always worked this way, two
+      // lines below — this is the sibling of that line, and it was the one that was wrong.
+      if(dayISO && j.scheduled_date && String(j.scheduled_date) !== dayISO) return;
       // A BLOCK IS SAID TO BE A BLOCK. "doctor's appointment" in a Jobs list reads as a
       // CUSTOMER called doctor's appointment; the owner has to be told which it is, in words.
       var jWhat = j.is_block ? (j.service_name || 'Blocked time') : (j.customer_name || j.service_name || 'Job');
@@ -7282,18 +7379,28 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // EVERY DAY HAS AN A, A B AND A C. Not some days — Adrian, 2026-09-16. The three are
     // rendered from a generated sequence, so "a band is missing" is not a state that exists.
     var bands = hcEl('div', 'hcmd-bands');
-    ['A', 'B', 'C'].forEach(function(b){
+    // BAND EVERY ITEM ONCE, HERE, so no two sections can disagree about where a thing belongs
+    // and nothing can be banded twice by two different readers.
+    var banded = items.map(function(it){ return { it: it, r: hcDeriveBand(it, dayISO) }; });
+    var unsure = banded.filter(function(x){ return !x.r.band; });
+    // THE FOURTH SECTION EXISTS ONLY WHEN IT HAS SOMETHING IN IT — and when it does, it is
+    // announced by its own heading rather than by items quietly appearing in C. A/B/C are
+    // always all three (Adrian, 2026-09-16: "Not some days"); "I can\u2019t tell" is not a band,
+    // it is us admitting a read failed, so it is absent on a day where nothing failed.
+    ['A', 'B', 'C'].concat(unsure.length ? ['?'] : []).forEach(function(b){
       var sec = hcEl('section', 'hcmd-band');
       sec.setAttribute('data-band', b);
       var bh = hcEl('header', 'hcmd-bandhead');
       bh.appendChild(hcEl('span', 'hcmd-disc', b));
       var names = hcEl('div', 'hcmd-bandnames');
-      names.appendChild(hcEl('div', 'hcmd-bandname', hcBandWords(b) || ''));
-      names.appendChild(hcEl('div', 'hcmd-banddesc', HC_BAND_DESC[b] || ''));
+      names.appendChild(hcEl('div', 'hcmd-bandname', b === '?' ? 'I can\u2019t tell where these go' : (hcBandWords(b) || '')));
+      names.appendChild(hcEl('div', 'hcmd-banddesc', b === '?'
+        ? 'Each one says why below. Tell me where it belongs and I\u2019ll keep it there.'
+        : (HC_BAND_DESC[b] || '')));
       bh.appendChild(names);
-      var more = hcEl('button', 'hcmd-more', '⋯');
+      var more = hcEl('button', 'hcmd-more', '\u22ef');
       more.type = 'button';
-      more.setAttribute('aria-label', 'More for ' + (hcBandWords(b) || b));
+      more.setAttribute('aria-label', 'More for ' + (b === '?' ? 'the ones I cannot place' : (hcBandWords(b) || b)));
       bh.appendChild(more);
       sec.appendChild(bh);
 
@@ -7302,7 +7409,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       sec.appendChild(cols);
 
       var body = hcEl('div', 'hcmd-rows');
-      var mine = items.filter(function(it){ return hcItemBand(it) === b; });
+      var mine = banded.filter(function(x){ return b === '?' ? !x.r.band : x.r.band === b; });
       if(!mine.length){
         // ONE LINE, NEVER A GHOST ROW.
         var add = hcEl('button', 'hcmd-add');
@@ -7311,12 +7418,21 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         add.appendChild(hcEl('span', null, HC_DAY_ADD_LINE));
         body.appendChild(add);
       } else {
-        mine.forEach(function(it){
+        mine.forEach(function(x){
+          var it = x.it;
           var row = hcEl('div', 'hcmd-row');
           row.setAttribute('data-kind', it.kind);
+          // THE REASON TRAVELS WITH THE ROW, always — readable by him on the unplaced ones and
+          // readable by a check on all of them, so "why is this an A" is never a guess.
+          row.setAttribute('data-band-source', x.r.source);
+          row.setAttribute('data-band-why', x.r.why || '');
           var what = hcEl('span', 'hcmd-what');
           what.appendChild(hcEl('span', 'hcmd-whatmain', it.what));
-          if(it.detail) what.appendChild(hcEl('span', 'hcmd-whatsub', it.detail));
+          // ON THE ROW, IN WORDS (Adrian, 2026-09-16). An item we could not place says why it
+          // could not be placed, in the same slot where a job says what service it is — because
+          // the alternative is it sitting in C looking like something he decided was optional.
+          var sub = (b === '?') ? (x.r.why || 'I could not work out where this goes') : it.detail;
+          if(sub) what.appendChild(hcEl('span', 'hcmd-whatsub', sub));
           row.appendChild(what);
           row.appendChild(hcEl('span', 'hcmd-when', it.when ? (hcTimeUS(it.when) || '') : ''));
           row.appendChild(hcEl('span', 'hcmd-where', it.where || ''));
@@ -7444,7 +7560,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       if(ta && tb) return ta < tb ? -1 : ta > tb ? 1 : 0;
       if(ta) return -1;                                  // a timed stop comes before an untimed one
       if(tb) return 1;
-      return String(hcItemBand(a)).localeCompare(String(hcItemBand(b)));
+      // UNBANDED SORTS LAST, AND IS NEVER TREATED AS A C. A null band means we could not read
+      // the item; ordering it as though it were the "okay if it doesn't happen" band would be
+      // the silent fall-through the rule forbids, arriving through a comparator.
+      var ba = hcItemBand(a, dayISO) || 'Z', bb = hcItemBand(b, dayISO) || 'Z';
+      return ba.localeCompare(bb);
     });
     var addrs = [];
     ordered.forEach(function(i){ if(i.where && addrs.indexOf(i.where) < 0) addrs.push(i.where); });
@@ -7506,7 +7626,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   try{
     window.hublyDayUI = Object.assign(window.hublyDayUI || {}, {
       render: hcRenderMyDay, hours: hcDayHourRange, label: hcHourLabel,
-      repaint: hcRepaintDay, addLine: HC_DAY_ADD_LINE, band: hcItemBand
+      repaint: hcRepaintDay, addLine: HC_DAY_ADD_LINE, band: hcItemBand,
+      // THE RULE ITSELF, not just its answer — a check has to be able to ask WHY a thing is a B.
+      deriveBand: hcDeriveBand, bandRule: HC_BAND_RULE
     });
   }catch(e){}
 

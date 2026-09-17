@@ -179,6 +179,16 @@ export type HublyService = {
     instant_book_eligible: boolean;
   };
   buffers?: { before_min?: number; after_min?: number };
+  /**
+   * THE TYPE MODEL, ON THE THING YOU SELL (see `offerType` at the foot of this file).
+   * Optional and absent by default: an offer nobody has typed carries nothing, and the reader
+   * derives what it can from the store the offer lives in. Values are stored AS DECLARED and are
+   * NOT validated here on purpose — `offerType` is the one place that decides whether a
+   * declaration is readable, and a normalizer that quietly dropped `kind:'subscription'` would
+   * make "a declaration we cannot read" unreachable and turn that offer into a plain service
+   * behind the owner's back.
+   */
+  offer?: { kind?: string; sale?: string } | null;
   payment?: ServicePaymentOverride;
   recommend_tag?: string | null;
   /**
@@ -497,6 +507,11 @@ function normalizeCanonicalService(raw: Record<string, unknown>, index: number):
     },
     includes: Array.isArray(raw.includes) ? raw.includes.map(String).filter(Boolean) : [],
     addon_ids: Array.isArray(raw.addon_ids) ? raw.addon_ids.map(String).filter(Boolean) : [],
+    // THE DECLARED TYPE SURVIVES THE ROUND TRIP. This normalizer lists its fields explicitly, so
+    // anything not named here is silently dropped — which is how a type stamped by the editor
+    // would have vanished on the next read and the offer would have quietly become whatever its
+    // store implies. Preserved verbatim, not validated: `offerType` is the one place that judges.
+    offer: normalizeOfferDeclaration(raw.offer),
     sort_order: Number(raw.sort_order ?? index) || index,
     media: {
       photos: Array.isArray(media.photos) ? media.photos.map(String).filter(Boolean).slice(0, 24) : [],
@@ -899,4 +914,172 @@ export function catalogHasServiceName(
     const n = s.name.toLowerCase();
     return n === needle || n.includes(needle) || needle.includes(n);
   });
+}
+
+// ══ THE TYPE MODEL — ON THE OFFER, AND ONE READER ═══════════════════════════════════════════
+//
+// SETTLED 30, established from the column names rather than assumed: `memberships` carries
+// `customer_id`, `next_due_date` and `source_plan_ref` — the columns of an INSTANCE pointing at
+// an OFFER — and `meta.membership_offers` sits beside `service_catalog.services`, where a
+// thing-you-sell belongs. So:
+//
+//     OFFER : MEMBERSHIP  ::  SERVICE : JOB
+//
+// THEREFORE THE TYPE BELONGS ON THE THING YOU SELL, never on the instance. A job does not need to
+// be told it is "bookable" — it already happened. A membership does not need to be told it is a
+// membership — the plan it came from is.
+//
+// TWO AXES, AND THEY ARE INDEPENDENT (Adrian, 2026-09-16: the `+` "asks quote-or-booking AND
+// service/membership/other"). A membership can be quoted; a one-off service can be bookable. They
+// are not two values of one field, and collapsing them is how "quote" ended up meaning four
+// different things in the same codebase.
+//
+//   kind  — WHAT IT IS:        service | membership | other
+//   sale  — HOW SOMEONE GETS IT: bookable | quoted
+//
+// "UNTYPED MUST NOT GUESS." That rule is about the RECORD, not about the STRUCTURE. An entry in
+// `service_catalog.services` is a service because of WHERE IT IS STORED — that is a structural
+// fact, not an inference about the owner's intent, and refusing to read it would be the
+// empty-reader defect (reporting our missing bookkeeping as his missing data). What must never be
+// guessed is an offer with no home yet: the one the `+` button is about to create. That one is
+// `kind: 'unknown'`, and the only correct behaviour is to ASK.
+//
+// So the precedence is: the record's own declaration, then the structure it lives in, then unknown.
+// Never a default, and never the flattering value.
+
+/** The declaration as stored: two optional strings, kept verbatim. Returns null when there is no
+ *  declaration at all, so an untyped offer carries nothing rather than an empty object that reads
+ *  as "somebody typed this". */
+export function normalizeOfferDeclaration(raw: unknown): { kind?: string; sale?: string } | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const kind = o.kind != null ? String(o.kind).trim() : "";
+  const sale = o.sale != null ? String(o.sale).trim() : "";
+  if (!kind && !sale) return null;
+  const out: { kind?: string; sale?: string } = {};
+  if (kind) out.kind = kind;
+  if (sale) out.sale = sale;
+  return out;
+}
+
+export type OfferKind = "service" | "membership" | "other" | "unknown";
+export type OfferSale = "bookable" | "quoted" | "unknown";
+/** Where the offer was read from. This is the STRUCTURE, and it is what types an undeclared
+ *  offer — passed in by the caller because only the caller knows which store it opened. */
+export type OfferHome = "catalog_services" | "membership_offers" | "none";
+
+export type OfferType = {
+  kind: OfferKind;
+  sale: OfferSale;
+  /** How each half was decided: 'declared' (the record says), 'structure' (where it lives),
+   *  'unknown' (we do not know and must ask). Carried so a surface can show its reasoning and a
+   *  check can assert it, exactly as hcDeriveBand carries `source` for the A/B/C bands. */
+  kindFrom: "declared" | "structure" | "unknown";
+  saleFrom: "declared" | "structure" | "unknown";
+};
+
+const OFFER_KINDS: OfferKind[] = ["service", "membership", "other"];
+
+/**
+ * THE PRICING MODE, FROM EITHER SHAPE — and the two shapes are named, not guessed at.
+ *
+ * `pricing.mode` is the canonical HublyService field. `pricingType` is the EDITOR's field, and the
+ * editor's vocabulary differs: 'flat' is 'fixed', and 'quote' / 'request_quote' mean
+ * 'quote_required'. That translation is not new here — `buildServiceCatalogFromEditor` in
+ * public/hubly.html has always done it on the way into the catalog — but it lived only there, so a
+ * reader handed a half-built editor object saw no mode at all and answered 'unknown'. One reader
+ * that knows both shapes beats a mapper in front of a reader that knows one: a mapper is a second
+ * place for the vocabulary to drift, and this codebase's whole problem is second places.
+ */
+function offerPricingMode(o: Record<string, unknown>): string {
+  const pricing = (o.pricing && typeof o.pricing === "object" ? o.pricing as Record<string, unknown> : null);
+  let m = String((pricing ? pricing.mode : o.pricing_mode) ?? o.pricingType ?? "").trim().toLowerCase();
+  if (m === "flat") m = "fixed";
+  if (m === "quote" || m === "request_quote") m = "quote_required";
+  return m;
+}
+const HOME_KIND: Record<OfferHome, OfferKind> = {
+  catalog_services: "service",
+  membership_offers: "membership",
+  none: "unknown",
+};
+
+/**
+ * THE ONE READER. Every surface that needs to know what an offer is calls this and nothing else.
+ *
+ * `raw` is an offer record — a HublyService, a membership offer, or the half-built object the `+`
+ * flow is holding. `home` is the store it came out of; pass "none" for something not yet saved.
+ *
+ * It never throws and never guesses. An answer of 'unknown' is a real answer and means ASK.
+ */
+export function offerType(raw: unknown, home: OfferHome = "none"): OfferType {
+  const o = (raw && typeof raw === "object" ? raw as Record<string, unknown> : {});
+  const declared = (o.offer && typeof o.offer === "object" ? o.offer as Record<string, unknown> : {});
+
+  // ── KIND ────────────────────────────────────────────────────────────────────────────────
+  const dk = String(declared.kind ?? "").trim().toLowerCase();
+  let kind: OfferKind, kindFrom: OfferType["kindFrom"];
+  if ((OFFER_KINDS as string[]).includes(dk)) { kind = dk as OfferKind; kindFrom = "declared"; }
+  // A DECLARATION WE CANNOT READ IS A READ FAILURE, NOT AN ABSENT DECLARATION. An offer whose
+  // record says `kind: 'subscription'` has plainly been told it is something recurring by somebody
+  // — falling back to the store it sits in would render it as a bookable one-off service, which is
+  // guessing the flattering answer over an explicit statement we did not understand. Same shape as
+  // the A/B/C rule refusing to re-band an item the owner moved himself when the letter is
+  // unreadable: when HIS word is present and broken, we say so; we do not overrule it with ours.
+  else if (dk !== "") { kind = "unknown"; kindFrom = "unknown"; }
+  else if (home !== "none") { kind = HOME_KIND[home]; kindFrom = "structure"; }
+  else { kind = "unknown"; kindFrom = "unknown"; }
+
+  // ── SALE ────────────────────────────────────────────────────────────────────────────────
+  // `pricing.mode === 'quote_required'` IS the quoted case and has been in PricingMode since the
+  // service engine was written — so this axis is not new storage, it is a name for something the
+  // catalog has always recorded. An explicit `offer.sale` still wins, because a membership offer
+  // has no `pricing.mode` at all and needs somewhere to say it.
+  const ds = String(declared.sale ?? "").trim().toLowerCase();
+  const mode = offerPricingMode(o);
+  let sale: OfferSale, saleFrom: OfferType["saleFrom"];
+  if (ds === "bookable" || ds === "quoted") { sale = ds as OfferSale; saleFrom = "declared"; }
+  else if (ds !== "") { sale = "unknown"; saleFrom = "unknown"; }   // same refusal, other axis
+  else if (mode === "quote_required") { sale = "quoted"; saleFrom = "structure"; }
+  else if (mode === "fixed" || mode === "from" || mode === "variable") { sale = "bookable"; saleFrom = "structure"; }
+  else { sale = "unknown"; saleFrom = "unknown"; }
+
+  return { kind, sale, kindFrom, saleFrom };
+}
+
+/** The two questions, in the product's own words, so the `+` flow and the editor cannot word them
+ *  differently. Exported as data for the same reason HC_BAND_RULE is: the copy IS the rule. */
+export const OFFER_TYPE_QUESTIONS = {
+  kind: {
+    ask: "What are you adding?",
+    options: [
+      { value: "service", label: "A service", hint: "A one-off job someone pays for once." },
+      { value: "membership", label: "A membership", hint: "Someone pays on a schedule and keeps getting it." },
+      { value: "other", label: "Something else", hint: "A product, a fee, a package — anything you sell that isn’t either of those." },
+    ],
+  },
+  sale: {
+    ask: "How do people get it?",
+    options: [
+      { value: "bookable", label: "They book it", hint: "The price is the price, and they can book it themselves." },
+      { value: "quoted", label: "They ask for a price", hint: "It depends on the job, so you quote it." },
+    ],
+  },
+} as const;
+
+/** Is this offer fully typed — i.e. can a surface act on it without asking? */
+export function offerIsTyped(t: OfferType): boolean {
+  return t.kind !== "unknown" && t.sale !== "unknown";
+}
+
+/** The sentence for an offer whose type we do not know. It ASKS; it never states a type.
+ *  Returns null when nothing needs asking, so a caller cannot print an empty question. */
+export function offerTypeAsk(t: OfferType): string | null {
+  // ONE ASK AT A TIME — the standing rule, and the first version of this function broke it by
+  // concatenating both questions into one line. When both halves are unknown, the KIND is asked
+  // first and the other waits for his answer; two requests in one message read like two people
+  // talking over each other, which is exactly what happened on 2026-08-26.
+  if (t.kind === "unknown") return OFFER_TYPE_QUESTIONS.kind.ask;
+  if (t.sale === "unknown") return OFFER_TYPE_QUESTIONS.sale.ask;
+  return null;
 }

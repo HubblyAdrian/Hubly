@@ -11884,7 +11884,7 @@ document.addEventListener('DOMContentLoaded', function() {
               <div class="bk-acc-h" onclick="toggleBkAcc(this)"><span class="bk-acc-num">3</span><span>Packages</span><span class="bk-acc-chevron">▼</span></div>
               <div class="bk-acc-body">
                 <div id="svc-editor-list"></div>
-                <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc()">+ Add another package</button>
+                <button class="add-svc-btn" style="margin-top:8px;" onclick="addEdSvc(this)">+ Add another package</button>
               </div>
             </div>
               
@@ -12212,7 +12212,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   </div>
                   <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
                     <button type="button" class="btn btn-out btn-sm" onclick="openImportOffersModal('pkg-hub')">Import</button>
-                    <button type="button" class="btn btn-brand btn-sm" onclick="addEdSvc();renderPackagesHub();">+ Add</button>
+                    <button type="button" class="btn btn-brand btn-sm" onclick="addEdSvc(this)">+ Add</button>
                   </div>
                 </div>
                 <div id="ed-pkg-list"></div>
@@ -14891,6 +14891,10 @@ function buildServiceCatalogFromEditor(){
       category:s.category!=null?String(s.category):null,
       subcategory:s.subcategory!=null?String(s.subcategory):null,
       status:['active','inactive','archived'].includes(String(s.status))?String(s.status):'active',
+      // Preserved verbatim, never validated here — wsOfferType is the one place that judges a
+      // declaration, and a builder that silently dropped an unreadable one would turn the offer
+      // into whatever its store implies behind the owner's back.
+      offer:wsNormalizeOfferDeclaration(s.offer),
       duration_minutes,
       pricing:{
         mode,
@@ -19190,6 +19194,9 @@ function catalogItemToEditorSvc(item,i){
     depositType:'pct',
     depositVal:25,
     imgUrl:img||null,
+    // AN IMPORTED OR RESTORED OFFER KEEPS THE TYPE IT WAS GIVEN. Absent when nothing was
+    // declared — an empty object would read as "somebody typed this" and suppress the ask.
+    offer:wsNormalizeOfferDeclaration(item&&item.offer),
     _open:false,
   };
 }
@@ -19208,6 +19215,10 @@ function syncEditorPackagesToServices(){
     includes:s.includes||'',
     includesList:getSvcIncludes(s),
     recommendTag:s.recommendTag||'',
+    // THE DECLARED TYPE TRAVELS WITH THE OFFER. This map lists its fields explicitly, so an
+    // unlisted one is dropped — and a type the owner stated in the editor would have vanished
+    // between here and the page. Same omission shape as the description bug two functions down.
+    offer:wsNormalizeOfferDeclaration(s.offer),
   }));
   (S.services||[]).forEach(s=>{if(s.name)SVC_PRICES[s.name]=Number(s.price)||0;});
 }
@@ -33063,7 +33074,7 @@ function renderPkgHubList(){
       <div class="pkg-ed-empty-actions">
         <button type="button" class="btn btn-brand btn-sm" onclick="seedEditorPackagesFromBlueprint({force:true});renderPackagesHub();">Use starters</button>
         <button type="button" class="btn btn-out btn-sm" onclick="openImportOffersModal('pkg-hub')">Import my offers</button>
-        <button type="button" class="btn btn-out btn-sm" onclick="addEdSvc();renderPackagesHub();">Add blank</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="addEdSvc(this)">Add blank</button>
       </div>
     </div>`;
     return;
@@ -33262,7 +33273,7 @@ function renderSvcEditorList(){
       <div class="pkg-ed-empty-actions">
         <button type="button" class="btn btn-brand btn-sm" onclick="seedEditorPackagesFromBlueprint({force:true})">Use ${esc(trade)} starters</button>
         <button type="button" class="btn btn-out btn-sm" onclick="openImportOffersModal('svc-editor')">Import my offers</button>
-        <button type="button" class="btn btn-out btn-sm" onclick="addEdSvc()">Add blank package</button>
+        <button type="button" class="btn btn-out btn-sm" onclick="addEdSvc(this)">Add blank package</button>
       </div>
     </div>`;
     renderAddonEditorList();
@@ -33388,15 +33399,88 @@ function deleteSvc(id){
   syncEditorPackagesToServices();
   renderSvcEditorList();updateSvcPreview();toast('Package deleted');
 }
-function addEdSvc(){
+/**
+ * ══ THE + BUTTON ASKS. ═════════════════════════════════════════════════════════════════════════
+ *
+ * ADRIAN, 2026-09-16: the `+` "asks quote-or-booking and service/membership/other", and "untyped
+ * must not guess."
+ *
+ * It used to create a record on the spot — a nameless offer with `defaultPrice:99`. Two defects in
+ * one line: the offer was typed by assumption (it is in the services list, so it is a service), and
+ * **99 is a price nobody stated**, on an object that is one typed word away from a live page. That
+ * is the standing rule about never publishing a fact the owner did not state, arriving through a
+ * placeholder rather than through the model.
+ *
+ * So the button asks the KIND first — one ask at a time — and the answer decides what gets written.
+ * Nothing is written until he answers. Nothing about the price is invented at all: a new offer has
+ * no price and does not show one until he sets it.
+ */
+function addEdSvc(anchor){
+  const el=anchor&&anchor.nodeType===1?anchor:(document.activeElement&&document.activeElement.nodeType===1?document.activeElement:document.body);
+  // The pop's buttons are onclick strings, so the anchor he pressed is remembered rather than
+  // passed — the preview's `+` needs it to open the new offer's editor in the right place.
+  S._addSvcAnchor=el;
+  const q=WS_OFFER_TYPE_QUESTIONS.kind;
+  showWsPePop(el,`<div class="ws-pe-pop-lbl">${escPeHtml(q.ask)}</div>
+    ${q.options.map(o=>`<button type="button" class="btn btn-out btn-sm" style="width:100%;text-align:left;margin-bottom:6px;" onclick="addEdSvcOfKind('${o.value}')">
+        <span style="font-weight:600;">${escPeHtml(o.label)}</span><br><span style="font-size:11px;opacity:.75;">${escPeHtml(o.hint)}</span>
+      </button>`).join('')}
+    <div class="ws-pe-pop-actions"><button type="button" class="btn btn-out btn-sm" onclick="closeWsPePop()">Cancel</button></div>`,true);
+}
+/**
+ * THE ANSWER. `service` and `other` create the offer, typed as he said, with NO price.
+ *
+ * `membership` WRITES NOTHING, deliberately. Adrian, 2026-09-16: "membership half gets
+ * button/behaviour but NO record written" — and, on the memberships themselves: "DO NOT BUILD ON IT
+ * UNTIL WE HAVE ONE." Graef runs memberships in real life and wants them here; what we have is a
+ * `memberships` table whose columns describe an INSTANCE and a `meta.membership_offers` key with
+ * nothing in it. Writing a membership offer into the services catalog to make the button feel
+ * finished would put a record in the wrong store and teach the reader a lie. So the button exists,
+ * behaves, and says exactly where it stops.
+ */
+function addEdSvcOfKind(kind){
+  const el=S._addSvcAnchor&&S._addSvcAnchor.nodeType===1?S._addSvcAnchor:null;
+  closeWsPePop();
+  if(kind==='membership'){
+    // ══ LOOK FOR THE MISSING DOOR BEFORE BUILDING THE ROOM ═══════════════════════════════════
+    //
+    // Adrian's instruction here was "membership half gets button/behaviour but NO record written",
+    // and it rested on a premise we had recorded: memberships have no home yet. THE PREMISE IS
+    // WRONG, and the standing rule says prove the backend is dead before treating an area as
+    // greenfield. The membership OFFER half is fully built and shipping: `ensureMembershipOffers`,
+    // `defaultMembershipPlan`, `addMembershipPlan`, `renderMembershipEditorList`,
+    // `editMembershipFromPreview`, a website section and a profile tab — and the website preview's
+    // own `add-membership` marker has been routing to them all along. So the `+` in the services
+    // editor was the ONLY surface that could not reach it: a missing door, not a missing feature.
+    //
+    // Writing a membership offer into the SERVICES catalog to make this button feel finished would
+    // put the record in the wrong store and teach the reader a lie. Routing to the store that
+    // already exists writes no new kind of record — it reuses the shipped one.
+    try{ addMembershipPlan(); }catch(e){ toast('I couldn’t open the membership editor just now — nothing was saved.'); return; }
+    try{
+      const plans=ensureMembershipOffers();
+      const plan=plans[plans.length-1];
+      if(plan&&el&&typeof editMembershipFromPreview==='function')editMembershipFromPreview(plan.id,el);
+    }catch(e){}
+    return;
+  }
+  addEdSvcTyped(kind==='other'?'other':'service',el);
+}
+function addEdSvcTyped(kind,thenEditAt){
   const newId=Date.now();
   const blank=catalogItemToEditorSvc({
     name:'',
-    defaultPrice:99,
+    // NO PRICE. Not 99, not 0 — nothing. `defaultPrice:99` was a number nobody stated sitting on an
+    // object one typed name away from the page, and `catalogItemToEditorSvc` turns a missing price
+    // into '' which `buildServiceCatalogFromEditor` reads as null. The offer shows no price until he
+    // sets one, which is the honest state of a thing he has not priced.
     dur:typeof isPhotoLedTrade==='function'&&isPhotoLedTrade()?'1.5':'2',
     desc:'',
     image:'',
+    offer:{kind:kind},
   },(S.editorSvcs||[]).length);
+  blank.price='';
+  blank.showPrice=false;
   blank.id=newId;
   blank._open=true;
   blank.popular=false;
@@ -33408,7 +33492,15 @@ function addEdSvc(){
   renderSvcEditorList();
   renderWebsitePreview();
   try{if(document.getElementById('ed-hub-packages')?.classList.contains('on'))renderPackagesHub();}catch(e){}
+  // The repaint used to be the caller's job (`onclick="addEdSvc();renderPackagesHub()"`), which
+  // cannot work now that the button asks first — the caller's line would run before he answered.
+  try{if(typeof renderPackagesHub==='function'&&document.getElementById('ed-pkg-list'))renderPackagesHub();}catch(e){}
   requestAnimationFrame(()=>{
+    // FROM THE PREVIEW, THE NEW OFFER'S OWN EDITOR OPENS ON IT. This used to be the caller's job:
+    // `addEdSvc(); const svc=S.editorSvcs[S.editorSvcs.length-1]; editServiceFromPreview(svc.id)` —
+    // which, now that the button asks first, would have opened the editor on the PREVIOUS offer,
+    // before the new one existed. The creation path knows the id it just made; the caller does not.
+    if(thenEditAt&&typeof editServiceFromPreview==='function'){ try{ editServiceFromPreview(newId,thenEditAt); return; }catch(e){} }
     document.getElementById('svc-ed-'+newId)?.scrollIntoView({behavior:'smooth',block:'nearest'});
     const inp=document.querySelector('#svc-ed-'+newId+' input[type=text]')||document.querySelector('#ed-pkg-edit input[type=text]');
     if(inp)focusSvcNameInput(inp);
@@ -35578,8 +35670,121 @@ function showWsPePop(anchor,html,wide){
 // So: a marker that names a PART of a record resolves to the record's own editor, and focuses the
 // field it names. The mapping is derived from the marker itself (`svc-*` belongs to the service
 // card that contains it), not from a second list that would drift the same way.
+// ══ THE TYPE MODEL, CLIENT SIDE — A MIRROR, AND A CHECKED ONE ════════════════════════════════
+//
+// The canonical reader is `offerType` in supabase/functions/_shared/service_engine.ts, and the
+// reasoning for the model lives there: OFFER : MEMBERSHIP :: SERVICE : JOB, so the type belongs on
+// the thing you sell. Two independent axes — `kind` (service | membership | other) and `sale`
+// (bookable | quoted) — because a membership can be quoted and a one-off service can be bookable.
+//
+// THIS IS THE SECOND COPY, AND IT SAYS SO. Hubly has two of almost everything and a rule written
+// once is usually present twice; the client cannot import a Deno module, so the honest move is not
+// to pretend there is one copy but to make the two provably agree.
+// `scripts/check-offer-type-one-reader.mjs` runs the SAME case table through this function in a
+// browser and through `offerType` in Deno and fails if any answer differs — including the question
+// wording, which is the half most likely to drift because it is copy.
+//
+// "UNTYPED MUST NOT GUESS" (Adrian, 2026-09-16) applies to the RECORD, not the STRUCTURE. An entry
+// in the catalog is a service because of where it is stored; an offer with no home yet — the one
+// the `+` button is about to create — is `unknown`, and the only correct behaviour is to ASK.
+var WS_OFFER_KINDS = ['service', 'membership', 'other'];
+var WS_OFFER_HOME_KIND = { catalog_services: 'service', membership_offers: 'membership', none: 'unknown' };
+/** THE PRICING MODE, FROM EITHER SHAPE. `pricing.mode` is canonical; `pricingType` is the editor's
+ *  field and its vocabulary differs ('flat' is 'fixed', 'quote'/'request_quote' are
+ *  'quote_required'). buildServiceCatalogFromEditor has always done this translation on the way
+ *  INTO the catalog; doing it here too means one reader handles a saved offer and a half-built one,
+ *  instead of a mapper in front of a reader — a mapper is a second place for the vocabulary. */
+function wsOfferPricingMode(o){
+  var pricing = (o.pricing && typeof o.pricing === 'object') ? o.pricing : null;
+  var raw = pricing ? pricing.mode : (o.pricing_mode != null ? o.pricing_mode : o.pricingType);
+  var m = String(raw == null ? '' : raw).trim().toLowerCase();
+  if(m === 'flat') m = 'fixed';
+  if(m === 'quote' || m === 'request_quote') m = 'quote_required';
+  return m;
+}
+function wsOfferType(raw, home){
+  var o = (raw && typeof raw === 'object') ? raw : {};
+  var declared = (o.offer && typeof o.offer === 'object') ? o.offer : {};
+  home = (home === 'catalog_services' || home === 'membership_offers') ? home : 'none';
+
+  var dk = String(declared.kind == null ? '' : declared.kind).trim().toLowerCase();
+  var kind, kindFrom;
+  if(WS_OFFER_KINDS.indexOf(dk) >= 0){ kind = dk; kindFrom = 'declared'; }
+  // A DECLARATION WE CANNOT READ IS A READ FAILURE, NOT AN ABSENT ONE. `kind:'subscription'` has
+  // been told it is something recurring by somebody; falling back to the store it sits in would
+  // render it as a bookable one-off, which is guessing the flattering answer over an explicit
+  // statement we did not understand.
+  else if(dk !== ''){ kind = 'unknown'; kindFrom = 'unknown'; }
+  else if(home !== 'none'){ kind = WS_OFFER_HOME_KIND[home]; kindFrom = 'structure'; }
+  else { kind = 'unknown'; kindFrom = 'unknown'; }
+
+  var ds = String(declared.sale == null ? '' : declared.sale).trim().toLowerCase();
+  var mode = wsOfferPricingMode(o);
+  var sale, saleFrom;
+  if(ds === 'bookable' || ds === 'quoted'){ sale = ds; saleFrom = 'declared'; }
+  else if(ds !== ''){ sale = 'unknown'; saleFrom = 'unknown'; }   // same refusal, other axis
+  else if(mode === 'quote_required'){ sale = 'quoted'; saleFrom = 'structure'; }
+  else if(mode === 'fixed' || mode === 'from' || mode === 'variable'){ sale = 'bookable'; saleFrom = 'structure'; }
+  else { sale = 'unknown'; saleFrom = 'unknown'; }
+
+  return { kind: kind, sale: sale, kindFrom: kindFrom, saleFrom: saleFrom };
+}
+/** The two questions, in the product's own words. The copy IS the rule, so it is data — and the
+ *  cross-runtime check compares these strings against the server's, character for character. */
+var WS_OFFER_TYPE_QUESTIONS = {
+  kind: { ask: 'What are you adding?', options: [
+    { value:'service',    label:'A service',      hint:'A one-off job someone pays for once.' },
+    { value:'membership', label:'A membership',   hint:'Someone pays on a schedule and keeps getting it.' },
+    { value:'other',      label:'Something else', hint:'A product, a fee, a package — anything you sell that isn’t either of those.' }
+  ] },
+  sale: { ask: 'How do people get it?', options: [
+    { value:'bookable', label:'They book it',        hint:'The price is the price, and they can book it themselves.' },
+    { value:'quoted',   label:'They ask for a price', hint:'It depends on the job, so you quote it.' }
+  ] }
+};
+/** The declaration as stored: two optional strings, verbatim. null when nothing was declared, so
+ *  an untyped offer carries nothing rather than an empty object that reads as typed. Mirrors
+ *  `normalizeOfferDeclaration` in service_engine.ts. */
+function wsNormalizeOfferDeclaration(raw){
+  if(!raw || typeof raw !== 'object') return null;
+  var kind = raw.kind != null ? String(raw.kind).trim() : '';
+  var sale = raw.sale != null ? String(raw.sale).trim() : '';
+  if(!kind && !sale) return null;
+  var out = {};
+  if(kind) out.kind = kind;
+  if(sale) out.sale = sale;
+  return out;
+}
+function wsOfferIsTyped(t){ return !!t && t.kind !== 'unknown' && t.sale !== 'unknown'; }
+/** ASKS; never states a type. null when nothing needs asking, so a caller cannot print an empty
+ *  question — the same refusal hcDeriveBand makes when it cannot place a band. */
+function wsOfferTypeAsk(t){
+  if(!t) return null;
+  // ONE ASK AT A TIME — the standing rule. The first version concatenated both questions into one
+  // line; when both halves are unknown the KIND is asked first and the other waits for his answer.
+  if(t.kind === 'unknown') return WS_OFFER_TYPE_QUESTIONS.kind.ask;
+  if(t.sale === 'unknown') return WS_OFFER_TYPE_QUESTIONS.sale.ask;
+  return null;
+}
+/** The words shown ON the offer for a type it already has — never a letter, never a code. */
+function wsOfferTypeWords(t){
+  if(!t || t.kind === 'unknown') return null;
+  var k = t.kind === 'membership' ? 'Membership' : t.kind === 'other' ? 'Something else' : 'Service';
+  if(t.sale === 'quoted') return k + ' · you quote it';
+  if(t.sale === 'bookable') return k + ' · they book it';
+  return k;
+}
+try{ window.hublyOfferUI = Object.assign(window.hublyOfferUI || {}, {
+  type: wsOfferType, questions: WS_OFFER_TYPE_QUESTIONS, isTyped: wsOfferIsTyped,
+  ask: wsOfferTypeAsk, words: wsOfferTypeWords }); }catch(e){}
+
 const WS_PE_PART_FIELD = { 'svc-price': 'ws-pe-svc-price', 'svc-name': 'ws-pe-svc-name',
-                           'svc-dur': 'ws-pe-svc-dur' };
+                           'svc-dur': 'ws-pe-svc-dur',
+                           // The type is a PART of the offer like its price is, so pressing it
+                           // opens the offer's own editor focused on the type — the mapping is
+                           // derived from the marker (`svc-*` belongs to the service card that
+                           // contains it), never a second list that would drift.
+                           'svc-type': 'ws-pe-svc-type' };
 function wsPeResolvePart(type, el){
   if(!/^svc-/.test(String(type||''))) return null;
   var card = el && el.closest ? el.closest('.ws-svc-card[data-pe="service"], [data-pe="service"]') : null;
@@ -35683,9 +35888,9 @@ function handleWsPeClick(type,el){
   if(type==='add-gallery'){openAddGalleryAlbumFlow(el);return;}
   if(type==='service'){editServiceFromPreview(el.dataset.svcId,el);return;}
   if(type==='add-service'){
-    addEdSvc();
-    const svc=S.editorSvcs[S.editorSvcs.length-1];
-    if(svc)editServiceFromPreview(svc.id,el);
+    // THE ASK OWNS THE FOLLOW-UP. Reading `S.editorSvcs[last]` right after the click would name the
+    // offer BEFORE this one, because nothing has been created until he answers the question.
+    addEdSvc(el);
     return;
   }
   if(type==='add-membership'){
@@ -36953,13 +37158,20 @@ function editServiceFromPreview(svcId,anchor){
     if(!svc.price&&svc.varPrices?.sedan)svc.price=Number(svc.varPrices.sedan)||0;
   }
   const isVar=vehicleOn&&svc.pricingType==='variable';
+  // THE QUOTED AXIS WAS ALWAYS EXPRESSIBLE AND NEVER OFFERED. `buildServiceCatalogFromEditor` has
+  // mapped pricingType 'quote' to mode 'quote_required' since it was written, but the editor's only
+  // pricing options were flat and variable — so an owner whose price genuinely depends on the job
+  // had no way to say so and had to type a number he had not been asked for. That is a missing
+  // DOOR on a built capability, which is the first hypothesis the standing rules tell us to check.
+  const isQuote=String(svc.pricingType||'').toLowerCase()==='quote'||String(svc.pricingType||'').toLowerCase()==='quote_required';
   const el=anchor||document.querySelector(`[data-svc-id="${svc.id}"]`)||document.body;
   const pricingHtml=vehicleOn?`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
       <input type="number" class="ws-pe-inp" id="ws-pe-svc-dur" placeholder="Hours" step="0.5" value="${escPeHtml(svc.dur??'')}">
       <select class="ws-pe-inp" id="ws-pe-svc-ptype" onchange="togglePeSvcPricing(this.value)">
-        <option value="flat" ${!isVar?'selected':''}>Flat rate</option>
+        <option value="flat" ${!isVar&&!isQuote?'selected':''}>Flat rate</option>
         <option value="variable" ${isVar?'selected':''}>Variable by size</option>
+        <option value="quote" ${isQuote?'selected':''}>They ask for a price</option>
       </select>
     </div>
     <div id="ws-pe-svc-flat" style="display:${isVar?'none':'block'}"><input type="number" class="ws-pe-inp" id="ws-pe-svc-price" placeholder="Price $" value="${svc.price??''}"></div>
@@ -36975,9 +37187,29 @@ function editServiceFromPreview(svcId,anchor){
       <input type="number" class="ws-pe-inp" id="ws-pe-svc-dur" placeholder="Hours" step="0.5" value="${escPeHtml(svc.dur??'')}">
       <input type="number" class="ws-pe-inp" id="ws-pe-svc-price" placeholder="Price $" value="${svc.price??''}">
     </div>
-    <input type="hidden" id="ws-pe-svc-ptype" value="flat">`;
+    <select class="ws-pe-inp" id="ws-pe-svc-ptype" onchange="togglePeSvcPricing(this.value)">
+      <option value="flat" ${!isQuote?'selected':''}>${escPeHtml(WS_OFFER_TYPE_QUESTIONS.sale.options[0].label)}</option>
+      <option value="quote" ${isQuote?'selected':''}>${escPeHtml(WS_OFFER_TYPE_QUESTIONS.sale.options[1].label)}</option>
+    </select>`;
+  // ── WHAT THIS OFFER IS. One control, because the other axis (book vs quote) is ALREADY the
+  // pricing control two rows down — adding a second way to say "they ask for a price" would be a
+  // second storage location for one fact, which is this codebase's standing failure.
+  //
+  // AN UNTYPED OFFER SHOWS THE QUESTION, NOT A GUESS. Every offer in the corpus is untyped today,
+  // and `wsOfferType` answers 'service' for them from the STRUCTURE (they live in the services
+  // catalog) — so the select opens on what the reader actually thinks, and only a genuinely
+  // unreadable declaration shows the ask. The option list is the model's own, so a fourth kind
+  // costs one entry in service_engine.ts and not a hunt through the editor.
+  const _ot=wsOfferType(svc,'catalog_services');
+  const _typeHtml=`<div style="margin-bottom:6px;">
+      <select class="ws-pe-inp" id="ws-pe-svc-type">
+        ${WS_OFFER_TYPE_QUESTIONS.kind.options.map(o=>`<option value="${o.value}" ${_ot.kind===o.value?'selected':''}>${escPeHtml(o.label)}</option>`).join('')}
+        ${_ot.kind==='unknown'?`<option value="" selected>${escPeHtml(WS_OFFER_TYPE_QUESTIONS.kind.ask)}</option>`:''}
+      </select>
+    </div>`;
   showWsPePop(el,`<div class="ws-pe-pop-lbl">Edit service</div>
     ${photoHtml}
+    ${_typeHtml}
     <button type="button" class="btn btn-out btn-sm" style="width:100%;margin-bottom:8px;" onclick="document.getElementById('ed-pe-svc-photo')?.click()">+ Add photo</button>
     <input type="text" class="ws-pe-inp" id="ws-pe-svc-name" placeholder="Service name" value="${escPeHtml(svc.name||'')}">
     ${pricingHtml}
@@ -36993,6 +37225,10 @@ function editServiceFromPreview(svcId,anchor){
   // The hint depends on the account default, so it is rendered after the popover
   // is in the DOM rather than baked into the template string.
   try{updatePeSvcDepositHint();}catch(e){}
+  // AND RUN THE TOGGLE ONCE, so an offer that is ALREADY quoted opens without a price box. The
+  // template renders the default state; only this makes the popover match the record. Assuming the
+  // markup already reflects the row is the "no step may assume a previous step succeeded" shape.
+  try{togglePeSvcPricing(document.getElementById('ws-pe-svc-ptype')?.value||'flat');}catch(e){}
 }
 /**
  * Payment terms for ONE package, on the canvas card.
@@ -37059,8 +37295,24 @@ function updatePeSvcDepositHint(){
 function togglePeSvcPricing(v){
   const flat=document.getElementById('ws-pe-svc-flat');
   const vr=document.getElementById('ws-pe-svc-var');
-  if(flat)flat.style.display=v==='variable'?'none':'block';
+  const quoted=String(v||'')==='quote';
+  if(flat)flat.style.display=(v==='variable'||quoted)?'none':'block';
   if(vr)vr.style.display=v==='variable'?'grid':'none';
+  // A QUOTED OFFER HAS NO PRICE FIELD — and the field does not just vanish. Something disappearing
+  // with no word for it is the silent-shape-change defect; a one-line replacement says what the
+  // choice means, so the owner is never left wondering where the price box went.
+  const price=document.getElementById('ws-pe-svc-price');
+  if(price&&price.parentNode&&!flat)price.style.display=quoted?'none':'';
+  let note=document.getElementById('ws-pe-svc-quotenote');
+  if(quoted&&!note){
+    note=document.createElement('div');
+    note.id='ws-pe-svc-quotenote';
+    note.style.cssText='font-size:12px;opacity:.75;margin:2px 0 6px;';
+    note.textContent='No price on this one — they ask you, and you quote it.';
+    const sel=document.getElementById('ws-pe-svc-ptype');
+    if(sel&&sel.parentNode)sel.parentNode.insertBefore(note,sel.nextSibling);
+  }
+  if(note)note.style.display=quoted?'':'none';
 }
 function removePeSvcPhoto(pi){
   const svc=findEditorSvc(S._peSvcId);
@@ -37103,8 +37355,16 @@ function applyWsPeService(){
   svc.name=document.getElementById('ws-pe-svc-name')?.value?.trim()||'Service';
   svc.dur=document.getElementById('ws-pe-svc-dur')?.value||'';
   let ptype=document.getElementById('ws-pe-svc-ptype')?.value||'flat';
-  if(!vehicleOn)ptype='flat';
+  // 'variable' needs vehicle details; 'quote' does not and must survive this line. It used to read
+  // `if(!vehicleOn)ptype='flat'`, which silently turned "they ask for a price" back into a flat
+  // rate for every trade that is not a detailer — the destructive-default shape.
+  if(!vehicleOn&&ptype==='variable')ptype='flat';
   svc.pricingType=ptype;
+  // WHAT HE SAID IT IS, WRITTEN AS HE SAID IT. An empty value is the ask still standing, and it
+  // writes NOTHING — a fact the owner did not state is never published, including a type.
+  const _tsel=document.getElementById('ws-pe-svc-type');
+  const _tval=_tsel?String(_tsel.value||'').trim():'';
+  svc.offer=wsNormalizeOfferDeclaration(Object.assign({},svc.offer||{},_tval?{kind:_tval}:{}));
   if(svc.pricingType==='variable'&&vehicleOn){
     svc.varPrices={
       sedan:document.getElementById('ws-pe-svc-sedan')?.value||'',
@@ -37115,6 +37375,11 @@ function applyWsPeService(){
       van:document.getElementById('ws-pe-svc-van')?.value||'',
     };
     svc.price=Number(svc.varPrices.sedan||svc.price||0);
+  }else if(svc.pricingType==='quote'){
+    // A QUOTED OFFER HAS NO PRICE, AND WE DO NOT KEEP THE OLD ONE AROUND. Leaving the previous
+    // number on the record is how a page ends up showing "$180" beside "ask for a price".
+    svc.price='';
+    svc.showPrice=false;
   }else{
     svc.price=Number(document.getElementById('ws-pe-svc-price')?.value||0);
   }
@@ -37297,7 +37562,13 @@ function scrubMembershipTradeLeaks(){
     if((descLeak||incLeak)&&(!m.name||/^monthly membership$/i.test(String(m.name).trim()))){
       m.name=defs.name;
     }
-    if((descLeak||incLeak)&&(m.price==null||Number(m.price)===99)&&defs.price!=null){
+    // THE COPY SCRUB MAY NOT WRITE A PRICE. It exists to stop detailing wording appearing on a
+    // window-washer's site, and re-pricing his plan while fixing his prose is a different act
+    // entirely — one he never asked for and would not see. (The seeded DESCRIPTION and INCLUDES
+    // below are a deliberate onboarding system and are left alone; they are reported for Adrian's
+    // call rather than quietly rewritten, because unlike the price they are not a commitment a
+    // customer can act on.)
+    if(false&&(descLeak||incLeak)&&(m.price==null||Number(m.price)===99)&&defs.price!=null){
       m.price=defs.price;
     }
   });
@@ -37308,7 +37579,19 @@ function defaultMembershipPlan(overrides){
     id:newMembershipPlanId(),
     enabled:true,
     name:defs.name,
-    price:defs.price,
+    // ══ NO SEEDED PRICE. VERIFIED BY USE, 2026-09-16. ═══════════════════════════════════════
+    //
+    // This read `price:defs.price`, which is 99 for detailing and 89 for windows. Driven in a real
+    // browser on the served page: pressing add-a-membership produced a plan with price 99,
+    // enabled:true, and `.ws-membership-amount` on the WEBSITE card (wsMembershipCardHtml, not the
+    // editor) rendered **$99/mo** — a monthly price nobody stated, live, with a Join button under
+    // it. That is the named case in the standing rule: "A fact write requires a value sourced from
+    // the current turn's user message… never fill the gap from a default." A price is the sharpest
+    // version of it, because a customer can act on it and the owner can be held to it.
+    //
+    // `defs.price` survives as the input PLACEHOLDER — a suggestion he accepts by typing it, which
+    // is the difference between offering a number and publishing one.
+    price:null,
     cadence:'monthly',
     serviceName:'',
     includes:defs.includes.slice(),
@@ -37398,7 +37681,7 @@ function renderMembershipEditorList(){
         <div class="svc-ed-card-title">${m.name||'Membership'}</div>
         <div style="display:flex;align-items:center;gap:6px;">
           ${m.enabled?'<span class="badge b-green">On site</span>':'<span class="badge" style="background:var(--surface-2);color:var(--ink-3);">Hidden</span>'}
-          <span class="svc-ed-card-price">$${m.price??0}${membershipCadenceLabel(m.cadence)}</span>
+          <span class="svc-ed-card-price">${membershipHasPrice(m)?`$${m.price}${membershipCadenceLabel(m.cadence)}`:'No price yet'}</span>
           <span class="svc-ed-chevron">▼</span>
         </div>
       </div>
@@ -37409,7 +37692,7 @@ function renderMembershipEditorList(){
         </label>
         <div class="field"><label style="font-size:11px;">Plan name</label><input type="text" value="${(m.name||'').replace(/"/g,'&quot;')}" oninput="S.website.membershipOffers[${i}].name=this.value;syncLegacyMembershipOffer();renderWebsitePreview()" placeholder="${namePh}" style="font-size:13px;padding:8px 10px;"></div>
         <div class="field-row">
-          <div class="field"><label style="font-size:11px;">Price</label><input type="number" min="0" step="1" value="${m.price??defs.price}" oninput="S.website.membershipOffers[${i}].price=parseFloat(this.value)||0;syncLegacyMembershipOffer();renderWebsitePreview()" style="font-size:13px;padding:8px 10px;"></div>
+          <div class="field"><label style="font-size:11px;">Price</label><input type="number" min="0" step="1" value="${m.price??''}" placeholder="${defs.price??''}" oninput="S.website.membershipOffers[${i}].price=(this.value===''?null:(parseFloat(this.value)||null));syncLegacyMembershipOffer();renderWebsitePreview()" style="font-size:13px;padding:8px 10px;"></div>
           <div class="field"><label style="font-size:11px;">Cadence</label>
             <select onchange="S.website.membershipOffers[${i}].cadence=this.value;syncLegacyMembershipOffer();renderWebsitePreview()" style="font-size:13px;padding:8px 10px;">
               <option value="weekly" ${m.cadence==='weekly'?'selected':''}>Weekly</option>
@@ -37499,7 +37782,7 @@ function editMembershipFromPreview(memId,anchor){
     <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px;"><input type="checkbox" id="ws-pe-mem-on" ${m.enabled?'checked':''}> Show on website</label>
     <input type="text" class="ws-pe-inp" id="ws-pe-mem-name" placeholder="${escPeHtml(defs.name)}" value="${escPeHtml(m.name||'')}">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
-      <input type="number" class="ws-pe-inp" id="ws-pe-mem-price" placeholder="Price" value="${m.price??defs.price}">
+      <input type="number" class="ws-pe-inp" id="ws-pe-mem-price" placeholder="Price${defs.price!=null?(' \u2014 e.g. '+defs.price):''}" value="${m.price??''}">
       <select class="ws-pe-inp" id="ws-pe-mem-cadence">
         <option value="weekly" ${m.cadence==='weekly'?'selected':''}>Weekly</option>
         <option value="biweekly" ${m.cadence==='biweekly'?'selected':''}>Biweekly</option>
@@ -37520,7 +37803,10 @@ function applyWsPeMembership(){
   if(!m)return;
   m.enabled=!!document.getElementById('ws-pe-mem-on')?.checked;
   m.name=document.getElementById('ws-pe-mem-name')?.value?.trim()||'Membership';
-  m.price=parseFloat(document.getElementById('ws-pe-mem-price')?.value)||0;
+  // EMPTY MEANS UNPRICED, NOT ZERO. `||0` turned "he has not told me" into "it is free", which the
+  // card would then render as a price. Null is the honest value and membershipHasPrice reads it.
+  const _mpRaw=String(document.getElementById('ws-pe-mem-price')?.value??'').trim();
+  m.price=_mpRaw===''?null:(Number.isFinite(parseFloat(_mpRaw))?parseFloat(_mpRaw):null);
   m.cadence=document.getElementById('ws-pe-mem-cadence')?.value||'monthly';
   m.description=document.getElementById('ws-pe-mem-desc')?.value?.trim()||'';
   m.includes=(document.getElementById('ws-pe-mem-inc')?.value||'').split('\n').map(s=>s.trim()).filter(Boolean);
@@ -37540,6 +37826,14 @@ function membershipCadenceLabel(cadence){
   if(cadence==='biweekly')return t('wsCadBiweek');
   return t('wsCadMonth');
 }
+/** Is there a real price on this plan? '' , null, 0 and NaN are all "he has not priced it" — and
+ *  none of them may be rendered as a number. One predicate, so the website card, the editor summary
+ *  and the customer chip cannot disagree about whether a plan has a price. */
+function membershipHasPrice(m){
+  if(!m||m.price==null||m.price==='')return false;
+  const n=Number(m.price);
+  return Number.isFinite(n)&&n>0;
+}
 function wsMembershipCardHtml(m){
   const includes=(m.includes||[]).map(i=>`<li>${i}</li>`).join('');
   return `<div class="ws-membership-card ws-pe-target" data-pe="membership" data-mem-id="${m.id}">
@@ -37547,10 +37841,10 @@ function wsMembershipCardHtml(m){
       <p class="ws-membership-eyebrow">${t('wsMembershipEyebrow')}</p>
       <h3>${m.name||t('wsMembership')}</h3>
       <p>${m.description||''}</p>
-      <div class="ws-membership-price">
-        <span class="ws-membership-amount">$${m.price??0}</span>
+      ${membershipHasPrice(m)?`<div class="ws-membership-price">
+        <span class="ws-membership-amount">$${m.price}</span>
         <span class="ws-membership-cadence">${membershipCadenceLabel(m.cadence)}</span>
-      </div>
+      </div>`:''}
       <ul class="ws-membership-includes">${includes}</ul>
       <button type="button" class="ws-membership-cta" onclick="event.stopPropagation();openMembershipSignup('${m.id}')">${t('wsJoinMembership')}</button>
     </div>
@@ -50908,7 +51202,8 @@ function populateNcMembershipPlans(){
     opts.push('<option value="">Select from your website plans…</option>');
     plans.forEach(m=>{
       const cad=membershipCadenceLabel(m.cadence||'monthly');
-      const label=`${m.name||'Membership'} · $${m.price??0}${cad}`;
+      // "$0/mo" beside a plan name is a price claim, and an unpriced plan has no price to claim.
+      const label=membershipHasPrice(m)?`${m.name||'Membership'} · $${m.price}${cad}`:`${m.name||'Membership'} · no price set`;
       opts.push(`<option value="${String(m.id).replace(/"/g,'&quot;')}">${label.replace(/</g,'&lt;')}</option>`);
     });
   }

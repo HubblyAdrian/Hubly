@@ -230,3 +230,37 @@ build on it and do not write rows to it until we have one. See
 **27. 108 OF 194 BUSINESSES HAVE NO SERVICES IN EITHER STORE.**
 More than half the corpus never got past the front door. **That is a funnel fact, not a defect** —
 and it is probably the most commercially interesting number measured this week.
+
+---
+
+**28. THE BOOKING PATH IS NOT NO-TRACE. Removed from that list.**
+`booking_requests` already stores abandoned attempts with contact details — written by
+`writeAbandonedBookingRequest()`, `status='abandoned'` — and the leads UI already reads them
+(`status==='pending'||status==='abandoned'`).
+
+**The count is still unusable, but for a NEW reason.** 141 abandoned rows exist; **125 are the
+paging fixture**, and **13 of the remaining 16 fall inside one 13-minute window on 2026-09-05 across
+three different businesses** — a test sweep, not three customers. So the real figure is near-zero
+and near-unknowable *because the corpus is ours*, not because nothing is recorded.
+
+**The actual gap is the gate:** the hard path requires name **AND** phone, not reachable
+(phone **OR** email).
+
+**29. THE LIST ENGINE ALREADY EXISTS: `hcRoomShell` + `hcRoomRow`.** Adrian was right that there was
+one. The list surfaces are contents and a row spec, not a build.
+
+**30. OFFER : MEMBERSHIP :: SERVICE : JOB — established from the column names, not assumed.**
+`memberships` carries `customer_id`, `next_due_date` and `source_plan_ref`: the columns of an
+INSTANCE pointing at an OFFER. `meta.membership_offers` sits beside `service_catalog.services`,
+where a thing-you-sell belongs.
+
+**Therefore TYPE BELONGS ON THE THING YOU SELL**, not on the instance. A job does not need to be
+told it is "bookable" — it already happened.
+
+**31. A NEGATIVE ASSERTION NEEDS A SCOPE.**
+*Fired three times: `openSmartQuote`, `toggleWsSvcCard`, and inside a check of my own.*
+
+**"This string is gone" over a whole file will always trip on the comment explaining the deletion.**
+A negative assertion is anchored to a function body, a block, or a code construct — **never a whole
+file, never a bare identifier**. `confirm-served` already refuses bare-identifier absence markers;
+`scripts/check-negative-assertions-scoped.mjs` sweeps the checks for the same shape.
