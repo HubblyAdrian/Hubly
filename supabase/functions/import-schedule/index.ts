@@ -29,13 +29,25 @@ const CORS = {
   "access-control-allow-methods": "POST, OPTIONS",
 };
 
-const SYSTEM = `You read a picture of someone's work schedule and report ONLY what is actually in it.
+const SYSTEM = `You read a picture of someone's work schedule OR their to-do list, and report ONLY
+what is actually in it.
 
-Return JSON: {"jobs":[...],"unreadable":[...],"warnings":[...]}
+Return JSON: {"jobs":[...],"tasks":[...],"unreadable":[...],"warnings":[...]}
 
 Each job: {"customer_name":string|null,"service_name":string|null,"scheduled_date":"YYYY-MM-DD"|null,
 "scheduled_time":"HH:MM"|null,"address":string|null,"amount":number|null,"notes":string|null,
 "source_text":string}
+
+Each task: {"title":string,"due_date":"YYYY-MM-DD"|null,"due_time":"HH:MM"|null,"source_text":string}
+
+WHICH IS IT — and this decides who a row is ABOUT, so get it right rather than fast:
+- A JOB is work for a CUSTOMER. A name, a service, an address or a price means a job.
+- A TASK is his own errand: "order glass cleaner", "call the accountant", "invoice Dave", "gym".
+  No customer, nothing to turn up at someone's house for.
+- WHEN IT IS GENUINELY AMBIGUOUS, IT IS A TASK. A task sits quietly on his day; a job is a
+  commitment someone is expecting him at, and inventing one of those is the expensive error.
+  ("A default that destroys work is never acceptable" — the cheap direction wins the tie.)
+- ONE ROW GOES IN ONE LIST. Never both.
 
 RULES, and they are absolute:
 - REPORT ONLY WHAT IS WRITTEN. Never infer a customer, a service, a price or an address that is not
@@ -49,7 +61,7 @@ RULES, and they are absolute:
   appointment.
 - unreadable: [{"source_text":string,"why":string}] — every row you saw and could not resolve. Do
   not omit them. A row you dropped silently is worse than one you reported as unclear.
-- If the picture is not a schedule at all, return {"jobs":[],"unreadable":[],"warnings":["not a schedule"]}.
+- If the picture is not a schedule or a list at all, return {"jobs":[],"tasks":[],"unreadable":[],"warnings":["not a schedule"]}.
 - Never invent a row to make the list look complete.`;
 
 Deno.serve(async (req) => {
@@ -147,8 +159,42 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ══ AND THE TASKS, THROUGH THE SAME DOOR ═══════════════════════════════════════════════
+    //
+    // Adrian: "screenshot/paste for TASKS". A photo of a to-do list is the same gesture as a photo
+    // of a schedule — hand me the thing you already have — so it is the SAME endpoint, the same
+    // review step and the same "nothing is on your day yet" promise. A second door would be a
+    // second prompt, a second reviewer and a second idea of what a row means.
+    //
+    // A TASK'S SHAPE IS SMALLER AND SO IS ITS GATE. A job needs a date or it is unreadable,
+    // because a job is a commitment at a time. A task with no date is a perfectly good task —
+    // "order glass cleaner" is real whether or not he said when — so an undated task is KEPT,
+    // and only a task with no title at all is dropped.
+    const rawTasks = Array.isArray(parsed?.tasks) ? parsed.tasks as Record<string, unknown>[] : [];
+    const tasks: Record<string, unknown>[] = [];
+    for (const t of rawTasks) {
+      const title = String(t?.title || "").trim();
+      if (!title) {
+        unreadable.push({ source_text: String(t?.source_text || "").slice(0, 200), why: "no title I could read" });
+        continue;
+      }
+      const due = String(t?.due_date || "");
+      const dueTime = String(t?.due_time || "");
+      const okDue = due === "" || /^\d{4}-\d{2}-\d{2}$/.test(due);
+      const okDueTime = dueTime === "" || /^([01]\d|2[0-3]):[0-5]\d$/.test(dueTime);
+      tasks.push({
+        title: title.slice(0, 200),
+        // A DATE THAT IS NOT A DATE BECOMES NO DATE, never a bad cast into the writer. The task
+        // survives; only the unreadable part of it is dropped, and the row says so.
+        due_date: okDue && due ? due : null,
+        due_time: okDueTime && dueTime ? dueTime : null,
+        source_text: String(t?.source_text || "").slice(0, 200),
+      });
+      if (!okDue && due) unreadable.push({ source_text: title.slice(0, 200), why: "kept, but the date was not a date I could read" });
+    }
+
     return new Response(JSON.stringify({
-      jobs, unreadable,
+      jobs, tasks, unreadable,
       warnings: Array.isArray(parsed?.warnings) ? (parsed.warnings as unknown[]).map(String) : [],
     }), { headers: { ...CORS, "content-type": "application/json" } });
   } catch (e) {

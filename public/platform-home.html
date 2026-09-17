@@ -5150,11 +5150,12 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
       }).then(function(r){ clearTimeout(to); return r.ok ? r.json() : null; });
     }).then(function(o){
       var jobs = (o && Array.isArray(o.jobs)) ? o.jobs : [];
+      var tasks = (o && Array.isArray(o.tasks)) ? o.tasks : [];
       var bad  = (o && Array.isArray(o.unreadable)) ? o.unreadable : [];
       if(!o){ done("I couldn’t read that one just now, so nothing was added. Try it again, or tell me what’s on it."); return; }
-      if(!jobs.length && !bad.length){ done("I couldn’t find a schedule in that, so nothing was added. Tell me what’s coming up and I’ll put it on your day."); return; }
+      if(!jobs.length && !tasks.length && !bad.length){ done("I couldn’t find a schedule or a list in that, so nothing was added. Tell me what’s coming up and I’ll put it on your day."); return; }
       done(null);
-      hcProposeImportedJobs(jobs, bad);
+      hcProposeImportedJobs(jobs, bad, tasks);
     }).catch(function(){
       done("I couldn’t read that one just now, so nothing was added. Try it again, or tell me what’s on it.");
     });
@@ -5284,14 +5285,30 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     catch(e){ say("I couldn’t open that file, so nothing was added. Try sending it again."); }
   }
   /** THE PROPOSAL. Every row it read, with the words it read them from, and one button. */
-  function hcProposeImportedJobs(jobs, bad){
+  /** ══ A PICTURE OF A TO-DO LIST IS THE SAME GESTURE AS A PICTURE OF A SCHEDULE ═══════════════
+   *
+   *  Adrian: "screenshot/paste for TASKS". Same door, same reviewer, same promise — `tasks` is a
+   *  third argument rather than a second proposal function, because two review steps would be two
+   *  ideas of what "nothing is on your day yet" means.
+   *
+   *  A TASK IS SHOWN AS A TASK. It has no customer and no price and it must not read like a job:
+   *  the row says what it is, and an undated task says "no date yet" rather than borrowing a day
+   *  it was never given. */
+  function hcProposeImportedJobs(jobs, bad, tasks){
+    tasks = tasks || [];
     var thread = hcThreadBody(); if(!thread) return;
     var wrap = document.createElement('div');
     wrap.className = 'hc-msg hubly hc-import-prop';
     wrap.setAttribute('data-hc-import', 'schedule');
+    var total = jobs.length + tasks.length;
+    // COUNTED SEPARATELY, SAID SEPARATELY. "3 things" over two jobs and one errand tells him
+    // neither number; a job is someone expecting him and a task is not.
+    var parts = [];
+    if(jobs.length) parts.push(jobs.length + (jobs.length === 1 ? ' job' : ' jobs'));
+    if(tasks.length) parts.push(tasks.length + (tasks.length === 1 ? ' task' : ' tasks'));
     var h = hcEl('div', 'hc-import-h',
-      jobs.length ? ('I read ' + jobs.length + (jobs.length === 1 ? ' thing' : ' things') + ' off that. Nothing is on your day yet — have a look first.')
-                  : 'I couldn’t pin any of it down well enough to add.');
+      total ? ('I read ' + parts.join(' and ') + ' off that. Nothing is on your day yet — have a look first.')
+            : 'I couldn’t pin any of it down well enough to add.');
     wrap.appendChild(h);
     jobs.forEach(function(j){
       var row = hcEl('div', 'hc-import-row');
@@ -5304,6 +5321,15 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
       if(j.source_text) row.appendChild(hcEl('span', 'hc-import-src', '“' + j.source_text + '”'));
       wrap.appendChild(row);
     });
+    tasks.forEach(function(t){
+      var row = hcEl('div', 'hc-import-row');
+      row.setAttribute('data-hc-import-kind', 'task');
+      row.appendChild(hcEl('span', 'hc-import-when',
+        t.due_date ? [hcDayLabel(t.due_date), t.due_time ? hcTimeUS(t.due_time) : ''].filter(Boolean).join(' at ') : 'No date yet'));
+      row.appendChild(hcEl('span', 'hc-import-what', (t.title || '(no title)') + ' · Task'));
+      if(t.source_text) row.appendChild(hcEl('span', 'hc-import-src', '“' + t.source_text + '”'));
+      wrap.appendChild(row);
+    });
     if(bad.length){
       wrap.appendChild(hcEl('div', 'hc-import-badh',
         bad.length + (bad.length === 1 ? ' line I couldn’t read' : ' lines I couldn’t read') + ' — these are NOT included:'));
@@ -5311,19 +5337,28 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         wrap.appendChild(hcEl('div', 'hc-import-bad', (b.source_text ? '“' + b.source_text + '” — ' : '') + (b.why || 'unclear')));
       });
     }
-    if(jobs.length){
-      var go = hcEl('button', 'hc-day-add-go', 'Add ' + (jobs.length === 1 ? 'it' : 'all ' + jobs.length) + ' to my day');
+    if(total){
+      var go = hcEl('button', 'hc-day-add-go', 'Add ' + (total === 1 ? 'it' : 'all ' + total) + ' to my day');
       go.type = 'button'; go.setAttribute('data-hc-import-go', '1');
       var note = hcEl('div', 'hc-day-add-msg');
       go.addEventListener('click', async function(){
         go.disabled = true; note.textContent = '';
         var res = await hcCreateImportedJobs(jobs);
-        note.textContent = res.added
-          ? ('Added ' + res.added + (res.added === 1 ? ' thing' : ' things') + ' to your day' +
-             (res.failed ? '. ' + res.failed + " didn’t save — they’re still listed above." : '.'))
+        // THE TASKS GO THROUGH THE WRITER THAT ALREADY EXISTS — hcAddDayTask, the same one the
+        // by-hand form uses. Not a second creator, and each one counted by what came back.
+        var tAdded = 0, tFailed = 0;
+        for(var i = 0; i < tasks.length; i++){
+          var t = tasks[i];
+          var r = await hcAddDayTask({ title: t.title, time: t.due_time || '', place: '', date: t.due_date || null });
+          if(r && r.ok) tAdded++; else tFailed++;
+        }
+        var added = res.added + tAdded, failed = res.failed + tFailed;
+        note.textContent = added
+          ? ('Added ' + added + (added === 1 ? ' thing' : ' things') + ' to your day' +
+             (failed ? '. ' + failed + " didn’t save — they’re still listed above." : '.'))
           : 'None of those saved, so your day is unchanged. Try again in a moment.';
-        if(res.added){ try{ await hcAfterWrite('job', { id: null, dates: res.dates }); }catch(e){} }
-        go.disabled = !!res.added ? true : false;
+        if(added){ try{ await hcAfterWrite('job', { id: null, dates: res.dates }); }catch(e){} }
+        go.disabled = added ? true : false;
       });
       wrap.appendChild(go); wrap.appendChild(note);
     }

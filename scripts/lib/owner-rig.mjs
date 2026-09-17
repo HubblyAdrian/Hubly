@@ -91,7 +91,7 @@ export function installOwnerFake(opts) {
       if (name === "get_business_customers") return ok(tables.customers || []);
       if (name === "get_business_customer_count") return ok((tables.customers || []).length);
       if (name === "get_business_hours") return ok(opts.hours || []);
-      if (name === "get_business_tasks") return ok(tables.tasks || []);
+      if (name === "get_business_tasks") return ok((tables.tasks || []).slice());
       // THE UNION SERVICES READER. Shaped exactly as the RPC returns it — name + price in DOLLARS
       // (the relational table's unit) plus `source` and `conflicts` — so a check exercising the quoter
       // is exercising the conversion too, which is where a units bug would live.
@@ -191,7 +191,24 @@ export function installOwnerFake(opts) {
         rows.push({ kind: a.p_kind, scope: a.p_scope, visible: true, sort_order: next, config: null });
         return ok({ ok: true, outcome: "created", kind: a.p_kind, scope: a.p_scope });
       }
-      if (name === "update_business_job" || name === "create_task") { W.__rig.writes.push({ name, args }); return ok([{ id: null, error: null }]); }
+      // ══ create_task WRITES, AND THE PRODUCT READS IT BACK ═══════════════════════════════════
+      //
+      // This returned `{ id: null }`, so hcAddDayTask's read-back — "the writer telling us what it
+      // wrote is the writer's word; the table is the record" — could never find the row and every
+      // successful write was reported as `not_readable_back`. A fixture that cannot satisfy the
+      // product's own postcondition makes correct code look broken, which is how the photo-import
+      // check first reported two written tasks as two failures.
+      if (name === "create_task") {
+        W.__rig.writes.push({ name, args });
+        const a = args || {};
+        const row = { id: "task-" + ((W.__rig.tasksMade = (W.__rig.tasksMade || 0) + 1)),
+                      title: a.p_title ?? null, due_date: a.p_due_date ?? null, due_time: a.p_due_time ?? null,
+                      band: a.p_band ?? null, band_source: "owner", band_reason: a.p_band_reason ?? null,
+                      lane: a.p_lane ?? "work", status: "open", roll_count: 0, notes: a.p_notes ?? null };
+        (tables.tasks = tables.tasks || []).push(row);
+        return ok(row);
+      }
+      if (name === "update_business_job") { W.__rig.writes.push({ name, args }); return ok([{ id: null, error: null }]); }
       return ok(null);
     },
     // ══ THE SOCKET IS A REAL PATH INTO THE APP, SO THE FAKE KEEPS ITS HANDLERS ═══════════
