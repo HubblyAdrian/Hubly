@@ -8,13 +8,25 @@ And the red count must be DECLARED."*
 
 **Measured by `node scripts/run-all-checks.mjs` — 166 checks, found by glob, not by a list.**
 
-| | before this round | after |
+| | before this round | AFTER |
 | --- | --- | --- |
-| passed | 136 | see the tail of this file |
-| **RED** | **27** | |
-| cannot run | 2 | |
-| timed out | 1 (`check-block-legibility`, at 90s) | |
-| assertions passed | 1,477 | |
+| checks found by glob | 166 | **167** (one added) |
+| passed | 136 | **145** |
+| **RED** | **27** | **19** |
+| cannot run | 2 | 2 |
+| timed out | 1 (`check-block-legibility`, at 90s) | 1 (same, at 120s) |
+| assertions passed | 1,477 | **1,480** |
+
+**Nine checks went from red to green, and one new red is my own** —
+`check-no-unwritten-placeholder`, which is red on the three owner-preview placeholders it found
+and which are deliberately not fixed blind (below). Green: `no-db-push`, `denominator-rule`,
+`recording-on-success`, `mobile-nav-drawer`, `owner-preview-clicks`, `day-night-mode`,
+`hubly-syntax`, `profile-membership`, `revenue-invoices`, `name-is-asked`.
+
+**The 19 that remain, by bucket:** 4 in A (`draft-token-truthiness`, `one-writer-per-question`,
+`platform-rc`, `walk-assertions`) plus my own `no-unwritten-placeholder`; 13 in B (10 of them the
+marketing/milestone block, plus `graefs-page`, `booking-link-subdomain`, `hubly-brain`); 1 in C
+(`draft-arg-name`, which reports that it cannot run and exits 1 instead of 2).
 
 **Two of the 27 were NOT on the list I was given.** `check-no-db-push` and `check-denominator-rule`
 had gone red since, and the first of those is the enforcement of the most dangerous command in the
