@@ -24,7 +24,13 @@ const MIME = { ".html": "text/html", ".css": "text/css", ".js": "text/javascript
 export async function servePublic(root) {
   const server = createServer(async (req, res) => {
     try {
-      const rel = decodeURIComponent((req.url || "/").split("?")[0]);
+      let rel = decodeURIComponent((req.url || "/").split("?")[0]);
+      // THE REAL ROUTES, NOT JUST THE FILENAMES. api/router.js answers "/", "/home", "/platform" and
+      // "/platform-home" with platform-home.html — none of which is a file on disk. A checker that
+      // asked for "/platform-home" got a 404 BODY and then reported "no seam on the page", which is a
+      // check failing to find a page and blaming the product. If the router grows a route, it grows
+      // here too; the alternative is every check hardcoding a filename the product does not use.
+      if (rel === "/" || rel === "/home" || rel === "/platform" || rel === "/platform-home") rel = "/platform-home.html";
       const buf = await readFile(join(root, "public", rel));
       res.writeHead(200, { "content-type": MIME[extname(rel)] || "application/octet-stream" });
       res.end(buf);

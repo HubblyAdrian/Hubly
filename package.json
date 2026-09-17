@@ -120,7 +120,8 @@
     "check:page-price-drift": "node scripts/check-page-price-drift.mjs",
     "check:seeded-content": "node scripts/check-seeded-content-stays-in-the-editor.mjs",
     "check:ip-retention": "node scripts/check-ip-retention-is-structural.mjs",
-    "check:the-quote": "node scripts/check-the-quote.mjs"
+    "check:the-quote": "node scripts/check-the-quote.mjs",
+    "check:a2-job-record": "node scripts/check-a2-job-record.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

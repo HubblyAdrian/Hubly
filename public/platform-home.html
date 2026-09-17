@@ -1013,6 +1013,20 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     /* THE MODE CHIP. Same visual family as the selection chip so it reads as the same kind of
        thing — a piece of state attached to what you are about to type — but it is unmistakably a
        MODE: it names itself, and the way out is a control beside the name, never a hidden gesture. */
+    /* A2 — THE JOB RECORD FORM. Two columns where there is room, one where there is not, and
+       nothing squeezed: every field is at least 9em before it wraps, which is what stops the price
+       and the time collapsing into unreadable slivers on a narrow chat pane. */
+    .hc-jobform{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:flex-end;padding:10px 0}
+    .hc-jf-field{display:flex;flex-direction:column;gap:3px;flex:1 1 9em;min-width:9em}
+    .hc-jf-lbl{font-size:11px;font-weight:600;opacity:.75}
+    .hc-jf-in{font:inherit;font-size:13px;padding:7px 9px;border:1px solid var(--hc-line,#d8d8dd);border-radius:8px;background:var(--hc-bg,#fff);min-width:0;width:100%}
+    .hc-jf-in:disabled{opacity:.5}
+    textarea.hc-jf-in{resize:vertical}
+    .hc-jf-row{display:flex;gap:8px;align-items:flex-end;flex:1 1 100%;flex-wrap:wrap}
+    .hc-jf-pick{font:inherit;font-size:12px;font-weight:600;padding:7px 10px;border:1px solid var(--hc-line,#d8d8dd);border-radius:999px;background:transparent;cursor:pointer;white-space:nowrap}
+    .hc-jf-go{font:inherit;font-size:13px;font-weight:700;padding:8px 14px;border:none;border-radius:999px;background:var(--hc-ink,#111);color:#fff;cursor:pointer;flex:0 0 auto}
+    .hc-jf-go:disabled{opacity:.6}
+    .hc-jf-msg,.hc-jf-note{flex:1 1 100%;font-size:12px;line-height:1.45;opacity:.85}
     .hc-mng-note{display:block;flex-basis:100%;font-size:11px;opacity:.8;margin:2px 0 0}
     .hc-mode-chip-row{display:flex;gap:8px;align-items:center;margin:0 0 6px;flex-wrap:wrap}
     .hc-mode-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 8px 5px 10px;border-radius:999px;
@@ -7890,6 +7904,270 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     return wrap;
   }
 
+  // ══ A2 — THE JOB RECORD ══════════════════════════════════════════════════════════════════════
+  //
+  // ADRIAN, 2026-09-16: "Name, address, kind (dropdown from their offers, CARRYING TYPE — a quoted
+  // offer starts a quote, not a booking — or a one-off), price, phone, email, notes. The one-off is
+  // first-class and must not become a public offer. Leads -> Customers -> Jobs carries forward;
+  // pickContactInto('customer') is ALREADY OPEN — wire to it, do not build a second. Ground every
+  // field with the existing mechanism. A job created here appears on My Day with no refresh."
+  //
+  // ══ THE KIND DROPDOWN CARRIES THE TYPE, AND THAT IS THE WHOLE POINT OF THIS FORM ═════════════
+  //
+  // Every option is one of HIS OWN offers, read through `get_business_services` — the union reader, so
+  // this form behaves identically on a CLASSIC and a FREEFORM business (ruled 2026-09-16: it reads the
+  // RECORD, never the page). Each option carries the offer's SALE AXIS with it:
+  //
+  //   BOOKABLE offer  -> a job, priced from his record.
+  //   QUOTED offer    -> NOT A JOB. Choosing it starts a QUOTE, because that is what the offer says it
+  //                      is. Writing a job with a made-up amount for something he quotes is the
+  //                      fabricated-price defect arriving through a dropdown, and it is exactly what
+  //                      the type model exists to prevent.
+  //   SOMETHING ELSE  -> a one-off. FIRST-CLASS: it gets a name and a price on this job and it is
+  //                      NEVER written to the catalogue, so it cannot become a public offer.
+  //
+  // ══ GROUNDING ═══════════════════════════════════════════════════════════════════════════════
+  //
+  // Every field is what he typed or what his record already held. There is no default price, no
+  // default duration, and no invented customer name. A bookable offer's price is PRE-FILLED from his
+  // own record and is editable; an empty price stays empty rather than becoming 0, because 0 is a
+  // number nobody stated.
+  var HC_JOB_KIND_NONE = '__oneoff__';
+  var HC_JOB_FORM = null;
+  /** His own offers, with the sale axis each one declares. `wsOfferType` is the canonical reader and
+   *  lives in the other shell, so the axis is derived here from the same structural source it uses:
+   *  `pricing.mode === 'quote_required'`. The union reader does not return the mode, so a service with
+   *  NO PRICE is treated as quoted — which is the honest reading of "he has never put a number on it"
+   *  and is the same conclusion `offerType` reaches from `saleFrom:'unknown'` plus no price. */
+  async function hcJobOffers(){
+    var offers = await hcQuoteOffers();
+    if(offers === null) return null;
+    return (offers || []).map(function(o){
+      return { name: o.name, cents: o.cents, quoted: o.cents == null };
+    });
+  }
+  /** THE FORM. Built into a room, with its own status line, and it says every outcome in words. */
+  async function hcJobForm(room, biz){
+    var wrap = document.createElement('form');
+    wrap.className = 'hc-jobform';
+    wrap.setAttribute('data-hc-jobform', '1');
+    var mk = function(tag, cls, attrs){
+      var e = document.createElement(tag);
+      if(cls) e.className = cls;
+      Object.keys(attrs || {}).forEach(function(k){ e.setAttribute(k, attrs[k]); });
+      return e;
+    };
+    var field = function(label, el){
+      var f = mk('label', 'hc-jf-field');
+      var l = mk('span', 'hc-jf-lbl'); l.textContent = label;
+      f.appendChild(l); f.appendChild(el);
+      return f;
+    };
+    var name  = mk('input', 'hc-jf-in', { type:'text', 'data-hc-job':'name',  placeholder:'Their name', 'aria-label':'Their name' });
+    var phone = mk('input', 'hc-jf-in', { type:'tel',  'data-hc-job':'phone', placeholder:'Phone', 'aria-label':'Phone' });
+    var email = mk('input', 'hc-jf-in', { type:'email','data-hc-job':'email', placeholder:'Email', 'aria-label':'Email' });
+    var addr  = mk('input', 'hc-jf-in', { type:'text', 'data-hc-job':'address', placeholder:'Address', 'aria-label':'Address' });
+    var kind  = mk('select','hc-jf-in', { 'data-hc-job':'kind', 'aria-label':'What the job is' });
+    var price = mk('input', 'hc-jf-in', { type:'text', 'data-hc-job':'price', placeholder:'Price', inputmode:'decimal', 'aria-label':'Price' });
+    var oneoff= mk('input', 'hc-jf-in', { type:'text', 'data-hc-job':'oneoff', placeholder:'What is the work?', 'aria-label':'What is the work?' });
+    var date  = mk('input', 'hc-jf-in', { type:'date', 'data-hc-job':'date', 'aria-label':'Day' });
+    var time  = mk('input', 'hc-jf-in', { type:'time', 'data-hc-job':'time', 'aria-label':'Time' });
+    var notes = mk('textarea','hc-jf-in',{ rows:'2', 'data-hc-job':'notes', placeholder:'Notes (optional)', 'aria-label':'Notes' });
+    var msg   = mk('div', 'hc-jf-msg', { 'data-hc-job':'msg' });
+    var go    = mk('button','hc-jf-go', { type:'submit', 'data-hc-job':'add' }); go.textContent = 'Add the job';
+
+    // THE OFFERS, OR AN HONEST REFUSAL. A read failure is not an empty list, and a dropdown with one
+    // option that says "something else" would quietly tell him he has no services.
+    var offers = await hcJobOffers();
+    if(offers === null){
+      var bad = mk('div', 'hc-jf-msg');
+      bad.textContent = 'I couldn’t read your services just now, so I can’t offer them here. That’s a read failure, not an empty list — try again in a moment.';
+      room.appendChild(bad);
+      return null;
+    }
+    var blank = mk('option', null, { value:'' }); blank.textContent = 'What is it?';
+    kind.appendChild(blank);
+    offers.forEach(function(o){
+      var op = mk('option', null, { value: o.name });
+      op.setAttribute('data-quoted', o.quoted ? '1' : '0');
+      if(o.cents != null) op.setAttribute('data-cents', String(o.cents));
+      // THE OPTION SAYS WHICH IT IS, IN WORDS. He is choosing between two different outcomes and a
+      // dropdown that looked uniform would hide that.
+      op.textContent = o.name + (o.quoted ? ' — you quote this' : (' — ' + hcMoney(o.cents)));
+      kind.appendChild(op);
+    });
+    var other = mk('option', null, { value: HC_JOB_KIND_NONE });
+    other.textContent = 'Something else (just this once)';
+    kind.appendChild(other);
+
+    var oneoffField = field('The work', oneoff);
+    oneoffField.hidden = true;
+    var quotedNote = mk('div', 'hc-jf-note'); quotedNote.hidden = true;
+
+    var sync = function(){
+      var op = kind.options[kind.selectedIndex];
+      var isOneOff = kind.value === HC_JOB_KIND_NONE;
+      var isQuoted = !!(op && op.getAttribute('data-quoted') === '1');
+      oneoffField.hidden = !isOneOff;
+      // A QUOTED OFFER IS NOT A JOB, and the form says so before he fills anything in — the button
+      // changes with it, because a button that says "Add the job" and then starts a quote is the
+      // silent-shape-change defect.
+      quotedNote.hidden = !isQuoted;
+      if(isQuoted){
+        quotedNote.textContent = 'You quote this one, so there’s no price to put on a job yet. I’ll start a Quick Quote instead.';
+        go.textContent = 'Start a quote';
+        price.disabled = true; price.value = '';
+      } else {
+        go.textContent = 'Add the job';
+        price.disabled = false;
+        // PRE-FILLED FROM HIS OWN RECORD, and editable. Never a default for something he has not
+        // priced: an empty field stays empty, because 0 is a number nobody stated.
+        var cents = op && op.getAttribute('data-cents');
+        if(cents && !price.value) price.value = String(Number(cents) / 100);
+        if(!cents && !isOneOff) price.value = price.value || '';
+      }
+    };
+    kind.addEventListener('change', function(){ sync(); });
+
+    // FROM HIS PHONE — the capability hubly.html already had, now shared (/contact-pick.js). Rendered
+    // only when the device actually offers it: a button that cannot work is worse than no button.
+    var row = mk('div', 'hc-jf-row');
+    row.appendChild(field('Name', name));
+    try{
+      if(typeof HublyContactPick !== 'undefined' && HublyContactPick.available()){
+        var pick = mk('button', 'hc-jf-pick', { type:'button' });
+        pick.textContent = 'From my phone';
+        pick.addEventListener('click', async function(){
+          try{
+            var c = await HublyContactPick.pick();
+            if(c === null) return;                            // cancelled: say nothing
+            if(!c){ msg.textContent = 'I couldn’t read a phone number or an email from that contact, so nothing was filled in.'; return; }
+            if(c.name) name.value = c.name;
+            if(c.phone) phone.value = c.phone;
+            if(c.email) email.value = c.email;
+            msg.textContent = 'Filled in from your contacts — check it before you add the job.';
+          }catch(e){ msg.textContent = 'Your browser wouldn’t open your contacts, so nothing was filled in.'; }
+        });
+        row.appendChild(pick);
+      }
+    }catch(e){}
+
+    wrap.appendChild(row);
+    wrap.appendChild(field('Phone', phone));
+    wrap.appendChild(field('Email', email));
+    wrap.appendChild(field('Address', addr));
+    wrap.appendChild(field('What', kind));
+    wrap.appendChild(oneoffField);
+    wrap.appendChild(quotedNote);
+    wrap.appendChild(field('Price', price));
+    wrap.appendChild(field('Day', date));
+    wrap.appendChild(field('Time', time));
+    wrap.appendChild(field('Notes', notes));
+    wrap.appendChild(go);
+    wrap.appendChild(msg);
+    sync();
+
+    wrap.addEventListener('submit', async function(ev){
+      ev.preventDefault();
+      go.disabled = true;
+      var res = await hcJobCreate({
+        name: name.value, phone: phone.value, email: email.value, address: addr.value,
+        kind: kind.value, oneoff: oneoff.value, price: price.value,
+        date: date.value, time: time.value, notes: notes.value,
+        quoted: !!(kind.options[kind.selectedIndex] && kind.options[kind.selectedIndex].getAttribute('data-quoted') === '1')
+      }, biz);
+      msg.textContent = hcJobCreateLine(res);
+      go.disabled = false;
+      if(res && res.ok){
+        name.value = phone.value = email.value = addr.value = oneoff.value = price.value = notes.value = '';
+        kind.selectedIndex = 0; sync();
+        // NO REFRESH TO SEE HIS OWN CHANGE. My Day is re-read from the record, not patched in the DOM.
+        try{ await hcRepaintDay(); }catch(e){}
+      }
+    });
+    room.appendChild(wrap);
+    HC_JOB_FORM = wrap;
+    return wrap;
+  }
+  /** THE WRITE. Refuses before it writes, and every refusal names itself. */
+  async function hcJobCreate(input, biz){
+    biz = biz || hc.draftBusiness;
+    if(!biz || !biz.id) return { ok:false, error:'no_business' };
+    var nm = String(input.name || '').trim();
+    var kindVal = String(input.kind || '').trim();
+    var oneoff = String(input.oneoff || '').trim();
+    if(!kindVal) return { ok:false, error:'no_kind' };
+    // A QUOTED OFFER STARTS A QUOTE, NOT A BOOKING. The form said so; the writer enforces it, because
+    // a guard that lives only in the UI is a guard one code path away from being bypassed.
+    if(input.quoted) return { ok:false, error:'quoted', service: kindVal };
+    var service = (kindVal === HC_JOB_KIND_NONE) ? oneoff : kindVal;
+    if(!service) return { ok:false, error:'no_oneoff_name' };
+    if(!nm) return { ok:false, error:'no_name' };
+    // A PRICE IS WHAT HE TYPED, OR NOTHING. Never 0, never a default.
+    var priceRaw = String(input.price == null ? '' : input.price).trim();
+    var amount = null;
+    if(priceRaw){
+      // "abc" STRIPPED TO NOTHING IS NOT ZERO. `Number('')` is 0, which is finite and not negative —
+      // so the first version of this turned a typo into a job priced at $0, which is the one number
+      // nobody ever states. The cleaned string must actually contain a digit, and it must parse.
+      var cleaned = priceRaw.replace(/[^0-9.]/g, '');
+      if(!/\d/.test(cleaned)) return { ok:false, error:'bad_price' };
+      var n = Number(cleaned);
+      if(!Number.isFinite(n) || n < 0) return { ok:false, error:'bad_price' };
+      amount = n;
+    }
+    try{
+      var uid = await hcOwnerUid();
+      if(!uid) return { ok:false, error:'not_signed_in' };
+      var c = await authGetClient();
+      var job = {
+        customer_name: nm,
+        service_name: service,
+        scheduled_date: String(input.date || '').trim() || null,
+        scheduled_time: String(input.time || '').trim() || null,
+        address: String(input.address || '').trim() || null,
+        phone: String(input.phone || '').trim() || null,
+        email: String(input.email || '').trim() || null,
+        amount: amount,
+        notes: String(input.notes || '').trim() || null
+      };
+      var r = await c.rpc('create_business_job', { p_business_id: biz.id, p_owner_id: uid, p_job: job });
+      if(r && r.error) return { ok:false, error:String(r.error.message || 'write_failed') };
+      var row = Array.isArray(r && r.data) ? r.data[0] : (r && r.data);
+      if(!row) return { ok:false, error:'write_failed' };
+      if(row.error) return { ok:false, error:String(row.error) };
+      if(!row.id) return { ok:false, error:'not_readable_back' };
+      return { ok:true, job:row, oneOff: kindVal === HC_JOB_KIND_NONE };
+    }catch(e){ return { ok:false, error:String((e && e.message) || e).slice(0, 120) }; }
+  }
+  /** THE SENTENCE. Pure, so a check runs it: every outcome says something and only a real write says
+   *  it worked. */
+  function hcJobCreateLine(res){
+    if(!res) return 'I couldn’t add that just now.';
+    if(res.ok){
+      var j = res.job || {};
+      var when = [j.scheduled_date ? hcDayLabel(j.scheduled_date) : '', hcTimeUS(j.scheduled_time)].filter(Boolean).join(' at ');
+      return 'Added' + (when ? (' — ' + when) : '') + ': ' + (j.customer_name || '') +
+             (j.service_name ? (', ' + j.service_name) : '') +
+             (Number(j.amount) > 0 ? (', ' + hcMoney(Math.round(Number(j.amount) * 100))) : '') + '.' +
+             (res.oneOff ? ' That one stays on this job only — it isn’t added to your services.' : '');
+    }
+    if(res.error === 'quoted') return 'You quote ' + (res.service || 'that one') + ', so there’s no price to put on a job. Say “quick quote” and I’ll price it with you.';
+    if(res.error === 'no_kind') return 'Pick what the job is first.';
+    if(res.error === 'no_oneoff_name') return 'Tell me what the work is and I’ll put it on this job only.';
+    if(res.error === 'no_name') return 'Whose job is it? I need a name.';
+    if(res.error === 'bad_price') return 'I couldn’t read that price, so nothing was saved.';
+    if(res.error === 'not_signed_in') return 'You’re signed out, so I couldn’t write that.';
+    if(res.error === 'no_business') return 'I don’t have a business to add that to.';
+    if(res.error === 'not_readable_back') return 'I saved that but couldn’t read it back, so I’m not going to tell you it’s on your day.';
+    return 'I couldn’t add that just now — nothing was saved.';
+  }
+  try{
+    window.hublyJobFormUI = Object.assign(window.hublyJobFormUI || {}, {
+      form: hcJobForm, create: hcJobCreate, line: hcJobCreateLine, oneOffValue: HC_JOB_KIND_NONE
+    });
+  }catch(e){}
+
   // ── PLANNER: the owner's day. ───────────────────────────────────────────────
   // Today and tomorrow, jobs and blocked time in ONE list, because a detailer does not
   // keep his jobs and his errands in separate apps and asking him to is why he uses
@@ -8054,6 +8332,15 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     }
     var work = jobs.filter(function(j){ return !j.is_block; });
     var room = hcRoomShell('Jobs', work.length ? (work.length + (work.length === 1 ? ' job' : ' jobs')) : null, null);
+    // ══ THE DOOR TO A2, AND IT IS OPEN IN THE STATE WHERE IT IS NEEDED. ══════════════════════════
+    //
+    // The form is part of the room in EVERY state — including the empty one, which is the state every
+    // business in the corpus is in. A jobs room whose only way in is "something else put it there" is a
+    // report, and that is the same mistake hcDayAddRow already exists to avoid on the planner.
+    //
+    // It is AWAITED before the list so the order on screen is hands-then-contents, and a read failure
+    // inside the form says so on its own line without emptying the room.
+    try{ await hcJobForm(room, biz); }catch(e){}
     if(!work.length){
       hcRoomEmpty(room, 'No jobs yet',
         'A job appears here when someone books, or when you tell me to add one. Nothing is hidden — there simply aren’t any on record.');
@@ -8754,7 +9041,13 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   /** NOBODY REFRESHES TO SEE THEIR OWN CHANGE. Any write that touches the day repaints it,
    *  in place, wherever it is showing — Home's canvas and any copy of the day rendered inside
    *  the conversation thread. It is a no-op when the day is not on screen. */
+  /** RE-READ THE DAY FROM THE RECORD. Counted, and the count is on the seam — "no refresh to see your
+   *  own change" is a claim about a re-read HAPPENING, and a check that could only assert this function
+   *  EXISTS would be green against a product that never calls it (which is exactly what the red-proof
+   *  found). The counter costs one integer and makes the claim checkable. */
+  var hcRepaintDayCount = 0;
   async function hcRepaintDay(){
+    hcRepaintDayCount++;
     try{
       var biz = hc.draftBusiness;
       if(!biz || !biz.id || !hc.draftClaimed) return false;
@@ -8780,7 +9073,8 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   try{
     window.hublyDayUI = Object.assign(window.hublyDayUI || {}, {
       render: hcRenderMyDay, hours: hcDayHourRange, label: hcHourLabel,
-      repaint: hcRepaintDay, addLine: HC_DAY_ADD_LINE, band: hcItemBand,
+      repaint: hcRepaintDay, repaints: function(){ return hcRepaintDayCount; },
+      addLine: HC_DAY_ADD_LINE, band: hcItemBand,
       // THE RULE ITSELF, not just its answer — a check has to be able to ask WHY a thing is a B.
       deriveBand: hcDeriveBand, bandRule: HC_BAND_RULE
     });
@@ -12667,5 +12961,8 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   }
 })();
 </script>
+  <!-- THE SHARED CONTACT PICKER (see /contact-pick.js). A2 wires to the capability hubly.html
+       already had rather than building a second one. -->
+  <script defer src="/contact-pick.js"></script>
 </body>
 </html>

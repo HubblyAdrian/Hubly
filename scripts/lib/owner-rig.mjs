@@ -78,6 +78,20 @@ export function installOwnerFake(opts) {
         return ok(Object.assign({ ok: true, id, status: "draft", lines: args.p_lines }, m));
       }
       if (name === "get_business_quotes") return ok(W.__rig.quotes.slice());
+      // create_business_job returns a TABLE, so the client sees an ARRAY with one row — and the row
+      // echoes what was written plus the new id, which is what the reply is composed from. Shaped as
+      // the real RPC returns it (20260914200000_create_business_job.sql) rather than as a bare object:
+      // a fake that returns the wrong SHAPE makes a correct client look broken.
+      if (name === "create_business_job") {
+        W.__rig.writes.push({ name, args });
+        const j = (args && args.p_job) || {};
+        return ok([{ id: "job-" + (W.__rig.jobsMade = (W.__rig.jobsMade || 0) + 1),
+                     customer_name: j.customer_name ?? null, service_name: j.service_name ?? null,
+                     scheduled_date: j.scheduled_date ?? null, scheduled_time: j.scheduled_time ?? null,
+                     address: j.address ?? null, phone: j.phone ?? null,
+                     amount: j.amount ?? null, notes: j.notes ?? null,
+                     status: "scheduled", error: null }]);
+      }
       if (name === "get_business_events") return ok(tables.events || []);
       if (name === "get_public_business") return ok([{ brand_color: null, city: null, state: null, meta: null }]);
       // THE PLACES ROWS MATTER MORE THAN THEY LOOK. Returning [] leaves hc.places null, which

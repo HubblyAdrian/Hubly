@@ -13196,6 +13196,11 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/smart-quote/ui.js"></script>
 <script defer src="/smart-quote/booking.js?v=pkg-lock-3"></script>
 <script defer src="/hubly-session.js"></script>
+<!-- ONE CONTACT PICKER, TWO SHELLS. The capability lived only here; A2 needs it in platform-home.html,
+     and two documents cannot call each other's functions. Adrian: "wire to it, do not build a second."
+     So the capability moved to /contact-pick.js and BOTH shells load it. What is shared is asking the
+     device and reading what it returns; which fields to fill stays shell-specific, which is correct. -->
+<script defer src="/contact-pick.js"></script>
 <script defer src="/journey-os/design-system.js"></script>
 <script defer src="/journey-os/hubly-events.js"></script>
 <script defer src="/journey-os/commerce/types.js?v=commerce-1"></script>
@@ -46047,19 +46052,16 @@ async function pasteContactInto(target){
   toast(t('pasteContactApplied'));
 }
 async function pickContactInto(target){
-  if(!contactsPickerAvailable()){toast(t('pickContactUnavailable'));return;}
+  // ASKS THROUGH THE SHARED CAPABILITY (/contact-pick.js) and fills THIS shell's fields. The
+  // device-asking half was identical to what platform-home needs and is now in one place; the
+  // field-filling half is legitimately per-shell and stays here.
+  if(typeof HublyContactPick==='undefined'||!HublyContactPick.available()){toast(t('pickContactUnavailable'));return;}
   try{
-    const contacts=await navigator.contacts.select(['name','email','tel'],{multiple:false});
-    const c=contacts&&contacts[0];
-    if(!c)return;
-    const name=(Array.isArray(c.name)?c.name[0]:c.name)||'';
-    const email=(Array.isArray(c.email)?c.email[0]:c.email)||'';
-    const tel=(Array.isArray(c.tel)?c.tel[0]:c.tel)||'';
-    const blob=[name,tel,email].filter(Boolean).join('\n');
-    const el=contactPasteEl(target);
-    if(el)el.value=blob;
-    const parsed=parseContactText(blob)||parseContactText([name,tel,email].join(' '));
+    const parsed=await HublyContactPick.pick();
+    if(parsed===null)return;                        // cancelled — not a failure, and not announced
     if(!parsed){toast(t('pasteContactFailed'));return;}
+    const el=contactPasteEl(target);
+    if(el)el.value=[parsed.name,parsed.phone,parsed.email].filter(Boolean).join('\n');
     fillParsedContact(target,parsed);
     toast(t('pasteContactApplied'));
   }catch(e){
