@@ -174,6 +174,8 @@ export const ALLOWED_TAGS = new Set([
 const SVG_TAGS = new Set(["svg", "path", "circle", "rect", "line", "polyline", "polygon", "g"]);
 
 /** Opaque to the AI — configured presentationally, implemented by Hubly. */
+import { lyingClaims, claimsIn, type BusinessFacts } from "./hubly_claims.ts";
+
 export const HUBLY_RESERVED_TAGS = new Set([
   "HublyBooking", "HublyReviews", "HublyCustomerPortal", "HublyContactForm", "HublyMap",
   // ══ THE THIRD OPTION THE CONTENT VALUE RULE NEVER HAD — ADRIAN'S RULING, 2026-09-17 ═══════
@@ -802,6 +804,18 @@ function validateReasoning(raw: unknown, path: string, warnings: ValidationIssue
  *  makes it data: inside a list item or a table cell. Anywhere else it needs a
  *  currency symbol or a real unit next to it.
  */
+/** Every string the page shows, in order. The claims checker reads the page's OWN WORDS — never
+ *  its markup — because a claim is a sentence a customer reads, whatever element carries it. */
+function textOf(node: HublyDocumentNode): string {
+  const parts: string[] = [];
+  const walk = (n: HublyDocumentNode) => {
+    if (typeof n.children === "string") { parts.push(n.children); return; }
+    if (Array.isArray(n.children)) for (const c of n.children) walk(c);
+  };
+  walk(node);
+  return parts.join(" ");
+}
+
 function sectionCarriesContent(node: HublyDocumentNode): boolean {
   let listItems = 0;
   let found = false;
@@ -846,7 +860,13 @@ function sectionCarriesContent(node: HublyDocumentNode): boolean {
   return found || listItems >= 2;
 }
 
-export function validateHublyDocument(raw: unknown, meta: { businessId: string; tag?: string; version: number; generatedBy: "ai" | "user" | "patch" }): ValidationResult {
+export function validateHublyDocument(raw: unknown, meta: {
+  businessId: string; tag?: string; version: number; generatedBy: "ai" | "user" | "patch";
+  /** WHAT THIS BUSINESS ACTUALLY HAS, for the claims checker. OPTIONAL, and its absence is not
+   *  treated as "nothing to check": a caller that supplies no facts gets no claim rejections and
+   *  a warning saying so, because an empty reader has told you about ITSELF. */
+  facts?: BusinessFacts;
+}): ValidationResult {
   const errors: ValidationIssue[] = [];
   const warnings: ValidationIssue[] = [];
   if (!raw || typeof raw !== "object") return { ok: false, errors: [{ path: "$", message: "document must be an object" }], rejections: emptyRejections() };
@@ -893,6 +913,32 @@ export function validateHublyDocument(raw: unknown, meta: { businessId: string; 
         message:
           `these sections carry no concrete content: ${hollow.join(", ")}. A section earns its place with something a visitor can use — a price, a number, a list of two or more items, a table, an expandable question, an image, or a Hubly element. Headings and paragraphs about the business are not enough. YOU HAVE THREE OPTIONS AND INVENTING A FIGURE IS NOT ONE OF THEM: fill it with something you were actually told; DELETE it; or, if this business genuinely needs the section and you have not been given the content, put a <HublySlot for="..." kind="..."/> in it — an empty space only the OWNER sees, which he fills or removes. A number you made up is worse than an empty section, because a section the owner has not filled never reaches a customer and a made-up number does.`,
       });
+    }
+  }
+  // ══ A PAGE THAT LIES CANNOT BE STORED — ADRIAN'S TEST, RUN WHERE THE PAGE IS VALIDATED ═════
+  //
+  // "a string is a CLAIM if a reasonable customer could be WRONG by acting on it… 47 -> dozens
+  // holds, 47 -> hundreds is a lie with a true row behind it."
+  //
+  // Only the two families that can be JUDGED are rejected — a quantity the record contradicts and
+  // an identifier that is not this business's own. Credential and promise words ("licensed",
+  // "24/7") are collected as warnings: no column holds them, so rejecting them would mean
+  // inventing a threshold for something we have no evidence about.
+  //
+  // AND WITHOUT FACTS IT SAYS SO. A caller that passes none gets a warning, never a silent pass.
+  if (root && meta.generatedBy === "ai") {
+    const pageText = textOf(root);
+    if (!meta.facts) {
+      warnings.push({ path: "$", message: "no business facts were supplied, so no claim on this page was checked against the record" });
+    } else {
+      for (const c of lyingClaims(pageText, meta.facts)) {
+        errors.push({ path: "$", message: `"${c.text}" is a claim this business's record contradicts — ${c.why}. Remove it or replace it with something true; a figure you cannot support is worse than no figure.` });
+      }
+    }
+    for (const c of claimsIn(pageText, meta.facts)) {
+      if (c.verdict === "unjudgeable" && (c.family === "credential" || c.family === "promise")) {
+        warnings.push({ path: "$", message: `"${c.text}" — ${c.why}` });
+      }
     }
   }
   if (errors.length || !root) return { ok: false, errors, rejections };

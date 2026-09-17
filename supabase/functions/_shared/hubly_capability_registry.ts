@@ -47,6 +47,7 @@ import { unstyledPageVerdict, MIN_OWN_STYLE_BYTES } from "./hubly_page_css_guard
 import { photoReply, servicesAreaAddedReply, composeServicesTruth, type ServicesPlacementLike } from "./hubly_owner_replies.ts";
 import { HublyAI, extractJson } from "./hubly_ai.ts";
 import { issueDraftGrant } from "./draft_grant.ts";
+import { type BusinessFacts } from "./hubly_claims.ts";
 import {
   validateStorefrontAst,
   storefrontCatalogPromptBlock,
@@ -755,7 +756,9 @@ export async function rebuildDocumentFromRecord(
 
     const brief = `Rebuild this page for ${bizRow?.name || "this business"} using THE BUSINESS RECORD above as the source of every fact. New information has just been added to the record (${changes.join(", ")}), and the current page was written before it existed. Use the real services, prices, photos, service area and contact details exactly as recorded. Do not invent anything the record does not contain.`;
 
-    const gen = await generateAndValidateDocument(system, brief, draftId, "website");
+    // THE CLAIMS CHECKER GETS THE RECORD THE PAGE WAS WRITTEN FROM. Without this the gate exists
+    // and never fires — a capability with no door, which is the pattern this repo keeps paying for.
+    const gen = await generateAndValidateDocument(system, brief, draftId, "website", undefined, undefined, factsFromRecord(record));
     if (!gen.ok) return { status: "failed", detail: "validation" };
 
     const html = renderHublyDocument(gen.document, renderContextFor(draftId, bizRow));
@@ -1527,7 +1530,24 @@ function addUsage(total: UsageTotal, u?: { promptTokens: number; completionToken
  *  usage accumulates real token counts across every attempt (including a
  *  failed/retried one) — the only honest basis for a real cost figure,
  *  not an estimate. */
-export async function generateAndValidateDocument(system: string, brief: string, businessId: string, tag: string, modelOverride?: string, reasoningEffortOverride?: "low" | "medium" | "high"): Promise<DocGenOutcome> {
+/** ══ THE FACTS THE CLAIMS CHECKER JUDGES A PAGE AGAINST ══════════════════════════════════════
+ *
+ *  Built from the record the generation already loaded — never a second read, and never a guess.
+ *  A field that is ABSENT here means "we did not establish it", which the checker treats as
+ *  unjudgeable rather than as zero. `reviews` is the exception: review_submissions is the table,
+ *  so an empty list IS zero approved reviews, and a page claiming 120 of them is contradicted.
+ */
+function factsFromRecord(record: BusinessRecord, customerCount?: number): BusinessFacts {
+  return {
+    reviews: Array.isArray(record.reviews) ? record.reviews.length : undefined,
+    yearsInBusiness: typeof record.yearsInBusiness === "number" ? record.yearsInBusiness : undefined,
+    phone: record.phone ?? null,
+    address: record.address ?? null,
+    customers: customerCount,
+  };
+}
+
+export async function generateAndValidateDocument(system: string, brief: string, businessId: string, tag: string, modelOverride?: string, reasoningEffortOverride?: "low" | "medium" | "high", facts?: BusinessFacts): Promise<DocGenOutcome> {
   const usage = emptyUsage();
   let modelUsed: string | undefined;
   // Standard approach as of 2026-08-06 (see buildDesignRationaleInstructions'
@@ -1565,14 +1585,54 @@ export async function generateAndValidateDocument(system: string, brief: string,
   const rootOf = (candidate: any) => candidate?.root;
   const rationaleOf = (candidate: any) => (typeof candidate?.designRationale === "string" ? candidate.designRationale : null);
 
+  /** ══ WRITE DOWN WHAT THE FIRST ATTEMPT DID ══════════════════════════════════════════════════
+   *
+   *  `firstAttemptOk` was computed and thrown away, so "how often does the model need a retry"
+   *  had no answer and the json_object -> json_schema change could not be measured against
+   *  anything. It is one row now (migration 20260917210000), and the error KINDS are recorded
+   *  beside it because a strict schema can only prevent the shape errors — a hollow section or a
+   *  claim the record contradicts is not something a schema can stop, and without the split the
+   *  "after" number would be unattributable.
+   *
+   *  BEST-EFFORT AND SILENT ON FAILURE. Telemetry may never break a generation. */
+  const kindOf = (msg: string): string => {
+    if (/is not allowed/.test(msg)) return "tag";
+    if (/unknown class token/.test(msg)) return "class_token";
+    if (/not a configurable prop|is never allowed|only allowed on/.test(msg)) return "attr";
+    if (/carry no concrete content/.test(msg)) return "hollow_section";
+    if (/record contradicts/.test(msg)) return "false_claim";
+    if (/missing root|valid JSON/.test(msg)) return "shape";
+    return "other";
+  };
+  const recordAttempt = async (okFirst: boolean, errs: { message: string }[], model: string | undefined) => {
+    try {
+      const supabaseUrl = (Deno.env.get("SUPABASE_URL") || "").trim();
+      if (!supabaseUrl) return;
+      await fetch(`${supabaseUrl}/rest/v1/document_generation_events`, {
+        method: "POST",
+        headers: { ...adminHeaders(), "content-type": "application/json", prefer: "return=minimal" },
+        body: JSON.stringify({
+          business_id: businessId, tag, model: model ?? null,
+          // THE MODE IS RECORDED, NOT ASSUMED. When the strict contract is turned on this string
+          // changes with it and the comparison is one GROUP BY rather than an argument.
+          schema_mode: "json_object",
+          first_attempt_ok: okFirst,
+          error_kinds: [...new Set((errs || []).map((e) => kindOf(String(e.message || ""))))],
+          error_count: (errs || []).length,
+        }),
+      });
+    } catch (e) { console.error("document_generation_events write failed", (e as Error)?.message); }
+  };
+
   const first = await attempt([{ role: "user", content: brief }]);
   if (!first) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON" }], usage, firstAttemptOk: false, firstAttemptErrors: [{ path: "$", message: "empty completion or unparseable JSON" }], modelUsed, rationale: null };
   if (!rootOf(first.candidate)) return { ok: false, errors: [{ path: "$.root", message: "response was missing the required root field" }], usage, firstAttemptOk: false, firstAttemptErrors: [{ path: "$.root", message: "missing root field" }], modelUsed, rationale: rationaleOf(first.candidate) };
-  const firstResult = validateHublyDocument(rootOf(first.candidate), { businessId, tag, version: 1, generatedBy: "ai" });
+  const firstResult = validateHublyDocument(rootOf(first.candidate), { businessId, tag, version: 1, generatedBy: "ai", facts });
   // The FIRST attempt is the honest signal: it is what the model reaches for
   // before being told what it may not have. The retry is already contaminated
   // by the rejection messages, so its vocabulary is ours, not the model's.
   const rejections = firstResult.rejections;
+  await recordAttempt(firstResult.ok, firstResult.ok ? [] : firstResult.errors, modelUsed);
   if (firstResult.ok) return { ok: true, document: firstResult.document, usage, rejections, firstAttemptOk: true, modelUsed, rationale: rationaleOf(first.candidate) };
 
   const retryMsg = `Your previous output's "root" field had these validation errors — fix exactly these, nothing else:\n${firstResult.errors.map((e) => `- ${e.path}: ${e.message}`).join("\n")}\n\nReturn the same { "designRationale": ..., "root": ... } shape, with root corrected (a full corrected root node, not just the fixed part).`;
@@ -1583,7 +1643,7 @@ export async function generateAndValidateDocument(system: string, brief: string,
   ]);
   if (!second) return { ok: false, errors: [{ path: "$", message: "the model did not return valid JSON on retry" }], usage, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed, rationale: rationaleOf(first.candidate) };
   if (!rootOf(second.candidate)) return { ok: false, errors: [{ path: "$.root", message: "retry response was missing the required root field" }], usage, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed, rationale: rationaleOf(first.candidate) };
-  const secondResult = validateHublyDocument(rootOf(second.candidate), { businessId, tag, version: 1, generatedBy: "ai" });
+  const secondResult = validateHublyDocument(rootOf(second.candidate), { businessId, tag, version: 1, generatedBy: "ai", facts });
   const rationale = rationaleOf(second.candidate) ?? rationaleOf(first.candidate);
   return secondResult.ok
     ? { ok: true, document: secondResult.document, usage, rejections, firstAttemptOk: false, firstAttemptErrors: firstResult.errors, modelUsed, rationale }
