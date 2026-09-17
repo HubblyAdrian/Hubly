@@ -13,18 +13,28 @@
 
 > ### THE INDEX, AND WHY IT IS HERE
 >
-> **This file holds 35 lessons.** Lessons **1–3** are the three instances described
-> narratively in the opening section below — they have no `## Lesson N` heading, which is
-> why a later count read the file as starting at 4. Numbered headings run **4 → 33**, with
-> **11 and 11b** both present: two distinct lessons were written with the same number on
-> different days and neither noticed.
+> **THIS COUNT IS DERIVED, NOT TRANSCRIBED — 2026-09-17.** It read *"this file holds 35
+> lessons … numbered headings run 4 → 33"* while the file carried **89 headings running to
+> Lesson 96**. A hand-kept number in a file about hand-kept numbers, and it had been wrong for
+> weeks. It is not maintained by hand any more:
 >
-> Renumbering 12–33 would invalidate every citation made in commit messages since, so the
-> second became **11b** rather than shifting the rest. Before adding a lesson, take the
-> next number above the highest heading here and update this count.
+> ```
+> grep -c '^## Lesson' docs/CHECKER_LESSONS.md        # headings
+> grep -o '^## Lesson [0-9b]*' docs/CHECKER_LESSONS.md | tail -1   # the highest, for the next number
+> ```
 >
-> A lessons file that miscounts its own lessons undermines the method it documents —
-> caught 2026-09-12 because Adrian's notes said 15 and the file held 31 headings.
+> **89 headings, running 4 → 96**, plus lessons **1–3**, which are the three instances described
+> narratively in the opening section and have no heading — which is why a later count read the file
+> as starting at 4. **11 and 11b** are both present: two lessons written with the same number on
+> different days, and renumbering would invalidate every citation in the commit history since, so
+> the second became 11b. Gaps in the sequence are real and deliberate for the same reason.
+>
+> Before adding a lesson, run the second command above and take the next number. Do not write a
+> total here again.
+>
+> A lessons file that miscounts its own lessons undermines the method it documents — caught the
+> first time on 2026-09-12 (notes said 15, the file held 31), and the correction itself then went
+> stale, which is the whole argument for deriving it.
 
 # Checks that report a result they did not establish
 
@@ -3421,3 +3431,53 @@ stylesheets, so the stylesheet precondition is a no-op for the 24 checks that lo
 check ever navigated to a page with local stylesheets — `check-job-door-open`, written this round.**
 So this did not uncover a pile of rotten checks; it closed the hole that had just swallowed one, in
 the only place where closing it is structural rather than remembered.
+
+## Lesson 96
+
+**THE ADVISOR IS PART OF THE CHAIN. A FINDING THAT ARRIVES WITH ITS OWN DISPROOF ATTACHED MUST NOT
+BE REPORTED AS URGENT UNTIL THE DISPROOF IS CHECKED.**
+
+**Recorded on 2026-09-17 by Adrian, about himself, and it is the second instance:**
+
+> *"I AMPLIFIED YOUR CAVEATED FINDING AND IT WAS WRONG — second time (17:00, then lugnuts). You
+> gave me the caveats; I led with the alarm."*
+
+### The two instances
+
+1. **17:00.** A job time was reported with the caveat that `jobs` has no `updated_at`, so "did this
+   move, and when" could not be answered from the row. The caveat was dropped on the way up; the
+   time was treated as evidence of a defect. It turned out Adrian had set it by hand after the walk.
+2. **lugnuts-regulators, this round.** The finding was reported as *"the one eligible market booking
+   … delivery `skipped`, no recipient address"* — with, in the same document, the sentence
+   **"`owner_identified=false`, which is our own way of saying we have never confirmed who this
+   is"**. That caveat was the disproof. It went up as *"A REAL MARKET BOOKING HAS BEEN SITTING
+   UNACCEPTED AND NOBODY WAS TOLD… that is a real person."* The requester was **the owner, booking
+   his own page on the day he built it** — `customer_email` byte-for-byte his own auth address.
+
+### Why this is a checking lesson and not a manners lesson
+
+Every other rule in this file guards the step where a MEASUREMENT becomes a CLAIM. This one guards
+the step after it: where a claim becomes a PRIORITY. That step has the same failure mode and none of
+the same defences —
+
+- **the caveat is written down and travels separately from the number.** A sentence three paragraphs
+  below the headline does not survive a re-telling, and the re-telling is what gets acted on.
+- **the flattering direction is the alarming one.** *"I found a real customer we dropped"* is a
+  better story than *"our own test booking did not notify us"*, so it gets repeated rather than
+  re-derived — the same asymmetry as Lesson 94, one level up the chain.
+- **the correction never travels as far as the alarm did.** Already in CLAUDE.md, and it is why the
+  correction in `OPEN_FINDINGS.md` was put at the TOP of the file rather than beside the entry.
+
+### The rule, both directions
+
+**Down the chain (the measurer):** a caveat that could make the finding evaporate is not a footnote.
+It goes **before** the number, in the same sentence, and the finding is not reported as urgent until
+it has been CHECKED — not merely stated. *"This holds only if…"* is a task, not a disclaimer.
+
+**Up the chain (the advisor, whoever that is):** a finding that arrives with its own disproof
+attached gets the disproof checked before it is amplified. Amplifying is an ACT, and it is the act
+that reprioritises a day, reaches a customer, and becomes the thing everyone remembers.
+
+**The line that settles both, and it is already ours:** *a row is not evidence of a person.* The
+whole lugnuts alarm rested on reading `customer_name` and an `account_kind` label. One query —
+*is this address the owner's own?* — was the entire disproof, and it took eleven seconds.

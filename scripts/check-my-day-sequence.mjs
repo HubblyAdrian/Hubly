@@ -293,9 +293,17 @@ try {
   // is room (measured below at 1800). So the leg asserts THE RULE — the calendar is always there,
   // and it is beside the day wherever both fit — instead of a fixed picture that can only be true
   // at one window size.
-  say("15 [RULE] the calendar is there, and at this width it stacks rather than squeezing the day",
-      opened.cal === 1 && opened.truncated === 0,
-      `calendar present · beside the day: ${opened.calRightOfDay} · ${opened.truncated} truncated cell(s)`);
+  // ══ BOTH RULES AT 1440, AFTER ADRIAN'S RULING ON THE TRADE — 2026-09-17 ═══════════════════
+  //
+  // This leg used to say "at this width it stacks rather than squeezing the day", which was the
+  // honest report of a trade I had made: with the rail at 260 the canvas was 800, the day got
+  // 412px, and three cells truncated, so the context column was dropped underneath. Adrian ruled
+  // the other way — "NARROW THE RAIL… both rules must be true at 1440" — and he was right that it
+  // was affordable. Rail 180 -> canvas 880 -> day 492, and the Where cell wraps instead of
+  // ellipsing, so a 53-character address renders whole. BOTH now hold and the leg asserts both.
+  say("15 [RULE] at 1440 the calendar sits BESIDE the day AND nothing is truncated",
+      opened.cal === 1 && opened.calRightOfDay === true && opened.truncated === 0,
+      `beside the day: ${opened.calRightOfDay} · ${opened.truncated} truncated cell(s)`);
 
   // ── AND ON A SCREEN WITH ROOM, IT IS BESIDE THE DAY AGAIN ─────────────────────────────
   await rig.page.setViewportSize({ width: 1800, height: 900 });
@@ -307,7 +315,7 @@ try {
                .filter((e) => e.scrollWidth > e.clientWidth + 1).length,
              canvas: Math.round(document.querySelector(".hc-app-right").getBoundingClientRect().width) };
   });
-  say("15b [RULE] give it room and the calendar is beside the day, still with nothing squeezed",
+  say("15b [RULE] and more room keeps both true rather than trading one for the other",
       wide.beside === true && wide.truncated === 0,
       `canvas ${wide.canvas}px · beside: ${wide.beside} · ${wide.truncated} truncated cell(s)`);
   await rig.page.setViewportSize({ width: 1440, height: 900 });

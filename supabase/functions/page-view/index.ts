@@ -130,6 +130,8 @@ async function fireFirstVisitorAlert(admin: ReturnType<typeof createClient>, biz
   const { data: del } = await admin.from("notification_deliveries").insert({
     business_id: biz.id, subject_type: "first_visitor", subject_id: biz.id, recipient_role: "owner",
     channel: "email", provider: "resend", status: "pending",
+    // In words, now: the ledger outlives its subject and a bare uuid is unattributable.
+    subject_label: String(biz.name || biz.slug || "").slice(0, 200) || null,
   }).select("id").maybeSingle();
   const delId = (del as { id?: string } | null)?.id || null;
 

@@ -88,6 +88,10 @@ type LedgerRef = {
   businessId: string | null;
   subjectId: string | null;
   role: "owner" | "customer" | "operator";
+  /** What this row is about, in words, from the caller that has the order in hand. The ledger
+   *  outlives its subject — subject_id is polymorphic and cannot be a foreign key — so without
+   *  this an orphaned row is an unattributable uuid. */
+  subjectLabel?: string | null;
 };
 
 /**
@@ -108,6 +112,9 @@ async function sendEmail(
         business_id: ledger.businessId,
         subject_type: "commerce_order",
         subject_id: ledger.subjectId,
+        // WHAT THIS ROW IS ABOUT, captured now. subject_id is polymorphic and cannot be a foreign
+        // key, so a deleted order leaves a uuid pointing at nothing unless the row says in words.
+        subject_label: ledger.subjectLabel ?? null,
         recipient_role: ledger.role,
         recipient: to,
         channel: "email",

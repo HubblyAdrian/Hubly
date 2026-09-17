@@ -120,6 +120,9 @@ Deno.serve(async (req) => {
         } else {
           await admin.from('notification_deliveries').insert({
             business_id: businessId, subject_type: 'signup', subject_id: businessId, recipient_role: 'owner',
+            // In words, now — the ledger outlives its subject (subject_id is polymorphic and
+            // cannot be a foreign key), and a bare uuid is an unattributable row.
+            subject_label: name.slice(0, 200) || null,
             recipient: ownerEmail, channel: 'email', provider: 'resend', provider_message_id: providerMessageId,
             status, error: error ? String(error).slice(0, 500) : null,
           });

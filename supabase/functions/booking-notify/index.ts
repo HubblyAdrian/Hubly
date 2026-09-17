@@ -105,7 +105,12 @@ function googleCalendarLink(opts: { summary: string; location: string; descripti
  */
 async function sendEmail(
   supabase: ReturnType<typeof createAdminClient>,
-  ledger: { businessId: string | null; subjectType: string; subjectId: string | null; role: string; deliveryId?: string | null },
+  ledger: { businessId: string | null; subjectType: string; subjectId: string | null; role: string;
+            deliveryId?: string | null;
+            /** What this row is about, in words. The ledger outlives its subject — subject_id is
+             *  polymorphic and cannot be a foreign key — so an INSERTed row says it here. An
+             *  UPDATE does not need it: the caller wrote the label when it created the row. */
+            subjectLabel?: string | null },
   to: string | null,
   subject: string,
   html: string,
@@ -130,6 +135,7 @@ async function sendEmail(
           business_id: ledger.businessId,
           subject_type: ledger.subjectType,
           subject_id: ledger.subjectId,
+          subject_label: ledger.subjectLabel ?? null,
           recipient_role: ledger.role,
           recipient: to,
           channel: 'email',
@@ -149,7 +155,7 @@ async function sendEmail(
     // Not a failure and not a success. A business with no email on file cannot
     // be notified, and that is worth being able to count.
     await record('skipped', { error: 'no recipient address' });
-    return;
+    return 'skipped' as const;
   }
   try {
     const body: Record<string, unknown> = { from: RESEND_FROM, to, subject, html };
@@ -165,14 +171,16 @@ async function sendEmail(
     if (!res.ok) {
       console.error('Resend error', text);
       await record('failed', { error: `resend ${res.status}: ${text}` });
-      return;
+      return 'failed' as const;
     }
     let id: string | null = null;
     try { id = (JSON.parse(text) as { id?: string }).id ?? null; } catch { /* keep null */ }
     await record('sent', { providerMessageId: id });
+    return 'sent' as const;
   } catch (e) {
     console.error('Email send failed', e);
     await record('failed', { error: String(e) });
+    return 'failed' as const;
   }
 }
 
@@ -395,8 +403,32 @@ Deno.serve(async (req) => {
     });
 
     // ---- Notify the customer ----
+    //
+    // ══ THE CUSTOMER IS NEVER PROMISED A CONFIRMATION NOBODY WAS ASKED TO MAKE ═══════════════
+    //
+    // On 2026-09-01 the ledger recorded, ONE SECOND APART: owner -> `skipped, no recipient
+    // address`; customer -> `sent`. The customer copy said *"They'll confirm your appointment
+    // shortly"* — about a business that had not been told a booking existed. That is the
+    // unearned-checkmark defect pointed at a stranger: Hubly made a promise on an owner's behalf
+    // that the owner had no way to keep, and the owner never found out there was anything to keep.
+    //
+    // (That particular booking turned out to be the owner testing his own page — but the
+    // MECHANISM was live on every booking, and it is the mechanism that is fixed here.)
+    //
+    // So the customer's sentence is composed from WHAT ACTUALLY HAPPENED, like every other
+    // sentence in this product: if the owner could not be reached, the customer is told the truth
+    // and given a way to reach the business directly, instead of being told to wait for a call
+    // that nobody knows to make.
+    const ownerWasTold = !!ownerEmail;
+    const customerLead = ownerWasTold
+      ? `Hi ${booking.customer_name}, your request has been sent to <b>${business.name}</b>. They'll confirm your appointment shortly.`
+      : `Hi ${booking.customer_name}, we've recorded your request for <b>${business.name}</b>. ` +
+        `We could not reach them by email just now, so we can't promise when they'll confirm \u2014 ` +
+        (business.phone
+          ? `the fastest way is to call them on <b>${esc(String(business.phone))}</b>.`
+          : `if you need it sooner, contact them directly.`);
     const customerBody = `
-      <div style="font-size:15px;color:#333;margin-bottom:18px;">Hi ${booking.customer_name}, your request has been sent to <b>${business.name}</b>. They'll confirm your appointment shortly.</div>
+      <div style="font-size:15px;color:#333;margin-bottom:18px;">${customerLead}</div>
       ${detailRow('\u{1F527}', 'Service', booking.service_name)}
       ${detailRow('\u{1F697}', 'Vehicle', vehicleLine)}
       ${detailRow('\u{1F4C5}', 'When', when.full)}
@@ -406,14 +438,19 @@ Deno.serve(async (req) => {
     `;
     const customerHtml = emailShell({
       accentColor: accent,
-      headline: '\u{1F389} Booking request sent!',
-      subhead: `${business.name} will confirm shortly`,
+      headline: ownerWasTold ? '\u{1F389} Booking request sent!' : '\u{1F4DD} Booking request recorded',
+      subhead: ownerWasTold
+        ? `${business.name} will confirm shortly`
+        : `We couldn't reach ${business.name} by email`,
       bodyHtml: customerBody,
       ctaText: '\u{1F4C5} Add to Google Calendar',
       ctaHref: gcalLink,
     });
 
-    const ledgerBase = { businessId: business.id ?? null, subjectType: 'booking_request', subjectId: booking.id ?? null };
+    // WHAT EVERY ROW FROM HERE IS ABOUT, composed once from the booking in hand.
+    const subjectLabel = [booking.customer_name, booking.service_name, booking.requested_date, booking.requested_time]
+      .map((v) => String(v ?? '').trim()).filter(Boolean).join(' \u00b7 ').slice(0, 200) || null;
+    const ledgerBase = { businessId: business.id ?? null, subjectType: 'booking_request', subjectId: booking.id ?? null, subjectLabel };
 
     // AN UNREACHABLE OWNER IS AN OPERATIONAL FAILURE, NOT A QUIET BRANCH.
     //
@@ -431,7 +468,7 @@ Deno.serve(async (req) => {
       if (opsTo) {
         await sendEmail(
           supabase,
-          { businessId: business.id ?? null, subjectType: 'unreachable_owner', subjectId: booking.id ?? null, role: 'operator' },
+          { businessId: business.id ?? null, subjectType: 'unreachable_owner', subjectId: booking.id ?? null, role: 'operator', subjectLabel },
           opsTo,
           `Hubly: ${business.name || business.slug} got a booking and cannot be told`,
           `<p><strong>${esc(business.name || business.slug || 'A business')}</strong> received a booking from ` +
@@ -443,10 +480,42 @@ Deno.serve(async (req) => {
       }
     }
 
-    await Promise.all([
+    const [ownerOutcome, customerOutcome] = await Promise.all([
       sendEmail(supabase, { ...ledgerBase, role: 'owner', deliveryId }, ownerEmail, `New booking from ${booking.customer_name}`, ownerHtml),
       sendEmail(supabase, { ...ledgerBase, role: 'customer' }, booking.customer_email, `Booking request sent to ${business.name}`, customerHtml, { filename: 'appointment.ics', content: icsBase64 }),
     ]);
+
+    // ══ A FAILED OWNER SEND IS AS SILENT AS A MISSING ADDRESS — AND WAS NOT ALERTED ═════════
+    //
+    // The branch above alerts the operator when `businesses.email` is EMPTY. It does nothing when
+    // the address is PRESENT AND THE SEND FAILS, and that has already happened:
+    // calder-vane-roofing, 2026-08-20 23:06:49 — owner `failed`, Resend 422 "Invalid `to` field",
+    // customer `sent` in the same second. The customer was told the business would confirm; the
+    // business was never told anything; nobody was told that nobody was told.
+    //
+    // The condition that matters is not "was there an address" — it is THE CUSTOMER WAS TOLD AND
+    // THE OWNER WAS NOT, whatever the reason. That is the condition, and it is checked here
+    // against what the sends ACTUALLY returned rather than against what we expected them to do.
+    if (customerOutcome === 'sent' && ownerOutcome !== 'sent') {
+      const opsTo = (Deno.env.get('PLATFORM_OWNER_EMAIL') || '').trim();
+      console.error(
+        `booking-notify: ASYMMETRY — customer told, owner NOT (owner=${ownerOutcome}) for booking ` +
+        `${booking.id} on ${business.slug || business.id}.`,
+      );
+      if (opsTo && ownerEmail) {   // the empty-address case already alerted above; do not send twice
+        await sendEmail(
+          supabase,
+          { businessId: business.id ?? null, subjectType: 'unreachable_owner', subjectId: booking.id ?? null, role: 'operator', subjectLabel },
+          opsTo,
+          `Hubly: ${business.name || business.slug} got a booking and the owner email ${ownerOutcome}`,
+          `<p><strong>${esc(business.name || business.slug || 'A business')}</strong> received a booking from ` +
+          `${esc(booking.customer_name || 'a customer')}. <strong>The customer was confirmed. The owner was not told.</strong></p>` +
+          `<p>The owner send came back <strong>${esc(ownerOutcome || 'unknown')}</strong> for an address that was present. ` +
+          `See notification_deliveries for the provider's reason.</p>` +
+          `<p>Booking id: ${esc(String(booking.id || ''))} · slug: ${esc(String(business.slug || ''))}</p>`,
+        );
+      }
+    }
 
     // The response still says ok — the notify PATH ran — but it no longer has to
     // carry the weight of "and it was delivered". That question is now answered

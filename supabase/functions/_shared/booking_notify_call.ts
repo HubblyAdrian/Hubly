@@ -82,12 +82,26 @@ export async function notifyBookingReal(
         .from("notification_deliveries")
         .insert({
           business_id: (row as Record<string, unknown>).business_id ?? null,
-          subject_type: "booking",
+          // ONE LABEL FOR ONE THING. This said "booking" while booking-notify's own insert said
+          // "booking_request" — one writer pair, two names, and it made a count wrong: a sweep
+          // filtered on one label and reported "no booking email has ever been sent" while four
+          // were recorded under the other. The canonical label is the table the subject lives in.
+          subject_type: "booking_request",
           subject_id: (row as Record<string, unknown>).id ?? null,
           recipient_role: "owner",
           channel: "email",
           provider: "resend",
           status: "pending",
+          // AND WHAT IT IS ABOUT, captured now. subject_id is polymorphic and cannot be a foreign
+          // key, so the ledger outlives its subject — two rows already point at booking_requests
+          // ids that exist in no table. A uuid pointing at nothing is an unattributable row; this
+          // is the one moment the subject is in hand.
+          subject_label: [
+            (row as Record<string, unknown>).customer_name,
+            (row as Record<string, unknown>).service_name,
+            (row as Record<string, unknown>).requested_date,
+            (row as Record<string, unknown>).requested_time,
+          ].map((v) => String(v ?? "").trim()).filter(Boolean).join(" · ").slice(0, 200) || null,
         })
         .select("id")
         .maybeSingle();

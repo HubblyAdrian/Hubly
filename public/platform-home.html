@@ -338,13 +338,15 @@ body.hc-active .footer,body.hc-active .hero{display:none}
    nominally wide. A container query asks the only question that was ever relevant: how much room
    does THIS have. Below 900px of its own, the context column drops underneath and the day gets
    the width back. (Nothing renders squeezed, at any width a surface can actually reach.)
-   900 IS A MEASUREMENT, NOT A ROUND NUMBER. At 1440 the canvas is 800: side by side leaves the
-   day 472px and "488 W Center St" still truncates; stacked it gets 752 and NOTHING truncates.
-   A wider screen crosses 900 and they sit side by side again on their own. If the day and the
-   context are wanted side by side AT 1440, the fix is the rail (260) and the chat (380) — the
-   approved drawing runs them at ~145 and ~290 — and that is a proportion change for Adrian,
-   not something to tune here. */
-@container (max-width:900px){ .hcmd{flex-wrap:wrap} .hcmd-ctx{flex:1 1 100%} }
+   860 IS A MEASUREMENT, NOT A ROUND NUMBER, AND IT MOVED ONCE — 2026-09-17.
+   It was 900, chosen when the rail was 260: the canvas was 800, side by side left the day 412px,
+   and three cells truncated, so stacking was the lesser evil. ADRIAN RULED THE OTHER WAY —
+   "NARROW THE RAIL… both rules must be true at 1440" — and he was right that it was affordable.
+   Rail 180 -> canvas 880 -> day 492, and with the Where cell wrapping instead of ellipsing,
+   a 53-character address renders whole. So the threshold sits just under that width: the day and
+   the context sit side by side at 1440, and anything genuinely narrower still stacks rather than
+   squeezing. Measured, both directions, at 1440 and at 1100. */
+@container (max-width:860px){ .hcmd{flex-wrap:wrap} .hcmd-ctx{flex:1 1 100%} }
 @media (max-width:1100px){ .hcmd{flex-wrap:wrap} .hcmd-ctx{flex:1 1 100%} }
 .hcmd-head{margin:0 0 18px}
 /* The date and the controls that move it share a line, and the controls sit to the right of it
@@ -393,6 +395,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 .hcmd-what{display:flex;flex-direction:column;gap:2px;white-space:normal!important}
 .hcmd-whatmain{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hcmd-whatsub{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* ══ WIDTH IS NOT THE ONLY ANSWER, AND ON ITS OWN IT IS NOT A DURABLE ONE ════════════════════
+   Narrowing the rail buys the day ~80px, which clears THIS fixture's "488 W Center St" by about
+   five pixels. A five-pixel margin is not a design: the next address is longer and truncates
+   again at any rail width. So WHERE wraps instead of ellipsing — two short lines are readable and
+   an ellipsis is not, and "nothing renders squeezed" is a rule about content, not about one
+   fixture fitting. When and Type stay on one line: a time and the word "Personal" have no second
+   line to wrap to. */
+.hcmd-row>span.hcmd-where{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
 .hcmd-when,.hcmd-where,.hcmd-type{color:var(--muted)}
 .hcmd-add{display:flex;align-items:center;gap:10px;width:100%;border:0;border-top:1px solid var(--line);background:transparent;padding:14px 16px;font:inherit;font-size:14px;color:var(--muted);cursor:pointer;text-align:left}
 .hcmd-add:hover{background:rgba(0,0,0,.02)}
@@ -518,7 +528,14 @@ body.hc-active .footer,body.hc-active .hero{display:none}
    cramped lines — the worst thing on the screen. It is a place now: wordmark at the
    top, nav as icon PLUS label with the active one lit, and the business block at the
    foot so an owner can always see whose hub this is. */
-.hc-rail{display:none;flex:0 0 260px;flex-direction:column;align-items:stretch;justify-content:flex-start;
+/* ══ 180, NOT 260 — ADRIAN, 2026-09-17 ═══════════════════════════════════════════════════════
+   "NARROW THE RAIL. 260px is generous for four short words, and the chat at 380 is the working
+   minimum." He is right and it is measurable: at 260 the canvas is 800 and the day column gets
+   412px, which truncates three cells; at 180 the canvas is 880 and the day gets 492. The rail's
+   own content floor is ~175px (the account chip and the business name), so 180 is the narrowest
+   width that is a CHOICE rather than a squeeze. The approved drawing runs it at ~145.
+   Measured at 1440: rail 260 -> 3 truncated · 200 -> 1 · 180 -> 0 (with the row fix below). */
+.hc-rail{display:none;flex:0 0 180px;flex-direction:column;align-items:stretch;justify-content:flex-start;
   padding:22px 14px 16px;background:var(--sidebar,#0f2a22);color:#fff;z-index:2;height:100%;box-sizing:border-box;
   animation:hcRailArrive .5s cubic-bezier(.22,.61,.36,1) both}
 .hc-app.hc-claimed .hc-rail{display:flex}
@@ -616,7 +633,7 @@ body.hc-active .footer,body.hc-active .hero{display:none}
    header: it runs floor to ceiling and carries the wordmark, so the app starts at 0
    and the floating nav is pushed off the sidebar and reduced to the account chip. */
 .hc-app.hc-claimed{top:0}
-body.hc-shell-claimed .nav{left:260px;background:transparent;border-bottom-color:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;justify-content:flex-end;pointer-events:none}
+body.hc-shell-claimed .nav{left:180px;background:transparent;border-bottom-color:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;justify-content:flex-end;pointer-events:none}
 body.hc-shell-claimed .nav > a{display:none}          /* the rail carries the mark now */
 body.hc-shell-claimed .nav > *{pointer-events:auto}
 /* The header floats over the app, so an opening panel would slide underneath the
