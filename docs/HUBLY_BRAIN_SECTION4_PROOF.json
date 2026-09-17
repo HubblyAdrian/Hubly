@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-09-17T18:48:35.585Z",
+  "checkedAt": "2026-09-17T20:47:31.352Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -272,7 +272,7 @@
     "timing": [
       {
         "expertId": "experience_director",
-        "executionTimeMs": 3
+        "executionTimeMs": 4
       },
       {
         "expertId": "research",
@@ -288,7 +288,7 @@
       },
       {
         "expertId": "critic",
-        "executionTimeMs": 1
+        "executionTimeMs": 0
       }
     ],
     "failures": [
@@ -1604,7 +1604,7 @@
         {
           "expertName": "Critic",
           "expertId": "critic",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "reasoning": [
             {
               "reason": "Experts agree enough to proceed without overwhelming the owner.",
@@ -1664,7 +1664,7 @@
           "output": {
             "type": "Builder Intent",
             "builderIntent": {
-              "intentId": "bint_mu5vusc4_o2zmk3",
+              "intentId": "bint_mu603qbu_idlz5u",
               "version": "1.0.0",
               "originalRequest": "I'm starting a pressure washing company.",
               "intentCategory": "Business Strategy",
@@ -1695,7 +1695,7 @@
                   "confidence": 81
                 }
               ],
-              "timestamp": "2026-09-17T18:48:35.573Z",
+              "timestamp": "2026-09-17T20:47:31.338Z",
               "applied": false,
               "changePlanGenerated": false
             },
@@ -1708,7 +1708,7 @@
         {
           "expertName": "Experience Director",
           "expertId": "experience_director",
-          "executionTimeMs": 3,
+          "executionTimeMs": 4,
           "reasoning": [
             {
               "reason": "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
@@ -1937,7 +1937,7 @@
           "changedFromPrevious": "Creative Director produced Creative Plan; Critic advanced that into Quality Report (confidence 84 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "outputType": "Quality Report",
           "retries": 0
         },
@@ -1990,7 +1990,7 @@
           "changedFromPrevious": "Builder Expert produced Builder Intent; Experience Director advanced that into Experience Review (confidence 81 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 3,
+          "executionTimeMs": 4,
           "outputType": "Experience Review",
           "retries": 0
         }

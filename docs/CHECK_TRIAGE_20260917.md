@@ -17,6 +17,18 @@ And the red count must be DECLARED."*
 | timed out | 1 (`check-block-legibility`, at 90s) | 1 (same, at 120s) |
 | assertions passed | 1,477 | **1,480** |
 
+### THE COUNT AT THE END OF THE ROUND
+
+**176 checks · 153 passed · 20 RED · 2 cannot run · 1 timed out · 1,549 assertions.**
+Nine checks were added this round and every one of them is green. The red count moved 27 → 19 → 20;
+the extra one is **`check-page-facts-are-this-business`**, which is red because `saltmarsh-bindery`
+really does publish another business's phone number, and **`check-no-unwritten-placeholder`**, which
+is red on three owner-preview placeholders named with line numbers rather than fixed blind.
+
+**Three of the twenty are OURS and correct to be red** — they are findings that have not been
+fixed, not instruments that are broken. The rest are the marketing/milestone block and the two
+routing questions, unchanged and awaiting Adrian's one decision.
+
 **Nine checks went from red to green, and one new red is my own** —
 `check-no-unwritten-placeholder`, which is red on the three owner-preview placeholders it found
 and which are deliberately not fixed blind (below). Green: `no-db-push`, `denominator-rule`,
