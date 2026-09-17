@@ -11436,7 +11436,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <span class="sq-trade-badge" id="sq-trade-badge">trade</span>
             <button type="button" class="btn btn-out btn-sm" onclick="openTodaysSpecial()">Today’s special</button>
             <button type="button" class="btn btn-out btn-sm" onclick="openWebsiteEditorHub('quote')">Customize questions</button>
-            <button type="button" class="btn btn-brand btn-sm" onclick="try{HublySmartQuoteUI.openNew()}catch(e){toast('Quick Quote loading…')}">New Quick Quote</button>
+            <!-- "New Quick Quote" opened the old workspace, which is gone. A quote is now made by
+                 talking to Hubly — this says HOW, without naming a control on a screen it cannot see. -->
+            <span class="sq-page-blurb" style="font-size:12px;">Say “quick quote” to Hubly and I’ll price one with you.</span>
           </div>
         </div>
         <!-- ══ THE RECORD'S OWN LIST. ONE RECORD, TWO VIEWS. ════════════════════════════════════
@@ -11448,9 +11450,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="sc sq-list-card"><div class="sc-h"><div class="sc-t">Your quotes</div></div>
             <div class="sc-b" id="sq-record-list"></div></div>
         </div>
-        <div id="sq-list-wrap">
-          <div class="sc sq-list-card"><div class="sc-h"><div class="sc-t">Your quotes</div><div class="sq-list-hint">Unfinished drafts stay here when you Close mid-quote — text them anytime.</div></div><div class="sc-b" id="sq-list"></div></div>
-        </div>
+        <!-- The old #sq-list came out with ui.js; #sq-record-list above is the record's own list. -->
         <div id="sq-workspace" class="sq-workspace hidden">
           <div class="sq-layout">
             <div class="sq-main" id="sq-main"></div>
@@ -12287,7 +12287,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <h2 data-i18n="quoteQuestionsTitle">Questions</h2>
                     <p data-i18n="quoteQuestionsSub">Same questions for Quick Quote and Book Now. Turn off what you don’t need, add your own, and set price adds (like Commercial +$40).</p>
                   </div>
-                  <button type="button" class="btn btn-brand btn-sm" onclick="HublySmartQuoteUI.saveSetupInline()">Save questions</button>
+                  <!-- "Save questions" called HublySmartQuoteUI.saveSetupInline(), which came out with
+                       ui.js. A button that throws is worse than no button, so it is gone; the panel
+                       below says what replaced it. -->
                 </div>
                 <div id="ed-quote-setup"></div>
               </div>
@@ -12869,21 +12871,13 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
-<div id="m-quote-sms" class="modal-bg hidden" onclick="mbg(event,'m-quote-sms')">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-h"><div class="modal-t">Text this quote</div><button class="modal-x" onclick="closeM('m-quote-sms')">×</button></div>
-    <div class="modal-b">
-      <p style="font-size:13px;color:var(--ink-3);margin:0 0 12px;line-height:1.45;">Hubly doesn’t auto-send texts yet (Twilio coming). Copy the message and paste it in Messages — or open Messages with it ready to send.</p>
-      <div class="field"><label>To</label><input type="text" id="quote-sms-phone" readonly></div>
-      <div class="field"><label>Message</label><textarea id="quote-sms-body" rows="5" placeholder="Quote message…"></textarea></div>
-    </div>
-    <div class="modal-f" style="flex-wrap:wrap;gap:8px;justify-content:flex-end">
-      <button type="button" class="btn btn-out" onclick="HublySmartQuoteUI.copyQuoteSms()">Copy message</button>
-      <button type="button" class="btn btn-brand" onclick="HublySmartQuoteUI.openQuoteSmsApp()">Open Messages</button>
-      <button type="button" class="btn btn-ink" onclick="HublySmartQuoteUI.confirmQuoteSmsSent()">Mark as texted</button>
-    </div>
-  </div>
-</div>
+<!-- ══ THE QUOTE-SMS MODAL CAME OUT WITH ui.js. ════════════════════════════════════════════
+     Its three buttons were HublySmartQuoteUI.copyQuoteSms / openQuoteSmsApp / confirmQuoteSmsSent,
+     all of which lived in the file that is gone — so leaving the markup would leave three controls
+     that throw. The claimed shell's quote panel does this job now, and does it better: it hands him a
+     prefilled sms:/mailto: composer and marks the quote sent ONLY when he says it went.
+     Its opening copy — "Hubly doesn't auto-send texts yet (Twilio coming)" — was also a promise about
+     a feature nobody had committed to, which is its own reason not to keep it. -->
 
 <div id="m-block-time" class="modal-bg hidden" onclick="mbg(event,'m-block-time')">
   <div class="modal">
@@ -13201,8 +13195,23 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/business-blueprints/validator.js"></script>
 <script defer src="/business-blueprints/registry.js"></script>
 <script defer src="/booking-frames/registry.js"></script>
+<!-- ══ smart-quote/ui.js IS GONE. engine.js AND booking.js STAY, AND HERE IS THE MEASUREMENT. ══
+     Adrian asked for "the old 177KB" to come out once the new quote worked. Measured before removing
+     anything, because the 176,965 bytes are not one removable unit:
+
+       ui.js      82,971  HublySmartQuoteUI — the old Quick Quote UI. 12 call sites, all in the
+                          quotes tab and the editor's "customize questions". REMOVED.
+       engine.js  56,171  HublySmartQuote — used by ui.js (31x) AND booking.js (16x). STAYS.
+       booking.js 37,823  HublyBookingSQ — the LIVE BOOKING WIZARD's pricing. STAYS.
+
+     booking.js is load-bearing for a path a customer pays through: `const money =
+     HublyBookingSQ.computeMoney();` is called UNGUARDED at two sites in this file, so removing it
+     throws where a booking is priced. engine.js is what booking.js computes with. Deleting either to
+     reach a byte count would be trading a working payment path for a tidier number.
+
+     So 82,971 of the 176,965 came out. The rest is the booking wizard, and it is named rather than
+     quietly counted as removed. -->
 <script defer src="/smart-quote/engine.js"></script>
-<script defer src="/smart-quote/ui.js"></script>
 <script defer src="/smart-quote/booking.js?v=pkg-lock-3"></script>
 <script defer src="/hubly-session.js"></script>
 <!-- ONE CONTACT PICKER, TWO SHELLS. The capability lived only here; A2 needs it in platform-home.html,
@@ -16152,8 +16161,7 @@ async function refreshOpenAppViews(){
   }catch(e){}
   try{
     if(viewIsOpen('v-quotes')){ try{ renderQuotesFromRecord(); }catch(e){} }
-    if(viewIsOpen('v-quotes')&&typeof HublySmartQuoteUI!=='undefined'&&HublySmartQuoteUI.renderQuotesView){
-      HublySmartQuoteUI.renderQuotesView();
+    if(false){
     }
   }catch(e){}
   try{ refreshDashboardIfOpen(); }catch(e){}
@@ -30832,16 +30840,15 @@ function switchWebsiteHubTab(tab){
     }
   }else if(t==='quote'){
     try{ensureTradeEditorChrome();}catch(e){}
+    // CUSTOMIZE QUESTIONS CAME OUT WITH ui.js, and this says so rather than showing an empty panel
+    // or a "still loading" that never resolves. The questions it edited belonged to the old Quick
+    // Quote workspace; the new quote reads his SERVICES, which he edits in Packages.
     try{
-      if(typeof HublySmartQuoteUI==='undefined'||typeof HublySmartQuoteUI.renderSetupInline!=='function'){
-        toast('Customize questions still loading — try again in a second');
-      }else{
-        HublySmartQuoteUI.renderSetupInline('ed-quote-setup');
-      }
-    }catch(e){
-      console.warn('Quote hub tab',e);
-      toast('Couldn’t open Customize questions');
-    }
+      const host=document.getElementById('ed-quote-setup');
+      if(host)host.innerHTML='<p style="font-size:13px;color:var(--ink-3);margin:0;line-height:1.5;">'+
+        'The old quote questionnaire is gone. A quote is now priced from your own services — edit those in Packages, '+
+        'and say “quick quote” to Hubly when you want to price one for someone.</p>';
+    }catch(e){ console.warn('Quote hub tab',e); }
   }
   try{syncEdSettingsRail(t==='site'?'site':t);}catch(e){}
   try{persistOwnerAppView('editor',{hub:t,settingsNav:(S&&S._edSettingsNav)||''});}catch(e){}
@@ -42105,7 +42112,7 @@ function switchV(el,opts){
   if(v==='apps'){try{HublyAppMarketplace?.render?.();}catch(e){console.warn(e);}}
   if(v==='store'){try{HublyStoreCommerce?.render?.()||HublyJourneyOS?.renderStore?.();}catch(e){console.warn(e);}}
   if(v==='customers'&&typeof HublyJourneyOS?.renderCustomersPage!=='function'){try{renderCustomersView()}catch(e){}}
-  if(v==='quotes'){try{HublyJourneyOS?.updateChrome?.('quotes')}catch(e0){};try{HublySmartQuoteUI.renderQuotesView();}catch(e){console.warn(e);}}
+  if(v==='quotes'){try{HublyJourneyOS?.updateChrome?.('quotes')}catch(e0){};try{renderQuotesFromRecord();}catch(e){console.warn(e);}}
   if(v==='money'){renderReports();renderMoneyView();try{syncMoneyPayPrefs();}catch(e){}try{refreshStripeConnectStatus({quiet:true});}catch(e){}}
   if(v==='chats'){try{HublyJourneyOS?.onSwitchView?.('chats');}catch(e){renderChatsPanel();}}
   if(v==='marketplace'){try{loadMarketplaceSettings();loadMarketplaceBookings();}catch(e){console.warn(e);}}
@@ -42246,7 +42253,7 @@ function unmountEdChrome(){
 // "return to where you came from" branch only ever worked for the shortcut that has been deleted.
 function closeSmartQuoteToReturn(){
   try{
-    if(typeof HublySmartQuoteUI!=='undefined')HublySmartQuoteUI.closeWorkspace();
+    ;   // the Quick Quote workspace came out with ui.js; there is nothing to close.
   }catch(e){}
   const ret=S._sqReturnNav;
   if(ret==='editor'){

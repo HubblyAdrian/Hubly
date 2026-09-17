@@ -21,13 +21,33 @@
  * A bare identifier is never a scope, and `confirm-served` already refuses one.
  */
 
-/** Source with comments removed — JS line and block comments, and HTML comments. A `//` inside a
- *  string or a URL is left alone by requiring the two slashes not to follow a colon. */
+/** Source with comments removed — JS line and block comments, and HTML comments.
+ *
+ *  ══ HTML IS HANDLED SEPARATELY, AND THAT IS NOT A REFINEMENT — IT IS A CORRECTNESS FIX. ═══════
+ *
+ *  The first version ran `/\*…*\/` over the WHOLE document. In `public/hubly.html` an attribute
+ *  value at line 10337 contains a literal `/*` (`accept="ima…` follows `/*" onchange=…`), and the
+ *  next `*\/` is **216,251 characters later** in a real JS comment. Everything between them —
+ *  thousands of lines of markup, including `id="sq-record-list"` — was silently deleted, and a leg
+ *  that looked for that markup reported the PRODUCT wrong.
+ *
+ *  **A stripper that removes what it was asked to preserve is the absent-vs-broken defect inside the
+ *  tool built to prevent it.** So for HTML, comments are stripped only where they are comments: the
+ *  `<!-- -->` form anywhere, and the JS/CSS forms only INSIDE `<script>` and `<style>` bodies.
+ *
+ *  A non-HTML source (a .ts, a .mjs, a .sql passed through) takes the plain path, unchanged. */
 export function codeOf(src) {
-  return String(src || "")
-    .replace(/<!--[\s\S]*?-->/g, " ")
+  const text = String(src || "");
+  const looksHtml = /^\s*(?:<!doctype|<html|<!--|<div|<script|<meta)/i.test(text) || /<\/html>|<\/body>/i.test(text);
+  const stripJs = (s) => s
     .replace(/\/\*[\s\S]*?\*\//g, " ")
     .split("\n").map((l) => l.replace(/(^|[^:])\/\/.*$/, "$1")).join("\n");
+  if (!looksHtml) return stripJs(text);
+  // HTML: drop <!-- --> everywhere, then JS/CSS comments ONLY inside script/style bodies.
+  return text
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/(<(script|style)\b[^>]*>)([\s\S]*?)(<\/\2>)/gi,
+             (_, open, tag, body, close) => open + stripJs(body) + close);
 }
 
 /** The body of one function, brace-counted from its declaration. null when the declaration is not
