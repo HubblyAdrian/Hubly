@@ -23,7 +23,7 @@
 > grep -o '^## Lesson [0-9b]*' docs/CHECKER_LESSONS.md | tail -1   # the highest, for the next number
 > ```
 >
-> **89 headings, running 4 → 96**, plus lessons **1–3**, which are the three instances described
+> **90 headings, running 4 → 97**, plus lessons **1–3**, which are the three instances described
 > narratively in the opening section and have no heading — which is why a later count read the file
 > as starting at 4. **11 and 11b** are both present: two lessons written with the same number on
 > different days, and renumbering would invalidate every citation in the commit history since, so
@@ -3481,3 +3481,66 @@ that reprioritises a day, reaches a customer, and becomes the thing everyone rem
 **The line that settles both, and it is already ours:** *a row is not evidence of a person.* The
 whole lugnuts alarm rested on reading `customer_name` and an `account_kind` label. One query —
 *is this address the owner's own?* — was the entire disproof, and it took eleven seconds.
+
+## Lesson 97
+
+**A CHECK THAT COVERS ONE INSTANCE OF A SURFACE COVERS NONE OF THEM.**
+
+Where a thing exists in more than one place — two shells, N tabs, multiple renderers, several
+editors — the check must enumerate the instances **from the product** and exercise each one. A
+hand-written list of instances is the hand-maintained-set disease and it will go stale. **Derive the
+list.**
+
+### Adrian, 2026-09-17, on the third instance in a row
+
+> *"Three for three. Every one of these is a check that covered one instance of a surface and
+> reported on all of them."*
+
+1. **The double-click that did nothing.** The check was written against one surface; he was on
+   another.
+2. **The editing fix that landed in the wrong shell.** `hubly.html` was fixed; he was in
+   `platform-home.html`. (Fifth instance of the two-shells hazard on its own.)
+3. **Home's chat in the Website tab.** `check-a-different-conversation-in-every-tab` carried a
+   hand-written list of three places — `website`, `planner`, `jobs` — and pressed **two**. Website
+   was *in the list and never pressed*, and the defect lived in exactly that gap. The check's own
+   title claimed *every* tab.
+
+### Why this is not just "test more things"
+
+The failure is not thin coverage, it is a **false universal**. All three checks made a claim about
+a CLASS of surface — "the conversation is per tab", "editing works", "the control responds" — from
+one member of that class, and then went green. A check with narrow coverage that says so is
+harmless; a check that says *every* while testing *one* actively prevents the discovery, because it
+is quoted as proof that the area is covered.
+
+And the hand-written list is worse than no list. `PLACES = [website, planner, jobs]` **looked** like
+enumeration. It was three of the six places `HC_PLACE_SURFACES` actually holds — `customers`,
+`leads` and `quotes` were added to the product and never here — so the list was already stale
+before it was used, in the same way every hand-maintained set in this repo has gone stale
+(the route list in `api/router.js`, the fact SHAPES in the extraction gate, the hour labels).
+
+### The rule
+
+- **Derive the instance list at run time, from the thing that defines it.** Registries already
+  published for exactly this: `window.hublyListUI.surfaces` (HC_PLACE_SURFACES), `HC_ROOMS`,
+  `HC_FILE_ROUTES`, `HC_THREAD_VIEWS`, `HC_GO_PLACES`. For the two shells, the list is the files in
+  `public/` that carry the seam, read off disk — not a filename typed into the check.
+- **Loop, and label the leg with the instance** (`2.website`, `2.quotes`). A single pass/fail over a
+  set hides which member failed, and the member is the finding.
+- **A derived list that comes back empty or with one entry is a broken instrument**, not a passing
+  check. Assert the count is plausible and say the number in the output: *"derived 6 place(s) from
+  HC_PLACE_SURFACES"*. The number is what lets the next reader see the coverage without reading the
+  code.
+- **A leg that cannot fail is not a leg.** Found while red-proofing this very rewrite: leg `4` for
+  the FIRST place visited compared its thread against an empty set of earlier places — green,
+  always, forever. It is now emitted from the second place onwards.
+
+### And the one that was caught by obeying it
+
+The rewritten check's new leg for the reported defect — *a late Home render cannot repaint the
+thread of whatever tab is open* — **passed with the fix removed.** It asserted that a line of
+Home's *transcript* was absent from the Website thread, and Home does not dump the transcript (it
+renders a calm greeting), so that string could never have appeared. The leg was re-anchored on the
+thing the wipe actually destroys: Website's own saved message. **Six tabs correctly enumerated and
+the leg that mattered was still vacuous** — deriving the instances is necessary and not sufficient,
+and only the break tells you which you have.
