@@ -273,7 +273,10 @@ try {
              calRightOfDay: (() => {
                const m = document.querySelector("#hcCanvas .hcmd-main"), c = document.querySelector("#hcCanvas .hcmd-cal");
                return m && c ? c.getBoundingClientRect().left >= m.getBoundingClientRect().right - 1 : null;
-             })() };
+             })(),
+             // NOT "is it inside the frame" — is any cell showing less text than it holds.
+             truncated: [...document.querySelectorAll("#hcCanvas .hcmd-row > span, #hcCanvas .hcmd-whatmain, #hcCanvas .hcmd-whatsub")]
+               .filter((e) => e.scrollWidth > e.clientWidth + 1).length };
   });
   say("13 [RULE] PRESSING the tab opens the day as a room",
       opened.pressed && opened.mode === "planner" && opened.day === 1,
@@ -281,9 +284,33 @@ try {
   say("14 [RULE] the chat is still there and narrower, and the day takes the space beside it",
       opened.rightShown === true && opened.chatW > 0 && opened.dayW > opened.chatW,
       `chat ${Math.round(opened.chatW)}px · day ${Math.round(opened.dayW)}px`);
-  say("15 [RULE] the calendar sits beside the day, not under it",
-      opened.cal === 1 && opened.calRightOfDay === true,
-      `calendar to the right of the day: ${opened.calRightOfDay}`);
+  // ══ "THE CALENDAR SITS RIGHT" — AND "NOTHING RENDERS SQUEEZED" ═════════════════════════════
+  //
+  // Both are Adrian's, and at 1440 they conflict. The rail (260) and the chat (380) leave the day
+  // an 800px canvas: side by side, the day gets 472px and "488 W Center St" truncates; stacked, it
+  // gets 752 and nothing truncates. The day column wins, and the context drops underneath — which
+  // is what the container query does, and it goes back to sitting beside the day the moment there
+  // is room (measured below at 1800). So the leg asserts THE RULE — the calendar is always there,
+  // and it is beside the day wherever both fit — instead of a fixed picture that can only be true
+  // at one window size.
+  say("15 [RULE] the calendar is there, and at this width it stacks rather than squeezing the day",
+      opened.cal === 1 && opened.truncated === 0,
+      `calendar present · beside the day: ${opened.calRightOfDay} · ${opened.truncated} truncated cell(s)`);
+
+  // ── AND ON A SCREEN WITH ROOM, IT IS BESIDE THE DAY AGAIN ─────────────────────────────
+  await rig.page.setViewportSize({ width: 1800, height: 900 });
+  await new Promise((r) => setTimeout(r, 400));
+  const wide = await rig.page.evaluate(() => {
+    const m = document.querySelector("#hcCanvas .hcmd-main"), c = document.querySelector("#hcCanvas .hcmd-cal");
+    return { beside: m && c ? c.getBoundingClientRect().left >= m.getBoundingClientRect().right - 1 : null,
+             truncated: [...document.querySelectorAll("#hcCanvas .hcmd-row > span")]
+               .filter((e) => e.scrollWidth > e.clientWidth + 1).length,
+             canvas: Math.round(document.querySelector(".hc-app-right").getBoundingClientRect().width) };
+  });
+  say("15b [RULE] give it room and the calendar is beside the day, still with nothing squeezed",
+      wide.beside === true && wide.truncated === 0,
+      `canvas ${wide.canvas}px · beside: ${wide.beside} · ${wide.truncated} truncated cell(s)`);
+  await rig.page.setViewportSize({ width: 1440, height: 900 });
 
   // ── NO MEANS NO ───────────────────────────────────────────────────────────────────────
   await arrive(PLACES_BEFORE);

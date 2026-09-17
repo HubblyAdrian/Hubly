@@ -15,6 +15,33 @@ about LAYOUT is the shipping product's; nothing here is evidence about what the 
 
 ---
 
+## STATUS AFTER 2026-09-17 — five of the six are closed
+
+| | gap | now |
+| --- | --- | --- |
+| 1 | the account pill floated over the day | **fixed** — it is in the rail |
+| 2 | no way to look at another day | **fixed** — `Today · ‹ · › ·` a real date field, and the whole surface moves |
+| 3 | a band with items offered no way to add | **fixed** — the add line is under every band |
+| 4 | rows truncated | **fixed** — a container query on the pane, not a media query on the window |
+| 5 | context cards renamed / de-linked | **partly** — the glance card is "… at a glance" again and follows the day; the two links are NOT added, because there is nothing behind them yet and a control that leads nowhere is worse than none |
+| 6 | band descriptions | **not a gap** — Adrian ruled the band rule wins |
+| 7 | the Ask Hubly panel is thinner | **partly** — the honesty line is in; the four action chips and a mic are not |
+
+**AND ONE THING I GOT WRONG IN THIS DOC:** I wrote *"no attach or mic"*. **Attach existed all
+along** — `#hcAttachBtn`, labelled "Attach a photo or file" — drawn as a four-point **sparkle**, the
+universal "AI will do something clever" glyph. The control worked and nobody would guess what it
+was; a door nobody recognises is the same as a door nobody has. It is a paperclip now. The mic is
+genuinely not built, and is not drawn.
+
+**A CONSEQUENCE ADRIAN SHOULD SEE:** fixing the truncation moved the context column (glance,
+calendar, stops) **underneath** the day at 1440. Both of his rules apply here and at that width they
+conflict — *"the calendar sits right"* (his step 6) and *"nothing renders squeezed, at any width"*.
+Measured: side by side the day gets **472px** and the address still truncates; stacked it gets
+**752px** and nothing truncates. The day column won. It goes back beside the day on a wider screen
+on its own (checked at 1800: canvas 1160, beside, nothing truncated). **If he wants them side by
+side AT 1440, the lever is the rail (260px) and the chat (380px) — the drawing runs them at ~145
+and ~290 — and that is a proportion change for him to make, not one to tune quietly.**
+
 ## Differences, worst first
 
 1. **~~The account pill sits on top of the day.~~ FIXED THIS ROUND.** It was `position:fixed` in

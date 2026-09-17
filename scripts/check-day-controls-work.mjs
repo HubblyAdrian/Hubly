@@ -33,6 +33,24 @@
  * SIMULATED AND SAID SO: no session, no network. The bands, the calendar, the form and the handlers
  * are the shipping product's; the jobs and tasks are declared fakes.
  *
+ * ══ RED-PROOFED PER LEG (the 2026-09-17 additions) ══════════════════════════════════════════
+ *
+ *   11b  the add line back to empty-bands-only        -> 11b
+ *   12   the day controls not rendered                -> 12 (and the run dies, which is red)
+ *   12,13 ‹ wired to nothing                          -> 12, 13
+ *   15   Today never disabled                         -> 15
+ *   16,17 the date field's change handler emptied     -> 16, 17
+ *   17   the glance heading hardcoded to "Today"      -> 17
+ *   18   the add form back to `new Date()`            -> 18
+ *
+ * TWO INSTRUMENT DEFECTS THIS FOUND IN ITSELF, both of the same family — measuring the control
+ * instead of the surface:
+ *   · `dayOf()` read the date FIELD's value, which is whatever was last typed into it, so a
+ *     picker that moved nothing passed. It reads the date the day RENDERED now.
+ *   · the day was drawn into a bare <div>, which hcRepaintDay does not know about, so every
+ *     control that works by redrawing looked dead. It is drawn as a real `.hc-inthread-day`,
+ *     and the check sets `draftClaimed` — the state this surface only ever exists in.
+ *
  * Exit: 0 PASS · 1 FAIL · 2 CANNOT RUN
  */
 import { resolve, dirname, join } from "node:path";
@@ -61,9 +79,20 @@ const draw = async (jobs) => {
     tables: { jobs: jobs || [], tasks: [] },
   });
   await rig.page.evaluate((id) => { window.hublyCaptureUI.withBusiness(id); }, BIZ.id);
+  // CLAIMED, BECAUSE THIS SURFACE ONLY EXISTS FOR A CLAIMED OWNER — and because hcRepaintDay
+  // refuses to redraw anything when `draftClaimed` is false. Without it every control that works
+  // by REDRAWING looks dead here while working in the product: the state the check runs in was
+  // the thing under test, which is the "a green test on a draft proves nothing about a claimed
+  // site" rule arriving inside a harness.
+  await rig.page.evaluate((biz) => { window.__setClaimed(true); }, BIZ);
   return rig.page.evaluate(async ({ biz }) => {
     const host = document.createElement("div");
     host.id = "daytest";
+    // A REAL LIVE DAY SURFACE, not a detached div. hcRepaintDay redraws the planner canvas and
+    // every `.hc-inthread-day` — a bare node is neither, so every control that works by REDRAWING
+    // (the day controls) would look dead here while working in the product. The in-thread day is
+    // one of the two surfaces that actually ship; this is that one.
+    host.className = "hc-inthread-day";
     document.body.appendChild(host);
     await window.hublyDayUI.render(host, biz);
     return { bands: host.querySelectorAll(".hcmd-band").length,
@@ -161,6 +190,118 @@ try {
     const t = forms.length ? forms[forms.length - 1].querySelector('[data-hc-day="time"]').value : null;
     return { forms: forms.length, time: t, lastHour: rows[rows.length - 1].getAttribute("data-hour") };
   });
+  // ══ THE DOOR IS IN EVERY BAND, NOT ONLY AN EMPTY ONE ═══════════════════════════════════════
+  //
+  // The add line rendered only when a band was EMPTY, so on a day with something in every band
+  // there was no + anywhere and the calendar hours were the only remaining door — which nothing
+  // on screen announces. Asserted on a day that HAS things in it, because that is the state the
+  // old behaviour was wrong in and the state a working owner is in.
+  const full = await draw([
+    { id: "f1", business_id: BIZ.id, customer_name: "Leslie", service_name: "Full Detail",
+      scheduled_date: TODAY, scheduled_time: "12:00:00", duration_hours: 2, amount: 180,
+      status: "scheduled", is_block: false },
+  ]);
+  const doors = await rig.page.evaluate(() => {
+    const bands = [...document.querySelectorAll("#daytest .hcmd-band")];
+    return bands.map((b) => ({
+      band: b.getAttribute("data-band"),
+      rows: b.querySelectorAll(".hcmd-row").length,
+      doors: b.querySelectorAll('[data-hc-day="add-open"]').length,
+    }));
+  });
+  say("11b EVERY band offers a way in — the ones with something in them too",
+      doors.length >= 3 && doors.every((d) => d.doors >= 1) && doors.some((d) => d.rows > 0),
+      doors.map((d) => `${d.band}: ${d.rows} row(s), ${d.doors} door(s)`).join(" · "));
+
+  // ══ AND HE CAN LOOK AT ANOTHER DAY. Built 2026-09-17; the model had no controls. ═══════════
+  //
+  // `hc._dayISO` decided which day this surface drew from the day it was written, and nothing
+  // could change it — no Today, no arrows, no picker, while the approved drawing has all four.
+  // Every leg here PRESSES the control and reads the date the surface then draws.
+  // READ WHAT THE SURFACE DREW, never the control the test just typed into. The date FIELD's
+  // value is whatever was last set in it — including by this check — so asserting on it made a
+  // picker that changed nothing look like it worked (caught on the first run of leg 16).
+  const dayOf = () => rig.page.evaluate(() => {
+    const el = document.querySelector("#daytest .hcmd-date");
+    return el ? el.textContent.trim() : null;
+  });
+  const press = (sel) => rig.page.evaluate(async (sel) => {
+    const el = document.querySelector("#daytest " + sel);
+    if (!el) return false;
+    el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+    await new Promise((r) => setTimeout(r, 400));
+    return true;
+  }, sel);
+
+  const startDay = await dayOf();
+  const okPrev = await press('[data-hc-day="prev"]');
+  const afterPrev = await dayOf();
+  const dayDiff = (a, b) => Math.round((new Date(b) - new Date(a)) / 864e5);
+  say("12 PRESSING ‹ moves the whole surface to the day before",
+      okPrev && !!afterPrev && dayDiff(afterPrev, startDay) === 1, `${startDay} -> ${afterPrev}`);
+
+  const okNext = await press('[data-hc-day="next"]');
+  say("13 and › comes back", (await dayOf()) === startDay, `back to ${await dayOf()}`);
+
+  await press('[data-hc-day="prev"]');
+  const todayState = await rig.page.evaluate(() => {
+    const b = document.querySelector('#daytest [data-hc-day="today"]');
+    return { disabledOnAnotherDay: b.disabled };
+  });
+  const okToday = await press('[data-hc-day="today"]');
+  const backHome = await dayOf();
+  say("14 Today is pressable only when he is NOT on today, and it brings him back",
+      todayState.disabledOnAnotherDay === false && okToday && backHome === startDay,
+      `on another day it was enabled: ${!todayState.disabledOnAnotherDay} · landed on ${backHome}`);
+  const onToday = await rig.page.evaluate(() => document.querySelector('#daytest [data-hc-day="today"]').disabled);
+  say("15 and on today it says so by being unavailable, rather than doing nothing when pressed",
+      onToday === true, "Today is disabled while he is on today");
+
+  const picked = await rig.page.evaluate(async () => {
+    const el = document.querySelector('#daytest .hcmd-navdate');
+    const d = new Date(); d.setDate(d.getDate() + 9);
+    const iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    el.value = iso;
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 450));
+    // WHAT THE SURFACE DREW: the date line it rendered, and the glance heading beside it.
+    const drew = document.querySelector('#daytest .hcmd-date');
+    return { asked: iso, drew: drew ? drew.textContent.trim() : null,
+             drewISO: (() => { const d = drew ? new Date(drew.textContent.trim()) : null;
+               return d && !isNaN(d) ? d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") : null; })(),
+             heading: (document.querySelector('#daytest .hcmd-cardh') || {}).textContent || "" };
+  });
+  say("16 a real date field takes him to a real date — and the SURFACE is what moved",
+      picked.drewISO === picked.asked, `asked ${picked.asked} · the day drew "${picked.drew}"`);
+  // A CARD CALLED "TODAY" BESIDE NEXT WEEK'S ROWS IS A FALSE STATEMENT ABOUT WHICH DAY HE IS ON.
+  say("17 and the glance card stops calling it Today when it is not today",
+      !/^today/i.test(picked.heading.trim()), JSON.stringify(picked.heading.trim()));
+
+  // ══ THE SILENT WRONG-DATE WRITE, CAUGHT BY THE SAME CHANGE THAT COULD HAVE CAUSED IT ═══════
+  //
+  // The add form wrote `new Date()` unconditionally. That was harmless while the surface could
+  // only ever draw today; the moment these controls existed it meant "add something while looking
+  // at next Tuesday" would put it on TODAY and say it was added — a true-sounding sentence about
+  // a thing that is not where he put it.
+  const wrote = await rig.page.evaluate(async () => {
+    const host = document.getElementById("daytest");
+    host.querySelectorAll("[data-hc-day-add]").forEach((e) => e.remove());
+    const btn = host.querySelector('[data-hc-day="add-open"]');
+    btn.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+    await new Promise((r) => setTimeout(r, 250));
+    const form = host.querySelector("[data-hc-day-add]");
+    form.querySelector('[data-hc-day="what"]').value = "sharpen the blades";
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 600));
+    const w = (window.__rig.writes || []).filter((x) => x.name === "create_task");
+    const drew = document.querySelector('#daytest .hcmd-date');
+    const d = drew ? new Date(drew.textContent.trim()) : null;
+    return { date: w.length ? w[w.length - 1].args.p_due_date : null,
+             shown: d && !isNaN(d) ? d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") : null };
+  });
+  say("18 adding something while looking at another day puts it on THAT day",
+      wrote.date === wrote.shown, `wrote ${JSON.stringify(wrote.date)} while showing ${wrote.shown}`);
+
   say("11 touching three hours moves ONE form and re-seeds it — never three stacked",
       once.forms === 1 && once.time === String(once.lastHour).padStart(2, "0") + ":00",
       `${once.forms} form(s), seeded ${once.time} from hour ${once.lastHour}`);

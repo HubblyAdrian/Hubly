@@ -323,10 +323,42 @@ body.hc-active .footer,body.hc-active .hero{display:none}
    NOTHING RENDERS SQUEEZED: the centre and the context column both have a min-width and the
    context column drops below the day rather than crushing it. */
 .hcmd{display:flex;gap:20px;align-items:flex-start;width:100%;height:100%;overflow:auto;padding:22px 24px 40px;box-sizing:border-box}
+/* THE CONTAINER IS THE PANE, NOT THE DAY ITSELF. An element is never its own container query
+   context, so `container-type` on .hcmd made `.hcmd{flex-wrap:wrap}` inside the @container block
+   silently never match while `.hcmd-ctx{flex:1 1 100%}` DID — the context column grew instead of
+   wrapping and the day got NARROWER (340px, measured). It belongs on the pane above. */
+#hcCanvas{container-type:inline-size}
 .hcmd-main{flex:1 1 560px;min-width:340px}
 .hcmd-ctx{flex:0 0 320px;min-width:260px;display:flex;flex-direction:column;gap:14px}
+/* ══ IT WRAPS ON ITS OWN WIDTH, NOT THE WINDOW'S. Adrian's design gap #3. ══════════════════
+   This was `@media (max-width:1100px)`, which asks how wide the WINDOW is. The day does not live
+   in the window: at 1440 it lives in an 800px canvas beside a 380px chat, and after a 320px
+   context column it had 412px for four columns. So the media query never fired at the size that
+   mattered and the rows truncated — "488 W Cen…", "Blocked — not a custo…" — while the page was
+   nominally wide. A container query asks the only question that was ever relevant: how much room
+   does THIS have. Below 900px of its own, the context column drops underneath and the day gets
+   the width back. (Nothing renders squeezed, at any width a surface can actually reach.)
+   900 IS A MEASUREMENT, NOT A ROUND NUMBER. At 1440 the canvas is 800: side by side leaves the
+   day 472px and "488 W Center St" still truncates; stacked it gets 752 and NOTHING truncates.
+   A wider screen crosses 900 and they sit side by side again on their own. If the day and the
+   context are wanted side by side AT 1440, the fix is the rail (260) and the chat (380) — the
+   approved drawing runs them at ~145 and ~290 — and that is a proportion change for Adrian,
+   not something to tune here. */
+@container (max-width:900px){ .hcmd{flex-wrap:wrap} .hcmd-ctx{flex:1 1 100%} }
 @media (max-width:1100px){ .hcmd{flex-wrap:wrap} .hcmd-ctx{flex:1 1 100%} }
 .hcmd-head{margin:0 0 18px}
+/* The date and the controls that move it share a line, and the controls sit to the right of it
+   the way the approved drawing has them. It wraps rather than squeezing: at a narrow canvas the
+   controls drop under the date instead of crushing the date into two lines. */
+.hcmd-datebar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.hcmd-nav{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.hcmd-navbtn{border:1px solid var(--line);background:var(--bg,#fff);color:var(--ink-2,#444);font:inherit;
+  font-size:13px;font-weight:650;min-height:32px;padding:0 12px;border-radius:9px;cursor:pointer}
+.hcmd-navbtn.is-icon{padding:0;width:32px;font-size:17px;line-height:1}
+.hcmd-navbtn:hover:not([disabled]){border-color:var(--ink-3,#8a909c);color:var(--ink)}
+.hcmd-navbtn[disabled]{opacity:.45;cursor:default}
+.hcmd-navdate{border:1px solid var(--line);background:var(--bg,#fff);color:var(--ink-2,#444);font:inherit;
+  font-size:13px;min-height:32px;padding:0 8px;border-radius:9px;cursor:pointer}
 .hcmd-date{font-size:14px;color:var(--muted)}
 .hcmd-title{font-size:38px;line-height:1.1;margin:2px 0 6px;font-weight:800;letter-spacing:-.02em}
 .hcmd-sub{margin:0;color:var(--muted);font-size:14px}
@@ -761,6 +793,9 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
 .hc-arrival-act.is-primary{background:var(--brand-600,#D9632D);border-color:var(--brand-600,#D9632D);color:#fff}
 .hc-arrival-act.is-primary:hover{background:var(--brand-700,#b8501f);border-color:var(--brand-700,#b8501f)}
 .hc-arrival-act.is-primary[disabled]{opacity:.65;cursor:default}
+/* Quiet on purpose: it is a standing promise, not a notice. It must never look like an error
+   and must never be the thing the eye lands on. */
+.hc-ask-honesty{margin:8px 2px 0;font-size:12px;line-height:1.35;color:var(--muted,#6b7280);text-align:left}
 /* An action attached to a normal chat message (e.g. Undo beside a change). */
 .hc-msg-action{display:inline-block;margin-top:8px;padding:6px 13px;font-size:13px;min-height:34px}
 /* Direct-edit undo — a quiet transient control over the canvas, NOT a chat line. */
@@ -1696,14 +1731,29 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         <div class="ask-glow" aria-hidden="true"></div>
         <div class="ask-box">
           <input id="hcInput" type="text" autocomplete="off" placeholder="Reply to Hubly…" aria-label="Reply to Hubly">
-          <button type="button" class="ask-icon-left" id="hcAttachBtn" aria-label="Attach a photo or file">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l1.9 5.4L19 9.3l-5.1 1.9L12 16.6l-1.9-5.4L5 9.3l5.1-1.9L12 2z"/></svg>
+          <!-- A PAPERCLIP, BECAUSE IT ATTACHES A FILE. It was drawn as a four-point SPARKLE —
+               the universal "AI will do something clever" glyph — while being labelled "Attach a
+               photo or file". The control existed and worked; nobody would guess what it was, and
+               a door nobody recognises is the same as a door nobody has. (The drawing has a
+               paperclip here. It also has a microphone, which is NOT built — not drawn either,
+               because an affordance that does nothing is worse than a missing one.) -->
+          <button type="button" class="ask-icon-left" id="hcAttachBtn" aria-label="Attach a photo or file" title="Attach a photo or file">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-8.9 8.9a5.5 5.5 0 0 1-7.8-7.8l9-8.9a3.7 3.7 0 0 1 5.2 5.2l-8.9 8.9a1.8 1.8 0 0 1-2.6-2.6l8.2-8.2"/></svg>
           </button>
           <button type="button" class="ask-submit" id="hcSubmit" aria-label="Send">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
         </div>
       </div>
+      <!-- ══ THE HONESTY LINE. It is in the approved drawing and it was not in the product. ══
+           Adrian, 2026-09-17: "THE HONESTY LINE IS MISSING — 'Hubly uses your real data. I won't
+           make up information.' That line is the product's whole thesis and it is absent from the
+           surface he looks at most."
+           It is also the one sentence on this screen that the rest of the repo has to keep true:
+           the grounding rules, "never state what you weren't told", "never publish a fact the
+           owner did not state". Printed where he types, because that is where he is deciding
+           whether to trust the answer. -->
+      <p class="hc-ask-honesty">Hubly uses your real data. I won’t make up information.</p>
     </div>
   </div>
   <div class="hc-app-right" id="hcCanvasPane">
@@ -8188,8 +8238,17 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     wrap.addEventListener('submit', async function(ev){
       ev.preventDefault();
       b.disabled = true;
+      // ══ THE DAY HE IS LOOKING AT, NEVER "today". ════════════════════════════════════════════
+      //
+      // This wrote `new Date()` unconditionally, which was harmless while the surface could only
+      // ever draw today. The moment the day controls shipped (2026-09-17) it became a SILENT
+      // WRONG-DATE WRITE: on Thursday's view, adding something would have put it on Wednesday
+      // with a confirmation saying it was added — the owner told, in words, a thing that is not
+      // where he put it. Fixed in the same change that made it reachable, not after someone
+      // found it.
       var today = new Date();
-      var iso = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+      var iso = hc._dayISO ||
+        (today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0'));
       var res = await hcAddDayTask({ title: w.value, time: t.value, place: p.value, date: iso });
       // EVERY OUTCOME SAYS SOMETHING, HERE, BESIDE THE CONTROL THEY PRESSED (prohibition 6).
       msg.textContent = hcAddDayTaskLine(res);
@@ -9359,6 +9418,53 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     }catch(e){}
     return form;
   }
+  /** THE DAY CONTROLS — Today · ‹ · › · a real date field.
+   *
+   *  Each one sets `hc._dayISO` and redraws through hcRepaintDay, which is the SAME repaint every
+   *  other writer uses — so moving to tomorrow and adding something to tomorrow cannot end up
+   *  disagreeing about what day it is.
+   *
+   *  `Today` is disabled when he is already on today: a control that does nothing when pressed is
+   *  worse than one that is visibly unavailable, and this is the one place the difference is
+   *  obvious at a glance. */
+  function hcDayNav(canvas, biz, dayISO){
+    var nav = hcEl('div', 'hcmd-nav');
+    var isoOf = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+    var todayISO = isoOf(new Date());
+    var go = function(iso){
+      if(!iso) return;
+      hc._dayISO = (iso === todayISO) ? null : iso;   // null means "today", so it follows midnight
+      hcRepaintDay();
+    };
+    var shift = function(days){
+      var d = new Date(String(dayISO) + 'T12:00:00');
+      if(isNaN(d.getTime())) return;
+      d.setDate(d.getDate() + days);
+      go(isoOf(d));
+    };
+    var today = hcEl('button', 'hcmd-navbtn', 'Today');
+    today.type = 'button'; today.setAttribute('data-hc-day', 'today');
+    if(dayISO === todayISO){ today.disabled = true; today.title = 'You’re on today'; }
+    today.addEventListener('click', function(){ go(todayISO); });
+    var prev = hcEl('button', 'hcmd-navbtn is-icon', '\u2039');
+    prev.type = 'button'; prev.setAttribute('data-hc-day', 'prev');
+    prev.setAttribute('aria-label', 'The day before');
+    prev.addEventListener('click', function(){ shift(-1); });
+    var next = hcEl('button', 'hcmd-navbtn is-icon', '\u203a');
+    next.type = 'button'; next.setAttribute('data-hc-day', 'next');
+    next.setAttribute('aria-label', 'The day after');
+    next.addEventListener('click', function(){ shift(1); });
+    // A REAL DATE FIELD, not a calendar we drew. The platform's own picker is reachable by
+    // keyboard, localised, and known to everyone holding the device.
+    var pick = document.createElement('input');
+    pick.type = 'date'; pick.className = 'hcmd-navdate';
+    pick.value = dayISO || todayISO;
+    pick.setAttribute('data-hc-day', 'pick');
+    pick.setAttribute('aria-label', 'Go to a date');
+    pick.addEventListener('change', function(){ go(pick.value); });
+    nav.appendChild(today); nav.appendChild(prev); nav.appendChild(next); nav.appendChild(pick);
+    return nav;
+  }
   /** One item, flattened from a job or a task, so the row renderer has no idea which it was. */
   function hcDayItems(loaded, dayISO){
     var items = [];
@@ -9443,7 +9549,20 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     // ── CENTRE: the day is the hero ──────────────────────────────────────────────────────
     var main = hcEl('main', 'hcmd-main');
     var head = hcEl('div', 'hcmd-head');
-    head.appendChild(hcEl('div', 'hcmd-date', hcDateLong(dayISO) || hcDateUS(dayISO) || ''));
+    var datebar = hcEl('div', 'hcmd-datebar');
+    datebar.appendChild(hcEl('div', 'hcmd-date', hcDateLong(dayISO) || hcDateUS(dayISO) || ''));
+    // ══ A MODEL WITH NO CONTROLS ON IT. Built 2026-09-17, Adrian's design gap #1. ═════════════
+    //
+    // `hc._dayISO` has decided which day this surface draws since it was written, and NOTHING
+    // could change it: no Today, no arrows, no picker — the approved drawing has all four and the
+    // product had none. An owner could look at today and only today, on the surface whose whole
+    // job is his schedule.
+    //
+    // THE HOUR MOVES THE WHOLE SURFACE, NOT A LABEL. The bands, the calendar, the glance counts,
+    // "Later this week", the progress line and the add form's date all read `dayISO`, so one
+    // variable moves them together and none of them can disagree about which day it is.
+    datebar.appendChild(hcDayNav(canvas, biz, dayISO));
+    head.appendChild(datebar);
     head.appendChild(hcEl('h1', 'hcmd-title', 'My Day'));
     // ONE GESTURE, ONE PHRASING, and it is the one Adrian ruled (design README ruling 2). The
     // drawing's "Get things done. … or just start typing." is a picture artifact; this is his.
@@ -9510,8 +9629,14 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
 
       var body = hcEl('div', 'hcmd-rows');
       var mine = banded.filter(function(x){ return b === '?' ? !x.r.band : x.r.band === b; });
-      if(!mine.length){
-        // ONE LINE, NEVER A GHOST ROW — and now the button actually does something.
+      // ══ THE DOOR IS IN EVERY BAND, NOT ONLY AN EMPTY ONE. Adrian's design gap #2. ════════════
+      //
+      // The add line rendered ONLY when a band had nothing in it, so on a day with something in
+      // all three bands there was no + anywhere on the surface — the calendar hours were the only
+      // remaining door and nothing on screen says an hour is a door. That is the idle-only-door
+      // rule, inside the surface the rule was written for, and the approved drawing has the line
+      // under every band whether it holds anything or not.
+      var addLine = function(){
         var add = hcEl('button', 'hcmd-add');
         add.type = 'button';
         add.setAttribute('data-hc-day', 'add-open');
@@ -9519,7 +9644,11 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         add.appendChild(hcEl('span', 'hcmd-plus', '+'));
         add.appendChild(hcEl('span', null, HC_DAY_ADD_LINE));
         add.addEventListener('click', function(){ hcOpenDayAdd(sec, biz, { band: b }); });
-        body.appendChild(add);
+        return add;
+      };
+      if(!mine.length){
+        // ONE LINE, NEVER A GHOST ROW — and now the button actually does something.
+        body.appendChild(addLine());
       } else {
         mine.forEach(function(x){
           var it = x.it;
@@ -9549,6 +9678,9 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
           if(it.kind === 'job' && it.raw) row.addEventListener('click', function(){ try{ hcJobPanel(it.raw); }catch(e){} });
           body.appendChild(row);
         });
+        // AFTER THE ROWS, so it reads as "and one more thing" rather than competing with what is
+        // already on his day.
+        body.appendChild(addLine());
       }
       // THE PROMISED GESTURE STILL WORKS. He was told double-click for days; honouring it costs one
       // listener and breaks nobody, and removing a gesture someone has learned is its own small
@@ -9597,9 +9729,11 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     // TODAY AT A GLANCE — three honest counts. No ring, no percentage, no colour that moves
     // with progress (ruling 3, 2026-09-16). A count we could not read is NOT rendered as 0.
     var glance = hcEl('section', 'hcmd-card');
-    // The heading names what the card holds. "Today at a glance" is the drawing's caption and is
-    // in neither the spec nor Adrian's words; the three tile labels below ARE his (ruling 3).
-    glance.appendChild(hcEl('h3', 'hcmd-cardh', 'Today'));
+    // THE HEADING FOLLOWS THE DAY. It said "Today" unconditionally, which was true while today
+    // was the only day this surface could draw. It is not any more: a card called "Today" beside
+    // next Tuesday's rows is a false statement about which day he is looking at — the same defect
+    // as any other unearned label, arriving through a heading.
+    glance.appendChild(hcEl('h3', 'hcmd-cardh', (hcDayLabel(dayISO) || 'Today') + ' at a glance'));
     var tiles = hcEl('div', 'hcmd-glance');
     var jobCount = loaded.jobsFailed ? null : items.filter(function(i){ return i.kind === 'job' && i.type === 'Job'; }).length;
     var evCount  = loaded.jobsFailed ? null : items.filter(function(i){ return i.kind === 'job' && i.type !== 'Job'; }).length;
