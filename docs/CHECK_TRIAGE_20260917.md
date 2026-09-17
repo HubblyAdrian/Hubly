@@ -153,6 +153,36 @@ a consent sentence naming nobody, recorded into the row that answers "what were 
 sitting in a check that had been red, and therefore unread, the whole time. A red check nobody reads
 is worse than no check: it is a smoke alarm that has been beeping so long the battery is the noise.
 
+## THE DELIBERATE REDS, NAMED — one row each, because an unnamed one is a forgotten bug
+
+> *"Name them in the file itself: check name, why it is deliberately red, and what condition would
+> make it legitimately green. An unnamed deliberate red is indistinguishable from a bug we forgot
+> about."* — Adrian, 2026-09-17
+
+**AND THE COUNT IN THIS FILE WAS WRONG.** The summary above says *"Three of the twenty are OURS and
+correct to be red"*. Counted properly against the 20, it is **seven** — a hand-written total in a
+file whose whole subject is untrustworthy totals, which is the same defect as the lessons file
+miscounting its own lessons. The three it meant were the three product defects; it silently left out
+the tripwire, the two rulings and the write audit, and those are exactly the ones that look like
+forgotten bugs from the outside.
+
+| check | why it is red ON PURPOSE | what would make it legitimately green |
+| --- | --- | --- |
+| `check-page-facts-are-this-business` | **a real, customer-facing defect, unfixed.** `saltmarsh-bindery`'s stored page publishes `801-555-9001`, which is `copperwick-kilns`'s number. Its own record says `801-555-2277`. Nobody has corrected the page, and a rebuild is forbidden | the page serves saltmarsh's own number — by a targeted patch to that one stored document, never a regeneration. Green then means the corpus holds no page publishing another business's phone |
+| `check-no-unwritten-placeholder` | **a real finding, deliberately not fixed blind.** Three owner-preview surfaces render a placeholder that no writer fills. They are named with line numbers in the check's output rather than patched on a guess about which of them is intentional | each of the three either gets a writer that fills it or is marked `data-hd-placeholder` so the strip removes it before a customer sees it. The decision is per surface and is Adrian's |
+| `check-one-writer-per-question` | **a real product defect, open.** `canyon-ridge-tree-care` was asked *"whats the business called"* twice in a row — seq 2 and seq 3, 41 seconds apart. Two composers own one question | one composer owns each question: the standalone ask asks it, the model describes what it is making and stops. Green means no business in the corpus was asked the same thing twice in consecutive turns |
+| `check-walk-assertions` (leg 7) | **a real product defect, open.** A message sent DURING the claim transition is answered by the post-claim welcome instead of by an answer — seq 17, a real owner typing his hours, which were then not captured | a message that arrives mid-transition is answered, and the welcome does not consume it. Green means the walk's seq-17 message has an answer of its own |
+| `check-graefs-page` | **a TRIPWIRE doing its job, not a failure.** It recorded `#p-storefront` and the container is `#p-classic-site` now. A tripwire that goes off on a rename is correct; silencing it by widening the matcher would destroy the only thing it does | the rename is confirmed as intended and the snapshot is re-recorded **deliberately** with `--update`. Green means the recorded page matches what is served, and the next unexplained change trips it again |
+| `check-booking-link-subdomain` | **a routing ruling, not a code fix.** It asserts the apex serves `hubly.html`'s Welcome. The apex serves the owner shell now, which is almost certainly right and is Adrian's call, not a session's | Adrian rules what the apex serves. If it is the owner shell, the check's assertion is a SHAPE it froze and the check is what changes. Green means the assertion matches the ruling |
+| `check-draft-token-truthiness` | **the claimed-owner write audit, open.** One writer still has no owner alternative, so a claimed site cannot use it. Fixing it blind risks the exact class the audit exists to find | every page-write path accepts `p_owner_id` and is exercised as a signed-in owner. Green means no writer is dead on a claimed site — and that is the one it cannot prove alone, because Claude Code cannot sign in |
+
+**Not on this list, and therefore NOT deliberate:** the ten marketing/milestone checks
+(`homepage-craft`, `onboarding-priority`, `landing-intent`, `customer-journey-os`, `m2-epic1/2/7`,
+`creative-director-architecture`, `discovery-architecture`, `hubly-ai`), `check-hubly-brain`,
+`check-platform-rc` and `check-draft-arg-name`. Those are **unresolved**, which is a different state
+from deliberate: nobody has decided whether the surface they assert about still exists. They are red
+because a decision is missing, not because a decision was made.
+
 ## WHAT IS STILL RED, AND WHY IT IS NOT A LIE
 
 Everything in B that is not fixed is red **on purpose** until Adrian rules:
