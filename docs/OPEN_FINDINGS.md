@@ -1,5 +1,71 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## MY DAY ON A PHONE WAS A BLANK SCREEN — FIXED, NOT VERIFIED ON A HANDSET (2026-09-17)
+
+Two rules, each correct alone, cancelling each other out:
+
+- `@media (max-width:900px)` — *"on a phone the room is the whole screen"* — hides `.hc-app-left`
+  for `planner`, `jobs` and `customers`.
+- `@media (max-width:700px)` — *"exactly one pane on a phone"* — hides `.hc-app-right` with
+  `display:none !important` unless the mobile toggle says **Site**.
+
+A room is neither Chat nor Site, so **both panes were hidden**. An owner who pressed **My Day**,
+**Jobs** or **Customers** on the bottom bar got an empty screen with a bar under it. The bar is the
+phone's entire navigation — the rail is `display:none` below 900px — so this was not a corner:
+it is what those three tabs did on a phone. Reachable three ways: the bar, a `#planner` bookmark,
+and the back button (`hcModeFromUrl` opens the room on entry).
+
+**Fixed** by extending the one-pane invariant: in a room, the room *is* the one pane, and the
+Chat/Site toggle is hidden because it names neither of the things that can be on screen. Also
+fixed the size half of the same invariant — `[data-mode="planner"] .hc-app-left{flex:0 0 380px}`
+is (0,3,1) and beat the (0,3,0) mobile rule, so the chat pane carried a desktop column's basis on
+a phone.
+
+**MEASURED AT 390px IN THE DESKTOP ENGINE. NOT VERIFIED ON A HANDSET** — there is no true 390px
+viewport or soft keyboard here, and this is exactly the class of thing that reads differently on
+real hardware. It must be looked at on a phone before anyone calls it done.
+
+**And the open question under it, for Adrian:** a room on a phone has no way back to the
+conversation except the bottom bar's Home. That is probably right, but it was never designed —
+the phone shell was built as Chat|Site and rooms arrived later.
+
+## THE DAY STOPPED SAYING "TWO THINGS AT 2PM" — the arithmetic shipped, the surface that used it did not (2026-09-17)
+
+`hcMarkClashes` — *"two things at 2pm is the most useful thing a calendar can tell an owner, and
+nothing in this product said it before"* — was written for the old planner room. When My Day became
+the day, the old room stopped being reachable and **the overlap was never computed for the surface
+an owner actually opens.** A capability with no door, one more time; and it was invisible because
+the fixture that would have caught it was asserting the old room's markup.
+
+**Fixed:** `hcDayItems` now runs the same arithmetic, the row carries the mark *and the word*
+"Overlaps", and the day says it in words above the bands — *"Two things overlap today — Leslie
+Ammons at 12:00 PM and Dentist appointment at 2:00 PM."* Jobs and blocks only: a task has a due
+time and no span, so pairing one with a three-hour job would be an alarm about something that is
+not a conflict.
+
+**The second copy of the day is deleted.** `hcRenderPlanner` had its own reader, row shape, clash
+marking and empty states, and its only two remaining callers were **repaints after an owner edit** —
+so changing a job's time in the My Day room would have swapped the surface under him for a
+different-looking day. Both callers now go through `hcRepaintDay`, which knows every live day
+surface, and the old renderer is gone rather than parked.
+
+## A CLAIM I NEARLY FILED, AND WHY IT IS WRONG (2026-09-17)
+
+**Nearly recorded:** *"the calendar renders 6 AM – 5 PM while a 6:00 PM task sits on the day — an
+item with no row to land on."* It is what the screenshot shows, and it is **false**. The sentence
+that would have caught it, said first: *this only holds if the calendar shows every hour it
+generates.* It does not — `.hcmd-cal` is `max-height:340px; overflow:auto`, so the picture was of a
+**scrolled-out-of-view** hour, not a missing one.
+
+Checked directly rather than from the image: with a single 6:00 PM task, `hcDayHourRange` returns
+`6…20` and the DOM holds fifteen `.hcmd-calrow` elements ending at 8 PM. **The range is derived and
+it does follow the data.**
+
+What is left is a much smaller, real observation: the calendar clips at 340px with no visible
+affordance saying there is more below, so an item late in the day is invisible until you scroll a
+box that does not look scrollable. Worth a look; not the defect it first appeared to be.
+
+
 ## THE SHAPE: FAILURES THAT LEAVE NO TRACE — three instances, one finding (2026-09-15)
 
 Adrian: *"That is the third instance this week of a failure that leaves no trace — the booking path,

@@ -37,16 +37,34 @@ for (const f of FILES) {
   catch (e) { console.error("CANNOT RUN — " + e.message); process.exit(2); }
 
   // A FRESH assignment replaces whatever was there. `Object.assign(window.X || {}, …)` extends it.
-  const fresh = new Map();
+  //
+  // ══ COUNTING FRESH ASSIGNMENTS WAS NOT THE RULE. Corrected 2026-09-17. ══════════════════
+  //
+  // This counted `= {` per name and failed only at TWO. `hublyDayUI` had exactly one — at line
+  // 7955, THREE THOUSAND LINES BELOW an `Object.assign` that had registered `inThread`,
+  // `offerTab`, `tabDeclined` and `rememberDeclined` on the same global. One fresh assignment,
+  // arriving second, wiped all four; the check stayed green and the seam was silently missing
+  // for anything that reached for it. Found by hitting it, not by the check — which is the
+  // whole failure mode this file exists to prevent.
+  //
+  // THE RULE IS ORDER, NOT COUNT: a fresh assignment must be the FIRST thing that touches the
+  // name. Anything after an earlier touch — fresh or extend — replaces work already done.
+  const touches = new Map();
   for (const m of src.matchAll(/window\.(hubly[A-Za-z0-9_]*UI)\s*=\s*(\{|Object\.assign)/g)) {
     const [, name, kind] = m;
-    if (kind !== "{") continue;                       // an extend, not a replace
-    fresh.set(name, (fresh.get(name) || 0) + 1);
+    if (!touches.has(name)) touches.set(name, []);
+    touches.get(name).push({ kind: kind === "{" ? "fresh" : "extend", at: m.index,
+                             line: src.slice(0, m.index).split("\n").length });
   }
-  total += fresh.size;
-  const clobbered = [...fresh.entries()].filter(([, n]) => n > 1).map(([k, n]) => `${k} x${n}`);
-  say(`${f} — every seam is assigned at most once`, clobbered.length === 0,
-    clobbered.length ? `CLOBBERED: ${clobbered.join(", ")}` : `${fresh.size} seam(s), none replaced twice`);
+  total += touches.size;
+  const clobbered = [];
+  for (const [name, list] of touches) {
+    list.slice(1).forEach((t) => {
+      if (t.kind === "fresh") clobbered.push(`${name} replaced at line ${t.line} (first set at line ${list[0].line})`);
+    });
+  }
+  say(`${f} — no seam is REPLACED after it has been set`, clobbered.length === 0,
+    clobbered.length ? `CLOBBERED: ${clobbered.join("; ")}` : `${touches.size} seam(s), every replacement is the first touch`);
 }
 say("the scan found seams to check — a zero here means the pattern moved, not that it is clean",
   total > 0, `${total} seam name(s) across ${FILES.length} file(s)`);

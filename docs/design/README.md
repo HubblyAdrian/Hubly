@@ -5,11 +5,66 @@ plainly that it has none.
 
 | file | verdict |
 | --- | --- |
-| `my-day-2026-09-16-final.png` | **APPROVED — CURRENT.** The My Day surface. Supersedes every earlier My Day/schedule image |
+| `my-day-2026-09-16-final.png` | **APPROVED — CURRENT for the SURFACE.** The My Day surface itself. Supersedes every earlier My Day/schedule image. **Its RAIL is out of date** — it draws `Home · Website · Settings` with no My Day row, which the 2026-09-17 reversal at the top of this file overturns |
 | `my-day-2026-09-15-approved.png` | **Superseded** by `my-day-2026-09-16-final.png`. Kept as history, not as instructions |
 | `owner-home-2026-09-06-flow.png` | **Approved in part** — screens 1, 2, and the top half of 3 |
 | `owner-home-2026-09-06-advice-cards-rejected.png` | **Rejected.** The counter-example |
 | `owner-home-2026-09-06-early-single-card-unreviewed.png` | **No verdict.** Kept as history |
+
+---
+
+## REVERSED 2026-09-17 — "MY DAY IS NOT A RAIL ROW" IS NO LONGER THE RULING
+
+**Read this before the section below it.** The 2026-09-16 ruling recorded further down —
+*"MY DAY IS NOT A RAIL ROW. MY DAY IS WHAT HOME RENDERS"* — was **reversed by Adrian on
+2026-09-17**. It is left in place, not deleted, because an implicitly superseded ruling gets
+restored by whoever reads the older text first; that is the same reason it was written down in the
+first place.
+
+**THE RULING NOW:** the rail is **Home · MY DAY · Website · Settings**, and **Home does not
+auto-open the day.** My Day is a place an owner goes to.
+
+### Why — the two questions are different questions
+
+Adrian, 2026-09-17, arguing it from the booking case: *"if someone books a job how are they
+supposed to see it if my day is there?"*
+
+| surface | the question it answers |
+| --- | --- |
+| **HOME** | **"WHAT'S NEW?"** — what happened while he was away: a booking came in, someone asked and didn't book, a payment landed. News, newest first. |
+| **MY DAY** | **"WHAT AM I DOING?"** — the plan for today: the bands, the calendar, what he has committed to. |
+
+A day rendered on Home answers the second question in the place reserved for the first, and the
+new booking — the single most valuable thing Hubly has to say — has nowhere to land. That is the
+cost the reversal pays for, and it is why the earlier ruling's reasoning (*"the first screen of
+ownership is the owner's day"*) does not survive contact with a business that is actually getting
+bookings.
+
+### And the day is not simply moved — it is EARNED, through a sequence
+
+Adrian, 2026-09-17, describing what actually happens:
+
+1. **HOME IS THE MAIN CHAT.** Full width, conversation-first — not a narrow column with a panel
+   beside it.
+2. He asks for his schedule.
+3. **IT RENDERS INLINE IN THE THREAD.**
+4. **IT OFFERS TO BECOME A TAB.**
+5. He accepts → **MY DAY IS CREATED AS A TAB**, and it persists.
+6. **OPENING THAT TAB** is where the chat moves left, the day takes the middle, the calendar sits
+   to the right.
+
+*"HOME IS CURRENTLY SHOWING STEP 6'S LAYOUT AT STEP 1."* That was the defect in one sentence: the
+after-state was being rendered before anything had triggered it, so steps 2–5 had nothing left to
+do. The three-column view is not wrong — it is **step 6**, and it belongs behind the tab.
+
+The sequence is built and every step of it is pressed for real by
+`scripts/check-my-day-sequence.mjs` (20 legs, each one seen red).
+
+**STILL OPEN, FOR ADRIAN — do not let a session guess this:** *is the rail EARNED for everything,
+or is My Day special?* Today My Day is earned exactly like Jobs and Customers — it is not in
+`HC_RAIL_DEFAULT`, and the only way to get the row is to ask for the day and accept the offer.
+Website is the one place a new business is given. That is a rule the code follows, not a ruling
+Adrian has given.
 
 ---
 
@@ -48,6 +103,9 @@ Four rulings Adrian gave on 2026-09-16, all now drawn:
    through the one-ask floor. *My Day = fast daily entry. Job workspace = complete management.*
 
 ### THIS RULING REVERSES THE 2026-09-13 RULING — stated explicitly, with the reason
+<!-- AND WAS ITSELF REVERSED ON 2026-09-17. See the top of this file. The 2026-09-13 ruling it
+     superseded ("Home shows the site too") did NOT come back: Home is the conversation, full
+     width, and the site is one rail row away under Website. -->
 
 **Superseded: "Home shows the site too" (Adrian, 2026-09-13).** That ruling put the site preview
 back into Home's right-hand pane, reversing an even earlier choice to hide it. Its reasoning is
@@ -73,6 +131,10 @@ in `my-day-2026-09-16-final.png`: the rail is **Home · Website · Settings** wi
 foot and no chats; each band shows exactly one *"Double-click to add something…"* line and no ghost
 rows; *Today at a glance* is **Jobs 0 · Events 0 · Tasks 0** with no ring and no percentage; the row
 header is **What | When | Where | Type**; the honesty line and all four Quick examples are as quoted.
+
+**REVERSED 2026-09-17 — see the section at the top of this file. My Day IS a rail row.** The
+paragraph below is kept as the record of what was ruled on 2026-09-16 and is no longer what the
+product does; the rail is `Home · My Day · Website · Settings` and Home does not render the day.
 
 **It also answers the rail question that was being held.** **My Day is not a rail row.** The rail is
 three items, `Home` is the selected one, and **My Day is what Home renders** — the date, the title,

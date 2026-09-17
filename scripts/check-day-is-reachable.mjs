@@ -142,10 +142,22 @@ try {
   say("1 the schedule door opens, and counts what it found",
     went && went.ok === true && went.place === "planner" && went.counted === 2,
     `ok=${went && went.ok} counted=${went && went.counted} (expected 2 rows)`);
-  // AND IT LANDS ON HOME, because Home is the day now. A door that reported success while
-  // opening a mode that renders nothing is the false green this whole file exists to refuse.
-  const landedHome = await rig.page.evaluate(() => document.getElementById("hcApp").getAttribute("data-mode"));
-  say("1b and it lands on Home, which is where the day is", landedHome === "home", `data-mode=${landedHome}`);
+  // AND IT LANDS ON THE SURFACE THAT RENDERS THE DAY — DERIVED, not named. RETARGETED 2026-09-17:
+  // this asserted `data-mode === "home"` because Home was the day under a ruling Adrian has since
+  // reversed. Naming the destination made the leg a statement about a ruling; asking "does the mode
+  // it landed in have a room that renders the day" makes it a statement about the rule, and it
+  // survives the day moving again.
+  //
+  // A door that reported success while opening a mode that renders nothing is the false green this
+  // whole file exists to refuse.
+  const landed = await rig.page.evaluate(() => {
+    const mode = document.getElementById("hcApp").getAttribute("data-mode");
+    const rooms = Object.keys((window.hublyNavUI || {}).rooms || {});
+    return { mode, hasRoom: rooms.includes(mode), rows: document.querySelectorAll(".hcmd-row, .hcmd-band").length };
+  });
+  say("1b and it lands on a surface that actually renders the day",
+    landed.hasRoom === true && landed.rows > 0,
+    `data-mode=${landed.mode} · has a room=${landed.hasRoom} · day elements=${landed.rows}`);
 
   const afterGo = await rig.settle(() => {
     const cv = document.getElementById("hcCanvas");

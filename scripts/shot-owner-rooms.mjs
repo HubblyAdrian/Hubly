@@ -200,18 +200,31 @@ for (const v of VIEWS) {
     // SCREENSHOT. An early picture is a worse picture, not a wrong number — nothing is asserted
     // across this line. Reviewed 2026-09-13; do not re-audit.
     await page.waitForTimeout(300);
+    // ══ [SHAPE] THE DAY ROOM'S SHAPE MOVED ON PURPOSE, 2026-09-17 ═══════════════════════════
+    //
+    // `planner` used to be the old planner room: `.hc-row` list, `.hc-room-hd h2` heading. Adrian
+    // reversed "My Day is what Home renders" and My Day became the room, so the room is now the
+    // My Day surface — `.hcmd-*`, bands and a calendar — and the old renderer is deleted. These
+    // legs are [SHAPE]: they went red because the shape moved, which is not an alarm, and the fix
+    // is to point them at the shape that ships. What they MEASURE is unchanged: a heading, rows
+    // for everything on the day, blocks said to be blocks, and two things at 2pm called out.
     const m = await page.evaluate(() => {
       const canvas = document.getElementById('hcCanvas');
       const pane = document.querySelector('.hc-app-right');
-      const rows = [...canvas.querySelectorAll('.hc-row')];
+      const day = !!canvas.querySelector('.hcmd');
+      const rows = [...canvas.querySelectorAll(day ? '.hcmd-row, .hcmd-laterrow' : '.hc-row')];
       const empty = canvas.querySelector('.hc-room-empty');
       return {
         mode: document.getElementById('hcApp').getAttribute('data-mode'),
         paneVisible: pane ? getComputedStyle(pane).display !== 'none' : false,
-        title: (canvas.querySelector('.hc-room-hd h2') || {}).textContent || null,
+        title: (canvas.querySelector('.hc-room-hd h2, .hcmd-title') || {}).textContent || null,
         nRows: rows.length,
-        clashes: canvas.querySelectorAll('.hc-row.is-clash').length,
-        blocks: canvas.querySelectorAll('.hc-row.is-block').length,
+        clashes: canvas.querySelectorAll('.hc-row.is-clash, .hcmd-row.is-clash').length,
+        blocks: canvas.querySelectorAll('.hc-row.is-block, .hcmd-row[data-kind="job"] .hcmd-whatsub').length,
+        // The day's own way of saying a thing is not a customer, in words, on the row.
+        blockSaid: [...canvas.querySelectorAll('.hcmd-whatsub')].some((e) => /blocked/i.test(e.textContent)),
+        clashSaid: !!canvas.querySelector('.hcmd-clash'),
+        addDoors: canvas.querySelectorAll('[data-hc-day="add-open"]').length,
         emptyText: empty ? empty.textContent.trim().slice(0, 60) : null,
         overflow: document.documentElement.scrollWidth > window.innerWidth + 1
       };
@@ -220,7 +233,9 @@ for (const v of VIEWS) {
     if (!m.paneVisible) failures.push(`${v.id}/${room}: the workspace pane is not visible — the room does not take the centre`);
     if (!m.title) failures.push(`${v.id}/${room}: room has no heading`);
     if (m.overflow) failures.push(`${v.id}/${room}: page scrolls sideways`);
-    if (!m.nRows && !m.emptyText) failures.push(`${v.id}/${room}: no rows AND no empty-state sentence — an empty frame`);
+    // An empty DAY is not an empty frame: it renders its bands and an add door in each. The
+    // question is whether the room says ANYTHING, not whether it says this one sentence.
+    if (!m.nRows && !m.emptyText && !m.addDoors) failures.push(`${v.id}/${room}: no rows AND nothing to do — an empty frame`);
     // A TITLE AND ITS SUBTITLE MUST NOT SHARE A LINE. "Leslie AmmonsFull Detail" passed
     // every measurement and was the first thing the eye caught — the second time today,
     // after the action cards this morning. So the check is general, not per-component.
@@ -245,14 +260,25 @@ for (const v of VIEWS) {
     if (chip) failures.push(`${v.id}/${room}: the account chip overlaps the room heading`);
     console.log(`  ${room.padEnd(10)} rows=${m.nRows} clashes=${m.clashes} blocks=${m.blocks}${m.emptyText ? ' empty="' + m.emptyText + '"' : ''}`);
     if (room === 'planner') {
-      // THE UNION IS THE POINT: 3 timed things + 2 tasks in ONE list.
-      if (m.nRows !== 5) failures.push(`${v.id}/planner: expected 3 jobs/blocks AND 2 tasks in one list, got ${m.nRows} rows`);
-      if (m.clashes !== 2) failures.push(`${v.id}/planner: expected 2 rows marked as clashing (12–15 vs 14–16), got ${m.clashes}`);
-      if (m.blocks !== 1) failures.push(`${v.id}/planner: expected the dentist appointment to render as a block, got ${m.blocks}`);
+      // [SHAPE] THE UNION IS STILL THE POINT: 3 timed things + 2 tasks, in one surface. Today's
+      // sit in the bands and the ones further out under "Later this week" — counted together,
+      // because the rule is that nothing he was told about disappears, not where it sits.
+      if (m.nRows !== 5) failures.push(`${v.id}/planner: expected 3 jobs/blocks AND 2 tasks on the day, got ${m.nRows} rows`);
+      // [RULE] TWO THINGS AT 2PM IS THE MOST USEFUL THING THIS SCREEN CAN SAY — 12–15 vs 14–16.
+      if (m.clashes !== 2) failures.push(`${v.id}/planner: expected 2 rows marked as overlapping (12–15 vs 14–16), got ${m.clashes}`);
+      if (!m.clashSaid) failures.push(`${v.id}/planner: the overlap is marked with a colour and never said in words`);
+      // [RULE] A BLOCK IS SAID TO BE A BLOCK — "Dentist appointment" must not read as a customer.
+      if (!m.blockSaid) failures.push(`${v.id}/planner: the dentist appointment does not say it is blocked time, not a customer`);
     }
     // Open the first row as a record: a workspace takes the centre, a record takes the panel.
+    // A ROW OPENS A RECORD, whichever shape of row the room renders. Gating this on the OLD
+    // row class would have quietly stopped asserting it for the day — a leg that stops running
+    // is worse than one that goes red, because nothing says so.
     if (m.nRows) {
-      await page.evaluate(() => document.querySelector('#hcCanvas .hc-row').click());
+      await page.evaluate(() => {
+        const r = document.querySelector('#hcCanvas .hc-row, #hcCanvas .hcmd-row[data-kind="job"]');
+        if (r) r.click();
+      });
     // DELIBERATE FIXED DELAY (docs/FIXED_DELAY_AUDIT.md kind 5): a render settling before a
     // SCREENSHOT. An early picture is a worse picture, not a wrong number — nothing is asserted
     // across this line. Reviewed 2026-09-13; do not re-audit.

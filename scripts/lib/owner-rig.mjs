@@ -16,7 +16,13 @@
 /** Installed in the PAGE world. Serialised by Playwright, so it may not close over anything. */
 export function installOwnerFake(opts) {
   const W = window;
-  W.__rig = { rpc: [], writes: [], quotes: (opts.quotes || []).slice() };
+  W.__rig = { rpc: [], writes: [], quotes: (opts.quotes || []).slice(),
+    // THE PLACES ROWS ARE STATE, NOT A CONSTANT. add_business_place WRITES here and
+    // get_public_business_places READS here, so a check can press "Yes, add it" and then ask
+    // what the server would hand back — which is the only way the write and the read can be
+    // shown to agree. A fixture where the writer cannot change what the reader returns proves
+    // a click happened and nothing more.
+    places: (opts.places || [{ kind: "website", scope: "workspace", visible: true, sort_order: 10 }]).map((p) => Object.assign({}, p)) };
   const ok = (data) => Promise.resolve({ data, error: null });
   const q = (rows) => {
     let held = rows.slice();
@@ -108,7 +114,32 @@ export function installOwnerFake(opts) {
       // makes hcWorkspaces() fail open and treat every place as earned. Default to the shape a
       // real account actually has — ONE row — so a check measures the world owners live in.
       if (name === "get_public_business_places") {
-        return ok(opts.places || [{ kind: "website", scope: "workspace", visible: true, sort_order: 10 }]);
+        return ok(W.__rig.places.map((p) => Object.assign({}, p)));
+      }
+      // ══ THE PLACE WRITER, SHAPED LIKE THE REAL ONE ══════════════════════════════════════
+      //
+      // 20260908030000_add_business_place.sql returns WHICH OF THREE THINGS HAPPENED, and the
+      // caller composes its sentence from that — so a fake that always answered {ok:true} would
+      // let a client that never distinguishes them look correct. It also refuses without a
+      // credential and refuses for the wrong owner, because "the write went out" and "the write
+      // was allowed" are different facts and only the second one earns a tab.
+      //
+      // NOT MODELLED, AND SAID SO: the real function also rejects an unknown kind or scope with
+      // a check_violation. Nothing here exercises that, so nothing here should be read as proof
+      // of it.
+      if (name === "add_business_place") {
+        W.__rig.writes.push({ name, args });
+        const a = args || {};
+        if (!a.p_id || !a.p_owner_id) return ok({ ok: false, error: "missing_credential" });
+        if (String(a.p_owner_id) !== String(opts.uid)) return ok({ ok: false, error: "not_owner" });
+        const rows = W.__rig.places;
+        const hit = rows.filter((r) => r.kind === a.p_kind && r.scope === a.p_scope)[0];
+        if (hit && hit.visible !== false) return ok({ ok: true, outcome: "already", kind: a.p_kind, scope: a.p_scope });
+        if (hit) { hit.visible = true; return ok({ ok: true, outcome: "re-enabled", kind: a.p_kind, scope: a.p_scope }); }
+        const next = rows.filter((r) => r.scope === a.p_scope)
+                         .reduce((m, r) => Math.max(m, Number(r.sort_order) || 0), 0) + 10;
+        rows.push({ kind: a.p_kind, scope: a.p_scope, visible: true, sort_order: next, config: null });
+        return ok({ ok: true, outcome: "created", kind: a.p_kind, scope: a.p_scope });
       }
       if (name === "update_business_job" || name === "create_task") { W.__rig.writes.push({ name, args }); return ok([{ id: null, error: null }]); }
       return ok(null);

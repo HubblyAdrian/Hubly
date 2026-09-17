@@ -101,6 +101,23 @@ try {
   });
   say("8 the task panel has a door to roll_task, and it says what it does",
       door.exists === true && /tomorrow/i.test(door.label || ""), JSON.stringify(door.label));
+  // ══ AND A PERSON CAN PRESS IT. Added 2026-09-17. ═══════════════════════════════════════════
+  // Leg 8 proved the button EXISTS. That is not the same as a person being able to use it — the
+  // "Double-click to add something" line existed too, with no handler behind it anywhere. So this
+  // dispatches a real click on the real button and asserts the product wrote and said so.
+  const rolled = await rig.page.evaluate(async () => {
+    window.hublyCaptureUI.withBusiness("5ebedc20-1061-46b9-b393-a6ef57225910");
+    window.__rig.writes.length = 0;
+    const btn = document.querySelector('[data-hc-task="roll"]');
+    if (!btn) return { pressed: false };
+    btn.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+    await new Promise((r) => setTimeout(r, 600));
+    const note = [...document.querySelectorAll(".hc-event-sub")].map((e) => e.textContent).join(" ");
+    return { pressed: true, calls: window.__rig.rpc.filter((n) => n === "roll_task").length, note };
+  });
+  say("8b CLICKING it calls roll_task and says what happened — the control, not the function",
+      rolled.pressed === true && rolled.calls >= 1 && rolled.note.length > 5,
+      `${rolled.calls} roll_task call(s) · ${JSON.stringify(rolled.note.slice(0, 70))}`);
 
   const lines = await rig.page.evaluate(() => {
     const L = window.hublyTaskUI.rollLine;

@@ -130,7 +130,9 @@
     "pretest": "node scripts/check-no-db-push.mjs",
     "check:quote-pipeline": "node scripts/check-quote-pipeline.mjs",
     "check:quote-tab": "node scripts/check-quote-tab-after-removal.mjs",
-    "measure:page-claims": "node scripts/measure-page-claims.mjs"
+    "measure:page-claims": "node scripts/measure-page-claims.mjs",
+    "check:day-controls": "node scripts/check-day-controls-work.mjs",
+    "check:my-day-sequence": "node scripts/check-my-day-sequence.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

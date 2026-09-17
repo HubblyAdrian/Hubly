@@ -25,6 +25,7 @@
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openRig } from "./lib/browser-rig.mjs";
+import { installOwnerFake } from "./lib/owner-rig.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 let rig, failed = 0;
@@ -34,6 +35,11 @@ catch (e) { console.error("CANNOT RUN — " + e.message); process.exit(2); }
 
 try {
   await rig.load("file://" + join(ROOT, "public/platform-home.html"));
+  // THE DECLARED FAKE. Leg 6 presses the real button, and a real button needs a backend to write
+  // through — without one the press would be measuring a rejection, not the control.
+  await rig.page.evaluate(installOwnerFake, {
+    uid: "sim-owner", email: "sim@example.com", displayName: "Adrian", tables: { jobs: [], tasks: [] },
+  });
   const seam = await rig.page.evaluate(() => !!(window.hublyDayUI && window.hublyDayUI.add && window.hublyDayUI.line));
   if (!seam) { console.error("CANNOT RUN — window.hublyDayUI is not exposed."); await rig.close(); process.exit(2); }
 
@@ -81,6 +87,39 @@ try {
     `${room.time} · ${room.what} · ${room.where} · ${room.add}`);
   say("5b every control is named for someone who cannot see it", room.labelled === true, "aria-labels present");
 
+  // ══ AND A PERSON CAN ACTUALLY PRESS IT. ═══════════════════════════════════════════════════
+  //
+  // ADDED 2026-09-17. Every leg above proves the form is BUILT; none of them proved it RESPONDS.
+  // Adrian: "A CHECK THAT CALLS THE FUNCTION IS NOT A CHECK THAT THE CONTROL WORKS." This file
+  // called `hublyDayUI.add(...)` for its outcome sentences and `hublyDayUI.addRow(...)` for its
+  // markup, and never once pressed the button between them — which is exactly how a page came to
+  // say "Double-click to add something" with no dblclick handler anywhere and every check green.
+  //
+  // So this leg types into the real inputs and SUBMITS the real form, and asserts the product said
+  // something back on the form itself.
+  const pressed = await rig.page.evaluate(async () => {
+    const el = document.createElement("div");
+    document.body.appendChild(el);
+    window.hublyCaptureUI.withBusiness("5ebedc20-1061-46b9-b393-a6ef57225910");
+    const form = window.hublyDayUI.addRow(el, { id: "5ebedc20-1061-46b9-b393-a6ef57225910" });
+    const q = (n) => el.querySelector(`[data-hc-day="${n}"]`);
+    q("what").value = "order glass cleaner";
+    q("time").value = "09:00";
+    const before = (window.__rig.writes || []).filter((w) => w.name === "create_task").length;
+    // THE REAL EVENT. A submit, on the real form, as a person pressing Add produces.
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await new Promise((r) => setTimeout(r, 700));
+    const after = (window.__rig.writes || []).filter((w) => w.name === "create_task");
+    const msg = (q("msg") || {}).textContent || "";
+    el.remove();
+    return { wrote: after.length - before, title: after.length ? after[after.length - 1].args.p_title : null, msg };
+  });
+  say("6 SUBMITTING the real form writes — the control, not the writer behind it",
+    pressed.wrote === 1 && pressed.title === "order glass cleaner",
+    `${pressed.wrote} write(s), title ${JSON.stringify(pressed.title)}`);
+  say("7 and it says what happened, on the form he pressed",
+    pressed.msg.length > 5 && !/^\s*$/.test(pressed.msg), JSON.stringify(pressed.msg.slice(0, 80)));
+
 } catch (e) {
   console.error("FAIL — " + String(e.message).slice(0, 240));
   failed++;
@@ -88,17 +127,31 @@ try {
   try { await rig.close(); } catch (_) {}
 }
 
-// ── AND THE ORDER IN THE ROOM, FROM SOURCE: the add row precedes the empty-state return ──
-import { readFileSync } from "node:fs";
-const page = readFileSync(join(ROOT, "public/platform-home.html"), "utf8");
-const planner = page.slice(page.indexOf("async function hcRenderPlanner"), page.indexOf("async function hcRenderPlanner") + 4000);
-// `hcRoomEmpty(room,` with the comma: the read-failure branch uses room0, and matching that
-// one compared the wrong two positions on the first run.
-const addAt = planner.indexOf("hcDayAddRow(room");
-const emptyAt = planner.indexOf("hcRoomEmpty(room,");
-say("6 the add row is in the room BEFORE the empty state can return",
-  addAt > 0 && emptyAt > 0 && addAt < emptyAt,
-  `addRow@${addAt} emptyState@${emptyAt}`);
+// ── AND THE DAY OFFERS THE DOOR IN THE STATE EVERY BUSINESS IS IN: EMPTY ────────────────
+//
+// WAS: a source-order assertion inside hcRenderPlanner ("the add row comes before the empty-state
+// return"). That room is deleted — it was the old day, unreachable since the 2026-09-17 reversal —
+// so the leg was reading the source of a surface nobody could open. The RULE it was protecting is
+// real and survives it: an empty day must still offer a way in, because empty is the state every
+// business starts in. Asserted on the surface that ships, by rendering it with nothing on it.
+import { openRig as openRig2 } from "./lib/browser-rig.mjs";
+let rig2;
+try { rig2 = await openRig2(); } catch (e) { console.error("CANNOT RUN — " + e.message); process.exit(2); }
+try {
+  await rig2.load("file://" + join(ROOT, "public/platform-home.html"));
+  await rig2.page.evaluate(installOwnerFake, { uid: "sim-owner", email: "sim@example.com", tables: { jobs: [], tasks: [] } });
+  const empty = await rig2.page.evaluate(async () => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    await window.hublyDayUI.render(host, { id: "5ebedc20-1061-46b9-b393-a6ef57225910", slug: "x" });
+    return { rows: host.querySelectorAll(".hcmd-row").length,
+             doors: host.querySelectorAll('[data-hc-day="add-open"]').length,
+             hours: host.querySelectorAll('[data-hc-day="cal-hour"]').length };
+  });
+  say("8 an EMPTY day still offers a way in — the state every business starts in",
+    empty.rows === 0 && empty.doors >= 1 && empty.hours >= 1,
+    `${empty.rows} rows · ${empty.doors} add door(s) · ${empty.hours} calendar hours`);
+} finally { try { await rig2.close(); } catch (_) {} }
 
 console.log(failed ? `\n${failed} assertion(s) failed.` : "\nA person can type into their day, and only a write that read back says so.");
 process.exit(failed ? 1 : 0);

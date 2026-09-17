@@ -103,12 +103,18 @@ try {
   const deadDoors = resolved.filter(([, to]) => to !== "home" && !reg.surfaces.includes(to)).map(([k, to]) => `${k}->${to}`);
   say("3 every place a sentence can take someone to opens something — a surface, or Home",
     deadDoors.length === 0, deadDoors.length ? `opens nothing: ${deadDoors.join(", ")}` : resolved.map(([k, t]) => `${k}->${t}`).join(", "));
-  // AND HOME IS NOT A DUMPING GROUND. A destination that resolves to Home must be one Home can
-  // actually answer for — today that is the day. If a second such alias appears, it is named
-  // here so nobody can quietly route an unbuilt place to Home and call it reachable.
+  // AND HOME IS NOT A DUMPING GROUND. RETARGETED 2026-09-17 when Adrian reversed the "Home is the
+  // day" ruling: the old leg asserted that EXACTLY ONE destination (`planner`) resolves to Home,
+  // which was a fact about that ruling, not the rule underneath it. My Day has its own surface now,
+  // so ZERO destinations fall through to Home — which is the cleaner state, and the old leg went red
+  // against an improvement. That is a leg encoding a shape (Lesson 92), and the fix is the leg.
+  //
+  // THE RULE, which survives both rulings: nothing may be routed to Home that Home cannot answer
+  // for. Home answers for the conversation and nothing else, so a destination landing there must be
+  // one whose subject Home actually renders — and today none do.
   const toHome = resolved.filter(([k, to]) => to === "home" && k !== "home").map(([k]) => k);
-  say("3b the only destination that opens Home is the day",
-    toHome.length === 1 && toHome[0] === "planner", `-> home: ${toHome.join(", ") || "(none)"}`);
+  say("3b nothing is quietly routed to Home — a destination opens its own surface or it is not one",
+    toHome.length === 0, `-> home: ${toHome.join(", ") || "(none)"}`);
 
   // ── 4. AND EVERY DOOR CAN COUNT ITS ROOM BEFORE IT MOVES ANYONE. This is the leg that
   //       catches "your schedule isn't set up" said about a room with two jobs on it: the
@@ -140,6 +146,33 @@ try {
   say("7 the refusal points at no button, tab or menu",
     !/\b(button|tab|menu|sidebar|click|tap|top right|left side)\b/i.test(refused.text),
     JSON.stringify(refused.text.slice(0, 80)));
+
+  // ══ AND THE RAIL TAB IS A CONTROL, SO IT IS PRESSED. Added 2026-09-17. ════════════════════
+  //
+  // Every leg above asks the REGISTRIES whether a destination resolves. None of them touched the
+  // thing a person touches. Adrian, after finding a page that instructed a gesture with no handler
+  // anywhere behind it: "A CHECK THAT CALLS THE FUNCTION IS NOT A CHECK THAT THE CONTROL WORKS."
+  const tabbed = await rig.page.evaluate(async () => {
+    // THE RAIL ONLY EXISTS FOR A CLAIMED OWNER — hcRenderRail returns early otherwise, which is
+    // correct and is why the first version of this leg found no tabs to press. The claimed state is
+    // set through the seam the product already publishes, and the rail is rendered by the product.
+    try { window.__setClaimed(true); } catch (e) {}
+    try { window.hublyCaptureUI.withBusiness("5ebedc20-1061-46b9-b393-a6ef57225910"); } catch (e) {}
+    try { window.hublyNavUI.renderRail(); } catch (e) {}
+    await new Promise((r) => setTimeout(r, 200));
+    const tabs = [...document.querySelectorAll(".hc-rail-tab")].map((b) => b.getAttribute("data-tab"));
+    const target = tabs.filter((t) => t && t !== "home")[0] || null;
+    if (!target) return { tabs, target: null };
+    const btn = document.querySelector(`.hc-rail-tab[data-tab="${target}"]`);
+    btn.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+    await new Promise((r) => setTimeout(r, 400));
+    return { tabs, target, mode: document.getElementById("hcApp").getAttribute("data-mode"),
+             onTab: !!document.querySelector(`.hc-rail-tab[data-tab="${target}"].is-on`) };
+  });
+  say("9 a rail tab is a control a person can PRESS, and pressing it moves the shell",
+      !!tabbed.target && tabbed.mode === tabbed.target && tabbed.onTab === true,
+      tabbed.target ? `clicked "${tabbed.target}" -> data-mode=${tabbed.mode}, marked on=${tabbed.onTab}`
+                    : `NO non-home tab in the rail (${tabbed.tabs.join(",") || "none"}) — nothing to press`);
 
 } catch (e) {
   console.error("FAIL — " + String(e.stack || e.message).slice(0, 400));

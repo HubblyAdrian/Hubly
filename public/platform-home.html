@@ -299,10 +299,23 @@ body.hc-active .footer,body.hc-active .hero{display:none}
    NO DRAFT, NO PANE. The pane is bound to .hc-has-draft, so a claimed account with
    nothing built still gets the centred column rather than an empty frame — a panel that
    appears with nothing in it is the same unearned claim as a green checkmark. */
-/* HOME IS THE DAY, so the conversation is the left column and the day fills the rest — for
-   EVERY claimed owner, not only one with a site. The day exists before the website does. */
-.hc-app.hc-claimed[data-mode="home"] .hc-app-left{flex:0 0 380px;min-width:0;border-right:1px solid var(--line)}
-.hc-app.hc-claimed[data-mode="home"] .hc-app-right{display:flex;flex:1 1 auto;min-width:0}
+/* ══ HOME IS THE MAIN CHAT, FULL WIDTH. ADRIAN, 2026-09-17. ════════════════════════════════
+   This line pinned the conversation to 380px with a panel beside it, and that is the single
+   sentence behind three separate complaints:
+
+       "HOME IS CURRENTLY SHOWING STEP 6'S LAYOUT AT STEP 1. The squeezed chat is not a layout
+        mistake — it is the AFTER state rendered before anything triggered it. THE NARROW CHAT IS
+        A CONSEQUENCE OF OPENING A TAB, NOT A DEFAULT."
+
+   The approved sequence (owner-home-2026-09-06-flow.png, screen 2) is: Home is the main chat →
+   he asks for his schedule → it renders INLINE in the thread → it OFFERS to become a tab → he
+   accepts → the tab is created → OPENING THAT TAB is where the chat moves left, the day takes the
+   middle and the calendar sits on the right.
+
+   So Home gets its full width back and no docked pane. The three-column view is not deleted — it
+   moves to [data-mode="planner"], which is the moment it was always for. */
+.hc-app.hc-claimed[data-mode="home"] .hc-app-left{flex:1 1 100%;min-width:0;border-right:0}
+.hc-app.hc-claimed[data-mode="home"] .hc-app-right{display:none}
 /* ── MY DAY IS WHAT HOME RENDERS (Adrian, 2026-09-16) ────────────────────────────────────
    Home keeps the conversation on the left and puts THE DAY beside it, where the site preview
    used to sit. That reverses the 2026-09-13 ruling which put the site there; the approved
@@ -339,6 +352,11 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 .hcmd-cols{font-size:12px;font-weight:600;color:var(--muted);border-top:1px solid var(--line);background:rgba(0,0,0,.015)}
 .hcmd-row{border-top:1px solid var(--line);font-size:14px;cursor:pointer}
 .hcmd-row:hover{background:rgba(0,0,0,.02)}
+/* TWO THINGS AT 2PM. The mark is on the ROW and the sentence is above the day, because a
+   colour alone is not a statement — somebody has to be told what it means, in words. */
+.hcmd-row.is-clash{box-shadow:inset 3px 0 0 #c2410c}
+.hcmd-clashtag{display:inline-block;margin-left:8px;font-size:11px;font-weight:700;color:#9a3412;letter-spacing:.02em;text-transform:uppercase}
+.hcmd-clash{margin:8px 0 0;font-size:13px;font-weight:650;color:#9a3412}
 .hcmd-row>span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hcmd-what{display:flex;flex-direction:column;gap:2px;white-space:normal!important}
 .hcmd-whatmain{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -408,6 +426,9 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 .hc-app.hc-claimed[data-mode="planner"] .hc-app-left,
 .hc-app.hc-claimed[data-mode="jobs"] .hc-app-left,
 .hc-app.hc-claimed[data-mode="customers"] .hc-app-left{flex:0 0 380px;min-width:0;border-right:1px solid var(--line)}
+/* STEP 6 — OPENING THE TAB is where the chat moves left and the day takes the middle. This is the
+   layout the 2026-09-16 screenshot shows, and it was correct; it was being shown at step 1. */
+.hc-app.hc-claimed[data-mode="planner"] .hc-app-left{flex:0 0 380px;min-width:0;border-right:1px solid var(--line)}
 .hc-app.hc-claimed[data-mode="planner"] .hc-app-right,
 .hc-app.hc-claimed[data-mode="jobs"] .hc-app-right,
 .hc-app.hc-claimed[data-mode="customers"] .hc-app-right{display:flex;flex:1 1 auto;min-width:0;animation:hcCanvasArrive .45s cubic-bezier(.22,.61,.36,1) both}
@@ -574,7 +595,22 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
 /* The chip still needs somewhere to sit that is not on top of a control. Reserve its
    corner INSIDE the toolbar rather than letting the two overlap: the bar's own padding
    keeps its last button clear of the chip at every width the sidebar allows. */
-body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
+/* ══ THE ACCOUNT PILL NO LONGER FLOATS OVER THE DAY ══════════════════════════════════════
+   It was `position:fixed` in the header and sat ON the My Day context column — visibly over
+   the "Today at a glance" card at 1440×900 (docs/shots/owner-rooms/desktop-planner.png,
+   2026-09-17). This padding was the clearance hack that overlap required: 180–260px of empty
+   bar kept beside a control in another stacking context. The chip is in the rail now, in the
+   flow, so the bar gets its width back. The mobile rule below still applies, because on a
+   phone the chip is still in the header. */
+@media (min-width:901px){
+  body.hc-shell-claimed .nav{display:none}
+}
+.hc-rail-acct{padding:0 10px 4px}
+.hc-rail-acct .nav-signin{width:100%}
+.hc-rail-acct .nav-signin.is-chip{justify-content:flex-start;background:transparent;border-color:transparent;padding:8px 10px;border-radius:12px}
+.hc-rail-acct .nav-signin.is-chip:hover{background:rgba(255,255,255,.07);border-color:transparent}
+.hc-rail-acct .nav-signin.is-chip .hc-chip-nm{color:#fff;max-width:none}
+.hc-rail-acct .nav-signin.is-chip .hc-chip-cv{margin-left:auto;color:rgba(255,255,255,.55)}
 @media (max-width:900px){ body.hc-shell-claimed .hc-canvas-bar{padding-right:14px} }
 @media (max-width:900px){ body.hc-panel-open.hc-shell-claimed .nav{right:0} }
 /* Phone and tablet portrait: the sidebar is gone, so the header carries the wordmark
@@ -1309,6 +1345,30 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
      that and belongs stated once: on a phone, one pane, whatever the desktop rules say. */
   .hc-app[data-mview="site"] .hc-app-left{ display:none !important; }
   .hc-app:not([data-mview="site"]) .hc-app-right{ display:none !important; }
+  /* AND THE INVARIANT COVERS SIZE, NOT ONLY VISIBILITY — the rules that break it are not only
+     `display`. `[data-mode="planner"] .hc-app-left{flex:0 0 380px}` is (0,3,1) and beats the
+     (0,3,0) mobile rule above, so the chat pane kept a desktop column's basis on a phone. */
+  .hc-app .hc-app-left{ flex:1 1 auto !important; width:100% !important; border-right:0 !important; }
+
+  /* ══ A ROOM ON A PHONE WAS A BLANK SCREEN. Measured at 390px, 2026-09-17. ════════════════
+     Two rules, each right on its own, cancelling: at ≤900px the room takes the whole screen so
+     `.hc-app-left` is hidden; at ≤700px exactly one pane shows and `.hc-app-right` is
+     `display:none !important` unless the mobile toggle says "site". A room is neither Chat nor
+     Site, so BOTH panes were hidden and an owner who pressed My Day, Jobs or Customers on the
+     bottom bar — the bar is the phone's whole navigation; the rail is hidden here — got an empty
+     screen with a bar under it. Reachable three ways: the bar, a #planner bookmark, and the back
+     button (hcModeFromUrl opens the room on entry).
+     So: in a room, the ROOM is the one pane. The Chat/Site toggle goes away with it, because it
+     names neither of the things that could be on screen and a control that cannot be true is
+     worse than no control.
+     NOT VERIFIED ON A HANDSET — there is no real 390px viewport or soft keyboard here. This is
+     the desktop engine at 390px and it must be looked at on a phone before it is called done. */
+  .hc-app.hc-claimed[data-mode="planner"] .hc-app-right,
+  .hc-app.hc-claimed[data-mode="jobs"] .hc-app-right,
+  .hc-app.hc-claimed[data-mode="customers"] .hc-app-right{ display:flex !important; }
+  .hc-app.hc-claimed[data-mode="planner"] .hc-mobile-tabs,
+  .hc-app.hc-claimed[data-mode="jobs"] .hc-mobile-tabs,
+  .hc-app.hc-claimed[data-mode="customers"] .hc-mobile-tabs{ display:none !important; }
   /* No site yet -> chat is the whole screen, no toggle, nothing to switch to. */
   .hc-app:not(.hc-has-draft) .hc-app-right{ display:none; }
 
@@ -1582,6 +1642,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     <div class="hc-rail-mark" aria-hidden="true">hub<i>ly</i></div>
     <div class="hc-rail-tabs" id="hcRailTabs" role="tablist"></div>
     <div class="hc-rail-spacer"></div>
+    <!-- THE ACCOUNT, IN THE LAYOUT. The chip is MOVED here from the floating header when the
+         claimed shell is wide (hcPlaceAccountChip) — moved, not copied: two account controls
+         would be the two-of-everything pattern arriving in the furniture. On a phone the rail
+         is not rendered at all, so it goes back to the header, which is where a phone's account
+         lives. -->
+    <div class="hc-rail-acct" id="hcRailAcct"></div>
     <!-- WHOSE BUSINESS THIS IS. Restored 2026-09-08: the screen read as a chatroom because
          nothing on it said whose place it was — correct content, no sense of place.
          Name and location only, both real columns; no placeholder when either is absent. -->
@@ -6262,13 +6328,25 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   //    A business that has ALREADY earned `jobs` or `customers` keeps them: hcWorkspaces reads
   //    business_places, and this map only decides what a place is CALLED and whether a surface
   //    exists for it — so Graef, who holds all four rows, loses nothing.
-  // MY DAY IS NOT A RAIL ROW — Adrian, 2026-09-16. The rail is Home · Website · Settings, and
-  // MY DAY IS WHAT HOME RENDERS (hcRenderMyDay). It also fits the standing rule that every tab
-  // has its own conversation EXCEPT home: Home is special because Home is the day.
+  // ══ MY DAY IS A RAIL ROW. REVERSED 2026-09-17 BY ADRIAN. ═══════════════════════════════════
   //
-  // `planner` therefore is not a SURFACE any more. It survives as a DESTINATION — "take me to
-  // my schedule" still has to go somewhere — and that somewhere is Home. See HC_GO_PLACES.
+  // The 2026-09-16 ruling that stood here — "MY DAY IS NOT A RAIL ROW. MY DAY IS WHAT HOME
+  // RENDERS" — was read off the mockup and it was wrong. Adrian, 2026-09-17:
+  //
+  //     THE RAIL IS:  Home · MY DAY · Website · Settings
+  //     HOME DOES NOT AUTO-OPEN THE DAY. Home is the conversation. If he ASKS for his day, it
+  //     renders in the thread — hcShowInThread already does this and it works. Keep that.
+  //
+  // So `planner` is a SURFACE again, in the default rail beside Website, and Home goes back to
+  // being the conversation. The internal id stays `planner` (it is in business_places rows, in
+  // HC_ROOMS, in the URL hash); the WORD an owner reads is "My Day" and always was — that half of
+  // the 2026-09-15 ruling is untouched.
+  //
+  // RECORDED SO IT IS NOT RESTORED BY A FUTURE SESSION: docs/design/README.md carries the
+  // reversal with its reason. An implicitly superseded ruling gets re-applied by whoever reads the
+  // older file first.
   var HC_PLACE_SURFACES = {
+    planner:   { label:'My Day',    icon:HC_RAIL_ICONS.planner },
     website:   { label:'Website',   icon:HC_RAIL_ICONS.website },
     jobs:      { label:'Jobs',      icon:HC_RAIL_ICONS.jobs },
     customers: { label:'Customers', icon:HC_RAIL_ICONS.customers },
@@ -6286,6 +6364,18 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   /** WHICH PLACES A NEW BUSINESS IS OFFERED IN THE RAIL BY DEFAULT. Everything else is reached
    *  by asking and earns its row through the screen-2 offer. Jobs and Customers are deliberately
    *  absent — they are thread views until the owner says otherwise. */
+  // ══ MY DAY IS EARNED, THROUGH THE SEQUENCE. ═══════════════════════════════════════════════
+  //
+  // An earlier version of this line put `planner: true` here, which would have put My Day in the
+  // rail from the first minute. Adrian's sequence says otherwise, and it is the flow he approved on
+  // 2026-09-06: he ASKS for his schedule, it renders in the thread, it OFFERS to become a tab, and
+  // ACCEPTING is what creates it. A tab that is already there cannot be offered, and the offer is
+  // the moment the mechanic is taught.
+  //
+  // The rail therefore ENDS UP as Home · My Day · Website · Settings — which is what he described —
+  // but it gets there by his hand. **OPEN QUESTION FOR ADRIAN (asked, not assumed): is the rail
+  // earned for EVERYTHING, or is My Day special?** Today every place except `website` is earned;
+  // the answer is in the report.
   var HC_RAIL_DEFAULT = { website: true };
   function hcWorkspaces(){
     var ws = [];
@@ -6374,6 +6464,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       b.addEventListener('click', function(){ hcOpenWorkspace(b.getAttribute('data-tab')); });
     });
     hcRenderBottomBar(dests);
+    // The rail's own markup is permanent, but the chip may still be sitting in the header
+    // (first claim, or a resize back to desktop). This is the other moment the answer changes.
+    try{ hcPlaceAccountChip(); }catch(e){}
   }
   // ONE SOURCE, TWO SURFACES. The bottom bar is handed the sidebar's own list so the two
   // can never disagree about which places this business has earned; the only difference
@@ -7312,16 +7405,42 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       describe: function(){ return 'the week of ' + hcDateUS(range.from); },
       redraw: function(all){ hcWeekGridInto(wrap, kind, v, all, offsetWeeks); }
     });
-    hcOfferSidebarTab('planner', 'Schedule');
+    // STEP 4 OF THE SEQUENCE. The label is the word an owner reads — "My Day", never "Schedule" and
+    // never "Planner" (2026-09-15 ruling on the word, untouched by the 2026-09-17 reversal).
+    hcOfferSidebarTab('planner', 'My Day');
     hcThreadScrollToEnd();
   }
   /** SCREEN 2's OFFER, AND SCREEN 3's ANNOUNCEMENT. The view is produced by the conversation and
    *  only becomes furniture if the owner says so — "Nothing appears in navigation because we
    *  guessed they would want it." And when it does, it is ANNOUNCED and said to be reversible,
    *  because the interface may not change shape silently (prohibition 4). */
+  /** ══ A DECLINED OFFER IS AN ANSWER, AND IT IS REMEMBERED. ═════════════════════════════════
+   *
+   *  ADRIAN, 2026-09-17: "If he says no, IT DOES NOT ASK AGAIN — a declined offer is an answer and
+   *  it is remembered, same rule as deleting a placeholder slot."
+   *
+   *  `hc._tabOfferShown` was SESSION-ONLY — "one offer per session, not per render" — so a reload
+   *  asked him again, and asking a second time after he has said no is the product not listening.
+   *
+   *  STORED PER DEVICE, AND THAT LIMIT IS STATED RATHER THAN HIDDEN: there is no column anywhere
+   *  that records a declined offer, so this is `localStorage`, keyed by business and place. He will
+   *  be asked again on a second device. A server-side record is one small migration and is named in
+   *  the report rather than invented here. A browser with storage blocked degrades to the old
+   *  per-session behaviour, which is the safe direction. */
+  function hcTabOfferKey(kind){
+    var id = (hc.draftBusiness && hc.draftBusiness.id) || 'nobiz';
+    return 'hublyTabDeclined:' + id + ':' + kind;
+  }
+  function hcTabOfferDeclined(kind){
+    try{ return localStorage.getItem(hcTabOfferKey(kind)) === '1'; }catch(e){ return false; }
+  }
+  function hcRememberTabDeclined(kind){
+    try{ localStorage.setItem(hcTabOfferKey(kind), '1'); }catch(e){}
+  }
   function hcOfferSidebarTab(kind, label){
     try{ if(hcWorkspaces().some(function(w){ return w.id === kind; })) return false; }catch(e){}
-    if(hc._tabOfferShown) return false;              // one offer per session, not per render
+    if(hcTabOfferDeclined(kind)) return false;       // he said no. That is an answer.
+    if(hc._tabOfferShown) return false;              // and not twice in one sitting either
     hc._tabOfferShown = true;
     var thread = hcThreadBody(); if(!thread) return false;
     var q = hcAppendMessage('hubly', 'Want me to keep this as a tab in your sidebar?');
@@ -7352,7 +7471,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     });
     no.addEventListener('click', function(){
       try{ acts.remove(); }catch(e){}
-      hcAppendMessage('hubly', 'No problem \u2014 it stays here in the conversation.');
+      hcRememberTabDeclined(kind);
+      // AND IT SAYS THAT IT WILL NOT ASK AGAIN. An offer that quietly stops being made is
+      // indistinguishable from one that failed; saying so is what makes "no" feel heard.
+      hcAppendMessage('hubly', 'No problem \u2014 it stays here in the conversation, and I won\u2019t ask again.');
       hcThreadScrollToEnd();
     });
     acts.appendChild(yes); acts.appendChild(no);
@@ -7412,9 +7534,21 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       line = 'Here\u2019s your day. Nothing on it yet \u2014 ' + hcWaysClause('day');
     }
     hcAppendMessage('hubly', line); hcPersist('assistant', line); hcNoteSaid(line);
+    // ══ STEP 4 OF THE SEQUENCE: IT OFFERS TO BECOME A TAB. ═══════════════════════════════════
+    //
+    // This is the surface he actually asks for — "show me my day" lands HERE, and the week grid is
+    // the other, rarer door. The offer was only on the week grid, so the commonest path through
+    // Adrian's own flow produced the day and never offered to keep it.
+    //
+    // AFTER THE SENTENCE, NEVER BEFORE IT. One ask at a time: he gets his day and what is on it,
+    // and only then a question — two composers in one beat read as two people talking over him.
+    hcOfferSidebarTab('planner', 'My Day');
     return { ok:true, counted:n };
   }
-  try{ window.hublyDayUI = Object.assign(window.hublyDayUI || {}, { inThread: hcShowDayInThread }); }catch(e){}
+  try{ window.hublyDayUI = Object.assign(window.hublyDayUI || {}, {
+    inThread: hcShowDayInThread, offerTab: hcOfferSidebarTab,
+    tabDeclined: hcTabOfferDeclined, rememberDeclined: hcRememberTabDeclined
+  }); }catch(e){}
 
   async function hcShowInThread(kind, offsetWeeks){
     hcShowTrace('asked for ' + JSON.stringify(kind) + ' claimed=' + !!hc.draftClaimed +
@@ -7712,7 +7846,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // place: a local edit that drifts from the record is the next false green.
           try{
             var jj = res.job; if(jj) { j.scheduled_time = jj.scheduled_time; j.address = jj.address; }
-            if(hc.mode === 'planner'){ var cv = document.getElementById('hcCanvas'); if(cv){ cv.innerHTML = ''; await hcRenderPlanner(cv, hc.draftBusiness); } }
+            // ONE REPAINT, AND IT KNOWS EVERY LIVE DAY SURFACE. This line used to render
+            // hcRenderPlanner — the OLD day — into the canvas whenever mode was 'planner'. Since
+            // the 2026-09-17 reversal that mode IS the My Day room, so editing a job from the day
+            // he is looking at would have replaced it with a DIFFERENT-LOOKING day. Two renderers,
+            // one canvas, and the edit is what swapped them.
+            await hcRepaintDay();
           }catch(e){}
           // AND EVERY OTHER SURFACE SHOWING THIS JOB. This is the defect he hit: the panel said
           // 3:00 PM correctly and the week grid THREE LINES ABOVE still read 2:00 PM, because the
@@ -7856,7 +7995,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   }
   // The one seam, same reason as the job card: no authed session is reachable from a check,
   // and a proof of a copy is not a proof of the code.
-  try{ window.hublyDayUI = { add: hcAddDayTask, line: hcAddDayTaskLine, addRow: hcDayAddRow }; }catch(e){}
+  // EXTEND THE SEAM, NEVER REPLACE IT — the same defect the note at hcRenderMyDay's seam records,
+  // still live here. This was a fresh assignment, and it runs AFTER the in-thread day registered
+  // `inThread`, `offerTab`, `tabDeclined` and `rememberDeclined` on the same global — so all four
+  // were silently wiped on every load and anything reaching for them got undefined. A seam is a
+  // shared surface; the owner that loads second must never get to be the only one.
+  try{ window.hublyDayUI = Object.assign(window.hublyDayUI || {}, { add: hcAddDayTask, line: hcAddDayTaskLine, addRow: hcDayAddRow }); }catch(e){}
   // The task panel joins the other declared seams (hublyJobUI, hublyDayUI) so a check can drive
   // THE PRODUCT'S panel with simulated task DATA — the alternative was a leg that reported it
   // could not measure and passed nothing, which is honest but useless.
@@ -7960,7 +8104,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         w.value = ''; p.value = '';
         // RE-READ THE ROOM FROM THE RECORD rather than pushing the new row into the DOM: the
         // list an owner sees is the list the table holds, or it is decoration.
-        try{ var canvas = document.getElementById('hcCanvas'); if(canvas){ canvas.innerHTML = ''; await hcRenderPlanner(canvas, biz); } }catch(e){}
+        // THE SIBLING OF THE LINE ABOVE, found by grepping for the class rather than waiting
+        // for it to be reported: same swap, same canvas, different control.
+        try{ await hcRepaintDay(); }catch(e){}
       }
     });
     room.appendChild(wrap);
@@ -8295,116 +8441,21 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // further sits under "Later this week", which is the honest name for it. Nothing Hubly named
   // is off-screen, and nothing further out is presented as today.
   var HC_DAY_HORIZON = 7;
-  async function hcRenderPlanner(canvas, biz){
-    var today = new Date();
-    var iso = function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
-    var from = iso(today), to = iso(new Date(today.getTime() + 864e5));
-    var horizon = iso(new Date(today.getTime() + HC_DAY_HORIZON * 864e5));
-    var jobs, tasks = [];
-    try{
-      jobs = await hcLoadJobs(biz.id, from, horizon);
-      // TASKS JOIN THE SAME LIST. The union is the point: the 8:00 Full Detail sits
-      // beside "order glass cleaner" and "gym", because a detailer does not keep his
-      // jobs and his errands in separate apps and asking him to is why he uses neither.
-      // A task read failure is NOT fatal to the day — the jobs still show, and the
-      // absence is stated rather than passed off as an empty list.
-      try{
-        var uid = await hcOwnerUid();
-        var c2 = await authGetClient();
-        var tr = await c2.rpc('get_business_tasks', { p_business_id: biz.id, p_owner_id: uid, p_from: null, p_to: horizon });
-        if(tr && !tr.error && Array.isArray(tr.data)) tasks = tr.data;
-      }catch(_){ tasks = null; }
-    }
-    catch(e){
-      var room0 = hcRoomShell('Your day', null, null);
-      hcRoomEmpty(room0, 'I couldn’t read your schedule just now',
-        'That’s a problem reaching your records, not an empty day — don’t plan around it. Try again in a moment.');
-      canvas.appendChild(room0); return;
-    }
-    var room = hcRoomShell('Your day', null, null);
-    // THE HANDS COME FIRST. The add row is part of the room in EVERY state — including the
-    // empty one, which is the state every business in the corpus is in today. A planner whose
-    // only way in is "something else put it there" is a report.
-    hcDayAddRow(room, biz);
-    var openTasks = Array.isArray(tasks) ? tasks : [];
-    if(!jobs.length && !openTasks.length){
-      hcRoomEmpty(room, 'Nothing booked in the next ' + HC_DAY_HORIZON + ' days',
-        'When a customer books, it lands here. You can also tell me things directly — "add tomorrow 12 to 3, Leslie, detailing", "dentist Thursday 2 to 4", "remind me to order glass cleaner" — and I’ll put them on the day.');
-      canvas.appendChild(room); return;
-    }
-    // Clashes are computed WITHIN a day, never across days — two things at 2pm on different
-    // days is not a clash, and saying it is would be a false alarm about a real calendar.
-    function renderDay(day, showEmpty){
-      var dayJobs = jobs.filter(function(j){ return String(j.scheduled_date) === day; });
-      if(!dayJobs.length && !showEmpty) return;
-      var g = document.createElement('div'); g.className = 'hc-room-group';
-      g.textContent = hcDayLabel(day) + (dayJobs.length ? '' : ' — nothing booked');
-      room.appendChild(g);
-      if(!dayJobs.length) return;
-      var items = hcMarkClashes(dayJobs.map(hcJobToItem));
-      var clashed = false;
-      items.forEach(function(it){
-        var j = it.row;
-        room.appendChild(hcRoomRow({
-          when: hcTimeUS(j.scheduled_time) || '—',
-          title: j.is_block ? (j.service_name || 'Blocked time') : (j.customer_name || 'Someone'),
-          sub: j.is_block ? 'Blocked — not a customer' : (j.service_name || null),
-          tail: (!j.is_block && Number(j.amount) > 0) ? ('$' + Number(j.amount)) : null,
-          block: j.is_block === true, clash: it.clash,
-          onOpen: function(){ hcJobPanel(j); }
-        }));
-        if(it.clash) clashed = true;
-      });
-      if(clashed){
-        var n = document.createElement('div'); n.className = 'hc-clash-note';
-        n.textContent = 'Two of these overlap. Ask me to move one and I’ll find the next free slot.';
-        room.appendChild(n);
-      }
-    }
-    renderDay(from, true); renderDay(to, true);
-    // ANYTHING FURTHER OUT IS SHOWN, UNDER ITS OWN NAME. It is not "your day" and it is not
-    // hidden: an owner told about Thursday must be able to find Thursday.
-    var later = jobs.filter(function(j){ var d = String(j.scheduled_date || ''); return d && d > to; });
-    if(later.length){
-      var lh = document.createElement('div'); lh.className = 'hc-room-group';
-      lh.setAttribute('data-hc-day-later', '1');
-      lh.textContent = 'Later this week';
-      room.appendChild(lh);
-      var days = [];
-      later.forEach(function(j){ var d = String(j.scheduled_date); if(days.indexOf(d) < 0) days.push(d); });
-      days.sort().forEach(function(d){ renderDay(d, false); });
-    }
-    // ── THE SAME LIST. Tasks after the timed things, banded, with undated ones last.
-    // An undated task has not failed to happen — it simply has no day, and nothing here
-    // may render it as late.
-    if(tasks === null){
-      var w = document.createElement('div'); w.className = 'hc-room-group';
-      w.textContent = 'Your tasks couldn’t be read just now — that’s a read failure, not an empty list';
-      room.appendChild(w);
-    }else if(openTasks.length){
-      var g2 = document.createElement('div'); g2.className = 'hc-room-group';
-      g2.textContent = 'To do';
-      room.appendChild(g2);
-      openTasks.forEach(function(t){
-        var _row = hcRoomRow({
-          when: t.due_time ? (hcTimeUS(t.due_time) || hcHm(t.due_time)) : (t.band ? t.band : '—'),
-          title: t.title,
-          sub: [ hcLaneLabel(t.lane),
-                 // THE WORDS, NOT THE COLUMN. "Band B" was our schema leaking into his day.
-                 t.band_source === 'owner' ? (hcBandLabel(t.band) + ' \u2014 you set this')
-                   : (t.band_reason ? (hcBandLabel(t.band) + ' \u2014 ' + t.band_reason) : hcBandLabel(t.band)),
-                 Number(t.roll_count) > 0 ? ('moved ' + t.roll_count + (Number(t.roll_count) === 1 ? ' time' : ' times') + ' already') : null,
-                 (!t.due_date ? 'no day set' : null)
-               ].filter(Boolean).join(' · '),
-          onOpen: function(){ hcTaskPanel(t); }
-        });
-        // THE TICK GOES FIRST IN THE ROW, as the design draws it: checkbox · time · title.
-        try{ _row.insertBefore(hcTaskCheckbox(t, function(st){ _row.classList.toggle('is-done', st === 'done'); }), _row.firstChild); }catch(e){}
-        room.appendChild(_row);
-      });
-    }
-    canvas.appendChild(room);
-  }
+  // ══ hcRenderPlanner WAS HERE AND IS DELETED, not left for the next caller. ═══════════════
+  //
+  // It was the OLD day room: its own reader, its own row shape, its own clash marking, its own
+  // empty states. When My Day became the day (2026-09-17 reversal) nothing routed to it any
+  // more — HC_ROOMS.planner renders hcRenderMyDay — and the only two lines that still called it
+  // were REPAINTS after an owner edit. So the day he was looking at would silently become a
+  // DIFFERENT-LOOKING day the moment he changed a job's time. Two renderers, one canvas.
+  //
+  // Deleted rather than parked, for the reason hcBookableServices was: a second reader left
+  // lying around is one somebody picks up again, and this one had already started rendering
+  // itself over the surface that replaced it. What it knew that My Day did not — overlapping
+  // jobs — was MOVED ACROSS first (hcDayItems now runs hcMarkClashes, the row carries the mark
+  // and the day says it in words); nothing else in it was reachable.
+  //
+  // Its repaint callers now go through hcRepaintDay, which knows every live day surface.
   function hcTaskPanel(t){
     hcOpenPanel('Task', function(body){
       var rows = [
@@ -8955,7 +9006,8 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
    *  ONE READER, TWO PROJECTIONS — never a second loader. docs/MY_DAY_AUDIT_20260915.md:
    *  "Today there is exactly one loader that returns both kinds ... do not write a second
    *  loader. If a second `load` appears, that is the two-store mistake in a new costume."
-   *  hcLoadDayItems IS that reader, lifted out of hcRenderPlanner so both surfaces share it.
+   *  hcLoadDayItems IS that reader, lifted out of the old planner room (since deleted) so both
+   *  surfaces share it — it is now the ONLY day reader there is.
    */
 
   /** THE ONE READER. Jobs and tasks for a window, merged, with the read failure of EACH kind
@@ -9130,7 +9182,28 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
    *  and the Pro tip all say the same words because it is the same gesture. Ruling 2 of
    *  2026-09-16: an empty band shows EXACTLY this one line and never a grey placeholder row,
    *  because a ghost row reads as loading and makes an empty day look broken. */
-  var HC_DAY_ADD_LINE = 'Double-click to add something…';
+  // ══ THE ADD LINE, AND WHY IT NO LONGER SAYS "DOUBLE-CLICK". ═══════════════════════════════
+  //
+  // ADRIAN, 2026-09-17: "'DOUBLE-CLICK TO ADD SOMETHING…' DOES NOT ADD ANYTHING. The page says it
+  // three times and it does not work."
+  //
+  // He was right twice over. There was NO `dblclick` handler anywhere in this file — the sentence
+  // was an offer nobody kept, which is the exact class we have spent the week removing. And the
+  // gesture itself was wrong:
+  //
+  //   · DOUBLE-CLICK DOES NOT EXIST ON TOUCH. A double-tap is zoom. Half his customers' owners are
+  //     on a phone, and for them the instruction is not merely hidden, it is impossible.
+  //   · ON DESKTOP IT MEANS "OPEN", not "create", in every operating system convention.
+  //   · AND IT WAS THE ONLY THING TEACHING ITSELF. A gesture whose only documentation is a line of
+  //     copy is a gesture that stops existing the moment the copy moves.
+  //
+  // What was already there and unwired: the empty band renders a REAL `<button>` with a `+` in it.
+  // The control existed; it had no click handler. A missing door, not a missing feature.
+  //
+  // So: SINGLE CLICK on that button, SINGLE CLICK on a calendar hour (which also fills the time),
+  // and `dblclick` is ALSO honoured on the band body so the gesture he was promised still works for
+  // anyone who learned it. The line now names the visible control instead of an invisible gesture.
+  var HC_DAY_ADD_LINE = 'Add something to your day';
 
   /** THE COMPLETION LINE. Appended asynchronously so a slow read never holds up the day.
    *  It is the ONLY caller of get_task_progress, and the words are the migration's own intent. */
@@ -9158,6 +9231,39 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(done <= 0) return total + (total === 1 ? ' thing to do.' : ' things to do.');
     if(done >= total) return 'That\u2019s everything done.';
     return done + ' of ' + total + ' done.';
+  }
+  /** ══ OPEN THE ADD ROW, WHEREVER HE TOUCHED. ═══════════════════════════════════════════════
+   *
+   *  ONE FORM, THREE DOORS. The `+` button in an empty band, a double-click on a band, and a tap on
+   *  a calendar hour all open `hcDayAddRow` — the form that already existed and already writes. A
+   *  second add form would be the two-of-everything pattern arriving inside one screen.
+   *
+   *  `seed.time` comes from the hour he touched, because touching 2 PM IS the statement of when.
+   *  Nothing else is pre-filled: a band is not a fact about the work, and guessing one would be the
+   *  pre-fill-that-guesses defect (a field that already looks answered is a field he will not read).
+   *
+   *  IT IS IDEMPOTENT. Touching three hours in a row moves the one form and re-seeds it rather than
+   *  stacking three; and it focuses the first field, because a form that opens without focus is a
+   *  form he has to go and find. */
+  function hcOpenDayAdd(host, biz, seed){
+    if(!host) return null;
+    try{
+      // One form on screen at a time — remove any previous, wherever it was opened from.
+      var old = document.querySelectorAll('[data-hc-day-add]');
+      for(var i = 0; i < old.length; i++) old[i].remove();
+    }catch(e){}
+    var form = hcDayAddRow(host, biz || hc.draftBusiness);
+    if(!form) return null;
+    try{
+      if(seed && seed.time){
+        var t = form.querySelector('[data-hc-day="time"]');
+        if(t) t.value = seed.time;
+      }
+      var what = form.querySelector('[data-hc-day="what"]');
+      if(what) what.focus();
+      form.scrollIntoView({ block: 'nearest' });
+    }catch(e){}
+    return form;
   }
   /** One item, flattened from a job or a task, so the row renderer has no idea which it was. */
   function hcDayItems(loaded, dayISO){
@@ -9187,6 +9293,18 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         type: j.is_block ? 'Personal' : 'Job'
       });
     });
+    // ══ TWO THINGS AT 2PM, ON THE SURFACE HE ACTUALLY LOOKS AT ═══════════════════════════
+    //
+    // hcMarkClashes was written for the OLD planner room and was left behind when My Day became
+    // the day: the arithmetic shipped, the room that used it became unreachable, and the surface
+    // an owner opens said nothing about an overlap. A capability with no door, one more time.
+    //
+    // JOBS AND BLOCKS ONLY, and that limit is deliberate. A job has a duration; a task has a due
+    // TIME and no span, so "your 2pm task clashes with your 12–3 detail" would be an alarm about
+    // something that is not a conflict — and a false alarm on this screen costs more than a
+    // missing one (the alarming-number rule). When tasks carry durations, they join.
+    hcMarkClashes(items.filter(function(x){ return x.kind === 'job'; })
+      .map(function(x){ var sp = hcJobToItem(x.raw); x.startMin = sp.startMin; x.endMin = sp.endMin; x.clash = false; return x; }));
     (loaded.tasks || []).forEach(function(t){
       if(dayISO && t.due_date && String(t.due_date) !== dayISO) return;
       items.push({
@@ -9252,6 +9370,16 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // A READ FAILURE PRINTS NOTHING AT ALL. A progress line is a claim about his day, and "0 of 0"
     // off a query that did not run is the unearned checkmark with the sign flipped.
     hcDayProgressLine(head, biz, dayISO);
+    // AND IT IS SAID IN WORDS, ONCE, ABOVE THE DAY — never left to a colour on a row he may
+    // have scrolled past. Two overlapping things are NAMED; more than two are counted and the
+    // rows carry the mark, because a sentence listing five things is not a sentence anyone reads.
+    var clashing = items.filter(function(x){ return x.clash; });
+    if(clashing.length === 2){
+      head.appendChild(hcEl('p', 'hcmd-clash', 'Two things overlap today — ' +
+        clashing.map(function(x){ return x.what + (x.when ? ' at ' + (hcTimeUS(x.when) || x.when) : ''); }).join(' and ') + '.'));
+    } else if(clashing.length > 2){
+      head.appendChild(hcEl('p', 'hcmd-clash', clashing.length + ' things on today overlap — they’re marked below.'));
+    }
     main.appendChild(head);
 
     // EVERY DAY HAS AN A, A B AND A C. Not some days — Adrian, 2026-09-16. The three are
@@ -9289,11 +9417,14 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       var body = hcEl('div', 'hcmd-rows');
       var mine = banded.filter(function(x){ return b === '?' ? !x.r.band : x.r.band === b; });
       if(!mine.length){
-        // ONE LINE, NEVER A GHOST ROW.
+        // ONE LINE, NEVER A GHOST ROW — and now the button actually does something.
         var add = hcEl('button', 'hcmd-add');
         add.type = 'button';
+        add.setAttribute('data-hc-day', 'add-open');
+        add.setAttribute('data-band', b);
         add.appendChild(hcEl('span', 'hcmd-plus', '+'));
         add.appendChild(hcEl('span', null, HC_DAY_ADD_LINE));
+        add.addEventListener('click', function(){ hcOpenDayAdd(sec, biz, { band: b }); });
         body.appendChild(add);
       } else {
         mine.forEach(function(x){
@@ -9304,8 +9435,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           // readable by a check on all of them, so "why is this an A" is never a guess.
           row.setAttribute('data-band-source', x.r.source);
           row.setAttribute('data-band-why', x.r.why || '');
+          if(it.clash) row.classList.add('is-clash');
           var what = hcEl('span', 'hcmd-what');
           what.appendChild(hcEl('span', 'hcmd-whatmain', it.what));
+          // THE MARK IS NOT ONLY A COLOUR. Someone reading this row in grayscale, or not knowing
+          // what an orange edge means, still gets the word.
+          if(it.clash) what.appendChild(hcEl('span', 'hcmd-clashtag', 'Overlaps'));
           // ON THE ROW, IN WORDS (Adrian, 2026-09-16). An item we could not place says why it
           // could not be placed, in the same slot where a job says what service it is — because
           // the alternative is it sitting in C looking like something he decided was optional.
@@ -9321,6 +9456,13 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
           body.appendChild(row);
         });
       }
+      // THE PROMISED GESTURE STILL WORKS. He was told double-click for days; honouring it costs one
+      // listener and breaks nobody, and removing a gesture someone has learned is its own small
+      // betrayal. The COPY no longer teaches it, because it cannot be taught on a phone.
+      sec.addEventListener('dblclick', function(ev){
+        if(ev.target && ev.target.closest && ev.target.closest('.hc-day-add')) return;  // already open
+        hcOpenDayAdd(sec, biz, { band: b });
+      });
       sec.appendChild(body);
       bands.appendChild(sec);
     });
@@ -9392,6 +9534,25 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       timed.filter(function(i){ return parseInt(hcHm(i.when).slice(0, 2), 10) === h; })
         .forEach(function(i){ slot.appendChild(hcEl('span', 'hcmd-calitem', i.what)); });
       rowEl.appendChild(slot);
+      // ══ IF HE CAN SEE IT, HE CAN CHANGE IT FROM THERE — ADRIAN, 2026-09-17. ════════════════
+      //
+      // "He should be able to put something at 2 PM by touching 2 PM. Same ruling as the page."
+      //
+      // The hour carries the time, so the form opens with 2:00 PM already in it — he touched the
+      // hour, which IS the statement of when. It is a real <button> so it is reachable by keyboard
+      // and named for a screen reader; a clickable <div> would have been a control only a mouse can
+      // find.
+      rowEl.setAttribute('role', 'button');
+      rowEl.setAttribute('tabindex', '0');
+      rowEl.setAttribute('data-hc-day', 'cal-hour');
+      rowEl.setAttribute('aria-label', 'Add something at ' + hcHourLabel(h));
+      var openAtHour = function(){
+        hcOpenDayAdd(cal, biz, { time: String(h).padStart(2, '0') + ':00' });
+      };
+      rowEl.addEventListener('click', openAtHour);
+      rowEl.addEventListener('keydown', function(ev){
+        if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); openAtHour(); }
+      });
       grid.appendChild(rowEl);
     });
     if(!timed.length){
@@ -9489,7 +9650,8 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       var biz = hc.draftBusiness;
       if(!biz || !biz.id || !hc.draftClaimed) return false;
       var painted = false;
-      if(hc.mode === 'home'){
+      // THE DAY LIVES IN ITS OWN ROOM NOW (reversed 2026-09-17), so the repaint follows it there.
+      if(hc.mode === 'planner'){
         var canvas = document.getElementById('hcCanvas');
         if(canvas){ await hcRenderMyDay(canvas, biz); painted = true; }
       }
@@ -9513,14 +9675,14 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       repaint: hcRepaintDay, repaints: function(){ return hcRepaintDayCount; },
       progressWords: hcDayProgressWords, progressLine: hcDayProgressLine,
       nameForDisplay: hcNameForDisplay,
-      addLine: HC_DAY_ADD_LINE, band: hcItemBand,
+      addLine: HC_DAY_ADD_LINE, band: hcItemBand, openAdd: hcOpenDayAdd,
       // THE RULE ITSELF, not just its answer — a check has to be able to ask WHY a thing is a B.
       deriveBand: hcDeriveBand, bandRule: HC_BAND_RULE
     });
   }catch(e){}
 
-  // `planner` is NOT here any more: Home renders the day (hcRenderMyDay), and hcOpenWorkspace
-  // aliases planner -> home. hcRenderPlanner still serves the in-thread day view.
+  // `planner` IS here again (reversed 2026-09-17): HC_ROOMS.planner renders hcRenderMyDay, which
+  // is also what the in-thread day draws. ONE day renderer, two places it can be put.
   /** ══ ONE LIST ENGINE. ONE ROW SPEC PER KIND. THE ROOM IS A PROJECTION OF IT. ══════════════
    *
    *  ADRIAN, 2026-09-16: "ONE LIST ENGINE. SIX SURFACES THAT ARE NEVER CONFUSED … THEY SHARE THE
@@ -9575,7 +9737,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       canvas.appendChild(room);
     };
   }
-  var HC_ROOMS = { jobs: hcRenderJobs, customers: hcRenderCustomers,
+  // `planner` renders My Day into the canvas — the same renderer the thread view uses, so the tab
+  // and "show me my day" can never disagree about what a day looks like.
+  var HC_ROOMS = { planner: function(canvas, biz){ return hcRenderMyDay(canvas, biz); },
+                   jobs: hcRenderJobs, customers: hcRenderCustomers,
                    leads: hcRoomFromView('leads'), quotes: hcRoomFromView('quotes') };
   // THE SPEC ITSELF, not a copy of its answers — a check has to be able to ask which kinds exist,
   // what words each one uses, and whether an earned place has anywhere to go. Extended, never
@@ -9629,14 +9794,14 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // back; without this the pane would appear EMPTY, because only 'website' ever rendered
     // the canvas. A visible empty frame is worse than the full-width chat it replaced, so
     // the render is part of the same change, not a follow-up.
-    // HOME IS THE DAY (Adrian, 2026-09-16). This REVERSES the 2026-09-13 ruling that put the
-    // site preview here; the approved 2026-09-16 design supersedes it and the site is one rail
-    // row away under Website. The day is rendered for every claimed owner — a day exists
-    // before a website does, so it is NOT gated on having a draft.
-    if(id === 'home' && hc.draftBusiness && hc.draftClaimed){
-      var homeCanvas = document.getElementById('hcCanvas');
-      if(homeCanvas) hcRenderMyDay(homeCanvas, hc.draftBusiness).catch(function(e){ console.error('[myday]', e); });
-    }
+    // HOME DOES NOT AUTO-OPEN THE DAY — REVERSED 2026-09-17 BY ADRIAN. "Home is the conversation.
+    // If he ASKS for his day, it renders in the thread." That path is hcShowInThread and it is
+    // untouched; My Day now has its own rail row, which is where a person goes to look at it.
+    //
+    // The canvas is left EMPTY on Home rather than filled with something else. The 2026-09-13
+    // comment worried that "a visible empty frame is worse than the full-width chat it replaced" —
+    // still true, and handled by the CSS that gives Home back its full width when nothing is
+    // mounted, not by putting a surface there to fill the space.
     if(id === 'website'){
       // Hold the canvas only when there is something to wait for — an owner whose page
       // was already upgraded this session mounts immediately, as before.
@@ -11785,7 +11950,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // Said to an owner on 2026-09-15, one message after Hubly had listed what was on his
   // schedule. He could PUT things on his day and not LOOK at his day: the loop breaking at
   // exactly the step he asked it to continue. And it was the missing-door shape again — the
-  // Planner room, hcRenderPlanner, HC_ROOMS and hcOpenWorkspace were all built and working.
+  // Planner room, its renderer, HC_ROOMS and hcOpenWorkspace were all built and working.
   // Nothing could reach them from a sentence.
   //
   // WHAT IT WILL NOT DO. It will not open a place this business has not earned (prohibition 5
@@ -11805,6 +11970,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
    *  of seam a text assertion cannot see. */
   try{ window.hublyNavUI = {
     surfaces: HC_PLACE_SURFACES, rooms: HC_ROOMS, goPlaces: HC_GO_PLACES,
+    // THE REAL RAIL RENDERER, so a check can put the shell in the claimed state and then PRESS a
+    // tab rather than asking a registry whether one would resolve.
+    renderRail: hcRenderRail, openWorkspace: hcOpenWorkspace,
     threadViews: HC_THREAD_VIEWS, railDefault: HC_RAIL_DEFAULT,
     // The real door, executed — an unknown place must be refused, never guessed at.
     goTo: hcGoToPlace,
@@ -12449,7 +12617,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         // read them — a simulation that skips the load leaves hc.places null, hcWorkspaces()
         // FAILS OPEN, and every place looks earned. A red-proof for the earned-gate defect then
         // passes with the defect restored, which is what happened on the first attempt.
-        try{ if(biz && biz.slug) hcLoadPlaces(biz.slug); }catch(e){}
+        // AND REPAINT WHEN IT LANDS, exactly as hcEnterClaimed does (hcLoadPlaces(...).then(rail)).
+        // Fired-and-forgotten, the rail was rendered below while hc.places was still null, so
+        // hcWorkspaces() FAILED OPEN to the default rail and every check on this seam saw
+        // Home+Website no matter which rows the account held. A simulation that diverges from
+        // the shipping path at exactly the point under test is a fixture reporting on itself.
+        try{ if(biz && biz.slug) hcLoadPlaces(biz.slug).then(function(){ try{ hcRenderRail(); }catch(e){} }); }catch(e){}
         // AND REVEAL THE SHELL, as hcEnterClaimed does. Without this #hcApp stays hidden, every
         // pane measures 0 wide, and a layout sweep reports "0 problems" because it was looking
         // at nothing — which is exactly what the first squeeze measurement did.
@@ -13094,9 +13267,34 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   }
   // Sign-in used to be invisible even when it worked — the header said "Sign in"
   // whether you were signed in or not. Reflect the real state so success shows.
+  /** ══ ONE ACCOUNT CONTROL, PUT SOMEWHERE REAL ════════════════════════════════════════════
+   *
+   *  ADRIAN, 2026-09-17: "the account pill moves into the left rail — it floats. Put it in a
+   *  real layout."
+   *
+   *  It MOVES the existing button rather than rendering a second one in the rail. A copy would
+   *  mean two elements answering to the same job, two sets of handlers, and the usual outcome:
+   *  one of them drifts and nobody knows which one they pressed. So there is one `#navSignin`
+   *  for the life of the page and this decides where it lives.
+   *
+   *  WIDE + CLAIMED -> the rail, in the flow, above the business row. Anything else -> the
+   *  header it started in, because the rail is not rendered on a phone and an account control
+   *  that vanishes with the furniture is worse than one in a corner. */
+  function hcPlaceAccountChip(){
+    var btn = document.getElementById('navSignin'); if(!btn) return;
+    var slot = document.getElementById('hcRailAcct');
+    var header = document.querySelector('header.nav');
+    var wide = true; try{ wide = window.matchMedia('(min-width:901px)').matches; }catch(e){}
+    var want = (hc.draftClaimed && wide && slot) ? slot : header;
+    if(want && btn.parentNode !== want){ try{ want.appendChild(btn); }catch(e){} }
+  }
+  try{ window.addEventListener('resize', function(){ try{ hcPlaceAccountChip(); }catch(e){} }); }catch(e){}
   function hcReflectAuthState(){
     var btn = document.getElementById('navSignin');
     if(!btn) return;
+    // WHEREVER IT BELONGS RIGHT NOW. Reflect is called on claim, on sign-in and on every live
+    // redraw of the name, which is exactly when the answer can have changed.
+    try{ hcPlaceAccountChip(); }catch(e){}
     // THE CHIP IS THE ONE SURFACE THAT ALREADY SATISFIED THE CONTRACT — measured, not assumed:
     // it fills a permanent page node in place (`btn.innerHTML = ''` then refills) rather than
     // creating and appending its own. So it registers as-is, and its redraw is this same
