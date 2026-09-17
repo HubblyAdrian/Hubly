@@ -68,6 +68,21 @@ a live claimed page.** The second could not be settled here — the one business
 (`hearth-and-iron`) is UNCLAIMED, and its subdomain correctly serves the marketing page instead of a
 site. It needs a claimed business and a real visit.
 
+## ⚠ THE DENOMINATOR EXCLUDES THE CLASSIC STORE — and that is not a small footnote
+
+This sweep reads `business_documents.rendered_html`: **the freeform store**. The CLASSIC store is
+`businesses.meta`, and **four market businesses serve classic** (aquaspeed, bucket-mobile-detailing,
+devdetailing661, Graef — Adrian, 2026-09-16: *"CLASSIC IS A SUPPORTED PATH, NOT A LEGACY EXCEPTION"*).
+None of their buttons are in any number above.
+
+**It shows immediately.** `check-walk-assertions` drives the LIVE page of
+`crestview-window-cleaning` — a classic page — and reports a dead `#services` link and a missing
+`#service-area` target. That page is not in this sweep's 188 at all.
+
+**So the honest statement of the result is: of the CTA controls on 188 freeform pages, zero lead
+nowhere — and the classic pages have not been swept.** Doing it needs a second reader over
+`businesses.meta`, which is the two-store split arriving in a measurement.
+
 ## What this measurement cannot see
 
 - It presses in an isolated mount. A control whose handler comes from the shell, or from a script
