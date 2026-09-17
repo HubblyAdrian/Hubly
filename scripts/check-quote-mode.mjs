@@ -40,6 +40,8 @@
  *   the offer speaks over an unanswered question -> leg 15
  *   entering announced twice                     -> leg 16
  *   `mention` matches nothing                    -> leg 4
+ *   the mode's declared place removed            -> leg 18b (under-claiming)
+ *   a tab claimed for a place that does not exist-> leg 18  (over-claiming)
  *
  * TWO LEGS WERE FOUND WEAK BY THAT PASS AND FIXED, which is the point of doing it per leg:
  *   · Leg 6 read the row's state straight after page load, where `hidden` comes from the HTML
@@ -273,9 +275,18 @@ try {
   const ways = await rig.page.evaluate(() => {
     const w = window.hublyModeUI.ways("quote").map((x) => x.id);
     const clause = window.hublyModeUI.waysClause("quote");
-    const hasQuotesPlace = !!(window.hublyNavUI && window.hublyNavUI.surfaces && window.hublyNavUI.surfaces.quotes);
-    const hasQuotesRoom = !!(window.hublyNavUI && window.hublyNavUI.rooms && window.hublyNavUI.rooms.quotes);
-    return { w, clause, hasQuotesPlace, hasQuotesRoom };
+    // THE PLACE THE MODE DECLARES, not one guessed from its name. The mode is `quote`, the place is
+    // `quotes` — and this leg caught that mismatch the day the place was added, which is exactly the
+    // "adding a tab turns this green by itself" behaviour it was written for.
+    // THE NAV REGISTRIES, READ INDEPENDENTLY OF THE MODE. What places exist, and which have rooms —
+    // so the leg below can judge the mode's claim against something the mode does not decide.
+    const surfaces = window.hublyNavUI.surfaces || {};
+    const places = Object.values(surfaces).map((v) => v.label);
+    const roomsList = Object.keys(window.hublyNavUI.rooms || {});
+    // Which place the clause actually names, recovered from the clause itself.
+    const named = (clause.match(/press the (.+?) tab/) || [])[1] || null;
+    const namedPlaceKey = Object.keys(surfaces).filter((k) => surfaces[k].label === named)[0] || null;
+    return { w, clause, places, roomsList, namedPlace: named, namedPlaceKey };
   });
   say("17 the ways in are DERIVED from what is wired — saying it and the button, both real",
       ways.w.includes("say") && ways.w.includes("button") && ways.clause.length > 10,
@@ -283,9 +294,29 @@ try {
   // THE HONEST ABSENCE. There is no `quotes` place in THIS shell, so "press the tab" must not be
   // claimed — and the leg is written as a CONDITIONAL on what is wired rather than as "there is no
   // tab", so adding one later turns this green by itself instead of red.
-  say("18 \"press the tab\" is claimed only when a tab actually exists in this shell",
-      ways.w.includes("tab") === (ways.hasQuotesPlace && ways.hasQuotesRoom),
-      `tab claimed=${ways.w.includes("tab")} place=${ways.hasQuotesPlace} room=${ways.hasQuotesRoom}`);
+  // ══ TWO LEGS, BECAUSE ONE WAS VACUOUS. ══════════════════════════════════════════════════
+  //
+  // The original leg 18 was `claimsTab === (place && room)` with BOTH sides read from the same
+  // source. It caught a real mismatch once — the mode is `quote`, the place is `quotes` — and then I
+  // "fixed" it to read the mode's declared place, which made both sides agree by construction:
+  // removing the declaration, or removing the place entirely, left it GREEN. **A leg that passes
+  // against every possible product has not been tested and cannot be.**
+  //
+  // So it splits into the two independent claims it was always making:
+  //   18  OVER-CLAIMING — if it names a tab, that tab must exist. Read from the nav registries.
+  //   18b UNDER-CLAIMING — [SHAPE] the Quotes place exists today, so the clause must name it.
+  say("18 it never claims a tab that does not exist — the place it names is in the rail registries",
+      !ways.w.includes("tab") ||
+        (ways.places.includes(ways.namedPlace) && ways.roomsList.includes(ways.namedPlaceKey)),
+      ways.w.includes("tab") ? `claims "${ways.namedPlace}" · in surfaces=${ways.places.includes(ways.namedPlace)} · has room=${ways.roomsList.includes(ways.namedPlaceKey)}`
+                             : "claims no tab");
+  // [SHAPE], DECLARED AT WRITE TIME. This asserts today's rail: a Quotes place with a room exists, so
+  // the clause must offer it. If the Quotes place is ever removed this goes red — and that is the
+  // shape moving, not a defect: confirm the removal was intended and update the leg.
+  say("18b [SHAPE] the Quotes place exists today, so the clause OFFERS the tab — it grew by itself",
+      ways.roomsList.includes("quotes") && ways.places.includes("Quotes") &&
+      ways.w.includes("tab") && /press the Quotes tab/.test(ways.clause),
+      JSON.stringify(ways.clause));
 } finally { await rig.close(); }
 
 console.log(failed ? `\n${failed} FAILED\n` : "\nALL PASS — the mode is visible, leaveable, and fifteen mid-sentence mentions do not start it.\n");

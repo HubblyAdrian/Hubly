@@ -4092,7 +4092,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       leaveLine: 'Out of Quick Quote. Nothing was saved.',
       offerLine: 'Do you want me to start a Quick Quote?',
       offerCta: 'Start a Quick Quote',
-      hint: 'say “never mind” to leave'
+      hint: 'say “never mind” to leave',
+      // THE PLACE THIS MODE HAS A TAB IN, DECLARED — not inferred from the mode's own name. The mode
+      // is `quote` and the place is `quotes`, and matching them by name would be wrong in BOTH
+      // directions: it missed the tab the day the place was added (leg 18 caught exactly that), and it
+      // would silently claim a tab for any future mode whose name happened to match a place.
+      place: 'quotes'
     }
   };
   // LEAVING, IN HIS WORDS. One list, shared by every mode, because "never mind" means the same
@@ -4119,9 +4124,13 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // SAY IT — wired iff there is an entry pattern and the composer routes through hcSendText.
     if(m.enter instanceof RegExp && typeof hcSendText === 'function')
       ways.push({ id:'say', clause: 'say \u201c' + String(m.label).toLowerCase() + '\u201d' });
-    // PRESS THE TAB — wired iff this shell has a place surface for it AND a room to open.
-    if(HC_PLACE_SURFACES[key] && HC_ROOMS[key])
-      ways.push({ id:'tab', clause: 'press the ' + HC_PLACE_SURFACES[key].label + ' tab' });
+    // PRESS THE TAB — wired iff the place this mode DECLARES exists and has a room to open. It used
+    // to look up HC_PLACE_SURFACES[key] with the MODE's key, which is `quote` while the place is
+    // `quotes` — so the day the Quotes place landed, the clause stayed silent and leg 18 of
+    // check-quote-mode went red. Two registries, one explicit link, no matching by name.
+    var pk = m.place || null;
+    if(pk && HC_PLACE_SURFACES[pk] && HC_ROOMS[pk])
+      ways.push({ id:'tab', clause: 'press the ' + HC_PLACE_SURFACES[pk].label + ' tab' });
     // PRESS A BUTTON — wired iff a control can be put in the thread at all.
     if(typeof hcAppendActionRow === 'function')
       ways.push({ id:'button', clause: 'press the button when I offer it' });
