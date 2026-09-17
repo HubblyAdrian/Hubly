@@ -55,6 +55,36 @@ does not exist.
    ledger outlives its subject and a stuck `pending` can become unattributable** — exactly what
    happened here, and the reason it cost an hour to answer.
 
+### FIRED, 2026-09-17 — the notification path works, end to end, in under a second
+
+Authorised by Adrian (*"YES, FIRE ONE REAL BOOKING — on a TEST business, with ADRIAN'S OWN EMAIL as
+the recipient. His data, his inbox, no customer involved."*). One `booking_requests` row on
+**adrians-lawn-service** (test, he owns it, `businesses.email` is his own address, so both sides of
+the notification land in his inbox and no stranger is involved). The row says so in its own notes.
+
+| | |
+| --- | --- |
+| booking row created | **17:54:32.24Z** |
+| owner email | **`sent`**, with a Resend receipt — **+0.89 s** |
+| customer email | **`sent`**, with a receipt — **+0.97 s** |
+| errors | none on either |
+
+**So the chain is intact:** trigger → pending row → `booking-notify` → Resend → ledger updated to
+`sent` with the provider's message id, both recipients, inside one second. What failed on
+2026-09-01 was the missing address, not the plumbing, and the plumbing has now been seen working
+rather than assumed.
+
+`get_business_events` returns it as a `booking.created`, `is_new`, `pending` — so it is **sitting on
+his Home right now as a card with an Accept button on it.**
+
+**THE ONE TEST I CANNOT RUN:** pressing that Accept. It needs a real owner session, which this
+environment cannot hold. Everything up to the request is proven by dispatching the real click
+(`check-a-booking-reaches-him` legs 5–8: the control exists, it calls `accept-booking` with the
+booking id and the owner's own JWT, it says what happened, and a refusal is said as itself and
+stays retryable). What only Adrian can prove is the other side of that request: that the job
+appears on his day and the booking flips to accepted. **The booking is deliberately left pending
+for exactly that.**
+
 ### What Adrian should do
 
 - **Nothing about that owner, and nothing to that address.** There is no wronged customer and no
@@ -63,9 +93,33 @@ does not exist.
   there `owner_identified=false` is the thing to fix.
 - **Exercise the fixed path instead** — which is what his answer 5 already authorises: one real
   booking on a test business with his own address, and report what arrives and how fast.
+- **Press Accept on the test booking waiting on his Home** — the half of the new path this
+  environment cannot reach.
 - **Two small builds this finding argues for**, neither started: a sweep that reports deliveries
   stuck at `pending` (the ledger already holds the evidence; nothing reads it), and one label for
   one thing in `subject_type`.
+
+## THE SECOND ACCEPT IS STILL LIVE — named, with line numbers (2026-09-17)
+
+Adrian: *"SHARE acceptBookingRequest, DO NOT BUILD A SECOND ONE. Fifth instance of the two-shells
+hazard."* Done for platform-home: it calls the new `accept-booking` edge function, which calls
+`_shared/booking_job.ts` — **the writer whose own header says it exists for "the owner clicking
+Accept" and whose `reason: "accept"` had never once been passed.** The door onto an accept that was
+already built, not a new one.
+
+**What is NOT done, so it is written down rather than implied:**
+`public/hubly.html` `acceptBookingRequest` (**~line 45543**, with `_acceptBookingRequestInner`
+following it, ~250 lines) still has its own implementation of the same act — membership signups,
+the pipeline board, the leads board, toasts, `S.jobs`, its own `createJob`, its own
+`booking-confirmed` invoke. It is the second copy. Retiring it onto the shared endpoint is the next
+step and it is a real piece of work: four classic market businesses are on that shell, so it cannot
+be done blind.
+
+**Until it is done, the two differ in one way that matters:** the classic path handles a
+**membership signup** booking (it writes a recurring plan); the new endpoint does not — it creates
+the job and accepts the booking. A membership signup accepted from platform-home would get its job
+and not its plan. **That gap is real today** and is the first thing to close when the two are
+merged.
 
 
 ## WHEN A CUSTOMER BOOKS, DOES THE OWNER FIND OUT? — measured 2026-09-17

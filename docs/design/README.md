@@ -60,11 +60,26 @@ do. The three-column view is not wrong — it is **step 6**, and it belongs behi
 The sequence is built and every step of it is pressed for real by
 `scripts/check-my-day-sequence.mjs` (20 legs, each one seen red).
 
-**STILL OPEN, FOR ADRIAN — do not let a session guess this:** *is the rail EARNED for everything,
-or is My Day special?* Today My Day is earned exactly like Jobs and Customers — it is not in
-`HC_RAIL_DEFAULT`, and the only way to get the row is to ask for the day and accept the offer.
-Website is the one place a new business is given. That is a rule the code follows, not a ruling
-Adrian has given.
+### THE RAIL RULE — RULED 2026-09-17, no longer open
+
+Adrian, asked whether the rail is earned for everything or whether My Day is special:
+
+> **"THE RAIL IS EARNED, AND WEBSITE BEING GIVEN IS CORRECT. Every business gets a site, so Home +
+> Website are given and everything else appears when asked for and accepted. That is what the code
+> does — CONFIRM IT AND WRITE IT DOWN as the rule, do not change it."**
+
+So, as the rule rather than as an observation:
+
+| | |
+| --- | --- |
+| **Given, to every claimed business** | **Home** and **Website**. Every business gets a site, so the place that holds it is furniture, not an earning. |
+| **Earned, every one of them the same way** | **My Day, Jobs, Customers, People who asked, Quotes** — asked for, rendered in the conversation, offered, and accepted. |
+| **My Day is not special** | It is in `HC_PLACE_SURFACES` like the others and deliberately NOT in `HC_RAIL_DEFAULT`. |
+
+**Confirmed in the code, 2026-09-17:** `HC_RAIL_DEFAULT = { website: true }` — one key. `hcWorkspaces()`
+fails open to that same default when the places rows cannot be read, so a failed read shows what a
+new business is offered and never the whole rail. Held by `scripts/check-my-day-sequence.mjs` legs
+8 and 12, and by `check-navigation-destinations`.
 
 ---
 

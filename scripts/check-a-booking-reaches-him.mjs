@@ -33,8 +33,19 @@
  *   4  the Call link gated off                        -> 4
  *   5  the card's button relabelled "Accept booking"  -> 5
  *   6  the live re-render after the signal removed    -> 6
- *   7  hcOnEventSignal's `mode !== 'home'` guard cut  -> 7  (the leg is [SHAPE]: this break is
- *                                                            what the IMPROVEMENT would look like)
+ *   7  the guard restored (news only on Home)         -> 7, 7c, 8
+ *      the badge removed from the rail only            -> 7   (a count-the-badges leg stayed
+ *                                                              GREEN here: the bottom bar still
+ *                                                              had one. It is derived now)
+ *      the aria-label dropped                          -> 7c
+ *      the signal redraws the room he is standing in   -> 7, 7b, 7c
+ *      nothing shown on return to Home                 -> 8, 9
+ *      marked seen without rendering the cards         -> 8
+ *
+ * LEG 7 WAS [SHAPE] AND IT WENT RED, AND THE RED WAS THE POINT. It asserted the gap — "a booking
+ * arriving while he is in another room shows him NOTHING" — so the gap could not close in silence.
+ * Adrian ruled on 2026-09-17 that a booking must reach him wherever he is; the leg now asserts the
+ * ruling instead, and 7b keeps the other half: his screen is not yanked out from under him.
  *
  * Exit: 0 PASS · 1 FAIL · 2 CANNOT RUN
  */
@@ -69,12 +80,18 @@ try { rig = await openRig(); }
 catch (e) { console.error("CANNOT RUN — " + e.message); srv.close(); process.exit(2); }
 
 /** A claimed owner, with the events reader returning `events` from the moment it is asked. */
-async function arrive(events, places) {
+async function arrive(events, places, edge) {
   await rig.load(PAGE);
   await rig.page.evaluate(installOwnerFake, {
     uid: UID, email: "owner@example.com", displayName: "Adrian",
     places: places || [{ kind: "website", scope: "workspace", visible: true, sort_order: 10 }],
     tables: { jobs: [], tasks: [], customers: [], events: events || [] },
+    // THE EDGE ANSWER IS DECLARED, like every other backend answer here. Nothing in this check
+    // reaches the real accept-booking function; what is proved is that the CONTROL calls it, with
+    // the right id and the owner's own token, and says what came back.
+    edge: edge || { "accept-booking": { ok: true, job_id: "job-1", created: true, status_written: true,
+                                        customer_name: "Dana Whitlock", service_name: "Full Detail",
+                                        date: TODAY, time: "15:00" } },
   });
   await rig.page.evaluate(async ({ biz }) => {
     await window.hublyArrivalUI.simulate(biz, true, []);
@@ -122,10 +139,49 @@ try {
   say("4 [RULE] it carries what he needs to act — the service, when, and a way to reach her",
       onHome.fields.some((f) => /Full Detail/.test(f)) && onHome.acts.some((a) => /call/i.test(a)),
       `fields: ${onHome.fields.length} · actions: ${onHome.acts.join(" / ")}`);
-  // ══ AND THE ONE HE CANNOT DO. This is a FINDING, asserted so it cannot quietly change. ══
-  say("5 [SHAPE] he cannot ACCEPT it from this shell — acceptBookingRequest lives in hubly.html",
-      onHome.canAccept === false,
-      "if this leg goes red, accepting has been built here and the finding is closed — update it");
+  // ══ THE DECISION, AND IT IS HIS TO MAKE FROM HERE ═══════════════════════════════════════
+  //
+  // WAS [SHAPE]: "he cannot ACCEPT it from this shell — acceptBookingRequest lives in hubly.html",
+  // with a note saying that a red here meant the gap had closed. It closed on 2026-09-17 (Adrian:
+  // "he can SEE it, so he can ACT on it"), the leg went red, and this is the ruling in its place.
+  say("5 [RULE] the card puts the DECISION in front of him, not only the details",
+      onHome.canAccept === true, `actions: ${onHome.acts.join(" / ")}`);
+
+  const pressed = await rig.page.evaluate(async () => {
+    const btn = document.querySelector("[data-hc-accept]");
+    if (!btn) return { pressed: false };
+    btn.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+    await new Promise((r) => setTimeout(r, 700));
+    const calls = (window.__rig.fetches || []).filter((f) => f.fn === "accept-booking");
+    const said = document.querySelector("[data-hc-accept-said]");
+    return { pressed: true, calls: calls.length, sentId: calls[0] && calls[0].body && calls[0].body.booking_request_id,
+             authKind: calls[0] && calls[0].authKind,
+             said: said ? said.textContent.trim() : null,
+             saidKind: said ? said.getAttribute("data-hc-accept-said") : null,
+             buttonGone: !document.querySelector("[data-hc-accept]") };
+  });
+  say("6 [RULE] PRESSING it calls the shared writer with this booking and the OWNER'S OWN token",
+      pressed.calls === 1 && pressed.sentId === "b1" && pressed.authKind === "owner-jwt",
+      `${pressed.calls} call(s) to accept-booking · id ${JSON.stringify(pressed.sentId)} · auth ${pressed.authKind}`);
+  say("7 [RULE] and it says what it did, in words, beside the control he pressed",
+      pressed.saidKind === "ok" && /accepted/i.test(pressed.said || "") && /Dana/.test(pressed.said || ""),
+      JSON.stringify(pressed.said));
+
+  // ── A REFUSAL IS SAID AS ITSELF, AND THE CONTROL COMES BACK ───────────────────────────
+  await arrive([BOOKING], null, { "accept-booking": { __status: 403, ok: false, error: "not_owner" } });
+  const refused = await rig.page.evaluate(async () => {
+    const btn = document.querySelector("[data-hc-accept]");
+    btn.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+    await new Promise((r) => setTimeout(r, 700));
+    const said = document.querySelector("[data-hc-accept-said]");
+    const again = document.querySelector("[data-hc-accept]");
+    return { said: said ? said.textContent.trim() : null, kind: said ? said.getAttribute("data-hc-accept-said") : null,
+             retryable: !!(again && !again.disabled) };
+  });
+  say("8 [RULE] a refusal says which refusal it was, never claims it worked, and leaves him able to retry",
+      refused.kind === "failed" && !/accepted —/i.test(refused.said || "") &&
+      /own/i.test(refused.said || "") && refused.retryable === true,
+      JSON.stringify(refused.said));
 } finally { /* continue */ }
 
 // ── ONE THAT ARRIVES WHILE HE IS LOOKING AT SOMETHING ELSE ──────────────────────────────
@@ -148,7 +204,7 @@ try {
              said: [...document.querySelectorAll(".hc-msg:not(.hc-event-card)")]
                      .map((m) => m.textContent.trim()).filter((t) => /booking/i.test(t)).length };
   }, BOOKING);
-  say("6 [RULE] a booking that arrives WHILE HE IS ON HOME appears without a refresh",
+  say("9 [RULE] a booking that arrives WHILE HE IS ON HOME appears without a refresh",
       live.handlers >= 1 && live.before === 0 && live.after === 1 && live.said > 0,
       `${live.before} card(s) before, ${live.after} after, ${live.said} sentence(s)`);
 
@@ -173,16 +229,55 @@ try {
     return { pressed: true, mode: document.getElementById("hcApp").getAttribute("data-mode"),
              before, after: document.querySelectorAll(".hc-event-card").length,
              named: /Ruth Alvarez/.test(document.body.textContent),
-             badge: document.querySelectorAll(".hc-rail-tab .hc-badge, .hc-rail-dot, [data-hc-unseen]").length };
+             // EVERY NAVIGATION THAT RENDERS A HOME DESTINATION, DERIVED — not "there are two of
+             // them". Removing the badge from the rail left the bottom bar's in place and a
+             // count-the-badges leg stayed green, which is the hand-maintained-set disease
+             // arriving in an assertion.
+             homeDests: [...document.querySelectorAll('[data-tab="home"]')].map((el) => ({
+               where: el.className.split(/\s+/)[0],
+               badge: (el.querySelector(".hc-rail-badge") || {}).textContent || null })),
+             homeLabel: (() => {
+               const h = [...document.querySelectorAll(".hc-rail-tab")].filter((t) => /home/i.test(t.textContent))[0];
+               return h ? h.getAttribute("aria-label") : null;
+             })() };
   }, BOOKING);
   // [SHAPE], DELIBERATELY. This asserts TODAY'S BEHAVIOUR so the finding cannot change in
   // silence. If Hubly learns to tell him while he is in another room, this leg goes red and
   // that red is the improvement — update the leg, never the product.
-  say("7 [SHAPE] a SECOND booking, arriving while he is in another room, shows him NOTHING — today",
-      away.pressed && away.mode === "planner" && away.after === away.before &&
-      away.named === false && away.badge === 0,
-      `in ${away.mode}: ${away.before} card(s) before, ${away.after} after, the new customer named: ${away.named}, ` +
-      `${away.badge} badge(s) — hcOnEventSignal returns early unless mode==='home'`);
+  // ══ THIS LEG WAS [SHAPE] AND IT WENT RED, AND THE RED WAS THE IMPROVEMENT ═══════════════
+  //
+  // It asserted the gap — "a booking arriving while he is in another room shows him NOTHING" —
+  // so that the gap could not close in silence. Adrian ruled on 2026-09-17: "A BOOKING MUST
+  // REACH HIM WHEREVER HE IS. A booking is money… A BADGE ON HOME IN THE RAIL IS THE MINIMUM,
+  // and the card is there when he goes to Home." So the leg now asserts the ruling, and the two
+  // halves of it are asserted separately, because "he was told" and "his screen was not yanked
+  // out from under him" are different promises.
+  say("10 [RULE] a booking arriving while he is in another room COUNTS on Home — in EVERY navigation that has a Home",
+      away.pressed && away.mode === "planner" && away.homeDests.length >= 1 &&
+      away.homeDests.every((d) => d.badge === "1"),
+      `${away.homeDests.map((d) => d.where + ":" + JSON.stringify(d.badge)).join(" · ")} · Home reads "${away.homeLabel}"`);
+  say("10b [RULE] and it does NOT redraw the room he is standing in",
+      away.after === away.before && away.named === false,
+      `${away.before} card(s) before, ${away.after} after; the new customer named on screen: ${away.named}`);
+  say("10c [RULE] the count is named for someone who cannot see the dot",
+      /1 new thing/.test(away.homeLabel || ""), JSON.stringify(away.homeLabel));
+
+  // ── AND THE OTHER HALF OF THE RULING: "the card is there when he goes to Home" ─────────
+  const back = await rig.page.evaluate(async () => {
+    const home = [...document.querySelectorAll(".hc-rail-tab")].filter((t) => /home/i.test(t.textContent))[0];
+    home.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+    await new Promise((r) => setTimeout(r, 900));
+    return { mode: document.getElementById("hcApp").getAttribute("data-mode"),
+             named: /Ruth Alvarez/.test(document.body.textContent),
+             badges: document.querySelectorAll(".hc-rail-badge").length,
+             marked: (window.__rig.writes || []).filter((w) => w.name === "mark_business_events_seen").length };
+  });
+  say("11 [RULE] going to Home shows him the booking he was counted about",
+      back.mode === "home" && back.named === true,
+      `mode ${back.mode} · the customer is named on screen: ${back.named}`);
+  say("12 [RULE] and looking at it is what clears the count — never a timer, never a guess",
+      back.badges === 0 && back.marked >= 1,
+      `${back.badges} badge(s) left · ${back.marked} seen-write(s)`);
 } finally { await rig.close(); srv.close(); }
 
 console.log(failed ? `\n${failed} FAILED\n` : "\nA booking reaches Home, says what it is, and can be called back — and reaches nothing else.\n");

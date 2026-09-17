@@ -505,6 +505,15 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 .hc-rail-tab.is-on{background:rgba(255,255,255,.10);color:#fff}
 .hc-rail-tab.is-on .hc-rail-lbl{font-weight:750}
 .hc-rail-spacer{flex:1 1 auto;min-height:12px}
+/* NEWS HE HAS NOT SEEN, ON THE PLACE THAT HOLDS IT. Only ever on Home, only ever a real
+   count, and gone the moment he looks. It pushes nothing: the label keeps its position and
+   the badge takes the space the row already had on its right (prohibition 5 — nothing
+   reshuffles). */
+.hc-rail-badge{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:999px;
+  background:#c2410c;color:#fff;font-size:12px;font-weight:750;line-height:20px;text-align:center;flex-shrink:0}
+.hc-btab .hc-rail-badge{margin:0;position:absolute;top:2px;right:calc(50% - 20px);min-width:16px;height:16px;
+  padding:0 4px;font-size:10px;line-height:16px}
+.hc-btab{position:relative}
 /* The business block. Logo tile, name in bold, city beneath — readable, not wrapped
    into a column 72px wide. No placeholder tile when there is no logo: initials on the
    brand colour, because a grey square implies a logo exists. */
@@ -747,6 +756,11 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   transition:border-color .15s,box-shadow .15s}
 .hc-arrival-act:hover{border-color:var(--brand-600,#D9632D);box-shadow:0 5px 16px -8px rgba(217,99,45,.35)}
 .hc-arrival-act:active{transform:translateY(1px)}
+/* THE DECISION, not one more thing to read. Accept is the only primary on a booking card;
+   everything beside it (details, a phone call) is what he does instead of deciding. */
+.hc-arrival-act.is-primary{background:var(--brand-600,#D9632D);border-color:var(--brand-600,#D9632D);color:#fff}
+.hc-arrival-act.is-primary:hover{background:var(--brand-700,#b8501f);border-color:var(--brand-700,#b8501f)}
+.hc-arrival-act.is-primary[disabled]{opacity:.65;cursor:default}
 /* An action attached to a normal chat message (e.g. Undo beside a change). */
 .hc-msg-action{display:inline-block;margin-top:8px;padding:6px 13px;font-size:13px;min-height:34px}
 /* Direct-edit undo — a quiet transient control over the canvas, NOT a chat line. */
@@ -6373,9 +6387,18 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   // the moment the mechanic is taught.
   //
   // The rail therefore ENDS UP as Home · My Day · Website · Settings — which is what he described —
-  // but it gets there by his hand. **OPEN QUESTION FOR ADRIAN (asked, not assumed): is the rail
-  // earned for EVERYTHING, or is My Day special?** Today every place except `website` is earned;
-  // the answer is in the report.
+  // but it gets there by his hand.
+  //
+  // ══ RULED 2026-09-17, so nobody has to re-derive it from this one line ═══════════════════════
+  //
+  //   "THE RAIL IS EARNED, AND WEBSITE BEING GIVEN IS CORRECT. Every business gets a site, so
+  //    Home + Website are given and everything else appears when asked for and accepted."
+  //                                                                         — Adrian, 2026-09-17
+  //
+  // GIVEN: Home and Website. EARNED, all the same way: My Day, Jobs, Customers, People who asked,
+  // Quotes. My Day is NOT special — it is earned exactly like the rest, which is why it is absent
+  // here. One key in this object is the whole rule; a second key is a change to the ruling.
+  // (docs/design/README.md carries it in full.)
   var HC_RAIL_DEFAULT = { website: true };
   function hcWorkspaces(){
     var ws = [];
@@ -6457,8 +6480,10 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     host.innerHTML = dests.map(function(t){
       var on = (t.id === hc.mode);
       return '<button type="button" class="hc-rail-tab' + (on ? ' is-on' : '') + '" '
-        + 'data-tab="' + t.id + '" role="tab" aria-selected="' + on + '">'
-        + t.icon + '<span class="hc-rail-lbl">' + t.label + '</span></button>';
+        + 'data-tab="' + t.id + '" role="tab" aria-selected="' + on + '"'
+        + hcUnseenLabel(t.id, t.label) + '>'
+        + t.icon + '<span class="hc-rail-lbl">' + t.label + '</span>'
+        + hcUnseenBadge(t.id) + '</button>';
     }).join('');
     Array.prototype.forEach.call(host.querySelectorAll('.hc-rail-tab'), function(b){
       b.addEventListener('click', function(){ hcOpenWorkspace(b.getAttribute('data-tab')); });
@@ -6467,6 +6492,74 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     // The rail's own markup is permanent, but the chip may still be sitting in the header
     // (first claim, or a resize back to desktop). This is the other moment the answer changes.
     try{ hcPlaceAccountChip(); }catch(e){}
+  }
+  /** ══ A BOOKING IS MONEY, AND IT MUST REACH HIM WHEREVER HE IS ═══════════════════════════
+   *
+   *  ADRIAN, 2026-09-17: "A BOOKING MUST REACH HIM WHEREVER HE IS. A booking is money.
+   *  hcOnEventSignal returning early unless mode === 'home' means the news only arrives if he is
+   *  already looking at it. A BADGE ON HOME IN THE RAIL IS THE MINIMUM, and the card is there
+   *  when he goes to Home."
+   *
+   *  So: the count of things he has not seen, on Home, in both navigations. It is a REAL COUNT,
+   *  read back from `get_business_events` (`is_new`) — never a dot we light because something
+   *  probably happened (prohibition 2). Zero renders nothing at all rather than a "0".
+   *
+   *  ONE FUNCTION, TWO SURFACES, for the same reason the rail hands the bottom bar its own list:
+   *  two badge renderers would be two opinions about how much news there is. */
+  function hcUnseenBadge(id){
+    var n = (id === 'home') ? (hc._unseen || 0) : 0;
+    if(!(n > 0)) return '';
+    return '<span class="hc-rail-badge" aria-hidden="true">' + (n > 9 ? '9+' : n) + '</span>';
+  }
+  /** The badge is a picture; this is the same fact for someone who cannot see it. */
+  function hcUnseenLabel(id, label){
+    var n = (id === 'home') ? (hc._unseen || 0) : 0;
+    if(!(n > 0)) return '';
+    return ' aria-label="' + hcEsc(label) + ', ' + n + (n === 1 ? ' new thing' : ' new things') + '"';
+  }
+  /** ══ AND THE OTHER HALF OF THE RULING: "the card is there when he goes to Home" ═════════
+   *
+   *  Coming back to Home did NOT show him what he had been counted about. Home renders once, on
+   *  arrival; returning to it re-enters the mode and renders nothing, so the badge said "1 new
+   *  thing", he pressed Home, and the thing was not there. A count that leads nowhere is worse
+   *  than no count — it is the notification standard's "link straight to the thing" failing at
+   *  the last step.
+   *
+   *  IT APPENDS. It does NOT call hcRenderHome, because that wipes the thread — and wiping a
+   *  conversation he was in the middle of, to show him a card, is the destructive default the
+   *  draft rule forbids. New cards land at the end of the conversation he already has, which is
+   *  also where he is looking.
+   *
+   *  ONE RENDERER: the same hcRenderEventCard Home uses on arrival, so a card he sees on return
+   *  and a card he sees on open cannot differ. */
+  async function hcShowUnseenOnHome(){
+    var biz = hc.draftBusiness;
+    if(!biz || !biz.id || !hc.draftClaimed) return 0;
+    var thread = hcThreadBody(); if(!thread) return 0;
+    var list;
+    try{ list = await hcLoadEvents(biz.id); }catch(e){ return 0; }
+    var fresh = (list || []).filter(function(e){ return e && e.is_new; });
+    if(!fresh.length){ hcSetUnseen(0); return 0; }
+    // SAID IN WORDS FIRST, then the cards — the same order and the same sentences Home uses, so
+    // "one new booking came in" means the same thing whichever way he arrived at it.
+    var nBook = fresh.filter(function(e){ return e.kind === 'booking.created'; }).length;
+    var nAsk  = fresh.filter(function(e){ return e.kind === 'chat.asked'; }).length;
+    var nAbn  = fresh.filter(function(e){ return e.kind === 'booking.abandoned'; }).length;
+    if(nBook) hcAppendMessage('hubly', nBook === 1 ? 'One new booking came in.' : nBook + ' new bookings came in.');
+    if(nAsk)  hcAppendMessage('hubly', nAsk === 1 ? 'Someone asked on your site and didn\u2019t book.' : nAsk + ' people asked on your site and didn\u2019t book.');
+    if(nAbn)  hcAppendMessage('hubly', nAbn === 1 ? 'Someone started booking and stopped.' : nAbn + ' people started booking and stopped.');
+    fresh.slice(0, 5).forEach(function(e){ hcRenderEventCard(e, thread); });
+    hcMarkEventsSeen(biz.id, fresh);
+    hcSetUnseen(0);
+    hcThreadScrollToEnd();
+    return fresh.length;
+  }
+  /** Set it from a number we actually read, and repaint the two navigations. */
+  function hcSetUnseen(n){
+    var v = (typeof n === 'number' && n > 0) ? n : 0;
+    if(v === (hc._unseen || 0)) return;
+    hc._unseen = v;
+    try{ hcRenderRail(); }catch(e){}
   }
   // ONE SOURCE, TWO SURFACES. The bottom bar is handed the sidebar's own list so the two
   // can never disagree about which places this business has earned; the only difference
@@ -6480,8 +6573,9 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     bar.innerHTML = dests.slice(0, HC_MOBILE_PLACE_CAP).map(function(t){
       var on = (t.id === hc.mode);
       return '<button type="button" class="hc-btab' + (on ? ' is-on' : '') + '" data-tab="' + t.id + '"'
-        + ' aria-current="' + (on ? 'page' : 'false') + '">'
-        + t.icon + '<span class="hc-rail-lbl">' + t.label + '</span></button>';
+        + ' aria-current="' + (on ? 'page' : 'false') + '"' + hcUnseenLabel(t.id, t.label) + '>'
+        + t.icon + '<span class="hc-rail-lbl">' + t.label + '</span>'
+        + hcUnseenBadge(t.id) + '</button>';
     }).join('');
     Array.prototype.forEach.call(bar.querySelectorAll('.hc-btab'), function(b){
       b.addEventListener('click', function(){ hcOpenWorkspace(b.getAttribute('data-tab')); });
@@ -9802,6 +9896,11 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     // comment worried that "a visible empty frame is worse than the full-width chat it replaced" —
     // still true, and handled by the CSS that gives Home back its full width when nothing is
     // mounted, not by putting a surface there to fill the space.
+    // COMING BACK TO HOME WITH NEWS WAITING. The badge promised something; this is where it is
+    // kept. Nothing happens when there is no news, and nothing is wiped either way.
+    if(id === 'home' && (hc._unseen || 0) > 0){
+      hcShowUnseenOnHome().catch(function(e){ console.error('[events] show on return failed', e); });
+    }
     if(id === 'website'){
       // Hold the canvas only when there is something to wait for — an owner whose page
       // was already upgraded this session mounts immediately, as before.
@@ -9936,6 +10035,9 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     });
     wrap.appendChild(dl);
     var acts = document.createElement('div'); acts.className = 'hc-event-acts';
+    // ACCEPT FIRST. It is the decision the card exists to put in front of him; details and a
+    // phone call are what he does if he is not ready to make it.
+    hcAcceptControl(ev, acts);
     var det = document.createElement('button'); det.type='button'; det.className='hc-arrival-act';
     det.textContent = 'View details';
     det.addEventListener('click', function(){ hcOpenEventPanel(ev); });
@@ -10041,6 +10143,101 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   // The panel is the same rows, expanded. It is handed the event object the card was
   // built from, so it cannot be more confident than the card — there is no second read
   // and therefore no way for the two to disagree.
+  /** ══ HE CAN SEE IT, SO HE CAN ACT ON IT — ACCEPTING A BOOKING, FROM THIS SHELL ═══════════
+   *
+   *  ADRIAN, 2026-09-17: "YES, ACCEPTING BELONGS IN platform-home… SHARE acceptBookingRequest,
+   *  DO NOT BUILD A SECOND ONE. Fifth instance of the two-shells hazard."
+   *
+   *  So nothing here creates a job, resolves a customer, or writes a status. It calls
+   *  `accept-booking`, which calls `_shared/booking_job.ts` — the function whose own header says
+   *  it exists for "the owner clicking Accept" and whose `reason: "accept"` had never been
+   *  passed by anything. The door, not a second accept.
+   *
+   *  STILL TRUE AND WRITTEN DOWN: public/hubly.html's `acceptBookingRequest` (~:45543) keeps its
+   *  own implementation for now. That is the copy to retire onto this endpoint; it is named in
+   *  docs/OPEN_FINDINGS.md rather than left for someone to discover. */
+  async function hcAcceptBooking(ev){
+    var id = ev && (ev.subject_id || ev.id);
+    if(!id) return { ok:false, error:'no_subject' };
+    try{
+      var c = await authGetClient();
+      var sess = await c.auth.getSession();
+      var token = sess && sess.data && sess.data.session && sess.data.session.access_token;
+      // THE OWNER'S OWN JWT OR NOTHING. Falling back to the anon key here would send a request
+      // that cannot be authorised and would come back "not_owner" — a confusing sentence for a
+      // signed-out owner, when "you're signed out" is the true one.
+      if(!token) return { ok:false, error:'signed_out' };
+      var res = await fetch(SUPA_URL + '/functions/v1/accept-booking', {
+        method:'POST',
+        headers:{ 'content-type':'application/json', apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + token },
+        body: JSON.stringify({ booking_request_id: id })
+      });
+      var json = await res.json().catch(function(){ return null; });
+      if(!json) return { ok:false, error:'unreadable' };
+      return json;
+    }catch(e){ return { ok:false, error:'unreachable' }; }
+  }
+  /** COMPOSED FROM WHAT HAPPENED, never from what was hoped — and every distinct failure gets
+   *  its own sentence, because "something went wrong" is not a thing anyone can act on. */
+  function hcAcceptBookingLine(res, ev){
+    var who = (ev && ev.customer_name) ? ev.customer_name : 'That booking';
+    if(!res || res.ok !== true){
+      var e = String((res && res.error) || 'unknown');
+      if(e === 'signed_out')    return 'You’re signed out, so I couldn’t accept that. Sign in and try again.';
+      if(e === 'session_expired') return 'Your session expired, so nothing was accepted. Refresh and try again.';
+      if(e === 'not_owner')     return 'That booking isn’t on a business you own, so I didn’t touch it.';
+      if(e === 'booking_gone')  return 'That booking isn’t there any more — it may have been removed. Nothing was changed.';
+      if(e === 'unreachable')   return 'I couldn’t reach the server, so nothing was accepted. Your booking is untouched.';
+      if(e === 'unreadable')    return 'I got an answer I couldn’t read, so I’m not going to tell you it’s accepted. Nothing is confirmed.';
+      // A MEMBERSHIP IS NOT HALF-ACCEPTED HERE. The plan is the point of it, and this path cannot
+      // write one yet — so it says that, rather than creating the visit and losing the repeat.
+      if(e === 'membership_signup_not_supported_here')
+        return 'That one is a membership signup, and accepting it here would set up the visit without the repeating plan — so I haven’t touched it. Nothing was changed.';
+      return 'I couldn’t accept that just now, so nothing was changed.';
+    }
+    var when = '';
+    if(res.date){ when = ' for ' + (hcDateUS(res.date) || res.date) + (res.time ? ' at ' + (hcTimeUS(res.time) || res.time) : ''); }
+    if(res.already_accepted) return who + '’s booking was already accepted' + when + ' — it’s on your day.';
+    if(res.created === false) return who + '’s booking is accepted' + when + ' — the job was already on your day, so nothing was duplicated.';
+    // THE ONE HALF-SUCCESS THAT MUST NOT READ AS A WHOLE ONE.
+    if(res.status_written === false){
+      return who + '’s job is on your day' + when + ', but I couldn’t mark the booking accepted — so it may still show as pending.';
+    }
+    return 'Accepted — ' + who + '’s job is on your day' + when + '.';
+  }
+  /** ONE CONTROL, BUILT ONCE, USED BY THE CARD AND THE PANEL. Two copies of an Accept button is
+   *  the same defect as two accepts, one level down. */
+  function hcAcceptControl(ev, acts, after){
+    if(!ev || String(ev.kind) !== 'booking.created') return null;
+    if(String(ev.status || '') === 'accepted') return null;
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'hc-arrival-act is-primary';
+    b.setAttribute('data-hc-accept', String(ev.subject_id || ''));
+    b.textContent = 'Accept booking';
+    b.addEventListener('click', async function(){
+      b.disabled = true; b.textContent = 'Accepting…';
+      var res = await hcAcceptBooking(ev);
+      var line = hcAcceptBookingLine(res, ev);
+      // IT SAYS WHAT IT DID, BESIDE THE CONTROL HE PRESSED — success and failure both
+      // (prohibition 6, and prohibition 2 the other way).
+      var say = document.createElement('div'); say.className = 'hc-event-sub';
+      say.setAttribute('data-hc-accept-said', res && res.ok ? 'ok' : 'failed');
+      say.textContent = line;
+      try{ b.remove(); }catch(e){}
+      (acts.parentNode || acts).insertBefore(say, acts.nextSibling);
+      if(res && res.ok){
+        ev.status = 'accepted';
+        // A JOB NOW EXISTS. Every live day surface redraws so he does not have to refresh to see
+        // the thing he just agreed to.
+        try{ await hcRepaintDay(); }catch(e){}
+      }else{
+        b.disabled = false; b.textContent = 'Accept booking'; acts.appendChild(b);
+      }
+      if(typeof after === 'function'){ try{ after(res); }catch(e){} }
+    });
+    acts.appendChild(b);
+    return b;
+  }
   function hcOpenEventPanel(ev){
     hcOpenPanel(hcEventPanelTitle(ev), function(body){
       var sub = document.createElement('div'); sub.className = 'hc-event-sub';
@@ -10054,13 +10251,18 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         line.appendChild(k); line.appendChild(v); dl.appendChild(line);
       });
       body.appendChild(dl);
+      // THE SAME CONTROL, IN THE PLACE HE OPENED TO DECIDE. Built by the same function as the
+      // card's, so the two can never come to mean different things.
+      var pacts = document.createElement('div'); pacts.className = 'hc-event-acts';
+      var accepted = hcAcceptControl(ev, pacts);
       if(ev.customer_phone){
-        var acts = document.createElement('div'); acts.className = 'hc-event-acts';
         var call = document.createElement('a'); call.className = 'hc-arrival-act';
         call.href = 'tel:' + String(ev.customer_phone).replace(/[^0-9+]/g,'');
         call.textContent = 'Call ' + hcPhoneHouse(ev.customer_phone);
-        acts.appendChild(call); body.appendChild(acts);
-      }else if(!ev.customer_email){
+        pacts.appendChild(call);
+      }
+      if(pacts.childNodes.length) body.appendChild(pacts);
+      if(!ev.customer_phone && !ev.customer_email){
         var none = document.createElement('div'); none.className = 'hc-event-sub';
         none.textContent = 'They didn’t leave a phone or email, so there’s no way to reach them from here.';
         body.appendChild(none);
@@ -10110,10 +10312,19 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     }catch(e){ console.error('[events] subscribe failed', e); }
   }
   async function hcOnEventSignal(businessId){
-    if(hc.mode !== 'home') return;               // do not redraw a screen they are not on
+    // THE READ HAPPENS WHEREVER HE IS. It used to return here unless he was standing on Home,
+    // which meant a booking that arrived while he was in My Day reached nothing at all — no
+    // card, no count, no sound — and the surface that answers "what's new?" only answered it
+    // for someone already looking at it. (Adrian, 2026-09-17: "a booking is money".)
     var before = hcEvents.list.length;
     var list = await hcLoadEvents(businessId);
-    if(list.length > before) hcRenderHome();     // one reader, one render path
+    if(list.length <= before) return;
+    // ON HOME: the screen he is looking at redraws, as before — one reader, one render path,
+    // and hcRenderHome marks them seen, so there is nothing left to badge.
+    if(hc.mode === 'home'){ hcSetUnseen(0); hcRenderHome(); return; }
+    // ANYWHERE ELSE: the count, on Home, from the rows themselves. Never a redraw of a screen
+    // he did not ask to change (prohibition 4) — the card is waiting when he goes to Home.
+    hcSetUnseen(list.filter(function(e){ return e && e.is_new; }).length);
   }
 
   function hcEsc(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(ch){
@@ -11039,6 +11250,9 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
           evs.slice(0, 5).forEach(function(e){ hcRenderEventCard(e, thread); });
           hcMarkEventsSeen(biz.id, evs);
         }
+        // HE HAS LOOKED. The badge counts what he has NOT seen, so Home rendering them is
+        // exactly the moment it stops being true — whether there were five or none.
+        try{ hcSetUnseen(0); }catch(e){}
         hcSubscribeEvents(biz.id);
       }
     }catch(e){ console.error('[events] render failed', e); }

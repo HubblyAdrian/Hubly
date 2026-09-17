@@ -45,7 +45,8 @@ export function installOwnerFake(opts) {
   const client = {
     auth: {
       getUser: () => ok({ user: { id: opts.uid, email: opts.email, user_metadata: opts.meta || {} } }),
-      getSession: () => ok({ session: { access_token: "sim", expires_at: Math.floor(Date.now() / 1000) + 3600 } }),
+      getSession: () => ok({ session: { access_token: opts.accessToken || "sim-access-token",
+                                        expires_at: Math.floor(Date.now() / 1000) + 3600 } }),
       signOut: () => ok(null),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
     },
@@ -113,7 +114,18 @@ export function installOwnerFake(opts) {
       // prove that a reload renders what was always there.
       if (name === "get_business_events") {
         if (!W.__rig.events) W.__rig.events = (tables.events || []).slice();
-        return ok(W.__rig.events.slice());
+        return ok(W.__rig.events.map((e) => Object.assign({}, e)));
+      }
+      // SEEN IS A REAL WRITE, SO THE FAKE HONOURS IT. Without this, `is_new` stayed true for
+      // everything he had already been shown and any count of "things he has not seen" was the
+      // count of things that exist — which is the one number that must never be wrong on a badge.
+      if (name === "mark_business_events_seen") {
+        W.__rig.writes.push({ name, args });
+        const upto = new Date(String((args && args.p_seen_at) || 0)).getTime();
+        (W.__rig.events || []).forEach((e) => {
+          if (!isFinite(upto) || new Date(String(e.occurred_at)).getTime() <= upto) e.is_new = false;
+        });
+        return ok(true);
       }
       if (name === "get_public_business") return ok([{ brand_color: null, city: null, state: null, meta: null }]);
       // THE PLACES ROWS MATTER MORE THAN THEY LOOK. Returning [] leaves hc.places null, which
@@ -198,7 +210,33 @@ export function installOwnerFake(opts) {
     localStorage.setItem("sb-rtwxxkxpkqdrhclkozma-auth-token",
       JSON.stringify({ access_token: "sim", expires_at: Math.floor(Date.now() / 1000) + 3600 }));
   } catch (_) {}
-  W.fetch = () => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(null), text: () => Promise.resolve("") });
+  // ══ EDGE CALLS ARE PART OF THE DECLARED BACKEND TOO ═════════════════════════════════════
+  //
+  // A blanket stub returning `null` made every edge-function door unanswerable: the control could
+  // be pressed and what it SENT — which endpoint, which id, whose token — went nowhere a check
+  // could read. Every request is recorded, and `opts.edge` declares the answers by endpoint name.
+  // Anything not declared still gets the old empty answer, so nothing that used to pass changes.
+  W.__rig.fetches = [];
+  W.fetch = (url, init) => {
+    const u = String(url || "");
+    const name = (u.match(/\/functions\/v1\/([A-Za-z0-9_-]+)/) || [])[1] || null;
+    let body = null;
+    try { body = init && init.body ? JSON.parse(String(init.body)) : null; } catch (_) { body = String((init || {}).body || ""); }
+    const auth = String(((init || {}).headers || {}).authorization || "");
+    W.__rig.fetches.push({ url: u, fn: name, body, auth,
+      // WHOSE TOKEN, without the token reaching a transcript. A check asserting "the owner's own
+      // JWT, not the anon key" needs to know which it was, never what it said.
+      authKind: auth ? (auth.indexOf(opts.accessToken || "sim-access-token") >= 0 ? "owner-jwt"
+                       : (auth.indexOf("anon") >= 0 ? "anon-key" : "other")) : "none" });
+    const declared = (opts.edge || {})[name];
+    const answer = typeof declared === "function" ? declared(body) : declared;
+    if (answer === undefined) {
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(null), text: () => Promise.resolve("") });
+    }
+    const status = (answer && answer.__status) || 200;
+    return Promise.resolve({ ok: status >= 200 && status < 300, status,
+      json: () => Promise.resolve(answer), text: () => Promise.resolve(JSON.stringify(answer)) });
+  };
 }
 
 /**

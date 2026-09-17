@@ -43,11 +43,14 @@ about LAYOUT is the shipping product's; nothing here is evidence about what the 
    `Today at a glance` (with three icons) → `Today` (no icons) · `Calendar · View calendar →` →
    `Calendar` (no link) · `Today's locations · View map →` → `Your stops, in order` (no map).
 
-6. **The band descriptions are different sentences.** Drawing: *"Critical tasks that move your
-   business forward." / "Important, but not time-sensitive." / "Great to do if you have time."*
-   Product: the band-rule sentences — *"If this doesn't happen today, there is a real
-   consequence." / "Should get done, but can move if necessary." / "Good to accomplish, but
-   completely okay if it doesn't happen."* Both are Adrian's; **which is canonical is his call.**
+6. **~~The band descriptions are different sentences.~~ RULED 2026-09-17 — NOT A GAP.** Adrian:
+   *"KEEP THE BAND-RULE SENTENCES. They are in the doc that is the source of truth and they already
+   ship. The drawing is history — mark it so."* So it is marked: the drawing's *"Critical tasks that
+   move your business forward." / "Important, but not time-sensitive." / "Great to do if you have
+   time."* are **HISTORY, not instructions.** The shipping sentences — *"If this doesn't happen
+   today, there is a real consequence." / "Should get done, but can move if necessary." / "Good to
+   accomplish, but completely okay if it doesn't happen."* — are the band rule, and the band rule
+   wins over the picture.
 
 7. **The Ask Hubly panel is much thinner than the drawing.** Absent: the *"Ask Hubly / Your AI
    business partner"* card header, the four action chips with icons (*Plan my day*, *Add a job or
