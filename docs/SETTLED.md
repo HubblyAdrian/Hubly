@@ -389,3 +389,31 @@ guard confirming it is inside `public/` (the prefixed branches above it never ch
 reads every root script off the DISK and asserts the router would serve each one — so adding a script
 makes it green by itself. And platform-home now **logs** when the module is missing, so "the module did
 not load" is distinguishable from "this device has no contacts picker".
+
+**44. THE STOREFRONT "BEHIND ?hcEdit=1" FINDING WAS WRONG, and wrong in the flattering direction.**
+Measured by opening the page **without** the flag: the Store rail row exists, the tab markup is
+present, `openWebsiteEditorHub` never tests `hcEdit`, and `edStoreAiSend` is defined. `?hcEdit=1` gates
+the **canvas editing affordance on a generated page**, not the store.
+
+What is true is narrower: `storefront` capabilities live in the `operate` context, so they work in the
+**store's own conversation** and not the ordinary one — which the operate prompt states as intent
+(*"Only the Store is yours to operate in this conversation"*). **A scoped conversation is not a
+missing door.**
+
+**The real gap is in the claimed shell:** `platform-home.html` has no `store` place at all — it is
+still a comment. Not built: pointing one shell at the other's workspace is a navigation decision.
+
+Checked alongside: all 7 capabilities (40 actions) in `HUBLY_CAPABILITY_REGISTRY` are named in at
+least one context. `CONTEXT_CAPABILITY_ALLOWLIST` is a hand-maintained list with a silent failure —
+absent means filtered from the prompt AND blocked at dispatch — but it has **no orphans today**.
+
+**45. `npm test` DID NOT RUN THE CHECKS, AND 59 OF THEM HAD NO COMMAND AT ALL.** 160 `check-*.mjs` on
+disk, 105 `check:` entries, no `check:all`, no `verify`, no `.github/workflows`. **`check-no-db-push`
+was referenced by nothing** — so CLAUDE.md's *"fails the run if the command reappears"* had no run to
+fail. Fixed: `run-all-checks.mjs` globs the directory, `check:all` runs it, and `pretest` runs the ban
+guard so the claim is true of the command everybody types.
+
+**Running them all for the first time: 27 of 160 are RED.** That number is the consequence, not a
+defect count — `check-hubly-syntax` opens `hubly.html` with a relative path and only works from
+`public/`, and several are `[SHAPE]` legs about old milestones. **But `check-rpc-doors` caught this
+session's own `set_quote_status` shipping with no caller.** The remaining reds are recorded as work.

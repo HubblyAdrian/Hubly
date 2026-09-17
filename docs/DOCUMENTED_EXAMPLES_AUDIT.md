@@ -92,7 +92,33 @@ operate   = [storefront, places]
 customer  = [booking]
 ```
 
-### Behind a door the owner's conversation cannot open — 20 examples
+### ~~Behind a door the owner's conversation cannot open~~ — CORRECTED 2026-09-16
+
+> **THE `?hcEdit=1` HALF OF THIS IS WRONG, and it was wrong in the direction that made it a better
+> story.** Measured by opening the page WITHOUT the flag: the **Store rail row exists**
+> (`.ni[data-v="store"]`), the store tab markup is present, `openWebsiteEditorHub` **does not test
+> `hcEdit` at all**, and `edStoreAiSend` is defined. `?hcEdit=1` gates the **canvas editing affordance
+> on a generated page** — not the store.
+>
+> **What is actually true, and it is narrower:** the `storefront` capabilities are in the `operate`
+> context only, so they are invokable in the **store's own conversation** and not in the owner's
+> ordinary one. The code says that is deliberate — the operate prompt reads *"Only the Store is yours
+> to operate in this conversation — if they ask about their website, booking, customers, or anything
+> else, say that lives in another part of Hubly."* A scoped conversation is not a missing door.
+>
+> **And the real gap is in the OTHER shell, which is where the owner now lives.**
+> `platform-home.html`'s `HC_PLACE_SURFACES` has `website`, `jobs`, `customers`, `leads`, `quotes` —
+> and `store` is still a comment: *"store — pending: the storefront workspace."* So in the claimed
+> shell there is no store place at all. That is a real doorless surface; it is **not built here**
+> because the storefront workspace lives in `hubly.html` and pointing one shell at the other is a
+> navigation decision, not a wiring job.
+>
+> Also checked while here: **every capability in `HUBLY_CAPABILITY_REGISTRY` (7, with 40 actions) is
+> named in at least one context.** `CONTEXT_CAPABILITY_ALLOWLIST` is a hand-maintained list whose
+> failure is silent — a capability absent from it is filtered out of the prompt AND blocked at
+> dispatch — but it has **no orphans today**. A candidate tried and not a finding.
+
+### The original entry, kept for its reasoning — 20 examples
 
 Every one belongs to the **`storefront`** group, which appears **only** in the `operate` context. And
 `operate` is reached only through the editor hub's **`store` tab**, inside the **`?hcEdit=1`**-gated
