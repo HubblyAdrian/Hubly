@@ -5209,7 +5209,11 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // tab arrived wearing the wrong picture — undercutting the exact moment the
     // mechanic exists for. Same 24x24 / 1.7-stroke line style as the other two.
     store:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M4 8h16l-1 3a3 3 0 0 1-2.9 2.2H7.9A3 3 0 0 1 5 11z"/><path d="M6 13.5V20h12v-6.5"/><path d="M8 8V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3"/></svg>',
-    jobs:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M3 12h18"/></svg>'
+    jobs:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M3 12h18"/></svg>',
+    // A HAND RAISED, not another list icon. Jobs and Store both fell back to the website icon once
+    // and a new tab arrived wearing the wrong picture, undercutting the exact moment the mechanic
+    // exists for — so a new place gets its own drawing before it gets a row. Same 24x24 / 1.7.
+    leads:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 21v-6.5"/><path d="M9 14.5c-2.2 0-3.5-1.5-3.5-3.7V7.2A1.7 1.7 0 0 1 7.2 5.5"/><path d="M9 11V3.8a1.3 1.3 0 0 1 2.6 0V10"/><path d="M11.6 9.6a1.3 1.3 0 0 1 2.6 0v1.2"/><path d="M14.2 10.4a1.3 1.3 0 0 1 2.6 0v2.3c0 3.4-1.9 5.3-4.6 5.3H9"/></svg>'
   };
   // ENTITLEMENTS -> WORKSPACES, declarative. A claimed account earns the workspaces its
   // FLAGS grant and nothing else. A website account earns Website. Jobs (Marketplace
@@ -5322,7 +5326,14 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     website:   { label:'Website',   icon:HC_RAIL_ICONS.website },
     jobs:      { label:'Jobs',      icon:HC_RAIL_ICONS.jobs },
     customers: { label:'Customers', icon:HC_RAIL_ICONS.customers },
-    // leads — pending: the unbooked-lead list
+    // LEADS IS A SURFACE NOW, NOT A COMMENT. It sat here as "pending: the unbooked-lead list" while
+    // `booking_requests` held the rows the whole time (SETTLED 28) — the data was never missing,
+    // the surface was. Being in this map is what makes it EARNABLE: hcWorkspaces ignores a
+    // business_places row whose kind has no surface, so a place that is not here can never be
+    // earned no matter what the owner asks for. It is deliberately absent from HC_RAIL_DEFAULT, so
+    // it appears only once he has asked for it and said yes to keeping it — same as Jobs and
+    // Customers, and the same progressive rule.
+    leads:     { label:'People who asked', icon:HC_RAIL_ICONS.leads },
     // store — pending: the storefront workspace
   };
   /** WHICH PLACES A NEW BUSINESS IS OFFERED IN THE RAIL BY DEFAULT. Everything else is reached
@@ -5933,6 +5944,55 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   // `has` is what item 4 turns on: whether this collection has ANYTHING. It is deliberately the
   // same question the cards and chips ask before offering themselves — no door to an empty room,
   // and no claim that a full room is "not set up".
+  // ══ STATUS WORDS — ONE TABLE, ONE ENTRY PER KIND, AND NEVER THE SAME WORDS TWICE ═════════
+  //
+  // ADRIAN, 2026-09-16: "THEY SHARE THE MECHANISM, THEY MUST NEVER LOOK ALIKE … one row spec per
+  // kind with per-kind status words."
+  //
+  // A lead is not "pending" the way a job is. A lead that is pending means SOMEONE IS WAITING FOR
+  // YOU TO ANSWER; a job that is scheduled means it is on the calendar and nobody needs anything.
+  // One shared word across both lists would flatten the only difference that matters to him, and
+  // the whole reason these lists exist separately is that they demand different actions.
+  //
+  // EVERY WORD BELOW IS A TRANSLATION OF A VALUE THAT ACTUALLY EXISTS IN THE TABLE. Measured
+  // against the live database, 2026-09-16, via the admin connection:
+  //   jobs.status              scheduled 174 · completed 85          (nothing else)
+  //   jobs.paid                false 259                             (NOTHING is ever marked paid)
+  //   booking_requests.status  abandoned 141 · accepted 130 · pending 10
+  //   memberships              the table exists and holds NO rows
+  // The counts are corpus-wide and mostly ours; what they establish here is the VOCABULARY, which
+  // is the only thing a word table needs from them.
+  //
+  // WHICH IS WHY THERE IS NO QUOTE ENTRY AND NO MEMBERSHIP ENTRY. There is no `quotes` table at
+  // all, and `memberships` has never held a row — so any status words for either would be words
+  // invented for a record that has never existed, which is the enumerate-the-valuable-side mistake
+  // written down in advance. Adrian's own ruling on memberships says it plainly: DO NOT BUILD ON IT
+  // UNTIL WE HAVE ONE. When the first one lands, its real values decide its words.
+  //
+  // AN UNRECOGNISED VALUE IS ECHOED, NEVER RENAMED. If a status appears that is not below, the row
+  // shows the record's own word rather than a friendly guess — echoing what the table says is
+  // honest; inventing "In progress" for a token we have never seen is not.
+  var HC_STATUS_WORDS = {
+    job: {
+      scheduled: 'Booked',
+      completed: 'Done'
+    },
+    lead: {
+      // A lead is someone who asked and has not booked. The two states differ in WHOSE move it is.
+      pending:   'Waiting on you',
+      abandoned: 'Didn\u2019t finish booking'
+      // 'accepted' is deliberately absent: an accepted request is not a lead any more, it is a job,
+      // and the lead reader filters it out rather than giving it a word here.
+    }
+  };
+  /** The word for a record's status, or null when there is nothing to say. Never invents. */
+  function hcStatusWord(kind, status){
+    var k = HC_STATUS_WORDS[kind];
+    var v = String(status == null ? '' : status).trim();
+    if(!v) return null;
+    if(!k) return v;                      // no vocabulary for this kind yet — echo, do not rename
+    return k[v.toLowerCase()] || v;       // unrecognised value — echo, do not rename
+  }
   var HC_THREAD_VIEWS = {
     day: {
       title: 'Your day',
@@ -5961,9 +6021,15 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         return rows.filter(function(j){ return !j.is_block; });
       },
       parts: function(j){
+        // THE TAIL SAYS THE STATE, then the money. It said only the money, so a completed job and a
+        // booked one looked identical in a list whose whole purpose is telling them apart — and
+        // `paid` is never true in the corpus (259 rows, all false), so "$180" was carrying the
+        // entire state of the record on its own.
+        var money = Number(j.amount) > 0 ? ('$' + Number(j.amount) + (j.paid ? ' paid' : '')) : '';
+        var state = hcStatusWord('job', j.status);
         return [ j.customer_name || j.service_name || 'Someone',
                  [hcDayLabel(j.scheduled_date), hcTimeUS(j.scheduled_time)].filter(Boolean).join(' at '),
-                 Number(j.amount) > 0 ? ('$' + Number(j.amount) + (j.paid ? ' paid' : '')) : '' ];
+                 [state, money].filter(Boolean).join(' \u00b7 ') ];
       },
       open: function(j){ hcJobPanel(j); },
       empty: 'You have no jobs on record yet.'
@@ -5992,6 +6058,47 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       },
       open: function(j){ hcJobPanel(j); },
       empty: 'Nothing is booked that week.'
+    },
+    // ── LEADS: PEOPLE WHO ASKED AND DID NOT BOOK ───────────────────────────────────────
+    //
+    // `leads` has been sitting in HC_PLACE_SURFACES as a comment — "pending: the unbooked-lead
+    // list" — while the records existed the whole time. `booking_requests` holds rows with
+    // status 'pending' (they asked, nobody has answered) and 'abandoned' (they started the
+    // booking form and stopped, with their contact details already written by
+    // writeAbandonedBookingRequest). SETTLED 28 corrected the premise that this path leaves no
+    // trace; this is the surface that was missing, not the data.
+    //
+    // WHAT IT REFUSES TO CLAIM. The corpus count is unusable — 141 abandoned rows of which 125
+    // are the paging fixture and 13 of the remaining 16 fall inside one 13-minute window across
+    // three businesses — so this list says how many rows HE has and never quotes a corpus figure.
+    leads: {
+      title: 'People who asked',
+      words: ['leads', 'enquiries', 'inquiries', 'people who asked', 'unbooked'],
+      load: async function(biz){
+        var c = await authGetClient();
+        var r = await c.from('booking_requests')
+          .select('id,customer_name,customer_phone,customer_email,service_name,status,created_at,preferred_date,preferred_time')
+          .eq('business_id', biz.id)
+          .order('created_at', { ascending:false });
+        if(r && r.error) throw new Error(r.error.message);
+        var rows = Array.isArray(r && r.data) ? r.data : [];
+        // AN ACCEPTED REQUEST IS A JOB, NOT A LEAD. It appears in Jobs, and leaving it here would
+        // make one record look like two pieces of work.
+        return rows.filter(function(x){ return String(x.status || '').toLowerCase() !== 'accepted'; });
+      },
+      parts: function(x){
+        // REACHABLE OR NOT IS THE FACT THAT MATTERS about a lead, so it is the sub-line. A name
+        // with no way to contact them is not a lead you can act on, and the row must not imply
+        // otherwise by leaving the space blank.
+        var reach = hcPhoneHouse(x.customer_phone) || x.customer_email || null;
+        return [ x.customer_name || 'Someone',
+                 reach || 'no phone or email on this one',
+                 hcStatusWord('lead', x.status) || '' ];
+      },
+      open: function(x){ hcLeadPanel(x); },
+      noun: ['person', 'people'],
+      emptyTitle: 'Nobody has asked yet',
+      empty: 'When someone sends a booking request — or starts one and stops — they land here with whatever they left you. Nothing is hidden; there simply aren’t any.'
     },
     customers: {
       title: 'Your customers',
@@ -7003,7 +7110,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         when: j.scheduled_date ? String(j.scheduled_date).slice(5) : '—',
         title: j.customer_name || 'Someone',
         sub: [j.service_name, hcTimeUS(j.scheduled_time)].filter(Boolean).join(' · ') || null,
-        tail: Number(j.amount) > 0 ? ('$' + Number(j.amount) + (j.paid ? ' paid' : '')) : (j.status || null),
+        // `(j.status || null)` put the raw column value in front of the owner — "scheduled",
+        // "completed" — which is the band-words defect exactly: our storage vocabulary reaching a
+        // person. One table decides the words (HC_STATUS_WORDS) and it never invents one.
+        tail: Number(j.amount) > 0 ? ('$' + Number(j.amount) + (j.paid ? ' paid' : '')) : hcStatusWord('job', j.status),
         onOpen: function(){ hcJobPanel(j); }
       }));
     });
@@ -7102,6 +7212,61 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         var call = document.createElement('a'); call.className='hc-arrival-act';
         call.href = 'tel:' + String(cu.phone).replace(/[^0-9+]/g,'');
         call.textContent = 'Call ' + hcPhoneHouse(cu.phone); acts.appendChild(call); body.appendChild(acts);
+      }
+    });
+  }
+  /** ══ A LEAD, OPENED. ══════════════════════════════════════════════════════════════════════
+   *
+   *  A ROW THAT OPENS NOTHING IS A DOOR TO NOWHERE, and a list of people who asked for work is
+   *  exactly where that is least forgivable — the whole point of seeing the row is to do something
+   *  about it. So this shows every field the record actually holds and offers the one action that
+   *  genuinely exists: reaching them.
+   *
+   *  IT INVENTS NO ACTION. There is no "send a quote" here and no "mark as won", because neither
+   *  has anywhere to write — `quotes` is not a table. Showing a button for a capability that does
+   *  not exist is the same defect as naming a control we cannot see.
+   *
+   *  AND IT SAYS WHEN THERE IS NOTHING TO DO. An abandoned booking with no phone and no email is
+   *  a real row we cannot act on, and the panel says so in words instead of showing an empty
+   *  space that reads like a loading failure. That is the lead-gate problem stated at the surface:
+   *  the booking form requires a name AND a phone, so it collects nothing from someone who would
+   *  have left an email — the gate is the fix, and it is a separate change from this panel. */
+  function hcLeadPanel(x){
+    hcOpenPanel('Someone who asked', function(body){
+      var rows = [
+        ['Name', x.customer_name || null],
+        ['Phone', x.customer_phone ? hcPhoneHouse(x.customer_phone) : null],
+        ['Email', x.customer_email || null],
+        ['Wanted', x.service_name || null],
+        ['Asked for', [x.preferred_date ? hcDayLabel(x.preferred_date) : null, hcTimeUS(x.preferred_time)].filter(Boolean).join(' at ') || null],
+        ['Came in', x.created_at ? hcDateLong(String(x.created_at).slice(0,10)) : null],
+        ['Where it stopped', hcStatusWord('lead', x.status)]
+      ].filter(function(r){ return r[1]; });
+      var dl = document.createElement('div'); dl.className = 'hc-event-fields';
+      rows.forEach(function(r){
+        var line = document.createElement('div'); line.className = 'hc-event-row';
+        var k = document.createElement('span'); k.className='hc-event-k'; k.textContent = r[0];
+        var v = document.createElement('span'); v.className='hc-event-v'; v.textContent = r[1];
+        line.appendChild(k); line.appendChild(v); dl.appendChild(line);
+      });
+      body.appendChild(dl);
+      if(!x.customer_phone && !x.customer_email){
+        var n = document.createElement('div'); n.className='hc-event-sub';
+        n.textContent = 'They left no phone and no email, so there is no way to reach them from here.';
+        body.appendChild(n);
+      }else{
+        var acts = document.createElement('div'); acts.className='hc-event-acts';
+        if(x.customer_phone){
+          var call = document.createElement('a'); call.className='hc-arrival-act';
+          call.href = 'tel:' + String(x.customer_phone).replace(/[^0-9+]/g,'');
+          call.textContent = 'Call ' + hcPhoneHouse(x.customer_phone); acts.appendChild(call);
+        }
+        if(x.customer_email){
+          var mail = document.createElement('a'); mail.className='hc-arrival-act';
+          mail.href = 'mailto:' + String(x.customer_email);
+          mail.textContent = 'Email ' + x.customer_email; acts.appendChild(mail);
+        }
+        body.appendChild(acts);
       }
     });
   }
@@ -7634,7 +7799,72 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
 
   // `planner` is NOT here any more: Home renders the day (hcRenderMyDay), and hcOpenWorkspace
   // aliases planner -> home. hcRenderPlanner still serves the in-thread day view.
-  var HC_ROOMS = { jobs: hcRenderJobs, customers: hcRenderCustomers };
+  /** ══ ONE LIST ENGINE. ONE ROW SPEC PER KIND. THE ROOM IS A PROJECTION OF IT. ══════════════
+   *
+   *  ADRIAN, 2026-09-16: "ONE LIST ENGINE. SIX SURFACES THAT ARE NEVER CONFUSED … THEY SHARE THE
+   *  MECHANISM, THEY MUST NEVER LOOK ALIKE."
+   *
+   *  A kind is described ONCE, in HC_THREAD_VIEWS: how to load it, what its three row parts are,
+   *  what opens it, what its emptiness says. A ROOM is then that same spec rendered full-width
+   *  instead of in the thread — never a second implementation with its own idea of what a row of
+   *  that kind looks like. hcRenderJobs and the `jobs` thread view are exactly that mistake
+   *  today: the room computes `tail` one way and the view another, so the same job reads
+   *  differently in two places for no reason anyone chose.
+   *
+   *  They still never look ALIKE, because the differences live in the spec — the leads list leads
+   *  with whether you can reach them, the jobs list leads with when it is. The engine is shared;
+   *  the vocabulary is per kind. That is the whole distinction Adrian was drawing.
+   */
+  function hcRoomFromView(key){
+    return async function(canvas, biz){
+      var v = HC_THREAD_VIEWS[key];
+      if(!v){
+        // NEVER A BLANK ROOM. A missing spec is our defect and it says so, rather than rendering
+        // an empty list that reads as "you have nothing" (the empty-reader rule, both directions).
+        var rx = hcRoomShell('Not available', null, null);
+        hcRoomEmpty(rx, 'I don’t have this list built', 'That’s missing on our side, not empty on yours.');
+        canvas.appendChild(rx); return;
+      }
+      var rows;
+      try{ rows = await v.load(biz); }
+      catch(e){
+        var r0 = hcRoomShell(v.title, null, null);
+        hcRoomEmpty(r0, 'I couldn’t read this just now',
+          'That’s a problem reaching your records, not an empty list — don’t plan around it. Try again in a moment.');
+        canvas.appendChild(r0); return;
+      }
+      rows = Array.isArray(rows) ? rows : [];
+      var noun = v.noun || null;
+      var count = (rows.length && noun) ? (rows.length + ' ' + (rows.length === 1 ? noun[0] : noun[1])) : null;
+      var room = hcRoomShell(v.title, count, null);
+      if(!rows.length){
+        hcRoomEmpty(room, v.emptyTitle || 'Nothing here yet', v.empty || null);
+        canvas.appendChild(room); return;
+      }
+      rows.forEach(function(r){
+        var parts = v.parts(r) || [];
+        room.appendChild(hcRoomRow({
+          title: parts[0] || 'Someone',
+          sub: parts[1] || null,
+          tail: parts[2] || null,
+          onOpen: function(){ try{ v.open(r); }catch(e){} }
+        }));
+      });
+      canvas.appendChild(room);
+    };
+  }
+  var HC_ROOMS = { jobs: hcRenderJobs, customers: hcRenderCustomers, leads: hcRoomFromView('leads') };
+  // THE SPEC ITSELF, not a copy of its answers — a check has to be able to ask which kinds exist,
+  // what words each one uses, and whether an earned place has anywhere to go. Extended, never
+  // assigned fresh: two owners assigning one global is the two-of-everything pattern arriving in
+  // the harness, and the one that loads second silently wins.
+  try{
+    window.hublyListUI = Object.assign(window.hublyListUI || {}, {
+      views: HC_THREAD_VIEWS, statusWords: HC_STATUS_WORDS, statusWord: hcStatusWord,
+      room: hcRoomFromView, surfaces: HC_PLACE_SURFACES, railDefault: HC_RAIL_DEFAULT,
+      rooms: HC_ROOMS, icons: HC_RAIL_ICONS
+    });
+  }catch(e){}
   async function hcRenderRoom(id){
     var canvas = document.getElementById('hcCanvas'); if(!canvas) return;
     var biz = hc.draftBusiness;

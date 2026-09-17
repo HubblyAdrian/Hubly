@@ -3,7 +3,10 @@
  * A ONE-SHOT FETCH IS NOT A CONFIRMATION.
  *
  *   node scripts/confirm-served.mjs <url> <marker> [<marker> …]
- *   node scripts/confirm-served.mjs https://myhubly.app/ "hcRenderMyDay" "Nothing on your calendar"
+ *   node scripts/confirm-served.mjs https://myhubly.app/platform-home "function hcRenderMyDay(" "Nothing on your calendar"
+ *
+ * platform-home.html is served at /, /home, /platform or /platform-home — NOT /platform-home.html,
+ * which api/router.js answers with hubly.html. hubly.html is at a business subdomain or /hubly.html.
  *
  * 2026-09-16: a served-bytes confirmation fetched ONCE, landed mid-rollout, and reported the OLD
  * copy — for a change that had in fact shipped. The opposite is equally possible and worse: a
@@ -39,14 +42,30 @@ const want = markers.map((m) => (m.startsWith("!") ? { s: m.slice(1), present: f
 // skip it. So the tool refuses the ambiguous form rather than answering it. `!function foo(` and
 // `!;foo(this)` are unambiguous; `!foo` is a name that a comment, a string or a log line can carry
 // long after the code is gone.
-const bareAbsence = want.filter((w) => !w.present && /^[A-Za-z_$][\w$]*$/.test(w.s));
-if (bareAbsence.length) {
-  console.error("REFUSING — an absence marker must name a CODE CONSTRUCT, not a bare identifier:");
-  for (const b of bareAbsence) {
-    console.error(`  !${b.s}  ->  try  !"function ${b.s}("  or  !";${b.s}("  or another form that cannot appear in a comment`);
+// ── AND THE SAME RULE POINTS THE OTHER WAY. A PRESENCE MARKER IS A BARE IDENTIFIER TOO. ─────
+//
+// 2026-09-16, third firing and the worst one: confirming the band rule at
+// `https://myhubly.app/platform-home.html` reported `hcDeriveBand` **present**. The URL was wrong —
+// `.html` is not a route, so api/router.js served **hubly.html**, 3,045,535 bytes of the wrong file
+// — and `hcDeriveBand` matched a COMMENT in hubly.html that mentions the function by name. The other
+// three markers said absent, so the run failed loudly and the mistake was caught. Had all four been
+// bare names that happen to appear in a comment somewhere, this would have printed CONFIRMED for a
+// file that was never served.
+//
+// A false CONFIRMED is the worst output this tool can produce: it is the unearned checkmark, about
+// a deploy, which is the one thing every other rule here exists to prevent. So the refusal is
+// symmetric — a marker names a code construct in BOTH directions.
+const bare = want.filter((w) => /^[A-Za-z_$][\w$]*$/.test(w.s));
+if (bare.length) {
+  console.error("REFUSING — a marker must name a CODE CONSTRUCT, not a bare identifier:");
+  for (const b of bare) {
+    const p = b.present ? "" : "!";
+    console.error(`  ${p}${b.s}  ->  try  ${p}"function ${b.s}("  or  ${p}"${b.s} = "  or another form a comment cannot carry`);
   }
-  console.error("  A deleted function's NAME survives in the comment explaining its deletion, so a bare");
-  console.error("  identifier reports NOT CONFIRMED against a correct deploy. Fired twice on 2026-09-16.");
+  console.error("  ABSENCE: a deleted function's NAME survives in the comment explaining its deletion,");
+  console.error("  so a bare identifier reports NOT CONFIRMED against a correct deploy (fired twice).");
+  console.error("  PRESENCE: a bare name matches a comment in a DIFFERENT file, which a wrong URL can");
+  console.error("  silently serve — and that prints CONFIRMED for a file that was never fetched.");
   process.exit(2);
 }
 
