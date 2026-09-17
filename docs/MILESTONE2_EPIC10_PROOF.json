@@ -2,7 +2,7 @@
   "epic": 10,
   "title": "Hubly Daily",
   "passed": true,
-  "checkedAt": "2026-07-24T21:12:58.379Z",
+  "checkedAt": "2026-09-17T18:47:50.816Z",
   "version": "1.0.0",
   "sample": {
     "greeting": "Good morning, Adrian",
@@ -33,7 +33,7 @@
     "Tomorrow's weather will likely affect two jobs — act before customers ask.",
     "Three customers haven't left reviews yet — I drafted messages.",
     "Upload today's before-and-after photos while the jobs are fresh.",
-    "Your membership pitch is ready for five past customers.",
+    "Stripe isn't connected — I'll focus on what we can do without payments today.",
     "Open quotes are aging — two need a same-day nudge.",
     "Your gallery is converting — double down with one more proof set."
   ],

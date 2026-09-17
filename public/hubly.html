@@ -33716,6 +33716,24 @@ function renderThemedBookingLanding(biz,phone,city,email){
     logoEl.innerHTML=S.logoUrl?`<img src="${S.logoUrl}" alt="">`:init;
   }
   if(nameEl)nameEl.textContent=biz;
+  // ══ THE CONSENT SENTENCE NAMES THE BUSINESS, ON THE PUBLIC PATH TOO ══════════════════════
+  //
+  // `#bk-biz-consent` was substituted only by syncStorefront(), which is an OWNER-side function
+  // and does not run for a member of the public. So on every live booking page the SMS consent
+  // line read "I agree to receive SMS from YOUR BUSINESS" — visible, ticked, and then STORED:
+  // bkSmsConsentText() records the live label into booking_requests.sms_consent_text, and its own
+  // comment says why that matters — "'SMS from Everlasting' is materially different from 'SMS
+  // from Your Business' as a record of what was agreed to."
+  //
+  // Measured 2026-09-17 on the real page (crestview-window-cleaning.myhubly.app/?book=1): one
+  // visible placeholder, and one stored consent row already carries it (ironwood-fence,
+  // 2026-09-12, sms_consent=true, a test business — so no real person's consent is misrecorded
+  // yet, and the mechanism was live on every page).
+  //
+  // Set HERE, in the one function the public path goes through, from the same `biz` the heading
+  // uses — never a second source that can disagree with the name on the page.
+  const consentEl=document.getElementById('bk-biz-consent');
+  if(consentEl)consentEl.textContent=biz;
   if(tagEl)tagEl.textContent=S.tag||S.website?.heroSub||'';
   if(metaEl){
     let meta='';

@@ -2,7 +2,7 @@
   "section": 2,
   "title": "Experience Director",
   "passed": true,
-  "checkedAt": "2026-09-12T04:41:17.374Z",
+  "checkedAt": "2026-09-17T18:13:44.346Z",
   "version": "1.2.0",
   "implementationSummary": {
     "module": "supabase/functions/_shared/hubly_brain_experience_director.ts",
@@ -292,8 +292,8 @@
     ],
     "interceptionLogs": [
       {
-        "id": "ed_mtxwdvzw_g61a6",
-        "at": "2026-09-12T04:41:17.372Z",
+        "id": "ed_mu5ulyqf_mvair",
+        "at": "2026-09-17T18:13:44.343Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -322,8 +322,8 @@
         ]
       },
       {
-        "id": "ed_mtxwdvzx_qzu8f",
-        "at": "2026-09-12T04:41:17.373Z",
+        "id": "ed_mu5ulyqh_cp7j2",
+        "at": "2026-09-17T18:13:44.345Z",
         "modified": true,
         "vetoed": true,
         "before": {
@@ -353,8 +353,8 @@
         ]
       },
       {
-        "id": "ed_mtxwdvzx_c982l",
-        "at": "2026-09-12T04:41:17.373Z",
+        "id": "ed_mu5ulyqh_tp96a",
+        "at": "2026-09-17T18:13:44.345Z",
         "modified": true,
         "vetoed": true,
         "before": {
@@ -384,8 +384,8 @@
         ]
       },
       {
-        "id": "ed_mtxwdvzx_bnxf9",
-        "at": "2026-09-12T04:41:17.373Z",
+        "id": "ed_mu5ulyqh_rqav5",
+        "at": "2026-09-17T18:13:44.345Z",
         "modified": true,
         "vetoed": false,
         "before": {
@@ -415,8 +415,8 @@
         ]
       },
       {
-        "id": "ed_mtxwdvzy_owh5i",
-        "at": "2026-09-12T04:41:17.374Z",
+        "id": "ed_mu5ulyqh_pxcm2",
+        "at": "2026-09-17T18:13:44.345Z",
         "modified": true,
         "vetoed": false,
         "before": {

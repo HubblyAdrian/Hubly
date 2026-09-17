@@ -1,8 +1,8 @@
 {
   "epic": 7,
   "title": "Business Launch Experience",
-  "passed": true,
-  "checkedAt": "2026-07-24T21:12:58.338Z",
+  "passed": false,
+  "checkedAt": "2026-09-17T18:47:51.148Z",
   "version": "1.0.0",
   "celebration": "Today your business officially launched.",
   "homeTransition": "Ready? Let's get to work.",
@@ -13,13 +13,13 @@
         {
           "id": "website",
           "label": "Website Live",
-          "ok": true,
+          "ok": false,
           "required": true
         },
         {
           "id": "booking",
           "label": "Booking Live",
-          "ok": true,
+          "ok": false,
           "required": true,
           "detail": null
         },
@@ -41,13 +41,13 @@
         {
           "id": "memory",
           "label": "Business Memory Active",
-          "ok": true,
+          "ok": false,
           "required": true
         },
         {
           "id": "v1",
           "label": "Version 1.0 Protected",
-          "ok": true,
+          "ok": false,
           "required": true
         }
       ],
@@ -74,7 +74,7 @@
       "certificate": {
         "businessName": "ABC Pressure Washing",
         "owner": "Adrian",
-        "launchDate": "2026-07-24",
+        "launchDate": "2026-09-17",
         "version": "1.0",
         "firstStrategy": "Trust-first local brand",
         "positioning": "Premium & Reliable"
@@ -82,14 +82,17 @@
     },
     "partial": {
       "issues": [
+        "Website Live still needs attention.",
         "Booking couldn't be fully activated because Stripe isn't connected yet.",
-        "Stripe isn't connected yet — let's finish that together."
+        "Stripe isn't connected yet — let's finish that together.",
+        "Business Memory Active still needs attention.",
+        "Version 1.0 Protected still needs attention."
       ],
       "summary": [
         {
           "id": "website",
           "label": "Website Live",
-          "ok": true,
+          "ok": false,
           "required": true
         },
         {
@@ -102,19 +105,24 @@
         {
           "id": "memory",
           "label": "Business Memory Active",
-          "ok": true,
+          "ok": false,
           "required": true
         },
         {
           "id": "v1",
           "label": "Version 1.0 Protected",
-          "ok": true,
+          "ok": false,
           "required": true
         }
       ]
     }
   },
-  "failures": [],
+  "failures": [
+    {
+      "name": "Summary includes Website Live",
+      "detail": ""
+    }
+  ],
   "htmlChecks": {
     "launchCanvas": true,
     "animation": true,

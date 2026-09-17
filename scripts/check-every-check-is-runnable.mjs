@@ -67,7 +67,13 @@ say("3 a package.json script runs the whole set",
 // CLAUDE.md says this script "fails the run". THAT SENTENCE HAS TO BE TRUE OF A COMMAND SOMEONE
 // ACTUALLY TYPES, and the one everybody types is `npm test`. `pretest` runs before it, automatically,
 // with no extra step — so the claim becomes true of the command it was written about.
-say("4 the `supabase db push` guard exists as a file",
+// THE WORD "BANNED" IS LOAD-BEARING IN THIS LABEL, not decoration. check-no-db-push scans every
+// tracked file for the command and allows a mention only on a line that FORBIDS it; without the
+// word, this label — which names the command in order to check its guard — was itself reported as
+// "a place that would run it", and the guard for the most dangerous command in the repo went RED
+// on a false positive. A guard that cries wolf is a guard people learn to skip, so the fix is
+// here, in the mention, NEVER by widening what the detector lets through.
+say("4 the guard for the banned `supabase db push` exists as a file",
     existsSync(join(ROOT, "scripts/check-no-db-push.mjs")), "scripts/check-no-db-push.mjs");
 const pre = String(scripts.pretest || "");
 say("5 and it runs as part of `npm test` — CLAUDE.md says it \"fails the run\", so a run must include it",

@@ -34,7 +34,19 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SHARED = join(ROOT, "supabase/functions/_shared");
 
 /** Branch names that name a SUCCESS — the row whose absence makes the table a failure log. */
-const SUCCESS = /^(placed|inserted|patched|swapped|added|section_added|updated|saved|changed|live|ok)$/i;
+// ══ THIS LIST IS THE DISEASE IT EXISTS TO CATCH, ONE LEVEL UP (2026-09-17) ═══════════════════
+//
+// It went red on `applyServicesToClassic`, reporting that the function "can only ever say this
+// failed". It records `written` on its success path — a word this list did not have. So the check
+// was not finding a recorder with no success branch; it was finding a SUCCESS WORD IT HAD NOT BEEN
+// TOLD ABOUT, which is the hand-maintained-set failure wearing the shape of a finding.
+//
+// It stays a list, because "which branch name means success" genuinely has no derivation. What
+// changes is the posture: the honest reading of a miss is "I do not recognise this word", and the
+// output says so rather than accusing the function. Adding a word here is expected maintenance,
+// not a defeat — and the alternative (guessing that any unlisted branch is a failure) is how a
+// working recorder gets reported as broken.
+const SUCCESS = /^(placed|inserted|patched|swapped|added|section_added|updated|saved|changed|live|ok|written|created|sent|accepted|seeded)$/i;
 
 /** An `if (…)` whose body runs when something did NOT work. These are the conditions this
  *  codebase actually writes; each one is a real line from the server. */

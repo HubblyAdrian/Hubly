@@ -1,8 +1,8 @@
 {
   "epic": 2,
   "title": "Business Discovery Conversation",
-  "passed": true,
-  "checkedAt": "2026-07-24T17:35:25.193Z",
+  "passed": false,
+  "checkedAt": "2026-09-17T18:47:50.961Z",
   "version": "1.0.0",
   "maxClarifications": 3,
   "founderTests": {
@@ -74,7 +74,12 @@
       "accuracy": 1
     }
   ],
-  "failures": [],
+  "failures": [
+    {
+      "name": "Welcome still hands off with seed",
+      "detail": ""
+    }
+  ],
   "htmlChecks": {
     "discoveryShell": true,
     "understandingPanel": true,

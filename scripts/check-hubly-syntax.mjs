@@ -24,7 +24,8 @@ function check(path) {
 }
 
 check('public/hubly.html');
-check('hubly.html');
+// The root copy has not existed for a long time; checking it crashed the whole run on ENOENT.
+if (fs.existsSync('hubly.html')) check('hubly.html');
 if (/\/g=''/.test(fs.readFileSync('public/hubly.html', 'utf8'))) {
   console.error("FAIL: sms replace typo /g='' still present");
   failed = true;

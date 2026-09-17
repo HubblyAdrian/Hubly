@@ -1,7 +1,15 @@
 #!/usr/bin/env node
 import fs from 'fs';
 
-const files = ['hubly.html', 'public/hubly.html'];
+// ══ THE FILE LIST IS DERIVED, NOT TRANSCRIBED (2026-09-17) ═══════════════════════════════════
+// This read `hubly.html` at the repo root. That file has not existed for a long time — the shell
+// is public/hubly.html — so the check CRASHED on ENOENT before its first assertion and had been
+// reporting nothing at all. It was one of SIX in exactly this state: red for months, red for a
+// reason that had nothing to do with the product, and therefore never read.
+// A LIST OF PATHS IS A HAND-MAINTAINED SET. It is filtered by what is actually on disk, and it
+// refuses rather than passing vacuously if the filtering leaves nothing.
+const files = ['hubly.html', 'public/hubly.html'].filter((f) => fs.existsSync(f));
+if (!files.length) { console.error('CANNOT RUN — none of the candidate files exist'); process.exit(2); }
 let failed = false;
 
 for (const file of files) {
@@ -41,7 +49,11 @@ for (const file of files) {
     failed = true;
   }
 
-  if (!html.includes('body.ed-owner-preview-open #p-storefront .ws-re-btns')) {
+  // [RULE] the editor's reorder controls are hidden while the owner is previewing his own page.
+  // THE CONTAINER'S NAME IS NOT THE RULE: this required `#p-storefront`, which the product renamed
+  // to `#p-classic-site`. Matched on the class that does the work, with the id left open, so the
+  // next rename does not produce a false defect.
+  if (!/body\.ed-owner-preview-open\s+#[a-z-]+\s+\.ws-re-btns/.test(html)) {
     console.error(`FAIL ${file}: missing CSS hide for editor reorder controls in owner preview`);
     failed = true;
   }

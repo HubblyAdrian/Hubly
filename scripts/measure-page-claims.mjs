@@ -167,6 +167,8 @@ for (const r of rows) {
 }
 console.log("  by claim shape (all pages · market):");
 for (const [k, v] of Object.entries(byShape).sort((a, b) => b[1].ungrounded - a[1].ungrounded))
+  // rateLine() splits a SET OF SLUGS by account_kind, and a claim has no account_kind of its own.
+  // not-a-corpus-rate: a per-CLAIM count, not a per-business rate — and the market split is printed on the line itself
   console.log(`    ${k.padEnd(16)} ${String(v.ungrounded).padStart(4)} of ${String(v.total).padStart(4)} ungrounded   ·   market ${v.marketUngrounded} of ${v.market}`);
 
 const which = (process.argv[2] || "market");

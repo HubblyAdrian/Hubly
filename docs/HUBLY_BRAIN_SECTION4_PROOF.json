@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-09-12T04:41:17.458Z",
+  "checkedAt": "2026-09-17T18:13:44.431Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -1664,7 +1664,7 @@
           "output": {
             "type": "Builder Intent",
             "builderIntent": {
-              "intentId": "bint_mtxwdw1y_vbj8l7",
+              "intentId": "bint_mu5ulysj_g94jav",
               "version": "1.0.0",
               "originalRequest": "I'm starting a pressure washing company.",
               "intentCategory": "Business Strategy",
@@ -1695,7 +1695,7 @@
                   "confidence": 81
                 }
               ],
-              "timestamp": "2026-09-12T04:41:17.446Z",
+              "timestamp": "2026-09-17T18:13:44.419Z",
               "applied": false,
               "changePlanGenerated": false
             },

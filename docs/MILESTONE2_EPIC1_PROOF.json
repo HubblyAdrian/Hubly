@@ -2,18 +2,18 @@
   "milestone": "2",
   "epic": 1,
   "name": "Welcome Experience",
-  "passed": true,
-  "checkedAt": "2026-07-24T17:35:25.149Z",
+  "passed": false,
+  "checkedAt": "2026-09-17T18:47:50.777Z",
   "proofs": {
     "welcomeShell": true,
-    "heroConversation": true,
+    "heroConversation": false,
     "largeInput": true,
     "zeroAccountFields": true,
     "noClassicSignupCta": true,
     "trustOutcomes": true,
     "inspiration": true,
     "firstImpressionTimer": true,
-    "noCrmInWelcome": true,
+    "noCrmInWelcome": false,
     "microinteractions": true,
     "brandMark": true,
     "prompts": [
@@ -42,5 +42,18 @@
     "timeToFirstConversationTargetMs": 10000,
     "accountFieldsRequired": 0
   },
-  "failures": null
+  "failures": [
+    {
+      "name": "Hero conversation primary",
+      "detail": ""
+    },
+    {
+      "name": "No CRM terminology on welcome",
+      "detail": ""
+    },
+    {
+      "name": "Submit hands off to Instant Site with seed",
+      "detail": ""
+    }
+  ]
 }
