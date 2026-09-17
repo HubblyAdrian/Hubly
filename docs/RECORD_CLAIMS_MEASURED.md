@@ -82,7 +82,7 @@ on a `test` business.
 against it:
 
 - **79 of 89 are state claims**, and the most common state is *"on your page"* — which **no reader
-  can answer today**, because the two service stores disagree on 23 of 41 claimed businesses and
+  can answer today**, because the two service stores hold **2 REAL CONFLICTS** (corrected 2026-09-16 — see `docs/SERVICE_STORES_RESOLVED.md`; the old "23 of 41" figure was wrong) among 194 claimed businesses and
   neither is the page. Composing that truth means building the reader that does not exist. A composer
   per capability is ~40 composers, and the expensive ones are the ones nobody can write yet.
 - **The four composers that exist were each written for a specific scar.** They are good, and they

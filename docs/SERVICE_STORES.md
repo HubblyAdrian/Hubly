@@ -43,7 +43,7 @@ Two things fall out that were not previously written down:
 
 ### The store-level divergence
 
-**23 of 41 claimed businesses disagree between the two stores, in BOTH directions.**
+****2 REAL CONFLICTS** (corrected 2026-09-16 — see `docs/SERVICE_STORES_RESOLVED.md`; the old "23 of 41" figure was wrong).** 194 businesses examined: 5 have both stores populated and only 2 hold different content (`adrians-lawn-service`, `graefs-autocare`). The other 81 "disagreements" are an empty store beside a full one, which needs no adjudication.
 
 | | `services` table | `meta.service_catalog` | page kind |
 |---|---|---|---|

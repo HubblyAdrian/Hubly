@@ -100,7 +100,44 @@ export async function ensureGoogleAccessToken(
   const tokenJson = await tokenRes.json().catch(() => ({}));
   if (!tokenRes.ok || !tokenJson.access_token) {
     console.error("google token refresh", tokenJson);
-    throw new Error("Google access expired — reconnect Google Calendar in Settings.");
+    // ══ A CALENDAR THAT STOPS SYNCING QUIETLY IS THE NO-TRACE SHAPE WITH A CUSTOMER'S
+    //    SCHEDULE ATTACHED ════════════════════════════════════════════════════════════════
+    //
+    // Before this, a dead connection produced a console.error nobody reads and a thrown Error
+    // whose message never reaches a person — thrown inside a cron worker, it becomes a 500 in a
+    // log. The connection row stayed looking perfectly healthy, so every surface that asks "is
+    // Google connected?" said yes while nothing had synced for days.
+    //
+    // google_calendar_connections.last_error ALREADY EXISTS and is ALREADY RETURNED by
+    // google-calendar-connection's status response. Nothing ever wrote it. Built and doorless,
+    // one column wide.
+    //
+    // Google's own reason is recorded verbatim — `invalid_grant` (the test-user authorization
+    // expired, which in Testing mode happens on a timer) reads very differently from a network
+    // blip, and guessing between them later is how a reconnect prompt gets shown to someone whose
+    // connection was fine.
+    const why = String(tokenJson?.error || "refresh_failed");
+    const detail = String(tokenJson?.error_description || "").slice(0, 200);
+    try {
+      await admin
+        .from("google_calendar_connections")
+        .update({
+          last_error: detail ? `${why}: ${detail}` : why,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", conn.id);
+    } catch (e) {
+      // Recording the failure must never replace the failure. If even this write fails, the throw
+      // below still happens and the sync still stops — we just lose the note.
+      console.error("google token refresh: could not record last_error", e);
+    }
+    // NO CONTROL IS NAMED. The old message said "reconnect Google Calendar in Settings", which is
+    // Hubly pointing at something it cannot see. What it can honestly say is what happened and
+    // what will fix it, in the owner's own words.
+    throw new Error(
+      "Google Calendar stopped syncing because its access expired. Nothing has synced since, and "
+      + "no events were lost — reconnecting Google puts it back. Ask me and I'll take you to it.",
+    );
   }
 
   const accessToken = String(tokenJson.access_token);

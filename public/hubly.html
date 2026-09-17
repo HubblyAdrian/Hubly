@@ -32574,6 +32574,22 @@ async function requestGoogleCalendarAccess(){
       notifyDone('You’re cleared — tap Connect Google Calendar');
       return;
     }
+    // ══ THE SENTENCE COMES FROM WHETHER THE REQUEST ACTUALLY REACHED US ═══════════════════
+    //
+    // This used to say "You're on the list" on any 200, and the server returned 200 whether or not
+    // the notification sent. So a missing key or a bounced address ended with the owner waiting for
+    // a reply to a message nobody received — and that may be the whole explanation for zero Google
+    // Calendar connections. The server now reports `notified`; this reads it.
+    if(data && data.notified===false){
+      markGcalAccessRequestedFailed();
+      const why='I couldn’t get your request through to us just now, so you are NOT on the list — '
+              + 'nothing was sent. Try again in a moment, and if it keeps failing tell me and I’ll '
+              + 'make sure someone sees it.';
+      showGcalAccessRequestedUI(why);
+      notifyDone('Not sent — please try again',{err:true});
+      try{ console.warn('[gcal] request_access not delivered:', data.notify_error); }catch(e){}
+      return;
+    }
     const msg=data?.message||'You’re on the list. We’ll unlock Connect when Google clears you.';
     showGcalAccessRequestedUI(msg);
     renderGoogleCalendarStatus({...( _gcalStatusCache||{}),...data,connected:false,early_access:true,can_connect:false,access_requested:true,requested:true});
@@ -51094,6 +51110,12 @@ function gcalAccessRequestedKey(){
 }
 function gcalAccessWasRequested(){
   try{return localStorage.getItem(gcalAccessRequestedKey())==='1';}catch(e){return false;}
+}
+// A REQUEST THAT DID NOT SEND IS NOT A REQUEST. markGcalAccessRequested() is what makes the UI say
+// "you're already on the list" on the next visit, so a failed send must never reach it — otherwise
+// the lie becomes permanent for that browser.
+function markGcalAccessRequestedFailed(){
+  try{ localStorage.removeItem(gcalAccessRequestedKey()); }catch(e){}
 }
 function markGcalAccessRequested(){
   try{localStorage.setItem(gcalAccessRequestedKey(),'1');}catch(e){}

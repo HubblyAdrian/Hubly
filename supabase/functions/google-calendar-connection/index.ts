@@ -85,9 +85,27 @@ Deno.serve(async (req: Request) => {
         owner_id: user.id,
         owner_email: ownerEmail,
       });
+      // ══ THE RETURN VALUE IS DERIVED FROM WHETHER THE SEND ACTUALLY SUCCEEDED ═══════════
+      //
+      // This door returned {ok:true, requested:true} WHETHER OR NOT THE NOTIFICATION WENT. The
+      // email sat in a try/catch that only warned, and the three env vars it needs were checked
+      // with a silent `if` — so a missing key, a Resend outage or a bad address all ended with the
+      // owner being told "You're on the list" while nothing left the building.
+      //
+      // A DOOR THAT REPORTS SUCCESS WITHOUT SENDING IS WORSE THAN A DOOR THAT DOES NOT EXIST, and
+      // it may be the whole explanation for zero Google Calendar connections: people may have
+      // asked, we were told they did, and no one was told. Same shape as the silent success —
+      // the turn's outcome now comes from what happened.
+      let notified = false;
+      let notifyWhy = "";
+      if (!resendKey || !notifyTo) {
+        notifyWhy = "not_configured";
+      } else if (!ownerEmail) {
+        notifyWhy = "no_owner_email";
+      }
       if (resendKey && notifyTo && ownerEmail) {
         try {
-          await fetch("https://api.resend.com/emails", {
+          const sendRes = await fetch("https://api.resend.com/emails", {
             method: "POST",
             headers: {
               Authorization: `Bearer ${resendKey}`,
@@ -100,13 +118,23 @@ Deno.serve(async (req: Request) => {
               text: `Hubly owner requested Google Calendar early access.\n\nEmail: ${ownerEmail}\nUser id: ${user.id}\nBusiness id: ${businessId}\n\nAdd them under Google Cloud → OAuth consent → Test users, and to GOOGLE_CALENDAR_TEST_USERS.`,
             }),
           });
+          // A 2xx IS THE ONLY THING THAT COUNTS AS SENT. Resend answers 4xx for a bad address or
+          // an unverified sender, and that is exactly the case that used to read as success.
+          notified = sendRes.ok;
+          if (!notified) notifyWhy = `resend_${sendRes.status}`;
+
         } catch (e) {
           console.warn("early access notify email", e);
+          notifyWhy = "send_threw";
         }
       }
+      // AND THE RESPONSE SAYS WHICH IT WAS, so the client can tell him the truth rather than
+      // composing a thank-you from the fact that the request reached us.
       return jsonRes({
         ok: true,
-        requested: true,
+        requested: notified,
+        notified,
+        notify_error: notified ? null : (notifyWhy || "send_failed"),
         ...accessMeta,
         message: access.allowed
           ? "You’re already on the early-access list — tap Connect Google Calendar."

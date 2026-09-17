@@ -116,9 +116,10 @@ missing, and 250 of its rows are ours.
    owner is in — `platform-home.html` is where a claimed owner lives now, and it has no job form.
 3. **The dropdown trap is real and unresolved.** "Kind of job, taken from their services" needs the
    service list, and `service_id` is populated on **2 of 259 rows** — so today's jobs are almost
-   entirely free-text `service_name` with no link back to a service. Four read paths and 23 of 41
-   businesses with disagreeing stores; the dropdown must read what the BOOKING path reads, proved
-   through the booking path's own reader. **This is the item that may force the one-service-writer
-   job to move up, and it is flagged for Adrian rather than decided here.**
+   entirely free-text `service_name` with no link back to a service. Four read paths, and — corrected 2026-09-16 — only **2 REAL
+   store conflicts** across 194 businesses, not the "23 of 41" once repeated here (see
+   docs/SERVICE_STORES_RESOLVED.md). The dropdown must read what the BOOKING path reads, proved
+   through the booking path's own reader. **The collapse is two rows, not a migration, and it is
+   NOT blocked on extracting data from pages.**
 4. **Carry-forward (lead → customer → job) is not answered yet** — `customer_id` is set on 3 of 259
    rows, which says the link is almost never made today, but not whether it ever existed. Open.

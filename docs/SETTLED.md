@@ -184,3 +184,49 @@ writing.** The promise is what creates the obligation, not the claim. Ruled and 
 **16. HOME RENDERS MY DAY. THIS EXPLICITLY SUPERSEDES THE 2026-09-13 RULING** that put the site
 preview in Home. See `docs/design/README.md` for the reversal in full. A superseded ruling that is
 only superseded *implicitly* gets restored by a future session reading the older comment.
+
+---
+
+**22. THE TWO SERVICE STORES HOLD 2 REAL CONFLICTS. NOT 83, NOT 23.**
+*Measured 2026-09-16, full detail in `docs/SERVICE_STORES_RESOLVED.md`.*
+
+194 businesses · **5** have both stores populated · **2** hold different content:
+`adrians-lawn-service` and `graefs-autocare`. The other 81 "disagreements" are an empty store
+beside a full one and need no adjudication. **Both earlier figures are retracted: Adrian's
+"23 of 41" and my own "83 of 194".** Every doc that repeated them is corrected.
+
+**23. THE DATA IS NOT TRAPPED IN THE PAGE — so the collapse is not blocked on an extraction job.**
+
+37 of 179 stored pages bake prices into their HTML; **35 of those also hold the prices in a store.**
+Only 2 do not, and both are unclaimed test drafts (`rell-okonjo-photography`, `wynne-castellan`).
+**A page rebuild costs the DESIGN and the owner's edits, not the facts.** It stays forbidden — for
+that reason, which is a different reason than the one we had been giving.
+
+**24. CLASSIC IS NOT ONLY GRAEF.** Four **market** businesses have no freeform document and are
+served by the classic template: `aquaspeed`, `bucket-mobile-detailing`, `devdetailing661`,
+`graefs-autocare`. (Eight more are test/internal.) Retiring classic today would take three market
+pages with it. Whether the other three get migrated is **Adrian's open question**.
+
+**25. GRAEF'S 8 SERVICES ARE ALL PRICED, AND ALL PRICED VARIABLE BY VEHICLE SIZE.**
+$85 · $130 · $120 · $75 · $150 · $200 · $275 · $400, every one `active` and `website: true`, every
+one `pricing.mode = "variable"` with per-vehicle prices.
+
+**THE "GRAEF HAS ONE SERVICE" READING CAME FROM THE WRONG STORE, AND IT HAS BURNED US MORE THAN
+ONCE.** His `services` TABLE holds a single stray lowercase row, `clay and seal`. His CATALOG holds
+the eight. `getBookingServices()` — the page's and the booking wizard's own reader — prefers the
+catalog. **Any reader that prefers the table for Graef is the bug.**
+
+**26. GRAEF'S MEMBERSHIPS ARE REAL LIFE, NOT DATA. HE RUNS THEM AND WANTS TO ADD THEM.**
+*Adrian, 2026-09-16.* **There is nothing to model from yet** — do not go looking for rows.
+`meta.membership_offers`: 0 businesses. `memberships` table: 0 rows. Corpus-wide there are three
+membership-shaped service NAMES, all on test businesses.
+
+**AND THE `memberships` TABLE'S SHAPE IS NOT TO BE TRUSTED.** It has a **single `price` column**,
+and every one of Graef's 8 services is priced *variable by vehicle size*. His memberships almost
+certainly are too. **Somebody shaped that table with no real example in front of them.** Do not
+build on it and do not write rows to it until we have one. See
+`docs/MEMBERSHIPS_TABLE_MISMATCH.md`.
+
+**27. 108 OF 194 BUSINESSES HAVE NO SERVICES IN EITHER STORE.**
+More than half the corpus never got past the front door. **That is a funnel fact, not a defect** —
+and it is probably the most commercially interesting number measured this week.

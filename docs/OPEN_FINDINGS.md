@@ -207,7 +207,7 @@ not, and neither store is the answer on its own.**
 | star-windows | 9 | 0 |
 | dawn-patrol-coffee | 7 | 0 |
 
-**23 of 41 claimed businesses have the two disagreeing**, and they disagree in BOTH directions —
+****2 REAL CONFLICTS** (corrected 2026-09-16 — see `docs/SERVICE_STORES_RESOLVED.md`; the old "23 of 41" figure was wrong)** — 5 of 194 have both stores populated, 2 hold different content, and the rest are an empty store beside a full one —
 so there is no "just read the other one" fix. Reading the table would tell Graef he has one
 service; reading the catalog would tell star-windows it has none.
 
