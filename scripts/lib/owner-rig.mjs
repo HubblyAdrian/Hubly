@@ -11,6 +11,30 @@
  * SIMULATED AND SAID SO, EVERY TIME. There is no session here. `window.supabase.createClient`
  * is replaced with this; everything it answers is declared in the caller's `opts`. What runs
  * between the seam and the DOM is the shipping code in public/platform-home.html.
+ *
+ * ══ WHAT THIS FIXTURE STILL CANNOT DO — 2026-09-17, written down rather than discovered ═══════
+ *
+ * Adrian called this "the last bad fixture". Four things that made it one are fixed this round
+ * (the channel stub swallowed its handlers; edge calls all returned null; `from()` was read-only
+ * so nothing could test a write; `create_task` returned `{id:null}` so the product's own read-back
+ * could never succeed and correct code was reported as failing). What is LEFT is listed here so
+ * the next person meets it as a limit rather than as a mystery:
+ *
+ *   1. `eq` IS THE ONLY PREDICATE. `gte`, `lte`, `in`, `is`, `not`, `order` and `limit` are
+ *      NO-OPS. A check whose fixture depends on a date window narrowing, or on `order(...)`
+ *      choosing which row comes back, is measuring this file rather than the product. Where order
+ *      matters — the latest document, the most recent conversation — pass one row.
+ *   2. RLS IS NOT SIMULATED. Every read returns what `opts` declares, whoever is asking. A defect
+ *      where the product reads a row it should not be allowed to see is INVISIBLE here, and that
+ *      is exactly the class the claimed-owner write audit exists for.
+ *   3. THE SHAPES ARE DECLARED, NOT DERIVED. Each RPC's return is hand-written to match the real
+ *      one; when a migration changes a return shape, this file does not notice. `create_business_job`
+ *      returning a TABLE (an array) rather than an object is the one that has already bitten.
+ *   4. NO LATENCY, NO FAILURE, NO CONCURRENCY. Everything resolves immediately and succeeds unless
+ *      a flag says otherwise, so a race the product has in production cannot appear here.
+ *
+ * None of these is a reason to distrust a green leg. They are the reasons to say what a green leg
+ * is green ABOUT.
  */
 
 /** Installed in the PAGE world. Serialised by Playwright, so it may not close over anything. */

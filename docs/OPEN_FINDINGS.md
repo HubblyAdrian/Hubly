@@ -1,5 +1,24 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## THE THREE RELOAD STATES — I CANNOT RECOVER WHAT THEY ARE (2026-09-17)
+
+**"The three reload states (state 2 approved)"** has been carried on every list since 2026-09-16,
+and the definition is not in this session's transcript, not in `docs/`, and not in any commit
+message. What is recoverable is only the carry-forward line itself, repeated verbatim a dozen
+times, plus the parenthetical that Adrian **approved state 2**.
+
+Searched: the full session transcript (8,352 records), every `docs/*.md`, and the git log. The
+earliest occurrence is already the carry line — whatever defined the three states was said before
+this session's window.
+
+**So it is not built, and it is not guessed at.** Three states of what happens on reload — what
+the page shows, where the conversation is, what is restored — could be a dozen different things,
+and "state 2 approved" without state 2's text is an instruction to implement a number.
+
+**What is needed:** the three options, in Adrian's words, or a sentence saying what state 2 is.
+One line unblocks it; inventing it would be the thing this repo spends its days preventing.
+
+
 ## A CORRECTED RECORD DOES NOT CORRECT THE PAGE — and nothing notices (2026-09-17)
 
 This is what the cross-business leak turned out to be, traced through the rows rather than guessed.

@@ -4,7 +4,7 @@
   "name": "Booking Intelligence Builder",
   "title": "Booking Intelligence Builder",
   "passed": true,
-  "checkedAt": "2026-09-17T18:47:27.382Z",
+  "checkedAt": "2026-09-17T20:46:11.047Z",
   "proofs": {
     "bookingIntelligenceExists": true,
     "customerFacingName": "Booking Intelligence Builder",
@@ -109,7 +109,7 @@
     },
     "recommendationsSample": [
       {
-        "id": "brec_mu5vtbpo_r8e2g0",
+        "id": "brec_mu6020dc_ar6p99",
         "title": "Add travel buffers",
         "detail": "You don't have travel buffers. I recommend adding 20 minutes between jobs.",
         "conceptId": "travel_buffer",
@@ -117,7 +117,7 @@
         "requiresOwnerApproval": true
       },
       {
-        "id": "brec_mu5vtbpo_r7q85r",
+        "id": "brec_mu6020dc_atqmu6",
         "title": "Consider 24-hour notice",
         "detail": "Customers may be booking too late. A 24-hour notice policy protects prep time.",
         "conceptId": "minimum_notice",
@@ -125,7 +125,7 @@
         "requiresOwnerApproval": true
       },
       {
-        "id": "brec_mu5vtbpo_g2aw1a",
+        "id": "brec_mu6020dc_zoey9m",
         "title": "Weather-aware exterior work",
         "detail": "For exterior work, I recommend rain → reschedule automation.",
         "conceptId": "weather",
