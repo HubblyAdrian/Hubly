@@ -99,6 +99,20 @@ export async function openRig(opts = {}) {
   const initScripts = [];
   const applyInit = async (p) => { for (const fn of initScripts) { try { await p.addInitScript(fn); } catch (_) {} } };
 
+  // …AND THE SAME FOR ROUTES, which is the THIRD instance the note above predicted.
+  //
+  // A check that needs the network to be UNAVAILABLE — to prove a decision was made locally and
+  // not after a round-trip — registers `ctx.route()` and then calls `rig.load()`, which closes that
+  // context and opens a fresh one with no routes on it. The request then goes to the real CDN, the
+  // async path completes, and the check reports that the page behaved correctly while measuring the
+  // opposite of the condition it declared. Same shape as the two failures above: silence, or a
+  // success, manufactured by the instrument.
+  //
+  // Routes are the rig's to own for the same reason init scripts are: the rig is the thing entitled
+  // to replace the context.
+  const routes = [];
+  const applyRoutes = async (c) => { for (const r of routes) { try { await c.route(r.pattern, r.handler); } catch (_) {} } };
+
   /** Poll a page-evaluated expression until it stops changing. Returns the trace. */
   async function settle(readFn, label = "value", { stableMs = STABLE_MS, ceilingMs = CEILING_MS } = {}) {
     await assertFakeIntact();
@@ -183,6 +197,7 @@ export async function openRig(opts = {}) {
         page = await ctx.newPage();
         attachConsole(page);
         await applyInit(page);
+        await applyRoutes(ctx);
         rig.page = page;
       }
       await page.goto(url, { waitUntil: "domcontentloaded" });
@@ -291,6 +306,19 @@ export async function openRig(opts = {}) {
     /** Register a page-world init script that SURVIVES every reload. Use this, never
      *  `rig.page.addInitScript` — see the note above `initScripts`. */
     async addInitScript(fn) { initScripts.push(fn); await page.addInitScript(fn).catch(() => {}); },
+
+    /** Register a context route that SURVIVES every reload. Use this, never
+     *  `rig.page.context().route` — see the note above `routes`.
+     *
+     *  The common case is "this host must not answer", which is how a check proves a decision was
+     *  made from what the browser already held rather than from a round-trip:
+     *    await rig.addRoute("**cdn.jsdelivr.net**", (r) => r.abort());
+     *  ABORT, not a hang: a deferred script that never settles holds DOMContentLoaded open and the
+     *  load times out, which reads like a broken page rather than an absent network. */
+    async addRoute(pattern, handler) {
+      routes.push({ pattern, handler });
+      await ctx.route(pattern, handler).catch(() => {});
+    },
 
     /** Everything the page has logged, across every reload. */
     get consoleLines() { return consoleLines.slice(); },

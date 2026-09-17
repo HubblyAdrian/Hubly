@@ -14,6 +14,57 @@
 <!-- Same SDK + CDN the app (hubly.html) uses, so a session minted here is stored
      under the identical key and hubly.html recognises the signed-in owner. -->
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.5"></script>
+<script>
+/* ══ THE FIRST PAINT IS A DECISION FROM LOCAL EVIDENCE, NOT A CONSEQUENCE OF A ROUND-TRIP ═════
+ *
+ * ADRIAN, 2026-09-17: "Signed in, I refresh, and I see the landing page before the app."
+ *
+ * HE WAS RIGHT ABOUT THE CAUSE. Measured in this file: the landing (`header.nav`, `section.hero`,
+ * `.footer`) is in the markup and visible by default; the only thing that hides it is
+ * `body.hc-active`, added by hcRevealApp(), reached for a signed-in owner through
+ * hcOpenOwnedBusiness <- hcLoadOwnedBusiness <- the boot IIFE. That path first `await`s
+ * authGetClient() — which POLLS FOR THE CDN SCRIPT FOR UP TO TEN SECONDS — and then awaits an
+ * rpc('get_my_businesses') round-trip. So the landing was painted, held for the length of a script
+ * load plus a network call, and then replaced.
+ *
+ * THE BROWSER ALREADY KNOWS. The supabase session is in localStorage, synchronously readable, with
+ * its own expiry. That is enough to decide what the first frame should be, and this runs BEFORE
+ * <body> exists, so the landing is never laid out, never painted, and never replaced. It is not a
+ * class applied afterwards to something already on screen.
+ *
+ * ONE READER, NOT TWO. hcSbKey() and hcIsAuthed() further down DELEGATE to this — the session key
+ * and the expiry test exist once. Two readers of one fact is the defect this repo pays for most.
+ *
+ * AND IT UNDOES ITSELF IF THE EVIDENCE WAS STALE. A session that has expired server-side, or an
+ * account that owns nothing, still looks signed-in from here. When the async path concludes
+ * otherwise it calls HublyBoot.notOwner(), the class comes off, and the landing appears. Wrong
+ * once, briefly, for someone whose local state lies — never wrong for the owner who just refreshed.
+ */
+(function(){
+  var SUPA = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
+  function sbKey(){ try{ return 'sb-' + SUPA.split('//')[1].split('.')[0] + '-auth-token'; }catch(e){ return null; } }
+  function isAuthed(){
+    try{
+      var raw = localStorage.getItem(sbKey());
+      if(!raw) return false;
+      var o = JSON.parse(raw);
+      var exp = o && (o.expires_at || (o.currentSession && o.currentSession.expires_at));
+      return !exp || (exp * 1000 > Date.now());
+    }catch(e){ return false; }
+  }
+  var root = document.documentElement;
+  window.HublyBoot = {
+    SUPA_URL: SUPA,
+    sbKey: sbKey,
+    isAuthed: isAuthed,
+    lastBusiness: function(){ try{ return localStorage.getItem('hcLastBusiness'); }catch(e){ return null; } },
+    /** The evidence was wrong: show the landing after all. */
+    notOwner: function(){ try{ root.classList.remove('hc-boot-owner'); }catch(e){} },
+    owner: function(){ return root.classList.contains('hc-boot-owner'); }
+  };
+  if(isAuthed()) root.className += ' hc-boot-owner';
+})();
+</script>
 <style>
 :root{
   --brand:#D9632D;
@@ -252,6 +303,32 @@ button.ask-icon-left:focus-visible{outline:2px solid var(--brand);outline-offset
    audience cards with it. Hidden once the app is active; this runs after
    hcActivate's 420ms .hc-transforming animation, so it does not cut it short. */
 body.hc-active .footer,body.hc-active .hero{display:none}
+/* ══ THE SIGNED-IN FIRST FRAME. Set in <head>, before <body> exists. ══════════════════════════
+   Not "painted then hidden": `html.hc-boot-owner` is on the element before <body> is parsed, so the
+   hero and footer never produce a frame at all, and #hcApp takes the screen in the FIRST paint
+   rather than fading in after a CDN script load plus an rpc round-trip.
+
+   IT DOES EXACTLY WHAT body.hc-active DOES, NO MORE. Same two elements hidden, same reveal of
+   #hcApp. It is not a second opinion about what the claimed shell looks like — the rail, the
+   claimed-nav treatment and the business itself still arrive from the real state, because those
+   depend on WHICH business and whether it is claimed, and local storage cannot answer that
+   honestly. The first frame is the app's ground, not a guess at its contents.
+
+   AND NOT THE LANDING'S SIGN-IN BUTTON. "Log in or sign up", painted to someone who is signed in,
+   is the landing leaking through the one control that contradicts the state hardest. The chip gets
+   moved into the rail by hcPlaceAccountChip when the real state lands; until then it is absent
+   rather than wrong. */
+html.hc-boot-owner .hero,
+html.hc-boot-owner .footer{display:none}
+html.hc-boot-owner .hc-app{display:flex;opacity:1}
+html.hc-boot-owner #navSignin{visibility:hidden}
+html.hc-boot-owner body{background:var(--bg)}
+/* THE COMPOSER IS NOT LIVE UNTIL THERE IS A BUSINESS BEHIND IT. body.hc-active is added by
+   hcRevealApp — the one place the app is really open — so this lifts at exactly the moment a
+   business exists to receive the message. Showing an app ground early must not create a box that
+   accepts a sentence and drops it: that is the silently-discarded-owner-action class, and paying
+   for a faster first paint with one is not a trade this repo makes. */
+html.hc-boot-owner body:not(.hc-active) .hc-input-bar{opacity:.5;pointer-events:none}
 /* Drop target — a visible edge and a dimmed pane, so it is obvious the chat
    will take the file rather than the browser navigating away from it. */
 .hc-app.hc-dragging{outline:2px dashed var(--brand,#D9632D);outline-offset:-10px;}
@@ -6239,8 +6316,20 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
       if(last){ hcOpenOwnedBusiness(last); return true; }
       hcRenderBusinessPicker(list);   // a picker, not a dashboard
       return true;
-    }catch(e){ return false; }
+    }catch(e){
+      // WHY IT FAILED IS NOT THE SAME QUESTION AS WHETHER IT LOADED, and collapsing the two into
+      // one `false` is what makes a dropped connection indistinguishable from an account that owns
+      // nothing. The boot path needs to tell them apart: one of them means "show the landing, this
+      // person is not an owner here", and the other means "we could not ask" — and answering the
+      // second with the landing is falling through to a neutral screen, which prohibition 3 rules
+      // out precisely because it makes a broken step invisible.
+      hcOwnerAskFailed = String((e && e.message) || e || 'unknown');
+      return false;
+    }
   }
+  // Set by hcLoadOwnedBusiness when the OWNERSHIP QUESTION COULD NOT BE ASKED — the sdk never
+  // arrived, or the rpc never answered. null means it was asked and answered.
+  var hcOwnerAskFailed = null;
   // DOES THIS BUSINESS RENDER FROM A DOCUMENT, OR THE CLASSIC ARCHETYPE PATH?
   //
   // Measured 2026-09-08: 11 claimed businesses (incl. all four market ones) have NO
@@ -13492,6 +13581,34 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     try{ hcAuthDiagEnabled(); }catch(e){}
     var owned = await hcLoadOwnedBusiness();
     if(!owned) await hcResumeDraft();
+    // THE PRE-PAINT GUESS UNDOES ITSELF WHEN IT WAS WRONG. The head script hid the landing off
+    // local evidence alone (a supabase session in localStorage, unexpired by its own clock). That
+    // evidence can lie in two ways this code has now settled: the session is revoked server-side,
+    // or the account owns nothing. Both land here with no business open.
+    //
+    // body.hc-active IS THE ONE SIGNAL, because hcRevealApp is the one place the app is really
+    // opened — owner, picker and resumed draft all go through it. Asking a second question here
+    // ("did the rpc return rows?") would be a second reader of the same fact, and the two would
+    // eventually disagree.
+    //
+    // NO FLICKER FOR THE OWNER WHO JUST REFRESHED, one late landing paint for the person whose
+    // browser is holding a dead session. That asymmetry is the whole point: the wrong direction
+    // costs a stranger a moment, the right direction is Adrian's every reload.
+    try{
+      if(window.HublyBoot && window.HublyBoot.owner() && !document.body.classList.contains('hc-active')){
+        if(hcOwnerAskFailed){
+          // WE COULD NOT ASK. The session in this browser is real as far as this browser can tell,
+          // so putting the landing back would be telling a signed-in owner he is not signed in,
+          // off a network failure. Prohibition 3: this gets its own human message, not a fall
+          // through to a neutral screen, and prohibition 6: it does not happen in silence.
+          hcRevealApp();
+          try{ hcAppendMessage('hubly', "I can't reach Hubly right now — the connection dropped before I could load your business. Your sign-in is still here; reload when you're back online."); }catch(e2){}
+          try{ console.warn('[hubly] owner load failed (' + hcOwnerAskFailed + ') — kept the signed-in shell rather than showing the landing'); }catch(e3){}
+        }else{
+          window.HublyBoot.notOwner();
+        }
+      }
+    }catch(e){}
     try{
       if(new URLSearchParams(location.search).get('hcauth') === '1'){
         try{ await authGetClient(); }catch(e){}         // detectSessionInUrl parses the fragment
@@ -13813,7 +13930,10 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   // ── C: SIGN-IN CLAIMS THE DRAFT ──────────────────────────────────────────────
   // A lightweight authed check (the SDK's stored session), so the preview can gate
   // an edit without loading the SDK just to ask.
-  function hcSbKey(){ try{ return 'sb-' + SUPA_URL.split('//')[1].split('.')[0] + '-auth-token'; }catch(e){ return null; } }
+  // ONE READER. The session key and the expiry test are defined once, in the boot script in
+  // <head>, because the first-paint decision needs them before this script exists. These delegate
+  // rather than re-implement: two readers of one fact is how they come to disagree.
+  function hcSbKey(){ try{ return window.HublyBoot.sbKey(); }catch(e){ return null; } }
   // The signed-in user's access token (JWT), or null. Sent as Authorization on
   // edits so the server can authorise an OWNER's edit off the session — a claimed
   // business is edited by owning it, not by the draft token.
@@ -13844,15 +13964,7 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
       return rt || hcAccessToken();
     }catch(e){ return hcAccessToken(); }
   }
-  function hcIsAuthed(){
-    try{
-      var raw = localStorage.getItem(hcSbKey());
-      if(!raw) return false;
-      var o = JSON.parse(raw);
-      var exp = o && (o.expires_at || (o.currentSession && o.currentSession.expires_at));
-      return !exp || (exp * 1000 > Date.now());
-    }catch(e){ return false; }
-  }
+  function hcIsAuthed(){ try{ return window.HublyBoot.isAuthed(); }catch(e){ return false; } }
   // Sign-in used to be invisible even when it worked — the header said "Sign in"
   // whether you were signed in or not. Reflect the real state so success shows.
   /** ══ ONE ACCOUNT CONTROL, PUT SOMEWHERE REAL ════════════════════════════════════════════

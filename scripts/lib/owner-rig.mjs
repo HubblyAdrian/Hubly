@@ -48,7 +48,20 @@ export function installOwnerFake(opts) {
     // a click happened and nothing more.
     tables: {},
     places: (opts.places || [{ kind: "website", scope: "workspace", visible: true, sort_order: 10 }]).map((p) => Object.assign({}, p)) };
-  const ok = (data) => Promise.resolve({ data, error: null });
+  // ══ LATENCY, WHEN THE CHECK IS ABOUT WHAT HAPPENS BEFORE THE ANSWER ═══════════════════════════
+  //
+  // Limit 4 says "no latency", and that limit cost a leg on 2026-09-17. The first-paint check needs
+  // to see the state the shell is in WHILE the ownership question is outstanding; with every read
+  // resolving in the same microtask, the pre-answer state was over before the first animation frame,
+  // so a leg written to observe it recorded zero frames of it and went red at the product.
+  //
+  // `rpcDelayMs` is a DECLARED delay, not a sleep bolted onto a check — the fixture says how slow it
+  // is, and the check's output can name the number. It is the one thing a check cannot supply from
+  // outside: you cannot wait for a moment that has already passed.
+  const delay = Math.max(0, Number(opts.rpcDelayMs || 0));
+  const ok = (data) => (delay
+    ? new Promise((r) => setTimeout(() => r({ data, error: null }), delay))
+    : Promise.resolve({ data, error: null }));
   const q = (rows) => {
     let held = rows.slice();
     const t = {
@@ -105,6 +118,17 @@ export function installOwnerFake(opts) {
     },
     rpc: (name, args) => {
       W.__rig.rpc.push(name);
+      // ══ A READER THAT DOES NOT ANSWER IS A STATE THE PRODUCT HAS TO HANDLE ═══════════════════
+      //
+      // Limit 4 in the header ("no latency, no failure, no concurrency") is why a whole class of
+      // behaviour was untestable: everything here succeeded, so any branch the product has for "the
+      // question could not be asked" was unreachable from a check. `failRpc: ["get_my_businesses"]`
+      // makes one named reader reject the way a dropped connection does. Named, not global: a fake
+      // where everything fails at once measures a page with no backend, which is a different thing.
+      if ((opts.failRpc || []).indexOf(name) !== -1) {
+        const err = new Error("simulated network failure calling " + name);
+        return delay ? new Promise((_, rej) => setTimeout(() => rej(err), delay)) : Promise.reject(err);
+      }
       const tables = opts.tables || {};
       if (name === "get_owner_profile") {
         return ok([{ display_name: opts.displayName ?? null,
@@ -233,6 +257,17 @@ export function installOwnerFake(opts) {
         return ok(row);
       }
       if (name === "update_business_job") { W.__rig.writes.push({ name, args }); return ok([{ id: null, error: null }]); }
+      // ══ WHICH BUSINESSES THIS ACCOUNT OWNS — the reader the whole shell boots from ═══════════
+      //
+      // hcLoadOwnedBusiness() calls this first on every load, and until now it fell through to
+      // `ok(null)`, i.e. "owns none". Checks that wanted a signed-in owner had to reach past the
+      // boot path and call hcOpenOwnedBusiness() themselves, which skips the very decision under
+      // test. Declaring it here means the fake can express BOTH honest answers: owns one (the app
+      // opens) and owns none (a browser holding a session for an account with nothing in it).
+      //
+      // Default is [] — the same "owns none" the fallthrough already produced, so no existing
+      // check changes behaviour.
+      if (name === "get_my_businesses") return ok((opts.businesses || []).map((b) => Object.assign({}, b)));
       return ok(null);
     },
     // ══ THE SOCKET IS A REAL PATH INTO THE APP, SO THE FAKE KEEPS ITS HANDLERS ═══════════
