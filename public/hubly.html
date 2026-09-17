@@ -11439,6 +11439,15 @@ document.addEventListener('DOMContentLoaded', function() {
             <button type="button" class="btn btn-brand btn-sm" onclick="try{HublySmartQuoteUI.openNew()}catch(e){toast('Quick Quote loading…')}">New Quick Quote</button>
           </div>
         </div>
+        <!-- ══ THE RECORD'S OWN LIST. ONE RECORD, TWO VIEWS. ════════════════════════════════════
+             Reads `get_business_quotes` — the SAME RPC the chat reads — so the tab and the
+             conversation cannot disagree about a number he read to a customer. It renders ABOVE the
+             old Smart Quote list so that when the 177KB comes out, this view already works and the
+             rail row keeps its contents rather than emptying. -->
+        <div id="sq-record-wrap">
+          <div class="sc sq-list-card"><div class="sc-h"><div class="sc-t">Your quotes</div></div>
+            <div class="sc-b" id="sq-record-list"></div></div>
+        </div>
         <div id="sq-list-wrap">
           <div class="sc sq-list-card"><div class="sc-h"><div class="sc-t">Your quotes</div><div class="sq-list-hint">Unfinished drafts stay here when you Close mid-quote — text them anytime.</div></div><div class="sc-b" id="sq-list"></div></div>
         </div>
@@ -16142,6 +16151,7 @@ async function refreshOpenAppViews(){
     }
   }catch(e){}
   try{
+    if(viewIsOpen('v-quotes')){ try{ renderQuotesFromRecord(); }catch(e){} }
     if(viewIsOpen('v-quotes')&&typeof HublySmartQuoteUI!=='undefined'&&HublySmartQuoteUI.renderQuotesView){
       HublySmartQuoteUI.renderQuotesView();
     }
@@ -40163,6 +40173,57 @@ function setTodaysSpecialPct(pct){
   }
   S._todaysSpecialPctPrev=n;
 }
+/** ══ THE QUOTES TAB, FROM THE RECORD. ════════════════════════════════════════════════════════
+ *
+ *  ADRIAN, 2026-09-16: "the SAME RECORD visible from the chat and the tab. One record, two views."
+ *
+ *  This reads `get_business_quotes` — the identical RPC `hcQuotePanel`'s list uses in the claimed
+ *  shell — so the two surfaces cannot drift. That is structural, not a convention: there is ONE
+ *  reader and both call it. A number he reads to a customer in the chat is the number on this tab.
+ *
+ *  IT WORKS ON BOTH PAGE PATHS because it reads the RECORD, never the page — nothing here knows or
+ *  cares whether the business renders classic or freeform (ruled 2026-09-16).
+ *
+ *  A READ FAILURE IS NOT AN EMPTY LIST, and says so. An owner told "no quotes yet" by a query that
+ *  did not run will stop looking. */
+async function renderQuotesFromRecord(){
+  const el=document.getElementById('sq-record-list');
+  if(!el)return;
+  const money=(c)=>{const n=Number(c||0)/100;return '$'+(Number.isInteger(n)?String(n):n.toFixed(2));};
+  const words={draft:'Not sent yet',sent:'Waiting on them',accepted:'They said yes',declined:'They said no',expired:'Ran out'};
+  try{
+    const db=await waitForDb();
+    const uid=currentUser&&currentUser.id?currentUser.id:null;
+    if(!currentBusiness||!currentBusiness.id||!uid){
+      el.innerHTML='<p style="font-size:13px;color:var(--ink-3);margin:0;">Sign in and I’ll show your quotes here.</p>';
+      return;
+    }
+    const {data,error}=await db.rpc('get_business_quotes',{p_business_id:currentBusiness.id,p_owner_id:uid,p_status:null});
+    if(error){
+      el.innerHTML='<p style="font-size:13px;color:var(--ink-3);margin:0;">I couldn’t read your quotes just now — that’s a read failure, not an empty list. Try again in a moment.</p>';
+      return;
+    }
+    const rows=Array.isArray(data)?data:[];
+    if(!rows.length){
+      // SAYS HOW ONE IS MADE, without naming a control on a screen it cannot see.
+      el.innerHTML='<p style="font-size:13px;color:var(--ink-3);margin:0;">No quotes yet. Say “quick quote” to Hubly and I’ll price one with you from your own list.</p>';
+      return;
+    }
+    el.innerHTML=rows.map(q=>{
+      const names=(Array.isArray(q.lines)?q.lines:[]).map(l=>l&&l.name).filter(Boolean).join(' + ');
+      let m=money(q.total_cents);
+      if(Number(q.discount_cents)>0)m+=' ('+money(q.subtotal_cents)+' less '+money(q.discount_cents)+')';
+      return '<div class="sq-rec-row" data-quote-id="'+esc(q.id)+'" style="display:flex;gap:10px;align-items:baseline;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line,#eee);flex-wrap:wrap;">'+
+        '<span style="font-weight:600;">'+esc(q.customer_name||'Someone')+'</span>'+
+        '<span style="flex:1 1 12em;min-width:0;color:var(--ink-3);font-size:13px;">'+esc([names,m].filter(Boolean).join(' · '))+'</span>'+
+        '<span style="font-size:12px;font-weight:600;white-space:nowrap;">'+esc(words[q.status]||q.status||'')+'</span>'+
+      '</div>';
+    }).join('');
+  }catch(e){
+    el.innerHTML='<p style="font-size:13px;color:var(--ink-3);margin:0;">I couldn’t read your quotes just now — that’s a read failure, not an empty list.</p>';
+  }
+}
+try{ window.hublyQuotesTab={ render: renderQuotesFromRecord }; }catch(e){}
 function openTodaysSpecial(){
   const def=todaysSpecialDefaults();
   S._todaysSpecialPct=def.pct;

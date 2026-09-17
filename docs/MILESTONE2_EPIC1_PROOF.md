@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 1 — Welcome Experience
 
-**Status:** PASS  
-**Checked:** 2026-07-24T17:35:25.148Z  
+**Status:** FAIL  
+**Checked:** 2026-09-17T04:59:50.952Z  
 **Gate:** `npm run check:m2-epic1`
 
 > The front door to Hubly. Not a signup page — the beginning of a conversation.
@@ -11,18 +11,18 @@
 
 | Requirement | Status |
 |-------------|--------|
-| /signup completely replaced | ✅ |
-| No traditional signup UI | ✅ |
-| One large conversation focus | ✅ |
-| Dynamic example prompts | ✅ |
-| Trust strip = outcomes | ✅ |
-| Live business inspiration | ✅ |
-| Zero account information requested | ✅ |
-| Responsive layout | ✅ |
-| Microinteractions | ✅ |
-| No CRM terminology | ✅ |
-| First Impression Timer | ✅ |
-| Founder acceptance tests | ✅ |
+| /signup completely replaced | ❌ |
+| No traditional signup UI | ❌ |
+| One large conversation focus | ❌ |
+| Dynamic example prompts | ❌ |
+| Trust strip = outcomes | ❌ |
+| Live business inspiration | ❌ |
+| Zero account information requested | ❌ |
+| Responsive layout | ❌ |
+| Microinteractions | ❌ |
+| No CRM terminology | ❌ |
+| First Impression Timer | ❌ |
+| Founder acceptance tests | ❌ |
 
 ## First Impression Timer
 

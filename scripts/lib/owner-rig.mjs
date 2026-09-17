@@ -16,7 +16,7 @@
 /** Installed in the PAGE world. Serialised by Playwright, so it may not close over anything. */
 export function installOwnerFake(opts) {
   const W = window;
-  W.__rig = { rpc: [], writes: [], quotes: [] };
+  W.__rig = { rpc: [], writes: [], quotes: (opts.quotes || []).slice() };
   const ok = (data) => Promise.resolve({ data, error: null });
   const q = (rows) => {
     let held = rows.slice();
@@ -78,6 +78,16 @@ export function installOwnerFake(opts) {
         return ok(Object.assign({ ok: true, id, status: "draft", lines: args.p_lines }, m));
       }
       if (name === "get_business_quotes") return ok(W.__rig.quotes.slice());
+      if (name === "set_quote_status") { W.__rig.writes.push({ name, args }); return ok({ ok: true, status: args.p_status }); }
+      if (name === "accept_quote") {
+        W.__rig.writes.push({ name, args });
+        const q = W.__rig.quotes.filter((x) => x.id === args.p_quote_id)[0];
+        if (!q) return ok({ ok: false, error: "not_owner" });
+        if (q.status === "accepted") return ok({ ok: false, error: "already_accepted", job_id: q.became_job_id || null });
+        return ok({ ok: true, job_id: "job-from-" + q.id, became: "job",
+                    service_name: (q.lines || []).map((l) => l.name).join(" + "),
+                    amount_cents: q.total_cents, customer_name: q.customer_name });
+      }
       // create_business_job returns a TABLE, so the client sees an ARRAY with one row — and the row
       // echoes what was written plus the new id, which is what the reply is composed from. Shaped as
       // the real RPC returns it (20260914200000_create_business_job.sql) rather than as a bare object:

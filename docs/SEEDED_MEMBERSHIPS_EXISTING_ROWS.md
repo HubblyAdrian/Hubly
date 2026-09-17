@@ -22,7 +22,18 @@ Re-exported and re-measured **2026-09-16**, after the writer fix, so these are c
 
 ---
 
-## graefs-autocare — **market. READ-ONLY. PROPOSED, NOT EXECUTED.**
+## graefs-autocare — **WAITING ON GRAEF. NOT PENDING WORK. DO NOT EXECUTE.**
+
+> **RULED 2026-09-16, Adrian:** *"it is a conversation, not a migration. Do not execute anything against
+> graefs-autocare. He will ask Graef whether he meant to offer monthly wash, interior refresh and
+> priority scheduling. If yes they become his; if no they come off."*
+>
+> **This section is a record of a question that is with a customer, not a task on a list.** A future
+> session must not read it as work waiting to be picked up, must not execute the SQL below, and must not
+> re-propose it. The next thing that happens here is **Graef answering**, and only Adrian can bring that
+> back. `graefs-autocare` is read-only regardless.
+
+### The state, for whoever reads this next
 
 ### What he would lose, exactly
 

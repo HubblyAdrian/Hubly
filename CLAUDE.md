@@ -195,6 +195,19 @@ acts, or it says what will happen — it never gives directions to something it 
   the change was intended and update the leg, never to undo the improvement. Labelling at birth is
   what stops the next person rediscovering which kind it was, from a red result, under pressure.
   (Same spirit as the `[TRIPWIRE]` labels on the milestone certifications.)
+- **A ROUTE LIST IS A HAND-MAINTAINED SET, AND ITS FAILURE MODE IS SILENT-UNDEFINED — NOT AN ERROR.**
+  `api/router.js` served root-level scripts from a hand-written list of three. `public/contact-pick.js`
+  deployed perfectly, was not on the list, and the catch-all answered it with **hubly.html** —
+  3,064,347 bytes of HTML delivered where a script was expected. **Nothing 404'd.** The browser loaded a
+  document as a script, the parse failed, and everything the script defined was silently `undefined` —
+  in BOTH shells, including the one whose working feature had just been changed to depend on it. A
+  working feature broken by a file that shipped and did not serve, with no error anywhere.
+  So: **wherever a LIST decides whether something is served, loaded, routed, registered or dispatched,
+  that list is a hand-maintained set** and it belongs in the same category as a transcribed set of hour
+  labels or a list of fact shapes. Derive it from what exists (`fs.existsSync` already answers "is this
+  real") or, where a list is genuinely required, make a check read the real inventory off disk and
+  assert every entry is reachable. And test the ASSET ITSELF after a deploy, never only the page that
+  references it: a `<script src>` that returns HTML looks exactly like a `<script src>` that worked.
 - **WHEN A VALUE IS HANDED TO YOU, IT IS AN EXAMPLE OF A SET. GO FIND THE SET.** Adrian, 2026-09-16,
   recording it as his own error: *"I handed you '$99' and it nearly became the query."* The seeded
   membership price is per trade — 99 detailing, 89 windows, 149 cleaning, **119 landscaping**, 129

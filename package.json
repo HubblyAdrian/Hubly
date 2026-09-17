@@ -124,7 +124,11 @@
     "check:a2-job-record": "node scripts/check-a2-job-record.mjs",
     "check:human-time": "node scripts/check-model-sees-human-time.mjs",
     "check:tail-doors": "node scripts/check-tail-doors.mjs",
-    "check:root-scripts": "node scripts/check-root-scripts-are-served.mjs"
+    "check:root-scripts": "node scripts/check-root-scripts-are-served.mjs",
+    "check:all": "node scripts/run-all-checks.mjs",
+    "check:every-check-runnable": "node scripts/check-every-check-is-runnable.mjs",
+    "pretest": "node scripts/check-no-db-push.mjs",
+    "check:quote-pipeline": "node scripts/check-quote-pipeline.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

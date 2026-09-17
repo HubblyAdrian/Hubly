@@ -123,8 +123,17 @@ try {
       shared.length ? shared.map(([w, ks]) => `"${w}" in ${ks.join("+")}`).join("; ") : `${Object.keys(byWord).length} distinct words`);
 
   // ── A KIND WITH NO RECORDS HAS NO VOCABULARY ────────────────────────────────────────────
-  say("3 no vocabulary exists for a record that has never existed (no quote, no membership words)",
-      !seam.words.quote && !seam.words.membership && !seam.words.quotes && !seam.words.memberships,
+  // UPDATED 2026-09-16, DELIBERATELY, AND THE CHANGE IS THE POINT OF THE RULE. The original leg said
+  // "no quote words and no membership words", because neither record existed. `quotes` now has a
+  // schema with a CHECK constraint, so its five words ARE the constraint read back rather than five
+  // words somebody imagined — the record existing is exactly the condition the rule named. Membership
+  // INSTANCES still hold no rows, so membership still has no vocabulary, and that half is unchanged.
+  //
+  // The leg is written against the CONDITION, not against today's answer: a kind may have words only
+  // if its record can exist. Building the membership instance is expected to turn this green by
+  // adding words, not red.
+  say("3 a kind has a vocabulary only once its record exists — quote does now, membership does not",
+      !!seam.words.quote && !seam.words.membership && !seam.words.memberships,
       `kinds with words: ${Object.keys(seam.words).join(", ")}`);
 
   // ── ECHO, NEVER RENAME ──────────────────────────────────────────────────────────────────
@@ -134,12 +143,14 @@ try {
     lead: window.hublyListUI.statusWord("lead", "abandoned"),
     pendingIsNotALeadWord: window.hublyListUI.statusWord("lead", "pending"),
     unseen: window.hublyListUI.statusWord("job", "snoozed"),
-    noKind: window.hublyListUI.statusWord("quote", "sent"),
+    // A KIND WITH GENUINELY NO VOCABULARY. This used to be "quote", which had none — it has one
+    // now, so the leg would have been testing a translation rather than an echo.
+    noKind: window.hublyListUI.statusWord("membership", "active"),
     empty: window.hublyListUI.statusWord("job", ""),
     nul: window.hublyListUI.statusWord("job", null),
   }));
   say("4 a known value is translated; an UNSEEN one is echoed, never renamed",
-      words.known === "Booked" && words.done === "Done" && words.unseen === "snoozed" && words.noKind === "sent",
+      words.known === "Booked" && words.done === "Done" && words.unseen === "snoozed" && words.noKind === "active",
       JSON.stringify(words));
   say("5 nothing in, nothing out — an absent status produces null, not a word",
       words.empty === null && words.nul === null, `"${words.empty}" / "${words.nul}"`);

@@ -6146,6 +6146,9 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // A HAND RAISED, not another list icon. Jobs and Store both fell back to the website icon once
     // and a new tab arrived wearing the wrong picture, undercutting the exact moment the mechanic
     // exists for — so a new place gets its own drawing before it gets a row. Same 24x24 / 1.7.
+    // A PAGE WITH A FIGURE ON IT, not another list icon — Jobs and Store both fell back to the
+    // website drawing once and a new tab arrived wearing the wrong picture. Same 24x24 / 1.7.
+    quotes:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h4M9 17h6"/><path d="M12.2 10.6v-.9M12.2 13.2v-.8"/></svg>',
     leads:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M9 21v-6.5"/><path d="M9 14.5c-2.2 0-3.5-1.5-3.5-3.7V7.2A1.7 1.7 0 0 1 7.2 5.5"/><path d="M9 11V3.8a1.3 1.3 0 0 1 2.6 0V10"/><path d="M11.6 9.6a1.3 1.3 0 0 1 2.6 0v1.2"/><path d="M14.2 10.4a1.3 1.3 0 0 1 2.6 0v2.3c0 3.4-1.9 5.3-4.6 5.3H9"/></svg>'
   };
   // ENTITLEMENTS -> WORKSPACES, declarative. A claimed account earns the workspaces its
@@ -6267,6 +6270,7 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // it appears only once he has asked for it and said yes to keeping it — same as Jobs and
     // Customers, and the same progressive rule.
     leads:     { label:'People who asked', icon:HC_RAIL_ICONS.leads },
+    quotes:    { label:'Quotes',            icon:HC_RAIL_ICONS.quotes },
     // store — pending: the storefront workspace
   };
   /** WHICH PLACES A NEW BUSINESS IS OFFERED IN THE RAIL BY DEFAULT. Everything else is reached
@@ -6910,6 +6914,17 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       scheduled: 'Booked',
       completed: 'Done'
     },
+    // QUOTE JOINS THE TABLE THE DAY THE RECORD EXISTS, and not a day earlier. docs/LIST_SURFACES.md
+    // left it out on purpose — "words for a record that has never existed are invented words" — and
+    // `quotes` now has a schema with a CHECK constraint, so these five are the values it can hold and
+    // not five words somebody imagined. The vocabulary is the constraint, read.
+    quote: {
+      draft:    'Not sent yet',
+      sent:     'Waiting on them',
+      accepted: 'They said yes',
+      declined: 'They said no',
+      expired:  'Ran out'
+    },
     lead: {
       // A lead is someone who started a booking and did not finish. `pending` is NOT here: measured
       // on the live table, a pending row is a SUBMITTED request waiting for the owner to accept, so
@@ -7069,6 +7084,41 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       noun: ['person', 'people'],
       emptyTitle: 'Nobody has asked yet',
       empty: 'When someone sends a booking request — or starts one and stops — they land here with whatever they left you. Nothing is hidden; there simply aren’t any.'
+    },
+    // ── QUOTES: a lead with a price on it ──────────────────────────────────────────────
+    //
+    // ONE RECORD, TWO VIEWS. This reads `get_business_quotes` — the same RPC the classic shell's
+    // Quotes tab reads — so the chat and the tab cannot disagree about a number he read to a
+    // customer. That is not a convention anyone has to remember: there is one reader, and both
+    // surfaces call it.
+    quotes: {
+      title: 'Your quotes',
+      words: ['quotes', 'quote list', 'my quotes'],
+      load: async function(biz){
+        var uid = await hcOwnerUid();
+        var c = await authGetClient();
+        var r = await c.rpc('get_business_quotes', { p_business_id: biz.id, p_owner_id: uid, p_status: null });
+        if(r && r.error) throw new Error(r.error.message);
+        return Array.isArray(r && r.data) ? r.data : [];
+      },
+      parts: function(q){
+        // THE MONEY IS THE MIDDLE, because that is what a quote IS. The lines are named because
+        // "Lawn Mowing + Edging" is what he will say on the phone, and a row that said only "$67.50"
+        // would make him open it to remember which job it was.
+        var names = (Array.isArray(q.lines) ? q.lines : []).map(function(l){ return l && l.name; })
+                      .filter(Boolean).join(' + ');
+        var money = hcMoney(q.total_cents);
+        // THE DISCOUNT IS ON THE ROW, not only inside. A total that is lower than his list price
+        // without saying why is the number he will be asked about.
+        if(Number(q.discount_cents) > 0) money += ' (' + hcMoney(q.subtotal_cents) + ' less ' + hcMoney(q.discount_cents) + ')';
+        return [ q.customer_name || 'Someone',
+                 [names, money].filter(Boolean).join(' \u00b7 '),
+                 hcStatusWord('quote', q.status) || '' ];
+      },
+      open: function(q){ hcQuotePanel(q); },
+      noun: ['quote', 'quotes'],
+      emptyTitle: 'No quotes yet',
+      empty: 'Say \u201cquick quote\u201d and I\u2019ll price one with you from your own list. Nothing here is hidden \u2014 there simply aren\u2019t any.'
     },
     customers: {
       title: 'Your customers',
@@ -8551,6 +8601,209 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     return { phone: phone, email: email,
              label: phone || email || null };
   }
+  /** ══ A QUOTE, OPENED — WITH THE TWO THINGS HE CAN ACTUALLY DO. ═══════════════════════════════
+   *
+   *  ACCEPT and SEND, and they are deliberately different kinds of act:
+   *
+   *  ACCEPTING carries the quote forward into a job — server-side, from the quote ROW, so the
+   *  customer, the work and the money are the same bytes he read aloud. "Never retyped" is a
+   *  guarantee about where the values come from, not a UI convenience.
+   *
+   *  SENDING HANDS IT TO HIM READY. It does not send. Three reasons, and the first is the one that
+   *  decides it:
+   *    1. IT IS HIS MESSAGE TO HIS CUSTOMER. Hubly composing and dispatching it means a stranger
+   *       receives a text from us about a price we did not set. The send is his act.
+   *    2. WE HAVE NO CONSENT FOR IT. The SMS consent we store is the CUSTOMER consenting to THE
+   *       BUSINESS about a booking they started — it is not consent for us to message someone who
+   *       has only been quoted, and using it that way would be exactly the "reporting a fact the
+   *       system never captured" defect pointed at a person's phone.
+   *    3. AN `sms:` / `mailto:` HANDOFF WORKS OFFLINE and needs no carrier setup, so it works in a
+   *       driveway on one bar.
+   *  If Adrian wants a real send later, this is where it goes — and it will need its own consent
+   *  record, not this one.
+   *
+   *  AND OPENING THE COMPOSER IS NOT SENDING. `status='sent'` is set only when HE says he sent it.
+   *  Marking it on the tap would be a checkmark for something we did not watch happen. */
+  function hcQuotePanel(q){
+    hcOpenPanel('Quote', function(body){
+      var lines = Array.isArray(q.lines) ? q.lines : [];
+      var rows = [
+        ['For', q.customer_name || null],
+        ['Phone', q.customer_phone ? (hcPhoneHouse(q.customer_phone) || q.customer_phone) : null],
+        ['Email', q.customer_email || null],
+        ['State', hcStatusWord('quote', q.status)],
+        ['Sent', q.sent_at ? hcDateLong(String(q.sent_at).slice(0,10)) : null]
+      ].filter(function(r){ return r[1]; });
+      var dl = document.createElement('div'); dl.className = 'hc-event-fields';
+      rows.forEach(function(r){
+        var line = document.createElement('div'); line.className = 'hc-event-row';
+        var k = document.createElement('span'); k.className='hc-event-k'; k.textContent = r[0];
+        var v = document.createElement('span'); v.className='hc-event-v'; v.textContent = r[1];
+        line.appendChild(k); line.appendChild(v); dl.appendChild(line);
+      });
+      body.appendChild(dl);
+      // THE LINES AND THE ARITHMETIC, THE SAME SHAPE HE READ ALOUD.
+      var ll = document.createElement('div'); ll.className = 'hc-event-fields';
+      lines.forEach(function(l){
+        var line = document.createElement('div'); line.className = 'hc-event-row';
+        var k = document.createElement('span'); k.className='hc-event-k';
+        k.textContent = l.name + ((Number(l.qty) || 1) > 1 ? (' × ' + l.qty) : '');
+        var v = document.createElement('span'); v.className='hc-event-v';
+        v.textContent = hcMoney((Number(l.unit_cents) || 0) * (Number(l.qty) || 1));
+        line.appendChild(k); line.appendChild(v); ll.appendChild(line);
+      });
+      if(Number(q.discount_cents) > 0){
+        [['Usual price', hcMoney(q.subtotal_cents)],
+         [q.discount_words || 'Discount', '−' + hcMoney(q.discount_cents)]].forEach(function(r){
+          var line = document.createElement('div'); line.className = 'hc-event-row';
+          var k = document.createElement('span'); k.className='hc-event-k'; k.textContent = r[0];
+          var v = document.createElement('span'); v.className='hc-event-v'; v.textContent = r[1];
+          line.appendChild(k); line.appendChild(v); ll.appendChild(line);
+        });
+      }
+      var tot = document.createElement('div'); tot.className = 'hc-event-row';
+      var tk = document.createElement('span'); tk.className='hc-event-k'; tk.textContent = 'Total';
+      var tv = document.createElement('span'); tv.className='hc-event-v'; tv.textContent = hcMoney(q.total_cents);
+      tot.appendChild(tk); tot.appendChild(tv); ll.appendChild(tot);
+      body.appendChild(ll);
+
+      var note = document.createElement('div'); note.className = 'hc-event-sub';
+      var acts = document.createElement('div'); acts.className = 'hc-event-acts';
+
+      // ── SEND: handed to him, ready. Only the ways that honestly exist for THIS quote. ────
+      var reach = { phone: q.customer_phone || null, email: q.customer_email || null };
+      if(reach.phone){
+        var sms = document.createElement('a'); sms.className='hc-arrival-act';
+        sms.setAttribute('data-hc-quote', 'sms');
+        sms.href = 'sms:' + String(reach.phone).replace(/[^0-9+]/g,'') + '?&body=' + encodeURIComponent(hcQuoteMessage(q));
+        sms.textContent = 'Text it to them';
+        sms.addEventListener('click', function(){ hcQuoteAfterHandoff(q, 'text', note); });
+        acts.appendChild(sms);
+      }
+      if(reach.email){
+        var mail = document.createElement('a'); mail.className='hc-arrival-act';
+        mail.setAttribute('data-hc-quote', 'email');
+        mail.href = 'mailto:' + String(reach.email) +
+                    '?subject=' + encodeURIComponent('Your quote') +
+                    '&body=' + encodeURIComponent(hcQuoteMessage(q));
+        mail.textContent = 'Email it to them';
+        mail.addEventListener('click', function(){ hcQuoteAfterHandoff(q, 'email', note); });
+        acts.appendChild(mail);
+      }
+      if(!reach.phone && !reach.email){
+        // NO WAY TO SEND IT, AND IT SAYS SO rather than showing a control that cannot work.
+        var n0 = document.createElement('div'); n0.className='hc-event-sub';
+        n0.textContent = 'No phone or email on this quote, so there is no way to send it from here. Add one and it will appear.';
+        body.appendChild(n0);
+      }
+      // ── ACCEPT: carries forward. Absent once it has been accepted — the row says so instead. ──
+      if(q.status !== 'accepted' && q.status !== 'declined'){
+        var acc = document.createElement('button'); acc.type='button'; acc.className='hc-arrival-act';
+        acc.setAttribute('data-hc-quote', 'accept');
+        acc.textContent = 'They said yes — make it a job';
+        acc.addEventListener('click', async function(){
+          acc.disabled = true;
+          var res = await hcAcceptQuote(q);
+          note.textContent = hcAcceptQuoteLine(res, q);
+          acc.disabled = false;
+          if(res && res.ok){ try{ await hcRepaintDay(); }catch(e){} }
+        });
+        acts.appendChild(acc);
+      }
+      body.appendChild(acts); body.appendChild(note);
+    });
+  }
+  /** THE MESSAGE HE HANDS OVER — his own lines, his own arithmetic, and nothing we invented. No
+   *  greeting we made up for him, no "valid for 30 days", no signature. */
+  function hcQuoteMessage(q){
+    var lines = (Array.isArray(q.lines) ? q.lines : []).map(function(l){
+      var n = Number(l.qty) || 1;
+      return l.name + (n > 1 ? (' × ' + n) : '') + ' — ' + hcMoney((Number(l.unit_cents) || 0) * n);
+    });
+    var tail = Number(q.discount_cents) > 0
+      ? ['Usual price ' + hcMoney(q.subtotal_cents),
+         (q.discount_words || 'Discount') + ' −' + hcMoney(q.discount_cents),
+         'Total ' + hcMoney(q.total_cents)].join('\n')
+      : 'Total ' + hcMoney(q.total_cents);
+    var biz = (hc.draftBusiness && hc.draftBusiness.name) ? (hc.draftBusiness.name + '\n') : '';
+    return biz + lines.join('\n') + '\n' + tail;
+  }
+  /** AFTER THE HANDOFF. Opening a composer is not sending, so this ASKS whether he sent it and only
+   *  then marks it. A status set on the tap would be a checkmark for something nobody watched. */
+  function hcQuoteAfterHandoff(q, how, note){
+    note.textContent = '';
+    var row = hcAppendActionRow ? null : null;
+    var wrap = document.createElement('div'); wrap.className = 'hc-event-acts';
+    var ask = document.createElement('div'); ask.className = 'hc-event-sub';
+    ask.textContent = 'I opened your ' + how + ' app with the quote in it. Did it go?';
+    var yes = document.createElement('button'); yes.type='button'; yes.className='hc-arrival-act';
+    yes.setAttribute('data-hc-quote', 'sent-yes'); yes.textContent = 'Yes, sent';
+    var no = document.createElement('button'); no.type='button'; no.className='hc-arrival-act';
+    no.setAttribute('data-hc-quote', 'sent-no'); no.textContent = 'Not yet';
+    yes.addEventListener('click', async function(){
+      yes.disabled = true; no.disabled = true;
+      var res = await hcSetQuoteStatus(q, 'sent');
+      note.textContent = res && res.ok
+        ? 'Marked as sent.'
+        : 'I couldn’t mark it as sent — the quote is unchanged.';
+    });
+    no.addEventListener('click', function(){
+      yes.disabled = true; no.disabled = true;
+      note.textContent = 'Left as it was. Nothing changed.';
+    });
+    wrap.appendChild(yes); wrap.appendChild(no);
+    note.parentNode.insertBefore(ask, note);
+    note.parentNode.insertBefore(wrap, note);
+  }
+  async function hcSetQuoteStatus(q, status){
+    try{
+      var uid = await hcOwnerUid();
+      if(!uid) return { ok:false, error:'not_signed_in' };
+      var c = await authGetClient();
+      var r = await c.rpc('set_quote_status', { p_quote_id: q.id, p_owner_id: uid, p_status: status });
+      if(r && r.error) return { ok:false, error:String(r.error.message || 'write_failed') };
+      var row = r && r.data;
+      if(!row || row.ok !== true) return { ok:false, error:String((row && row.error) || 'refused') };
+      q.status = status;
+      return { ok:true, status: status };
+    }catch(e){ return { ok:false, error:String((e && e.message) || e).slice(0, 90) }; }
+  }
+  async function hcAcceptQuote(q){
+    try{
+      var uid = await hcOwnerUid();
+      if(!uid) return { ok:false, error:'not_signed_in' };
+      var c = await authGetClient();
+      var r = await c.rpc('accept_quote', { p_quote_id: q.id, p_owner_id: uid, p_as: 'job' });
+      if(r && r.error) return { ok:false, error:String(r.error.message || 'write_failed') };
+      var row = r && r.data;
+      if(!row) return { ok:false, error:'write_failed' };
+      if(row.ok !== true) return { ok:false, error:String(row.error || 'refused'), jobId: row.job_id || null };
+      q.status = 'accepted'; q.became = 'job';
+      return { ok:true, jobId: row.job_id, service: row.service_name, cents: row.amount_cents, name: row.customer_name };
+    }catch(e){ return { ok:false, error:String((e && e.message) || e).slice(0, 90) }; }
+  }
+  /** Pure, so a check runs it. Every outcome says something and only a real write says it worked. */
+  function hcAcceptQuoteLine(res, q){
+    if(!res) return 'I couldn’t do that just now.';
+    if(res.ok){
+      return 'Done — that’s a job now: ' + (res.name || 'them') + ', ' + (res.service || 'the work') +
+             ', ' + hcMoney(res.cents) + '. I haven’t put a day on it, because you haven’t told me one.';
+    }
+    if(res.error === 'already_accepted') return 'That one is already a job — nothing was created twice.';
+    if(res.error === 'declined') return 'They said no to this one. Re-open it first if that’s changed.';
+    if(res.error === 'no_lines') return 'There’s nothing on that quote to carry over.';
+    if(res.error === 'only_job') return 'I can make it a job. Turning a quote into a booking isn’t built yet, so I’m not going to pretend it is.';
+    if(res.error === 'not_signed_in') return 'You’re signed out, so I couldn’t do that.';
+    if(res.error === 'not_owner') return 'I couldn’t find that quote on your account.';
+    return 'That didn’t go through — nothing was created.';
+  }
+  try{
+    window.hublyQuoteUI = Object.assign(window.hublyQuoteUI || {}, {
+      panel: hcQuotePanel, message: hcQuoteMessage, accept: hcAcceptQuote,
+      acceptLine: hcAcceptQuoteLine, setStatus: hcSetQuoteStatus
+    });
+  }catch(e){}
+
   /** ══ A LEAD, OPENED. ══════════════════════════════════════════════════════════════════════
    *
    *  A ROW THAT OPENS NOTHING IS A DOOR TO NOWHERE, and a list of people who asked for work is
@@ -9203,7 +9456,8 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       canvas.appendChild(room);
     };
   }
-  var HC_ROOMS = { jobs: hcRenderJobs, customers: hcRenderCustomers, leads: hcRoomFromView('leads') };
+  var HC_ROOMS = { jobs: hcRenderJobs, customers: hcRenderCustomers,
+                   leads: hcRoomFromView('leads'), quotes: hcRoomFromView('quotes') };
   // THE SPEC ITSELF, not a copy of its answers — a check has to be able to ask which kinds exist,
   // what words each one uses, and whether an earned place has anywhere to go. Extended, never
   // assigned fresh: two owners assigning one global is the two-of-everything pattern arriving in

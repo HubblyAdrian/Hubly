@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 2 — Business Discovery Conversation
 
-**Status:** PASS  
-**Checked:** 2026-07-24T17:35:25.193Z  
+**Status:** FAIL  
+**Checked:** 2026-09-17T04:59:51.120Z  
 **Gate:** `npm run check:m2-epic2`
 
 > First consulting session — not a questionnaire.  
@@ -11,18 +11,18 @@
 
 | Requirement | Status |
 |-------------|--------|
-| Adaptive conversation (no fixed script) | ✅ |
-| Confidence-driven discovery | ✅ |
-| Infers instead of asking | ✅ |
-| Discovery Moments | ✅ |
-| Live Understanding Panel | ✅ |
-| Contextual clarifications | ✅ |
-| Memory prevents repeats | ✅ |
-| Emotion-aware responses | ✅ |
-| Transitions into Thinking | ✅ |
-| Five distinct industry conversations | ✅ |
-| What I'm Learning summary | ✅ |
-| Founder acceptance tests | ✅ |
+| Adaptive conversation (no fixed script) | ❌ |
+| Confidence-driven discovery | ❌ |
+| Infers instead of asking | ❌ |
+| Discovery Moments | ❌ |
+| Live Understanding Panel | ❌ |
+| Contextual clarifications | ❌ |
+| Memory prevents repeats | ❌ |
+| Emotion-aware responses | ❌ |
+| Transitions into Thinking | ❌ |
+| Five distinct industry conversations | ❌ |
+| What I'm Learning summary | ❌ |
+| Founder acceptance tests | ❌ |
 
 ## Founder tests
 

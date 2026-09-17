@@ -1,7 +1,7 @@
 # Milestone 3 — Hubly v3 Business OS
 
 **Status:** PASS (wiring)  
-**Checked:** 2026-07-30T21:43:35.922Z  
+**Checked:** 2026-09-17T04:59:51.501Z  
 **Gate:** `npm run check:m3-v3-os`
 
 > Hubly is a business operating system. AI builds. Hubly operates.
