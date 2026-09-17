@@ -194,8 +194,7 @@ try {
     const said = [...document.querySelectorAll(".hc-msg.hubly")].map((e) => e.textContent);
     const acts = [...document.querySelectorAll('[data-hc-actions] button')].map((b) => b.textContent);
     const stillIn = window.hublyModeUI.current();
-    const handledQuoteish = window.hublyModeUI.handled("the driveway is 40 by 12 feet");
-    return { handledOther, said: said.slice(n0).join(" ~ "), acts, stillIn, handledQuoteish };
+    return { handledOther, said: said.slice(n0).join(" ~ "), acts, stillIn };
   });
   say("11 a message that plainly means something else is NOT fed to the quoter",
       swallow.handledOther === true && /didn.t take that as/i.test(swallow.said),
@@ -204,8 +203,27 @@ try {
       swallow.acts.some((t) => /^Leave /.test(t)) && swallow.acts.some((t) => /^Stay in /.test(t)) &&
       swallow.stillIn === "quote",
       JSON.stringify(swallow.acts));
-  say("13 a message the mode has nothing to say about falls through to the normal turn",
-      swallow.handledQuoteish === false, "not handled, so the ordinary reply still happens");
+  // UPDATED 2026-09-16 WHEN THE MODE GREW ITS CONTENTS, AND THE CHANGE WAS DELIBERATE. Before the
+  // quoter existed, a message the mode could not use FELL THROUGH to the ordinary turn, and this leg
+  // asserted that. Now the mode IS the quoter, so it answers everything — and the invariant that
+  // matters is not "it falls through", it is "IT NEVER SWALLOWS ONE SILENTLY". A quoter that says
+  // nothing to a sentence it could not use is indistinguishable from one that is broken. So the leg
+  // now asserts the thing Adrian actually asked for: an unusable message produces WORDS and a
+  // question, never silence and never an invented line.
+  const unusable = await rig.page.evaluate(async () => {
+    window.hublyModeUI.leave("t"); window.hublyQuoteUI.end();
+    window.hublyModeUI.enter("quote", "test");
+    const n0 = document.querySelectorAll(".hc-msg.hubly").length;
+    window.hublyModeUI.handled("the driveway is 40 by 12 feet");
+    await new Promise((r) => setTimeout(r, 600));           // the quoter reads his record first
+    const said = [...document.querySelectorAll(".hc-msg.hubly")].map((e) => e.textContent).slice(n0);
+    const q = window.hublyQuoteUI.state();
+    window.hublyModeUI.leave("t"); window.hublyQuoteUI.end();
+    return { said: said.join(" ~ "), lines: q ? (q.lines || []).length : null };
+  });
+  say("13 a message the quoter cannot use is ANSWERED IN WORDS — never swallowed, never an invented line",
+      unusable.said.length > 20 && /\?/.test(unusable.said) && unusable.lines === 0,
+      `${unusable.lines} lines created · ${JSON.stringify(unusable.said.slice(0, 110))}`);
 
   // ── THE OFFER IS A CONTROL, AND IT WAITS ITS TURN. ─────────────────────────────────────
   const offer = await rig.page.evaluate(() => {

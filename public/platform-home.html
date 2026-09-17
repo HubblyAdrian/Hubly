@@ -3877,6 +3877,170 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     return row;
   }
 
+  // ══ THE QUOTE ITSELF ═════════════════════════════════════════════════════════════════════════
+  //
+  // ADRIAN, 2026-09-16: "Built from their own pricing through the equal readers · NEVER invents a
+  // number, the existing grounding mechanism, not a new one · asks for what is missing ONE ASK AT A
+  // TIME · a discount in his own words applied WITH THE ARITHMETIC SHOWN — usual price, the discount,
+  // the result — because he reads it aloud to a customer · a PDF he can text or email · MEASURE THE
+  // TURN TIME and report it, he is mid-phone-call."
+  //
+  // ══ WHERE THE NUMBERS COME FROM, AND THE TWO PLACES THEY MAY COME FROM ═══════════════════════
+  //
+  // A quote line's price has exactly two honest origins and the record stores which:
+  //
+  //   'offer:<name>'  HIS OWN CATALOGUE, read through `get_business_services` — the UNION reader that
+  //                   already knows both stores. That is what makes this work identically on a
+  //                   CLASSIC and a FREEFORM business (ruled 2026-09-16): it reads the RECORD, never
+  //                   the page, so there is nothing for a page kind to differ about.
+  //   'said'          A NUMBER HE TYPED IN THIS MESSAGE. Grounded the way every other fact is — the
+  //                   digits must be present in the text of this turn. This is `hcQuoteStatedPrice`,
+  //                   which is the same rule as `priceGrounded` in hubly_grounding.ts, applied on the
+  //                   client because there is no model turn in this path.
+  //
+  // Anything else is 'unpriced', and an unpriced line makes Hubly ASK. It never guesses, never
+  // averages, and never reaches for a number from an earlier message — that last one is the
+  // evergreen-yard-care defect (a phone lifted from the transcript), and money is the version of it
+  // that ends with him honouring a price he never set.
+  var HC_QUOTE = null;
+  /** HIS OWN OFFERS, through the union reader. Cached per business for the life of the quote, because
+   *  re-reading between two lines of one quote is how two lines come to disagree about one price. */
+  async function hcQuoteOffers(){
+    if(HC_QUOTE && HC_QUOTE._offers) return HC_QUOTE._offers;
+    var biz = hc.draftBusiness;
+    if(!biz || !biz.id) return [];
+    try{
+      var uid = await hcOwnerUid();
+      var c = await authGetClient();
+      var r = await c.rpc('get_business_services', { p_business_id: biz.id, p_owner_id: uid });
+      if(r && r.error) throw new Error(r.error.message);
+      var rows = Array.isArray(r && r.data) ? r.data : [];
+      var out = rows.map(function(x){
+        // The reader returns DOLLARS (the relational table's unit); cents are what a quote stores, so
+        // the conversion happens once, here, and never again.
+        var dollars = (x.price == null || x.price === '') ? null : Number(x.price);
+        return { name: String(x.name || '').trim(),
+                 cents: (Number.isFinite(dollars) && dollars > 0) ? Math.round(dollars * 100) : null,
+                 source: x.source || null, conflicts: x.conflicts === true };
+      }).filter(function(o){ return o.name; });
+      if(HC_QUOTE) HC_QUOTE._offers = out;
+      return out;
+    }catch(e){ return null; }        // null = COULD NOT READ, which is not "he has no offers"
+  }
+  /** WHICH OF HIS OWN SERVICES THIS MESSAGE NAMES. Matched on HIS names against the text — never the
+   *  other way round, and never fuzzily: "Full Detail" and "Full Detail (Truck)" are two services at
+   *  two prices, and a fuzzy match silently merges two real ones. Longest name first, so naming the
+   *  more specific service does not also match the shorter one inside it. */
+  function hcQuoteNamedOffers(text, offers){
+    var t = ' ' + String(text || '').toLowerCase().replace(/\s+/g, ' ') + ' ';
+    var hits = [];
+    (offers || []).slice().sort(function(a, b){ return b.name.length - a.name.length; }).forEach(function(o){
+      var n = o.name.toLowerCase();
+      if(t.indexOf(' ' + n) >= 0 || t.indexOf(n + ' ') >= 0 || t.indexOf(n) >= 0){
+        // Do not match a name already covered by a longer one already matched.
+        if(hits.some(function(h){ return h.name.toLowerCase().indexOf(n) >= 0; })) return;
+        hits.push(o);
+      }
+    });
+    return hits;
+  }
+  /** A PRICE HE TYPED IN THIS MESSAGE, in cents, or null. The digits must be here — that is the whole
+   *  guard. Accepts "$180", "180 dollars", "180". Rejects a percentage, which is a discount. */
+  function hcQuoteStatedPrice(text){
+    var t = String(text || '');
+    if(/\d\s*%/.test(t)) return null;                       // that is a discount, not a price
+    var m = /\$\s*(\d{1,6}(?:\.\d{1,2})?)/.exec(t) ||
+            /(\d{1,6}(?:\.\d{1,2})?)\s*(?:dollars|bucks)\b/i.exec(t);
+    if(!m) return null;
+    var n = Number(m[1]);
+    if(!Number.isFinite(n) || n <= 0) return null;
+    return Math.round(n * 100);
+  }
+  /** A DISCOUNT, IN HIS WORDS. Returns { kind, value, words } or null. `words` is the phrase HE used,
+   *  sliced out of his own message — never a sentence we compose about it, because the whole point is
+   *  that he reads this aloud. */
+  function hcQuoteDiscount(text){
+    var t = String(text || '');
+    var pct = /(\d{1,3}(?:\.\d+)?)\s*(?:%|percent)\s*(?:off|discount)?/i.exec(t);
+    if(pct) return { kind:'pct', value: Number(pct[1]), words: pct[0].trim() };
+    var word = /\b(ten|twenty|twenty-five|thirty|fifty)\s*(?:%|percent)\s*(?:off)?/i.exec(t);
+    if(word){
+      var map = { ten:10, twenty:20, 'twenty-five':25, thirty:30, fifty:50 };
+      return { kind:'pct', value: map[word[1].toLowerCase()], words: word[0].trim() };
+    }
+    var flat = /(?:take|knock)\s*\$?\s*(\d{1,5}(?:\.\d{1,2})?)\s*(?:off)?|\$\s*(\d{1,5}(?:\.\d{1,2})?)\s*off\b/i.exec(t);
+    if(flat){
+      var v = Number(flat[1] != null ? flat[1] : flat[2]);
+      if(Number.isFinite(v) && v > 0) return { kind:'flat', value: v, words: flat[0].trim() };
+    }
+    return null;
+  }
+  var hcMoney = function(cents){
+    var n = Number(cents || 0) / 100;
+    return '$' + (Number.isInteger(n) ? String(n) : n.toFixed(2));
+  };
+  /** THE ARITHMETIC, WRITTEN OUT, BECAUSE HE READS IT ALOUD. Usual price, the discount in his words,
+   *  the result. Computed here for the screen; the DATABASE computes it again for the record
+   *  (`quote_money`), and the check asserts the two agree — a total the client sent is a number
+   *  nobody checked, and a total only the server knows cannot be read aloud. */
+  function hcQuoteMath(q){
+    var sub = (q.lines || []).reduce(function(a, l){
+      return a + (Number(l.unit_cents) || 0) * (Number(l.qty) || 1); }, 0);
+    var d = 0, dd = q.discount;
+    if(dd && dd.kind === 'pct' && dd.value > 0) d = Math.min(Math.round(sub * Math.min(dd.value, 100) / 100), sub);
+    if(dd && dd.kind === 'flat' && dd.value > 0) d = Math.min(Math.round(dd.value * 100), sub);
+    return { subtotal: sub, discount: d, total: sub - d };
+  }
+  function hcQuoteLinesSaid(q){
+    return (q.lines || []).map(function(l){
+      var qty = Number(l.qty) || 1;
+      if(l.source === 'unpriced') return '• ' + l.name + ' — no price yet';
+      return '• ' + l.name + (qty > 1 ? (' × ' + qty) : '') + ' — ' + hcMoney(l.unit_cents * qty);
+    }).join('\n');
+  }
+  /** WHAT TO SAY ABOUT THE QUOTE SO FAR. One paragraph, the lines, then the arithmetic — and the
+   *  arithmetic appears ONLY when there is a discount, because "Total $205" with no discount above it
+   *  is already the whole sum and three lines saying so is noise on a phone call. */
+  function hcQuoteSay(q){
+    var m = hcQuoteMath(q);
+    var who = (q.customer && q.customer.name) ? (' for ' + q.customer.name) : '';
+    var head = 'Quote' + who + ':';
+    var body = hcQuoteLinesSaid(q);
+    var tail;
+    if(q.discount && m.discount > 0){
+      tail = 'Usual price ' + hcMoney(m.subtotal) + '. ' +
+             (q.discount.words ? (q.discount.words.charAt(0).toUpperCase() + q.discount.words.slice(1)) : 'Discount') +
+             ' is ' + hcMoney(m.discount) + ' off. That comes to ' + hcMoney(m.total) + '.';
+    } else {
+      tail = 'That comes to ' + hcMoney(m.total) + '.';
+    }
+    return [head, body, tail].filter(Boolean).join('\n');
+  }
+  /** THE ONE NEXT QUESTION, or null when nothing is missing. ONE ASK AT A TIME — the same discipline
+   *  as offerTypeAsk, and for the same reason: two requests in one message read like two people
+   *  talking over each other while he is on the phone. */
+  function hcQuoteNextAsk(q){
+    if(!q) return null;
+    if(!(q.lines || []).length) return 'What are you quoting them for?';
+    var un = (q.lines || []).filter(function(l){ return l.source === 'unpriced'; })[0];
+    if(un) return 'What do you charge for ' + un.name + '?';
+    if(!q.customer || !q.customer.name) return 'Who is this quote for?';
+    return null;
+  }
+  try{
+    window.hublyQuoteUI = Object.assign(window.hublyQuoteUI || {}, {
+      state: function(){ return HC_QUOTE; },
+      statedPrice: hcQuoteStatedPrice, discount: hcQuoteDiscount, named: hcQuoteNamedOffers,
+      math: hcQuoteMath, say: hcQuoteSay, ask: hcQuoteNextAsk, money: hcMoney,
+      begin: function(){ HC_QUOTE = { customer:{}, lines:[], discount:null, t0: Date.now() }; return HC_QUOTE; },
+      turn: function(t){ return hcQuoteTurn(t); }, save: function(){ return hcQuoteSave(function(){}, function(){ return 0; }); },
+      // THE DOCUMENT ITSELF, not a screenshot of it: a check must be able to assert that the printed
+      // total is the SAME total he read aloud, and the only way is to read the markup.
+      printDoc: function(q){ hcQuotePrint(q || HC_QUOTE); return hc._lastQuoteHtml || null; },
+      end: function(){ HC_QUOTE = null; }
+    });
+  }catch(e){}
+
   // ══ MODES — VISIBLE · LEAVEABLE · AND THEY NEVER SWALLOW A MESSAGE ═══════════════════════════
   //
   // ADRIAN, 2026-09-16: "He says 'quick quote' and the AI becomes a quoter in the chat. VISIBLE ·
@@ -4069,7 +4233,236 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       ]); }catch(e){}
       return true;
     }
+    // ══ THE QUOTER'S TURN. ═══════════════════════════════════════════════════════════════════
+    //
+    // From here the mode is not a label, it is the thing answering. MEASURED, because Adrian is
+    // mid-phone-call: hcQuoteTurn reports how long its own turn took, in the reply, every time.
+    if(k === 'quote'){ hcQuoteTurn(text); return true; }
     return false;    // the mode has nothing to say about this message; the normal turn runs
+  }
+  /** ONE TURN OF THE QUOTER. Everything it knows comes from THIS message and his own record; nothing
+   *  is carried forward from the transcript and nothing is invented.
+   *
+   *  IT SAYS HOW LONG IT TOOK. Not as telemetry — as a sentence he can read while a customer waits.
+   *  A quoter that is fast is worth having on a phone call and a quoter that is slow is worth knowing
+   *  about, and the only way to know is to publish the number every time. */
+  async function hcQuoteTurn(text){
+    var t0 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    var q = HC_QUOTE || (HC_QUOTE = { customer:{}, lines:[], discount:null, t0: Date.now() });
+    var say = function(msg, ms){
+      var line = msg + (ms != null ? ('\n\n(' + ms + ' ms)') : '');
+      hcAppendMessage('hubly', line); hcPersist('assistant', line);
+      try{ hcNoteSaid(line); }catch(e){}
+    };
+    var took = function(){
+      var t1 = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      return Math.max(0, Math.round(t1 - t0));
+    };
+
+    var offers = await hcQuoteOffers();
+    if(offers === null){
+      // A READ FAILURE IS NOT AN EMPTY CATALOGUE (the empty-reader rule). It says so and quotes
+      // nothing, rather than asking him for every price as though he had never entered any.
+      say('I couldn’t read your own prices just now, so I’m not going to quote off guesses. Try again in a moment, or tell me the price and I’ll use that.', took());
+      return;
+    }
+
+    // 1. A PRICE HE JUST TYPED answers an unpriced line, before anything else is considered — it is
+    //    the answer to the question we asked, and a question on the floor gets answered first.
+    var stated = hcQuoteStatedPrice(text);
+    var waiting = q.lines.filter(function(l){ return l.source === 'unpriced'; })[0];
+    if(stated && waiting){
+      waiting.unit_cents = stated;
+      waiting.source = 'said';
+      var ask1 = hcQuoteNextAsk(q);
+      say(hcQuoteSay(q) + (ask1 ? ('\n\n' + ask1) : '\n\nSay “send it” and I’ll save it, or tell me a discount.'), took());
+      return;
+    }
+
+    // 2. A DISCOUNT, IN HIS WORDS.
+    var disc = hcQuoteDiscount(text);
+    if(disc && q.lines.length){
+      q.discount = disc;
+      say(hcQuoteSay(q) + '\n\nSay “send it” and I’ll save it.', took());
+      return;
+    }
+
+    // 3. HIS OWN SERVICES, NAMED IN THIS MESSAGE.
+    var named = hcQuoteNamedOffers(text, offers);
+    if(named.length){
+      named.forEach(function(o){
+        if(q.lines.some(function(l){ return l.name === o.name; })) return;   // one line per service
+        q.lines.push({ name: o.name, qty: 1,
+                       unit_cents: o.cents != null ? o.cents : 0,
+                       source: o.cents != null ? ('offer:' + o.name) : 'unpriced' });
+      });
+      if(stated){
+        // He named a service AND a number in the same breath. The number he typed wins for the line
+        // that has no price of its own — never for one his catalogue already prices, because
+        // overwriting his own list from a passing sentence is the destructive default.
+        var noPrice = q.lines.filter(function(l){ return l.source === 'unpriced'; })[0];
+        if(noPrice){ noPrice.unit_cents = stated; noPrice.source = 'said'; }
+      }
+      var ask = hcQuoteNextAsk(q);
+      say(hcQuoteSay(q) + (ask ? ('\n\n' + ask) : '\n\nSay “send it” and I’ll save it, or tell me a discount.'), took());
+      return;
+    }
+
+    // 4. A SERVICE HE DOES NOT SELL YET, with a price he just gave — a one-off line. First-class, and
+    //    it NEVER becomes a public offer: it lives on this quote and nowhere else.
+    if(stated){
+      var label = hcQuoteOneOffLabel(text) || 'That work';
+      q.lines.push({ name: label, qty: 1, unit_cents: stated, source: 'said' });
+      var ask2 = hcQuoteNextAsk(q);
+      say(hcQuoteSay(q) + '\n\nThat one isn’t on your list, so it stays on this quote only.' +
+          (ask2 ? ('\n\n' + ask2) : ''), took());
+      return;
+    }
+
+    // 5b. "PRINT IT" — the copy he texts or emails.
+    if(/^\s*(?:print it|print|pdf|send (?:it )?to (?:him|her|them)|copy)\s*[.!]?\s*$/i.test(text)){
+      var okp = hcQuotePrint(q);
+      say(okp ? 'Opened a printable copy — use your browser’s “Save as PDF”, then text or email it.'
+              : 'I couldn’t open a printable copy just now, and nothing was lost — the quote is still here.', took());
+      return;
+    }
+    // 5. "SEND IT" — save the record and say what happened.
+    if(/^\s*(?:send it|save it|that’s it|thats it|that's it|done|looks good)\s*[.!]?\s*$/i.test(text)){
+      await hcQuoteSave(say, took);
+      return;
+    }
+
+    // 6. A NAME FOR THE CUSTOMER, if that is what is missing and this looks like an answer to it.
+    if(!q.customer.name && hcLooksLikeAName && hcLooksLikeAName(text)){
+      q.customer.name = hcLooksLikeAName(text);
+      var ask3 = hcQuoteNextAsk(q);
+      say(hcQuoteSay(q) + (ask3 ? ('\n\n' + ask3) : '\n\nSay “send it” and I’ll save it.'), took());
+      return;
+    }
+
+    // 7. NOTHING IT COULD USE — AND IT SAYS SO RATHER THAN INVENTING A LINE. This is the branch that
+    //    keeps the quoter honest: an unrecognised sentence produces a question, never a number.
+    var ask4 = hcQuoteNextAsk(q) || 'What are you quoting them for?';
+    say('I didn’t find one of your services or a price in that. ' + ask4 +
+        (offers.length ? ('\n\nYours are: ' + offers.map(function(o){ return o.name; }).join(', ') + '.') : ''), took());
+  }
+  /** ══ THE PRINTABLE COPY. ══════════════════════════════════════════════════════════════════════
+   *
+   *  ADRIAN ASKED FOR "a PDF he can text or email". THIS IS THE BROWSER'S OWN PDF, and the choice is
+   *  deliberate rather than a shortcut:
+   *
+   *    · NO LIBRARY. A PDF generator is ~200KB from a CDN, and every byte of it is a dependency on a
+   *      network that may be the thing failing while he is standing in a driveway. This works offline.
+   *    · IT IS THE SAME ARITHMETIC HE JUST READ ALOUD, from the same function (hcQuoteMath) — not a
+   *      second renderer that could format a number differently. A quote that prints a different total
+   *      from the one he said is the worst defect this feature could have.
+   *    · THE COST, STATED: he has to choose "Save as PDF" in the print dialog. That is one extra
+   *      gesture, and the reply says so in words rather than implying a file appeared.
+   *
+   *  NOTHING IS INVENTED ON IT. The business name and contact come from the record; a field we do not
+   *  have is simply absent, never a placeholder. There is no "valid for 30 days" — he never said that. */
+  function hcQuotePrint(q){
+    try{
+      if(!q || !(q.lines || []).length) return false;
+      var biz = hc.draftBusiness || {};
+      var m = hcQuoteMath(q);
+      var esc = function(v){ return String(v == null ? '' : v)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+      var rows = (q.lines || []).map(function(l){
+        var qty = Number(l.qty) || 1;
+        return '<tr><td>' + esc(l.name) + (qty > 1 ? (' <span class="q">× ' + qty + '</span>') : '') +
+               '</td><td class="n">' + esc(hcMoney((Number(l.unit_cents) || 0) * qty)) + '</td></tr>';
+      }).join('');
+      var discRow = (q.discount && m.discount > 0)
+        ? '<tr class="d"><td>' + esc(q.discount.words || 'Discount') + '</td><td class="n">−' + esc(hcMoney(m.discount)) + '</td></tr>'
+        : '';
+      var subRow = (q.discount && m.discount > 0)
+        ? '<tr class="s"><td>Usual price</td><td class="n">' + esc(hcMoney(m.subtotal)) + '</td></tr>' : '';
+      var who = (q.customer && q.customer.name) ? '<p class="for">For ' + esc(q.customer.name) + '</p>' : '';
+      var contact = [biz.name ? esc(biz.name) : '', hcPhoneHouse && biz.phone ? esc(hcPhoneHouse(biz.phone)) : '',
+                     biz.email ? esc(biz.email) : ''].filter(Boolean).join(' · ');
+      var html = '<!doctype html><meta charset="utf-8"><title>Quote' +
+        ((q.customer && q.customer.name) ? (' — ' + esc(q.customer.name)) : '') + '</title>' +
+        '<style>body{font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;' +
+        'max-width:640px;margin:32px auto;padding:0 20px;color:#111}' +
+        'h1{font-size:20px;margin:0 0 2px}.biz{color:#555;font-size:13px;margin:0 0 20px}' +
+        '.for{margin:0 0 14px;font-weight:600}' +
+        'table{width:100%;border-collapse:collapse}td{padding:7px 0;border-bottom:1px solid #eee}' +
+        'td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}' +
+        '.q{color:#666;font-size:13px}tr.s td{border-bottom:none;padding-top:14px;color:#555}' +
+        'tr.d td{border-bottom:none;color:#555}tr.t td{font-weight:700;font-size:17px;border-top:2px solid #111;border-bottom:none;padding-top:9px}' +
+        '@media print{body{margin:0}}</style>' +
+        '<h1>Quote</h1><p class="biz">' + contact + '</p>' + who +
+        '<table>' + rows + subRow + discRow +
+        '<tr class="t"><td>Total</td><td class="n">' + esc(hcMoney(m.total)) + '</td></tr></table>';
+      var w = window.open('', '_blank');
+      hc._lastQuoteHtml = html;                   // so a check can read the document it would print
+      if(!w) return false;                        // a blocked popup is a failure and is SAID, not hidden
+      w.document.open(); w.document.write(html); w.document.close();
+      try{ w.focus(); setTimeout(function(){ try{ w.print(); }catch(e){} }, 250); }catch(e){}
+      return true;
+    }catch(e){ return false; }
+  }
+  /** A LABEL FOR A ONE-OFF, TAKEN FROM HIS OWN WORDS — never composed. Strips the money and the
+   *  filler, keeps what he called the work. Null when there is nothing left to call it. */
+  function hcQuoteOneOffLabel(text){
+    var t = String(text || '')
+      .replace(/\$\s*\d[\d.,]*/g, ' ')
+      .replace(/\b\d{1,6}(?:\.\d{1,2})?\s*(?:dollars|bucks)\b/gi, ' ')
+      .replace(/\b(?:for|at|about|around|is|it’s|its|quote|add|charge|them|him|her|and|the|a)\b/gi, ' ')
+      .replace(/[^\w\s'&/-]/g, ' ')
+      .replace(/\s+/g, ' ').trim();
+    if(!t) return null;
+    return t.split(/\s+/).slice(0, 6).join(' ');
+  }
+  /** SAVE. The DATABASE computes the money; the reply says what the RECORD holds, read back, never
+   *  what we sent it (prohibition 3). */
+  async function hcQuoteSave(say, took){
+    var q = HC_QUOTE;
+    if(!q || !q.lines.length){ say('There’s nothing on this quote yet, so there was nothing to save.', took()); return; }
+    var un = q.lines.filter(function(l){ return l.source === 'unpriced'; });
+    if(un.length){
+      say('I can’t send it yet — ' + un[0].name + ' has no price. What do you charge for it?', took());
+      return;
+    }
+    var biz = hc.draftBusiness;
+    if(!biz || !biz.id){ say('I can’t save a quote without a business — nothing was saved.', took()); return; }
+    try{
+      var uid = await hcOwnerUid();
+      if(!uid){ say('You’re signed out, so I couldn’t save that quote.', took()); return; }
+      var c = await authGetClient();
+      var r = await c.rpc('create_quote', {
+        p_business_id: biz.id, p_owner_id: uid,
+        p_lines: q.lines,
+        p_customer_name: q.customer.name || null,
+        p_customer_phone: q.customer.phone || null,
+        p_customer_email: q.customer.email || null,
+        p_discount_kind: q.discount ? q.discount.kind : null,
+        p_discount_value: q.discount ? q.discount.value : null,
+        p_discount_words: q.discount ? q.discount.words : null,
+        p_notes: null
+      });
+      if(r && r.error){ say('That didn’t save — ' + String(r.error.message).slice(0, 90) + '. Nothing was written.', took()); return; }
+      var row = r && r.data;
+      if(!row || row.ok !== true){ say('That didn’t save (' + String((row && row.error) || 'refused') + '). Nothing was written.', took()); return; }
+      // READ IT BACK FROM THE TABLE. The writer's word is not the record.
+      var back = await c.rpc('get_business_quotes', { p_business_id: biz.id, p_owner_id: uid, p_status: null });
+      var found = (back && !back.error && Array.isArray(back.data))
+        ? back.data.filter(function(x){ return x.id === row.id; })[0] : null;
+      if(!found){ say('I saved that but couldn’t read it back, so I’m not going to tell you it’s on file.', took()); return; }
+      q.savedId = found.id;
+      var mine = hcQuoteMath(q);
+      var agree = mine.total === found.total_cents && mine.subtotal === found.subtotal_cents &&
+                  mine.discount === found.discount_cents;
+      // THE TWO SUMS MUST AGREE, AND IF THEY DO NOT HE HEARS IT. The screen's arithmetic is what he
+      // read aloud; the record's is what a customer will be held to. Two numbers that disagree about
+      // money is the one case where saying nothing is worst.
+      say('Saved. ' + hcQuoteSay(q).split('\n').slice(-1)[0] +
+          (agree ? '' : ' — careful: the saved total is ' + hcMoney(found.total_cents) +
+                        ', which is not what I just read you. Open it before you send it.') +
+          '\n\nSay “print it” for a copy you can text or email.', took());
+      try{ hcRepaintDay && hcRepaintDay(); }catch(e){}
+    }catch(e){ say('That didn’t save — ' + String((e && e.message) || e).slice(0, 80) + '. Nothing was written.', took()); }
   }
   /** THE COUNTABLE RECORD. A mode that starts when it should not is a defect we must be able to
    *  count rather than wait to be told about — same reason capture misses are a table. Fire and

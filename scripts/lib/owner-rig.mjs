@@ -16,7 +16,7 @@
 /** Installed in the PAGE world. Serialised by Playwright, so it may not close over anything. */
 export function installOwnerFake(opts) {
   const W = window;
-  W.__rig = { rpc: [], writes: [] };
+  W.__rig = { rpc: [], writes: [], quotes: [] };
   const ok = (data) => Promise.resolve({ data, error: null });
   const q = (rows) => {
     let held = rows.slice();
@@ -57,6 +57,27 @@ export function installOwnerFake(opts) {
       if (name === "get_business_customer_count") return ok((tables.customers || []).length);
       if (name === "get_business_hours") return ok(opts.hours || []);
       if (name === "get_business_tasks") return ok(tables.tasks || []);
+      // THE UNION SERVICES READER. Shaped exactly as the RPC returns it — name + price in DOLLARS
+      // (the relational table's unit) plus `source` and `conflicts` — so a check exercising the quoter
+      // is exercising the conversion too, which is where a units bug would live.
+      if (name === "get_business_services") return ok(tables.services || []);
+      if (name === "create_quote") {
+        W.__rig.writes.push({ name, args });
+        const money = (lines, kind, val) => {
+          const sub = (lines || []).reduce((a, l) => a + (Number(l.unit_cents) || 0) * (Number(l.qty) || 1), 0);
+          let d = 0;
+          if (kind === "pct" && val > 0) d = Math.min(Math.round(sub * Math.min(val, 100) / 100), sub);
+          if (kind === "flat" && val > 0) d = Math.min(Math.round(val * 100), sub);
+          return { subtotal_cents: sub, discount_cents: d, total_cents: sub - d };
+        };
+        const m = money(args.p_lines, args.p_discount_kind, args.p_discount_value);
+        const id = "q-" + (W.__rig.quotes.length + 1);
+        W.__rig.quotes.push(Object.assign({ id, status: "draft", lines: args.p_lines,
+          customer_name: args.p_customer_name, discount_kind: args.p_discount_kind,
+          discount_value: args.p_discount_value, discount_words: args.p_discount_words }, m));
+        return ok(Object.assign({ ok: true, id, status: "draft", lines: args.p_lines }, m));
+      }
+      if (name === "get_business_quotes") return ok(W.__rig.quotes.slice());
       if (name === "get_business_events") return ok(tables.events || []);
       if (name === "get_public_business") return ok([{ brand_color: null, city: null, state: null, meta: null }]);
       // THE PLACES ROWS MATTER MORE THAN THEY LOOK. Returning [] leaves hc.places null, which
