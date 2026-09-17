@@ -22,9 +22,15 @@
  * and goes green as long as it brings its own words, its own icon and a destination — which is the
  * cost this check exists to impose.
  *
- * RED-PROOFED (docs/LIST_SURFACES.md): seen red with the leads spec sharing the word "Pending" with
- * jobs; with hcStatusWord inventing "In progress" for an unseen value; with a `quote` vocabulary
- * added; with leads in HC_RAIL_DEFAULT; and with HC_ROOMS.leads removed.
+ * RED-PROOFED, SIX BREAKS, EACH RUN (table in docs/LIST_SURFACES.md):
+ *   leads says "Booked" like jobs            -> legs 2, 6
+ *   hcStatusWord invents "In progress"       -> leg 4
+ *   a `quote` vocabulary is added            -> legs 3, 4
+ *   leads added to HC_RAIL_DEFAULT           -> leg 9
+ *   HC_ROOMS.leads removed                   -> leg 7
+ *   leads reuses the jobs icon               -> leg 8
+ * Legs 1, 5, 10-14 were seen red while being written (the accepted-request filter, the projection
+ * comparison and the scoped absence each failed before the code they describe existed).
  *
  * SIMULATED AND SAID SO: no session, no network. The spec, the engine and the renderer are the
  * shipping product's; the booking requests and jobs are declared fakes.
