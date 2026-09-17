@@ -105,7 +105,24 @@ and it has **no `business_documents` row**, the same shape as the only paying cu
 from every corpus count**, and **never prove a classic-store change against
 `graefs-autocare` — read-only, always.** *(built 2026-09-13)*
 
-## 14. The classic renderer is a LEGACY surface. Every new site is freeform
+## 14. Classic is a SUPPORTED PATH. Every NEW site is freeform — those are different claims
+
+> **SUPERSEDED IN ITS CONCLUSION, 2026-09-16, BY ADRIAN'S RULING. The counts below stand; the word
+> "legacy" and everything that followed from it does not.**
+>
+> **RULED:** *"CLASSIC IS A SUPPORTED PATH, NOT A LEGACY EXCEPTION AWAITING SUNSET."* aquaspeed,
+> bucket-mobile-detailing and devdetailing661 stay classic, as does graefs-autocare. **Four market
+> businesses serve classic and all four stay.**
+>
+> **What the counts actually support** is the narrow claim: *nobody NEW is put on classic.* They do
+> not support "classic is on its way out", and this entry drew that second conclusion from the first.
+> "Work on it is maintenance of a legacy surface, and it should be costed that way" is withdrawn —
+> anything new works on **both** paths, is never built freeform-first and retrofitted, and no doc may
+> imply a migration. See the rule in CLAUDE.md.
+>
+> **And the record is corrected:** *"Graef is the only one that will do the old store"* was an
+> intention, never a fact (it is flagged as such in `docs/SERVICE_STORES_RESOLVED.md:50`). Four
+> market businesses serve classic pages today.
 
 **Settled 2026-09-13, counted from the database, because this question keeps being re-asked
 and answered by impression.**
@@ -124,9 +141,10 @@ and answered by impression.**
   got the freeform generator.**
 
 **So a classic page is not a path anyone is put on; it is where four market businesses already
-live, one of whom pays us.** Work on it is maintenance of a legacy surface, and it should be
-costed that way — which is also why `set_business_service_catalog` was a pure add rather than a
-change to a writer with 31 call sites (D-028).
+live, one of whom pays us.** ~~Work on it is maintenance of a legacy surface, and it should be costed
+that way~~ — **withdrawn 2026-09-16 (see the banner above): it is a supported path and new work must
+serve it.** The `set_business_service_catalog` decision (a pure add rather than a change to a writer
+with 31 call sites, D-028) stands on its own merits and did not depend on that conclusion.
 
 **And `hubly-paging-fixture`'s page is thin because its `meta.website` is EMPTY (0 bytes), not
 because any generator produced it.** It was seeded as a *paging* fixture — rows for pagination

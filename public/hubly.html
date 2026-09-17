@@ -8829,6 +8829,8 @@ body.ws-booking-open .booked-slot{opacity:.4;cursor:not-allowed;background:var(-
 .ws-membership-body h3{font-family:var(--font-d,inherit);font-size:clamp(22px,3vw,28px);font-weight:700;color:var(--ws-heading);margin:0 0 8px;line-height:1.2;}
 .ws-membership-body > p{color:var(--ws-muted);font-size:15px;line-height:1.55;margin:0 0 18px;}
 .ws-membership-price{display:flex;align-items:baseline;gap:4px;margin:0 0 8px;}
+.mem-suggest{appearance:none;border:1px solid var(--ink-4,#ccc);background:transparent;border-radius:999px;font:inherit;font-size:10px;font-weight:600;padding:1px 7px;margin-left:6px;cursor:pointer;opacity:.85}
+.mem-suggest:hover{opacity:1;background:rgba(0,0,0,.05)}
 .ws-membership-amount{font-size:clamp(36px,5vw,48px);font-weight:800;color:var(--ws-heading);letter-spacing:-.02em;line-height:1;}
 .ws-membership-cadence{font-size:16px;font-weight:500;color:var(--ws-muted);}
 .ws-membership-includes{list-style:none;padding:0;margin:16px 0 24px;}
@@ -37567,24 +37569,30 @@ function scrubMembershipTradeLeaks(){
   const defs=membershipDefaultsForTrade();
   S.website.membershipOffers.forEach(m=>{
     if(!m)return;
-    const descLeak=!m.description||isDetailingMembershipCopy(m.description);
+    // ══ AN EMPTY FIELD IS NOT A LEAK. ════════════════════════════════════════════════════════
+    //
+    // THIS IS THE CHANGE THAT WOULD HAVE DEFEATED THE OTHER THREE. `descLeak` was
+    // `!m.description || isDetailingMembershipCopy(...)` — so an EMPTY description counted as a leak
+    // and was refilled from `defs`. Stopping the writer from seeding while this still ran would have
+    // silently re-seeded every plan on the next scrub, and the fix would have looked applied and not
+    // been. Adrian named it before it could happen.
+    //
+    // What this pass is FOR is still done: detailing wording on a window-washer's site is WRONG and
+    // is removed. What it may no longer do is WRITE PROSE HE DID NOT SAY — a wrong sentence is
+    // cleared, not replaced, and the editor's placeholder offers the right one for him to accept.
     const inc=Array.isArray(m.includes)?m.includes:[];
-    const incLeak=!inc.length||inc.some(line=>isDetailingMembershipCopy(line));
-    if(descLeak)m.description=defs.description;
-    if(incLeak)m.includes=defs.includes.slice();
-    // Stock detailing title left behind on other trades
-    if((descLeak||incLeak)&&(!m.name||/^monthly membership$/i.test(String(m.name).trim()))){
-      m.name=defs.name;
-    }
-    // THE COPY SCRUB MAY NOT WRITE A PRICE. It exists to stop detailing wording appearing on a
-    // window-washer's site, and re-pricing his plan while fixing his prose is a different act
-    // entirely — one he never asked for and would not see. (The seeded DESCRIPTION and INCLUDES
-    // below are a deliberate onboarding system and are left alone; they are reported for Adrian's
-    // call rather than quietly rewritten, because unlike the price they are not a commitment a
-    // customer can act on.)
-    if(false&&(descLeak||incLeak)&&(m.price==null||Number(m.price)===99)&&defs.price!=null){
-      m.price=defs.price;
-    }
+    const descWrong=!!m.description&&isDetailingMembershipCopy(m.description);
+    const incWrong=inc.some(line=>isDetailingMembershipCopy(line));
+    if(descWrong)m.description='';
+    if(incWrong)m.includes=inc.filter(line=>!isDetailingMembershipCopy(line));
+    // A STOCK DETAILING TITLE ON ANOTHER TRADE IS WRONG, SO IT IS CLEARED — not renamed. The plan
+    // then shows the generic word the card already falls back to, and the editor offers him the
+    // right name with a "use this" beside the field. Renaming his plan for him is the same act as
+    // writing his description for him, one field over.
+    if(/^monthly membership$/i.test(String(m.name||'').trim())) m.name='';
+    // AND IT MAY NOT WRITE A PRICE. Re-pricing his plan while fixing his prose is a different act
+    // entirely — one he never asked for and would not see. The dead `if(false)` branch that used to
+    // stand here is gone rather than left as a comment about itself.
   });
 }
 function defaultMembershipPlan(overrides){
@@ -37592,7 +37600,21 @@ function defaultMembershipPlan(overrides){
   return Object.assign({
     id:newMembershipPlanId(),
     enabled:true,
-    name:defs.name,
+    // ══ NO SEEDED CONTENT IN THE RECORD. RULED 2026-09-16. ═══════════════════════════════════
+    //
+    // ADRIAN: "seeded content may appear IN THE EDITOR as a starting point the owner sees and edits.
+    // It must NEVER reach a customer-facing page before he has looked at it. A price is a number
+    // someone can argue with; A LIST OF DELIVERABLES IS A PROMISE A CUSTOMER CAN HOLD HIM TO."
+    //
+    // Measured on the live page before this changed: graefs-autocare's Bi-Weekly plan published
+    // "Monthly wash · Interior refresh · Priority scheduling" under a Join Membership button, and he
+    // never said any of it. That is not marketing copy — it is three things a customer can hold him
+    // to, on a market page.
+    //
+    // `defs` survives as the EDITOR'S suggestion: placeholders on every field, plus a "use this"
+    // control that writes the value AS HIS the moment he presses it. That is the whole distinction —
+    // offering a number is not publishing one.
+    name:'',
     // ══ NO SEEDED PRICE. VERIFIED BY USE, 2026-09-16. ═══════════════════════════════════════
     //
     // This read `price:defs.price`, which is 99 for detailing and 89 for windows. Driven in a real
@@ -37608,8 +37630,8 @@ function defaultMembershipPlan(overrides){
     price:null,
     cadence:'monthly',
     serviceName:'',
-    includes:defs.includes.slice(),
-    description:defs.description,
+    includes:[],
+    description:'',
     _open:false,
   },overrides||{});
 }
@@ -37678,6 +37700,40 @@ function membershipServiceOptionsHtml(selected){
   const cur=selected||'';
   return '<option value="">Standalone offer</option>'+svcs.map(s=>`<option value="${(s.name||'').replace(/"/g,'&quot;')}"${s.name===cur?' selected':''}>${s.name}</option>`).join('');
 }
+/** ══ ACCEPT THE SUGGESTION, AND IT BECOMES HIS. ═══════════════════════════════════════════════
+ *
+ *  A placeholder is half of Adrian's ruling: it keeps the seed off the page, and it also keeps the
+ *  seed out of reach. The other half is that he can take it **in one gesture** — otherwise the
+ *  ruling costs him a genuinely useful starting point and he types it out by hand or does without.
+ *
+ *  Pressing this WRITES THE VALUE AS HIS. From that moment it is a fact he stated, indistinguishable
+ *  from one he typed — which is exactly right, because he did state it: he read it and pressed it.
+ *  Nothing is written until he does. */
+function useMembershipSuggestion(i, field){
+  const plans=ensureMembershipOffers();
+  const m=plans[i]; if(!m) return;
+  const defs=membershipDefaultsForTrade();
+  if(field==='name') m.name=defs.name;
+  else if(field==='description') m.description=defs.description;
+  else if(field==='includes') m.includes=(defs.includes||[]).slice();
+  else if(field==='price') m.price=defs.price!=null?Number(defs.price):null;
+  else return;
+  syncLegacyMembershipOffer();
+  renderMembershipEditorList();
+  renderWebsitePreview();
+  // IT SAYS WHAT IT DID (prohibition 6). A value appearing in a field with no word is a change he
+  // did not see happen, and this one publishes.
+  try{ toast('Added to your plan — edit it or clear it, it\u2019s yours now.'); }catch(e){}
+}
+/** The one-gesture control, rendered only when there IS a suggestion and the field is still empty.
+ *  A "use this" beside a filled field would be an offer to overwrite his own words. */
+function memSuggestBtn(i, field, value, filled){
+  if(filled) return '';
+  const v=String(value==null?'':value).trim();
+  if(!v) return '';
+  const label=field==='includes'?'Use these':'Use this';
+  return `<button type="button" class="mem-suggest" onclick="useMembershipSuggestion(${i},'${field}')" title="${String(v).replace(/"/g,'&quot;').slice(0,120)}">${label}</button>`;
+}
 function renderMembershipEditorList(){
   const el=document.getElementById('mem-editor-list');
   if(!el)return;
@@ -37685,6 +37741,7 @@ function renderMembershipEditorList(){
   const defs=membershipDefaultsForTrade();
   const namePh=String(defs.name||'Monthly Membership').replace(/"/g,'&quot;');
   const descPh=String(defs.description||'').replace(/"/g,'&quot;');
+  const incPh=String((defs.includes||[]).join('\n')).replace(/"/g,'&quot;');
   if(!plans.length){
     el.innerHTML='<div style="font-size:12px;color:var(--ink-3);padding:8px 0;">No memberships yet. add one to show plans on your site.</div>';
     return;
@@ -37704,9 +37761,9 @@ function renderMembershipEditorList(){
           <input type="checkbox" ${m.enabled?'checked':''} onchange="S.website.membershipOffers[${i}].enabled=this.checked;syncLegacyMembershipOffer();renderMembershipEditorList();renderWebsitePreview()" style="width:15px;height:15px;">
           Show on website
         </label>
-        <div class="field"><label style="font-size:11px;">Plan name</label><input type="text" value="${(m.name||'').replace(/"/g,'&quot;')}" oninput="S.website.membershipOffers[${i}].name=this.value;syncLegacyMembershipOffer();renderWebsitePreview()" placeholder="${namePh}" style="font-size:13px;padding:8px 10px;"></div>
+        <div class="field"><label style="font-size:11px;">Plan name ${memSuggestBtn(i,'name',defs.name,!!(m.name||'').trim())}</label><input type="text" value="${(m.name||'').replace(/"/g,'&quot;')}" oninput="S.website.membershipOffers[${i}].name=this.value;syncLegacyMembershipOffer();renderWebsitePreview()" placeholder="${namePh}" style="font-size:13px;padding:8px 10px;"></div>
         <div class="field-row">
-          <div class="field"><label style="font-size:11px;">Price</label><input type="number" min="0" step="1" value="${m.price??''}" placeholder="${defs.price??''}" oninput="S.website.membershipOffers[${i}].price=(this.value===''?null:(parseFloat(this.value)||null));syncLegacyMembershipOffer();renderWebsitePreview()" style="font-size:13px;padding:8px 10px;"></div>
+          <div class="field"><label style="font-size:11px;">Price ${memSuggestBtn(i,'price',defs.price!=null?('$'+defs.price):'',membershipHasPrice(m))}</label><input type="number" min="0" step="1" value="${m.price??''}" placeholder="${defs.price??''}" oninput="S.website.membershipOffers[${i}].price=(this.value===''?null:(parseFloat(this.value)||null));syncLegacyMembershipOffer();renderWebsitePreview()" style="font-size:13px;padding:8px 10px;"></div>
           <div class="field"><label style="font-size:11px;">Cadence</label>
             <select onchange="S.website.membershipOffers[${i}].cadence=this.value;syncLegacyMembershipOffer();renderWebsitePreview()" style="font-size:13px;padding:8px 10px;">
               <option value="weekly" ${m.cadence==='weekly'?'selected':''}>Weekly</option>
@@ -37718,8 +37775,8 @@ function renderMembershipEditorList(){
         <div class="field"><label style="font-size:11px;">Linked service <span style="font-weight:400;color:var(--ink-3);">(optional)</span></label>
           <select onchange="S.website.membershipOffers[${i}].serviceName=this.value;syncLegacyMembershipOffer();" style="font-size:13px;padding:8px 10px;">${membershipServiceOptionsHtml(m.serviceName)}</select>
         </div>
-        <div class="field"><label style="font-size:11px;">Description</label><input type="text" value="${(m.description||'').replace(/"/g,'&quot;')}" oninput="S.website.membershipOffers[${i}].description=this.value;syncLegacyMembershipOffer();renderWebsitePreview()" placeholder="${descPh}" style="font-size:13px;padding:8px 10px;"></div>
-        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Includes (one per line)</label><textarea rows="4" oninput="S.website.membershipOffers[${i}].includes=this.value.split('\\n').map(s=>s.trim()).filter(Boolean);syncLegacyMembershipOffer();renderWebsitePreview()" style="font-size:12px;padding:8px 10px;">${(m.includes||[]).join('\n')}</textarea></div>
+        <div class="field"><label style="font-size:11px;">Description ${memSuggestBtn(i,'description',defs.description,!!(m.description||'').trim())}</label><input type="text" value="${(m.description||'').replace(/"/g,'&quot;')}" oninput="S.website.membershipOffers[${i}].description=this.value;syncLegacyMembershipOffer();renderWebsitePreview()" placeholder="${descPh}" style="font-size:13px;padding:8px 10px;"></div>
+        <div class="field" style="margin-bottom:10px;"><label style="font-size:11px;">Includes (one per line) ${memSuggestBtn(i,'includes',(defs.includes||[]).join(', '),!!(m.includes||[]).length)}</label><textarea rows="4" placeholder="${incPh}" oninput="S.website.membershipOffers[${i}].includes=this.value.split('\\n').map(s=>s.trim()).filter(Boolean);syncLegacyMembershipOffer();renderWebsitePreview()" style="font-size:12px;padding:8px 10px;">${(m.includes||[]).join('\n')}</textarea></div>
         <button type="button" class="btn btn-out btn-sm" style="color:var(--red);border-color:var(--red);" onclick="deleteMembershipPlan('${m.id}')">Delete membership</button>
       </div>
     </div>`).join('');
@@ -37742,7 +37799,10 @@ function addMembershipPlan(){
   const plans=ensureMembershipOffers();
   const defs=membershipDefaultsForTrade();
   plans.forEach(p=>p._open=false);
-  const plan=defaultMembershipPlan({_open:true,name:plans.length?'Membership Plan '+(plans.length+1):defs.name});
+  // NO NAME EITHER. This passed `defs.name` for the first plan and "Membership Plan 2" for the rest,
+  // which put the seeded title straight past defaultMembershipPlan's empty default — a seed arriving
+  // through an override is still a seed, and it is the field a customer reads first.
+  const plan=defaultMembershipPlan({_open:true,name:''});
   plans.push(plan);
   syncLegacyMembershipOffer();
   if(typeof getWebsiteLayoutId==='function'&&getWebsiteLayoutId()==='simple-profile'){
@@ -37854,12 +37914,12 @@ function wsMembershipCardHtml(m){
     <div class="ws-membership-body">
       <p class="ws-membership-eyebrow">${t('wsMembershipEyebrow')}</p>
       <h3>${m.name||t('wsMembership')}</h3>
-      <p>${m.description||''}</p>
+      ${m.description?`<p>${m.description}</p>`:''}
       ${membershipHasPrice(m)?`<div class="ws-membership-price">
         <span class="ws-membership-amount">$${m.price}</span>
         <span class="ws-membership-cadence">${membershipCadenceLabel(m.cadence)}</span>
       </div>`:''}
-      <ul class="ws-membership-includes">${includes}</ul>
+      ${includes?`<ul class="ws-membership-includes">${includes}</ul>`:''}
       <button type="button" class="ws-membership-cta" onclick="event.stopPropagation();openMembershipSignup('${m.id}')">${t('wsJoinMembership')}</button>
     </div>
   </div>`;

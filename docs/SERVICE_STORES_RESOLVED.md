@@ -47,8 +47,10 @@ classic template. **Four of those twelve are `market`:**
 `hubly-classic-fixture`, `hubly-paging-fixture`, `my-auto-detailing`, `my-photography`,
 `star-windows`.)
 
-**So "Graef is the only one that will do the old store" is true as an intention and not as a fact
-today.** Three other market businesses would lose their page if classic were retired now.
+**So "Graef is the only one that will do the old store" was an intention and was never a fact.**
+**RULED 2026-09-16: all four stay, and classic is a supported path.** aquaspeed,
+bucket-mobile-detailing and devdetailing661 are not awaiting migration — there is no migration.
+Anything new must work on both paths; see the rule in CLAUDE.md and the banner on SETTLED 14.
 
 ## (c) THE HISTORY — partially established, and said so
 

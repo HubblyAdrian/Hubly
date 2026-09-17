@@ -195,6 +195,32 @@ acts, or it says what will happen — it never gives directions to something it 
   the change was intended and update the leg, never to undo the improvement. Labelling at birth is
   what stops the next person rediscovering which kind it was, from a red result, under pressure.
   (Same spirit as the `[TRIPWIRE]` labels on the milestone certifications.)
+- **WHEN A VALUE IS HANDED TO YOU, IT IS AN EXAMPLE OF A SET. GO FIND THE SET.** Adrian, 2026-09-16,
+  recording it as his own error: *"I handed you '$99' and it nearly became the query."* The seeded
+  membership price is per trade — 99 detailing, 89 windows, 149 cleaning, **119 landscaping**, 129
+  hvac — so a sweep for `99` would have reported "nothing seeded is live", which is false:
+  adrians-lawn-service publishes exactly 119. **Third time a specific value became the measurement
+  instead of the thing it was an example of.** So: before a handed value becomes a query, find where
+  it comes from in the code and measure against THAT — the table, the enum, the generator. The
+  measurer parses `membershipDefaultsForTrade` out of the shipping file at run time for exactly this
+  reason. A value in a prompt is a pointer to a set; treating it as the set is the hand-maintained-set
+  disease arriving through the instruction rather than through the code.
+- **SEEDED CONTENT MAY LIVE IN THE EDITOR. IT MAY NOT REACH A CUSTOMER BEFORE HE HAS LOOKED AT IT.**
+  Adrian, 2026-09-16, ruling on the membership defaults: a suggestion the owner **sees and edits** is
+  helpful; the same suggestion **published** is a claim he never made. And the two halves are not
+  equally bad — *"a price is a number someone can argue with; A LIST OF DELIVERABLES IS A PROMISE A
+  CUSTOMER CAN HOLD HIM TO."* Graef's Bi-Weekly plan shipped "Monthly wash · Interior refresh ·
+  Priority scheduling" under a Join button and he never said any of it. So a seed belongs in a
+  placeholder, a "use this" affordance, or a draft state — never in the record that renders. And a
+  repair pass may not re-seed what the writer stopped seeding: `scrubMembershipTradeLeaks` treated an
+  EMPTY description as a leak and refilled it, which would have silently undone the fix.
+- **CLASSIC IS A SUPPORTED PATH, NOT A LEGACY EXCEPTION AWAITING SUNSET.** Adrian, 2026-09-16:
+  aquaspeed, bucket-mobile-detailing and devdetailing661 stay classic, as does Graef. **Four market
+  businesses serve classic and all four stay.** Consequences that bind: anything new works on BOTH
+  paths (a quoted offer renders as quoted on a classic page, with the right button, same as freeform);
+  never build freeform-first and retrofit; the union readers and the drift check cover both and stay
+  that way; and no doc may call classic "legacy" or imply a migration. **Correcting the record: "Graef
+  is the only one on the old store" was an intention, never a fact.**
 - **A BREAK THAT LEAVES A LEG GREEN HAS NOT TESTED IT.** Red-proofing is per LEG, not per check.
   Reverting `hcItemBand` to its broken form turned 10 of 15 legs red and the round could have been
   reported as red-proofed — but legs 8 and 11 stayed green, and they stayed green by COINCIDENCE
