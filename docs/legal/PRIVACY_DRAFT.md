@@ -95,27 +95,23 @@ about my booking" cannot authorise promotional messages. Today that flag is **`f
 
 ---
 
-## 4. **⚠ REVIEW — IP addresses. Hubly does store one, in one place.**
+## 4. IP addresses — one place, one purpose, **24 hours**
 
-A template would say "we collect IP addresses for security". The truth is narrower and the retention
-does not match it.
+Hubly stores the caller's IP address in **one place**, `draft_creation_events`, for **one purpose**: a
+rate limit of **10 new draft sites per IP per hour**, so a script cannot mass-create pages. The address
+is taken from `cf-connecting-ip` (Cloudflare's single trusted client IP), falling back to the first hop
+of `x-forwarded-for`. **It is never joined to a business, a person, or a conversation**, and nothing
+else reads the table.
 
-`draft_creation_events` stores **the caller's IP address** every time a new draft site is created. It
-exists for **one purpose**: a rate limit of **10 new drafts per IP per hour**, to stop a script mass-
-creating pages. The address is taken from `cf-connecting-ip` (Cloudflare's single trusted client IP),
-falling back to the first hop of `x-forwarded-for`. It is never joined to a business, a person, or a
-conversation, and nothing else reads the table.
+**It is deleted after 24 hours, and the deletion is structural rather than scheduled.** A database
+trigger prunes expired rows on every insert — there is exactly one code path that writes this table, so
+there is exactly one that prunes, and the two cannot come apart. It is not a job anyone has to remember
+to run, and it cannot silently stop.
 
-**⚠ THE GAP:** the limit only ever looks at the **last hour**, but **no row is ever deleted**. There
-are **315 rows going back to 2026-08-21**. Every row older than one hour serves no purpose and is
-still held.
-
-**This draft cannot honestly promise a retention period that the code does not implement.** Either the
-table gets a deletion job and this section states it, or this section states that the addresses are
-kept indefinitely. **Recommendation: delete rows older than 24 hours on a schedule**, and then say
-"IP addresses are kept for up to 24 hours and used only to rate-limit site creation."
-
----
+**This section used to be a ⚠ REVIEW flag.** The limit only ever looked at the last hour, but nothing
+was ever deleted: **315 rows going back to 2026-08-21**, every one past its purpose. Fixed
+2026-09-16 — the backlog was deleted in the same migration, because otherwise this paragraph would
+have been false the moment it was written.
 
 ## 5. **⚠ REVIEW — conversations are sent to an AI provider**
 
@@ -155,8 +151,10 @@ A template would supply these paragraphs and they would all be false.
 - **Deletion and export.** There is no "delete my account" path and no data-export path in the
   product. Deletion today means a manual database operation. **A privacy notice must not promise a
   self-service right that does not exist**, and this draft therefore does not.
-- **A retention schedule.** Nothing is deleted on a schedule anywhere — not conversations, not page
-  versions, not the IP table (§4).
+- **A retention schedule for everything else.** The IP table now expires its own rows (§4), and that
+  is the only thing that does. **Conversations, page versions, booking requests and customer records
+  are kept indefinitely.** That is stated rather than dressed up: there is no schedule, and a notice
+  that implied one would be false.
 - **A sub-processor list.** Supabase, Vercel, Cloudflare, Stripe, Anthropic and OpenAI are all in the
   path. That list is assembled from the code, not audited, and the contracts behind it have not been
   reviewed in this round.
@@ -225,9 +223,12 @@ contract. **This needs to be built before this clause can be written.**
 
 1. **Build the two things §7 says are missing** — self-service deletion/export, and a retention
    schedule — or accept clauses that say plainly that they do not exist.
-2. **Fix the IP retention gap in §4** (delete rows older than 24 hours), which is a small job and turns
-   an awkward paragraph into a clean one.
+2. ~~Fix the IP retention gap in §4~~ — **DONE 2026-09-16.** Structural, not scheduled, and the
+   backlog was deleted with it.
 3. **Verify the §5 provider terms** before any sentence about training or retention is written.
 4. **Then have a lawyer review it**, with the ⚠ REVIEW markers as the agenda.
 
-**Until all four are done this file stays in `docs/legal/` and is not linked from anything.**
+**Until the remaining three are done this file stays in `docs/legal/` and is not linked from
+anything.** The booking form's Privacy and Terms links no longer claim a notice exists — they say only
+what is true and checkable, and when a reviewed notice exists, `openBookingLegal` is the one place
+that links to it.

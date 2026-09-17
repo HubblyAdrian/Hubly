@@ -94,15 +94,40 @@ unverified rather than clear — and it is the state where a save actually persi
 landscaping services. **The nine table rows are a window-cleaning seed from another trade**, and five
 of the nine are exact duplicates of each other — the apollo-weeds burst pattern, one store over.
 
-**RECOMMENDATION — the catalog is the business; the nine table rows should be deleted.** Not merged:
+### EXECUTED 2026-09-16 — Adrian gave the call, and all nine were deleted
+
+**What I did:** deleted all nine rows from `public.services` for `adrians-lawn-service`, scoped by
+slug. **Why:** every one is explained, and none is ambiguous.
+
+**The evidence, which is what made them explainable:**
+
+- All nine were written on **2026-07-17 in two bursts eight seconds apart** — `18:02:44` wrote five
+  rows (`sort_order` 0–4), `18:02:52` wrote the same four again (`sort_order` 0–3, identical prices and
+  identical descriptions, stopping before sort 4). The first burst is at **the same second the business
+  was created**. So they were written by the creation path and then partially re-written by a retry —
+  **not by a person editing a lawn service's offers.**
+- Every one is window cleaning. The business is `landscaping`, the slug is `adrians-lawn-service`, the
+  catalog holds five lawn services.
+- **Nothing was ambiguous**, so there was nothing to leave behind and name. There is no row here that
+  could be a lawn service.
+
+**Verified by use on both sides of the delete.** Loaded the live page in a browser before and after:
+`S.services` and `getBookingServices()` both returned exactly the five lawn services, the page
+mentioned no window cleaning, and **the two readings are identical**. The nine rows reached neither the
+page nor the booking wizard, so deleting them could not change anything a visitor sees — established by
+loading it, not by reasoning about it.
+
+**The original recommendation, which stands as the reasoning:** the catalog is the business; the nine
+table rows should be deleted. Not merged:
 there is nothing to merge. A lawn service does not sell Storefront Glass, and keeping the rows means
 any future table-preferring reader will offer window cleaning to a landscaping customer. It is a
 **test** account, so the cost of deleting is zero and the cost of keeping is a contaminated corpus
 that has already produced wrong findings twice.
 
-**Nothing was deleted. That is your call** — and if the answer is yes, it is `delete from
-public.services where business_id = (adrians-lawn-service) returning name`, one statement, with the
-returned rows printed.
+They were seeded content sitting in a store a reader can prefer — the exact class of the ruling made
+the same day. Any table-preferring reader would have offered **Storefront Glass to a lawn customer**.
+They had also already produced a wrong measurement: they are half of the "two real store conflicts"
+count.
 
 ## The other six, and a finding about what "$0" means
 
