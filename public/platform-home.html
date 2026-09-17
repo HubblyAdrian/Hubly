@@ -5978,12 +5978,22 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       completed: 'Done'
     },
     lead: {
-      // A lead is someone who asked and has not booked. The two states differ in WHOSE move it is.
-      pending:   'Waiting on you',
+      // A lead is someone who started a booking and did not finish. `pending` is NOT here: measured
+      // on the live table, a pending row is a SUBMITTED request waiting for the owner to accept, so
+      // it is a booking to work and not a lead to chase — giving it a lead word would have been a
+      // word for a state this list never shows. `accepted` is absent for the same reason: it is a
+      // job. One status, one word, and the row's own tail carries how far they got.
       abandoned: 'Didn\u2019t finish booking'
-      // 'accepted' is deliberately absent: an accepted request is not a lead any more, it is a job,
-      // and the lead reader filters it out rather than giving it a word here.
     }
+  };
+  /** HOW FAR THEY GOT, IN THE OWNER'S LANGUAGE — the booking wizard's four steps, named as the
+   *  wizard names them. A number ("step 3") tells him nothing; "they were on the review screen"
+   *  tells him what the phone call is about. Indexed 1-4 so an absent column stays absent. */
+  var HC_BOOKING_STEP_WORDS = {
+    1: 'picking a package',
+    2: 'choosing when and where',
+    3: 'filling in their details',
+    4: 'the review screen — one press from booking'
   };
   /** The word for a record's status, or null when there is nothing to say. Never invents. */
   function hcStatusWord(kind, status){
@@ -6077,23 +6087,50 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       load: async function(biz){
         var c = await authGetClient();
         var r = await c.from('booking_requests')
-          .select('id,customer_name,customer_phone,customer_email,service_name,status,created_at,preferred_date,preferred_time')
+          .select('id,customer_name,customer_phone,customer_email,service_name,status,created_at,requested_date,requested_time,became_lead,reached_by,furthest_step')
           .eq('business_id', biz.id)
+          // A LEAD IS SOMEONE WHO DID NOT SUBMIT. Measured on the live table: status is one of
+          // abandoned (141) / accepted (130) / pending (10). `pending` is a SUBMITTED booking
+          // request waiting for the owner to accept — that is a booking to work, not a lead to
+          // chase, and it already has its own surface. `accepted` is a job. So the list is
+          // `abandoned`, asked of the database rather than filtered afterwards, because "not
+          // accepted" quietly included the ten pending bookings and would have shown him the same
+          // record in two places with two different meanings.
+          //
+          // A save-and-exit row is deliberately NOT here either: it is written as `pending` because
+          // the visitor ASKED us to save it, which the original writer's comment states outright —
+          // "Save & exit -> pending so it shows under New bookings (not buried as abandoned)".
+          .eq('status', 'abandoned')
           .order('created_at', { ascending:false });
         if(r && r.error) throw new Error(r.error.message);
         var rows = Array.isArray(r && r.data) ? r.data : [];
         // AN ACCEPTED REQUEST IS A JOB, NOT A LEAD. It appears in Jobs, and leaving it here would
         // make one record look like two pieces of work.
-        return rows.filter(function(x){ return String(x.status || '').toLowerCase() !== 'accepted'; });
+        //
+        // AND A NAME-ONLY ATTEMPT IS A SIGNAL, NEVER A LEADS ROW (Adrian, 2026-09-16). It is
+        // recorded — `became_lead = false`, so it is countable — and it is kept out of this list,
+        // where it would look followable and send him to call someone he cannot call. The filter
+        // reads the stored answer and only excludes an EXPLICIT false: every row written before
+        // 2026-09-16 has `became_lead = null`, which means "we did not capture this", and treating
+        // a null as a false would silently empty his list of 141 rows.
+        return rows.filter(function(x){ return x.became_lead !== false; });
       },
       parts: function(x){
         // REACHABLE OR NOT IS THE FACT THAT MATTERS about a lead, so it is the sub-line. A name
         // with no way to contact them is not a lead you can act on, and the row must not imply
         // otherwise by leaving the space blank.
-        var reach = hcPhoneHouse(x.customer_phone) || x.customer_email || null;
+        var r = hcLeadReach(x);
+        var reach = r.phone ? (hcPhoneHouse(r.phone) || r.phone) : (r.email || null);
+        // THE TAIL SAYS HOW FAR THEY GOT, because that is what differs between two rows in this
+        // list and what makes the phone call honest — "they were on the review screen" is a
+        // different conversation from "they were picking a package". Every row here is abandoned, so
+        // the status word alone would read identically on all of them; it stays as the fallback for
+        // the 141 rows written before `furthest_step` existed, where the step is genuinely UNKNOWN
+        // and is therefore not guessed.
+        var step = HC_BOOKING_STEP_WORDS[Number(x.furthest_step)] || null;
         return [ x.customer_name || 'Someone',
                  reach || 'no phone or email on this one',
-                 hcStatusWord('lead', x.status) || '' ];
+                 step || hcStatusWord('lead', x.status) || '' ];
       },
       open: function(x){ hcLeadPanel(x); },
       noun: ['person', 'people'],
@@ -7215,6 +7252,35 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
       }
     });
   }
+  /** ══ THE PHONE COLUMN SOMETIMES HOLDS AN EMAIL. ══════════════════════════════════════════════
+   *
+   *  `booking_requests.customer_phone` carries the string `email:someone@example.com` when the
+   *  visitor left an address and no number — a hack from the original abandoned-booking writer
+   *  (`leadPhone = phone || 'email:'+email`) that 141 existing rows depend on, so it is not being
+   *  unwound today. What is NOT acceptable is rendering it as a phone number: `hcPhoneHouse` would
+   *  be handed a string with no digits and a reader downstream would offer to dial it.
+   *
+   *  So the two facts are separated here, once, and every lead surface asks this instead of the
+   *  column: does this row have a real phone, and what can we actually reach them by. `reached_by`
+   *  (added 2026-09-16) is the writer's own answer and is preferred when present — a stored answer
+   *  beats a re-derived one, which is the same reason the band rule reads `band_source`. */
+  function hcLeadPhone(row){
+    var v = String((row && row.customer_phone) || '').trim();
+    if(!v || /^email:/i.test(v)) return null;
+    return v;
+  }
+  function hcLeadReach(row){
+    var byWriter = String((row && row.reached_by) || '').trim().toLowerCase();
+    var phone = hcLeadPhone(row);
+    var email = String((row && row.customer_email) || '').trim() || null;
+    // THE WRITER'S ANSWER, CHECKED AGAINST WHAT IS ACTUALLY IN THE ROW. If `reached_by` says phone
+    // and there is no phone, the row is telling us two different things and the honest answer is
+    // what we can see — never the label. A label that outranks the thing it labels is how a green
+    // checkmark gets believed.
+    if(byWriter === 'none' && !phone && !email) return { phone:null, email:null, label:null };
+    return { phone: phone, email: email,
+             label: phone || email || null };
+  }
   /** ══ A LEAD, OPENED. ══════════════════════════════════════════════════════════════════════
    *
    *  A ROW THAT OPENS NOTHING IS A DOOR TO NOWHERE, and a list of people who asked for work is
@@ -7235,10 +7301,15 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     hcOpenPanel('Someone who asked', function(body){
       var rows = [
         ['Name', x.customer_name || null],
-        ['Phone', x.customer_phone ? hcPhoneHouse(x.customer_phone) : null],
+        ['Phone', hcLeadPhone(x) ? (hcPhoneHouse(hcLeadPhone(x)) || hcLeadPhone(x)) : null],
         ['Email', x.customer_email || null],
+        // HOW FAR THEY GOT, in the owner's language, because it is what makes the call honest —
+        // "they were choosing a package" is a different conversation from "they were on the review
+        // screen". Null on every row written before the column existed, and absent rather than
+        // guessed: a step we never captured is not step 1.
+        ['Got as far as', HC_BOOKING_STEP_WORDS[Number(x.furthest_step)] || null],
         ['Wanted', x.service_name || null],
-        ['Asked for', [x.preferred_date ? hcDayLabel(x.preferred_date) : null, hcTimeUS(x.preferred_time)].filter(Boolean).join(' at ') || null],
+        ['Asked for', [x.requested_date ? hcDayLabel(x.requested_date) : null, hcTimeUS(x.requested_time)].filter(Boolean).join(' at ') || null],
         ['Came in', x.created_at ? hcDateLong(String(x.created_at).slice(0,10)) : null],
         ['Where it stopped', hcStatusWord('lead', x.status)]
       ].filter(function(r){ return r[1]; });
@@ -7250,21 +7321,22 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         line.appendChild(k); line.appendChild(v); dl.appendChild(line);
       });
       body.appendChild(dl);
-      if(!x.customer_phone && !x.customer_email){
+      var reach = hcLeadReach(x);
+      if(!reach.phone && !reach.email){
         var n = document.createElement('div'); n.className='hc-event-sub';
         n.textContent = 'They left no phone and no email, so there is no way to reach them from here.';
         body.appendChild(n);
       }else{
         var acts = document.createElement('div'); acts.className='hc-event-acts';
-        if(x.customer_phone){
+        if(reach.phone){
           var call = document.createElement('a'); call.className='hc-arrival-act';
-          call.href = 'tel:' + String(x.customer_phone).replace(/[^0-9+]/g,'');
-          call.textContent = 'Call ' + hcPhoneHouse(x.customer_phone); acts.appendChild(call);
+          call.href = 'tel:' + String(reach.phone).replace(/[^0-9+]/g,'');
+          call.textContent = 'Call ' + (hcPhoneHouse(reach.phone) || reach.phone); acts.appendChild(call);
         }
-        if(x.customer_email){
+        if(reach.email){
           var mail = document.createElement('a'); mail.className='hc-arrival-act';
-          mail.href = 'mailto:' + String(x.customer_email);
-          mail.textContent = 'Email ' + x.customer_email; acts.appendChild(mail);
+          mail.href = 'mailto:' + String(reach.email);
+          mail.textContent = 'Email ' + reach.email; acts.appendChild(mail);
         }
         body.appendChild(acts);
       }

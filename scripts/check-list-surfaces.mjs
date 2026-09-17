@@ -51,15 +51,28 @@ let failed = 0;
 const say = (n, ok, d) => { console.log(`${ok ? "PASS" : "FAIL"}  ${n}${d ? " — " + d : ""}`); if (!ok) failed++; };
 
 const BIZ = { id: "5ebedc20-1061-46b9-b393-a6ef57225910", slug: "hubly-classic-fixture", name: "Hubly Classic Fixture" };
+// THE FIXTURE ENCODES THE RULE, so it is worth reading as the spec: a lead is someone who did not
+// SUBMIT. Measured on the live table, status is one of abandoned / accepted / pending, and only
+// `abandoned` is a lead — `pending` is a submitted request waiting to be accepted (a booking to
+// work) and `accepted` is a job. A `became_lead:false` row is a name-only SIGNAL and is recorded but
+// never listed.
 const REQS = [
   { id: "r1", business_id: BIZ.id, customer_name: "Dana", customer_phone: "8015551212",
-    customer_email: null, service_name: "Full Detail", status: "pending", created_at: "2026-09-14T10:00:00Z" },
-  { id: "r2", business_id: BIZ.id, customer_name: "Marcus", customer_phone: null,
-    customer_email: null, service_name: "Express Wash", status: "abandoned", created_at: "2026-09-13T10:00:00Z" },
+    customer_email: null, service_name: "Full Detail", status: "abandoned", furthest_step: 4,
+    became_lead: true, reached_by: "phone", created_at: "2026-09-14T10:00:00Z" },
+  { id: "r2", business_id: BIZ.id, customer_name: "Marcus", customer_phone: "email:m@example.com",
+    customer_email: "m@example.com", service_name: "Express Wash", status: "abandoned",
+    furthest_step: 3, became_lead: true, reached_by: "email", created_at: "2026-09-13T10:00:00Z" },
   { id: "r3", business_id: BIZ.id, customer_name: "Already booked", customer_phone: "8015559999",
     customer_email: null, service_name: "Full Detail", status: "accepted", created_at: "2026-09-12T10:00:00Z" },
-  { id: "r4", business_id: BIZ.id, customer_name: "Odd one", customer_phone: "8015557777",
-    customer_email: null, service_name: null, status: "snoozed", created_at: "2026-09-11T10:00:00Z" },
+  { id: "r4", business_id: BIZ.id, customer_name: "Submitted, waiting on him", customer_phone: "8015558888",
+    customer_email: null, service_name: "Full Detail", status: "pending", created_at: "2026-09-11T10:00:00Z" },
+  { id: "r5", business_id: BIZ.id, customer_name: "Mike", customer_phone: "",
+    customer_email: null, service_name: null, status: "abandoned", furthest_step: 3,
+    became_lead: false, reached_by: "none", created_at: "2026-09-10T10:00:00Z" },
+  { id: "r6", business_id: BIZ.id, customer_name: "Older than the columns", customer_phone: "8015556666",
+    customer_email: null, service_name: "Full Detail", status: "abandoned", furthest_step: null,
+    became_lead: null, reached_by: null, created_at: "2026-07-20T10:00:00Z" },
 ];
 
 let rig;
@@ -118,7 +131,8 @@ try {
   const words = await rig.page.evaluate(() => ({
     known: window.hublyListUI.statusWord("job", "scheduled"),
     done: window.hublyListUI.statusWord("job", "completed"),
-    lead: window.hublyListUI.statusWord("lead", "pending"),
+    lead: window.hublyListUI.statusWord("lead", "abandoned"),
+    pendingIsNotALeadWord: window.hublyListUI.statusWord("lead", "pending"),
     unseen: window.hublyListUI.statusWord("job", "snoozed"),
     noKind: window.hublyListUI.statusWord("quote", "sent"),
     empty: window.hublyListUI.statusWord("job", ""),
@@ -130,7 +144,12 @@ try {
   say("5 nothing in, nothing out — an absent status produces null, not a word",
       words.empty === null && words.nul === null, `"${words.empty}" / "${words.nul}"`);
   say("6 a lead and a job never say the same thing about themselves",
-      words.lead !== words.known && /waiting/i.test(words.lead), `lead="${words.lead}" job="${words.known}"`);
+      words.lead !== words.known && /finish/i.test(words.lead), `lead="${words.lead}" job="${words.known}"`);
+  // `pending` HAS NO LEAD WORD, and that is the rule, not an omission: a pending row is a SUBMITTED
+  // request waiting to be accepted, so it never appears in this list and a word for it would
+  // describe a state the list cannot show. It echoes, which is what an unrecognised value does.
+  say("6b 'pending' is not a lead state — it echoes rather than getting a lead word",
+      words.pendingIsNotALeadWord === "pending", JSON.stringify(words.pendingIsNotALeadWord));
 
   // ── AN EARNABLE PLACE HAS SOMEWHERE TO GO AND ITS OWN PICTURE ───────────────────────────
   const needRoom = seam.surfaces.filter((k) => k !== "website");
@@ -165,18 +184,29 @@ try {
     host.remove();
     return out;
   }, { biz: BIZ });
-  say("10 an ACCEPTED request is not a lead — it is a job, and it appears in one list only",
-      !leads.loaded.includes("Already booked") && leads.loaded.length === 3,
+  say("10 only the people who did NOT submit are leads — accepted is a job, pending is a booking",
+      !leads.loaded.includes("Already booked") &&
+      !leads.loaded.includes("Submitted, waiting on him") &&
+      leads.loaded.includes("Dana") && leads.loaded.includes("Marcus"),
       `loaded: ${leads.loaded.join(", ")}`);
+  say("10b a name-only SIGNAL is recorded but never listed, and a row older than the column still is",
+      !leads.loaded.includes("Mike") && leads.loaded.includes("Older than the columns"),
+      `became_lead:false excluded, became_lead:null kept — ${leads.loaded.length} rows`);
   say("11 the room renders exactly what the SPEC says — it is a projection, not a second list",
       JSON.stringify(leads.rowTitles) === JSON.stringify(leads.parts.map((p) => p[0])) &&
       JSON.stringify(leads.rowSubs) === JSON.stringify(leads.parts.map((p) => p[1])),
       `${leads.rowTitles.length} rows, titles and subs both from parts()`);
-  say("12 a lead with no phone and no email SAYS so — the space is never left blank",
-      leads.rowSubs.some((t) => /no phone or email/i.test(t)),
+  say("12 every lead row's sub-line says how to reach them, or says there is no way",
+      leads.rowSubs.length === leads.rowTitles.length && leads.rowSubs.every((t) => t && t.length > 3),
       JSON.stringify(leads.rowSubs));
   say("13 the count is his own rows in his own words, never a corpus figure",
-      leads.count === "3 people", `"${leads.count}"`);
+      leads.count === "3 people", `"${leads.count}" (Dana, Marcus and the pre-column row)`);
+  // THE PHONE COLUMN SOMETIMES HOLDS AN EMAIL (`email:m@example.com`), a hack 141 existing rows
+  // depend on. It must never be rendered as a phone number — hcPhoneHouse would be handed a string
+  // with no digits and a reader downstream would offer to dial it.
+  say("13b an email hiding in the phone column is shown as an EMAIL, never dialled",
+      leads.rowSubs.some((t) => t === "m@example.com") && !leads.rowSubs.some((t) => /email:/i.test(t)),
+      JSON.stringify(leads.rowSubs));
 
   // ── AND THE JOBS ROOM NO LONGER SHOWS A COLUMN VALUE. Scoped to its own function body. ──
   const jobsBody = codeOf(bodyOf(readFileSync(FILE, "utf8"), "async function hcRenderJobs(canvas, biz){"));

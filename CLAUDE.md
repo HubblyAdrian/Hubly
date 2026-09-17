@@ -195,6 +195,16 @@ acts, or it says what will happen — it never gives directions to something it 
   the change was intended and update the leg, never to undo the improvement. Labelling at birth is
   what stops the next person rediscovering which kind it was, from a red result, under pressure.
   (Same spirit as the `[TRIPWIRE]` labels on the milestone certifications.)
+- **A BREAK THAT LEAVES A LEG GREEN HAS NOT TESTED IT.** Red-proofing is per LEG, not per check.
+  Reverting `hcItemBand` to its broken form turned 10 of 15 legs red and the round could have been
+  reported as red-proofed — but legs 8 and 11 stayed green, and they stayed green by COINCIDENCE
+  (the broken version happened to return 'A' for the same case, and the function the leg counted
+  still existed). A second, targeted break — trusting the stored `proposed` band, adding a second C
+  default — was needed to see those two fail. So: after a break, read WHICH legs went red, name the
+  ones that did not, and break again for each. A leg that has never been seen red is a leg that has
+  never been tested, and a check reported as red-proofed while it contains such a leg is itself a
+  false green. Same discipline as the two directions of a probe: absent must be distinguishable from
+  broken, and every assertion must have been observed failing for the reason it claims to catch.
 - **A probe must know ABSENT from BROKEN, or it reports the fix as the defect.** The squeeze sweep
   measured `display:none` column headers as "crushed" and failed the very change that stopped them
   being squeezed — the headers were hidden *because* four columns do not fit a chat pane. Any probe

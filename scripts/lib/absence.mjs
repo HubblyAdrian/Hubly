@@ -31,15 +31,47 @@ export function codeOf(src) {
 }
 
 /** The body of one function, brace-counted from its declaration. null when the declaration is not
- *  found — and a caller must treat null as CANNOT MEASURE, never as "the string is absent". */
+ *  found — and a caller must treat null as CANNOT MEASURE, never as "the string is absent".
+ *
+ *  THE PARAMETER LIST IS SKIPPED BEFORE COUNTING, and that is not cosmetic. The first version took
+ *  `src.indexOf("{", at)`, which for
+ *
+ *      async function writeAbandonedBookingRequest(opts={}){
+ *
+ *  found the `{` of the DEFAULT PARAMETER `opts={}`, counted one brace up and one down, and returned
+ *  a body of exactly two characters: `{}`. Two absence legs then passed — vacuously, against a
+ *  window containing no code at all — and one of them only failed because it also asserted a string
+ *  was PRESENT. An absence assertion over an empty window is the worst false green available: it is
+ *  green for every possible product.
+ *
+ *  So the parameter list is matched first, and a body that cannot be found returns null rather than
+ *  something small. A caller that treats a 2-char window as a scope has been handed a probe failure
+ *  wearing a pass. */
 export function bodyOf(src, decl) {
-  const at = String(src || "").indexOf(decl);
+  const s = String(src || "");
+  const at = s.indexOf(decl);
   if (at < 0) return null;
-  let i = src.indexOf("{", at), depth = 0;
-  const start = i;
-  for (; i < src.length; i++) {
-    if (src[i] === "{") depth++;
-    else if (src[i] === "}") { depth--; if (depth === 0) return src.slice(start, i + 1); }
+  // Walk the parameter list to its matching ")", so a default value's braces cannot be mistaken
+  // for the body's. If the declaration has no "(" before the first "{", it is not a function.
+  const openParen = s.indexOf("(", at);
+  const firstBrace = s.indexOf("{", at);
+  let bodyStart;
+  if (openParen >= 0 && (firstBrace < 0 || openParen < firstBrace)) {
+    let i = openParen, depth = 0;
+    for (; i < s.length; i++) {
+      if (s[i] === "(") depth++;
+      else if (s[i] === ")") { depth--; if (depth === 0) break; }
+    }
+    if (i >= s.length) return null;
+    bodyStart = s.indexOf("{", i);
+  } else {
+    bodyStart = firstBrace;
+  }
+  if (bodyStart < 0) return null;
+  let i = bodyStart, depth = 0;
+  for (; i < s.length; i++) {
+    if (s[i] === "{") depth++;
+    else if (s[i] === "}") { depth--; if (depth === 0) return s.slice(bodyStart, i + 1); }
   }
   return null;
 }

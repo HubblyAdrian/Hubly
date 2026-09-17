@@ -264,3 +264,42 @@ told it is "bookable" — it already happened.
 A negative assertion is anchored to a function body, a block, or a code construct — **never a whole
 file, never a bare identifier**. `confirm-served` already refuses bare-identifier absence markers;
 `scripts/check-negative-assertions-scoped.mjs` sweeps the checks for the same shape.
+
+---
+
+**32. THREE OF ADRIAN'S PREMISES ABOUT MEMBERSHIPS WERE WRONG. The pattern is the finding.**
+
+1. *"Memberships have no home yet"* → **the offer half was always built and shipping**:
+   `ensureMembershipOffers`, `defaultMembershipPlan`, `addMembershipPlan`,
+   `renderMembershipEditorList`, `editMembershipFromPreview`, a website section, a profile tab. The
+   services `+` was the only surface that could not reach it. **MISSING DOOR, NOT MISSING FEATURE.**
+2. *"Graef's memberships are run in real life but not in the data"* → **they are in the data and
+   live on his page**: $60/mo and $50/2wk, both with a Join button, both prices his own.
+3. *"Write nothing for the membership half"* → **writing nothing was the wrong instruction**, because
+   the store exists; the right move was to route to it.
+
+Three for three, all in the same direction: **the capability existed and the door didn't.** When
+something in Hubly looks unbuilt, that is now the *second* hypothesis.
+
+**33. QUOTED WAS ALWAYS IN THE DATA MODEL.** `pricingType:'quote'` → `pricing.mode:'quote_required'`
+since `buildServiceCatalogFromEditor` was written; `PricingMode` has carried `quote_required` since
+the service engine was written. **The editor never offered it** — so an owner whose price depends on
+the job had to type a number nobody asked him for. And `if(!vehicleOn) ptype='flat'` silently
+converted "ask me" into a flat rate for every non-detailing trade.
+
+**34. A SEEDED DEFAULT HIDES BEHIND ONE NUMBER.** Searching live pages for `$99` would have reported
+"no seeded price is live." The seed is **per trade** — 99 detailing, 89 windows, 149 cleaning,
+**119 landscaping**, 129 hvac, 99 pressure_washing — and `adrians-lawn-service` publishes exactly
+$119. A detector for a per-trade default must read the **table**, not a value; the measurer parses
+`membershipDefaultsForTrade` out of `public/hubly.html` at run time.
+Measured answer: **zero market businesses publish a price the owner didn't set**, but Graef's
+Bi-Weekly plan publishes **all three seeded INCLUDES** — deliverables a customer can hold him to —
+under a Join button. See `docs/SEEDED_MEMBERSHIPS_MEASURED.md`.
+
+**35. `confirm-served` COULD REPORT THE WRONG FILE.** `/platform-home.html` is not a route;
+`api/router.js` served **hubly.html**, and the bare name `hcDeriveBand` matched a **comment** there.
+Three other markers said absent, so it failed loudly — four bare names would have printed
+**CONFIRMED for a file never served**, which is the unearned checkmark aimed at a deploy. The
+refusal is now **symmetric**: a marker names a code construct in both directions. Routes:
+platform-home.html is served at `/`, `/home`, `/platform`, `/platform-home` — **not**
+`/platform-home.html`.

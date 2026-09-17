@@ -74,7 +74,7 @@ nowhere on his screen, which is a worse version of the silent fall-through. It n
 and the rule says out loud that it cannot place it. Tasks had always worked this way two lines
 below; the jobs line was the sibling that was wrong.
 
-**LEFT OPEN, with its line numbers.** `hcLoadJobs` (`public/platform-home.html`, the
+**LEFT OPEN, with its line numbers — Adrian confirmed this stays recorded here.** `hcLoadJobs` (`public/platform-home.html`, the
 `.gte('scheduled_date', fromISO)` / `.lte(...)` pair) excludes a null date in real Postgres, so an
 undated job never comes back from the database at all. So what legs 13–14 of the check prove is the
 **renderer's** half: handed such an item, it places it in `?` with a reason rather than in C. The

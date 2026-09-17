@@ -23,6 +23,10 @@ export function installOwnerFake(opts) {
     const t = {
       select: (_c, o) => (o && o.count ? Object.assign(t, { __count: true }) : t),
       in: () => t, gte: () => t, lte: () => t, order: () => t, limit: () => t,
+      // `is` and `not` join the no-ops; `eq` is the only predicate the fake actually applies, and
+      // that is stated rather than left to be discovered: a check whose fixture relies on gte/lte
+      // narrowing is measuring the fake, not the product.
+      is: () => t, not: () => t,
       eq: (c, v) => { held = held.filter((r) => String(r[c]) === String(v)); return t; },
       maybeSingle: () => ok(held[0] || null),
       single: () => ok(held[0] || null),

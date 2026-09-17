@@ -12693,12 +12693,26 @@ document.addEventListener('DOMContentLoaded', function() {
           <div class="bk-info-compose">
             <div class="bk-info-primary">
               <div class="field"><label>Full name *</label><input type="text" id="bk-name" placeholder="John Smith" autocomplete="name"></div>
-              <div class="field"><label>Email address *</label><input type="email" id="bk-email" placeholder="john.smith@email.com" autocomplete="email">
+              <!-- BOTH SAID "*" AND ONLY THE PHONE WAS ACTUALLY ENFORCED, so the form was asking for
+                   two things and refusing on one — and a visitor who would have left an email got
+                   past nothing. The gate is now REACHABLE: phone OR email. The asterisks come off
+                   both, and one line says what is actually required, once, where they can see it. -->
+              <div class="field"><label>Email address</label><input type="email" id="bk-email" placeholder="john.smith@email.com" autocomplete="email">
                 <div class="bk-field-hint" id="bk-info-blurb">🛡 We respect your privacy. Your information will only be used for booking and service updates.</div>
               </div>
-              <div class="field"><label>Phone number *</label><input type="tel" id="bk-phone" placeholder="(801) 555-1234" autocomplete="tel" oninput="formatPhone(this);refreshBookingSmsConsent()" onblur="refreshBookingSmsConsent()">
+              <div class="field"><label>Phone number</label><input type="tel" id="bk-phone" placeholder="(801) 555-1234" autocomplete="tel" oninput="formatPhone(this);refreshBookingSmsConsent()" onblur="refreshBookingSmsConsent()">
                 <div class="bk-phone-hint">We’ll text you to confirm your appointment.</div>
               </div>
+              <div class="bk-field-hint" id="bk-reach-req">A phone number or an email address — whichever you prefer. One is enough.</div>
+              <!-- THE DISCLOSURE. Option 1, ruled 2026-09-16 (docs/ABANDONED_BOOKING_TRACE.md).
+                   Option 3 was rejected PERMANENTLY for describing lead capture as customer support:
+                   "a euphemism in the one sentence whose entire job is honesty is the wrong
+                   instinct". Option 2 was rejected as an ask rather than a disclosure — it said
+                   nothing about what they have ALREADY typed, which is the whole fact being
+                   disclosed. The business name is slot-filled by bkSetVisitorDisclosure(), which
+                   refuses to render the sentence at all without a real name rather than saying
+                   "this business". -->
+              <div class="bk-field-hint" id="bk-visitor-disclosure" hidden></div>
               <label class="bk-sms-consent" for="bk-sms-consent">
                 <input type="checkbox" id="bk-sms-consent">
                 <span class="bk-sms-body">
@@ -42603,6 +42617,11 @@ function goToStep(from, to){
     setTimeout(()=>{toEl.style.transform=''},10);
   },goingForward?180:10);
   updateBkProgress(to);
+  // THE DISCLOSURE APPEARS WITH THE FIELDS IT IS ABOUT, and only there. Step 3 is where the name,
+  // phone and email are typed, so that is where the visitor is told what happens to them if they
+  // walk away. Set on every arrival rather than once at build time: the business name is loaded
+  // asynchronously, and a sentence composed before the name arrives says "this business".
+  if(Number(to)===3){ try{ bkSetVisitorDisclosure(); }catch(e){} }
 }
 
 function selTime(el,val,label){
@@ -42857,7 +42876,12 @@ async function bkNext(step){
     goToStep(2,3);
   } else if(step===3){
     if(!document.getElementById('bk-name').value.trim()){toast('Enter your name');return}
-    if(!document.getElementById('bk-phone').value.trim()){toast('Enter your phone number');return}
+    // ══ REACHABLE: PHONE **OR** EMAIL. ═══════════════════════════════════════════════════════
+    // This demanded a PHONE, so a visitor who was willing to leave an email address could not
+    // advance and we stored NOTHING — the lead did not get lost in a list, it never existed. One
+    // predicate decides it (bkIsReachable) and the writer asks the same predicate, so the form and
+    // the record can never disagree about who counts.
+    if(!bkIsReachable()){toast('Leave a phone number or an email address so they can reach you');return}
     // SMS consent is OPTIONAL. It used to block this step, which meant nobody
     // could book without agreeing — and consent that cannot be declined is not
     // consent, it is a checkbox. It also made every stored `true` worthless as
@@ -42872,7 +42896,10 @@ async function bkNext(step){
     S.bkSmsConsent=bkHasSmsConsent();
     if(S.bkSmsConsent)rememberSmsConsentLocal(document.getElementById('bk-phone')?.value||'');
     buildOrderSummary();
-    writeAbandonedBookingRequest();
+    // FURTHEST STEP 3: they completed "your details" and moved past it. The step number is passed
+    // rather than assumed inside the writer, because the same writer runs from save-and-exit at a
+    // different point and a hardcoded 3 there would be a fact we did not capture.
+    writeAbandonedBookingRequest({furthestStep:3});
     goToStep(3,4);
   }
 }
@@ -43025,16 +43052,106 @@ function bkConsentColumns(){
 // Guarded to write only once per booking session; if the customer goes
 // back and changes details, the eventual completion call still sends
 // fresh values for everything that can change.
+// ══ THE LEAD GATE — ONE PREDICATE, ONE SWITCH ════════════════════════════════════════════════
+//
+// ADRIAN, 2026-09-16: "name AND phone becomes REACHABLE: phone OR email. Name-only is a signal,
+// never a leads row."
+//
+// The recommendation in docs/ABANDONED_BOOKING_TRACE.md was to implement reachable-only and make
+// the other choice TRIVIALLY SWITCHABLE — one predicate, one constant. This is that constant. If
+// the rule ever changes back, it changes here and nowhere else, and the form, the writer and the
+// server RPC all follow because all three ask this question rather than each testing fields.
+//
+// (The server asks it again in `record_booking_attempt`, deliberately — a client-side gate is a
+// convenience for the visitor and never a guarantee, and the row's `reached_by` is the server's own
+// answer so no reader re-derives it.)
+var BK_LEAD_GATE = 'reachable';           // 'reachable' = phone OR email · 'name_and_phone' = the old rule
+/** WHAT IS IN THE FIELD AT THE STEP BOUNDARY — not keystrokes, and not a remembered value.
+ *  "Provided" means completed and moved past (docs/ABANDONED_BOOKING_TRACE.md decision 2): a field
+ *  typed and then emptied is EMPTY here, and a keystroke capture is exactly what this is not. */
+function bkContactNow(){
+  var g = function(id){ var e = document.getElementById(id); return e ? String(e.value == null ? '' : e.value) : ''; };
+  return { name: g('bk-name'), phone: g('bk-phone'), email: g('bk-email') };
+}
+function bkIsReachable(){
+  var c = bkContactNow();
+  var phone = c.phone.trim(), email = c.email.trim();
+  if(BK_LEAD_GATE === 'name_and_phone') return !!(c.name.trim() && phone);
+  return !!(phone || email);
+}
+/** HOW we can reach them, in the same vocabulary the column stores. Null when we cannot. */
+function bkReachedBy(){
+  var c = bkContactNow();
+  var phone = !!c.phone.trim(), email = !!c.email.trim();
+  return phone && email ? 'both' : phone ? 'phone' : email ? 'email' : 'none';
+}
+/** AN OPAQUE PER-BROWSER ID, FOR DEDUPE AND NOTHING ELSE.
+ *
+ *  One visitor abandoning three times is ONE lead — the same disease as apollo-weeds renaming three
+ *  times in 108 seconds: a burst is one intention, not three events. This is not a person, it is
+ *  never joined to anything, and it carries no device, browser or network fact.
+ *
+ *  A browser with storage blocked gets a fresh key each load, which degrades to the old behaviour
+ *  (a second row) rather than failing — and that is stated rather than pretended away. */
+function bkVisitorKey(){
+  try{
+    var k = localStorage.getItem('hublyVisitorKey');
+    if(k) return k;
+    k = 'v-' + (crypto.randomUUID ? crypto.randomUUID() : (Date.now() + '-' + Math.random().toString(36).slice(2)));
+    localStorage.setItem('hublyVisitorKey', k);
+    return k;
+  }catch(e){
+    // No storage. A per-load key still dedupes the burst WITHIN this sitting, which is the case that
+    // actually happens (advance, go back, advance again).
+    if(!window.__bkVisitorKeyMem) window.__bkVisitorKeyMem = 'v-nostore-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    return window.__bkVisitorKeyMem;
+  }
+}
+/** THE LABEL, IN WORDS, ON THE RECORD. A half-finished booking must never render looking like a
+ *  confirmed job — and the label is part of the ROW, not a badge a later renderer can drop. */
+var BK_STEP_WORDS = { 1:'picking a package', 2:'choosing when and where', 3:'filling in their details',
+                      4:'the review screen — one press from booking' };
+function bkPartialLabel(step){
+  var w = BK_STEP_WORDS[Number(step)] || null;
+  return 'Started booking, didn’t finish' + (w ? (' — got as far as ' + w) : '') + '.';
+}
+/** THE VISITOR'S SENTENCE. Option 1, ruled 2026-09-16.
+ *
+ *  It REFUSES to render without a real business name. "whatever you've filled in goes to this
+ *  business" is a disclosure nobody can act on — and slot-filling a placeholder into the one
+ *  sentence whose entire job is honesty is the broken-grammar tell the standing rules name. No
+ *  name, no sentence; the absence is the honest state and it is not hidden from us (it warns). */
+function bkSetVisitorDisclosure(){
+  var el = document.getElementById('bk-visitor-disclosure');
+  if(!el) return false;
+  var name = String((typeof currentBusiness !== 'undefined' && currentBusiness && currentBusiness.name) || (S && S.biz) || '').trim();
+  if(!name || /^your business$/i.test(name)){
+    el.hidden = true; el.textContent = '';
+    try{ console.warn('[bk] visitor disclosure not shown: no business name yet'); }catch(e){}
+    return false;
+  }
+  el.textContent = 'If you don’t finish, whatever you’ve filled in goes to ' + name + ' so they can follow up.';
+  el.hidden = false;
+  return true;
+}
 async function writeAbandonedBookingRequest(opts={}){
   if(!currentBusiness?.id){
     if(opts.allowSoft||opts.source==='save_exit')toast('Sign in / publish your site first so leads can save');
     return {ok:false,reason:'no_business'};
   }
   const soft=!!opts.allowSoft;
-  const name=document.getElementById('bk-name')?.value?.trim()||'';
-  const phone=document.getElementById('bk-phone')?.value?.trim()||'';
-  const email=document.getElementById('bk-email')?.value?.trim()||null;
-  if(!soft&&(!name||!phone))return {ok:false,reason:'missing_contact'};
+  // READ THE FORM AT THE BOUNDARY, THROUGH ONE READER. `bkContactNow` is what the gate reads and
+  // what the writer reads, so the two cannot disagree about what is in the fields.
+  const _c=bkContactNow();
+  const name=_c.name.trim();
+  const phone=_c.phone.trim();
+  const email=_c.email.trim()||null;
+  // ══ THE GATE: REACHABLE, NOT name-AND-phone. ═════════════════════════════════════════════
+  // This was `!name||!phone`, so a visitor who left an EMAIL and no number was refused and we
+  // stored nothing — the lead never existed rather than arriving incomplete. One predicate decides
+  // it (BK_LEAD_GATE), and the server asks the same question again in record_booking_attempt
+  // because a client-side gate is a convenience for the visitor, never a guarantee.
+  if(!soft&&!bkIsReachable())return {ok:false,reason:'missing_contact'};
   if(soft&&!name&&!phone&&!email){
     toast('Add a phone or email first so we can follow up');
     return {ok:false,reason:'missing_contact'};
@@ -43057,8 +43174,65 @@ async function writeAbandonedBookingRequest(opts={}){
     ?[`[source:${opts.source}]`,consentBit,returningBit,rpBit,frameBits,whereLabel?`Where: ${whereLabel}`:''].filter(Boolean).join(' · ')
     :[consentBit,returningBit,rpBit,frameBits,whereLabel?`Where: ${whereLabel}`:''].filter(Boolean).join(' · ');
   const dbClient=await waitForDb();
+  // Hoisted so the partial branch can ask them before the original path computes its own copies —
+  // one definition each, rather than two readings of the same question.
+  const asLeadEarly=()=>opts.source==='save_exit'||!!opts.asLead;
+  const needsVehicleEarly=()=>bookingNeedsVehicle();
   const leadName=name||(email?String(email).split('@')[0]:'Saved lead');
   const leadPhone=phone||(email?`email:${email}`:'');
+
+  // ══ THE PARTIAL ATTEMPT IS WRITTEN BY record_booking_attempt, AND IT HAS TO BE. ══════════
+  //
+  // `booking_requests` has NO SELECT POLICY FOR ANON — the comment above this function records it
+  // ("sidestepping the RLS-under-RETURNING gap … no SELECT policy, confirmed earlier tonight"). So
+  // a visitor's browser cannot look for the row it wrote last visit, and dedupe across reloads is
+  // impossible on this side. It is not a preference for an RPC; it is the only place the lookup can
+  // happen. The function carries every field this insert carried — vehicle, addons, consent — so
+  // moving to it loses nothing (verified against the live table, 2026-09-16).
+  //
+  // The `save_exit` / asLead path is NOT this: it writes status 'pending' because the visitor asked
+  // us to save it, which is a different event from walking away, and it keeps the original insert.
+  if(!asLeadEarly()){
+    try{
+      const vk=bkVisitorKey();
+      const step=Number(opts.furthestStep||3);
+      const {data:ra,error:rerr}=await dbClient.rpc('record_booking_attempt',{
+        p_business_id: currentBusiness.id,
+        p_visitor_key: vk,
+        p_furthest_step: step,
+        // VERBATIM. What the field held at the boundary, with no normalising, no completing and no
+        // "cleaning" — there is no model in this path and a corrected phone is a number nobody gave
+        // us. (The input mask the visitor watches as they type is part of typing; a silent rewrite
+        // between the field and the row is not, and that is the line.)
+        p_name: _c.name, p_phone: _c.phone, p_email: _c.email,
+        p_service_name: S.bkService||null,
+        p_requested_date: date, p_requested_time: S.bkTimeVal||null, p_address: addr||null,
+        // THE LABEL IS PART OF THE ROW, not a badge a later renderer can drop. A half-finished
+        // booking must never render looking like a confirmed job.
+        p_notes: [bkPartialLabel(step), saveNote].filter(Boolean).join(' · '),
+        // `S.bkAddons` holds {name,price} OBJECTS, not strings — `.map(String)` would have written
+        // "[object Object]" into a text[] column, which is the fabricated-field defect arriving as a
+        // type error. (The original insert carried no addons at all, so a partial attempt lost them;
+        // they are added here rather than left out.)
+        p_addons: Array.isArray(S.bkAddons)&&S.bkAddons.length
+          ? S.bkAddons.map(a=>String((a&&a.name!=null)?a.name:a)).filter(Boolean) : null,
+        p_vehicle_type: needsVehicleEarly()?(S.bkVType||null):null,
+        p_vehicle_year: needsVehicleEarly()?(year||null):null,
+        p_vehicle_make: needsVehicleEarly()?(make||null):null,
+        p_vehicle_model: needsVehicleEarly()?(model||null):null,
+        p_vehicle_color: needsVehicleEarly()?(S.bkVColor||null):null,
+        p_sms_consent: bkHasSmsConsent(),
+        p_sms_consent_text: bkHasSmsConsent()?(bkSmsConsentText()||null):null
+      });
+      if(rerr){ console.warn('booking attempt not recorded:',rerr.message); return {ok:false,reason:'write_failed'}; }
+      if(!ra||ra.ok!==true){ console.warn('booking attempt refused:',ra&&ra.error); return {ok:false,reason:String((ra&&ra.error)||'refused')}; }
+      S._abandonedBookingReqId=ra.id; S._abandonedBookingPhone=_c.phone.trim()||(email?('email:'+email):'');
+      if(!opts.silentNudge)showAbandonBookingNudge({name:name||leadName,email,id:ra.id});
+      try{if(typeof loadJobs==='function')loadJobs();}catch(e){}
+      return {ok:true, id:ra.id, updated:!!ra.updated, inserted:!!ra.inserted,
+              becameLead:ra.became_lead===true, reachedBy:ra.reached_by||null};
+    }catch(e){ console.warn('booking attempt not recorded:',e.message); return {ok:false,reason:'write_failed'}; }
+  }
 
   if(S._abandonedBookingReqId){
     try{
