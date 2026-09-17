@@ -38,6 +38,13 @@
  *     product including one that never calls it — and removing the call went undetected. It now reads
  *     a counter the function keeps, so the leg watches the re-read HAPPEN.
  *
+
+ * LEADS -> CUSTOMERS -> JOBS (legs 18-23), red-proofed with five more breaks: the press-through
+ * removed (18-22), the pre-fill removed (19, 22), a missing address filled with the BUSINESS's
+ * address (22 — "a pre-fill that guesses is worse than no pre-fill, because he will not re-read a
+ * field that already looks answered"), an unknown service dropped instead of becoming the one-off's
+ * description (21), and the "filled in from the lead" line removed (23).
+ *
  * SIMULATED AND SAID SO: no session, no network. The form, the writer, the sentence and the type gate
  * are the shipping product's; the catalogue is a declared fixture in the shape the union reader returns.
  *
@@ -247,6 +254,58 @@ try {
   say("17 and it is still there once he has jobs — the door does not close behind him",
       door.withJobs && door.withJobs.form === true,
       `with jobs: form=${door.withJobs && door.withJobs.form}`);
+  // ══ B — LEADS -> CUSTOMERS -> JOBS: HE TYPES NOTHING TWICE. ══════════════════════════════
+  //
+  // Adrian: "That is the whole point of the pipeline — he opens a lead, presses through to a job, and
+  // types nothing twice." The legs below are that sentence, plus the one thing a pre-fill must never
+  // do: fill a field the source does not have.
+  const pipeline = await rig.page.evaluate(async () => {
+    const open = (lead) => {
+      document.querySelectorAll("[data-hc-lead], [data-hc-jobform]").forEach((e) => e.remove());
+      window.hublyJobFormUI.leadPanel(lead);
+      return document.querySelector('[data-hc-lead="to-job"]');
+    };
+    const press = async (lead) => {
+      const btn = open(lead);
+      if (!btn) return { pressed: false };
+      btn.click();
+      await new Promise((r) => setTimeout(r, 500));
+      const f = document.querySelector("[data-hc-jobform]");
+      if (!f) return { pressed: true, form: false };
+      const v = (n) => { const e = f.querySelector(`[data-hc-job="${n}"]`); return e ? e.value : null; };
+      return { pressed: true, form: true, name: v("name"), phone: v("phone"), email: v("email"),
+               address: v("address"), kind: v("kind"), oneoff: v("oneoff"), msg: v("msg"),
+               msgText: (f.querySelector('[data-hc-job="msg"]') || {}).textContent || "" };
+    };
+    const full = await press({ id: "L1", customer_name: "Dana Reeves", customer_phone: "8015550134",
+      customer_email: "dana@example.com", address: "14 Maple St", service_name: "Full Detail",
+      status: "abandoned", furthest_step: 4 });
+    const sparse = await press({ id: "L2", customer_name: "Mike", customer_phone: "",
+      customer_email: null, address: null, service_name: null, status: "abandoned" });
+    const unknownService = await press({ id: "L3", customer_name: "Sam", customer_phone: "8015559999",
+      customer_email: null, address: null, service_name: "Ceramic coating", status: "abandoned" });
+    return { full, sparse, unknownService };
+  });
+
+  say("18 a lead OPENS INTO a job form — the press-through exists",
+      pipeline.full.pressed === true && pipeline.full.form === true,
+      `button pressed=${pipeline.full.pressed} form appeared=${pipeline.full.form}`);
+  say("19 every field the lead HAS is carried forward — he types nothing twice",
+      pipeline.full.name === "Dana Reeves" && pipeline.full.phone === "8015550134" &&
+      pipeline.full.email === "dana@example.com" && pipeline.full.address === "14 Maple St",
+      JSON.stringify([pipeline.full.name, pipeline.full.phone, pipeline.full.email, pipeline.full.address]));
+  say("20 a service that IS one of his offers is pre-selected",
+      pipeline.full.kind === "Full Detail", JSON.stringify(pipeline.full.kind));
+  say("21 a service that is NOT one of his offers becomes the one-off's description — his words, not dropped",
+      pipeline.unknownService.kind === "__oneoff__" && pipeline.unknownService.oneoff === "Ceramic coating",
+      `kind=${pipeline.unknownService.kind} work=${JSON.stringify(pipeline.unknownService.oneoff)}`);
+  say("22 A FIELD THE LEAD DOES NOT HAVE IS LEFT EMPTY — never filled with something plausible",
+      pipeline.sparse.name === "Mike" && pipeline.sparse.phone === "" &&
+      pipeline.sparse.email === "" && pipeline.sparse.address === "" &&
+      (pipeline.sparse.kind === "" || pipeline.sparse.kind === null),
+      JSON.stringify([pipeline.sparse.phone, pipeline.sparse.email, pipeline.sparse.address, pipeline.sparse.kind]));
+  say("23 and it SAYS where the values came from — a form that fills itself silently cannot be checked",
+      /from the lead/i.test(pipeline.full.msgText), JSON.stringify(pipeline.full.msgText.slice(0, 80)));
 } finally { await rig.close(); site.close(); }
 
 console.log(failed ? `\n${failed} FAILED\n` : "\nALL PASS — the job record carries the type, and a one-off never becomes a public offer.\n");

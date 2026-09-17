@@ -8000,7 +8000,10 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     });
   }
   /** THE FORM. Built into a room, with its own status line, and it says every outcome in words. */
-  async function hcJobForm(room, biz){
+  /** `seed` PRE-FILLS FROM A RECORD HE ALREADY HAS — a lead, today; a customer or a quote later.
+   *  { name, phone, email, address, service } and nothing else: the form's own fields, filled from
+   *  the row he opened, never from anywhere he did not press. */
+  async function hcJobForm(room, biz, seed){
     var wrap = document.createElement('form');
     wrap.className = 'hc-jobform';
     wrap.setAttribute('data-hc-jobform', '1');
@@ -8127,6 +8130,38 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     wrap.appendChild(msg);
     sync();
 
+    // ══ LEADS -> CUSTOMERS -> JOBS: HE TYPES NOTHING TWICE. ════════════════════════════════════
+    //
+    // ADRIAN, 2026-09-16: "That is the whole point of the pipeline — he opens a lead, presses through
+    // to a job, and types nothing twice."
+    //
+    // Every value comes from the ROW he opened. A field the lead does not have is left EMPTY rather
+    // than filled with something plausible — a lead with no address does not get one invented because
+    // a job usually has one, and the service is only pre-selected when it matches one of HIS OWN
+    // offers by name. A pre-fill that guesses is worse than no pre-fill, because he will not re-read
+    // a field that already looks answered.
+    if(seed && typeof seed === 'object'){
+      if(seed.name)    name.value  = String(seed.name);
+      if(seed.phone)   phone.value = String(seed.phone);
+      if(seed.email)   email.value = String(seed.email);
+      if(seed.address) addr.value  = String(seed.address);
+      if(seed.service){
+        var want = String(seed.service).trim().toLowerCase();
+        for(var oi = 0; oi < kind.options.length; oi++){
+          if(String(kind.options[oi].value).trim().toLowerCase() === want){ kind.selectedIndex = oi; break; }
+        }
+        // NOT ONE OF HIS OFFERS. It becomes the one-off's description — still his words, still from
+        // the lead — rather than being dropped or turned into a service he does not sell.
+        if(!kind.value){ kind.value = HC_JOB_KIND_NONE; oneoff.value = String(seed.service); }
+        sync();
+      }
+      // AND IT SAYS WHERE THE VALUES CAME FROM. A form that fills itself without a word looks like it
+      // remembered something, and he cannot tell what to check.
+      if(seed.from){
+        msg.textContent = 'Filled in from ' + seed.from + '. Check it, add the day and the price, and it\u2019s a job.';
+      }
+    }
+
     wrap.addEventListener('submit', async function(ev){
       ev.preventDefault();
       go.disabled = true;
@@ -8224,7 +8259,8 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   }
   try{
     window.hublyJobFormUI = Object.assign(window.hublyJobFormUI || {}, {
-      form: hcJobForm, create: hcJobCreate, line: hcJobCreateLine, oneOffValue: HC_JOB_KIND_NONE
+      form: hcJobForm, create: hcJobCreate, line: hcJobCreateLine, oneOffValue: HC_JOB_KIND_NONE,
+      leadPanel: function(x){ return hcLeadPanel(x); }
     });
   }catch(e){}
 
@@ -8844,6 +8880,29 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         line.appendChild(k); line.appendChild(v); dl.appendChild(line);
       });
       body.appendChild(dl);
+      // ══ THE PRESS-THROUGH. Leads -> Jobs, with nothing retyped. ═══════════════════════════════
+      //
+      // It is offered whether or not they left contact details: a lead with only a name is still work
+      // he may be about to do, and the job record can hold a name alone. What it never does is invent
+      // the missing half.
+      var mkJob = document.createElement('button'); mkJob.type = 'button'; mkJob.className = 'hc-arrival-act';
+      mkJob.setAttribute('data-hc-lead', 'to-job');
+      mkJob.textContent = 'Make this a job';
+      var jobRoom = document.createElement('div');
+      mkJob.addEventListener('click', async function(){
+        mkJob.disabled = true;
+        jobRoom.innerHTML = '';
+        try{
+          await hcJobForm(jobRoom, hc.draftBusiness, {
+            name: x.customer_name || '', phone: hcLeadPhone(x) || '',
+            email: x.customer_email || '', address: x.address || '',
+            service: x.service_name || '', from: 'the lead'
+          });
+        }catch(e){
+          jobRoom.textContent = 'I couldn\u2019t open the job form just now — nothing was lost.';
+        }
+        mkJob.disabled = false;
+      });
       var reach = hcLeadReach(x);
       if(!reach.phone && !reach.email){
         var n = document.createElement('div'); n.className='hc-event-sub';
@@ -8863,6 +8922,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
         }
         body.appendChild(acts);
       }
+      // The press-through sits with the other actions, and the form opens IN the panel — he does not
+      // lose the lead he is looking at to see the job he is making from it.
+      var jobActs = document.createElement('div'); jobActs.className = 'hc-event-acts';
+      jobActs.appendChild(mkJob);
+      body.appendChild(jobActs);
+      body.appendChild(jobRoom);
     });
   }
   // ONE ENTRY POINT for the three rooms, so hcOpenWorkspace stays a switch and not a
