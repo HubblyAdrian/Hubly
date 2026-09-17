@@ -1,5 +1,73 @@
 # Open findings — Adrian's 2026-08-28 phone run
 
+## 2026-09-17 — I RAISED AN ALARM ABOUT A REAL CUSTOMER. THERE WAS NO CUSTOMER. THE CORRECTION GOES FIRST.
+
+**What I reported yesterday, and what Adrian acted on:** *"A REAL MARKET BOOKING HAS BEEN SITTING
+UNACCEPTED SINCE 2026-09-01 AND NOBODY WAS TOLD … that is a real person who got a booking and heard
+nothing for sixteen days."* He was reading my report. The report was wrong in the part that made it
+urgent.
+
+**Checked, before writing another word about it:**
+
+| question | answer |
+| --- | --- |
+| is the business real? | `lugnuts-regulators`, `account_kind='market'` — **but `owner_identified=false`**, which is our own way of saying *we have never confirmed who this is* |
+| when was the business created? | **2026-09-01**, the same day as the booking |
+| who placed the booking? | `customer_name='Adrian'` — **and `customer_email` is byte-for-byte the OWNER'S OWN auth email.** `customer_is_the_owner = true` |
+| what else is on the account? | 3 page loads, 0 jobs, 1 booking, nothing since |
+
+**It is the owner booking his own page on the day he built it.** Not a member of the public. The
+rule this nearly broke is already written down — *"a row is not evidence of a person… it read the
+names and called three test bookings 'real people whose requests were dropped on the floor'"* — and
+I walked into it by reading `customer_name` and a `market` label and stopping there.
+
+**So: nobody is owed an apology, and Hubly must not email anyone about this.** Emailing that
+address on the owner's behalf would be publishing a promise he never made, to fix a customer who
+does not exist.
+
+### What IS true, and still matters
+
+1. **The owner-notification failed for a market business, and the customer-side email did not.**
+   On 2026-09-01 the ledger records, one second apart: owner → **`skipped`, "no recipient address"**;
+   customer → **`sent`**. `businesses.email` was empty and there was no fallback. Had that been a
+   stranger, Hubly would have told the stranger *"they'll confirm your appointment shortly"* and
+   never told the owner. **That asymmetry is the defect**, and it is the one worth caring about.
+   The code is fixed (`auth.users.email` fallback) and **has never been exercised** — there has been
+   no eligible booking since.
+2. **THE LEDGER USES TWO LABELS FOR ONE THING, and it made my first count wrong.** The trigger's
+   pre-call row is `subject_type='booking'`; `booking-notify`'s own insert is
+   `subject_type='booking_request'`. Filtering on one label produced *"no booking email has ever
+   been sent"* when **four are recorded `sent`** under the other (calder-vane-roofing 2026-08-20,
+   owner + customer; lugnuts customer 2026-09-01). A hand-maintained vocabulary inside the ledger
+   that exists to tell us whether people are being reached.
+3. **A stuck `pending` is evidence that nothing reads.** The 2026-08-22 migration says it plainly:
+   *"a row stuck at 'pending' means the call never landed"*. Nothing sweeps for them, nothing
+   re-drives them, nothing tells us. A failure that leaves a trace no one looks at is one short step
+   from a failure that leaves none.
+4. **THE TWO UNEXPLAINED ROWS ARE EXPLAINED.** `adrians-lawn-service` (test), 2026-09-17 02:35:29
+   and 02:35:32 — two owner rows, `pending`, `recipient` null. Both `subject_id`s exist in **no**
+   table: not `booking_requests`, not `jobs.booking_request_id`, not `marketplace_bookings`. Both
+   writers that create a pending row READ the booking first, so the rows existed at 02:35; they are
+   gone now, `booking_requests` carries an **`owner can delete booking requests`** RLS policy, and
+   nothing in the repo issues that delete — so they were removed from outside the app (dashboard or
+   an ad-hoc client). Two test bookings, three seconds apart, deleted afterwards.
+   **The finding underneath it: `notification_deliveries.subject_id` is not a foreign key, so the
+   ledger outlives its subject and a stuck `pending` can become unattributable** — exactly what
+   happened here, and the reason it cost an hour to answer.
+
+### What Adrian should do
+
+- **Nothing about that owner, and nothing to that address.** There is no wronged customer and no
+  evidence the owner is waiting on anything; the account has been inert since the day it was made.
+  If he wants to reach out, it is a *"are you still building this?"* conversation, and while he is
+  there `owner_identified=false` is the thing to fix.
+- **Exercise the fixed path instead** — which is what his answer 5 already authorises: one real
+  booking on a test business with his own address, and report what arrives and how fast.
+- **Two small builds this finding argues for**, neither started: a sweep that reports deliveries
+  stuck at `pending` (the ledger already holds the evidence; nothing reads it), and one label for
+  one thing in `subject_type`.
+
+
 ## WHEN A CUSTOMER BOOKS, DOES THE OWNER FIND OUT? — measured 2026-09-17
 
 Adrian: *"if someone books a job how are they supposed to see it if my day is there?"* Four
@@ -14,8 +82,12 @@ email: *"🔔 New booking request"* (or *"✅ New booking — paid"*), with serv
 address, contact, payment and notes, and a one-tap **Open Hubly** CTA to the front door. It then
 updates the ledger row to `sent`, `failed` or `skipped`. **There is no SMS and no push.**
 
-**THE LEDGER HAS NEVER RECORDED A SENT BOOKING EMAIL.** Before that number is acted on, here is
-what would make it wrong, and it matters:
+**⚠ THE SENTENCE THAT STOOD HERE — "the ledger has never recorded a sent booking email" — IS
+WRONG, AND THE CORRECTION IS AT THE TOP OF THIS FILE (2026-09-17).** It filtered on
+`subject_type='booking'` alone; the ledger uses TWO labels for one thing, and four owner/customer
+booking emails are recorded `sent` under `booking_request`. The rest of this section stands.
+
+Before any number here is acted on, what would make it wrong:
 
 - **The ledger only exists from 2026-08-21/22.** Anything before that sent or failed with no row.
 - **A row is only written when a booking REACHES `pending`.** An abandoned booking correctly
@@ -26,10 +98,10 @@ what would make it wrong, and it matters:
 
 **With that denominator, the finding is small and sharp:** the one eligible market booking —
 `lugnuts-regulators`, 2026-09-01 — has a delivery row reading **`skipped`, error `no recipient
-address`**, and the booking is **still `pending` sixteen days later**. `booking-notify` now falls
-back to `auth.users.email` when `businesses.email` is empty (its own comment records this exact
-incident), so the code is fixed; **the booking it happened to is still unanswered**, and nothing
-has exercised the fixed path since.
+address`**. `booking-notify` now falls back to `auth.users.email` when `businesses.email` is empty
+(its own comment records this exact incident), so the code is fixed and nothing has exercised the
+fixed path since. **WHO THAT BOOKING WAS FROM IS ANSWERED AT THE TOP OF THIS FILE — it was the
+owner's own test, and the "sixteen days unanswered" framing is corrected there.**
 
 Two further rows, both **`pending`**, on `adrians-lawn-service` (test) at 2026-09-17 02:35 — the
 pre-call row written and never updated, which means `booking-notify` did not complete. Their
