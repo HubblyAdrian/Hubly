@@ -220,4 +220,81 @@ const ctaGoes = {};
 ctas.forEach((c) => { ctaGoes[c.goes] = (ctaGoes[c.goes] || 0) + 1; });
 Object.entries(ctaGoes).sort((a, b) => b[1] - a[1]).forEach(([k, n]) => console.log(`    ${String(n).padStart(4)}  ${k}`));
 
+// ══ AND THE CLASSIC STORE, BECAUSE A SWEEP THAT COVERS ONE IS NOT A SWEEP ═══════════════════
+//
+// Everything above reads `business_documents` — the FREEFORM store. The CLASSIC store is
+// `businesses.meta`, rendered by public/hubly.html at request time, and FOUR MARKET BUSINESSES
+// SERVE CLASSIC (Adrian, 2026-09-16: "CLASSIC IS A SUPPORTED PATH, NOT A LEGACY EXCEPTION").
+// None of their buttons were in any number above, and it showed: check-walk-assertions finds a
+// dead #services link on crestview's live classic page, which the 188 never saw.
+//
+// A classic page has no stored bytes to mount, so this loads the LIVE page and reads the rendered
+// document. Slower, fewer pages, and it is the only way to see them at all.
+//
+// ── TWO THINGS IT WILL NOT DO ──────────────────────────────────────────────────────────────
+//   · it does not PRESS anything on a classic page. A live page belongs to a real owner and its
+//     controls act on the outside world — a booking wizard, a form. Classification is read from
+//     the DOM; "it did nothing when pressed" is not claimed for classic.
+//   · GRAEFS-AUTOCARE IS READ-ONLY, ALWAYS. It is loaded like the others and nothing more.
+let classicRows = [];
+try {
+  const out = execFileSync("supabase", ["db", "query", "--linked",
+    `select b.slug, b.account_kind from businesses b
+     where b.owner_id is not null
+       and not exists (select 1 from business_documents d where d.business_id = b.id)`],
+    { encoding: "utf8", cwd: ROOT, maxBuffer: 16 * 1024 * 1024 });
+  const i = out.indexOf('"rows"'); let d = 0, st = out.indexOf("[", i), e = -1;
+  for (let k = st; k < out.length; k++) { if (out[k] === "[") d++; else if (out[k] === "]") { d--; if (!d) { e = k + 1; break; } } }
+  classicRows = JSON.parse(out.slice(st, e));
+} catch (err) { console.error("  (could not list classic businesses: " + String(err.message).slice(0, 90) + ")"); }
+
+console.log(`\n\nCLASSIC PAGES — the other store, loaded live: ${classicRows.length} claimed business(es) with no freeform document`);
+console.log(`  ${subsetLine("the classic set", classicRows.map((r) => r.slug), kinds)}`);
+console.log("  Read only. Nothing is pressed on a live page, and graefs-autocare is read-only always.\n");
+
+const classicCounts = {};
+let classicDead = 0, classicCta = 0, loaded = 0;
+for (const r of classicRows) {
+  const page = await ctx.newPage();
+  try {
+    await page.goto(`https://${r.slug}.myhubly.app/`, { waitUntil: "networkidle", timeout: 25000 });
+    await page.waitForTimeout(2500);
+    const seen = await page.evaluate(() => {
+      const vis = (el) => { const s = getComputedStyle(el); const b = el.getBoundingClientRect();
+        return s.display !== "none" && s.visibility !== "hidden" && b.width > 0 && b.height > 0; };
+      const ids = new Set([...document.querySelectorAll("[id]")].map((e) => e.id));
+      const out = [];
+      document.querySelectorAll('a,button,[role="button"]').forEach((el) => {
+        if (!vis(el)) return;
+        const text = (el.textContent || "").replace(/\s+/g, " ").trim().slice(0, 40);
+        const href = el.getAttribute("href");
+        let goes;
+        if (el.tagName.toLowerCase() === "a") {
+          if (href == null || href === "" || href === "#") goes = "UNKNOWN (href=# or none)";
+          else if (/^#/.test(href)) goes = ids.has(href.slice(1)) ? "an anchor on this page" : "DEAD (a #id that was never written)";
+          else if (/^tel:/i.test(href)) goes = "the phone";
+          else if (/^mailto:/i.test(href)) goes = "an email";
+          else goes = /myhubly\.app|\?book=|\?quote=/.test(href) ? "a Hubly route" : "an external site";
+        } else {
+          goes = el.getAttribute("onclick") ? "a handler on the page" : "UNKNOWN (a button whose handler is in script)";
+        }
+        out.push({ text, goes });
+      });
+      return out;
+    });
+    loaded++;
+    for (const c of seen) {
+      classicCounts[c.goes] = (classicCounts[c.goes] || 0) + 1;
+      if (/^DEAD/.test(c.goes)) { classicDead++; console.log(`    DEAD  ${r.slug.padEnd(26)} "${c.text}"`); }
+      if (/\bbook\b|\bquote\b|\bjoin\b|\bbuy\b|\bcall\b/i.test(c.text)) classicCta++;
+    }
+  } catch (e) {
+    console.log(`    (${r.slug}: could not load — ${String(e.message).slice(0, 50)})`);
+  }
+  await page.close();
+}
+console.log(`\n  ${loaded} classic page(s) loaded · ${classicCta} CTA-worded controls · ${classicDead} dead link(s)`);
+Object.entries(classicCounts).sort((a, b) => b[1] - a[1]).forEach(([k, n]) => console.log(`    ${String(n).padStart(4)}  ${k}`));
+console.log("");
+
 await browser.close();

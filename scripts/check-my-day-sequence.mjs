@@ -120,7 +120,7 @@ catch (e) { console.error("CANNOT RUN — " + e.message); srv.close(); process.e
  *  itself wrote — captured from the page, never a key typed in here. What is proved is the
  *  product's half: what it stored is enough to change what the next visit does. That the browser
  *  keeps localStorage between visits is the browser's promise, not ours, and is not tested here. */
-async function arrive(places, carryStorage) {
+async function arrive(places, carryStorage, opts) {
   await rig.load(PAGE);
   if (carryStorage) {
     await rig.page.evaluate((entries) => {
@@ -130,6 +130,7 @@ async function arrive(places, carryStorage) {
   await rig.page.evaluate(installOwnerFake, {
     uid: UID, email: "owner@example.com", displayName: "Adrian", places,
     tables: { jobs: JOBS, tasks: TASKS, customers: [], events: [] },
+    refuseAddPlace: !!(opts && opts.refuseAddPlace),
   });
   await rig.page.evaluate(async ({ biz }) => {
     await window.hublyArrivalUI.simulate(biz, true, []);
@@ -319,6 +320,30 @@ try {
       wide.beside === true && wide.truncated === 0,
       `canvas ${wide.canvas}px · beside: ${wide.beside} · ${wide.truncated} truncated cell(s)`);
   await rig.page.setViewportSize({ width: 1440, height: 900 });
+
+  // ══ AND WHEN THE WRITE FAILS ═══════════════════════════════════════════════════════════
+  //
+  // "Yes-add-it fails" — the case where he says yes and the place is NOT added. The tab must not
+  // appear, he must be told in words, and the offer must not be left looking like it worked.
+  // The rig refuses the write by answering the RPC as the real one does for a wrong owner.
+  await arrive(PLACES_BEFORE, null, { refuseAddPlace: true });
+  await press('.hc-act[data-promise="schedule"]');
+  const failed2 = await (async () => {
+    const before = await rig.page.evaluate(() =>
+      [...document.querySelectorAll(".hc-msg:not(.hc-inthread-day)")].map((m) => m.textContent.trim()));
+    await press("[data-hc-tab-offer] button", "Yes, add it");
+    return rig.page.evaluate((before) => ({
+      rail: [...document.querySelectorAll(".hc-rail-tab")].map((b) => b.textContent.trim()),
+      said: [...document.querySelectorAll(".hc-msg:not(.hc-inthread-day)")].map((m) => m.textContent.trim())
+              .filter((t) => before.indexOf(t) < 0).slice(-1)[0] || null,
+      offerGone: !document.querySelector("[data-hc-tab-offer]"),
+    }), before);
+  })();
+  say("19b [RULE] when the write FAILS the tab does not appear",
+      !failed2.rail.some((t) => /my day/i.test(t)), `rail: ${failed2.rail.join(" · ")}`);
+  say("19c [RULE] and he is told, in words, that his sidebar did not change",
+      !!failed2.said && /couldn.t add|hasn.t changed/i.test(failed2.said) && !/Got it/i.test(failed2.said),
+      JSON.stringify(failed2.said));
 
   // ── NO MEANS NO ───────────────────────────────────────────────────────────────────────
   await arrive(PLACES_BEFORE);

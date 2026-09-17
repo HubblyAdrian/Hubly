@@ -22,6 +22,7 @@ export function installOwnerFake(opts) {
     // what the server would hand back — which is the only way the write and the read can be
     // shown to agree. A fixture where the writer cannot change what the reader returns proves
     // a click happened and nothing more.
+    tables: {},
     places: (opts.places || [{ kind: "website", scope: "workspace", visible: true, sort_order: 10 }]).map((p) => Object.assign({}, p)) };
   const ok = (data) => Promise.resolve({ data, error: null });
   const q = (rows) => {
@@ -50,7 +51,34 @@ export function installOwnerFake(opts) {
       signOut: () => ok(null),
       onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
     },
-    from: (table) => q((opts.tables || {})[table] || []),
+    // ══ TABLES THE PRODUCT INSERTS INTO, NOT JUST READS ════════════════════════════════════
+    //
+    // `from()` returned a read-only view over a declared array, so `.insert()` was `undefined` and
+    // any code path that WRITES through PostgREST threw — which made conversation identity
+    // (ask_hubly_conversations / ask_hubly_messages, both owner-RLS and written directly) untestable.
+    // Writes land in W.__rig.tables so a check can read back what the product stored.
+    from: (table) => {
+      const held = (W.__rig.tables[table] = W.__rig.tables[table] || ((opts.tables || {})[table] || []).slice());
+      const view = q(held);
+      view.insert = (row) => {
+        const rows = Array.isArray(row) ? row : [row];
+        rows.forEach((r) => { held.push(Object.assign({ id: "row-" + (held.length + 1) }, r)); });
+        W.__rig.writes.push({ name: "insert:" + table, args: rows });
+        const made = held.slice(-rows.length);
+        const res = { data: rows.length === 1 ? made[0] : made, error: null };
+        const t2 = { select: () => t2, eq: () => t2, maybeSingle: () => Promise.resolve(res), single: () => Promise.resolve(res),
+                     then: (ok, no) => Promise.resolve(res).then(ok, no) };
+        return t2;
+      };
+      view.update = (patch) => {
+        W.__rig.writes.push({ name: "update:" + table, args: patch });
+        const t3 = { eq: (col, val) => { held.forEach((r) => { if (String(r[col]) === String(val)) Object.assign(r, patch); });
+                                         return Promise.resolve({ data: null, error: null }); },
+                     then: (ok, no) => Promise.resolve({ data: null, error: null }).then(ok, no) };
+        return t3;
+      };
+      return view;
+    },
     rpc: (name, args) => {
       W.__rig.rpc.push(name);
       const tables = opts.tables || {};
@@ -147,6 +175,10 @@ export function installOwnerFake(opts) {
       // of it.
       if (name === "add_business_place") {
         W.__rig.writes.push({ name, args });
+        // A DECLARED REFUSAL. "Yes, add it" failing is a real state — the write is authorised
+        // server-side and can say no — and a check that can only ever see the happy path is
+        // half a check. Shaped as the real function's refusal, not as a thrown error.
+        if (opts.refuseAddPlace) return ok({ ok: false, error: "not_owner" });
         const a = args || {};
         if (!a.p_id || !a.p_owner_id) return ok({ ok: false, error: "missing_credential" });
         if (String(a.p_owner_id) !== String(opts.uid)) return ok({ ok: false, error: "not_owner" });

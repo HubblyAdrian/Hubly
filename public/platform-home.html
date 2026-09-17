@@ -10069,6 +10069,110 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     catch(e){ console.error('[room] ' + id + ' failed', e); }
   }
 
+  /** ══ CONVERSATION IDENTITY — A DIFFERENT CONVERSATION IN EVERY TAB EXCEPT HOME ═══════════
+   *
+   *  ADRIAN, 2026-09-17: "a different conversation in every tab except Home, and chats SAVED the
+   *  way ChatGPT and Claude save them. This is a feature, not polish, and it has been open since
+   *  the beginning."
+   *
+   *  THE STORAGE WAS ALREADY THERE. `ask_hubly_conversations` + `ask_hubly_messages` have existed
+   *  since 2026-07-27, with owner RLS on both — so an authenticated owner can read and write them
+   *  straight through PostgREST, no RPC. Zero rows, and NOTHING anywhere referenced them. Built,
+   *  authorised, unreachable; the missing piece was one column saying which PLACE a conversation
+   *  belongs to (migration 20260917220000).
+   *
+   *  HOME IS UNTOUCHED. The main chat keeps `business_conversations` and its 516 rows of history:
+   *  moving it would be a migration of the one thread people have actually used, for no gain.
+   *  Home is the conversation; a room has its own.
+   */
+  var hcPlaceChat = { place: null, id: null, loading: false, loaded: {} };
+
+  /** The owner's current conversation for a place — found, or started. Returns null when we are
+   *  not in a state that can hold one (no session, no business), and the caller says so rather
+   *  than pretending the thread is empty. */
+  async function hcConversationFor(place){
+    var biz = hc.draftBusiness;
+    if(!biz || !biz.id || !hc.draftClaimed || !hcIsAuthed()) return null;
+    try{
+      var c = await authGetClient();
+      var u = await c.auth.getUser();
+      var uid = u && u.data && u.data.user && u.data.user.id;
+      if(!uid) return null;
+      var found = await c.from('ask_hubly_conversations')
+        .select('id,title,updated_at')
+        .eq('business_id', biz.id).eq('place', place)
+        .order('updated_at', { ascending: false }).limit(1);
+      if(found && !found.error && Array.isArray(found.data) && found.data.length) return found.data[0].id;
+      // NONE YET. The first message in a place starts its conversation, titled by the place so a
+      // saved-chat list has something true to show before anyone has named it.
+      var label = (HC_PLACE_SURFACES[place] && HC_PLACE_SURFACES[place].label) || place;
+      var made = await c.from('ask_hubly_conversations')
+        .insert({ business_id: biz.id, user_id: uid, place: place, title: label })
+        .select('id').maybeSingle();
+      if(made && !made.error && made.data) return made.data.id;
+      return null;
+    }catch(e){ return null; }
+  }
+
+  /** Load a place's own conversation into the thread pane. Says what it is, once, because a
+   *  thread that silently holds different messages than the one next door is the interface
+   *  changing shape without saying so (prohibition 4). */
+  async function hcLoadPlaceConversation(place){
+    var thread = hcThreadBody(); if(!thread) return false;
+    if(hcPlaceChat.loading) return false;
+    hcPlaceChat.loading = true;
+    try{
+      var id = await hcConversationFor(place);
+      hcPlaceChat.place = place; hcPlaceChat.id = id;
+      if(!id){
+        // NOT "there are no messages" — we could not establish a conversation at all. The
+        // difference is the whole empty-reader rule, and it is said rather than implied.
+        thread.innerHTML = '';
+        hcAppendMessage('hubly', 'I can\u2019t open this room\u2019s conversation just now \u2014 that\u2019s a problem reaching your account, not an empty conversation.');
+        return false;
+      }
+      var c = await authGetClient();
+      var res = await c.from('ask_hubly_messages')
+        .select('role,content,created_at').eq('conversation_id', id)
+        .order('created_at', { ascending: true }).limit(200);
+      var rows = (res && !res.error && Array.isArray(res.data)) ? res.data : [];
+      thread.innerHTML = '';
+      var label = (HC_PLACE_SURFACES[place] && HC_PLACE_SURFACES[place].label) || place;
+      if(!rows.length){
+        hcAppendMessage('hubly', 'This is a separate conversation, just about ' + label + '. Your main chat is on Home.');
+      }
+      rows.forEach(function(r){ hcAppendMessage(r.role === 'user' ? 'user' : 'hubly', String(r.content || '')); });
+      hcThreadScrollToEnd();
+      return true;
+    }catch(e){ return false; }
+    finally{ hcPlaceChat.loading = false; }
+  }
+
+  /** Persist into the place's conversation instead of the business's main thread. */
+  async function hcPersistToPlace(role, text){
+    var t = String(text || '').trim(); if(!t) return false;
+    var biz = hc.draftBusiness;
+    if(!hcPlaceChat.id || !biz || !biz.id) return false;
+    try{
+      var c = await authGetClient();
+      await c.from('ask_hubly_messages').insert({
+        conversation_id: hcPlaceChat.id, business_id: biz.id,
+        role: role === 'user' ? 'user' : 'assistant', content: t,
+      });
+      // updated_at is what orders the saved list, so it moves when something is said.
+      await c.from('ask_hubly_conversations').update({ updated_at: new Date().toISOString() }).eq('id', hcPlaceChat.id);
+      return true;
+    }catch(e){ return false; }
+  }
+  try{ window.hublyChatUI = Object.assign(window.hublyChatUI || {}, {
+    forPlace: hcConversationFor, load: hcLoadPlaceConversation, persist: hcPersistToPlace,
+    // THE ROUTER, not only the writer. A check that calls hcPersistToPlace proves the write; only
+    // hcPersist proves that a message said in a room GOES there rather than into the main chat —
+    // and removing that routing left the leg green until this was exposed.
+    persistRouted: hcPersist,
+    current: function(){ return { place: hcPlaceChat.place, id: hcPlaceChat.id }; }
+  }); }catch(e){}
+
   function hcOpenWorkspace(id, filter, fromUrl){
     if(!id) id = 'home';
     id = hcResolvePlace(id);
@@ -10108,6 +10212,20 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     // comment worried that "a visible empty frame is worse than the full-width chat it replaced" —
     // still true, and handled by the CSS that gives Home back its full width when nothing is
     // mounted, not by putting a surface there to fill the space.
+    // ══ THE TAB IS THE CONVERSATION'S IDENTITY ═══════════════════════════════════════════════
+    //
+    // Entering a room loads THAT room's conversation; returning to Home restores the main chat.
+    // Home's thread is business_conversations (unchanged, 516 rows of real history); every other
+    // place has its own in ask_hubly_conversations, keyed by `place`.
+    if(id !== 'home' && hc.draftClaimed && HC_PLACE_SURFACES[id]){
+      hcLoadPlaceConversation(id).catch(function(e){ console.error('[chat] place conversation failed', e); });
+    } else if(id === 'home' && hcPlaceChat.place){
+      // BACK TO THE MAIN CHAT. The room's thread was a different conversation; Home's is restored
+      // from its own store rather than left showing the last room's messages.
+      hcPlaceChat.place = null; hcPlaceChat.id = null;
+      try{ hcRenderHome(); }catch(e){}
+    }
+
     // COMING BACK TO HOME WITH NEWS WAITING. The badge promised something; this is where it is
     // kept. Nothing happens when there is no news, and nothing is wiped either way.
     if(id === 'home' && (hc._unseen || 0) > 0){
@@ -13249,6 +13367,15 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     if(role !== 'user') text = hcSayable(text);
     if(!text) return;
     if(hcIsFallbackReply(text)) return;
+    // ══ A MESSAGE BELONGS TO THE CONVERSATION IT WAS SAID IN ═══════════════════════════════════
+    //
+    // In a room, this is not the main chat. Writing it to business_conversations would put a
+    // sentence about his day into the thread Home restores — the two conversations would slowly
+    // become one, which is the thing conversation identity exists to prevent.
+    if(hcPlaceChat.id && hcPlaceChat.place && hcPlaceChat.place !== 'home'){
+      hcPersistToPlace(role, text);
+      return;
+    }
     if(typeof hcIsBuildFiller === 'function' && hcIsBuildFiller(text)) return; // "building now…" status
     hc.pendingPersist.push({ role: role === 'user' ? 'user' : 'assistant', content: text });
     if(hc._persistTimer) clearTimeout(hc._persistTimer);
