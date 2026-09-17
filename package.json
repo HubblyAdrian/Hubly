@@ -115,7 +115,8 @@
     "check:offer-type": "node scripts/check-offer-type-one-reader.mjs",
     "check:list-surfaces": "node scripts/check-list-surfaces.mjs",
     "check:lead-gate": "node scripts/check-lead-gate.mjs",
-    "check:quote-mode": "node scripts/check-quote-mode.mjs"
+    "check:quote-mode": "node scripts/check-quote-mode.mjs",
+    "check:ics-door": "node scripts/check-ics-door.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"

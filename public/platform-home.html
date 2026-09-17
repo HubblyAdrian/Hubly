@@ -1637,7 +1637,12 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   <!-- The one attach input the composer button opens. Images + PDFs; routed by what
        Hubly asked for (see hcHandleIncomingFile). The older per-kind inputs below remain
        only for the logo dropzone card and the photo picker they were already wired to. -->
-  <input type="file" id="hcAttachInput" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf" multiple style="display:none">
+  <!-- .ics JOINS THE ACCEPT LIST, and a door the picker will not open is not a door. The list is
+       still written here rather than derived because an <input accept> attribute is markup the
+       router cannot reach — so check-ics-door asserts the two agree instead, which is the honest
+       version of "derived" when one side is a static attribute. text/calendar AND the extension:
+       some systems report text/plain for a .ics and the picker would grey it out on type alone. -->
+  <input type="file" id="hcAttachInput" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,text/calendar,.ics" multiple style="display:none">
   <input type="file" id="hcFileInput" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
   <input type="file" id="hcPdfInput" accept="application/pdf" style="display:none">
   <input type="file" id="hcLogoInput" accept="image/png,image/jpeg,image/svg+xml,image/webp" style="display:none">
@@ -4409,8 +4414,51 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     // ADDED 2026-09-16, and this one line is what makes the calendar's empty state start offering
     // "send me a screenshot of it". No copy was edited — hcWaysClause reads this table, so wiring
     // the route IS wiring the offer. check-ways-are-derived asserts exactly that transition.
-    day:      { send: function(f){ hcImportScheduleFromImage(f); }, acceptsPdf: true }
+    day:      { send: function(f){ hcImportScheduleFromImage(f); }, acceptsPdf: true,
+                // ══ THE .ICS DOOR — SAME DOOR AS THE SCREENSHOT. ═══════════════════════════════
+                //
+                // ADRIAN, 2026-09-16: "No Google, no OAuth, no policy. Same door as the screenshot,
+                // HC_FILE_ROUTES routes it."
+                //
+                // A calendar export is a FILE, and Hubly already has a door for files. There is
+                // nothing to authorise, nothing to ask Google for, and no privacy policy to write:
+                // he exports his calendar and sends it, exactly as he sends a photo of a paper
+                // schedule. `hcImportScheduleFromIcs` parses it HERE, in his browser — the file
+                // never leaves the page — which is the other reason this needs no policy.
+                //
+                // Declared as a route capability rather than another boolean in the handler, so the
+                // copy grows by itself: hcWaysClause offers the calendar clause IFF some route
+                // accepts an ics, the same way it offers the screenshot clause IFF a route exists.
+                acceptsIcs: true, ics: function(f){ hcImportScheduleFromIcs(f); } }
   };
+  /** WHICH FILE KINDS A ROUTE TAKES — derived from the route's own declaration, so the handler and
+   *  the copy read one source. `image` is the default: every route was written for an image. */
+  function hcRouteAccepts(route, kind){
+    if(!route) return false;
+    if(kind === 'image') return true;
+    if(kind === 'pdf') return !!route.acceptsPdf;
+    if(kind === 'ics') return !!(route.acceptsIcs && typeof route.ics === 'function');
+    return false;
+  }
+  /** Is there ANY route that takes a calendar file? What the copy asks before offering the clause. */
+  function hcAnyIcsRoute(){
+    for(var k in HC_FILE_ROUTES){
+      if(!Object.prototype.hasOwnProperty.call(HC_FILE_ROUTES, k)) continue;
+      if(hcRouteAccepts(HC_FILE_ROUTES[k], 'ics')) return k;
+    }
+    return null;
+  }
+  /** WHAT KIND OF FILE IS THIS — by type when the browser gives one, by extension when it does not.
+   *  A .ics arrives as text/calendar on some systems, text/plain on others, and '' from a few
+   *  Android pickers, so the extension is not a fallback here, it is a co-equal test. */
+  function hcFileKind(file){
+    var t = String((file && file.type) || '').toLowerCase();
+    var n = String((file && file.name) || '').toLowerCase();
+    if(/^image\//.test(t)) return 'image';
+    if(/pdf$/.test(t) || /\.pdf$/.test(n)) return 'pdf';
+    if(/calendar/.test(t) || /\.ics$/.test(n)) return 'ics';
+    return null;
+  }
 
   /** ══ THE WAYS ARE DERIVED, NEVER WRITTEN BY HAND ══════════════════════════════════════
    *
@@ -4442,10 +4490,19 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     self:       { clause: function(subj){ return subj.self || 'add it yourself'; },
                   wired: function(subj){ return typeof window[subj.byHand] === 'function'
                                            || (subj.byHandFn && typeof subj.byHandFn() === 'function'); } },
+    // THE CALENDAR CLAUSE, WIRED BY THE ROUTE AND NOTHING ELSE. Adrian, 2026-09-16: "verify the
+    // empty-state offer picks the clause up BY ITSELF." It does, and this is the whole mechanism —
+    // `wired` asks the router whether THIS subject's route takes an .ics. No copy was written for
+    // the calendar's empty state; wiring the route wired the sentence, exactly as it did for the
+    // screenshot clause when the `day` route landed.
+    calendar:   { clause: function(){ return 'send me your calendar file'; },
+                  wired: function(subj){ return hcRouteAccepts(HC_FILE_ROUTES[subj.key], 'ics'); } },
     showme:     { clause: function(){ return 'I can show you where'; },
                   wired: function(subj){ return !!(subj.place && HC_GO_PLACES[subj.place]); } }
   };
-  var HC_WAY_ORDER = ['tell', 'screenshot', 'self', 'showme'];
+  // The calendar sits after the screenshot because they are the same gesture — hand me the thing you
+  // already have — and before the by-hand option, which is more work.
+  var HC_WAY_ORDER = ['tell', 'screenshot', 'calendar', 'self', 'showme'];
 
   /** The subjects copy can offer ways for. `key` is what a sent file would be routed as. */
   var HC_SUBJECTS = {
@@ -4472,8 +4529,17 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     if(parts.length === 1) return parts[0] + '.';
     return parts.slice(0, -1).join(', ') + ', or ' + parts[parts.length - 1] + '.';
   }
+  // `subjects` was the KEYS, which is enough to enumerate them and not enough to run a clause
+  // against one — a check had to reconstruct the subject object, which is a second copy of the
+  // thing being tested. Both are exposed: the keys for listing, the table itself for executing.
   try{ window.hublyWaysUI = { clause: hcWaysClause, routes: HC_FILE_ROUTES,
-                              subjects: Object.keys(HC_SUBJECTS) }; }catch(e){}
+                              subjectKeys: Object.keys(HC_SUBJECTS), subjects: HC_SUBJECTS,
+                              accepts: hcRouteAccepts, anyIcs: hcAnyIcsRoute }; }catch(e){}
+  // THE CALENDAR DOOR, drivable by a check: the parser is pure and the kind reader is a function of
+  // the file alone, so both can be exercised with a declared fixture and no session.
+  try{ window.hublyIcsUI = { parse: hcParseIcs, unfold: hcIcsUnfold, when: hcIcsWhen,
+                             kind: hcFileKind, handle: hcHandleIncomingFile,
+                             importer: function(){ return typeof hcImportScheduleFromIcs === 'function'; } }; }catch(e){}
 
   /** READ A SCHEDULE OUT OF A PICTURE — and PROPOSE it. Never write from it.
    *
@@ -4518,6 +4584,129 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
     });
   }
 
+  /** ══ AN .ICS, PARSED HERE, IN HIS BROWSER. ════════════════════════════════════════════════
+   *
+   *  NO GOOGLE, NO OAUTH, NO POLICY (Adrian, 2026-09-16). The file is read with FileReader and
+   *  parsed below; it is never uploaded, never sent to a model, and never leaves the page. That is
+   *  not a privacy feature bolted on — it is why this door needs no consent screen at all.
+   *
+   *  IT PARSES ONLY WHAT IT CAN NAME, and says what it skipped. iCalendar is a large format and this
+   *  reads the four properties that make a row on his day: SUMMARY, DTSTART, DTEND, LOCATION. A
+   *  VEVENT it cannot date is not guessed at — it goes in the "couldn't pin down" list that the
+   *  proposal already renders, with the text it came from, so he can see what was ignored.
+   *
+   *  LINE UNFOLDING IS NOT OPTIONAL. RFC 5545 wraps long lines and continues them with a leading
+   *  space or tab; a parser that skips unfolding truncates exactly the long SUMMARY and LOCATION
+   *  values that matter most — the ones with an address in them.
+   *
+   *  NOTHING IS WRITTEN. It proposes, through the same hcProposeImportedJobs the photo path uses, so
+   *  the review step and the "nothing is on your day yet" promise are the same in both doors. */
+  function hcIcsUnfold(text){
+    // Normalise newlines first: an .ics from Outlook is CRLF, from Apple it can be LF, and a file
+    // that has been through a web form can be either.
+    var lines = String(text || '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+    var out = [];
+    for(var i = 0; i < lines.length; i++){
+      if(/^[ \t]/.test(lines[i]) && out.length) out[out.length - 1] += lines[i].slice(1);
+      else out.push(lines[i]);
+    }
+    return out;
+  }
+  /** An iCalendar date-time to { date:'YYYY-MM-DD', time:'HH:MM'|null }, or null when it cannot be
+   *  read. A DATE-only value (VALUE=DATE, an all-day event) has NO time, and null is the honest
+   *  answer — midnight would be a time nobody put in the file. */
+  function hcIcsWhen(raw){
+    var v = String(raw || '').trim();
+    var m = /^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/.exec(v);
+    if(!m) return null;
+    var date = m[1] + '-' + m[2] + '-' + m[3];
+    if(!m[4]) return { date: date, time: null, allDay: true };
+    // A TRAILING Z IS UTC AND IS CONVERTED TO HIS OWN CLOCK. Showing 19:00Z as "7:00 PM" to a
+    // detailer in Utah would put a 1pm job on his evening — the same class as the 24-hour clock
+    // defect, one timezone further out. A value with no Z is already local ("floating") per RFC 5545
+    // and is used as written.
+    if(m[7] === 'Z'){
+      var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] || 0)));
+      var pad = function(n){ return String(n).padStart(2, '0'); };
+      return { date: d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()),
+               time: pad(d.getHours()) + ':' + pad(d.getMinutes()), allDay: false, fromUtc: true };
+    }
+    return { date: date, time: m[4] + ':' + m[5], allDay: false };
+  }
+  /** Returns { jobs, unreadable } in exactly the shape the photo path returns, so the proposal
+   *  renderer cannot tell which door the rows came through. */
+  function hcParseIcs(text){
+    var lines = hcIcsUnfold(text);
+    var jobs = [], bad = [], cur = null;
+    var unescape = function(v){
+      return String(v || '').replace(/\\n/gi, ' ').replace(/\\,/g, ',').replace(/\;/g, ';')
+                            .replace(/\\\\/g, '\\').trim();
+    };
+    for(var i = 0; i < lines.length; i++){
+      var line = lines[i];
+      if(/^BEGIN:VEVENT\s*$/i.test(line)){ cur = { raw: [] }; continue; }
+      if(/^END:VEVENT\s*$/i.test(line)){
+        if(cur){
+          var when = cur.dtstart ? hcIcsWhen(cur.dtstart) : null;
+          var src = [cur.summary, cur.dtstartRaw].filter(Boolean).join(' · ');
+          if(!when){
+            // COULD NOT BE DATED — and it is SHOWN, not dropped. A silently skipped event is a
+            // commitment he thinks Hubly has and it does not.
+            bad.push({ source_text: src || '(an event with no readable date)' });
+          } else {
+            jobs.push({
+              customer_name: null,
+              service_name: unescape(cur.summary) || 'Blocked time',
+              scheduled_date: when.date,
+              scheduled_time: when.time,
+              address: unescape(cur.location) || null,
+              amount: null,
+              is_block: true,          // an imported calendar event is HIS time, not a customer job
+              source_text: src || null
+            });
+          }
+        }
+        cur = null; continue;
+      }
+      if(!cur) continue;
+      var kv = /^([A-Za-z0-9-]+)(;[^:]*)?:(.*)$/.exec(line);
+      if(!kv) continue;
+      var key = kv[1].toUpperCase(), val = kv[3];
+      if(key === 'SUMMARY') cur.summary = val;
+      else if(key === 'LOCATION') cur.location = val;
+      else if(key === 'DTSTART'){ cur.dtstart = val; cur.dtstartRaw = val; }
+      else if(key === 'DTEND') cur.dtend = val;
+    }
+    return { jobs: jobs, unreadable: bad };
+  }
+  function hcImportScheduleFromIcs(file){
+    if(hc.busy){ hcAppendMessage('hubly', "One moment — I'm still working on the last thing. Send that calendar again in a second."); return; }
+    hc.pendingCapture = null;
+    var lbl = '📅 ' + (file.name || 'calendar');
+    hcAppendMessage('user', lbl); hcPersist('user', lbl);
+    var say = function(msg){ hcAppendMessage('hubly', msg); hcPersist('assistant', msg); try{ hcNoteSaid(msg); }catch(e){} };
+    var reader = new FileReader();
+    // EVERY OUTCOME SAYS SOMETHING (prohibition 6), including the ones a file reader produces on its
+    // own — an unreadable file used to be indistinguishable from a file nobody sent.
+    reader.onerror = function(){ say("I couldn’t open that file, so nothing was added. Try sending it again."); };
+    reader.onload = function(){
+      var text = String(reader.result || '');
+      if(!/BEGIN:VCALENDAR/i.test(text)){
+        say("That doesn’t look like a calendar file to me, so nothing was added. It should be a .ics export from your calendar app.");
+        return;
+      }
+      var out;
+      try{ out = hcParseIcs(text); }
+      catch(e){ say("I couldn’t read that calendar, so nothing was added. Tell me what’s coming up and I’ll put it on your day."); return; }
+      if(!out.jobs.length && !out.unreadable.length){
+        say("That calendar has nothing in it that I could put on your day, so nothing was added.");
+        return;
+      }
+      hcProposeImportedJobs(out.jobs, out.unreadable);
+    };
+    try{ reader.readAsText(file); }
+    catch(e){ say("I couldn’t open that file, so nothing was added. Try sending it again."); }
+  }
   /** THE PROPOSAL. Every row it read, with the words it read them from, and one button. */
   function hcProposeImportedJobs(jobs, bad){
     var thread = hcThreadBody(); if(!thread) return;
@@ -4598,16 +4787,35 @@ body.hc-shell-claimed .hc-canvas-bar{padding-right:clamp(180px,16vw,260px)}
   function hcHandleIncomingFile(file){
     if(!file) return;
     if(hc.busy){ hcAppendMessage('hubly', "One moment — still working on the last thing."); return; }
-    var isPdf = /pdf$/i.test(file.type || '') || /\.pdf$/i.test(file.name || '');
-    var isImage = /^image\//i.test(file.type || '');
-    if(!isImage && !isPdf){ hcAppendMessage('hubly', "I can work with images and PDFs — that one I can't read."); return; }
+    var kind = hcFileKind(file);
+    var isPdf = kind === 'pdf', isImage = kind === 'image';
+    // WHAT IT CAN READ IS DERIVED FROM WHAT IS WIRED, INCLUDING IN THE REFUSAL. This said "images
+    // and PDFs" as a literal; the day the ics route landed that sentence would have been a lie in
+    // the other direction — refusing a file it can now read, and telling him so. The list comes
+    // from the routes.
+    if(!kind){
+      var can = ['images', 'PDFs'];
+      if(hcAnyIcsRoute()) can.push('calendar files (.ics)');
+      hcAppendMessage('hubly', 'I can work with ' + can.slice(0, -1).join(', ') + ' and ' + can[can.length - 1] +
+                               " — that one I can't read.");
+      return;
+    }
+    // A CALENDAR FILE GOES STRAIGHT TO ITS ROUTE, pending question or not. There is no ambiguity to
+    // resolve: an .ics is a schedule, and asking "is this your work or your logo" about one would be
+    // the interrogation this door exists to avoid.
+    if(kind === 'ics'){
+      var icsKey = hcAnyIcsRoute();
+      if(icsKey){ HC_FILE_ROUTES[icsKey].ics(file); return; }
+      hcAppendMessage('hubly', "I can't read calendar files yet, so nothing was added.");
+      return;
+    }
     // ROUTED BY A TABLE, NOT BY THREE IFS — and the table is the SAME ONE THE COPY READS.
     // Before this, "which things can you send me a picture of" was knowable only by reading
     // these branches, so a sentence offering a screenshot for something unrouted was merely
     // forbidden rather than impossible. See HC_WAYS.
     var pending = hc.pendingCapture && hc.pendingCapture.askedFor;
     var route = pending && HC_FILE_ROUTES[pending];
-    if(route && (isImage || route.acceptsPdf)){ route.send(file); return; }
+    if(route && hcRouteAccepts(route, kind)){ route.send(file); return; }
     // Nothing pending, and it's an IMAGE — almost always their work or their
     // logo. Hold it and ask which, rather than handing it to the model where it
     // evaporates. A PDF with nothing pending still goes to the model.
