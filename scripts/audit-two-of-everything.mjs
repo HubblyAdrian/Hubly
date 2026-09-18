@@ -81,6 +81,51 @@ console.log(`FUNCTION-NAME OVERLAP: ${nameOverlap.length} — ${nameOverlap.join
 console.log(`  which is why a name-matching audit cannot find this, and why the vocabulary below is the DATABASE'S.\n`);
 console.log(`${rpcNames.length} public functions in the database · ${shared.length} CALLED FROM BOTH SHELLS:\n`);
 for (const s of shared) console.log(`  ${s.name}`);
+/* ══ THE SECOND SIGNAL, TESTED RATHER THAN ASSUMED — 2026-09-18 ═══════════════════════════════
+ *
+ * The RPC signal cannot see a duplication that touches no database: `closePublicBooking` vs
+ * `bookingBack`, the scar that produced the rule, would not appear above. Adrian: *"Is there a SECOND
+ * signal that catches what the first cannot, without flooding the output? You ranked user-visible
+ * strings as the runner-up and said they miss duplicated features whose two copies word themselves
+ * differently. TEST that claim rather than assuming it."*
+ *
+ * So: every SENTENCE-SHAPED literal in each shell — a quoted string with a space in it, long enough
+ * not to be a class name or an attribute — intersected. A sentence repeated verbatim in two files IS
+ * the same feature twice; there is no other reason for it to be there. The number and the shape of
+ * what comes back is printed below whether it is usable or not, because a rejected instrument with
+ * its measurement attached is worth more than an untested hunch. */
+const SENTENCE = /(?:'([^'\n\\]{12,120})'|"([^"\n\\]{12,120})"|`([^`\n\\$]{12,120})`)/g;
+const sentencesOf = (text) => {
+  const out = new Set();
+  for (const m of text.matchAll(SENTENCE)) {
+    const v = (m[1] ?? m[2] ?? m[3]).trim();
+    if (!/\s/.test(v)) continue;                       // one word is a token, not a sentence
+    if (!/[a-z]{3}/.test(v)) continue;                  // must contain real words
+    if (/[<>{}()=;|]|::|--|\/\/|\bvar\b|\bfunction\b/.test(v)) continue;   // markup, css, code
+    if (/^[a-z-]+:\s/.test(v)) continue;                // a css declaration
+    if (/^[\d\s.,%px+-]+$/.test(v)) continue;
+    out.add(v);
+  }
+  return out;
+};
+const sents = shells.map((f) => sentencesOf(src[f]));
+const shared2 = [...sents[0]].filter((v) => sents.every((s2) => s2.has(v)));
+const humanish = shared2.filter((v) => /^[A-Z“"']/.test(v) && /[a-z]{3}\s/.test(v));
+
+console.log(`\n══ SECOND SIGNAL: THE SAME USER-VISIBLE SENTENCE IN BOTH SHELLS ═══════════════════════════`);
+console.log(`sentence-shaped literals: ${sents.map((s2, i) => `${shells[i]} ${s2.size}`).join(" · ")}`);
+console.log(`shared verbatim: ${shared2.length}  ·  of those, shaped like something a PERSON reads: ${humanish.length}\n`);
+if (humanish.length) {
+  for (const v of humanish.slice(0, 40)) console.log(`  ${JSON.stringify(v)}`);
+  if (humanish.length > 40) console.log(`  … and ${humanish.length - 40} more`);
+}
+console.log(`\nVERDICT ON THE SECOND SIGNAL — read the number above before the argument. A sentence shared`);
+console.log(`verbatim is a TRUE positive every time (there is no innocent reason for it), so this signal`);
+console.log(`has no noise problem at all; its limit is RECALL, and that is what the number shows. What it`);
+console.log(`cannot do is find a feature whose two copies word themselves differently, which is most of`);
+console.log(`them — and neither signal sees a duplication that shares no sentence AND no RPC, which is`);
+console.log(`exactly what closePublicBooking vs bookingBack was.`);
+
 console.log(`\nEach line is ONE CAPABILITY WITH TWO CALLERS — a candidate, not a finding. What makes it a`);
 console.log(`finding is opening both callers and seeing whether a fix to one would have to be made twice.`);
 console.log(`SCOPED: this cannot see a capability duplicated without an RPC — a direct PostgREST write on`);

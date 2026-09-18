@@ -188,14 +188,59 @@ for (const m of MIGRATIONS)
   for (const hit of m.text.matchAll(/functions\/v1\/([a-z0-9-]+)/g)) migrationCalls.add(hit[1]);
 console.log(`  migrations invoke ${migrationCalls.size} edge function(s) via net.http_post: ${[...migrationCalls].join(", ")}\n`);
 
+/* ══ THE FOURTH CALLER CLASS, AND THE THIRD ONE WAS MY QUOTING — 2026-09-18 ═══════════════════
+ *
+ * `page-view` has 223 rows in `page_loads` and this sweep had it in the DEAD list. The reason was
+ * NOT, as both of us assumed, that the public page assembles its URL at run time. It is
+ * `db.functions.invoke('page-view', …)` — a plain literal — and the scan below looked for
+ * `"page-view"` with DOUBLE quotes. **A quoting mismatch in my own reference test**, and it read out
+ * as "nothing live reaches this function" for four functions at once.
+ *
+ * Rescued by fixing it: page-view, send-customer-email, booking-confirmed and studio-api, all called
+ * by `functions.invoke('name')` in public/.
+ *
+ * AND THERE IS A REAL RUN-TIME CLASS, smaller than we thought: exactly two helpers take the function
+ * NAME as a parameter and build the URL from it —
+ *     public/platform-home.html:11836   hcStripeApi(fn, body)  -> SUPA_URL + '/functions/v1/' + fn
+ *     public/marketplace-lite.html:399  stripeApi(fn, body)    -> the same shape
+ * so the names are at the helper's CALL SITES, not at the fetch. Both are collected below. A function
+ * reached only that way is invisible to any search for its own name beside a URL. */
+const invokeNames = new Set();
+const helperNames = new Set();
+for (const file of FILES) {
+  if (!isLive(file.rel)) continue;
+  for (const m of file.text.matchAll(/functions\s*\.\s*invoke\(\s*["'`]([a-z0-9-]+)["'`]/g)) invokeNames.add(m[1]);
+  // A helper that builds `/functions/v1/` + <param>: collect what its call sites pass.
+  for (const h of file.text.matchAll(/(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(\s*([A-Za-z_$][\w$]*)\s*,/g)) {
+    const [, hname, param] = h;
+    const body = file.text.slice(h.index, h.index + 900);
+    // ESCAPED PROPERLY. The template-literal version lost its backslashes and produced
+    // /functions/v1/['"`]s*+s*secret/ — "Nothing to repeat" — which threw before any orphan was
+    // examined. A crash is the honest failure here; a silently-empty helper set would have been worse.
+    const wants = "functions/v1/['\"`]\\s*\\+\\s*" + param.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b";
+    if (!new RegExp(wants).test(body)) continue;
+    for (const c of FILES.filter((x) => isLive(x.rel)))
+      for (const call of c.text.matchAll(new RegExp(hname.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\(\\s*[\"'`]([a-z0-9-]+)[\"'`]", "g")))
+        helperNames.add(call[1]);
+  }
+}
+console.log(`  functions.invoke('name') call sites name ${invokeNames.size} function(s)`);
+console.log(`  a helper taking the function NAME as a parameter names ${helperNames.size}: ${[...helperNames].join(", ") || "(none)"}
+`);
+
 for (const f of fns) {
   const r = refs(`functions/v1/${f}`);
   const r2 = refs(`"${f}"`);
+  const r3 = refs(`'${f}'`);                      // THE QUOTING FIX. Single quotes are the common form.
+  const byInvoke = invokeNames.has(f), byHelper = helperNames.has(f);
   const byCron = cronFns.has(f), byTrigger = migrationCalls.has(f);
-  const how = [byCron ? "cron.job" : null, byTrigger ? "a migration's net.http_post" : null].filter(Boolean);
+  const how = [byCron ? "cron.job" : null, byTrigger ? "a migration's net.http_post" : null,
+               byInvoke ? "functions.invoke('name')" : null,
+               byHelper ? "a helper taking the name as a parameter" : null].filter(Boolean);
   out.push({ kind: "edge fn", name: f, rows: null, added: bornFn(f),
-             refs: r.all + r2.all, live: r.live + r2.live + (byCron ? 1 : 0) + (byTrigger ? 1 : 0),
-             where: [...new Set([...r.where, ...r2.where, ...how])].slice(0, 3) });
+             refs: r.all + r2.all + r3.all,
+             live: r.live + r2.live + r3.live + (byCron ? 1 : 0) + (byTrigger ? 1 : 0) + (byInvoke ? 1 : 0) + (byHelper ? 1 : 0),
+             where: [...new Set([...r.where, ...r2.where, ...r3.where, ...how])].slice(0, 3) });
 }
 
 /* ── SORT: ZERO REFERENCES FIRST, OLDEST FIRST ───────────────────────────────────────────────── */

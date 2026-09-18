@@ -148,15 +148,44 @@ try {
 
 const digits = (s) => String(s || "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
 /** The string values of a JSON document, or the text itself. Never raw JSON: its integers are not facts. */
-const renderable = (text) => {
+/** Is this array a COLLECTION OF CONTACT RECORDS — a lead list, a customer list? Detected by SHAPE,
+ *  never by key name: objects carrying a name plus a phone or an email. */
+const isContactRecords = (v) =>
+  Array.isArray(v) && v.length > 0 &&
+  v.every((e) => e && typeof e === "object" && !Array.isArray(e) &&
+    typeof e.name === "string" &&
+    (typeof e.phone === "string" || typeof e.email === "string"));
+
+const skipped = [];
+const renderable = (text, where) => {
   const t = String(text || "");
   if (!/^\s*[{[]/.test(t)) return t;
   let o; try { o = JSON.parse(t); } catch (_) { return t; }
   const out = [];
-  const walk = (v) => { if (typeof v === "string") out.push(v);
-    else if (Array.isArray(v)) v.forEach(walk);
-    else if (v && typeof v === "object") Object.values(v).forEach(walk); };
-  walk(o);
+  const walk = (v, path) => {
+    /* ══ A LEAD LIST IS NOT A PAGE FACT — 2026-09-18 ═══════════════════════════════════════════
+     *
+     * THIS CHECK REPORTED `adrians-lawn-service` AS PUBLISHING ANOTHER BUSINESS'S PHONE AND EMAIL,
+     * AND IT WAS NOT. The values live at `meta.pipeline.manual[0].phone` and `[1].email` — a LEAD
+     * LIST. The classic renderer does not render `meta.pipeline`; the check was walking every string
+     * in the column and calling them page facts.
+     *
+     * Two things follow. First, the finding was wrong and would have been ACTED ON: Adrian's
+     * instruction was "correct the page to match the record", and doing that literally would have
+     * overwritten LEAD RECORDS to fix a page that was never wrong. Second, a third party's phone
+     * number inside a lead row is CORRECT — that is whose number it is — so counting it as a
+     * contradiction is the same category error as reading a booking row as evidence of a person.
+     *
+     * Detected by SHAPE rather than by key name: an array of objects each carrying a name and a
+     * phone or an email is a contact list, whatever it is called. A key-name list would be a
+     * hand-maintained set and would miss the next one. Every skip is REPORTED, so the scoping is
+     * visible rather than silent. */
+    if (isContactRecords(v)) { skipped.push(`${where} ${path} (${v.length} contact record(s))`); return; }
+    if (typeof v === "string") out.push(v);
+    else if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${path}[${i}]`));
+    else if (v && typeof v === "object") Object.entries(v).forEach(([k, x]) => walk(x, `${path}.${k}`));
+  };
+  walk(o, "$");
   return out.join("\n");
 };
 /** Phones on a page: a separator or a tel: href required — see the header. */
@@ -184,7 +213,7 @@ for (const r of rows) {
     any = true;
     const label = `${s.table}.${s.col}`;
     perStore[label] = (perStore[label] || 0) + 1;
-    const text = renderable(raw);
+    const text = renderable(raw, `${r.slug} ${s.key}`);
     const mine = digits(r.phone), myEmail = String(r.email || "").toLowerCase().trim();
     for (const d of phonesIn(text)) {
       if (d === mine) continue;
@@ -215,6 +244,11 @@ console.log(`${pagesSeen} businesses with a page in at least one derived store �
 console.log(`${phoneOwner.size} businesses with a phone on record, ${emailOwner.size} with an email · ` +
   `${scanned} contact detail(s) on a page that were not that page's own`);
 console.log(`A detail nobody in the corpus claims is LEFT ALONE: a supplier or a partner is not ours to judge.`);
+if (skipped.length) {
+  console.log(`\n${skipped.length} CONTACT-RECORD COLLECTION(S) SKIPPED — a lead or customer list is not a page`);
+  console.log(`fact, and a third party's phone number inside one is CORRECT. Listed so the scoping is visible:`);
+  for (const k of skipped) console.log(`  ${k}`);
+}
 
 /* THE MARKET FOUR, REPORTED BY NAME WHETHER OR NOT THEY FAIL. The whole reason for the rewrite was
    that these were invisible, and "no failures" is only meaningful if their pages were actually read. */
@@ -223,7 +257,7 @@ console.log(`\nTHE MARKET BUSINESSES, AND WHICH STORE EACH WAS READ FROM (${mark
 for (const r of market) {
   const mineStores = isPageStore.filter((s) => r["store_" + s.col]);
   const has = mineStores.map((s) => s.key);
-  const text = mineStores.map((s) => renderable(r["store_" + s.col])).join("\n");
+  const text = mineStores.map((s) => renderable(r["store_" + s.col], `${r.slug} ${s.key}`)).join("\n");
   const ph = [...phonesIn(text)], em = [...emailsIn(text)];
   console.log(`  ${r.slug.padEnd(38)} ${has.length ? has.join(" + ") : "NO PAGE IN ANY DERIVED STORE"}`);
   console.log(`      record phone ${r.phone || "(none)"} · page phones ${JSON.stringify(ph)} · page emails ${JSON.stringify(em)}`);

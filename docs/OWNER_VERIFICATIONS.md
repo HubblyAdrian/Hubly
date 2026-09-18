@@ -67,6 +67,70 @@ alternative was shipping something unverifiable.
   is being collected at all" is **RED on purpose today** — the table has zero rows because no page has
   been generated since it was created. It goes green on the first build. That is a named deliberate
   red, in `docs/CHECK_TRIAGE_20260917.md`.
+## 5.4 Stripe's webhook delivery log — has `stripe-webhook` ever run?
+
+**Adrian's, 2026-09-18.** Unanswerable from this repo and the database, and the reason is worth keeping
+rather than re-deriving: every table `stripe-webhook` writes has other writers
+(`stripe_connect_accounts` 6, `booking_requests` 3, `marketplace_bookings` 3, `commerce_orders` 3), so
+rows prove nothing about *that* function, and no invocation log is reachable —
+`supabase functions list` returns a DEPLOY time, not a call count. `commerce_orders` holds 2 rows and
+both are still `pending`, which is suggestive of a webhook that never fired and is not evidence.
+
+**Stripe's own webhook delivery log is the only place the answer lives.** After the 2026-09-18 quoting
+fix in the orphan sweep, `stripe-webhook` is one of only THREE edge functions with no caller anywhere
+in `public/`, `api/`, cron or a migration — the other two are `commerce-merchandising` and
+`mission-control`.
+
+## 5.5 GRAEF'S EXTRA CONTACTS — and the finding changed shape overnight
+
+**Adrian is asking Graef whether he meant to publish these.** The exact values, so they are in front of
+him when he asks:
+
+| on his page / in his record | value |
+| --- | --- |
+| phone, **on his record** | `661-546-2662` |
+| phone, also present | `661-493-5289` |
+| phone, also present | `661-717-2773` |
+| email | `kurash448@gmail.com` |
+| email | `lhgraef5@gmail.com` — carries his surname |
+| email | `austinjgraef@gmail.com` — carries his surname |
+
+**AND THE 2026-09-17 FRAMING OF THIS WAS WRONG, which changes the question he should ask.** It was
+reported as *"his live page carries two extra phone numbers and three personal gmail addresses"*. On
+2026-09-18 they were located: they are **three lead records at `meta.pipeline.manual`**, each with a
+name, a phone and an email. The classic renderer does not render `meta.pipeline`, so **they are
+probably not on his page at all** — they are his own leads, correctly stored.
+
+So the question is no longer "did you mean to publish these". It is **5.6**.
+
+## 5.6 THE ANON READER RETURNS THE WHOLE `businesses` ROW — including that lead list
+
+**What would make this wrong, first.** `get_public_business(slug)` is `SECURITY DEFINER`,
+`EXECUTE`-granted to `anon`, and its body is `select to_jsonb(b) - 'draft_token' from public.businesses b
+where b.slug = p_slug and b.owner_id is not null`. That is conclusive about **what the function
+returns**. It is **NOT** an executed unauthenticated request: making one needs the anon key, and a key
+may never reach a command line or a transcript. **That last link is Adrian's to close**, and until he
+does, this is "the grant and the body say so", not "I fetched it".
+
+**What it means if it holds.** Every column of `businesses` is public for any CLAIMED business —
+including `meta`, and `meta.pipeline.manual` is a lead list. Measured 2026-09-18, counts only, no
+values printed: **`graefs-autocare` (market, claimed) has 3 lead records each carrying a name, a phone
+and an email**; `adrians-lawn-service` (test, claimed) has 2. Those are the six values in 5.5.
+
+**AND IT IS NOT JUST A NAME AND A PHONE.** The check reports FIELD NAMES (never values). Each of
+Graef's three records carries: `name`, `phone`, `email`, `address`, `messages`, `lastMessage`, `notes`,
+`notesList`, `activity`, `appointments`, `tasks`, `estimate`, `estimatedValue`, `service`, `source`,
+`stage`, `status`, `crmStatus`, `quoteStatus`, `jobStatus`, `tags`, `followUpAt`, `lastContacted`,
+`aiScore`, `aiQualified`, `buyingIntent`, `lostReason`, `isReturning`, `isMembershipSignup`. **That is
+his whole CRM record for those three people, including the message history and his own notes.**
+
+**And the shape is the problem, not the column.** `to_jsonb(b)` means a column added next month for
+something else is public the moment it exists. Nobody has to make a mistake for the next leak.
+
+`scripts/check-no-public-reader-leaks-contacts.mjs` is RED on this today and prints no values. The fix
+is a ruling — narrow the reader to the columns a public page actually needs — and it touches a live
+reader used by ten market businesses, so it is not something a session should choose alone.
+
 - **`stripe-webhook`: has it ever run?** Unanswerable from here. Every table it writes has other
   writers (`stripe_connect_accounts` 6, `booking_requests` 3, `marketplace_bookings` 3,
   `commerce_orders` 3), so rows prove nothing about *that* function, and no invocation log is

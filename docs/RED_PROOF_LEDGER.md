@@ -13,7 +13,7 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-18T01:47:05.194Z** · 22 run(s) recorded.
+**Last run: 2026-09-18T03:06:59.009Z** · 23 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
@@ -50,6 +50,7 @@ have made the rule the first thing anyone switched off.
 | `check-navigation-destinations.mjs` | 4 the count keys were read | **RED ALONE** | make the planner door count by a key no thread view answers — `planner->planner` instead of `planner->day`. THIS IS THE EXACT SHAPE of 'your schedule isn’t set up' said about a room with two jobs on it: the door counts by a different key than it navigates by | — |
 | `check-navigation-destinations.mjs` | 5 the default rail was read | **RED ALONE** | offer a place by default that no surface renders — `store: true` in HC_RAIL_DEFAULT, so every new business is given a rail row that opens nothing | — |
 | `check-no-mailto-reaches-a-customer.mjs` | no latest stored page carries a mailto | **DECLARED, PROVEN BY HAND** | plant a mailto anchor in a stored page and confirm this leg alone goes red | — |
+| `check-no-public-reader-leaks-contacts.mjs` | no anon-readable reader returns a collection of contact records | **DECLARED, PROVEN BY HAND** | plant a contact-record collection into a TEST business's meta and confirm this leg alone goes red | — |
 
 ## Runs
 
@@ -75,3 +76,4 @@ have made the rule the first thing anyone switched off.
 - **2026-09-18T01:45:39.544Z** — 1 break(s) applied · 1 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-18T01:46:22.260Z** — 0 break(s) applied · 0 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-18T01:47:05.194Z** — 17 break(s) applied · 16 red alone · 1 compound · 0 not red · 0 skipped
+- **2026-09-18T03:06:59.009Z** — 17 break(s) applied · 16 red alone · 1 compound · 0 not red · 0 skipped
