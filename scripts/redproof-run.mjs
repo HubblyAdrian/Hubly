@@ -143,6 +143,29 @@ for (const f of files) {
     const key = `${f}::${b.leg}`;
     const rec = { check: f, leg: b.leg, why: b.why || null, at: stamp };
 
+    // ══ A DECLARATION THAT CANNOT BE AUTOMATED AT ALL ═════════════════════════════════════════
+    //
+    // Gated on `provenBy` ALONE, not on `sql`. The first version required a `sql` break, so a leg
+    // that reads PRODUCTION — where no repo edit can change the answer until a git push — matched
+    // neither branch, fell through to `join(ROOT, undefined)`, and took the whole runner down with a
+    // TypeError. A runner that crashes on a legitimate declaration shape is a runner that stops
+    // red-proofing everything after it, which is the loudest possible version of the failure it
+    // exists to catch, and the only good thing about it.
+    if (b.provenBy && !b.file) {
+      rec.status = "DECLARED, PROVEN BY HAND"; rec.note = b.provenBy;
+      ledger.legs[key] = rec;
+      console.log(`   leg ${JSON.stringify(b.leg)}  DECLARED, PROVEN BY HAND — not re-verified by this runner`);
+      continue;
+    }
+    // No file and no hand-proof is a malformed declaration. SKIPPED and named, never a crash and
+    // never silence — an unparseable or unusable declaration is exactly the thing that lets a leg
+    // sit in the ledger having never been seen red.
+    if (!b.file && !b.sql) {
+      rec.status = "SKIPPED"; rec.note = "declaration has neither `file` nor `sql` nor `provenBy`";
+      ledger.legs[key] = rec; skipped++;
+      console.log(`   leg ${JSON.stringify(b.leg)}  SKIPPED — declaration names no file to break and no hand-proof`);
+      continue;
+    }
     if (b.sql && !b.file) {
       // A DB BREAK PERFORMED BY HAND IS EVIDENCE, AND IT IS LABELLED AS SUCH. Recording it as an
       // automated proof would put us back where we started — a claim in prose. Recording it as

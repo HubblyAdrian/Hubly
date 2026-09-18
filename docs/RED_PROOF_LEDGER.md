@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-18T14:46:18.680Z** · 55 run(s) recorded.
+**Last run: 2026-09-18T16:17:17.981Z** · 57 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 35 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 40 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 1 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -63,6 +63,12 @@ have made the rule the first thing anyone switched off.
 | `check-the-rail-says-who-you-are.mjs` | 1 a known first name is on its own line ABOVE the business name | **RED ALONE** | put the business name FIRST instead — the owner line is still there, still says exactly what the reader says, still on its own line. Only the order Adrian ruled on is gone, which is the narrowest break that can reach this leg: legs 2 and 3 cannot see it at all. | — |
 | `check-the-rail-says-who-you-are.mjs` | 2 no name established renders NOTHING — no node, no placeholder, no email | **RED ALONE** | fall back to the email's local part when the reader returns null, which is exactly the 2026-09-15 bug: a login credential shown to the owner as his name, in the one place he looks to confirm Hubly knows who he is | — |
 | `check-the-rail-says-who-you-are.mjs` | 3 the line is EXACTLY what the one reader returns — no second opinion | **RED ALONE** | restyle the name locally after reading it — one line of 'presentation', which is how every second opinion about a person's name starts. It keeps the node, the order, the geometry and the null decision identical, so ONLY the claim that the surface shows what the reader said can detect it. (The real bug it stands for is larger — an email prefix or the auth provider's guess — but a wider break would take legs 1 and 2 down with it and prove nothing.) | — |
+| `check-the-sitemap-is-the-record.mjs` | 1 every claimed non-test business is in the sitemap | **RED ALONE** | lose one business on the way from the record to the XML. Nothing errors and the sitemap still looks exactly like a sitemap; it is quietly shorter by one, and the customer it drops is never submitted to Google. THE BREAK IS AIMED AT api/sitemap.js AND NOT AT THE MIGRATION ON PURPOSE: the first version of this declaration edited the SQL file and came back NOT RED, because this check reads the LIVE function and a file on disk is not the database. A break must land on code the check actually RUNS (Lesson 100, pointed at a red-proof). | — |
+| `check-the-sitemap-is-the-record.mjs` | 2 nothing else is in the sitemap — no unclaimed draft, no test account | **RED ALONE** | put a URL in the sitemap that the record does not contain — the shape of submitting an unclaimed draft. Every unclaimed page stamps its own <meta robots> noindex, so this is us telling Google two contradictory things about one URL, and publishing the existence of a draft nobody claimed. Aimed at api/sitemap.js for the same reason as leg 1. | — |
+| `check-the-sitemap-is-the-record.mjs` | 3 /sitemap.xml has a route, and it precedes the catch-all | **RED ALONE** | move the route AFTER the catch-all. It is still present, still correct, and completely unreachable — /sitemap.xml goes back to answering with 3MB of hubly.html and a 200, which is the state this whole change exists to end. Presence is not reachability. | — |
+| `check-the-sitemap-is-the-record.mjs` | 4 robots.txt names the sitemap | **RED ALONE** | remove the Sitemap: line. The sitemap still serves perfectly and nothing references it, so Google only finds it if someone submits it by hand — and this file is served on every business subdomain, so the line is also the cross-submission that lets one sitemap carry URLs across all those hosts. | — |
+| `check-the-sitemap-is-the-record.mjs` | 5 a FAILED read serves no sitemap, never an empty one | **RED ALONE** | answer a failed read with a valid empty <urlset> and a 200 — the shape every empty-reader defect takes. It would be a confident 'there are no business pages' composed out of our own outage, aimed at Google instead of at an owner, and it would deindex every customer. | — |
+| `check-the-sitemap-is-the-record.mjs` | 6 [SHAPE] the SERVED bytes are this XML, not the catch-all's HTML | **DECLARED, PROVEN BY HAND** | NO REPO EDIT CAN MOVE THIS LEG — it reads what production serves, and production does not change until a git push. PROVEN BY HAND on 2026-09-18 instead, and the proof is that it was observed RED and then GREEN across one deploy: before the push /sitemap.xml returned http=200 size=3091125 type=text/html (the catch-all), and the first fetch AFTER the push still returned exactly that, then the next returned http=200 size=1498 type=application/xml with 13 <loc> and x-hubly-sitemap-count: 13. That transition is the assertion failing and passing for the reason it claims to catch. | — |
 
 ## Runs
 
@@ -121,3 +127,5 @@ have made the rule the first thing anyone switched off.
 - **2026-09-18T06:25:15.554Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 1 skipped
 - **2026-09-18T06:25:53.607Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-18T14:46:18.680Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T16:15:16.531Z** — 5 break(s) applied · 3 red alone · 0 compound · 2 not red · 1 skipped
+- **2026-09-18T16:17:17.981Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
