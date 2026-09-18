@@ -30,7 +30,8 @@
  *
  * Exit: 0 every declared break produced RED ALONE · 1 any COMPOUND / NOT RED / SKIPPED · 2 cannot run.
  */
-import { readFileSync, writeFileSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { ROOT, parseBreaks, failedLines, readLedger, writeLedger } from "./lib/redproof.mjs";
@@ -95,9 +96,61 @@ for (const f of files) {
         console.log(`   leg ${JSON.stringify(b.leg)}  SKIPPED (db break, no --allow-db)`);
         continue;
       }
-      rec.status = "SKIPPED"; rec.note = "db breaks are declared but this runner does not apply them yet — it must never write to a real table by accident";
-      ledger.legs[key] = rec; skipped++;
-      console.log(`   leg ${JSON.stringify(b.leg)}  SKIPPED (db break not automated)`);
+      /* ══ FUNCTION-ONLY DB BREAKS ARE AUTOMATED. ROW WRITES ARE NOT, EVER. ══════════════════════
+       *
+       * Adrian, 2026-09-18, on the anon-reader leg: *"the declared break is the allowlist reverting
+       * to to_jsonb(b), and it must turn that leg RED ALONE, recorded in the ledger."* That break is
+       * a database change, so either the runner applies it or the strongest leg in the repo is
+       * proven only in prose.
+       *
+       * IT IS BOUNDED BY A RULE, NOT BY CARE. The sql and its restore must contain nothing but
+       * `create or replace function` — no insert, update, delete, drop, truncate or alter table. A
+       * function can be swapped and swapped back with no row touched; that is why this one class is
+       * safe to automate and why nothing else is. The guard is checked on BOTH statements, because a
+       * restore that writes rows is as bad as a break that does. */
+      const ROWS = /\b(insert|update|delete|truncate|drop|alter\s+table|grant|revoke)\b/i;
+      const FUNC_ONLY = (t) => /create\s+or\s+replace\s+function/i.test(t) && !ROWS.test(t);
+      if (!b.restore || !FUNC_ONLY(b.sql) || !FUNC_ONLY(b.restore)) {
+        rec.status = "SKIPPED";
+        rec.note = "a db break this runner refuses to apply: only `create or replace function` breaks " +
+          "with a matching function-only restore are automated, so it can never write a row by accident";
+        ledger.legs[key] = rec; skipped++;
+        console.log(`   leg ${JSON.stringify(b.leg)}  SKIPPED (db break is not function-only)`);
+        continue;
+      }
+      const sqlFile = (t, label) => {
+        const f2 = join(mkdtempSync(join(tmpdir(), "hubly-rp-")), label + ".sql");
+        writeFileSync(f2, t);
+        const out = execFileSync("supabase", ["db", "query", "--linked", "-f", f2],
+          { encoding: "utf8", cwd: ROOT, maxBuffer: 64 * 1024 * 1024 });
+        if (/"_tag"\s*:\s*"Error"/.test(out)) throw new Error(out.slice(0, 300));
+        return f2;
+      };
+      try { sqlFile(b.sql, "break"); } catch (e) {
+        rec.status = "SKIPPED"; rec.note = "the break statement failed: " + String(e.message).slice(0, 160);
+        ledger.legs[key] = rec; skipped++;
+        console.log(`   leg ${JSON.stringify(b.leg)}  SKIPPED — break sql failed`);
+        continue;
+      }
+      const brokeDb = run(f);
+      // RESTORE IS A POSTCONDITION. If it fails, stop the whole run rather than leave the database
+      // holding a deliberately broken function.
+      try { sqlFile(b.restore, "restore"); } catch (e) {
+        console.error(`\nABORTING — the restore of ${b.leg} FAILED: ${String(e.message).slice(0, 200)}`);
+        console.error(`The database is holding a deliberately broken function. Re-apply it by hand NOW.`);
+        process.exit(2);
+      }
+      applied++;
+      const newlyDb = failedLines(brokeDb.out).filter((l) => !baseFails.has(l));
+      const hitDb = newlyDb.filter((l) => l.includes(String(b.leg)));
+      rec.also = newlyDb.filter((l) => !l.includes(String(b.leg))).map((l) => l.slice(0, 120));
+      rec.newlyRed = newlyDb.length;
+      rec.note = "a FUNCTION-ONLY database break, applied and restored by the runner; no row was written";
+      if (hitDb.length && newlyDb.length === 1) { rec.status = "RED ALONE"; alone++; }
+      else if (hitDb.length) { rec.status = "COMPOUND"; compound++; }
+      else { rec.status = "NOT RED"; notRed++; }
+      ledger.legs[key] = rec;
+      console.log(`   leg ${JSON.stringify(b.leg)}  ${rec.status}  (db break, ${newlyDb.length} newly-red leg(s))`);
       continue;
     }
 

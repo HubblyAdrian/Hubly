@@ -23,7 +23,7 @@
 > grep -o '^## Lesson [0-9b]*' docs/CHECKER_LESSONS.md | tail -1   # the highest, for the next number
 > ```
 >
-> **91 headings, running 4 → 98**, plus lessons **1–3**, which are the three instances described
+> **92 headings, running 4 → 99**, plus lessons **1–3**, which are the three instances described
 > narratively in the opening section and have no heading — which is why a later count read the file
 > as starting at 4. **11 and 11b** are both present: two lessons written with the same number on
 > different days, and renumbering would invalidate every citation in the commit history since, so
@@ -3636,3 +3636,63 @@ and coverage is the one that looks like rigour, so it is the one that gets mista
 - **Prefer a positive assertion whenever one exists.** "Website's own saved message is still in the
   thread" cannot be vacuous: something has to be there for it to pass. That is what the leg was
   re-anchored on, and it goes red on exactly the break that had left it green.
+
+## Lesson 99
+
+**A FINDING BECOMES AN INSTRUCTION ONE STEP AFTER IT BECOMES A SENTENCE.**
+
+A measurement written down is read as a fact. A fact stated to the advisor comes back as a task. A
+task naming a record comes back as a **WRITE**. Nothing in that chain re-checks the measurement, and
+**each step strips a caveat by reformatting** — a table becomes a bullet, a bullet becomes a clause,
+a clause becomes an imperative.
+
+So: **ANY INSTRUCTION TO WRITE, PATCH, CORRECT OR DELETE A RECORD MUST RE-ESTABLISH ITS PREMISE FROM
+THE DATA BEFORE THE FIRST WRITE** — however many times the premise has been repeated, and whoever
+repeated it. The advisor's confidence is not evidence. Being told twice is not evidence. The check
+that produced it may have been measuring something else, and on 2026-09-18 it was.
+
+### The near-miss, by name
+
+**2026-09-18, `adrians-lawn-service`.** Adrian, recording it himself:
+
+> *"I told you to patch adrians-lawn-service's page. Those values are not on the page — they are lead
+> records at `meta.pipeline.manual`. You checked before writing and refused. Had you done what I said,
+> you would have overwritten real lead records to fix a page that was never wrong."*
+
+The chain, in four steps, each one reasonable on its own:
+
+1. **A check with loose scoping manufactured a finding.** `check-page-facts-are-this-business` walked
+   EVERY string value in `businesses.meta` and called them page facts. `meta.pipeline.manual` is a
+   **lead list**; the classic renderer does not render it. A third party's phone number inside a lead
+   row is *correct* — it is whose number it is.
+2. **It entered a report** as *"adrians-lawn-service publishes 801-857-4283 (evergreen-yard-care's
+   number) and test@gmail.com (star-windows')"* — true about the column, false about the page, and the
+   distinction did not survive the sentence.
+3. **The report came back as an instruction:** *"Correct the page to match the record — targeted patch,
+   no rebuild."* Now it named a record and a verb.
+4. **Only a pre-write verification stopped it.** Locating the two values before writing showed they
+   were at `meta.pipeline.manual[0].phone` and `[1].email`. The patch would have rewritten a lead's
+   phone number to the business's own, in the business's own CRM.
+
+### Why this is not Lesson 96
+
+L96 is about a claim getting **LOUDER** as it travels — a caveated finding amplified into an alarm.
+This is about a claim **CHANGING CATEGORY** as it travels: from *measurement* to *fact* to *task* to
+*write*. Loudness is survivable; a category change is not, because a write is not reversible by
+correcting the sentence that caused it. The lugnuts alarm cost a day of misplaced priority. This one
+would have cost Graef-shaped data on a real owner's CRM — and it would have looked like a successful
+patch, with a green postcondition, because the postcondition would have asserted the page now matched
+the record. **It would have been reported as done.**
+
+### What it changes in practice
+
+- **A verb in an instruction is a trigger for re-derivation, not for execution.** "Patch", "correct",
+  "fix the record", "delete" — each one re-runs the query that produced the premise, first.
+- **Locate the value before changing it.** Not "does the page contain X" but *where in the document
+  does X live, and is that somewhere a customer is served*. The path is the evidence; the presence is
+  not. Both patch tools written that day print the path before they write.
+- **A postcondition cannot save you here.** It checks that the write did what the write intended.
+  It has no opinion about whether the write should have happened at all.
+- **And the fix for the check is scoping, not vigilance.** `check-page-facts-are-this-business` now
+  skips any array whose elements are contact records — detected by SHAPE (a name plus a phone or an
+  email), never by key name — and PRINTS what it skipped, so the scope is visible instead of trusted.

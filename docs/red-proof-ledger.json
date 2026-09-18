@@ -184,6 +184,54 @@
       "compound": 1,
       "notRed": 0,
       "skipped": 0
+    },
+    {
+      "at": "2026-09-18T04:18:14.627Z",
+      "applied": 17,
+      "alone": 16,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T04:20:45.358Z",
+      "applied": 1,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T04:25:05.386Z",
+      "applied": 1,
+      "alone": 1,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T04:26:46.284Z",
+      "applied": 0,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T04:27:15.371Z",
+      "applied": 0,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T04:27:44.471Z",
+      "applied": 1,
+      "alone": 1,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
     }
   ],
   "legs": {
@@ -214,7 +262,7 @@
       "check": "check-conversation-is-the-surface.mjs",
       "leg": "9 the promises rendered",
       "why": "offer a door to an empty room — drop the needs(ctx) gate so every card renders whether its room holds anything or not, which is prohibition 5 inverted",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -223,7 +271,7 @@
       "check": "check-conversation-is-the-surface.mjs",
       "leg": "12 the name reader answered",
       "why": "manufacture a name out of the credential — the email local-part heuristic, which passes off 'Adriansmithee' as something the owner told us",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [
         "FAIL  11 with NO name anywhere, the email is the fallback and is not passed off as a name — label=\"Adriansmithee+ever\" f",
         "FAIL  12a with no name on record the greeting drops it rather than using his email — \"Good evening, Adriansmithee+ever.\""
@@ -235,7 +283,7 @@
       "check": "check-conversation-is-the-surface.mjs",
       "leg": "6 the day's rows were COUNTED",
       "why": "RESTORE LESSON 86's OWN DEFECT — gate hcGoToPlace on business_places ROWS instead of on content, so a day holding a driveway job and a doctor's appointment is told it 'isn't set up on this account yet'. That sentence was said to a real owner on 2026-09-15",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -244,7 +292,7 @@
       "check": "check-conversation-is-the-surface.mjs",
       "leg": "7 the door returned a receipt",
       "why": "announce the action before the outcome is known — the premature 'Adding X' class, which claims a placement before it has landed",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -253,7 +301,7 @@
       "check": "check-doors-open-when-needed.mjs",
       "leg": "1 the scan found creation actions",
       "why": "make the delegation test blind, so every empty-state entry point counts as idle-only — the condition leg 1 exists to detect, without touching the door leg 2 asserts",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -262,7 +310,7 @@
       "check": "check-editable-set-is-derived.mjs",
       "leg": "1 [RULE] the markers were found",
       "why": "remove one marker's editor branch — `footer-tag` — so a marker the page renders has nowhere to be edited: the affordance painted over a capability that is not there",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -271,7 +319,7 @@
       "check": "check-every-check-is-runnable.mjs",
       "leg": "6 both sides of the comparison were read",
       "why": "make the glob miss a check that a convenience entry names, so a check is reachable ONLY by its hand-written name — the route-list disease, whose failure mode is silent",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -280,7 +328,7 @@
       "check": "check-day-controls-work.mjs",
       "leg": "2 there IS add-copy",
       "why": "put the dead gesture back in the add-row copy — instruct a double-click, which does not exist on touch, on the surface Adrian was actually looking at",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -289,7 +337,7 @@
       "check": "check-chain-acknowledgement.mjs",
       "leg": "7 a real job write was read",
       "why": "add `business.addJob` to the writers that can close the priced-services gap — one wrong entry in HC_GAP_WRITERS, which is how a job write comes to be announced as a price change",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -306,7 +354,7 @@
       "check": "check-arrival-in-dom.mjs",
       "leg": "2c the arrival IS in the thread",
       "why": "speak a second time while the name question is on the floor — a page-view count beside the arrival, which is two composers talking over each other",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -315,7 +363,7 @@
       "check": "check-address-change-is-said.mjs",
       "leg": "5 the sentence exists, names the new address",
       "why": "make the sentence point at a control — Hubly does not render the page and cannot know what is on screen, so naming a button is claiming a capability it has not verified",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -324,7 +372,7 @@
       "check": "check-navigation-destinations.mjs",
       "leg": "1 the surface registry was read",
       "why": "delete the `quotes` renderer from HC_ROOMS, so a place that can appear in the rail has nothing to render it — a rail row that opens an empty canvas",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -333,7 +381,7 @@
       "check": "check-navigation-destinations.mjs",
       "leg": "2 the room registry was read",
       "why": "add a room nothing can reach — a renderer for `store`, which is not a surface, so it is built and doorless: the diagnosis that has been right four times this month",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -363,7 +411,7 @@
       "check": "check-navigation-destinations.mjs",
       "leg": "4 the count keys were read",
       "why": "make the planner door count by a key no thread view answers — `planner->planner` instead of `planner->day`. THIS IS THE EXACT SHAPE of 'your schedule isn’t set up' said about a room with two jobs on it: the door counts by a different key than it navigates by",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -372,7 +420,7 @@
       "check": "check-navigation-destinations.mjs",
       "leg": "5 the default rail was read",
       "why": "offer a place by default that no surface renders — `store: true` in HC_RAIL_DEFAULT, so every new business is given a rail row that opens nothing",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -389,7 +437,7 @@
       "check": "check-navigation-destinations.mjs",
       "leg": "3 [SHAPE] the destinations were resolved",
       "why": "route an existing destination to Home instead of to its own surface, so something lands on a screen that cannot answer for it",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -398,7 +446,7 @@
       "check": "check-baseline-before-schema.mjs",
       "leg": "schema_mode is read from the call",
       "why": "put the literal \"json_object\" back in place of the value reported by the AI layer — which is what would make every row say json_object after the flag is flipped, and the whole before/after comparison silently wrong",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -407,17 +455,39 @@
       "check": "check-no-mailto-reaches-a-customer.mjs",
       "leg": "no latest stored page carries a mailto",
       "why": "plant a mailto anchor in a stored page and confirm this leg alone goes red",
-      "at": "2026-09-18T03:06:59.009Z",
+      "at": "2026-09-18T04:18:14.627Z",
       "status": "DECLARED, PROVEN BY HAND",
       "note": "BY HAND, 2026-09-17: planted into hubly-classic-fixture's website.heroHeadline via `supabase db query --linked -f`. Leg 1 went RED, leg 2 stayed GREEN. Restored and the fixture read back byte-identical (5347 bytes, json-equal). NEVER graefs-autocare."
     },
     "check-no-public-reader-leaks-contacts.mjs::no anon-readable reader returns a collection of contact records": {
       "check": "check-no-public-reader-leaks-contacts.mjs",
       "leg": "no anon-readable reader returns a collection of contact records",
-      "why": "plant a contact-record collection into a TEST business's meta and confirm this leg alone goes red",
-      "at": "2026-09-18T03:06:59.009Z",
-      "status": "DECLARED, PROVEN BY HAND",
-      "note": "NOT NEEDED YET — this leg is RED ON REAL DATA as of 2026-09-18 (graefs-autocare, 3 records; adrians-lawn-service, 2). A leg observed failing for the reason it claims to catch is red-proofed by observation. The planted break above becomes the proof once the exposure is closed and the leg turns green."
+      "why": "revert get_public_business to `to_jsonb(b) - 'draft_token'` — the whole-row shape — which is exactly the regression this leg exists to catch",
+      "at": "2026-09-18T04:20:45.358Z",
+      "also": [],
+      "newlyRed": 0,
+      "note": "a FUNCTION-ONLY database break, applied and restored by the runner; no row was written",
+      "status": "NOT RED"
+    },
+    "check-no-public-reader-leaks-contacts.mjs::every anon reader hands back an explicit field list": {
+      "check": "check-no-public-reader-leaks-contacts.mjs",
+      "leg": "every anon reader hands back an explicit field list",
+      "why": "revert get_public_business to `to_jsonb(b) - 'draft_token'` — the whole-row shape — which is exactly the regression this leg exists to catch",
+      "at": "2026-09-18T04:25:05.386Z",
+      "also": [],
+      "newlyRed": 1,
+      "note": "a FUNCTION-ONLY database break, applied and restored by the runner; no row was written",
+      "status": "RED ALONE"
+    },
+    "check-public-reader-allowlist-is-derived.mjs::the meta allowlist covers every subtree a renderer reads": {
+      "check": "check-public-reader-allowlist-is-derived.mjs",
+      "leg": "the meta allowlist covers every subtree a renderer reads",
+      "why": "drop `website` from the live function's meta allowlist — the single most-read subtree (16 reads) — so the classic page loses its hero and NOTHING errors: the renderer reads undefined. That is the route-list failure mode arriving in a column list, which is why this check exists",
+      "at": "2026-09-18T04:27:44.471Z",
+      "also": [],
+      "newlyRed": 1,
+      "note": "a FUNCTION-ONLY database break, applied and restored by the runner; no row was written",
+      "status": "RED ALONE"
     }
   }
 }
