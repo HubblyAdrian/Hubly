@@ -213,3 +213,47 @@ Graef's column, 51 on the wire, exactly one stripped — unchanged after this ro
 
 **No row was written at any point.** `graefs-autocare` remains read-only; two `create or replace
 function` statements and zero INSERT/UPDATE/DELETE.
+
+## ✅ 5.8 — CLOSED 2026-09-18. Discovery was the problem. Adrian's four conclusions, each checked
+
+**What Adrian established** (Search Console, a DOMAIN property for `myhubly.app` verified by DNS TXT
+that morning — it did not exist before, which is why the noindex window was unmeasurable). URL
+Inspection on `https://graefs-autocare.myhubly.app/`: *"URL is not on Google — Page is not indexed:
+URL is unknown to Google"*; no referring sitemaps; no referring page; **Last crawl, Crawled as, Crawl
+allowed, Page fetch, Indexing allowed — all N/A**. Then Test Live URL on the same URL: *"URL is
+available to Google"*, *"Page can be indexed"*, and a rendered screenshot of his real site. He
+pressed Request Indexing.
+
+### The four conclusions, verified rather than accepted
+
+| # | conclusion | how it was checked here | verdict |
+|---|---|---|---|
+| 1 | the noindex bug cost this customer nothing | **corroborated twice, independently of GSC.** The window is measurable from git: the allowlist that dropped `owner_id` was applied at **2026-09-17 22:28:46 -0600** (`74639de`) and the fix at **2026-09-18 00:07:24 -0600** (`62065b4`) — **1 hour 39 minutes**, overnight. Separately, every crawl field reading N/A means Google holds no crawl record for the URL. | **Supported.** See the caveat below. |
+| 2 | "Page can be indexed" confirms the noindex fix is live | measured independently in a real browser before he tested: two live claimed market sites carry **no** `data-hc-noindex` tag, and `adrians-lawn-service` (`account_kind='test'`) still **does**. Both directions. | **Confirmed, two ways.** |
+| 3 | Googlebot executes the client render; pre-hydration content is not a defect | his rendered screenshot is the direct evidence. Additionally, the **raw** response already carries the business's own `<title>`, `og:title` and `og:description`, injected server-side by `api/router.js` — so even the unrendered document identifies the business. | **Confirmed. Not investigated further, per his instruction.** |
+| 4 | the reason customer sites are not findable is DISCOVERY | measured from our side: `/sitemap.xml` returned **HTTP 200 with 3,091,125 bytes of `text/html`** (the catch-all), `robots.txt` had **no `Sitemap:` line**, and the apex homepage contains **3 `<a href>` in total and zero links to any business subdomain**. | **Confirmed, and it was worse than "absent".** |
+
+### The caveat on conclusion 1, stated because an alarming *or* a reassuring number needs one
+
+"URL is unknown to Google" is a statement about Google's index **now**. It cannot prove Google never
+fetched the page — only that no crawl record exists for it today. What makes the conclusion safe is
+not that field on its own; it is the **1h39m window**, which is measurable here and does not depend on
+Google's reporting at all. Had the window been three weeks, the same N/A fields would have been much
+weaker evidence. **This holds only if the commit timestamps approximate when each migration was
+applied to the remote** — each was applied immediately before its commit in the same session, so they
+do, to within minutes.
+
+### What was built
+
+`api/sitemap.js` + `public.get_indexable_business_slugs()` + a `vercel.json` route before the
+catch-all + a `Sitemap:` line in `robots.txt`. **13 URLs**: 10 claimed market, 3 claimed internal, out
+of 214 businesses (173 unclaimed and 28 claimed-test excluded). Membership is derived from
+`get_public_business()`'s own output — the same reader `hcNoIndex()` interrogates — so the sitemap and
+the page cannot disagree about a business. Covered by
+`scripts/check-the-sitemap-is-the-record.mjs`, 6 legs, 5 RED ALONE and 1 hand-proven.
+
+### Still needs a person
+
+Whether Google actually **fetches** these URLs now. Submitting the sitemap in Search Console, and the
+result of the Request Indexing he already pressed, are both his to observe — nothing in this repo can
+assert them.
