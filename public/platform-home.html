@@ -669,6 +669,7 @@ html.hc-boot-owner body:not(.hc-active) .hc-input-bar{opacity:.5;pointer-events:
 .hc-rail-biz-mono{width:38px;height:38px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
   font-weight:800;font-size:14px;color:#fff;letter-spacing:-.02em}
 .hc-rail-biz-txt{min-width:0}
+.hc-rail-biz-who{font-size:12px;font-weight:650;color:rgba(255,255,255,.72);line-height:1.2;margin-bottom:2px;word-break:break-word}
 .hc-rail-biz-nm{font-size:14px;font-weight:750;color:#fff;line-height:1.2;word-break:break-word}
 .hc-rail-biz-city{font-size:12px;color:rgba(255,255,255,.62);margin-top:2px}
 .hc-rail-gear{width:100%;min-height:44px;border:0;border-radius:12px;background:transparent;cursor:pointer;margin-top:4px;
@@ -1329,7 +1330,14 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
    and shadow so it reads as a device sitting on a desk, not a page failing to
    fill. The frame box holds the SCALED footprint; the stage is the device-sized
    content transform-scaled into it. */
-.hc-canvas-frame-wrap{flex:1;position:relative;background:var(--bg-1);min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;padding:22px}
+/* TOP-ALIGNED AND IT DOES NOT SCROLL — 2026-09-18, with the width-fit ruling.
+   `align-items:center` + `overflow:auto` was right while the device always fitted: the frame was
+   never taller than the pane. Fitting by WIDTH makes it taller on a short window, and centred
+   overflow puts the frame's TOP out of reach above the scroll origin — the one direction a
+   scrollbar cannot recover. So the frame is pinned to the top and clipped to the pane
+   (hcApplyPreviewFit computes the window height), which also leaves exactly ONE visible scrollbar
+   on screen: the page's own, inside the device, which is the one a visitor has. */
+.hc-canvas-frame-wrap{flex:1;position:relative;background:var(--bg-1);min-height:0;overflow:hidden;display:flex;align-items:flex-start;justify-content:center;padding:22px}
 .hc-preview-frame{
   position:relative;flex:0 0 auto;width:var(--hc-fw,100%);height:var(--hc-fh,100%);
   border-radius:14px;overflow:hidden;background:#fff;
@@ -2563,18 +2571,60 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
       return;
     }
     var dev = HC_DEVICES[hc.previewDevice] || HC_DEVICES.desktop;
-    // clientWidth/Height already exclude the wrap's own padding, which is the
-    // breathing room; fit the device rectangle inside that.
-    var paneW = wrap.clientWidth || 1;
-    var paneH = wrap.clientHeight || 1;
-    var scale = Math.min(paneW / dev.w, paneH / dev.h);
-    if(scale > 1) scale = 1;               // 1:1 is the ceiling
-    if(!(scale > 0)) scale = paneW / dev.w; // pathological (0-height pane) fallback
+
+    /* ══ clientWidth INCLUDES PADDING. THE OLD COMMENT SAID IT DID NOT. ═══════════════════════
+     *
+     * It read "clientWidth/Height already exclude the wrap's own padding" — false by
+     * specification: clientWidth is content + padding, excluding only border and scrollbar. With
+     * 22px each side that overstated the pane by 44px, so the device was fitted into a box bigger
+     * than the space it had and could sit inside its own breathing room.
+     *
+     * It was harmless only while the HEIGHT fit bound, which is exactly what stops being true
+     * below. Fixing the comment without fixing the arithmetic would have shipped a 44px overflow
+     * on the very change that makes width decisive. */
+    var cs = null; try{ cs = window.getComputedStyle(wrap); }catch(e){}
+    var padX = cs ? ((parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0)) : 0;
+    var padY = cs ? ((parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0)) : 0;
+    var paneW = Math.max(1, (wrap.clientWidth || 1) - padX);
+    var paneH = Math.max(1, (wrap.clientHeight || 1) - padY);
+
+    /* ══ WIDTH FITS. HEIGHT IS A WINDOW. — RULED BY ADRIAN, 2026-09-18 ════════════════════════
+     *
+     * Was `Math.min(paneW/dev.w, paneH/dev.h)`. At a short window the height fit bound — 668/900 =
+     * 0.742 against 1340/1440 = 0.931 — so widening the window changed nothing and every new pixel
+     * became beige. Adrian: *"it worked but now the website is small?"* He was right about the
+     * effect; the mechanism was min-of-two-fits, and the rail 260->180 was refuted as the cause
+     * (at rail 260 the width fit would have been 0.875, still above 0.742 — the scale was
+     * identical before and after; only the margins grew).
+     *
+     * HIS RULING, and the reason is on the record: fit the WIDTH. It is the only option that makes
+     * the preview bigger without making it LIE. Clipping the fold is the defect the 2026-08-21
+     * commit fixed; upscaling past 1:1 lies the other way by showing text bigger than a visitor
+     * gets.
+     *
+     * THE DEVICE KEEPS A TRUE 1440x900 VIEWPORT. The stage is still dev.w x dev.h, so `100vh`
+     * measures a real 900px and every breakpoint sees a real 1440. Only the FRAME changes: it is a
+     * WINDOW onto that device, as tall as the pane allows.
+     *
+     * AND THAT IS THE ANSWER TO THE TWO-SCROLLBAR PROBLEM. Scaling by width makes the scaled
+     * device (900*scale) taller than a short pane, and the obvious implementation — scroll the pane
+     * — puts the workspace's scrollbar beside the page's and reads as broken. So the pane does not
+     * scroll: the frame is CLIPPED to the pane's height and the only visible scrollbar is the
+     * PAGE'S OWN, inside the iframe, which is the one a real visitor has. Nothing is unreachable —
+     * scrolling the page brings everything up into the window, exactly as it does in a browser
+     * window shorter than the design. What is lost is the sight of the device's bottom border,
+     * which is decoration.
+     *
+     * Never upscale past 1:1 — unchanged, and it is why `scale` is still capped. */
+    var scale = paneW / dev.w;
+    if(scale > 1) scale = 1;                       // 1:1 is the ceiling
+    if(!(scale > 0)) scale = 1;                    // pathological pane: show it 1:1 and clip
+    var frameH = Math.min(dev.h * scale, paneH);   // the WINDOW, not the whole device
     stage.style.setProperty('--hc-pw', dev.w + 'px');
     stage.style.setProperty('--hc-ph', dev.h + 'px');
     stage.style.setProperty('--hc-scale', String(scale));
     frame.style.setProperty('--hc-fw', (dev.w * scale) + 'px');
-    frame.style.setProperty('--hc-fh', (dev.h * scale) + 'px');
+    frame.style.setProperty('--hc-fh', frameH + 'px');
     var toggle = document.getElementById('hcDeviceToggle');
     if(toggle){
       var btns = toggle.querySelectorAll('[data-hc-device]');
@@ -11263,9 +11313,34 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     }
     el.appendChild(mark);
     var txt = document.createElement('div'); txt.className = 'hc-rail-biz-txt';
+    // THE PERSON, ABOVE THE BUSINESS. RULED BY ADRIAN 2026-09-17. hcOwnerFirstName() is the
+    // ONE reader (it returns null for an email — Hubly does not greet someone by their login),
+    // and null renders NOTHING: no placeholder, no 'there', no initial. An invented display
+    // name in a chip is a fact the owner never stated, in the one place he looks to confirm
+    // Hubly knows who he is.
+    var who = hcOwnerFirstName();
+    var w = null;
+    if(who){ w = document.createElement('div'); w.className = 'hc-rail-biz-who'; w.textContent = who; txt.appendChild(w); }
     if(name){ var n = document.createElement('div'); n.className = 'hc-rail-biz-nm'; n.textContent = name; txt.appendChild(n); }
     if(place){ var c = document.createElement('div'); c.className = 'hc-rail-biz-city'; c.textContent = place; txt.appendChild(c); }
     el.appendChild(txt);
+    // A SURFACE SHOWING THE OWNER'S NAME, so it is TOLD when the name changes rather than
+    // waiting for a reload. This is the case the greeting's comment names: 'anything added
+    // later that nobody remembers to go back and add'. Only the owner line is rewritten —
+    // the logo, the business name and the city are not showing his name.
+    hcLiveRegister({
+      kind: 'ownerName', el: el, key: null,
+      describe: function(){ return 'your name in the rail'; },
+      redraw: function(){
+        var nw = hcOwnerFirstName();
+        if(nw && w){ w.textContent = nw; return; }
+        if(nw && !w){
+          w = document.createElement('div'); w.className = 'hc-rail-biz-who'; w.textContent = nw;
+          txt.insertBefore(w, txt.firstChild); return;
+        }
+        if(!nw && w){ try{ txt.removeChild(w); }catch(e){} w = null; }
+      }
+    });
   }
 
   // Elapsed time in the words a person uses. Never a fabricated precision.

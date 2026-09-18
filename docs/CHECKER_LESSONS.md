@@ -3516,6 +3516,43 @@ produced it. Up the chain: a correction states its definition, and "propagate th
 instruction to be measured before it is obeyed — because the one thing an authoritative instruction
 guarantees is reach.
 
+### Fourth instance, 2026-09-18: AN INSTRUMENT'S SILENCE IS NOT AN ABSENCE
+
+**Two errors in one message, recorded by Adrian about himself:**
+
+> *"I told Adrian the rail name was 'absent, not hidden' on the evidence that `.hc-rail-acct` innerText
+> was empty. `innerText` EXCLUDES a `visibility:hidden` subtree by specification. My instrument could
+> not have told those two states apart, and I reported one of them as fact."*
+>
+> *"I also told him the rail 260 -> 180 change probably caused the preview shrinking. I had the
+> mechanism (min of two fits) available to me and did not compute the other fit before naming a cause."*
+
+The chip WAS in the slot the whole time — hidden by `html.hc-boot-owner #navSignin{visibility:hidden}`,
+a rule shipped hours earlier, never lifted. And the rail change was refuted by arithmetic that was
+available before the claim: at rail 260 the width fit would have been 0.875, still above the height fit
+of 0.742, so the scale was *identical* before and after.
+
+**THE SHARED SHAPE, and it is the fourth direction this lesson has been wrong in:**
+
+> **AN INSTRUMENT'S SILENCE IS NOT AN ABSENCE.** `innerText` is empty for hidden text. A grep misses a
+> different quote style. A scoped derivation misses the line outside its window. A response body cannot
+> show a field that should be present and is not.
+>
+> **Before reporting "X is not there", state what this instrument would have done if X WERE there but in
+> a state the instrument cannot see.** If that question has no answer, the finding is **"I could not
+> detect X"** — which is a different sentence, and one nobody acts on.
+
+**Every one of this round's instrument failures is an instance of it**, which is why it belongs here
+rather than in a new lesson: `innerText` silent on hidden text · a reference scan searching `"page-view"`
+and missing `'page-view'` · a 60-line window missing a ~180-line unpack · `data_type in ('jsonb','json')`
+silent on a TEXT column holding JSON · `pg_get_functiondef` read at 21:52 and quoted at 22:30 as though
+a function definition were a standing fact.
+
+**And the second half of the pair is its own rule:** *do not name a cause while a cheaper disproof is
+unspent.* `min(a, b)` has two arguments. Computing the one you did not look at costs nothing and settles
+whether the other could possibly matter. Naming a cause is an act — it reprioritises a day and, as
+Lesson 99 records, it can come back as an instruction to write.
+
 ## Lesson 97
 
 **A CHECK THAT COVERS ONE INSTANCE OF A SURFACE COVERS NONE OF THEM.**

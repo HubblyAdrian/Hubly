@@ -360,6 +360,54 @@
       "compound": 0,
       "notRed": 0,
       "skipped": 0
+    },
+    {
+      "at": "2026-09-18T05:36:53.387Z",
+      "applied": 5,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T05:37:39.491Z",
+      "applied": 5,
+      "alone": 5,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T05:44:56.036Z",
+      "applied": 0,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T05:45:34.475Z",
+      "applied": 3,
+      "alone": 1,
+      "compound": 2,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T05:46:32.295Z",
+      "applied": 3,
+      "alone": 1,
+      "compound": 2,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T05:47:06.081Z",
+      "applied": 3,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
     }
   ],
   "legs": {
@@ -589,6 +637,78 @@
       "leg": "R5 [SHAPE] the identity load is reachable from outside hcRenderHome",
       "why": "put the identity load back inside hcRenderHome, where R1's guard makes it unreachable on any entry path that is not Home — the rail loses its location and its logo",
       "at": "2026-09-18T05:13:39.711Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-preview-is-a-true-device.mjs::1 the device's LOGICAL viewport is 1440x900 at every pane size": {
+      "check": "check-preview-is-a-true-device.mjs",
+      "leg": "1 the device's LOGICAL viewport is 1440x900 at every pane size",
+      "why": "make the stage's logical height follow the pane instead of staying 900 — the preview then LOOKS right and a 100vh hero measures something no visitor has, which is the failure mode the width-fit ruling exists to avoid",
+      "at": "2026-09-18T05:37:39.491Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-preview-is-a-true-device.mjs::2 the scale never exceeds 1": {
+      "check": "check-preview-is-a-true-device.mjs",
+      "leg": "2 the scale never exceeds 1",
+      "why": "remove the 1:1 ceiling, so a pane wider than 1440 upscales the device and shows the owner text BIGGER than a visitor gets — lying in the opposite direction from the clipped fold",
+      "at": "2026-09-18T05:37:39.491Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-preview-is-a-true-device.mjs::3 the scale tracks the pane's WIDTH": {
+      "check": "check-preview-is-a-true-device.mjs",
+      "leg": "3 the scale tracks the pane's WIDTH",
+      "why": "put the height fit back into the scale — `min(paneW/dev.w, paneH/dev.h)` — which is the state Adrian reported as 'the website got small': a wider window adds only beige",
+      "at": "2026-09-18T05:37:39.491Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-preview-is-a-true-device.mjs::4 the pane never needs its own scrollbar": {
+      "check": "check-preview-is-a-true-device.mjs",
+      "leg": "4 the pane never needs its own scrollbar",
+      "why": "restore `align-items:center; overflow:auto` on the wrap — the obvious implementation of a width fit, which puts the WORKSPACE's scrollbar beside the PAGE's and, worse, centres an overflowing frame so its top sits above the scroll origin and cannot be reached at all",
+      "at": "2026-09-18T05:37:39.491Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-preview-is-a-true-device.mjs::5 mobile still renders native-width": {
+      "check": "check-preview-is-a-true-device.mjs",
+      "leg": "5 mobile still renders native-width",
+      "why": "make hcIsMobile() always false, so a phone gets the desktop device simulation — a 1440px viewport scaled into a 390px screen, which is the one thing a phone must never do because the phone IS the device",
+      "at": "2026-09-18T05:37:39.491Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-the-rail-says-who-you-are.mjs::1 a known first name is on its own line ABOVE the business name": {
+      "check": "check-the-rail-says-who-you-are.mjs",
+      "leg": "1 a known first name is on its own line ABOVE the business name",
+      "why": "put the business name FIRST instead — the owner line is still there, still says exactly what the reader says, still on its own line. Only the order Adrian ruled on is gone, which is the narrowest break that can reach this leg: legs 2 and 3 cannot see it at all.",
+      "at": "2026-09-18T05:47:06.081Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-the-rail-says-who-you-are.mjs::2 no name established renders NOTHING — no node, no placeholder, no email": {
+      "check": "check-the-rail-says-who-you-are.mjs",
+      "leg": "2 no name established renders NOTHING — no node, no placeholder, no email",
+      "why": "fall back to the email's local part when the reader returns null, which is exactly the 2026-09-15 bug: a login credential shown to the owner as his name, in the one place he looks to confirm Hubly knows who he is",
+      "at": "2026-09-18T05:47:06.081Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-the-rail-says-who-you-are.mjs::3 the line is EXACTLY what the one reader returns — no second opinion": {
+      "check": "check-the-rail-says-who-you-are.mjs",
+      "leg": "3 the line is EXACTLY what the one reader returns — no second opinion",
+      "why": "restyle the name locally after reading it — one line of 'presentation', which is how every second opinion about a person's name starts. It keeps the node, the order, the geometry and the null decision identical, so ONLY the claim that the surface shows what the reader said can detect it. (The real bug it stands for is larger — an email prefix or the auth provider's guess — but a wider break would take legs 1 and 2 down with it and prove nothing.)",
+      "at": "2026-09-18T05:47:06.081Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1

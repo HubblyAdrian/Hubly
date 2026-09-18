@@ -33,7 +33,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdtempSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
-import { join } from "node:path";
+import { join, basename } from "node:path";
 import { ROOT, parseBreaks, failedLines, readLedger, writeLedger } from "./lib/redproof.mjs";
 
 const args = process.argv.slice(2);
@@ -42,8 +42,21 @@ const DRY = args.includes("--dry");
 const only = args.filter((a) => !a.startsWith("--"));
 
 const SCRIPTS = join(ROOT, "scripts");
-const files = (only.length ? only : readdirSync(SCRIPTS).filter((f) => /^(check|audit)-.*\.mjs$/.test(f)))
-  .filter((f) => existsSync(join(SCRIPTS, f)));
+// ══ A NAMED FILE THAT DOES NOT RESOLVE IS AN ERROR, NOT AN EMPTY RUN ═══════════════════════
+//
+// This took a `scripts/check-foo.mjs` argument, joined `scripts/` onto it AGAIN, found nothing at
+// `scripts/scripts/check-foo.mjs`, dropped it, and printed "0 break(s) applied · 0 RED ALONE" —
+// with exit 0. Which is a green report meaning "I red-proofed nothing", produced by the very tool
+// whose job is to catch instruments that find nothing and present it as an answer. A bare name is
+// still accepted; a path is now normalised, and anything that still does not exist STOPS the run.
+const names = (only.length ? only : readdirSync(SCRIPTS).filter((f) => /^(check|audit)-.*\.mjs$/.test(f)))
+  .map((f) => basename(f));
+const gone = names.filter((f) => !existsSync(join(SCRIPTS, f)));
+if (gone.length) {
+  console.error("NOTHING RED-PROOFED — no such check in scripts/: " + gone.join(", "));
+  process.exit(2);
+}
+const files = names;
 
 const run = (f) => {
   try {

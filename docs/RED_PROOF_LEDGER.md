@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-18T05:13:39.711Z** · 45 run(s) recorded.
+**Last run: 2026-09-18T05:47:06.081Z** · 51 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 23 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 31 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 1 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -48,9 +48,17 @@ have made the rule the first thing anyone switched off.
 | `check-no-mailto-reaches-a-customer.mjs` | no latest stored page carries a mailto | **DECLARED, PROVEN BY HAND** | plant a mailto anchor in a stored page and confirm this leg alone goes red | — |
 | `check-no-public-reader-leaks-contacts.mjs` | every anon reader hands back an explicit field list | **RED ALONE** | revert get_public_business to `to_jsonb(b) - 'draft_token'` — the whole-row shape — which is exactly the regression this leg exists to catch | — |
 | `check-page-facts-match-the-record.mjs` | the classic renderer still injects the recorded phone | **RED ALONE** | stop the classic hero pill building a tel: link from S.phone, so eleven live pages silently lose the only phone number they show and nothing errors | — |
+| `check-preview-is-a-true-device.mjs` | 1 the device's LOGICAL viewport is 1440x900 at every pane size | **RED ALONE** | make the stage's logical height follow the pane instead of staying 900 — the preview then LOOKS right and a 100vh hero measures something no visitor has, which is the failure mode the width-fit ruling exists to avoid | — |
+| `check-preview-is-a-true-device.mjs` | 2 the scale never exceeds 1 | **RED ALONE** | remove the 1:1 ceiling, so a pane wider than 1440 upscales the device and shows the owner text BIGGER than a visitor gets — lying in the opposite direction from the clipped fold | — |
+| `check-preview-is-a-true-device.mjs` | 3 the scale tracks the pane's WIDTH | **RED ALONE** | put the height fit back into the scale — `min(paneW/dev.w, paneH/dev.h)` — which is the state Adrian reported as 'the website got small': a wider window adds only beige | — |
+| `check-preview-is-a-true-device.mjs` | 4 the pane never needs its own scrollbar | **RED ALONE** | restore `align-items:center; overflow:auto` on the wrap — the obvious implementation of a width fit, which puts the WORKSPACE's scrollbar beside the PAGE's and, worse, centres an overflowing frame so its top sits above the scroll origin and cannot be reached at all | — |
+| `check-preview-is-a-true-device.mjs` | 5 mobile still renders native-width | **RED ALONE** | make hcIsMobile() always false, so a phone gets the desktop device simulation — a 1440px viewport scaled into a 390px screen, which is the one thing a phone must never do because the phone IS the device | — |
 | `check-public-reader-allowlist-is-derived.mjs` | the meta allowlist covers every subtree a renderer reads | **RED ALONE** | drop `website` from the live function's meta allowlist — the single most-read subtree (16 reads) — so the classic page loses its hero and NOTHING errors: the renderer reads undefined. That is the route-list failure mode arriving in a column list, which is why this check exists | — |
 | `check-status-words-are-one-vocabulary.mjs` | neither shell holds its own copy of the words | **RED ALONE** | paste the five words back into hubly.html as a literal — the duplication this file exists to prevent, and it is one paste away at all times | — |
 | `check-the-landing-never-paints-for-an-owner.mjs` | the account chip is visible once the business is open | **RED ALONE** | make the pre-paint hide unconditional again — `hc-boot-owner` is never removed on a successful owner load, so the sign-out door stays invisible for the life of the page | — |
+| `check-the-rail-says-who-you-are.mjs` | 1 a known first name is on its own line ABOVE the business name | **RED ALONE** | put the business name FIRST instead — the owner line is still there, still says exactly what the reader says, still on its own line. Only the order Adrian ruled on is gone, which is the narrowest break that can reach this leg: legs 2 and 3 cannot see it at all. | — |
+| `check-the-rail-says-who-you-are.mjs` | 2 no name established renders NOTHING — no node, no placeholder, no email | **RED ALONE** | fall back to the email's local part when the reader returns null, which is exactly the 2026-09-15 bug: a login credential shown to the owner as his name, in the one place he looks to confirm Hubly knows who he is | — |
+| `check-the-rail-says-who-you-are.mjs` | 3 the line is EXACTLY what the one reader returns — no second opinion | **RED ALONE** | restyle the name locally after reading it — one line of 'presentation', which is how every second opinion about a person's name starts. It keeps the node, the order, the geometry and the null decision identical, so ONLY the claim that the surface shows what the reader said can detect it. (The real bug it stands for is larger — an email prefix or the auth provider's guess — but a wider break would take legs 1 and 2 down with it and prove nothing.) | — |
 
 ## Runs
 
@@ -99,3 +107,9 @@ have made the rule the first thing anyone switched off.
 - **2026-09-18T05:08:22.668Z** — 22 break(s) applied · 21 red alone · 1 compound · 0 not red · 2 skipped
 - **2026-09-18T05:13:27.874Z** — 1 break(s) applied · 1 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-18T05:13:39.711Z** — 6 break(s) applied · 6 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T05:36:53.387Z** — 5 break(s) applied · 4 red alone · 0 compound · 1 not red · 0 skipped
+- **2026-09-18T05:37:39.491Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T05:44:56.036Z** — 0 break(s) applied · 0 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T05:45:34.475Z** — 3 break(s) applied · 1 red alone · 2 compound · 0 not red · 0 skipped
+- **2026-09-18T05:46:32.295Z** — 3 break(s) applied · 1 red alone · 2 compound · 0 not red · 0 skipped
+- **2026-09-18T05:47:06.081Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
