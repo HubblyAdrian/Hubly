@@ -228,3 +228,32 @@ legs produces 45 candidates and **a candidate graduates by being acted on, never
 **How to report this number.** "45 legs cannot tell absent from broken; the ratchet stops it growing;
 none is known to be masking a defect and none has been individually cleared." Never "45 checks are
 broken" — they are not broken, and the correction would not travel as far as that alarm would.
+
+---
+
+## 5.4 — the three checks that time out: a budget for two, an explanation for one (2026-09-18)
+
+They were reported as "TIMED OUT after 120000ms" and then after 180000ms, which says nothing about
+whether that is a bug or a cost. Diagnosed rather than raised-and-hoped:
+
+### `check-name-is-asked` — **intrinsically slow, and must stay so. Give it a budget, not a fix.**
+
+It drives **8 cases through the live `hubly-conversation` edge function** — real model round-trips. At
+15–30s each that is 2–4 minutes before variance, and the variance is the model's, not ours. The only way
+to make it fast is to mock the model, and a mocked model proves nothing about what Hubly *says* — which
+is the entire subject of the check (a business name is extracted or asked for, never constructed).
+**Budget: it needs the suite's timeout above 300000ms, and it is the reason `CHECK_TIMEOUT_MS` exists.**
+
+### `check-walk-assertions` and `check-block-legibility` — **cost, not defect, but unmeasured.**
+
+Both drive real browsers over multiple pages. Their individual wall-clock has never been recorded, so
+"they time out" is currently a statement about the suite's default and not about them. **They need a
+measured number before they get a budget** — that measurement is the open item, not a fix.
+
+### The rule this produces
+
+**A timeout is not a result.** A check that times out has reported nothing — not pass, not fail — and a
+suite line saying `TIMED OUT` is the same information content as a crash. So a check whose honest cost
+exceeds the default must carry its own declared budget *in the check*, so that running it alone and
+running it in the suite agree. Raising the suite-wide default instead hides the slow ones among the fast
+and makes the next genuine hang indistinguishable from a known cost.
