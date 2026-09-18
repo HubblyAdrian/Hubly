@@ -61,7 +61,10 @@ let expected = null, expErr = null;
 try {
   const out = execFileSync("supabase", ["db", "query", "--linked",
     "select coalesce(string_agg(slug, ',' order by slug), '') as slugs, count(*) as n from businesses " +
-    "where owner_id is not null and coalesce(account_kind,'') <> 'test'"],
+    // RULED BY ADRIAN 2026-09-18: internal accounts come out. Spelled here as the TABLE predicate
+    // on purpose -- the generator derives from business_is_indexable(), and this half must stay an
+    // independent statement of the same rule or the check is comparing the rule with itself.
+    "where owner_id is not null and coalesce(account_kind,'') not in ('test','internal')"],
     { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 90000 });
   const m = out.match(/"slugs":\s*"([^"]*)"/);
   if (m) expected = new Set(m[1].split(",").filter(Boolean));
@@ -89,7 +92,7 @@ console.log(`  status ${local.status} · ${local.headers["content-type"]} · cou
 
 /* ── LEG 1 ─────────────────────────────────────────────────────────────────────────────────── */
 declareBreak({
-  leg: "1 every claimed non-test business is in the sitemap",
+  leg: "1 every claimed market business is in the sitemap",
   why: "lose one business on the way from the record to the XML. Nothing errors and the sitemap " +
        "still looks exactly like a sitemap; it is quietly shorter by one, and the customer it drops " +
        "is never submitted to Google. THE BREAK IS AIMED AT api/sitemap.js AND NOT AT THE MIGRATION " +
@@ -101,15 +104,15 @@ declareBreak({
   with: "  const urls = rows.slice(1).map((row) => {",
 });
 const missing = [...expected].filter((s) => !got.has(s)).sort();
-leg("RULE", "1 every claimed non-test business is in the sitemap",
+leg("RULE", "1 every claimed market business is in the sitemap",
   missing.length === 0 && expected.size > 0,
   missing.length ? `MISSING from the sitemap: ${missing.join(" ")} — Google is never told these exist`
-    : `all ${expected.size} claimed non-test business(es) are present. The count is part of the claim, ` +
+    : `all ${expected.size} claimed market business(es) are present. The count is part of the claim, ` +
       `because "every one is present" is trivially true of none.`);
 
 /* ── LEG 2 ─────────────────────────────────────────────────────────────────────────────────── */
 declareBreak({
-  leg: "2 nothing else is in the sitemap — no unclaimed draft, no test account",
+  leg: "2 nothing else is in the sitemap — no unclaimed draft, no test, no internal",
   why: "put a URL in the sitemap that the record does not contain — the shape of submitting an " +
        "unclaimed draft. Every unclaimed page stamps its own <meta robots> noindex, so this is us " +
        "telling Google two contradictory things about one URL, and publishing the existence of a " +
@@ -119,11 +122,10 @@ declareBreak({
   with: "  const urls = rows.concat([{ slug: 'zz-not-in-the-record' }]).map((row) => {",
 });
 const extra = [...got].filter((s) => !expected.has(s)).sort();
-leg("RULE", "2 nothing else is in the sitemap — no unclaimed draft, no test account",
+leg("RULE", "2 nothing else is in the sitemap — no unclaimed draft, no test, no internal",
   extra.length === 0,
   extra.length ? `PRESENT but should not be: ${extra.join(" ")}`
-    : `0 extras. Checked as a set difference against the table, so this covers unclaimed drafts and ` +
-      `test accounts together rather than testing for the two shapes I happened to think of.`);
+    : `0 extras. Checked as a set difference against the table, so this covers unclaimed drafts, test AND internal accounts together rather than testing for the two shapes I happened to think of.`);
 
 /* ── LEG 3 ─────────────────────────────────────────────────────────────────────────────────── */
 declareBreak({
@@ -215,6 +217,74 @@ leg("SHAPE", "6 [SHAPE] the SERVED bytes are this XML, not the catch-all's HTML"
     : `served: ${sTail.trim()} · ${sLocs.length} <loc> · no <!DOCTYPE present. The DOCTYPE test is ` +
       `there because the failure mode is a 200 full of HTML, which a status check calls success. ` +
       `This leg says nothing about WHICH businesses are listed — that is legs 1 and 2.`);
+
+/* ── LEG 7 — ADRIAN'S RULING, ASSERTED AGAINST THE LIVE PREDICATE ─────────────────────────── */
+declareBreak({
+  leg: "7 no internal business is indexable",
+  provenBy: "NO REPO EDIT CAN MOVE THIS LEG — it reads the live predicate, and production does not " +
+            "change until a migration is applied. Proven by the transition on 2026-09-18: BEFORE " +
+            "20260918200000 the sitemap carried 13 URLs including cotter-aviation, lugnutz and " +
+            "my-auto-detailing (all account_kind='internal'), and get_public_business('cotter-" +
+            "aviation')->>'is_indexable' did not exist. AFTER: 10 URLs, none of the three present, " +
+            "and that key reads 'false' for cotter-aviation while graefs-autocare reads 'true'. Leg " +
+            "8 is the automated half — it fails if the repo and production disagree about the rule.",
+});
+let internals = null, intErr = null;
+try {
+  const out = execFileSync("supabase", ["db", "query", "--linked",
+    "select coalesce(string_agg(slug || '=' || coalesce((public.get_public_business(slug)->>'is_indexable'),'absent'), ',' order by slug), '') as v " +
+    "from businesses where owner_id is not null and account_kind = 'internal'"],
+    { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 90000 });
+  const m = out.match(/"v":\s*"([^"]*)"/);
+  if (m) internals = m[1].split(",").filter(Boolean);
+} catch (e) { intErr = e.message.split("\n")[0]; }
+const intBad = (internals || []).filter((x) => !/=false$/.test(x));
+leg("RULE", "7 no internal business is indexable",
+  Array.isArray(internals) && internals.length > 0 && intBad.length === 0 &&
+    ![...got].some((sl) => internals.some((x) => x.startsWith(sl + "="))),
+  internals === null ? `could not read the live predicate: ${intErr}`
+    : internals.length === 0 ? `NO claimed internal business exists to test against — this leg is ` +
+      `VACUOUS as written and must not be read as a pass; the ruling is untested until one exists`
+    : intBad.length ? `internal business(es) still indexable: ${intBad.join(" ")}`
+    : `${internals.length} claimed internal business(es), every one is_indexable=false, and none ` +
+      `appears in the generated sitemap. The count is part of the claim: "none of them is indexable" ` +
+      `is trivially true of none, which is why zero is reported as VACUOUS rather than as a pass.`);
+
+/* ── LEG 8 — the predicate in the repo IS the predicate in production ──────────────────────── */
+declareBreak({
+  leg: "8 the live predicate is the one the shipping migration declares",
+  why: "loosen the migration's predicate to exclude only 'test' — the state before Adrian's ruling. " +
+       "Production still excludes internal, so the repo now DESCRIBES a rule production does not " +
+       "apply. That divergence is invisible from either side alone, and it is the automated half of " +
+       "leg 7: leg 7 reads production, this reads whether the repo still means it.",
+  file: "supabase/migrations/20260918200000_one_indexable_predicate.sql",
+  find: "     and coalesce(p_kind, '') not in ('test', 'internal')",
+  with: "     and coalesce(p_kind, '') not in ('test')",
+});
+const norm = (t) => String(t).replace(/--[^\n]*/g, " ").replace(/\s+/g, " ").replace(/[()'"]/g, "").toLowerCase().trim();
+let liveDef = null, defErr = null;
+try {
+  const out = execFileSync("supabase", ["db", "query", "--linked",
+    "select replace(pg_get_functiondef('public.business_is_indexable(uuid,text)'::regprocedure), chr(10), ' ') as d"],
+    { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 90000 });
+  const m = out.match(/"d":\s*"([^"]*)"/);
+  if (m) liveDef = m[1];
+} catch (e) { defErr = e.message.split("\n")[0]; }
+const migSrc = readFileSync(join(ROOT, "supabase", "migrations", "20260918200000_one_indexable_predicate.sql"), "utf8");
+// THE DOLLAR-QUOTE TAG IS NOT PRESERVED. The migration writes $p$ and Postgres hands it back as
+// $function$ — so matching on the tag I wrote found the migration's body and NOT production's, and
+// the leg failed with "could not extract" rather than with a mismatch. An instrument that cannot
+// parse one of its two inputs must say which one, which is why that detail line named live=false.
+const dollarBody = (t) => { const m = String(t || "").match(/\$([A-Za-z_]*)\$([\s\S]*?)\$\1\$/); return m ? m[2] : null; };
+const migPred = dollarBody(migSrc.slice(migSrc.indexOf("business_is_indexable")));
+const liveBody = dollarBody(liveDef);
+leg("RULE", "8 the live predicate is the one the shipping migration declares",
+  !!liveBody && !!migPred && norm(liveBody) === norm(migPred),
+  !liveDef ? `could not read the live function: ${defErr} — reported as FAILURE, not skipped, ` +
+             `because this leg is what makes leg 7 a claim about the repo's intent as well`
+    : !liveBody || !migPred ? `could not extract a predicate body (live=${!!liveBody} migration=${!!migPred})`
+    : `live and migration agree, comparing bodies with comments and whitespace normalised away: ` +
+      `${JSON.stringify(norm(migPred).slice(0, 96))}`);
 
 const bad = legs.filter((l) => !l.pass);
 // not-a-corpus-rate: this check's own leg count, not a corpus

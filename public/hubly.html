@@ -17825,31 +17825,43 @@ function hcStripPlaceholders(root){
 // Hubly could find fake competitors under our own domain, and page_loads already
 // holds one Google referral to a test business (adrians-lawn-service, 2026-09-02).
 //
-// The field IS available here: get_public_business returns to_jsonb(b) minus
-// draft_token, so all 56 columns including account_kind reach the client. Checked
-// against the LIVE RPC before writing this, not read off the migration — if it
-// were absent, this line would silently never fire and look correct.
-/** IS THIS ADDRESS CLAIMED, according to the row we were actually handed?
+// STALE WHEN WRITTEN, CORRECTED 2026-09-18: get_public_business no longer returns
+// to_jsonb(b) minus draft_token. It returns an explicit 30-key allowlist, and the
+// reasoning below — "all 56 columns reach the client" — stopped being true the moment
+// that landed. This comment is left with its correction rather than deleted, because
+// the paragraph was RIGHT to insist the field be checked against the LIVE RPC and
+// WRONG about which fields arrive; both halves are worth keeping in view.
+//
+// The rule this line applies no longer lives in this file at all — see below.
+/** SHOULD GOOGLE INDEX THIS PAGE? ONE READ OF ONE VERDICT.
  *
- *  This used to be `!data.owner_id`, and on 2026-09-17 owner_id was removed from
- *  get_public_business on purpose (an auth user id on a public endpoint is a gift to anyone
- *  enumerating). `!undefined` is true, so the test did not go dead — it went ALWAYS TRUE, and
- *  every public Hubly page started serving robots="noindex, nofollow". Two live claimed market
- *  sites were measured carrying it. Nothing errored; nothing looked different.
+ *  ══ WHY THIS IS A READ AND NOT A PREDICATE ══════════════════════════════════════════════════
  *
- *  So the question is asked of a field that MEANS the answer, and the absent case is explicit
- *  rather than falsy: get_public_business returns is_claimed (true by construction of its WHERE
- *  clause), and get_draft_business still returns the whole row, so owner_id is the fallback for
- *  a draft. If NEITHER field is present we do not know, and not-knowing is noindex — the safe
- *  direction is to keep an unidentified page out of a search index, never to publish it. */
-function hcRowIsClaimed(row){
-  if(!row) return false;
-  if(row.is_claimed !== undefined) return !!row.is_claimed;
-  // PUBLIC-READER-OPTIONAL: owner_id  — get_public_business does NOT return it (an auth user id
-  // on a public endpoint is a gift to anyone enumerating). get_draft_business returns the whole
-  // row, so this is the DRAFT branch, and it must stay readable here.
-  if(row.owner_id !== undefined) return !!row.owner_id;   // PUBLIC-READER-OPTIONAL: owner_id
-  return false;
+ *  This replaces a local test that combined a claimed-check with an account_kind check — one of TWO
+ *  spellings of the same rule. The other lived in SQL and decided the sitemap. Both were correct,
+ *  and BOTH would have needed editing when Adrian ruled on 2026-09-18 that internal accounts come
+ *  out of the index. Two spellings of one fact is the shape of the account chip showing a login as
+ *  a name, and of the seven-field regression.
+ *
+ *  So the rule lives once — public.business_is_indexable(owner_id, account_kind) — and both
+ *  consumers read its ANSWER: this line reads `is_indexable` off get_public_business, and
+ *  get_indexable_business_slugs (the sitemap) filters on the same key. Adding a fourth excluded
+ *  kind tomorrow is one SQL edit and zero edits in this 3MB file. The renderer is handed the
+ *  VERDICT rather than the ingredients on purpose: given owner_id and account_kind it would have to
+ *  reconstruct the rule, and a reconstruction is a second opinion that drifts — and it cannot see a
+ *  WHERE clause at all.
+ *
+ *  ══ AND THE ABSENT CASE IS EXPLICIT, NOT FALSY ══════════════════════════════════════════════
+ *
+ *  `=== true`, deliberately. The previous version asked `!data.owner_id`, and when owner_id was
+ *  removed from the reader ON PURPOSE, `!undefined` was true — so the test did not go dead, it went
+ *  ALWAYS TRUE, and every public Hubly page served robots="noindex, nofollow" for 1h39m
+ *  (Lesson 101). A missing field must never be what decides this, in either direction.
+ *  get_draft_business returns the whole businesses row and no is_indexable, so a draft preview gets
+ *  `undefined` here and is NOT indexable — which is also the right answer, a draft being unclaimed
+ *  by definition. Not-knowing keeps a page OUT of the index; it never publishes one. */
+function hcRowIsIndexable(row){
+  return !!row && row.is_indexable === true;
 }
 function hcNoIndex(){
   try{
@@ -18204,7 +18216,7 @@ async function loadPublicProfile(slug,opts){
   // false-negative direction of the same bug, it PREDATES the owner_id change, and it is the
   // reason this is not fixed by adding a third call: the next branch would be missing too.
   // Decided once, off the row, where every exit is downstream of it.
-  if(!hcRowIsClaimed(data) || data.account_kind==='test') hcNoIndex();
+  if(!hcRowIsIndexable(data)) hcNoIndex();
   hcFirePageView(data.id);   // fire-and-forget visitor beacon; not awaited, not in the render path
   // Dedicated shareable Storefront route: <slug>.myhubly.app/store — render the standalone
   // store (Commerce public API) from the saved Storefront AST (meta.storefront), instead of the
