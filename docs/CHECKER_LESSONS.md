@@ -23,7 +23,7 @@
 > grep -o '^## Lesson [0-9b]*' docs/CHECKER_LESSONS.md | tail -1   # the highest, for the next number
 > ```
 >
-> **92 headings, running 4 → 99**, plus lessons **1–3**, which are the three instances described
+> **93 headings, running 4 → 100**, plus lessons **1–3**, which are the three instances described
 > narratively in the opening section and have no heading — which is why a later count read the file
 > as starting at 4. **11 and 11b** are both present: two lessons written with the same number on
 > different days, and renumbering would invalidate every citation in the commit history since, so
@@ -3696,3 +3696,67 @@ the record. **It would have been reported as done.**
 - **And the fix for the check is scoping, not vigilance.** `check-page-facts-are-this-business` now
   skips any array whose elements are contact records — detected by SHAPE (a name plus a phone or an
   email), never by key name — and PRINTS what it skipped, so the scope is visible instead of trusted.
+
+## Lesson 100
+
+**THE REPOSITORY IS A CLAIM ABOUT PRODUCTION, NOT PRODUCTION.**
+
+A migration says what was **intended**. A function definition read from the database says what is
+**deployed**. A response body says what a person **receives**. Those are three different sources and
+they can disagree. **A finding about what a user experiences is not established until it is read from
+the surface the user touches.** Everything upstream of that is a hypothesis with good provenance.
+
+### Adrian's draft, and the one thing it understates
+
+> *"For three rounds we have been reading the repository and drawing conclusions about the product.
+> Today the product disagreed with the repository, and the only reason we found out is that I opened a
+> browser."*
+
+**As it turned out the product did NOT disagree** — the apparent conflict was a timeline (the live body
+was `to_jsonb(b)` at 21:52, was replaced at 22:28, and was read from a browser after that; all three
+readings were true). So this lesson is not "the repo lies". It is the sharper thing the episode
+actually demonstrated, in **both** directions:
+
+- **THE BROWSER FOUND SOMETHING THE REPO COULD NOT.** Only a response body settles what a visitor
+  receives. Reading the function tells you what it returns *if it is the function you think is
+  deployed*, and 125 functions later that turned out to be true here — but it was an assumption until
+  measured.
+- **AND THE REPO FOUND SOMETHING THE BROWSER COULD NOT.** The same allowlist was missing SEVEN fields
+  the public renderer reads — `ig_handle`, `fb_url`, `tiktok_handle`, `google_url`, `section_order`,
+  `account_kind` — so every public page silently lost its social links and its section ordering, and
+  test pages stopped being noindexed. **A response body cannot show you a field a renderer needed and
+  did not get.** It shows what arrived. The absence is only visible in the code that reads it.
+
+**So the rule is not "trust the browser over the repo". It is: THE THREE SOURCES ANSWER THREE
+DIFFERENT QUESTIONS, and a finding that spans them needs all three.**
+
+| source | the only question it answers | what it cannot see |
+| --- | --- | --- |
+| a **migration** | what was intended, and when | whether it was applied, or later replaced |
+| `pg_get_functiondef` | what is deployed **right now** | whether anything calls it, or what a caller needed |
+| a **response body** | what one person received, once | a field the renderer needed and did not get; another user's response |
+| the **rendered page** | what a person sees | why, or whether it is their own data |
+
+### What it changes in practice
+
+- **Timestamp a reading of live state.** "The function is `to_jsonb(b)`" is true *at a time*. Written
+  without the time it becomes a standing fact and then a contradiction with the next reading. Both
+  readings in this episode were correct and the pair looked like a defect.
+- **A narrowing is verified from the CONSUMER side, not the producer side.** Having narrowed what a
+  reader returns, the question is not "is the leak gone" (the response body answers that) but "does
+  every caller still get what it reads" (only the code answers that). The first question was asked and
+  passed; the second was not, and seven fields went missing on live pages for an hour.
+- **A window parameter in a derivation is an assumption, and this is the cost.** The derivation used a
+  60-line window; `loadPublicProfile` unpacks the row over ~180. The window was PRINTED with the
+  result, which is the only reason it was findable — and it was still wrong. Print the assumption, and
+  then test the derivation against a second source.
+- **Nothing errored for any of the seven.** `undefined === 'test'` is false; `data.ig_handle || ''` is
+  `''`; a missing `section_order` skips a call. Same silent-undefined shape as the route list.
+
+### And the ledger for it
+
+`scripts/check-live-functions-match-their-migrations.mjs` compares every public function's live body
+to the last migration that defines it. **Measured 2026-09-18: 125 live functions, 122 matched, 0
+diverge, 3 defined by no migration at all** (`get_booked_times`, `get_busy_windows`, `owns_business`).
+So the repo does describe production for every function it claims to define — and three functions exist
+with no provenance in the repo, which is an absence of a claim rather than a false one.

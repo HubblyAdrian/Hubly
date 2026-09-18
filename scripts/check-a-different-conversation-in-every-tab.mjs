@@ -35,11 +35,13 @@
  *
  * Exit: 0 PASS · 1 FAIL · 2 CANNOT RUN
  */
-import { resolve, dirname } from "node:path";
+import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openRig } from "./lib/browser-rig.mjs";
 import { servePublic } from "./lib/serve-public.mjs";
 import { installOwnerFake, fakeIntact } from "./lib/owner-rig.mjs";
+import { declareBreak } from "./lib/redproof.mjs";
+import { readFileSync } from "node:fs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const srv = await servePublic(ROOT);
@@ -219,6 +221,50 @@ try {
   say("R2 [RULE] a message sent on Home is not visible in Website",
       onSite.current.place === "website" && !onSite.msgs.some((m) => m.includes(homeLine)),
       `on ${onSite.current.place}; Home's message present=${onSite.msgs.some((m) => m.includes(homeLine))}`);
+  /* ══ R5 — THE RAIL'S DATA SURVIVES ENTERING A ROOM DIRECTLY ═══════════════════════════════
+     `hcLoadIdentity` had ONE call site, inside `hcRenderHome`, and R1's fix makes hcRenderHome return
+     early when the open tab is not Home. Correct — and it silently took the identity load with it, so
+     a reload straight to `#website` left the rail with no location and no logo. Collateral damage from
+     a correct fix, which is exactly the pattern being guarded here. The observable is
+     `hcIdentity.loaded`, not the rail's text: the declared fixture returns a null city, so the rail
+     reads the same either way and a leg on its text would be vacuous. */
+  declareBreak({
+    leg: "R5 [SHAPE] the identity load is reachable from outside hcRenderHome",
+    why: "put the identity load back inside hcRenderHome, where R1's guard makes it unreachable on " +
+         "any entry path that is not Home — the rail loses its location and its logo",
+    file: "public/platform-home.html",
+    find: "    try{ hcLoadIdentity(hc.draftBusiness).then(function(){ try{ hcRenderRail(); }catch(e){} }); }catch(e){}",
+    with: "    /* BREAK: the load goes back to living only inside hcRenderHome, which R1's guard makes unreachable when a room is entered directly */",
+  });
+  /* AND IT IS A SOURCE ASSERTION, BECAUSE THE RUNTIME ONE COULD NOT BE RED-PROOFED. The first version
+   * read `hcIdentity.loaded` at the end of this run and came back NOT RED under the break: by then
+   * Home has rendered (via hublyArrivalUI.simulate -> hcMaybeShowArrival -> hcRenderHome with mode
+   * 'home'), which loads the identity whatever the boot path does. The path that carries the fix is
+   * `hcOpenOwnedBusiness`, and NO SEAM DRIVES IT — `simulate` deliberately bypasses it. So rather than
+   * record a break that does not fire, the leg asserts the SHAPE the fix has, labelled as such, plus
+   * the runtime value as a second clause so it is not a pure source grep. The gap is named: a check
+   * that boots through the real hcOpenOwnedBusiness does not exist, and until it does this leg cannot
+   * observe the defect it guards — only the code that prevents it. */
+  const identSrc = readFileSync(join(ROOT, "public/platform-home.html"), "utf8");
+  const loadSites = (identSrc.match(/hcLoadIdentity\(/g) || []).length;
+  const insideRenderHomeOnly = (() => {
+    const i = identSrc.indexOf("async function hcRenderHome(");
+    if (i < 0) return true;
+    let d = 0, st = identSrc.indexOf("{", i), en = st;
+    for (let k = st; k < identSrc.length; k++) { if (identSrc[k] === "{") d++; else if (identSrc[k] === "}") { d--; if (!d) { en = k; break; } } }
+    const inHome = (identSrc.slice(st, en).match(/hcLoadIdentity\(/g) || []).length;
+    return loadSites - 1 <= inHome;     // -1 for the declaration itself
+  })();
+  const ident = await rig.page.evaluate(() => ({
+    loaded: !!(window.hublyIdentityUI && window.hublyIdentityUI.loaded()) }));
+  say("R5 [SHAPE] the identity load is reachable from outside hcRenderHome, and it loaded in this run",
+      loadSites >= 3 && !insideRenderHomeOnly && ident.loaded === true,
+      `${loadSites} mention(s) of hcLoadIdentity in the shell (declaration + call sites); reachable ` +
+      `only from inside hcRenderHome=${insideRenderHomeOnly}; hcIdentity.loaded=${ident.loaded} in this ` +
+      `run. [SHAPE] because it asserts where the call SITS: R1's guard makes hcRenderHome unreachable ` +
+      `when a room is entered directly, so an identity load that lives only there leaves the rail with ` +
+      `no location and no logo on that one entry path.`);
+
   /* ══ R4 — TWO TAPS, NO PAUSE ══════════════════════════════════════════════════════════════
      `if(hcPlaceChat.loading) return false;` stood at the top of the place loader, so tapping
      Website and then Jobs before the first load finished DROPPED the second one: Jobs open,

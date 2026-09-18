@@ -140,7 +140,12 @@ export function failedLines(stdout) {
     // A SUMMARY IS NOT A LEG. `FAIL — 2/4 legs` and `3 FAILED` are a check's own tally, and counting
     // one as a newly-red leg makes every break on such a check report COMPOUND — so no check using
     // that output style could ever record a red-proof. Found the first time this runner met one.
+    // A SUMMARY OR A SECTION HEADER IS NOT A LEG. `FAIL — 2/4 legs` was the first one that fooled this
+    // (no check in that output style could ever record RED ALONE); `RED:` — the header a check prints
+    // above its list of failures — was the second, and it made the account-chip break read as COMPOUND
+    // against a leg that does not exist. Both are a check talking ABOUT its legs.
     .filter((l) => !/^\s*FAIL\s*[—–-]/.test(l) && !/^\s*FAIL\s*$/.test(l))
+    .filter((l) => !/^\s*(RED|FAILED)\s*:?\s*$/.test(l))
     .map((l) => l.trim());
 }
 

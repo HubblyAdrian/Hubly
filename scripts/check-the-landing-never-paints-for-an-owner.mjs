@@ -39,6 +39,7 @@ import { readFileSync } from "node:fs";
 import { openRig } from "./lib/browser-rig.mjs";
 import { servePublic } from "./lib/serve-public.mjs";
 import { installOwnerFake } from "./lib/owner-rig.mjs";
+import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const SRC = readFileSync(ROOT + "/public/platform-home.html", "utf8");
@@ -252,6 +253,42 @@ const summarise = (fs, k) => {
           return { pe: bar ? getComputedStyle(bar).pointerEvents : null,
                    active: document.body.classList.contains("hc-active") };
         });
+        /* ══ AND THE ACCOUNT CHIP COMES BACK TOO ══════════════════════════════════════════════════
+         * The pre-paint CSS hides "Log in or sign up" because painting it to someone who IS signed in
+         * is the landing leaking through the one control that contradicts the state hardest. It has to
+         * LIFT — and for a day it did not: `hc-boot-owner` is removed only when the account owns
+         * nothing, so on a successful owner load the chip stayed `visibility:hidden` for the life of
+         * the page. That chip is the sign-out door, and on a phone the route to settings.
+         *
+         * Adrian found it on a real session (`.hc-rail-acct` innerText EMPTY — innerText excludes a
+         * hidden subtree). The leg beside this one asserted the COMPOSER lifts and passed; nothing
+         * asserted the chip did. Two controls in one CSS block, one covered. */
+        const chip = await rig4.page.evaluate(() => {
+          const b = document.getElementById("navSignin");
+          if (!b) return { found: false };
+          const cs = getComputedStyle(b);
+          const r = b.getBoundingClientRect();
+          return { found: true, visibility: cs.visibility, display: cs.display,
+                   w: Math.round(r.width), h: Math.round(r.height),
+                   inRail: !!b.closest("#hcRailAcct"),
+                   active: document.body.classList.contains("hc-active") };
+        });
+        declareBreak({
+          leg: "the account chip is visible once the business is open",
+          why: "make the pre-paint hide unconditional again — `hc-boot-owner` is never removed on a " +
+               "successful owner load, so the sign-out door stays invisible for the life of the page",
+          file: "public/platform-home.html",
+          find: "html.hc-boot-owner body:not(.hc-active) #navSignin{visibility:hidden}",
+          with: "html.hc-boot-owner #navSignin{visibility:hidden}",
+        });
+        leg("RULE", "the account chip is visible once the business is open",
+          chip.found && chip.active === true && chip.visibility !== "hidden" &&
+          chip.display !== "none" && chip.w > 1 && chip.h > 1,
+          `#navSignin found=${chip.found} · visibility=${chip.visibility} · ${chip.w}x${chip.h} · ` +
+          `in the rail slot=${chip.inRail} · body.hc-active=${chip.active}. The SIZE is part of the ` +
+          `assertion: a hidden-but-present chip has a box, and a removed one has none — a leg asserting ` +
+          `only "not hidden" would pass on a chip that is not there at all.`);
+
         leg("RULE", "once the business is open the composer is live again",
           handedOff.active === true && handedOff.pe !== "none",
           `body.hc-active=${handedOff.active}, .hc-input-bar pointer-events=${handedOff.pe}. ` +

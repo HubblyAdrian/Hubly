@@ -4,6 +4,12 @@
   <script src="/journey-os/hubly-public-key.js"></script>
   <script src="/journey-os/stripe-connect-message.js"></script>
 <meta charset="UTF-8">
+<!-- THE ONE STATUS VOCABULARY, read by BOTH shells (public/status-words.js). IN THE HEAD, and
+     anchored on THIS charset tag specifically: this file has three `<meta charset>` and two of them
+     are inside generated-document template literals, so a naive anchor emitted the script INTO
+     generated HTML at byte 2.7M and the shell never loaded it. Not `defer`: it is 1KB, and removing
+     the ordering question is worth more than the parse. -->
+<script src="/status-words.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="google" content="notranslate">
 <title>Hubly · Book more jobs</title>
@@ -40239,7 +40245,13 @@ async function renderQuotesFromRecord(){
   const el=document.getElementById('sq-record-list');
   if(!el)return;
   const money=(c)=>{const n=Number(c||0)/100;return '$'+(Number.isInteger(n)?String(n):n.toFixed(2));};
-  const words={draft:'Not sent yet',sent:'Waiting on them',accepted:'They said yes',declined:'They said no',expired:'Ran out'};
+  // ONE VOCABULARY, NOT TWO — 2026-09-18. These five words lived here AND in platform-home.html's
+  // HC_STATUS_WORDS.quote, hand-maintained in both, so the two shells could disagree about what a
+  // quote's status is CALLED — to the same owner, about the same record. Found by the
+  // two-of-everything audit's sentence signal, which returned 17 verbatim-shared sentences with
+  // zero noise. The fallback to `{}` (and thence to the raw status) is deliberate: an ugly word
+  // beats an empty cell, and it is visibly wrong rather than invisibly blank.
+  const words=(window.HUBLY_STATUS_WORDS&&window.HUBLY_STATUS_WORDS.quote)||{};
   try{
     const db=await waitForDb();
     const uid=currentUser&&currentUser.id?currentUser.id:null;

@@ -39,7 +39,17 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT } from "./lib/redproof.mjs";
 
-const WINDOW = 60;
+// WIDENED FROM 60 TO 250, AND THE 60 COST SOMETHING REAL. `data.account_kind` is read at
+// hubly.html:18218 — 70 lines after the call — to decide whether a public page gets `hcNoIndex()`.
+// It fell outside the window, was left out of the allowlist, and TEST BUSINESSES' PUBLIC PAGES
+// SILENTLY STOPPED BEING NOINDEXED. Nothing errored: `undefined === 'test'` is simply false. That is
+// the route-list failure mode arriving through a window parameter, and it was found by Adrian asking
+// about a DIFFERENT field on the same line.
+//
+// The window is printed with the result because it is an assumption. 250 covers the whole of
+// loadPublicProfile; a read further away than that would still be invisible, which is why the
+// allowlist ALSO unions the named global and why check-public-reader-allowlist-is-derived exists.
+const WINDOW = 250;
 const CALL = /rpc\(\s*['"`]get_public_business['"`]\s*(?:,|\))/;
 const NOT_A_COLUMN = new Set(["data", "error", "message", "then", "catch", "length", "map", "filter",
   "forEach", "slice", "push", "trim", "toString", "hasOwnProperty", "single", "maybeSingle", "rpc",

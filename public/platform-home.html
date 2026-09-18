@@ -4,6 +4,14 @@
   <script src="/journey-os/hubly-public-key.js"></script>
   <script src="/journey-os/stripe-connect-message.js"></script>
 <meta charset="UTF-8">
+<!-- THE ONE STATUS VOCABULARY, read by BOTH shells (public/status-words.js). IN THE HEAD, and
+     anchored on the UPPERCASE charset tag specifically: this file ALSO carries a lowercase
+     `<meta charset="utf-8">` inside a JS template string (line ~4652, the quote document), and a
+     naive anchor put this <script> INSIDE that string literal — breaking it, and with it the whole
+     shell. The identical mistake had just been made and fixed in hubly.html; fixing the instance I
+     was looking at and not its sibling is Lesson 97, in the act of applying Lesson 97.
+     Not `defer`: it is 1KB and removing the ordering question is worth more than the parse. -->
+<script src="/status-words.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>hubly · Hubly gets it done.</title>
 <meta name="description" content="Tell us what you need and we'll take care of the rest. Hubly connects you with trusted providers for any home service.">
@@ -321,7 +329,18 @@ body.hc-active .footer,body.hc-active .hero{display:none}
 html.hc-boot-owner .hero,
 html.hc-boot-owner .footer{display:none}
 html.hc-boot-owner .hc-app{display:flex;opacity:1}
-html.hc-boot-owner #navSignin{visibility:hidden}
+/* ══ AND IT LIFTS, WHICH THE FIRST VERSION DID NOT — 2026-09-18 ══════════════════════════════
+   This was `html.hc-boot-owner #navSignin{visibility:hidden}`, unconditional. `hc-boot-owner` is
+   removed ONLY by HublyBoot.notOwner(), which runs when the account owns NOTHING — so on a
+   successful owner load the class stays on <html> for the life of the page and THE ACCOUNT CHIP WAS
+   INVISIBLE FOREVER. That chip is the sign-out door, and on a phone it is the route to settings.
+   Adrian found it from a real session: `.hc-rail-acct` innerText EMPTY, because innerText excludes
+   a `visibility:hidden` subtree — the chip was in the slot the whole time.
+   The condition is `body:not(.hc-active)`, the same guard as the composer rule below, which I wrote
+   correctly in this same block three lines away. Collateral damage from Bug 1's fix, and the L97
+   shape once more: measured against the rule it was made for ("no landing paint"), never against the
+   control sitting inside the thing being hidden. */
+html.hc-boot-owner body:not(.hc-active) #navSignin{visibility:hidden}
 html.hc-boot-owner body{background:var(--bg)}
 /* THE COMPOSER IS NOT LIVE UNTIL THERE IS A BUSINESS BEHIND IT. body.hc-active is added by
    hcRevealApp — the one place the app is really open — so this lifts at exactly the moment a
@@ -6398,6 +6417,30 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     // '#website', and coming back to Home instead is losing the owner's place. The
     // rail is rendered first so hcWorkspaces() can refuse a hash for a room this
     // account has not earned.
+    /* ══ THE RAIL'S DATA MUST NOT DEPEND ON HOME PAINTING — 2026-09-18 ═══════════════════════════
+     *
+     * `hcLoadIdentity` had exactly ONE call site, inside `hcRenderHome`. Bug 2's fix made
+     * `hcRenderHome` return early when the open tab is not Home — correctly — and that silently took
+     * the identity load with it: on a reload straight to `#website`, `hcIdentity.city/state/logoUrl`
+     * stayed null, so `hcRenderRailBiz` rendered the business NAME with no location and initials
+     * instead of the real logo. A rail quietly less informative than it was, on one entry path only.
+     *
+     * COLLATERAL DAMAGE FROM A CORRECT FIX, which is the pattern Adrian named: "it worked but now the
+     * website is small? its like code fixes something than breaks it." The guard was right; the side
+     * effect riding inside the function it guarded was not something the guard could know about.
+     *
+     * The load moves here, before the workspace opens, so the rail has its data on EVERY entry path.
+     *
+     * SCOPED, stated rather than implied: the collateral is established from the CODE (one call site,
+     * now unreachable on that path). It is NOT confirmed on a live surface — the declared fixture
+     * returns a null city, so no rig leg can tell the two states apart by looking at the rail.
+     * `hcIdentity.loaded` is the observable the leg uses instead. */
+    /* NOT `await`: hcOpenOwnedBusiness is a plain function, and an `await` here is a SYNTAX ERROR
+     * that takes the entire script with it — which is exactly what happened, and the check caught
+     * it as "window.hublyListUI.surfaces did not answer" rather than as a parse error, because a
+     * dead script has no seams. So: kick the load off and re-render the rail when it lands, which
+     * is one extra paint of a 38px tile and no ordering question at all. */
+    try{ hcLoadIdentity(hc.draftBusiness).then(function(){ try{ hcRenderRail(); }catch(e){} }); }catch(e){}
     try{
       // ONE PATH, INCLUDING HOME. This used to open a workspace only when the URL asked for
       // one other than home, because home had nothing to render. Home now carries the site
@@ -7367,13 +7410,13 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     // left it out on purpose — "words for a record that has never existed are invented words" — and
     // `quotes` now has a schema with a CHECK constraint, so these five are the values it can hold and
     // not five words somebody imagined. The vocabulary is the constraint, read.
-    quote: {
-      draft:    'Not sent yet',
-      sent:     'Waiting on them',
-      accepted: 'They said yes',
-      declined: 'They said no',
-      expired:  'Ran out'
-    },
+    // ONE VOCABULARY, NOT TWO — 2026-09-18. These five words were ALSO written out in
+    // public/hubly.html (renderQuotesFromRecord), hand-maintained in both, so the two shells could
+    // disagree about what a quote's status is called. They live in public/status-words.js now and both
+    // shells read them from there. The comment above still holds and is why the KEYS are not ours to
+    // invent — they are the CHECK constraint on quotes.status — and
+    // check-status-words-are-one-vocabulary asserts the key set still equals that constraint.
+    quote: (window.HUBLY_STATUS_WORDS && window.HUBLY_STATUS_WORDS.quote) || {},
     lead: {
       // A lead is someone who started a booking and did not finish. `pending` is NOT here: measured
       // on the live table, a pending row is a SUBMITTED request waiting for the owner to accept, so
@@ -11090,6 +11133,13 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   // name it greets without one rather than inventing "there".
   var hcIdentity = { loaded: false, logoUrl: null, brandColor: null, city: null, state: null, owner: null, authName: null, email: null };
 
+  /* THE IDENTITY, READABLE BY A CHECK. `hcIdentity` is closure-scoped, and the one thing a leg needs
+   *  to know is whether it LOADED — because its only call site used to sit inside hcRenderHome, which
+   *  Bug 2's guard makes unreachable when a room is entered directly. Exposing the boolean rather than
+   *  the object: a check has no business reading an owner's city out of a seam. */
+  try{ window.hublyIdentityUI = Object.assign(window.hublyIdentityUI || {}, {
+    loaded: function(){ try{ return !!hcIdentity.loaded; }catch(e){ return false; } }
+  }); }catch(e){}
   async function hcLoadIdentity(biz){
     hcIdentity.loaded = false;
     if(!biz || !biz.slug) return hcIdentity;

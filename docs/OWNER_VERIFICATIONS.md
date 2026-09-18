@@ -7,7 +7,30 @@ broken, not fine, unverified — and nothing in this repo may report it as prove
 
 ---
 
-## 5.1 Sign in, go to `#website`, refresh
+## ✅ 5.1 — CLOSED 2026-09-18. Adrian signed in and looked.
+
+**BOTH LIVE BUGS CONFIRMED FIXED ON A REAL SESSION** — real RLS, real business
+(`hubly-classic-fixture`), real authenticated load:
+
+- **BUG 1 — the first paint.** `hc-boot-owner` is on `<html>` on an authenticated load. **No landing
+  paint.**
+- **BUG 2 — a conversation per tab.** The Website tab shows its own conversation: *"This is a separate
+  conversation, just about Website. Your main chat is on Home."* **Home's chat is not in it.**
+
+**THIS IS THE FIRST EVIDENCE IN THIS ENTIRE EFFORT FROM THE SURFACE A PERSON ACTUALLY TOUCHES.** Every
+browser leg I ran used the declared fake in `scripts/lib/owner-rig.mjs` — real code paths, but no RLS,
+no session, no real JWT (limit 2 in that file's own header). Two things follow and both matter:
+
+1. The fake's green legs were not wrong, and they were not sufficient. They said the code does the
+   right thing against a declared world. They could not say the world is that.
+2. **The three rows below that these two closures cover are now LIVE-CONFIRMED** in
+   `docs/UNCONFIRMED_AGAINST_A_LIVE_SURFACE.md`: the first paint and the tab conversations move out of
+   RIG-MEASURED. What is still unconfirmed there is everything else, and the list says which.
+
+The section below is kept as the record of what was unverified and why, because the reasoning is what
+made the gap findable — not because it is still open.
+
+## 5.1 (the original entry, kept as the record) — Sign in, go to `#website`, refresh
 
 **Why nobody else can do it.** *"Never create an account, never enter a password."* Every browser leg
 in the 2026-09-17 rounds ran against the declared fake (`scripts/lib/owner-rig.mjs`), which has **no

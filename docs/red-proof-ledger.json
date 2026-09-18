@@ -232,6 +232,102 @@
       "compound": 0,
       "notRed": 0,
       "skipped": 0
+    },
+    {
+      "at": "2026-09-18T04:30:44.725Z",
+      "applied": 0,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T04:31:06.885Z",
+      "applied": 1,
+      "alone": 1,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T04:35:44.877Z",
+      "applied": 1,
+      "alone": 1,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T04:38:51.975Z",
+      "applied": 3,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T04:42:58.028Z",
+      "applied": 1,
+      "alone": 0,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T04:43:26.793Z",
+      "applied": 1,
+      "alone": 1,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T04:52:45.459Z",
+      "applied": 1,
+      "alone": 0,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T04:53:46.656Z",
+      "applied": 1,
+      "alone": 1,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T04:59:28.771Z",
+      "applied": 0,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T04:59:55.782Z",
+      "applied": 1,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T05:01:25.876Z",
+      "applied": 0,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T05:02:31.168Z",
+      "applied": 1,
+      "alone": 1,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
     }
   ],
   "legs": {
@@ -473,7 +569,7 @@
       "check": "check-no-public-reader-leaks-contacts.mjs",
       "leg": "every anon reader hands back an explicit field list",
       "why": "revert get_public_business to `to_jsonb(b) - 'draft_token'` — the whole-row shape — which is exactly the regression this leg exists to catch",
-      "at": "2026-09-18T04:25:05.386Z",
+      "at": "2026-09-18T04:38:51.975Z",
       "also": [],
       "newlyRed": 1,
       "note": "a FUNCTION-ONLY database break, applied and restored by the runner; no row was written",
@@ -483,11 +579,74 @@
       "check": "check-public-reader-allowlist-is-derived.mjs",
       "leg": "the meta allowlist covers every subtree a renderer reads",
       "why": "drop `website` from the live function's meta allowlist — the single most-read subtree (16 reads) — so the classic page loses its hero and NOTHING errors: the renderer reads undefined. That is the route-list failure mode arriving in a column list, which is why this check exists",
-      "at": "2026-09-18T04:27:44.471Z",
+      "at": "2026-09-18T04:38:51.975Z",
       "also": [],
       "newlyRed": 1,
       "note": "a FUNCTION-ONLY database break, applied and restored by the runner; no row was written",
       "status": "RED ALONE"
+    },
+    "check-page-facts-match-the-record.mjs::every business whose record holds a phone says that phone on its page": {
+      "check": "check-page-facts-match-the-record.mjs",
+      "leg": "every business whose record holds a phone says that phone on its page",
+      "why": "make the freeform fact-sync write the FIRST business's phone instead of this one's — the borrowed-context defect that put bucket-mobile-detailing's email on bucket-…-09616's page, reproduced in the writer rather than waited for",
+      "at": "2026-09-18T04:30:44.725Z",
+      "status": "SKIPPED",
+      "note": "declaration names leg \"every business whose record holds a phone says that phone on its page\", which appears nowhere in this check's output — the declaration is STALE, which is a different fault from a vacuous leg"
+    },
+    "check-page-facts-match-the-record.mjs::the classic renderer still injects the recorded phone": {
+      "check": "check-page-facts-match-the-record.mjs",
+      "leg": "the classic renderer still injects the recorded phone",
+      "why": "stop the classic hero pill building a tel: link from S.phone, so eleven live pages silently lose the only phone number they show and nothing errors",
+      "at": "2026-09-18T04:31:06.885Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-live-functions-match-their-migrations.mjs::every public function's live body matches the last migration that defines it": {
+      "check": "check-live-functions-match-their-migrations.mjs",
+      "leg": "every public function's live body matches the last migration that defines it",
+      "why": "add a behaviour-neutral expression to get_public_business's live body so it no longer matches its migration — a stand-in for a dashboard edit, which is the thing this check exists to catch",
+      "at": "2026-09-18T04:38:51.975Z",
+      "also": [],
+      "newlyRed": 1,
+      "note": "a FUNCTION-ONLY database break, applied and restored by the runner; no row was written",
+      "status": "RED ALONE"
+    },
+    "check-status-words-are-one-vocabulary.mjs::neither shell holds its own copy of the words": {
+      "check": "check-status-words-are-one-vocabulary.mjs",
+      "leg": "neither shell holds its own copy of the words",
+      "why": "paste the five words back into hubly.html as a literal — the duplication this file exists to prevent, and it is one paste away at all times",
+      "at": "2026-09-18T04:43:26.793Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-the-landing-never-paints-for-an-owner.mjs::the account chip is visible once the business is open": {
+      "check": "check-the-landing-never-paints-for-an-owner.mjs",
+      "leg": "the account chip is visible once the business is open",
+      "why": "make the pre-paint hide unconditional again — `hc-boot-owner` is never removed on a successful owner load, so the sign-out door stays invisible for the life of the page",
+      "at": "2026-09-18T04:53:46.656Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-a-different-conversation-in-every-tab.mjs::R5 [RULE] entering a room directly still loads the identity the rail renders from": {
+      "check": "check-a-different-conversation-in-every-tab.mjs",
+      "leg": "R5 [RULE] entering a room directly still loads the identity the rail renders from",
+      "why": "put the identity load back inside hcRenderHome, where R1's guard makes it unreachable on any entry path that is not Home — the rail loses its location and its logo",
+      "at": "2026-09-18T04:59:55.782Z",
+      "also": [],
+      "status": "NOT RED",
+      "newlyRed": 0
+    },
+    "check-a-different-conversation-in-every-tab.mjs::R5 [SHAPE] the identity load is reachable from outside hcRenderHome": {
+      "check": "check-a-different-conversation-in-every-tab.mjs",
+      "leg": "R5 [SHAPE] the identity load is reachable from outside hcRenderHome",
+      "why": "put the identity load back inside hcRenderHome, where R1's guard makes it unreachable on any entry path that is not Home — the rail loses its location and its logo",
+      "at": "2026-09-18T05:02:31.168Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
     }
   }
 }

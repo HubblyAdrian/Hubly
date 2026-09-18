@@ -13,19 +13,21 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-18T04:27:44.471Z** · 29 run(s) recorded.
+**Last run: 2026-09-18T05:02:31.168Z** · 41 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 19 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 24 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 1 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
-| NOT RED | 4 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
-| SKIPPED | 2 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
+| NOT RED | 5 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
+| SKIPPED | 3 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
 
 ## Every declared break
 
 | check | leg | status | break | also went red |
 | --- | --- | --- | --- | --- |
+| `check-a-different-conversation-in-every-tab.mjs` | R5 [RULE] entering a room directly still loads the identity the rail renders from | **NOT RED** | put the identity load back inside hcRenderHome, where R1's guard makes it unreachable on any entry path that is not Home — the rail loses its location and its logo | — |
+| `check-a-different-conversation-in-every-tab.mjs` | R5 [SHAPE] the identity load is reachable from outside hcRenderHome | **RED ALONE** | put the identity load back inside hcRenderHome, where R1's guard makes it unreachable on any entry path that is not Home — the rail loses its location and its logo | — |
 | `check-address-change-is-said.mjs` | 5 the sentence exists and names the address | **SKIPPED** | make the sentence point at a control — Hubly does not render the page and cannot know what is on screen, so naming a button is claiming a capability it has not verified | — |
 | `check-address-change-is-said.mjs` | 5 the sentence exists, names the new address | **RED ALONE** | make the sentence point at a control — Hubly does not render the page and cannot know what is on screen, so naming a button is claiming a capability it has not verified | — |
 | `check-arrival-in-dom.mjs` | 2c the arrival IS in the thread | **RED ALONE** | speak a second time while the name question is on the floor — a page-view count beside the arrival, which is two composers talking over each other | — |
@@ -41,6 +43,7 @@ have made the rule the first thing anyone switched off.
 | `check-doors-open-when-needed.mjs` | 1 the scan found creation actions | **RED ALONE** | make the delegation test blind, so every empty-state entry point counts as idle-only — the condition leg 1 exists to detect, without touching the door leg 2 asserts | — |
 | `check-editable-set-is-derived.mjs` | 1 [RULE] the markers were found | **RED ALONE** | remove one marker's editor branch — `footer-tag` — so a marker the page renders has nowhere to be edited: the affordance painted over a capability that is not there | — |
 | `check-every-check-is-runnable.mjs` | 6 both sides of the comparison were read | **RED ALONE** | make the glob miss a check that a convenience entry names, so a check is reachable ONLY by its hand-written name — the route-list disease, whose failure mode is silent | — |
+| `check-live-functions-match-their-migrations.mjs` | every public function's live body matches the last migration that defines it | **RED ALONE** | add a behaviour-neutral expression to get_public_business's live body so it no longer matches its migration — a stand-in for a dashboard edit, which is the thing this check exists to catch | — |
 | `check-navigation-destinations.mjs` | 1 the surface registry was read | **RED ALONE** | delete the `quotes` renderer from HC_ROOMS, so a place that can appear in the rail has nothing to render it — a rail row that opens an empty canvas | — |
 | `check-navigation-destinations.mjs` | 2 the room registry was read | **RED ALONE** | add a room nothing can reach — a renderer for `store`, which is not a surface, so it is built and doorless: the diagnosis that has been right four times this month | — |
 | `check-navigation-destinations.mjs` | 3 [SHAPE] the destinations were resolved | **RED ALONE** | route an existing destination to Home instead of to its own surface, so something lands on a screen that cannot answer for it | — |
@@ -52,7 +55,11 @@ have made the rule the first thing anyone switched off.
 | `check-no-mailto-reaches-a-customer.mjs` | no latest stored page carries a mailto | **DECLARED, PROVEN BY HAND** | plant a mailto anchor in a stored page and confirm this leg alone goes red | — |
 | `check-no-public-reader-leaks-contacts.mjs` | every anon reader hands back an explicit field list | **RED ALONE** | revert get_public_business to `to_jsonb(b) - 'draft_token'` — the whole-row shape — which is exactly the regression this leg exists to catch | — |
 | `check-no-public-reader-leaks-contacts.mjs` | no anon-readable reader returns a collection of contact records | **NOT RED** | revert get_public_business to `to_jsonb(b) - 'draft_token'` — the whole-row shape — which is exactly the regression this leg exists to catch | — |
+| `check-page-facts-match-the-record.mjs` | every business whose record holds a phone says that phone on its page | **SKIPPED** | make the freeform fact-sync write the FIRST business's phone instead of this one's — the borrowed-context defect that put bucket-mobile-detailing's email on bucket-…-09616's page, reproduced in the writer rather than waited for | — |
+| `check-page-facts-match-the-record.mjs` | the classic renderer still injects the recorded phone | **RED ALONE** | stop the classic hero pill building a tel: link from S.phone, so eleven live pages silently lose the only phone number they show and nothing errors | — |
 | `check-public-reader-allowlist-is-derived.mjs` | the meta allowlist covers every subtree a renderer reads | **RED ALONE** | drop `website` from the live function's meta allowlist — the single most-read subtree (16 reads) — so the classic page loses its hero and NOTHING errors: the renderer reads undefined. That is the route-list failure mode arriving in a column list, which is why this check exists | — |
+| `check-status-words-are-one-vocabulary.mjs` | neither shell holds its own copy of the words | **RED ALONE** | paste the five words back into hubly.html as a literal — the duplication this file exists to prevent, and it is one paste away at all times | — |
+| `check-the-landing-never-paints-for-an-owner.mjs` | the account chip is visible once the business is open | **RED ALONE** | make the pre-paint hide unconditional again — `hc-boot-owner` is never removed on a successful owner load, so the sign-out door stays invisible for the life of the page | — |
 
 ## Runs
 
@@ -85,3 +92,15 @@ have made the rule the first thing anyone switched off.
 - **2026-09-18T04:26:46.284Z** — 0 break(s) applied · 0 red alone · 0 compound · 0 not red · 1 skipped
 - **2026-09-18T04:27:15.371Z** — 0 break(s) applied · 0 red alone · 0 compound · 0 not red · 1 skipped
 - **2026-09-18T04:27:44.471Z** — 1 break(s) applied · 1 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T04:30:44.725Z** — 0 break(s) applied · 0 red alone · 0 compound · 0 not red · 1 skipped
+- **2026-09-18T04:31:06.885Z** — 1 break(s) applied · 1 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T04:35:44.877Z** — 1 break(s) applied · 1 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T04:38:51.975Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T04:42:58.028Z** — 1 break(s) applied · 0 red alone · 1 compound · 0 not red · 0 skipped
+- **2026-09-18T04:43:26.793Z** — 1 break(s) applied · 1 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T04:52:45.459Z** — 1 break(s) applied · 0 red alone · 1 compound · 0 not red · 0 skipped
+- **2026-09-18T04:53:46.656Z** — 1 break(s) applied · 1 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T04:59:28.771Z** — 0 break(s) applied · 0 red alone · 0 compound · 0 not red · 1 skipped
+- **2026-09-18T04:59:55.782Z** — 1 break(s) applied · 0 red alone · 0 compound · 1 not red · 0 skipped
+- **2026-09-18T05:01:25.876Z** — 0 break(s) applied · 0 red alone · 0 compound · 0 not red · 1 skipped
+- **2026-09-18T05:02:31.168Z** — 1 break(s) applied · 1 red alone · 0 compound · 0 not red · 0 skipped
