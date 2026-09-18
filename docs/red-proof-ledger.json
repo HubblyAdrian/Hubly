@@ -464,6 +464,120 @@
       "compound": 0,
       "notRed": 0,
       "skipped": 0
+    },
+    {
+      "at": "2026-09-18T19:02:16.493Z",
+      "applied": 2,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 2,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T19:03:04.398Z",
+      "applied": 0,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T19:04:57.308Z",
+      "applied": 0,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 4,
+      "errored": 0,
+      "unparseable": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-18T19:05:18.974Z",
+      "applied": 2,
+      "alone": 2,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 1,
+      "unparseable": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-18T19:05:32.677Z",
+      "applied": 3,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "declaredTotal": 3,
+      "recorded": 2,
+      "reconciled": false
+    },
+    {
+      "at": "2026-09-18T19:06:01.441Z",
+      "applied": 3,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-18T19:06:19.026Z",
+      "applied": 0,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 4,
+      "errored": 0,
+      "unparseable": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-18T19:14:21.110Z",
+      "applied": 5,
+      "alone": 5,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 1,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "declaredTotal": 6,
+      "recorded": 6,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-18T19:15:28.581Z",
+      "applied": 6,
+      "alone": 6,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "declaredTotal": 6,
+      "recorded": 6,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -746,64 +860,64 @@
       "check": "check-the-rail-says-who-you-are.mjs",
       "leg": "1 a known first name is on its own line ABOVE the business name",
       "why": "put the business name FIRST instead — the owner line is still there, still says exactly what the reader says, still on its own line. Only the order Adrian ruled on is gone, which is the narrowest break that can reach this leg: legs 2 and 3 cannot see it at all.",
-      "at": "2026-09-18T05:47:06.081Z",
+      "at": "2026-09-18T19:06:01.441Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-the-rail-says-who-you-are.mjs::2 no name established renders NOTHING — no node, no placeholder, no email": {
       "check": "check-the-rail-says-who-you-are.mjs",
       "leg": "2 no name established renders NOTHING — no node, no placeholder, no email",
       "why": "fall back to the email's local part when the reader returns null, which is exactly the 2026-09-15 bug: a login credential shown to the owner as his name, in the one place he looks to confirm Hubly knows who he is",
-      "at": "2026-09-18T05:47:06.081Z",
+      "at": "2026-09-18T19:06:01.441Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-the-rail-says-who-you-are.mjs::3 the line is EXACTLY what the one reader returns — no second opinion": {
       "check": "check-the-rail-says-who-you-are.mjs",
       "leg": "3 the line is EXACTLY what the one reader returns — no second opinion",
       "why": "restyle the name locally after reading it — one line of 'presentation', which is how every second opinion about a person's name starts. It keeps the node, the order, the geometry and the null decision identical, so ONLY the claim that the surface shows what the reader said can detect it. (The real bug it stands for is larger — an email prefix or the auth provider's guess — but a wider break would take legs 1 and 2 down with it and prove nothing.)",
-      "at": "2026-09-18T05:47:06.081Z",
+      "at": "2026-09-18T19:06:01.441Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-every-field-a-renderer-reads-is-returned.mjs::2 the derivation is alive and still sees across script blocks": {
       "check": "check-every-field-a-renderer-reads-is-returned.mjs",
       "leg": "2 the derivation is alive and still sees across script blocks",
       "why": "give each <script> block its own root scope again — the bug this analyzer shipped with. `var currentBusiness` is in one block and `currentBusiness = data` is ~4500 lines later in another, so the assignment resolved to nothing, the row stopped escaping the loading function, and the analyzer reported a smaller field set WITHOUT SAYING IT HAD FAILED. Leg 1 would then pass by looking for less.",
-      "at": "2026-09-18T14:46:18.680Z",
+      "at": "2026-09-18T19:15:28.581Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-every-field-a-renderer-reads-is-returned.mjs::4 no field is reached by a computed key, so the derivation is complete on this input": {
       "check": "check-every-field-a-renderer-reads-is-returned.mjs",
       "leg": "4 no field is reached by a computed key, so the derivation is complete on this input",
       "why": "count the `row[0]` unwrap as a computed field read again. It makes the derivation report a blind spot it does not have — and the point of the leg is that a blind spot must be LOUD, so it has to be observable when it is there.",
-      "at": "2026-09-18T14:46:18.680Z",
+      "at": "2026-09-18T19:15:28.581Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-every-field-a-renderer-reads-is-returned.mjs::1 every field a renderer reads is declared by the reader": {
       "check": "check-every-field-a-renderer-reads-is-returned.mjs",
       "leg": "1 every field a renderer reads is declared by the reader",
       "why": "drop ig_handle from the allowlist — one of the seven that actually shipped this way. No error, no log, no visible difference: the Instagram link on every public page just stops rendering, because `data.ig_handle || ''` is ''.",
-      "at": "2026-09-18T14:46:18.680Z",
+      "at": "2026-09-18T19:15:28.581Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-every-field-a-renderer-reads-is-returned.mjs::3 every key the migration declares is present in the LIVE function": {
       "check": "check-every-field-a-renderer-reads-is-returned.mjs",
       "leg": "3 every key the migration declares is present in the LIVE function",
       "why": "declare a key in the migration that production does not have. The repository is a CLAIM about production, not production (Lesson 100) — leg 1 reads the migration, so if the migration and the live function disagree, leg 1's pass is about a file.",
-      "at": "2026-09-18T14:46:18.680Z",
+      "at": "2026-09-18T19:15:28.581Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-the-sitemap-is-the-record.mjs::3 /sitemap.xml has a route, and it precedes the catch-all": {
       "check": "check-the-sitemap-is-the-record.mjs",
@@ -874,6 +988,56 @@
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
+    },
+    "check-no-well-known-path-returns-html.mjs::1 a path that does not exist returns 404, never a 200 of HTML": {
+      "check": "check-no-well-known-path-returns-html.mjs",
+      "leg": "1 a path that does not exist returns 404, never a 200 of HTML",
+      "why": "remove the not-real guard from the router, restoring the measured state: every file-shaped path falls through to the SPA and answers 200 with 3MB of hubly.html. Nothing 404s, nothing errors, every page still works, and every consumer that trusts a status code is lied to.",
+      "at": "2026-09-18T19:06:19.026Z",
+      "note": "This leg reads PRODUCTION, and api/router.js goes live only by git push, so no break applied by this runner can change the answer. The break that WOULD reach it is removing the not-real guard from api/router.js, restoring the measured state: every file-shaped path falls through to the SPA and answers 200 with 3MB of hubly.html — public/ and api/ go live only by git push — so the break edits the repo while the probe reads production. PROVEN BY HAND . Observed RED then GREEN across one deploy on 2026-09-18: before the push 20 of 22 sampled paths returned 200 + 3,092,140 bytes of text/html (/.env and a random nonce among them); after it, each returns 404 text/plain and only /robots.txt and /sitemap.xml return 200 with their own content types.",
+      "status": "DECLARED, PROVEN BY HAND"
+    },
+    "check-no-well-known-path-returns-html.mjs::2 no client-requested well-known path answers 200 with an HTML document": {
+      "check": "check-no-well-known-path-returns-html.mjs",
+      "leg": "2 no client-requested well-known path answers 200 with an HTML document",
+      "why": null,
+      "at": "2026-09-18T19:06:19.026Z",
+      "note": "Production-side, like legs 1, 3 and 4: the probe reads what is deployed and a repo edit cannot change that until a git push, so no break can be aimed at it from here. Observed RED then GREEN across two deploys on 2026-09-18. RED: 20 of 22 sampled paths returned 200 with 3,092,140 bytes of text/html — /favicon.ico, /manifest.json, /manifest.webmanifest, /ads.txt, /app-ads.txt, /security.txt, /.well-known/security.txt, /.well-known/assetlinks.json, /.well-known/apple-app-site-association, /.well-known/change-password, /sitemap_index.xml, /rss.xml, /atom.xml, /browserconfig.xml, /crossdomain.xml, /humans.txt and /.env among them. GREEN: 0 of 18. The two that were already correct, /robots.txt and /sitemap.xml, are the two vercel.json routes by name — which is itself the evidence that the catch-all was answering everything else.",
+      "status": "DECLARED, PROVEN BY HAND"
+    },
+    "check-no-well-known-path-returns-html.mjs::4 every literal route in vercel.json reaches its own destination": {
+      "check": "check-no-well-known-path-returns-html.mjs",
+      "leg": "4 every literal route in vercel.json reaches its own destination",
+      "why": null,
+      "at": "2026-09-18T19:06:19.026Z",
+      "note": "Production-only, same as legs 1 and 3. The break that would reach it is pointing the robots.txt route at the SPA: it still 200s, still looks fine in a browser, and crawlers silently get an HTML document where rules were expected — the state robots.txt's own header says it was created to end. Observed in the wild for /sitemap.xml earlier today: with no route it returned 200 with 3,091,125 bytes of text/html, and after the route landed, 200 application/xml with 13 <loc>. That is this leg red then green.",
+      "status": "DECLARED, PROVEN BY HAND"
+    },
+    "check-no-well-known-path-returns-html.mjs::3 every root file in public/ serves ITSELF, byte for byte": {
+      "check": "check-no-well-known-path-returns-html.mjs",
+      "leg": "3 every root file in public/ serves ITSELF, byte for byte",
+      "why": null,
+      "at": "2026-09-18T19:06:19.026Z",
+      "note": "Production-only, same as leg 1. The break that would reach it is forcing the not-real test to fail so an existing file is 404'd instead of served — the OPPOSITE error from leg 1, and the one a fix for leg 1 would plausibly introduce: /status-words.js and /contact-pick.js would stop loading and both shells would lose what they define. The September 16 incident IS this leg observed red in the wild: /contact-pick.js deployed, was answered with hubly.html, and HublyContactPick was undefined in both shells with no error anywhere. It reads 200 application/javascript today.",
+      "status": "DECLARED, PROVEN BY HAND"
+    },
+    "check-every-field-a-renderer-reads-is-returned.mjs::5 every meta subtree a renderer reads is declared by the reader": {
+      "check": "check-every-field-a-renderer-reads-is-returned.mjs",
+      "leg": "5 every meta subtree a renderer reads is declared by the reader",
+      "why": "drop `hours` from the meta subtree allowlist. Opening hours on every public page, absent, rendering as nothing — no error, no log, a page that loads without them. The seven-field regression one nesting level down, where there are 56 subtrees instead of 31 top-level fields. (The first version of this break named `heroHeadline`, which is in NEITHER list; the runner reported `find matched 0x` and SKIPPED it rather than counting an untested leg as proven — the declaration was wrong, and the ledger said so instead of flattering me.)",
+      "at": "2026-09-18T19:15:28.581Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-every-field-a-renderer-reads-is-returned.mjs::6 the meta derivation is alive — it crosses parseBizMeta and finds no computed key": {
+      "check": "check-every-field-a-renderer-reads-is-returned.mjs",
+      "leg": "6 the meta derivation is alive — it crosses parseBizMeta and finds no computed key",
+      "why": "remove the return-value taint, so a named function that RETURNS the meta object stops carrying it. The chain is data.meta -> parseBizMeta(data.meta) -> applyBizMeta(m) -> m.faqs, and applyBizMeta is where all 55 subtree reads live — so the derivation drops from 56 subtrees to a handful and leg 5 passes by LOOKING FOR ALMOST NOTHING. That is the direction that matters: an empty derivation must never read as 'nothing is missing'.",
+      "at": "2026-09-18T19:15:28.581Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
     }
   }
 }

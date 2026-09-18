@@ -118,12 +118,17 @@ declareBreak({
   why: "remove the not-real guard from the router, restoring the measured state: every file-shaped " +
        "path falls through to the SPA and answers 200 with 3MB of hubly.html. Nothing 404s, nothing " +
        "errors, every page still works, and every consumer that trusts a status code is lied to.",
-  file: "api/router.js",
-  find: "      if (!real) {\n        // text/plain, so nothing downstream can mistake the body for a document.\n        res.setHeader('Content-Type', 'text/plain; charset=utf-8');\n        return res.status(404).send('Not found\\n');\n      }",
-  with: "      if (false) {}",
-  provenBy: "The router change is not deployed by this runner — public/ and api/ go live only by git " +
+  // NO `file`. A DECLARATION THAT NAMES A FILE IS AN AUTOMATED CLAIM, and the runner will honour it:
+  // the first version of this leg carried BOTH a file break and a hand-proof, so the runner applied
+  // the break, read production (unchanged, because public/ and api/ go live only by git push), and
+  // recorded NOT RED. A misleading NOT RED on a leg that WAS proven is worse than an honest
+  // hand-proof, because NOT RED means "vacuous or the break misses it" and neither was true.
+  provenBy: "This leg reads PRODUCTION, and api/router.js goes live only by git push, so no break " +
+            "applied by this runner can change the answer. The break that WOULD reach it is removing " +
+            "the not-real guard from api/router.js, restoring the measured state: every file-shaped " +
+            "path falls through to the SPA and answers 200 with 3MB of hubly.html — public/ and api/ go live only by git " +
             "push — so the break edits the repo while the probe reads production. PROVEN BY HAND " +
-            "instead, and observed RED then GREEN across one deploy on 2026-09-18: before the push " +
+            ". Observed RED then GREEN across one deploy on 2026-09-18: before the push " +
             "20 of 22 sampled paths returned 200 + 3,092,140 bytes of text/html (/.env and a random " +
             "nonce among them); after it, each returns 404 text/plain and only /robots.txt and " +
             "/sitemap.xml return 200 with their own content types.",
@@ -136,6 +141,19 @@ leg("RULE", "1 a path that does not exist returns 404, never a 200 of HTML",
   `the CLASS; the sample below only demonstrates it on paths real clients actually request.`);
 
 /* ── LEG 2 — the declared sample ───────────────────────────────────────────────────────────── */
+declareBreak({
+  leg: "2 no client-requested well-known path answers 200 with an HTML document",
+  provenBy: "Production-side, like legs 1, 3 and 4: the probe reads what is deployed and a repo edit " +
+            "cannot change that until a git push, so no break can be aimed at it from here. Observed " +
+            "RED then GREEN across two deploys on 2026-09-18. RED: 20 of 22 sampled paths returned " +
+            "200 with 3,092,140 bytes of text/html — /favicon.ico, /manifest.json, /manifest." +
+            "webmanifest, /ads.txt, /app-ads.txt, /security.txt, /.well-known/security.txt, " +
+            "/.well-known/assetlinks.json, /.well-known/apple-app-site-association, /.well-known/" +
+            "change-password, /sitemap_index.xml, /rss.xml, /atom.xml, /browserconfig.xml, " +
+            "/crossdomain.xml, /humans.txt and /.env among them. GREEN: 0 of 18. The two that were " +
+            "already correct, /robots.txt and /sitemap.xml, are the two vercel.json routes by name — " +
+            "which is itself the evidence that the catch-all was answering everything else.",
+});
 const sampleHtml = SAMPLE.filter((p) => { const r = results.get(p); return r && r.code === 200 && r.isHtmlDoc; });
 leg("RULE", "2 no client-requested well-known path answers 200 with an HTML document",
   sampleHtml.length === 0,
@@ -146,15 +164,14 @@ leg("RULE", "2 no client-requested well-known path answers 200 with an HTML docu
 
 /* ── LEG 3 — the /contact-pick.js class: a real file must serve ITSELF ─────────────────────── */
 declareBreak({
-  leg: "3 every root file in public/ serves itself, not the SPA",
-  why: "make the not-real test always fail, so a file that DOES exist is 404'd instead of served — " +
-       "the opposite error from leg 1 and the one a fix for leg 1 would plausibly introduce. " +
-       "/status-words.js and /contact-pick.js would stop loading and both shells would lose what " +
-       "they define, silently, exactly as in the September 16 incident.",
-  file: "api/router.js",
-  find: "      const real =\n        filePath.startsWith(publicRoot + path.sep) &&",
-  with: "      const real = false && (\n        filePath.startsWith(publicRoot + path.sep) &&",
-  provenBy: "Same reason as leg 1 — the probe reads production and the break edits the repo. The " +
+  // The NAME must match the leg exactly. It said "serves itself, not the SPA" while the leg had been
+  // renamed to "serves ITSELF, byte for byte", and the runner reported SKIPPED — stale declaration.
+  // That is the right report and it is also how a leg quietly stops being red-proofed at all.
+  leg: "3 every root file in public/ serves ITSELF, byte for byte",
+  provenBy: "Production-only, same as leg 1. The break that would reach it is forcing the not-real " +
+            "test to fail so an existing file is 404'd instead of served — the OPPOSITE error from " +
+            "leg 1, and the one a fix for leg 1 would plausibly introduce: /status-words.js and " +
+            "/contact-pick.js would stop loading and both shells would lose what they define. The " +
             "September 16 incident IS this leg observed red in the wild: /contact-pick.js deployed, " +
             "was answered with hubly.html, and HublyContactPick was undefined in both shells with " +
             "no error anywhere. It reads 200 application/javascript today.",
@@ -183,13 +200,10 @@ leg("RULE", "3 every root file in public/ serves ITSELF, byte for byte",
 /* ── LEG 4 — the literal routes in vercel.json reach their own destination ─────────────────── */
 declareBreak({
   leg: "4 every literal route in vercel.json reaches its own destination",
-  why: "point the robots.txt route at the SPA. It still 200s, it still looks fine in a browser, and " +
-       "crawlers silently get an HTML document where rules were expected — which is the state " +
-       "public/robots.txt's own header comment says it was created to end.",
-  file: "vercel.json",
-  find: '      "src": "/robots.txt$",\n      "dest": "/robots.txt"',
-  with: '      "src": "/robots.txt$",\n      "dest": "/api/router.js"',
-  provenBy: "Production-side, same as legs 1 and 3. Observed in the wild for /sitemap.xml earlier " +
+  provenBy: "Production-only, same as legs 1 and 3. The break that would reach it is pointing the " +
+            "robots.txt route at the SPA: it still 200s, still looks fine in a browser, and crawlers " +
+            "silently get an HTML document where rules were expected — the state robots.txt's own " +
+            "header says it was created to end. Observed in the wild for /sitemap.xml earlier " +
             "today: with no route it returned 200 with 3,091,125 bytes of text/html, and after the " +
             "route landed, 200 application/xml with 13 <loc>. That is this leg red then green.",
 });

@@ -3947,3 +3947,94 @@ Two smaller rules that came out of the same day and belong here:
   every public page: a worse regression than the one being fixed, introduced by the fix, by
   transcribing a list that already existed and was correct. The shipped version was **generated** from
   its predecessor by inserting one line, and the diff against it is four lines long.
+
+## Lesson 103
+
+**A CATCH-ALL ROUTE CONVERTS EVERY MISSING FILE INTO A SUCCESSFUL WRONG ANSWER.**
+
+A 404 tells the caller the truth: *that isn't here.* A catch-all tells it *the SPA is the file you
+asked for* — with a **200** — and every consumer that trusts status codes believes it. The failure is
+invisible from inside the product, because the page still works.
+
+Measured on the live site, 2026-09-18: **20 of 22** well-known paths returned HTTP 200 with
+**3,092,140 bytes of `text/html`**. `/favicon.ico`, `/manifest.json`, `/manifest.webmanifest`,
+`/ads.txt`, `/security.txt`, `/.well-known/security.txt`, `/.well-known/assetlinks.json`, `/rss.xml`,
+`/browserconfig.xml`, `/.env`, and a randomly generated nonce path, all answering with `hubly.html`
+and a 200. The only two that were right — `/robots.txt` and `/sitemap.xml` — were right *because
+`vercel.json` routes those two by name*, which is itself the proof that the catch-all was answering
+everything else.
+
+**What each consumer does with that 200:** a browser parses 3MB of HTML as an icon; a crawler indexes
+our marketing copy as the content of `ads.txt`; a security scanner reads a **200 for `/.env`**; a
+`<script src>` loads a document and every symbol it defined is silently `undefined`. Not one of them
+sees an error, because there wasn't one.
+
+**This is the third appearance of one defect and each fix was scoped to the filename that had bitten
+us:**
+
+| | what happened |
+|---|---|
+| `/contact-pick.js` (2026-09-16) | shipped, served `hubly.html`, `HublyContactPick` undefined in **both** shells — including the working feature that had just been changed to depend on it |
+| `/sitemap.xml` (2026-09-18) | 200 + 3MB of HTML where a crawler asked for a sitemap. `robots.txt`'s own header comment *describes this exact failure* and says it was written to fix it — one filename over |
+| everything else (2026-09-18) | the 20 above |
+
+The first fix already contained the correct reasoning (*"`fs.existsSync` already decides whether a
+path is real, so the allowlist was adding nothing but the chance to forget"*) and applied it to `.js`
+**because `.js` was what had bitten us.** That is the lesson: the sibling search after a fix must run
+over the *dimension of the defect*, not the *instance*. The dimension here was "a path that looks
+like a file"; the instance was "a `.js` path".
+
+**The rule, stated structurally so it needs no list:**
+
+> Wherever a catch-all answers unmatched paths, a **root-level path whose last segment contains a
+> dot**, or anything under a reserved namespace like `/.well-known/`, must correspond to a real file
+> on disk or be a **404**. Derive it from `fs.existsSync`, never from a list of well-known paths — the
+> standards bodies extend that list without telling you.
+
+Two hand-tuned shapes died proving this, both mine, both found by running the check against the fix:
+`/.env` escaped a pattern that required a non-empty basename before the dot, and
+`/manifest.webmanifest` escaped an extension bound of `{1,8}`. A pattern that encodes the shapes you
+happened to think of is the same disease as the list you were avoiding.
+
+**And the check for it cannot judge by content type.** `/enter.html` and `/portal.html` *are* HTML and
+are supposed to be, while `/marketplace-landing.html` was *also* HTML and was the **wrong** HTML —
+3,092,140 bytes instead of its own 16,238. Indistinguishable by type, obvious by size. So the
+assertion is **bytes**: what came back is what is on disk.
+
+## Lesson 104
+
+**A FIELD REMOVED FROM A PAYLOAD DOES NOT SILENCE ITS READERS. IT ANSWERS THEM WITH `undefined`.**
+
+This is Lesson 101 generalised from one line to a discipline, because the same removal had **seven**
+readers and only one of them was noticed.
+
+When a field stops being returned, every reader keeps running. None throws. Each takes a branch
+chosen by `undefined`, and `undefined` is a *defined value* with *defined behaviour* in every
+operator JavaScript has:
+
+| the read | with the field absent | what the product does |
+|---|---|---|
+| `!row.flag` | **`true`** | the guarded thing always happens |
+| `if (row.flag)` | falsy | the guarded thing never happens |
+| `row.kind === 'test'` | `false` | the special case silently stops applying |
+| `row.str \|\| ''` | `''` | renders empty — a missing link, not an error |
+| `row.list.map(...)` | **throws** | the only loud one, and only for a reference type |
+| `row.n > 0` | `false` | a count reads as zero |
+| `JSON.stringify(row)` | key omitted | a downstream consumer sees a different shape |
+
+**The asymmetry that matters:** exactly one row of that table is loud, and it is loud only because the
+value would have been an object. Every scalar field removal is silent, and the *direction* of the
+silence depends on the operator — `!row.flag` fails OPEN (does the thing always) while
+`if (row.flag)` fails CLOSED (never does it). Reasoning about "does this still matter" in prose cannot
+distinguish those two, which is precisely how *"the test is dead by construction"* got written about a
+line that had just become *always true*.
+
+**So, when a field leaves a contract:** enumerate every read site, and for each one **write down what
+`undefined` does to that expression** — evaluate it, do not describe it. The sweep is not "is this
+field still needed"; it is "what does each of these lines now do". A field with seven readers needs
+seven answers, and `scripts/check-every-field-a-renderer-reads-is-returned.mjs` exists to produce the
+list of readers mechanically, because the list I produced by hand was short by six.
+
+**And the fix is structural, not vigilance:** ask a field that *means the answer*, hand the consumer a
+**verdict rather than the ingredients**, and test the absent case **explicitly** (`=== true`), never
+through the accident of a `!`. A tri-state question answered by `!x` has already lost the third state.

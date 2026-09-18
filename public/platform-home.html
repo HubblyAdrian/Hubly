@@ -11201,7 +11201,12 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         var meta = {};
         try{ meta = typeof row.meta === 'string' ? JSON.parse(row.meta) : (row.meta || {}); }catch(e){ meta = {}; }
         hcIdentity.logoUrl = meta.logoUrl || null;
-        hcIdentity.brandColor = row.brand_color || meta.brandColor || null;
+        // PUBLIC-READER-OPTIONAL: brandColor  — the COLUMN brand_color is returned and is the
+        // primary source; meta.brandColor is a fallback the public reader does not supply.
+        // Measured 2026-09-18: ZERO businesses have brand_color null AND meta.brandColor set, so
+        // the fallback is dead for every row that exists. Kept rather than deleted because it costs
+        // nothing and the column is the thing that could start being null, not the other way round.
+        hcIdentity.brandColor = row.brand_color || meta.brandColor || null;   // PUBLIC-READER-OPTIONAL: brandColor
         hcIdentity.city = row.city || null;
         hcIdentity.state = row.state || null;
       }

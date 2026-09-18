@@ -14058,27 +14058,13 @@ function restoreOwnerAppView(opts){
   return view;
 }
 
-function markM2ExperienceHome(){
-  try{
-    S._is=S._is||{};
-    S._is.readyForBusinessHome=true;
-    localStorage.setItem('hubly_m2_home','1');
-    if(currentBusiness){
-      const meta=typeof parseBizMeta==='function'?parseBizMeta(currentBusiness.meta)||{}:{};
-      if(!meta.m2Experience){
-        meta.m2Experience=true;
-        meta.experienceHome='business-home';
-        currentBusiness.meta=meta;
-        try{
-          if(typeof db!=='undefined'&&db?.from&&currentBusiness.id){
-            db.from('businesses').update({meta}).eq('id',currentBusiness.id).then(()=>{}).catch(()=>{});
-          }
-        }catch(e){}
-      }
-    }
-  }catch(e){}
-}
-
+// markM2ExperienceHome() WAS HERE AND IS DELETED, 2026-09-18. It had ZERO callers (the feature it
+// belonged to is archived — see the @deprecated note below), and it read currentBusiness.meta and
+// wrote the WHOLE object back with db.from('businesses').update({meta}). On a page where
+// currentBusiness came from get_public_business, that object is the ALLOWLISTED SUBSET, so the write
+// would have replaced the owner's full meta with a truncated copy — silently destroying every
+// subtree the public reader filters out, `pipeline` (their CRM leads) included. Dead code that
+// would overwrite real records if anything ever called it is worse than dead code.
 /** @deprecated Hubly v3 — Business Home archived; Operate Home is the OS dashboard. */
 function openProductionBusinessHome(opts){
   openOperateHome(opts);
@@ -15397,19 +15383,31 @@ function applyBizMeta(meta){
     S._is.servicesMode=meta.servicesMode;
   }
   if(meta.servicesDraft!=null)S._servicesDraft=!!meta.servicesDraft;
-  if(meta.pipeline&&typeof meta.pipeline==='object'){
+  // PUBLIC-READER-OPTIONAL: pipeline  — get_public_business deliberately does NOT return this
+  // subtree: it holds the owner's CRM leads and stage edits, which no anonymous visitor may read.
+  // So on a public page this branch does not fire and S.pipeline stays unset, which is correct —
+  // nothing a visitor sees uses it. The owner app reaches applyBizMeta through an authed
+  // select('*'), where the full subtree IS present. 2 claimed market businesses hold real data here.
+  // READ ONCE, into a local. It used to read `meta.pipeline` twenty-two times across this block,
+  // which meant twenty-two read sites for one decision — and the exemption rule is per read SITE
+  // (every one must carry its own marker, so deleting the last read deletes the exemption). Twenty-two
+  // identical comments is not a rule anybody keeps; one read is.
+  const pipe = meta.pipeline;   // PUBLIC-READER-OPTIONAL: pipeline
+  if(pipe&&typeof pipe==='object'){
     S.pipeline={
-      deleted:Array.isArray(meta.pipeline.deleted)?meta.pipeline.deleted.slice():[],
-      stages:meta.pipeline.stages&&typeof meta.pipeline.stages==='object'?{...meta.pipeline.stages}:{},
-      lostReasons:meta.pipeline.lostReasons&&typeof meta.pipeline.lostReasons==='object'?{...meta.pipeline.lostReasons}:{},
-      manual:Array.isArray(meta.pipeline.manual)?meta.pipeline.manual.map(x=>({...x})):[],
-      stageDefs:Array.isArray(meta.pipeline.stageDefs)?meta.pipeline.stageDefs.map(x=>({...x})):null,
-      edits:meta.pipeline.edits&&typeof meta.pipeline.edits==='object'?{...meta.pipeline.edits}:{},
-      seen:meta.pipeline.seen&&typeof meta.pipeline.seen==='object'?{...meta.pipeline.seen}:{},
-      followUps:Array.isArray(meta.pipeline.followUps)?meta.pipeline.followUps.map(x=>({...x})):[],
+      deleted:Array.isArray(pipe.deleted)?pipe.deleted.slice():[],
+      stages:pipe.stages&&typeof pipe.stages==='object'?{...pipe.stages}:{},
+      lostReasons:pipe.lostReasons&&typeof pipe.lostReasons==='object'?{...pipe.lostReasons}:{},
+      manual:Array.isArray(pipe.manual)?pipe.manual.map(x=>({...x})):[],
+      stageDefs:Array.isArray(pipe.stageDefs)?pipe.stageDefs.map(x=>({...x})):null,
+      edits:pipe.edits&&typeof pipe.edits==='object'?{...pipe.edits}:{},
+      seen:pipe.seen&&typeof pipe.seen==='object'?{...pipe.seen}:{},
+      followUps:Array.isArray(pipe.followUps)?pipe.followUps.map(x=>({...x})):[],
     };
     ensurePipelineState();
   }else{
+    // ABSENT IS THE NORMAL CASE ON A PUBLIC PAGE and it is handled explicitly, not by falling
+    // through: S.pipeline gets its empty default and nothing a visitor sees uses it.
     ensurePipelineState();
   }
   try{

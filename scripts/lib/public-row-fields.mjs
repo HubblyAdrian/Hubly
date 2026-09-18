@@ -182,6 +182,45 @@ function resultish(node, at, seedCalls) {
   return false;
 }
 
+/** ══ IS THIS EXPRESSION THE META OBJECT? ══════════════════════════════════════════════════════
+ *
+ * `meta` is a TEXT column, so it reaches the client as a STRING and every reader parses it first.
+ * The chain in hubly.html is three hops and crosses two functions:
+ *
+ *     data.meta  ->  parseBizMeta(data.meta)  ->  applyBizMeta(m)  ->  m.heroHeadline, m.faqs, ...
+ *
+ * so following it needs RETURN-VALUE taint, which the row pass never needed: the row arrives in a
+ * variable, the meta object arrives as the return value of a named function. A named function is
+ * marked meta-returning when any `return` in it returns something meta-ish, and calls to it then
+ * carry meta. Iterated to a fixpoint with everything else.
+ *
+ * NOT `F(metaish)` FOR ANY F. The cheap version — "a call handed meta yields meta" — would make
+ * Object.keys(meta) meta-ish and count `.length` as a subtree. It errs LOUD rather than quiet, which
+ * is the right direction, but a derivation that reports plausible nonsense gets ignored, and an
+ * ignored check is a silent one. */
+function metaish(node, at, seedCalls, metaFns) {
+  if (!node) return false;
+  if (node.type === "AwaitExpression") return metaish(node.argument, at, seedCalls, metaFns);
+  if (node.type === "LogicalExpression") return metaish(node.left, at, seedCalls, metaFns) || metaish(node.right, at, seedCalls, metaFns);
+  if (node.type === "ConditionalExpression") return metaish(node.consequent, at, seedCalls, metaFns) || metaish(node.alternate, at, seedCalls, metaFns);
+  if (node.type === "ChainExpression") return metaish(node.expression, at, seedCalls, metaFns);
+  if (node.type === "Identifier") { const b = resolve(at.get(node), node.name); return !!(b && b.meta); }
+  if (node.type === "MemberExpression") {
+    if (!node.computed && node.property.name === "meta") return rowish(node.object, at, seedCalls);
+    return false;
+  }
+  if (node.type === "CallExpression") {
+    // JSON.parse(<metaish>) — the parse hop
+    if (node.callee.type === "MemberExpression" && node.callee.property.name === "parse" &&
+        node.callee.object.type === "Identifier" && node.callee.object.name === "JSON")
+      return node.arguments.some((a) => metaish(a, at, seedCalls, metaFns));
+    // a named function that RETURNS meta
+    if (node.callee.type === "Identifier" && metaFns.has(node.callee.name)) return true;
+    return false;
+  }
+  return false;
+}
+
 export function publicRowFields(html) {
   const notes = [], fields = new Map(), tainted = new Set();
   let computed = 0, seeds = 0, unresolved = 0;
@@ -196,7 +235,8 @@ export function publicRowFields(html) {
     walk(ast, (n) => { if (n.type === "FunctionDeclaration" && n.id && !fnByName.has(n.id.name)) fnByName.set(n.id.name, { fn: n, T }); });
     units.push({ ast, T, at, seedCalls, code });
   }
-  if (!seeds) return { fields, notes, computed, seeds, sinks: 0, unresolved, bindings: [] };
+  if (!seeds) return { fields, notes, computed, seeds, sinks: 0, unresolved, bindings: [],
+                       metaFields: new Map(), metaComputed: 0, metaSinks: 0, metaBindings: [], metaFns: [] };
 
   const taint = (b, why) => { if (b && !b.tainted) { b.tainted = true; tainted.add(b); notes.push(`  row flows into \`${b.name}\` (${why})`); return true; } return false; };
   const markResult = (b) => { if (b && !b.result) { b.result = true; return true; } return false; };
@@ -274,6 +314,77 @@ export function publicRowFields(html) {
     if (n.type === "UpdateExpression" && n.argument.type === "MemberExpression") writeTargets.add(n.argument);
     if (n.type === "UnaryExpression" && n.operator === "delete" && n.argument.type === "MemberExpression") writeTargets.add(n.argument);
   });
+  /* ── THE META PASS ─────────────────────────────────────────────────────────────────────────── */
+  const metaFns = new Set();
+  const metaBindings = new Set();
+  const mtaint = (b, why) => { if (b && !b.meta) { b.meta = true; metaBindings.add(b); notes.push(`  meta flows into \`${b.name}\` (${why})`); return true; } return false; };
+  for (let pass = 0; pass < 24; pass++) {
+    let grew = false;
+    for (const u of units) {
+      const { ast, at, seedCalls } = u;
+      walk(ast, (n) => {
+        if (n.type === "VariableDeclarator" && n.id.type === "Identifier" && metaish(n.init, at, seedCalls, metaFns))
+          grew = mtaint(bindFor(at.get(n.id), n.id.name), "declared from meta") || grew;
+        if (n.type === "AssignmentExpression" && n.left.type === "Identifier" && metaish(n.right, at, seedCalls, metaFns))
+          grew = mtaint(bindFor(at.get(n.left), n.left.name), "assigned meta") || grew;
+        if (n.type === "CallExpression" && n.callee.type === "Identifier") {
+          const hit = fnByName.get(n.callee.name);
+          if (hit) n.arguments.forEach((a, i) => {
+            const pm = hit.fn.params[i];
+            if (pm && pm.type === "Identifier" && metaish(a, at, seedCalls, metaFns))
+              grew = mtaint(resolve(hit.T.fnOf.get(hit.fn), pm.name), `passed to ${n.callee.name}() as \`${pm.name}\``) || grew;
+          });
+        }
+        // A named function that returns meta-ish is itself a meta source. This is the parseBizMeta hop.
+        if (n.type === "ReturnStatement" && metaish(n.argument, at, seedCalls, metaFns)) {
+          // THE INNERMOST enclosing function, not every one. Nested functions sit inside their
+          // parent's span, so a plain containment test marked the parents too — it reported
+          // wireHcEditingSurface, hcBeginDrag and onMove as "returns the meta object" because a
+          // callback deep inside one of them does. Over-taint errs loud, but a derivation that
+          // reports obvious nonsense gets ignored, and an ignored check is a silent one.
+          let best = null;
+          for (const [nm, hit] of fnByName) {
+            if (n.start < hit.fn.start || n.end > hit.fn.end) continue;
+            if (!best || (hit.fn.end - hit.fn.start) < (best.hit.fn.end - best.hit.fn.start)) best = { nm, hit };
+          }
+          if (best && !metaFns.has(best.nm)) {
+            metaFns.add(best.nm); notes.push(`  \`${best.nm}()\` returns the meta object`); grew = true;
+          }
+        }
+      });
+    }
+    if (!grew) break;
+  }
+  const metaFields = new Map();
+  let metaComputed = 0;
+  // The SAME marker and the SAME rule as a top-level field: an exemption is declared at the read
+  // site, every read site of a subtree must carry one, and deleting the last read deletes the
+  // exemption with it. One mechanism, so there is nothing to learn twice.
+  const mnote = (k, u, n) => {
+    const upto = u.code.slice(0, n.start);
+    const line = upto.split("\n").length;
+    const all = u.code.split("\n");
+    const here = (all[line - 1] || "") + "\n" + (all[line - 2] || "");
+    const mk = here.match(MARK);
+    if (!metaFields.has(k)) metaFields.set(k, { reads: [], exempt: 0 });
+    const rec = metaFields.get(k);
+    rec.reads.push({ line, exempted: !!(mk && mk[1] === k) });
+    if (mk && mk[1] === k) rec.exempt++;
+  };
+  for (const u of units) walk(u.ast, (n) => {
+    if (n.type !== "MemberExpression") return;
+    if (writeTargets.has(n)) return;
+    if (!metaish(n.object, u.at, u.seedCalls, metaFns)) return;
+    if (n.computed) {
+      if (n.property.type === "Literal" && typeof n.property.value === "string") mnote(n.property.value, u, n);
+      else if (!(n.property.type === "Literal" && typeof n.property.value === "number")) metaComputed++;
+      return;
+    }
+    const k = n.property.name;
+    if (typeof k !== "string") return;
+    mnote(k, u, n);
+  });
+
   for (const u of units) walk(u.ast, (n) => {
     if (n.type !== "MemberExpression") return;
     if (writeTargets.has(n)) return;
@@ -289,7 +400,9 @@ export function publicRowFields(html) {
     note(k, u, n);
   });
   return { fields, notes, computed, seeds, sinks: tainted.size, unresolved,
-           bindings: [...tainted].map((b) => b.name) };
+           bindings: [...tainted].map((b) => b.name),
+           metaFields, metaComputed, metaSinks: metaBindings.size,
+           metaBindings: [...metaBindings].map((b) => b.name), metaFns: [...metaFns] };
 }
 
 export function readShell(path) { return publicRowFields(readFileSync(path, "utf8")); }

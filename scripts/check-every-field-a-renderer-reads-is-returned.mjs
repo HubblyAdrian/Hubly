@@ -75,7 +75,7 @@ const allow = allowlistFromMigration(readFileSync(join(MIGDIR, SHIPPING), "utf8"
 // The break declarations below name this file as a LITERAL (the ledger parses them statically). If a
 // newer migration redefines the function, those breaks would edit a file this check no longer reads
 // and register as NOT RED rather than as a mistake — so say it out loud here.
-const DECLARED_IN_BREAKS = "20260918160000_public_business_is_claimed.sql";
+const DECLARED_IN_BREAKS = "20260918200000_one_indexable_predicate.sql";
 if (SHIPPING !== DECLARED_IN_BREAKS) {
   console.log("  NOTE: the red-proof breaks in this file name " + DECLARED_IN_BREAKS + ", but the");
   console.log("        shipping migration is now " + SHIPPING + ". Update the two break declarations'");
@@ -113,7 +113,7 @@ declareBreak({
   // A LITERAL, because the ledger parses this declaration statically and cannot evaluate a
   // template. The CHECK still derives the shipping migration from disk; the two agreeing is
   // asserted below, so a new migration silently makes this break miss instead of lying.
-  file: "supabase/migrations/20260918160000_public_business_is_claimed.sql",
+  file: "supabase/migrations/20260918200000_one_indexable_predicate.sql",
   find: "           'ig_handle', b.ig_handle,\n",
   with: "",
 });
@@ -158,7 +158,7 @@ declareBreak({
   // A LITERAL, because the ledger parses this declaration statically and cannot evaluate a
   // template. The CHECK still derives the shipping migration from disk; the two agreeing is
   // asserted below, so a new migration silently makes this break miss instead of lying.
-  file: "supabase/migrations/20260918160000_public_business_is_claimed.sql",
+  file: "supabase/migrations/20260918200000_one_indexable_predicate.sql",
   find: "         || jsonb_build_object('is_claimed', true)",
   with: "         || jsonb_build_object('is_claimed', true)\n         || jsonb_build_object('zz_declared_but_not_live', true)",
 });
@@ -206,6 +206,76 @@ leg("RULE", "4 no field is reached by a computed key, so the derivation is compl
       `value\`, the editor) is not a read and is excluded; \`row[0]\` is the unwrap, not a field.`
     : `${blind} read(s) of the row by a computed key — the field list is INCOMPLETE and leg 1's ` +
       `pass cannot be taken as "nothing is missing".`);
+
+/* ── LEG 5 — META'S SUBTREES ────────────────────────────────────────────────────────────────── */
+const metaAllow = (() => {
+  const sql = readFileSync(join(MIGDIR, SHIPPING), "utf8");
+  const inParens = sql.split("e.k in (")[1];
+  if (!inParens) return null;
+  const names = [...inParens.split("))")[0].matchAll(/'([A-Za-z_][\w]*)'/g)].map((m) => m[1]);
+  return new Set(names);
+})();
+const metaRead = new Map();
+for (const p of per) for (const [k, v] of p.metaFields) {
+  if (!metaRead.has(k)) metaRead.set(k, { reads: 0, exempt: 0 });
+  const u = metaRead.get(k); u.reads += v.reads.length; u.exempt += v.exempt;
+}
+console.log(`  meta: ${metaRead.size} subtree(s) read across both shells · the reader declares ` +
+  `${metaAllow ? metaAllow.size : "?"} · meta bindings ` +
+  `${per.map((p) => p.metaSinks).join(", ")} · meta-returning fn(s) ` +
+  `${JSON.stringify([...new Set(per.flatMap((p) => p.metaFns))])} · computed-key reads ` +
+  `${per.reduce((a, p) => a + p.metaComputed, 0)}`);
+
+declareBreak({
+  leg: "5 every meta subtree a renderer reads is declared by the reader",
+  why: "drop `hours` from the meta subtree allowlist. Opening hours on every public page, absent, " +
+       "rendering as nothing — no error, no log, a page that loads without them. The seven-field " +
+       "regression one nesting level down, where there are 56 subtrees instead of 31 top-level " +
+       "fields. (The first version of this break named `heroHeadline`, which is in NEITHER list; the " +
+       "runner reported `find matched 0x` and SKIPPED it rather than counting an untested leg as " +
+       "proven — the declaration was wrong, and the ledger said so instead of flattering me.)",
+  // A LITERAL, for the same reason as legs 1 and 3: the ledger parses this statically.
+  file: "supabase/migrations/20260918200000_one_indexable_predicate.sql",
+  find: "'hours',",
+  with: "",
+});
+const metaBad = metaAllow ? [...metaRead].filter(([k, v]) => !metaAllow.has(k) && v.exempt < v.reads) : [];
+leg("RULE", "5 every meta subtree a renderer reads is declared by the reader",
+  !!metaAllow && metaBad.length === 0,
+  !metaAllow ? `could not parse the meta subtree list out of the shipping migration`
+    : metaBad.length ? `read but NOT returned and not marked at every read site: ` +
+        metaBad.map(([k, v]) => `${k} (${v.exempt}/${v.reads} marked)`).join(" ")
+    : `all ${metaRead.size} subtree(s) read are declared, counting the deliberately withheld ones ` +
+      `whose every read site carries a PUBLIC-READER-OPTIONAL marker — \`pipeline\` (the owner's CRM ` +
+      `leads; 2 claimed market businesses hold real data there) and \`brandColor\` (a dead fallback: ` +
+      `measured ZERO businesses with brand_color null and meta.brandColor set). ` +
+      `${metaAllow.size - [...metaAllow].filter((k) => metaRead.has(k)).length} declared subtree(s) ` +
+      `are never read — reported, not asserted: over-declaring is over-exposure, not a broken page.`);
+
+/* ── LEG 6 — and that derivation must be ALIVE, in both directions ─────────────────────────── */
+declareBreak({
+  leg: "6 the meta derivation is alive — it crosses parseBizMeta and finds no computed key",
+  why: "remove the return-value taint, so a named function that RETURNS the meta object stops " +
+       "carrying it. The chain is data.meta -> parseBizMeta(data.meta) -> applyBizMeta(m) -> m.faqs, " +
+       "and applyBizMeta is where all 55 subtree reads live — so the derivation drops from 56 " +
+       "subtrees to a handful and leg 5 passes by LOOKING FOR ALMOST NOTHING. That is the direction " +
+       "that matters: an empty derivation must never read as 'nothing is missing'.",
+  file: "scripts/lib/public-row-fields.mjs",
+  find: "    if (node.callee.type === \"Identifier\" && metaFns.has(node.callee.name)) return true;",
+  with: "",
+});
+const metaAlive = per.some((p) => p.metaFns.includes("parseBizMeta")) &&
+  per.some((p) => p.metaSinks >= 2) &&
+  metaRead.size >= 50 &&
+  per.reduce((a, p) => a + p.metaComputed, 0) === 0;
+leg("RULE", "6 the meta derivation is alive — it crosses parseBizMeta and finds no computed key",
+  metaAlive,
+  `parseBizMeta recognised as meta-returning: ${per.some((p) => p.metaFns.includes("parseBizMeta"))}; ` +
+  `meta bindings ${per.map((p) => p.metaSinks).join("/")}; ${metaRead.size} subtree(s) reached ` +
+  `(the floor is 50 — a number this side of the real 56 and far above what a broken chain returns); ` +
+  `${per.reduce((a, p) => a + p.metaComputed, 0)} computed-key read(s), so "every subtree read" is ` +
+  `the whole set and not "every one I could see". Without this leg, leg 5 cannot tell a clean result ` +
+  `from an instrument that stopped following the chain.`);
 
 const bad = legs.filter((l) => !l.pass);
 // not-a-corpus-rate: this check's own leg count, not a corpus

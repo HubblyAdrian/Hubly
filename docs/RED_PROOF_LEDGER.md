@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-18T18:52:36.083Z** · 58 run(s) recorded.
+**Last run: 2026-09-18T19:15:28.581Z** · 67 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 41 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 43 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 1 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -43,6 +43,8 @@ have made the rule the first thing anyone switched off.
 | `check-every-field-a-renderer-reads-is-returned.mjs` | 2 the derivation is alive and still sees across script blocks | **RED ALONE** | give each <script> block its own root scope again — the bug this analyzer shipped with. `var currentBusiness` is in one block and `currentBusiness = data` is ~4500 lines later in another, so the assignment resolved to nothing, the row stopped escaping the loading function, and the analyzer reported a smaller field set WITHOUT SAYING IT HAD FAILED. Leg 1 would then pass by looking for less. | — |
 | `check-every-field-a-renderer-reads-is-returned.mjs` | 3 every key the migration declares is present in the LIVE function | **RED ALONE** | declare a key in the migration that production does not have. The repository is a CLAIM about production, not production (Lesson 100) — leg 1 reads the migration, so if the migration and the live function disagree, leg 1's pass is about a file. | — |
 | `check-every-field-a-renderer-reads-is-returned.mjs` | 4 no field is reached by a computed key, so the derivation is complete on this input | **RED ALONE** | count the `row[0]` unwrap as a computed field read again. It makes the derivation report a blind spot it does not have — and the point of the leg is that a blind spot must be LOUD, so it has to be observable when it is there. | — |
+| `check-every-field-a-renderer-reads-is-returned.mjs` | 5 every meta subtree a renderer reads is declared by the reader | **RED ALONE** | drop `hours` from the meta subtree allowlist. Opening hours on every public page, absent, rendering as nothing — no error, no log, a page that loads without them. The seven-field regression one nesting level down, where there are 56 subtrees instead of 31 top-level fields. (The first version of this break named `heroHeadline`, which is in NEITHER list; the runner reported `find matched 0x` and SKIPPED it rather than counting an untested leg as proven — the declaration was wrong, and the ledger said so instead of flattering me.) | — |
+| `check-every-field-a-renderer-reads-is-returned.mjs` | 6 the meta derivation is alive — it crosses parseBizMeta and finds no computed key | **RED ALONE** | remove the return-value taint, so a named function that RETURNS the meta object stops carrying it. The chain is data.meta -> parseBizMeta(data.meta) -> applyBizMeta(m) -> m.faqs, and applyBizMeta is where all 55 subtree reads live — so the derivation drops from 56 subtrees to a handful and leg 5 passes by LOOKING FOR ALMOST NOTHING. That is the direction that matters: an empty derivation must never read as 'nothing is missing'. | — |
 | `check-live-functions-match-their-migrations.mjs` | every public function's live body matches the last migration that defines it | **RED ALONE** | add a behaviour-neutral expression to get_public_business's live body so it no longer matches its migration — a stand-in for a dashboard edit, which is the thing this check exists to catch | — |
 | `check-navigation-destinations.mjs` | 1 the surface registry was read | **RED ALONE** | delete the `quotes` renderer from HC_ROOMS, so a place that can appear in the rail has nothing to render it — a rail row that opens an empty canvas | — |
 | `check-navigation-destinations.mjs` | 2 the room registry was read | **RED ALONE** | add a room nothing can reach — a renderer for `store`, which is not a surface, so it is built and doorless: the diagnosis that has been right four times this month | — |
@@ -51,6 +53,10 @@ have made the rule the first thing anyone switched off.
 | `check-navigation-destinations.mjs` | 5 the default rail was read | **RED ALONE** | offer a place by default that no surface renders — `store: true` in HC_RAIL_DEFAULT, so every new business is given a rail row that opens nothing | — |
 | `check-no-mailto-reaches-a-customer.mjs` | no latest stored page carries a mailto | **DECLARED, PROVEN BY HAND** | plant a mailto anchor in a stored page and confirm this leg alone goes red | — |
 | `check-no-public-reader-leaks-contacts.mjs` | every anon reader hands back an explicit field list | **RED ALONE** | revert get_public_business to `to_jsonb(b) - 'draft_token'` — the whole-row shape — which is exactly the regression this leg exists to catch | — |
+| `check-no-well-known-path-returns-html.mjs` | 1 a path that does not exist returns 404, never a 200 of HTML | **DECLARED, PROVEN BY HAND** | remove the not-real guard from the router, restoring the measured state: every file-shaped path falls through to the SPA and answers 200 with 3MB of hubly.html. Nothing 404s, nothing errors, every page still works, and every consumer that trusts a status code is lied to. | — |
+| `check-no-well-known-path-returns-html.mjs` | 2 no client-requested well-known path answers 200 with an HTML document | **DECLARED, PROVEN BY HAND** | — | — |
+| `check-no-well-known-path-returns-html.mjs` | 3 every root file in public/ serves ITSELF, byte for byte | **DECLARED, PROVEN BY HAND** | — | — |
+| `check-no-well-known-path-returns-html.mjs` | 4 every literal route in vercel.json reaches its own destination | **DECLARED, PROVEN BY HAND** | — | — |
 | `check-page-facts-match-the-record.mjs` | the classic renderer still injects the recorded phone | **RED ALONE** | stop the classic hero pill building a tel: link from S.phone, so eleven live pages silently lose the only phone number they show and nothing errors | — |
 | `check-preview-is-a-true-device.mjs` | 1 the device's LOGICAL viewport is 1440x900 at every pane size | **RED ALONE** | make the stage's logical height follow the pane instead of staying 900 — the preview then LOOKS right and a 100vh hero measures something no visitor has, which is the failure mode the width-fit ruling exists to avoid | — |
 | `check-preview-is-a-true-device.mjs` | 2 the scale never exceeds 1 | **RED ALONE** | remove the 1:1 ceiling, so a pane wider than 1440 upscales the device and shows the owner text BIGGER than a visitor gets — lying in the opposite direction from the clipped fold | — |
@@ -132,3 +138,12 @@ have made the rule the first thing anyone switched off.
 - **2026-09-18T16:15:16.531Z** — 5 break(s) applied · 3 red alone · 0 compound · 2 not red · 1 skipped
 - **2026-09-18T16:17:17.981Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-18T18:52:36.083Z** — 6 break(s) applied · 6 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T19:02:16.493Z** — 2 break(s) applied · 0 red alone · 0 compound · 2 not red · 1 skipped
+- **2026-09-18T19:03:04.398Z** — 0 break(s) applied · 0 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T19:04:57.308Z** — 0 break(s) applied · 0 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T19:05:18.974Z** — 2 break(s) applied · 2 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T19:05:32.677Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T19:06:01.441Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T19:06:19.026Z** — 0 break(s) applied · 0 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T19:14:21.110Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 1 skipped
+- **2026-09-18T19:15:28.581Z** — 6 break(s) applied · 6 red alone · 0 compound · 0 not red · 0 skipped

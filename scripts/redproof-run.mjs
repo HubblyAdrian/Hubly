@@ -58,11 +58,19 @@ if (gone.length) {
 }
 const files = names;
 
+// A CHECK THAT HANGS MUST NOT HANG THE RUN. Without a timeout one blocked browser launch or one
+// network read with no deadline stops the pass forever, and a pass that never finishes reports
+// nothing about any leg — the same silence as a crash, wearing more patience.
+const RUN_TIMEOUT_MS = Number(process.env.REDPROOF_CHECK_TIMEOUT_MS || 600000);
 const run = (f) => {
   try {
     return { out: execFileSync("node", [join(SCRIPTS, f)], { encoding: "utf8", cwd: ROOT,
-      maxBuffer: 256 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"] }), code: 0 };
-  } catch (e) { return { out: String(e.stdout || "") + String(e.stderr || ""), code: e.status ?? 1 }; }
+      maxBuffer: 256 * 1024 * 1024, stdio: ["ignore", "pipe", "pipe"], timeout: RUN_TIMEOUT_MS }), code: 0 };
+  } catch (e) {
+    const timedOut = e.killed || e.signal === "SIGTERM" || e.code === "ETIMEDOUT";
+    return { out: String(e.stdout || "") + String(e.stderr || ""), code: e.status ?? 1,
+             timedOut, err: timedOut ? `no output within ${RUN_TIMEOUT_MS}ms` : (e.message || "").split("\n")[0] };
+  }
 };
 
 /* ══ ONE RUNNER AT A TIME, OR THE TREE IS CORRUPTED ══════════════════════════════════════════════
@@ -99,16 +107,45 @@ if (!DRY) {
 const ledger = readLedger();
 const stamp = new Date().toISOString();
 let applied = 0, alone = 0, compound = 0, notRed = 0, skipped = 0;
+// ══ THE THREE NUMBERS THAT MUST RECONCILE ════════════════════════════════════════════════════════
+//
+// Leg 6 of the sitemap check killed this runner outright — `join(ROOT, undefined)` on a legitimate
+// declaration shape the hand-proof branch did not anticipate. The gate is fixed, but the REAL defect
+// is that a runner can die, or skip, or quietly examine three of six legs, and its closing line looks
+// the same either way. A run that examined 3 of 6 and said nothing about the other 3 is the shape of
+// every defect chased this week.
+//
+// So every declaration found must end with exactly ONE recorded outcome, and the totals are
+// reconciled out loud at the end. `provenByHand` and `errored` are counted because the old tally
+// printed applied/alone/compound/notRed/skipped and a PROVEN BY HAND leg appeared in NONE of them —
+// six legs in, five numbers out, and nothing noticed.
+let declaredTotal = 0, provenByHand = 0, errored = 0, unparseable = 0;
+const outcomes = new Map();          // `check::leg` -> status, one entry per declaration, ever
+const record = (key, rec, status) => {
+  rec.status = status;
+  if (outcomes.has(key)) {
+    // Two outcomes for one leg means a code path recorded twice. Louder than a wrong total.
+    console.error(`   ACCOUNTING FAULT — ${key} recorded twice (${outcomes.get(key)} then ${status})`);
+  }
+  outcomes.set(key, status);
+  ledger.legs[key] = rec;
+  return rec;
+};
 
 for (const f of files) {
   const src = readFileSync(join(SCRIPTS, f), "utf8");
   const breaks = parseBreaks(src, f);
   if (!breaks.length) continue;
 
+  declaredTotal += breaks.length;
   const broken = breaks.filter((b) => b.__broken);
   for (const b of broken) {
     console.error(`  ${f}:${b.__line}  DECLARATION UNPARSEABLE — ${b.__broken}`);
-    skipped++;
+    // Counted in its OWN bucket. Folding it into `skipped` made an unparseable declaration — a
+    // declaration that was never even read — indistinguishable from a break that was read, applied
+    // and found not to match.
+    unparseable++;
+    outcomes.set(`${f}::__unparseable@${b.__line}`, "UNPARSEABLE");
   }
 
   /* ══ PRUNE THE LEDGER'S MEMORY OF LEGS THAT NO LONGER EXIST ══════════════════════════════════
@@ -142,6 +179,13 @@ for (const f of files) {
     if (b.__broken) continue;
     const key = `${f}::${b.leg}`;
     const rec = { check: f, leg: b.leg, why: b.why || null, at: stamp };
+    // ══ ONE LEG'S FAULT MAY NOT END THE RUN ════════════════════════════════════════════════════
+    //
+    // Whatever throws in here — an unanticipated declaration shape, a file that vanished, a JSON
+    // parse, a signal — is recorded against THIS leg and the pass continues to the next. Before
+    // this, a throw took down the whole run and every leg after it was never examined and never
+    // mentioned.
+    try {
 
     // ══ A DECLARATION THAT CANNOT BE AUTOMATED AT ALL ═════════════════════════════════════════
     //
@@ -152,8 +196,8 @@ for (const f of files) {
     // red-proofing everything after it, which is the loudest possible version of the failure it
     // exists to catch, and the only good thing about it.
     if (b.provenBy && !b.file) {
-      rec.status = "DECLARED, PROVEN BY HAND"; rec.note = b.provenBy;
-      ledger.legs[key] = rec;
+      rec.note = b.provenBy;
+      record(key, rec, "DECLARED, PROVEN BY HAND"); provenByHand++;
       console.log(`   leg ${JSON.stringify(b.leg)}  DECLARED, PROVEN BY HAND — not re-verified by this runner`);
       continue;
     }
@@ -161,8 +205,8 @@ for (const f of files) {
     // never silence — an unparseable or unusable declaration is exactly the thing that lets a leg
     // sit in the ledger having never been seen red.
     if (!b.file && !b.sql) {
-      rec.status = "SKIPPED"; rec.note = "declaration has neither `file` nor `sql` nor `provenBy`";
-      ledger.legs[key] = rec; skipped++;
+      rec.note = "declaration has neither `file` nor `sql` nor `provenBy`";
+      record(key, rec, "SKIPPED"); skipped++;
       console.log(`   leg ${JSON.stringify(b.leg)}  SKIPPED — declaration names no file to break and no hand-proof`);
       continue;
     }
@@ -172,14 +216,14 @@ for (const f of files) {
       // SKIPPED would throw away a real red-proof. So it gets its own status, which nobody can
       // mistake for the machine having checked it.
       if (b.provenBy) {
-        rec.status = "DECLARED, PROVEN BY HAND"; rec.note = b.provenBy;
-        ledger.legs[key] = rec;
+        rec.note = b.provenBy;
+        record(key, rec, "DECLARED, PROVEN BY HAND"); provenByHand++;
         console.log(`   leg ${JSON.stringify(b.leg)}  DECLARED, PROVEN BY HAND — not re-verified by this runner`);
         continue;
       }
       if (!ALLOW_DB) {
-        rec.status = "SKIPPED"; rec.note = "a database break, and --allow-db was not passed";
-        ledger.legs[key] = rec; skipped++;
+        rec.note = "a database break, and --allow-db was not passed";
+        record(key, rec, "SKIPPED"); skipped++;
         console.log(`   leg ${JSON.stringify(b.leg)}  SKIPPED (db break, no --allow-db)`);
         continue;
       }
@@ -243,8 +287,8 @@ for (const f of files) {
 
     const target = join(ROOT, b.file);
     if (!existsSync(target)) {
-      rec.status = "SKIPPED"; rec.note = `no such file: ${b.file}`;
-      ledger.legs[key] = rec; skipped++;
+      rec.note = `no such file: ${b.file}`;
+      record(key, rec, "SKIPPED"); skipped++;
       console.log(`   leg ${JSON.stringify(b.leg)}  SKIPPED — no such file ${b.file}`);
       continue;
     }
@@ -260,10 +304,9 @@ for (const f of files) {
     // So the declaration is checked against the UNBROKEN output first. A leg that does not appear
     // there is a stale declaration, recorded as its own distinct state.
     if (!base.out.includes(String(b.leg))) {
-      rec.status = "SKIPPED";
       rec.note = `declaration names leg ${JSON.stringify(b.leg)}, which appears nowhere in this ` +
         `check's output — the declaration is STALE, which is a different fault from a vacuous leg`;
-      ledger.legs[key] = rec; skipped++;
+      record(key, rec, "SKIPPED"); skipped++;
       console.log(`   leg ${JSON.stringify(b.leg)}  SKIPPED — no such leg in the output (stale declaration)`);
       continue;
     }
@@ -298,8 +341,8 @@ for (const f of files) {
     const hits = searchable.split(b.find).length - 1;
     if (hits !== 1) {
       // A break that never applied tested nothing. Recorded as SKIPPED, never as anything else.
-      rec.status = "SKIPPED"; rec.note = `\`find\` matched ${hits} time(s) in ${b.file}; a break must match exactly once`;
-      ledger.legs[key] = rec; skipped++;
+      rec.note = `\`find\` matched ${hits} time(s) in ${b.file}; a break must match exactly once`;
+      record(key, rec, "SKIPPED"); skipped++;
       console.log(`   leg ${JSON.stringify(b.leg)}  SKIPPED — find matched ${hits}x (must be exactly 1)`);
       continue;
     }
@@ -310,7 +353,15 @@ for (const f of files) {
     const broke = run(f);
     writeFileSync(target, before);
     if (readFileSync(target, "utf8") !== before) {
+      // STILL AN ABORT — a working tree that does not match its baseline is the one condition where
+      // continuing is worse than stopping. But it may not vanish silently: the accounting is printed
+      // first, so the legs that WERE examined are on the record and the ones that never will be are
+      // visibly missing from it.
+      rec.note = `restore of ${b.file} did not reproduce the original bytes`;
+      record(key, rec, "ERRORED"); errored++;
       console.error(`\nABORTING — restore of ${b.file} did not reproduce the original bytes.`);
+      console.error(`Check \`git status\` before doing anything else; a break may be left in the tree.`);
+      try { accounting("ACCOUNTING AT THE POINT OF ABORT:"); } catch (_) {}
       process.exit(2);
     }
     applied++;
@@ -320,23 +371,72 @@ for (const f of files) {
     const hit = newly.filter((l) => l.includes(String(b.leg)));
     rec.also = newly.filter((l) => !l.includes(String(b.leg))).map((l) => l.slice(0, 120));
 
-    if (hit.length && newly.length === 1) { rec.status = "RED ALONE"; alone++; }
-    else if (hit.length) { rec.status = "COMPOUND"; compound++; }
-    else { rec.status = "NOT RED"; notRed++; }
     rec.newlyRed = newly.length;
-    ledger.legs[key] = rec;
-    console.log(`   leg ${JSON.stringify(b.leg)}  ${rec.status}` +
+    let st;
+    if (hit.length && newly.length === 1) { st = "RED ALONE"; alone++; }
+    else if (hit.length) { st = "COMPOUND"; compound++; }
+    else { st = "NOT RED"; notRed++; }
+    record(key, rec, st);
+    console.log(`   leg ${JSON.stringify(b.leg)}  ${st}` +
       `  (${newly.length} newly-red leg(s)${rec.also.length ? "; also: " + rec.also.length : ""})`);
+    } catch (e) {
+      rec.note = `the runner threw while examining this leg: ${(e && e.message) || e}`;
+      record(key, rec, "ERRORED"); errored++;
+      console.error(`   leg ${JSON.stringify(b.leg)}  ERRORED — ${rec.note}`);
+    }
   }
 }
 
 if (DRY) { console.log("\nDry run. Nothing applied, nothing recorded."); process.exit(0); }
 
-ledger.runs.push({ at: stamp, applied, alone, compound, notRed, skipped });
+/* ══ THE CLOSING ACCOUNTING, AND IT MUST RECONCILE OR THE RUN FAILS ══════════════════════════════
+ *
+ * Three numbers: declarations FOUND, outcomes RECORDED, and the tallies those outcomes sum to. If
+ * they disagree, something was examined and not reported, or reported and not counted, and the run
+ * says so and exits non-zero rather than printing a confident summary of part of the work.
+ *
+ * This exists because the runner died mid-pass on `join(ROOT, undefined)` and its absence of a
+ * closing line was the only evidence. Before that it printed five numbers for six legs, because a
+ * PROVEN BY HAND leg was in none of the buckets — a silent shortfall in the tally of the tool whose
+ * job is to catch silent shortfalls. */
+function accounting(prefix) {
+  const recorded = outcomes.size;
+  const tallied = alone + compound + notRed + skipped + provenByHand + errored + unparseable;
+  const byStatus = {};
+  for (const v of outcomes.values()) byStatus[v] = (byStatus[v] || 0) + 1;
+  console.log(`\n${prefix}`);
+  console.log(`  declarations found   ${declaredTotal}`);
+  console.log(`  outcomes recorded    ${recorded}`);
+  console.log(`  tallied              ${tallied}   (RED ALONE ${alone} · COMPOUND ${compound} · ` +
+              `NOT RED ${notRed} · SKIPPED ${skipped} · PROVEN BY HAND ${provenByHand} · ` +
+              `ERRORED ${errored} · UNPARSEABLE ${unparseable})`);
+  console.log(`  breaks actually applied to a file or the database: ${applied}`);
+  const faults = [];
+  if (recorded !== declaredTotal)
+    faults.push(`${declaredTotal} declaration(s) found but ${recorded} outcome(s) recorded — ` +
+                `${Math.abs(declaredTotal - recorded)} leg(s) were examined and not reported, or never examined`);
+  if (tallied !== recorded)
+    faults.push(`${recorded} outcome(s) recorded but ${tallied} tallied — a status exists that no counter counts`);
+  for (const [k, v] of Object.entries(byStatus))
+    if (!["RED ALONE", "COMPOUND", "NOT RED", "SKIPPED", "DECLARED, PROVEN BY HAND", "ERRORED", "UNPARSEABLE"].includes(k))
+      faults.push(`unknown status recorded: ${k} (${v})`);
+  if (faults.length) {
+    console.error(`\n  ACCOUNTING DOES NOT RECONCILE — this run's summary cannot be trusted:`);
+    for (const x of faults) console.error(`    · ${x}`);
+  }
+  return faults.length;
+}
+
+const unreconciled = accounting(`${applied} break(s) applied · ${alone} RED ALONE · ${compound} COMPOUND · ` +
+  `${notRed} NOT RED · ${skipped} SKIPPED · ${provenByHand} PROVEN BY HAND · ${errored} ERRORED`);
+
+ledger.runs.push({ at: stamp, applied, alone, compound, notRed, skipped, provenByHand, errored,
+                   unparseable, declaredTotal, recorded: outcomes.size, reconciled: !unreconciled });
 writeLedger(ledger);
 
-console.log(`\n${applied} break(s) applied · ${alone} RED ALONE · ${compound} COMPOUND · ${notRed} NOT RED · ${skipped} SKIPPED`);
 console.log(`Ledger written: docs/red-proof-ledger.json + docs/RED_PROOF_LEDGER.md`);
 if (compound) console.log(`A COMPOUND proves nothing about its leg — it needs a narrower break (L98).`);
 if (notRed) console.log(`A NOT RED leg is VACUOUS or its break misses it. Either way it is a finding.`);
-process.exit(compound + notRed + skipped ? 1 : 0);
+if (errored) console.log(`An ERRORED leg was never tested. The runner faulted on it and carried on.`);
+if (unparseable) console.log(`An UNPARSEABLE declaration was never read at all — fix the literal.`);
+process.exit(compound + notRed + skipped + errored + unparseable + unreconciled ? 1 : 0);
