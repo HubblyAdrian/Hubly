@@ -197,3 +197,34 @@ Everything in B that is not fixed is red **on purpose** until Adrian rules:
 - **`check-booking-link-subdomain`** — what the apex serves is a routing ruling.
 
 They are listed here so that a red count is never again quoted without knowing which of these it is.
+
+---
+
+## The 45 purely-negative legs: A BACKLOG, NOT A FIRE — ruled by Adrian, 2026-09-18
+
+`scripts/check-negative-legs-declare-a-break.mjs` reports **45 legs whose only assertion is that
+something is absent** and which carry no positive clause. Adrian's ruling: **leave them.** They are a
+backlog, and this section exists so that nobody — including a future session reading the number cold —
+reads 45 as an alarm and reprioritises around it.
+
+**Why it is not a fire.** A purely-negative leg is not a leg that is wrong. It is a leg that *cannot
+distinguish absent from broken*: it passes when the thing it forbids is missing, and it also passes
+when the surface it was supposed to inspect never rendered. That is a real weakness and it is exactly
+the shape of the squeeze-sweep and empty-reader failures. But the cost profile is the opposite of an
+outage:
+
+- it does not produce a false ALARM. It produces a **false calm**, and only in the specific case where
+  the surface under test has itself broken — a case that something else in the suite is usually also
+  watching.
+- none of the 45 is known to be currently masking anything. That is stated as *not known*, not as
+  *verified clean* — verifying 45 legs is the work, and the work is what is being deferred.
+
+**Why it is not nothing either.** The ratchet (`ratchetSince 2026-09-18`) means every *new* negative
+leg must declare a break, so the number cannot grow. The 45 are the pre-ratchet residue. They are paid
+down when a leg is touched for another reason — not in a sweep of their own, because a sweep of 45
+legs produces 45 candidates and **a candidate graduates by being acted on, never by being re-read**
+(CLAUDE.md).
+
+**How to report this number.** "45 legs cannot tell absent from broken; the ratchet stops it growing;
+none is known to be masking a defect and none has been individually cleared." Never "45 checks are
+broken" — they are not broken, and the correction would not travel as far as that alarm would.

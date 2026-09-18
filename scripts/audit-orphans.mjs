@@ -269,6 +269,24 @@ console.log(`  MISSING DOOR = authorised for an owner and never called. That is 
 console.log(`  shape, and it is a REASON TO KEEP: the fix for one of those is a caller, not a build.`);
 for (const o of dead.filter((x) => x.tag && x.tag !== "MISSING DOOR").slice(0, 20))
   console.log(`      ${o.name.padEnd(38)} ${o.tag} — ${o.why}`);
+
+/* ══ ADRIAN'S RULING ON THE TWO THE SWEEP NAMED — 2026-09-18 ═══════════════════════════════════
+   Printed with the sweep's own output rather than filed in a doc, because the next person to run
+   this will see these two names in the list above and needs the decision in the same breath as
+   the finding. A ruling that lives somewhere else gets rediscovered as a question. */
+const RULED = [
+  { name: "commerce-merchandising", on: "2026-09-18", by: "Adrian",
+    ruling: "KEEP, tagged MISSING DOOR. Not dead — unreached." },
+  { name: "mission-control", on: "2026-09-18", by: "Adrian",
+    ruling: "KEEP, tagged MISSING DOOR. Not dead — unreached." },
+];
+console.log(`\nRULED, AND NOT UP FOR REDISCOVERY:`);
+for (const r of RULED) console.log(`  ${r.name.padEnd(26)} ${r.ruling}   (${r.by}, ${r.on})`);
+console.log(`  The standing rule these follow: look for the MISSING DOOR before building the room.`);
+console.log(`  Both appear in the list above; appearing there is not a proposal to delete them. Every`);
+console.log(`  capability Hubly has built and could not reach looked exactly like this first —`);
+console.log(`  ask_hubly_conversations sat unreferenced for seven weeks and was never dead.`);
+
 /* ══ THE THIRD CALLER CLASS, MADE VISIBLE — 2026-09-17 ═════════════════════════════════════════
  *
  * The header names a caller this sweep cannot see: an external service posting in. Adrian:

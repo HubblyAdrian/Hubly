@@ -196,7 +196,7 @@ export function publicRowFields(html) {
     walk(ast, (n) => { if (n.type === "FunctionDeclaration" && n.id && !fnByName.has(n.id.name)) fnByName.set(n.id.name, { fn: n, T }); });
     units.push({ ast, T, at, seedCalls, code });
   }
-  if (!seeds) return { fields, notes, computed, seeds, sinks: 0, unresolved };
+  if (!seeds) return { fields, notes, computed, seeds, sinks: 0, unresolved, bindings: [] };
 
   const taint = (b, why) => { if (b && !b.tainted) { b.tainted = true; tainted.add(b); notes.push(`  row flows into \`${b.name}\` (${why})`); return true; } return false; };
   const markResult = (b) => { if (b && !b.result) { b.result = true; return true; } return false; };
@@ -242,30 +242,83 @@ export function publicRowFields(html) {
     if (!grew) break;
   }
 
+  // A WRITE TARGET IS NOT A READ. `currentBusiness[field] = value` (hubly.html) is the editor
+  // putting a value INTO the row; counting it as a field the renderer needs would report the
+  // derivation as incomplete over something that has nothing to do with what the reader returns.
+  // ══ AN EXEMPTION IS DECLARED AT THE READ SITE, NOT IN A LIST INSIDE THE CHECK ══════════════
+  //
+  // Some fields are read deliberately where the public reader does not return them — owner_id is
+  // read in the DRAFT fallback, and get_draft_business does return it. A list of such fields kept
+  // inside the checker is a hand-maintained set: it goes stale silently, and the person deleting
+  // the last read never sees it. So the site says so, on its own line or the line above:
+  //
+  //     PUBLIC-READER-OPTIONAL: <field>   why ...
+  //
+  // The checker derives its exemptions by reading those markers off the source it already parsed.
+  // Every read site of a field must carry one; one exempted site does not exempt the others.
+  const MARK = /PUBLIC-READER-OPTIONAL:\s*([A-Za-z_$][\w$]*)/;
+  const note = (k, u, n) => {
+    const upto = u.code.slice(0, n.start);
+    const line = upto.split("\n").length;
+    const all = u.code.split("\n");
+    const here = (all[line - 1] || "") + "\n" + (all[line - 2] || "");
+    const mk = here.match(MARK);
+    if (!fields.has(k)) fields.set(k, { reads: [], exempt: 0 });
+    const rec = fields.get(k);
+    rec.reads.push({ line, exempted: !!(mk && mk[1] === k) });
+    if (mk && mk[1] === k) rec.exempt++;
+  };
+  const writeTargets = new Set();
+  for (const u of units) walk(u.ast, (n) => {
+    if (n.type === "AssignmentExpression" && n.left.type === "MemberExpression") writeTargets.add(n.left);
+    if (n.type === "UpdateExpression" && n.argument.type === "MemberExpression") writeTargets.add(n.argument);
+    if (n.type === "UnaryExpression" && n.operator === "delete" && n.argument.type === "MemberExpression") writeTargets.add(n.argument);
+  });
   for (const u of units) walk(u.ast, (n) => {
     if (n.type !== "MemberExpression") return;
+    if (writeTargets.has(n)) return;
     if (!rowish(n.object, u.at, u.seedCalls)) return;
     if (n.computed) {
-      if (n.property.type === "Literal" && typeof n.property.value === "string") {
-        if (!fields.has(n.property.value)) fields.set(n.property.value, new Set());
-        fields.get(n.property.value).add("computed-literal");
-      } else computed++;
+      if (n.property.type === "Literal" && typeof n.property.value === "string") note(n.property.value, u, n);
+      else if (n.property.type === "Literal" && typeof n.property.value === "number") return;  // row[0] is the unwrap, not a field
+      else computed++;
       return;
     }
     const k = n.property.name;
     if (k === "data" || typeof k !== "string") return;   // the unwrap itself, not a field
-    if (!fields.has(k)) fields.set(k, new Set());
-    fields.get(k).add("read");
+    note(k, u, n);
   });
-  return { fields, notes, computed, seeds, sinks: tainted.size, unresolved };
+  return { fields, notes, computed, seeds, sinks: tainted.size, unresolved,
+           bindings: [...tainted].map((b) => b.name) };
 }
 
 export function readShell(path) { return publicRowFields(readFileSync(path, "utf8")); }
 
 /** The reader's returned top-level keys, parsed out of the SHIPPING migration. */
+/** The reader's returned top-level keys, parsed out of the SHIPPING migration.
+ *
+ *  Every key of every top-level jsonb_build_object, WHATEVER ITS VALUE — not just `'k', b.col`.
+ *  The first version matched only column-valued keys and so reported `'is_claimed', true` as not
+ *  returned, which is the same instrument error as everything else here: a pattern that knows one
+ *  SHAPE of the thing it is counting, reporting a confident number about the shapes it knows. */
 export function allowlistFromMigration(sql) {
-  const body = sql.slice(sql.indexOf("jsonb_build_object"));
-  const cols = [...body.matchAll(/'([a-z_]+)',\s*b\.[a-z_]+/g)].map((m) => m[1]);
-  const hasMeta = /jsonb_build_object\(\s*'meta'/.test(body);
-  return { cols: new Set(hasMeta ? cols.concat("meta") : cols), declaredMeta: hasMeta };
+  const from = sql.indexOf("create or replace function");
+  const body = sql.slice(from < 0 ? 0 : from);
+  const cols = new Set();
+  const re = /jsonb_build_object\s*\(/g;
+  let m;
+  while ((m = re.exec(body))) {
+    // keys are the odd arguments; a key is always a single-quoted literal at depth 1 of this call
+    let d = 0, i = m.index + m[0].length - 1, q = null, argStart = i + 1, args = [];
+    for (; i < body.length; i++) {
+      const c = body[i];
+      if (q) { if (c === q && body[i - 1] !== "\\") q = null; continue; }
+      if (c === "'") { q = c; continue; }
+      if (c === "(") { d++; if (d === 1) argStart = i + 1; continue; }
+      if (c === ")") { d--; if (d === 0) { args.push(body.slice(argStart, i)); break; } continue; }
+      if (c === "," && d === 1) { args.push(body.slice(argStart, i)); argStart = i + 1; }
+    }
+    args.forEach((a, ix) => { if (ix % 2 === 0) { const k = a.trim().match(/^'([A-Za-z_][\w]*)'$/); if (k) cols.add(k[1]); } });
+  }
+  return { cols, declaredMeta: cols.has("meta") };
 }

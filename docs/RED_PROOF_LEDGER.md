@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-18T05:47:06.081Z** · 51 run(s) recorded.
+**Last run: 2026-09-18T06:25:53.607Z** · 54 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 31 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 35 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 1 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -39,6 +39,10 @@ have made the rule the first thing anyone switched off.
 | `check-doors-open-when-needed.mjs` | 1 the scan found creation actions | **RED ALONE** | make the delegation test blind, so every empty-state entry point counts as idle-only — the condition leg 1 exists to detect, without touching the door leg 2 asserts | — |
 | `check-editable-set-is-derived.mjs` | 1 [RULE] the markers were found | **RED ALONE** | remove one marker's editor branch — `footer-tag` — so a marker the page renders has nowhere to be edited: the affordance painted over a capability that is not there | — |
 | `check-every-check-is-runnable.mjs` | 6 both sides of the comparison were read | **RED ALONE** | make the glob miss a check that a convenience entry names, so a check is reachable ONLY by its hand-written name — the route-list disease, whose failure mode is silent | — |
+| `check-every-field-a-renderer-reads-is-returned.mjs` | 1 every field a renderer reads is declared by the reader | **RED ALONE** | drop ig_handle from the allowlist — one of the seven that actually shipped this way. No error, no log, no visible difference: the Instagram link on every public page just stops rendering, because `data.ig_handle || ''` is ''. | — |
+| `check-every-field-a-renderer-reads-is-returned.mjs` | 2 the derivation is alive and still sees across script blocks | **RED ALONE** | give each <script> block its own root scope again — the bug this analyzer shipped with. `var currentBusiness` is in one block and `currentBusiness = data` is ~4500 lines later in another, so the assignment resolved to nothing, the row stopped escaping the loading function, and the analyzer reported a smaller field set WITHOUT SAYING IT HAD FAILED. Leg 1 would then pass by looking for less. | — |
+| `check-every-field-a-renderer-reads-is-returned.mjs` | 3 every key the migration declares is present in the LIVE function | **RED ALONE** | declare a key in the migration that production does not have. The repository is a CLAIM about production, not production (Lesson 100) — leg 1 reads the migration, so if the migration and the live function disagree, leg 1's pass is about a file. | — |
+| `check-every-field-a-renderer-reads-is-returned.mjs` | 4 no field is reached by a computed key, so the derivation is complete on this input | **RED ALONE** | count the `row[0]` unwrap as a computed field read again. It makes the derivation report a blind spot it does not have — and the point of the leg is that a blind spot must be LOUD, so it has to be observable when it is there. | — |
 | `check-live-functions-match-their-migrations.mjs` | every public function's live body matches the last migration that defines it | **RED ALONE** | add a behaviour-neutral expression to get_public_business's live body so it no longer matches its migration — a stand-in for a dashboard edit, which is the thing this check exists to catch | — |
 | `check-navigation-destinations.mjs` | 1 the surface registry was read | **RED ALONE** | delete the `quotes` renderer from HC_ROOMS, so a place that can appear in the rail has nothing to render it — a rail row that opens an empty canvas | — |
 | `check-navigation-destinations.mjs` | 2 the room registry was read | **RED ALONE** | add a room nothing can reach — a renderer for `store`, which is not a surface, so it is built and doorless: the diagnosis that has been right four times this month | — |
@@ -113,3 +117,6 @@ have made the rule the first thing anyone switched off.
 - **2026-09-18T05:45:34.475Z** — 3 break(s) applied · 1 red alone · 2 compound · 0 not red · 0 skipped
 - **2026-09-18T05:46:32.295Z** — 3 break(s) applied · 1 red alone · 2 compound · 0 not red · 0 skipped
 - **2026-09-18T05:47:06.081Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T06:24:45.188Z** — 2 break(s) applied · 2 red alone · 0 compound · 0 not red · 2 skipped
+- **2026-09-18T06:25:15.554Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 1 skipped
+- **2026-09-18T06:25:53.607Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped

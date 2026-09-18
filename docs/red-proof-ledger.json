@@ -408,6 +408,30 @@
       "compound": 0,
       "notRed": 0,
       "skipped": 0
+    },
+    {
+      "at": "2026-09-18T06:24:45.188Z",
+      "applied": 2,
+      "alone": 2,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 2
+    },
+    {
+      "at": "2026-09-18T06:25:15.554Z",
+      "applied": 4,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T06:25:53.607Z",
+      "applied": 4,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
     }
   ],
   "legs": {
@@ -709,6 +733,42 @@
       "leg": "3 the line is EXACTLY what the one reader returns — no second opinion",
       "why": "restyle the name locally after reading it — one line of 'presentation', which is how every second opinion about a person's name starts. It keeps the node, the order, the geometry and the null decision identical, so ONLY the claim that the surface shows what the reader said can detect it. (The real bug it stands for is larger — an email prefix or the auth provider's guess — but a wider break would take legs 1 and 2 down with it and prove nothing.)",
       "at": "2026-09-18T05:47:06.081Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-every-field-a-renderer-reads-is-returned.mjs::2 the derivation is alive and still sees across script blocks": {
+      "check": "check-every-field-a-renderer-reads-is-returned.mjs",
+      "leg": "2 the derivation is alive and still sees across script blocks",
+      "why": "give each <script> block its own root scope again — the bug this analyzer shipped with. `var currentBusiness` is in one block and `currentBusiness = data` is ~4500 lines later in another, so the assignment resolved to nothing, the row stopped escaping the loading function, and the analyzer reported a smaller field set WITHOUT SAYING IT HAD FAILED. Leg 1 would then pass by looking for less.",
+      "at": "2026-09-18T06:25:53.607Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-every-field-a-renderer-reads-is-returned.mjs::4 no field is reached by a computed key, so the derivation is complete on this input": {
+      "check": "check-every-field-a-renderer-reads-is-returned.mjs",
+      "leg": "4 no field is reached by a computed key, so the derivation is complete on this input",
+      "why": "count the `row[0]` unwrap as a computed field read again. It makes the derivation report a blind spot it does not have — and the point of the leg is that a blind spot must be LOUD, so it has to be observable when it is there.",
+      "at": "2026-09-18T06:25:53.607Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-every-field-a-renderer-reads-is-returned.mjs::1 every field a renderer reads is declared by the reader": {
+      "check": "check-every-field-a-renderer-reads-is-returned.mjs",
+      "leg": "1 every field a renderer reads is declared by the reader",
+      "why": "drop ig_handle from the allowlist — one of the seven that actually shipped this way. No error, no log, no visible difference: the Instagram link on every public page just stops rendering, because `data.ig_handle || ''` is ''.",
+      "at": "2026-09-18T06:25:53.607Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-every-field-a-renderer-reads-is-returned.mjs::3 every key the migration declares is present in the LIVE function": {
+      "check": "check-every-field-a-renderer-reads-is-returned.mjs",
+      "leg": "3 every key the migration declares is present in the LIVE function",
+      "why": "declare a key in the migration that production does not have. The repository is a CLAIM about production, not production (Lesson 100) — leg 1 reads the migration, so if the migration and the live function disagree, leg 1's pass is about a file.",
+      "at": "2026-09-18T06:25:53.607Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1

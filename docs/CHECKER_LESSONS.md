@@ -3820,3 +3820,130 @@ to the last migration that defines it. **Measured 2026-09-18: 125 live functions
 diverge, 3 defined by no migration at all** (`get_booked_times`, `get_busy_windows`, `owns_business`).
 So the repo does describe production for every function it claims to define — and three functions exist
 with no provenance in the repo, which is an absence of a claim rather than a false one.
+
+## Lesson 101
+
+**AN ABSENT FIELD IS NOT A FALSE ONE. `!undefined` IS TRUE, AND A CONDITION THAT CAN NO LONGER
+MATTER IS NOT THE SAME AS ONE THAT IS NOW ALWAYS TRUE.**
+
+On 2026-09-18 I removed `owner_id` from `get_public_business` deliberately — an auth user id on a
+public endpoint is a gift to anyone enumerating, and that reasoning still holds. In the same
+migration's comment I wrote, about the one line in the product that reads it:
+
+> `if(!data.owner_id || …)` … which this function makes impossible — it already requires `owner_id
+> is not null`, so the test is **dead by construction**.
+
+The premise is true: the function's `WHERE` clause really does require an owner. The conclusion is
+backwards, and the whole distance between them is one evaluation I never performed:
+
+```js
+!undefined === true
+```
+
+A field that is not RETURNED is not false-and-therefore-irrelevant. It is `undefined`. So the test
+did not go dead — it went **always true** — and
+
+```js
+if(!data.owner_id || data.account_kind==='test') hcNoIndex();
+```
+
+began stamping `<meta name="robots" content="noindex, nofollow">` onto **every public Hubly page**,
+claimed market businesses included. Measured, not inferred: two live claimed market sites loaded in a
+real browser, both carrying it, with our own `data-hc-noindex` stamp on the tag. Ten market
+businesses are claimed. Nothing errored, nothing logged, no page looked different to a human, and the
+entire cost lands on whoever was going to find those businesses in a search.
+
+**The part worth keeping is not the bug, it is that I had already found the line.** I named it,
+reasoned about it, decided it was harmless, and wrote the reasoning into the migration where the next
+person would read it as settled. Being wrong while looking straight at the thing is a different
+failure from not looking, and it has a specific cause: *"this condition can no longer matter"* and
+*"this condition is now always true"* are near-identical sentences in **prose**, and prose is where I
+checked it. Two lines of it read as the same thought. In JavaScript they are opposites.
+
+**So: when a field leaves a contract, do not reason in prose about what reads it. EVALUATE the
+expression with the field absent.** Write down what `undefined` does to it — `!undefined`,
+`undefined === 'test'`, `undefined || ''`, `undefined?.length`, `if (row.flag)` — because every one
+of those is silently *defined* behaviour and none of it throws. This is the silent-undefined failure
+mode of a hand-maintained list (CLAUDE.md, the route list) arriving through a **deliberate,
+reviewed, commented removal** rather than through an oversight, which is why the usual defence — care
+— did not catch it.
+
+And the structural fix is the one this repo keeps arriving at from other directions: **ask a field
+that MEANS the answer, and make the absent case explicit rather than falsy.** `hcRowIsClaimed(row)`
+reads `is_claimed` if present, `owner_id` if present, and otherwise returns *false* — deliberately,
+because not-knowing should keep a page out of a search index rather than publish it. A tri-state
+question answered by `!x` has already lost the third state.
+
+There is a sibling worth recording with it, because the class rule found it and a report never
+would: the same removal broke `ensureDraftBusiness`'s fast path
+(`currentBusiness.owner_id === currentUser.id`), which then fell through to *"the owner's most recent
+business"* — a **different business** than the one on screen for anyone with more than one. Measured:
+6 owners have more than one, 1 of them market. The first bug was a wrong `<meta>` tag; its sibling
+would have been the wrong business. Same missing field, same silence, two different costs.
+
+## Lesson 102
+
+**WHAT MAKES A DERIVATION TRUSTWORTHY RATHER THAN MERELY DERIVED.**
+
+"Derived, not hand-maintained" has been the answer to a dozen findings in this repo, and it is the
+right answer. It is also not sufficient, and 2026-09-18 is the proof: the seven-field regression
+shipped from a derivation. It was derived. It was wrong. So was the one that replaced it, and the one
+after that. The same question — *which fields of the public business row does a renderer read?* — was
+answered four times by four derivations, and every answer was confidently wrong in a different way:
+
+| derivation | answer | what was actually wrong |
+|---|---|---|
+| file-wide grep for `\.field` | 80 fields | every property access in 3MB of unrelated code |
+| function-scoped grep | 4 fields | silently knew only `var x = …`, so `let {data,error} = …` vanished |
+| a 60-line window after the call | 23 fields | the unpack is ~180 lines. **This one shipped.** |
+| name-based flow analysis | 205 "fields" | `data` is bound hundreds of times; `var city = data.city` made `city` a row and `el.textContent = data` made `textContent` one |
+| a real parse with real scopes | 31 fields | *(this one, and it still has stated blind spots)* |
+
+The common shape of all four failures: **each answered a question about SCOPE with a tool that has no
+concept of scope.** A derivation is only as trustworthy as the correspondence between what it
+measures and what the question is about, and a regex over a program measures text.
+
+So, the properties. A derivation is trustworthy when:
+
+1. **IT CANNOT SILENTLY RETURN LESS.** Every one of the failures above was safe-looking in the small
+   direction — "4 fields" and "23 fields" both read like answers. So the derivation must carry an
+   assertion that it is *alive*, which is a separate leg from its result: did it find the seed, did
+   it reach the sinks it claims to reach, did every identifier resolve. `check-every-field-a-renderer-
+   reads-is-returned.mjs` leg 2 asserts `currentBusiness` is among the tainted bindings, because that
+   is the **cross-block** escape and the one thing the per-block bug could not see. Without leg 2,
+   "no fields missing" and "I looked for nothing" are the same output. (Lesson 96: an instrument's
+   silence is not an absence — pointed at one's own instrument.)
+2. **ITS BLIND SPOTS ARE COUNTED AND REPORTED, NOT DOCUMENTED.** A comment saying "this cannot see
+   computed keys" is prose; a `computed` counter that turns a leg red when a computed read appears is
+   a fact. The difference is that the counter notices when the codebase changes under the derivation.
+   And a blind spot of ZERO must be *measured* each run, never assumed from the last run.
+3. **IT FAILS DIFFERENTLY FROM THE THING IT MEASURES.** Leg 1's break (drop a field from the
+   allowlist) and leg 2's break (break the analyzer's scoping) must move different legs. If breaking
+   the *instrument* and breaking the *product* produce the same red, the check cannot tell you which
+   happened — and that is precisely the situation where you reach for the wrong fix under pressure.
+4. **THE PARAMETER THAT MAKES IT WRONG IS PRINTED WITH THE RESULT.** The 60-line window printed its
+   window size. That is why it was findable at all. It was still wrong, so printing is necessary and
+   not sufficient — but a derivation whose sensitivity is invisible cannot be argued with.
+5. **BOTH ENDS ARE DERIVED, INCLUDING THE ONE THAT LOOKS LIKE A CONSTANT.** This check derives the
+   *reads* by parsing and the *returned set* by parsing the migration — and it finds the shipping
+   migration by asking which files define the function, rather than naming one. A derivation with one
+   hand-maintained end is a hand-maintained set with extra steps.
+6. **AND IT IS A CLAIM ABOUT PRODUCTION, OR IT SAYS SO.** Leg 1 reads a file. Leg 3 confirms the live
+   function actually contains what that file declares, so the chain ends in production and not in the
+   repository (Lesson 100). When leg 3 cannot run, it reports **FAILURE, not skip** — being unable to
+   check the thing that makes leg 1 meaningful is not the same as leg 1 being meaningful.
+
+Two smaller rules that came out of the same day and belong here:
+
+- **AN EXEMPTION BELONGS AT THE SITE, NOT IN THE CHECKER.** `owner_id` is read deliberately in the
+  draft fallback, where the draft reader does return it. A list of such fields inside the check is a
+  hand-maintained set that goes stale silently, and the person deleting the last read never sees it.
+  The read site carries `PUBLIC-READER-OPTIONAL: owner_id` and the checker derives its exemptions
+  from the source it already parsed — so removing the last read removes the exemption with it, and
+  *every* read site must carry its own marker.
+- **A DERIVATION THAT WRITES CODE MUST GENERATE, NEVER TRANSCRIBE.** The migration fixing the
+  `!undefined` bug was first written by retyping the previous one. The diff caught it reproducing the
+  meta subtree list as 72 entries instead of 55 — which would have silently dropped ~30 subtrees off
+  every public page: a worse regression than the one being fixed, introduced by the fix, by
+  transcribing a list that already existed and was correct. The shipped version was **generated** from
+  its predecessor by inserting one line, and the diff against it is four lines long.

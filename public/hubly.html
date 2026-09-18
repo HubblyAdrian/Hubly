@@ -17845,7 +17845,10 @@ function hcStripPlaceholders(root){
 function hcRowIsClaimed(row){
   if(!row) return false;
   if(row.is_claimed !== undefined) return !!row.is_claimed;
-  if(row.owner_id !== undefined) return !!row.owner_id;
+  // PUBLIC-READER-OPTIONAL: owner_id  — get_public_business does NOT return it (an auth user id
+  // on a public endpoint is a gift to anyone enumerating). get_draft_business returns the whole
+  // row, so this is the DRAFT branch, and it must stay readable here.
+  if(row.owner_id !== undefined) return !!row.owner_id;   // PUBLIC-READER-OPTIONAL: owner_id
   return false;
 }
 function hcNoIndex(){
@@ -18899,7 +18902,9 @@ async function upsertOwnBusiness(bizPayload){
 
 async function ensureDraftBusiness(){
   if(!currentUser)return null;
-  if(currentBusiness&&currentBusiness.owner_id===currentUser.id)return currentBusiness;
+  // PUBLIC-READER-OPTIONAL: owner_id  — present on a row loaded as the owner or as a draft,
+  // absent on one loaded through the public reader; the branch below handles that case.
+  if(currentBusiness&&currentBusiness.owner_id===currentUser.id)return currentBusiness;   // PUBLIC-READER-OPTIONAL: owner_id
   // THE SIBLING OF THE noindex BUG, found by grepping for the CLASS rather than by a report.
   // When currentBusiness came from get_public_business it now has NO owner_id (removed from the
   // public reader on purpose), so the line above always misses and we fall through to "the
@@ -18907,7 +18912,7 @@ async function ensureDraftBusiness(){
   // DIFFERENT business than the one on screen. Measured: 6 owners have more than one, 1 of them
   // market. So ownership is verified against the row we actually loaded, by id, through the
   // authed client that is allowed to read its own rows. One query instead of a wrong answer.
-  if(currentBusiness&&currentBusiness.id&&currentBusiness.owner_id===undefined){
+  if(currentBusiness&&currentBusiness.id&&currentBusiness.owner_id===undefined){   // PUBLIC-READER-OPTIONAL: owner_id
     const {data:mine}=await db.from('businesses').select('*').eq('id',currentBusiness.id).eq('owner_id',currentUser.id).maybeSingle();
     if(mine){currentBusiness=mine;return currentBusiness;}
   }
