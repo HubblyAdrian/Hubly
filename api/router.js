@@ -261,6 +261,49 @@ module.exports = async (req, res) => {
       return res.status(404).send('Not found');
     }
 
+    // ══ A CATCH-ALL ROUTE CONVERTS EVERY MISSING FILE INTO A SUCCESSFUL WRONG ANSWER ═══════════
+    //
+    // MEASURED 2026-09-18, on the live site: 20 of 22 well-known paths returned **HTTP 200 with
+    // 3,092,140 bytes of text/html**. /favicon.ico, /manifest.json, /ads.txt, /security.txt,
+    // /.well-known/security.txt, /.well-known/assetlinks.json, /rss.xml, /browserconfig.xml, /.env
+    // and a random nonce path all answered with hubly.html and a 200. Only /robots.txt and
+    // /sitemap.xml were right, and only because vercel.json routes those two by name.
+    //
+    // THIS IS THE SAME DEFECT AS /sitemap.xml AND AS /contact-pick.js, one layer up. The block above
+    // fixed it for root-level `.js` after a script that deployed-and-did-not-serve broke a working
+    // feature in both shells. The reasoning there applies to EVERY extension, and it was scoped to
+    // .js because .js was what had bitten us. A 404 tells the caller the truth. A catch-all tells it
+    // the SPA is the file it asked for, with a 200, and every consumer that trusts status codes
+    // believes it: a crawler indexes our marketing copy as the content of ads.txt, a browser parses
+    // 3MB of HTML as an icon, a security scanner reads a 200 for /.env.
+    //
+    // DERIVED, NOT LISTED. There is no list of well-known paths here — such a list is exactly the
+    // hand-maintained set this repo keeps paying for, and the standards bodies add to it without
+    // telling us. The rule is structural instead:
+    //
+    //     a ROOT-LEVEL path that LOOKS LIKE A FILE, or anything under the reserved /.well-known/
+    //     namespace, must correspond to a real file on disk or it is a 404.
+    //
+    // fs.existsSync already answers "is this real" (CLAUDE.md). Client-side routes are untouched
+    // because they have no extension — /store, /app, /enter and every business page still fall
+    // through to the SPA, which is what the catch-all is legitimately for.
+    const looksLikeARootFile = /^\/[^/]+\.[A-Za-z0-9]{1,8}$/.test(urlPath);
+    const isWellKnown = urlPath.startsWith('/.well-known/');
+    if (looksLikeARootFile || isWellKnown) {
+      const publicRoot = path.resolve(__dirname, '../public');
+      const filePath = path.resolve(publicRoot, '.' + urlPath);
+      const real =
+        filePath.startsWith(publicRoot + path.sep) &&
+        fs.existsSync(filePath) &&
+        fs.statSync(filePath).isFile();
+      if (!real) {
+        // text/plain, so nothing downstream can mistake the body for a document.
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        return res.status(404).send('Not found\n');
+      }
+      // It IS real — fall through to the branches below, which already know how to serve it.
+    }
+
     // Weather proxy endpoint so frontend forecast works even when
     // browser/network policies block direct third-party weather fetches.
     if ((req.url || '').startsWith('/api/weather')) {
