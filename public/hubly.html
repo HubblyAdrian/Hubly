@@ -17829,6 +17829,25 @@ function hcStripPlaceholders(root){
 // draft_token, so all 56 columns including account_kind reach the client. Checked
 // against the LIVE RPC before writing this, not read off the migration — if it
 // were absent, this line would silently never fire and look correct.
+/** IS THIS ADDRESS CLAIMED, according to the row we were actually handed?
+ *
+ *  This used to be `!data.owner_id`, and on 2026-09-17 owner_id was removed from
+ *  get_public_business on purpose (an auth user id on a public endpoint is a gift to anyone
+ *  enumerating). `!undefined` is true, so the test did not go dead — it went ALWAYS TRUE, and
+ *  every public Hubly page started serving robots="noindex, nofollow". Two live claimed market
+ *  sites were measured carrying it. Nothing errored; nothing looked different.
+ *
+ *  So the question is asked of a field that MEANS the answer, and the absent case is explicit
+ *  rather than falsy: get_public_business returns is_claimed (true by construction of its WHERE
+ *  clause), and get_draft_business still returns the whole row, so owner_id is the fallback for
+ *  a draft. If NEITHER field is present we do not know, and not-knowing is noindex — the safe
+ *  direction is to keep an unidentified page out of a search index, never to publish it. */
+function hcRowIsClaimed(row){
+  if(!row) return false;
+  if(row.is_claimed !== undefined) return !!row.is_claimed;
+  if(row.owner_id !== undefined) return !!row.owner_id;
+  return false;
+}
 function hcNoIndex(){
   try{
     if(document.querySelector('meta[name="robots"][data-hc-noindex]')) return;
@@ -18218,7 +18237,7 @@ async function loadPublicProfile(slug,opts){
       document.documentElement.classList.add('hubly-public-site');
       document.documentElement.setAttribute('data-theme','day');
     }catch(e){}
-    if(!data.owner_id || data.account_kind==='test') hcNoIndex();
+    if(!hcRowIsClaimed(data) || data.account_kind==='test') hcNoIndex();
     return;
   }
   try{
@@ -18295,7 +18314,7 @@ async function loadPublicProfile(slug,opts){
       // a genuine translation pipeline, not an hour's work (see KNOWN_ISSUES).
       // A dead control is worse than no control, so it is removed on this view.
       try{ var lf=document.getElementById('lang-btn-float'); if(lf) lf.style.display='none'; }catch(e){}
-      if(!data.owner_id || data.account_kind==='test') hcNoIndex();
+      if(!hcRowIsClaimed(data) || data.account_kind==='test') hcNoIndex();
       showP('p-hubly-document');
       try{wireHublyDocumentReserved();}catch(e){console.warn('wireHublyDocumentReserved failed',e);}
       try{wireHublyDocumentClickToEdit();}catch(e){}
@@ -18872,6 +18891,17 @@ async function upsertOwnBusiness(bizPayload){
 async function ensureDraftBusiness(){
   if(!currentUser)return null;
   if(currentBusiness&&currentBusiness.owner_id===currentUser.id)return currentBusiness;
+  // THE SIBLING OF THE noindex BUG, found by grepping for the CLASS rather than by a report.
+  // When currentBusiness came from get_public_business it now has NO owner_id (removed from the
+  // public reader on purpose), so the line above always misses and we fall through to "the
+  // owner's most recent business" — which for an owner with more than one business is a
+  // DIFFERENT business than the one on screen. Measured: 6 owners have more than one, 1 of them
+  // market. So ownership is verified against the row we actually loaded, by id, through the
+  // authed client that is allowed to read its own rows. One query instead of a wrong answer.
+  if(currentBusiness&&currentBusiness.id&&currentBusiness.owner_id===undefined){
+    const {data:mine}=await db.from('businesses').select('*').eq('id',currentBusiness.id).eq('owner_id',currentUser.id).maybeSingle();
+    if(mine){currentBusiness=mine;return currentBusiness;}
+  }
   const {data:existing}=await db.from('businesses').select('*').eq('owner_id',currentUser.id).order('created_at',{ascending:false}).limit(1).maybeSingle();
   if(existing){currentBusiness=existing;return currentBusiness;}
   if(!S.biz)seedNewBusinessDefaults({email:currentUser.email});
