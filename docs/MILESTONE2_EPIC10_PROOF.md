@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 10 — Hubly Daily
 
 **Status:** PASS  
-**Checked:** 2026-09-18T06:30:15.662Z  
+**Checked:** 2026-09-18T19:18:03.120Z  
 **Gate:** `npm run check:m2-epic10`
 
 > Morning business partner — not a feed or report.  

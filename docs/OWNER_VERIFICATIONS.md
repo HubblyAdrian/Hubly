@@ -257,3 +257,69 @@ the page cannot disagree about a business. Covered by
 Whether Google actually **fetches** these URLs now. Submitting the sitemap in Search Console, and the
 result of the Request Indexing he already pressed, are both his to observe — nothing in this repo can
 assert them.
+
+## ✅ 6.1 — CLOSED 2026-09-18. The noindex incident cost ZERO. Measured, not assumed
+
+**The window: 1 hour 39 minutes.** Measured from git, independent of Google entirely:
+
+| | |
+|---|---|
+| `owner_id` removed from the public reader | `74639de`, **2026-09-17 22:28:46 -0600** |
+| the fix, both halves, applied and pushed | `62065b4`, **2026-09-18 00:07:24 -0600** |
+| elapsed | **1h 38m 38s**, overnight |
+
+**Google had never fetched the affected pages — not once.** Adrian's URL Inspection on
+`https://graefs-autocare.myhubly.app/` (new DOMAIN property for `myhubly.app`, DNS-TXT verified that
+morning) returned *"URL is unknown to Google"* with **every crawl field N/A** — Last crawl, Crawled as,
+Crawl allowed, Page fetch, Indexing allowed. No referring sitemap, no referring page. A Live Test on the
+same URL then rendered his real site and reported *"Page can be indexed"*.
+
+**So the cost was zero**, and it is zero for two independent reasons rather than one: the tag was live
+for 99 minutes overnight, and nothing had ever crawled the pages it was on.
+
+**What would make this wrong** — stated because a reassuring number needs a caveat exactly as much as an
+alarming one: *"URL is unknown to Google"* describes Google's index **now**; it cannot prove Google never
+fetched the page, only that no crawl record exists today. That field alone would be weak evidence. What
+carries the conclusion is the **99-minute window**, which is measurable here without Google's
+cooperation. Had the window been three weeks, the same N/A fields would have proved much less. The window
+itself holds only if each commit timestamp approximates when its migration was applied to the remote —
+each was applied immediately before its commit in the same session, so they agree to within minutes.
+
+**And the incident was still worth its cost**, because finding it produced
+`scripts/check-every-field-a-renderer-reads-is-returned.mjs`, which found it on its first run, and
+Lesson 104.
+
+## 6.3 — OPEN, not done. Canonical tags and JSON-LD. No ruling requested or given
+
+Both were named as discovery-adjacent options. Neither is built. My own assessment of each, offered so
+Adrian can rule later:
+
+### `<link rel="canonical">` — currently absent on every page
+
+**Cost: low.** One line in the `<head>` injection `api/router.js` already performs for `og:` tags, so it
+is server-side and needs no client change. **Urgency: low, and lower than it first looked.** I checked
+for the duplicate-host risk and it does not exist: `graefs-autocare.hubly.app` **does not resolve**
+(`http=000`), so there is one live host per business, not two. What remains is variant collapsing —
+`?utm_source=…`, a trailing-slash difference, an uppercase host — which Google usually handles unaided.
+**My recommendation: do it when something else touches that injection, not as its own task.** The one
+thing that would raise its urgency is starting to link business pages from anywhere with tracking
+parameters.
+
+### JSON-LD `LocalBusiness` in the raw response
+
+**Cost: low-to-moderate**, and it is the *moderate* part that matters. Emitting the markup is easy —
+same injection point, beside the `og:` tags, from the same `get_public_business` row. What is **not**
+easy is that structured data is a set of **claims Google will hold the business to**: an address, an
+opening-hours block, a price range, an `aggregateRating`. Every one of those is a fact, and this repo's
+standing rule is that Hubly never publishes a fact the owner did not state. A `LocalBusiness` block
+assembled from whatever the row happens to hold would be exactly the invented-business-hours defect, in
+a format designed to be machine-trusted. An `aggregateRating` we cannot substantiate is worse again.
+
+**Urgency: low. Value: genuinely high if done narrowly** — `name`, `url`, `image`, `telephone` and
+`address` **only where the record actually holds them**, omitting every absent field rather than
+approximating it, and no ratings. **My recommendation: build it only with that constraint written into
+the code as a per-field presence test, not as a template with blanks.** The failure mode here is not a
+missing feature; it is a confident machine-readable claim nobody made.
+
+**Neither is scoped, estimated, or scheduled. Recorded as open at Adrian's instruction, awaiting a
+ruling.**
