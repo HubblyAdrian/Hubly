@@ -159,3 +159,57 @@ reader used by ten market businesses, so it is not something a session should ch
   `commerce_orders` 3), so rows prove nothing about *that* function, and no invocation log is
   reachable (`supabase functions list` gives a deploy time). **Stripe's own webhook delivery log is
   the only place the answer lives**, and Adrian is the one who can open it.
+
+## ✅ 5.7 — CLOSED 2026-09-18. The `meta.pipeline` divergence: EXPLAINED, and the explanation is a timestamp
+
+**The observation, as Adrian gave it.** In an incognito window on `graefs-autocare.myhubly.app` he
+opened devtools, expanded the `get_public_business` response, and reported that `pipeline` was **not**
+in it — the expanded key tree ran alphabetically from `paymentSetting` straight to `portfolioUrls`
+with nothing between them, and a response-body search for `pipeline` hit only `app-marketplace.js`,
+`design-system.js` and the page HTML, with **no `get_public_business` group at all**. My SQL said the
+column holds `pipeline` with 3 records. He asked which of four explanations it was, and said *"still
+unexplained is an acceptable answer and a fabricated mechanism is not."*
+
+**Three of the four are refuted by measurement, not by argument.**
+
+| hypothesis | result |
+|---|---|
+| `pipeline` is not really in his meta | **REFUTED.** Exactly one key matches `%pipe%` and it is literally `pipeline`: an object, 9 subkeys, 3 manual records. |
+| the reading counted a key not literally named `pipeline` | **REFUTED** by the same query — one match, exact name. |
+| the row was written between the two readings | **REFUTED.** `businesses.updated_at` for that row is **2026-09-09 20:56Z**, months before either reading. Nothing wrote it. |
+| the client strips it after receipt, and devtools showed a processed body — *the serious case, because it would mean the raw bytes carried it* | **REFUTED.** Nothing in either shell deletes, omits, or overwrites `meta.pipeline`; and the decisive evidence is below, which rules out the old response shape entirely. |
+
+**What it actually was: he read the post-allowlist function, and the shape of his own screenshot
+proves it.** The premise I was asked to test was that his observation *predated* the allowlist
+migration. It did not, and the proof does not depend on anyone's memory of when they looked:
+
+- `businesses.meta` is a **TEXT** column. The pre-allowlist function body was
+  `select to_jsonb(b) - 'draft_token'`, and `to_jsonb()` of a text value is a **JSON string**.
+  Measured directly: `jsonb_typeof((to_jsonb(b) - 'draft_token')->'meta')` returns **`"string"`**,
+  and those raw bytes **do** contain the substring `"pipeline"`.
+- The post-allowlist function returns `meta` as an **object** — `jsonb_typeof(...)` returns
+  **`"object"`** — with `pipeline` filtered out by the 56-subtree allowlist.
+
+Both halves of Adrian's observation are only possible against the **object** version:
+
+1. **An alphabetical, expandable key tree is an object.** Under the old shape devtools would have
+   shown `meta` as one long quoted string — not expandable, not alphabetised, no `paymentSetting →
+   portfolioUrls` adjacency to notice.
+2. **The body search found no hit in that response.** Under the old shape the bytes *did* carry the
+   substring `"pipeline"` (measured above), so the search would have hit it.
+
+So there was never a divergence between his reading and the database: **my SQL read the raw column
+(which has `pipeline`) and his devtools read the allowlisted function output (which does not).** The
+two were measuring different things, and the field-for-field match noted in the previous round — his
+24 top-level fields and all 40 meta keys permitted by the live list, none forbidden — is the same
+conclusion arriving from the other direction.
+
+**The instrument note, because it is the lesson and not the answer.** Evidence (2) is a *silence* — a
+search that found nothing — and on its own it is worth much less than it looks: devtools only searches
+response bodies it retained, so "no hit" and "not searched" are indistinguishable from the outside
+(Lesson 96). What closed this was evidence (1), which is a **positive** observation: an object tree
+was on his screen, and only one version of the function can produce one. Counts: 52 meta keys in
+Graef's column, 51 on the wire, exactly one stripped — unchanged after this round's migration.
+
+**No row was written at any point.** `graefs-autocare` remains read-only; two `create or replace
+function` statements and zero INSERT/UPDATE/DELETE.

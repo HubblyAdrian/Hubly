@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 8 — Business Home
 
 **Status:** PASS  
-**Checked:** 2026-09-17T20:46:36.028Z  
+**Checked:** 2026-09-18T06:30:15.997Z  
 **Gate:** `npm run check:m2-epic8`
 
 > Personalized business briefing — not a dashboard.  

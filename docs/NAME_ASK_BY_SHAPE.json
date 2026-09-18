@@ -1,5 +1,5 @@
 {
-  "measured_at": "2026-09-17T08:15:55.498Z",
+  "measured_at": "2026-09-18T06:31:29.447Z",
   "complete": false,
   "results": [
     {
@@ -9,8 +9,8 @@
       "askedForName": false,
       "built": true,
       "recordName": null,
-      "slug": "site-835163",
-      "reply": "Aviation needs to feel calm and exact from the first glance, so I’m giving this a clean, professional look rather than something flashy. Los Angeles should come through as the base, but the page shouldn’t feel like a generic local directory. The writing will lean on trust, clarity, and experience wi",
+      "slug": "site-f7203b",
+      "reply": "Aviation needs to feel calm, precise, and trustworthy before anyone reads the details. I’m giving this a clean Los Angeles aviation feel — confident, not flashy. The writing will stay broad until you tell me the exact pilot services you offer, so it doesn’t overclaim. The first draft will give you a",
       "pass": false,
       "failures": [
         "NEED — brand_color is the column default #1a3a6e, so no palette was chosen and every trade gets the same navy page",
@@ -25,23 +25,9 @@
       "built": false,
       "recordName": null,
       "slug": null,
-      "reply": "Yes — what kind of business is it for? Once I know that, I’ll build the first draft. Yes — what kind of business is it for? Once I know that, I’ll build the first draft.",
+      "reply": "Yes — what kind of business is it? Yes — what kind of business is it?",
       "pass": true,
       "failures": []
-    },
-    {
-      "shape": "BARE-TRADE",
-      "said": "i do lawn care",
-      "mustAsk": true,
-      "askedForName": false,
-      "built": true,
-      "recordName": null,
-      "slug": "site-ddf1b2",
-      "reply": "Lawn care has to feel dependable fast — people want to know their yard will be handled without chasing someone down. I’m giving this a clean, grounded look with an outdoor feel rather than anything flashy. The page should make the basic promise clear: neat lawns, reliable service, easy booking. Sinc",
-      "pass": false,
-      "failures": [
-        "BARE-TRADE — did not ask what the business is called"
-      ]
     }
   ]
 }
