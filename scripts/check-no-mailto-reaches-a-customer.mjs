@@ -42,6 +42,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const q = (sql) => {
@@ -99,8 +100,28 @@ try {
   hits = q(clauses.join(" union all ") + " order by 1");
 } catch (err) { console.error("CANNOT RUN — " + String(err.message).slice(0, 300)); process.exit(2); }
 
+/* ══ L98 — THE POSITIVE CLAUSE, AND A BREAK THAT CANNOT BE A FILE EDIT ═══════════════════════════
+ * `hits.length === 0` is satisfied by a query that returned nothing for any reason — a derivation
+ * that found no stores, a connection that failed, a `like` that stopped matching. The positive clause
+ * is that the scan actually READ pages: two derived stores and a corpus behind them.
+ *
+ * THE BREAK IS A DATABASE WRITE, so redproof-run records it as declared-and-manual rather than
+ * applying it — a red-proof must never be the thing that writes to a real table by accident. It WAS
+ * performed by hand on 2026-09-17 and the result is recorded in `provenBy` below, which is the
+ * honest middle: the evidence is in the repo, attributed, and unmistakably not an automated proof. */
+declareBreak({
+  leg: "no latest stored page carries a mailto",
+  why: "plant a mailto anchor in a stored page and confirm this leg alone goes red",
+  sql: "update public.businesses set meta = jsonb_set(meta, '{website,heroHeadline}', " +
+       "to_jsonb(meta->'website'->>'heroHeadline' || ' <a href=\"mailto:x@y.test\">Email us</a>')) " +
+       "where slug = 'hubly-classic-fixture';",
+  restore: "restore businesses.meta for hubly-classic-fixture from the bytes read before the write",
+  provenBy: "BY HAND, 2026-09-17: planted into hubly-classic-fixture's website.heroHeadline via " +
+            "`supabase db query --linked -f`. Leg 1 went RED, leg 2 stayed GREEN. Restored and the " +
+            "fixture read back byte-identical (5347 bytes, json-equal). NEVER graefs-autocare.",
+});
 leg("RULE", "no latest stored page carries a mailto:, in any derived store",
-  hits.length === 0,
+  stores.length >= 2 && Array.isArray(hits) && hits.length === 0,
   `${stores.length} derived store(s) scanned — ${stores.join(", ")} · ` +
   (hits.length ? `FOUND: ${hits.map((h) => h.slug + " [" + h.store + "]").join(", ")}`
                : "no page in any of them carries one. SCOPED: this is the LATEST version per (business, tag); " +

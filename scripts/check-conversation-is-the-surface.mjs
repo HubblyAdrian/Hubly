@@ -17,6 +17,7 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openRig } from "./lib/browser-rig.mjs";
+import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PAGE = "file://" + join(ROOT, "public/platform-home.html");
@@ -195,18 +196,86 @@ try {
     JSON.stringify(opened.panel.slice(0, 130)));
 
   // ══ 2+3. A FULL DAY IS NEVER REPORTED AS ABSENT, AND NOTHING IS ANNOUNCED FIRST. ═════
+  /* ══ WHAT WAS SAID DURING THE TURN, NOT WHAT IS ON SCREEN AFTER IT ═══════════════════════════
+   *
+   * The first version read the thread's innerText after the call. That cannot see an optimistic
+   * line, because entering a room LOADS THAT ROOM'S CONVERSATION, which begins
+   * `thread.innerHTML = ''` — so anything said before the room opened is wiped by the room opening,
+   * and leg 7 stayed green with an "Opening your day…" deliberately inserted. A DOM snapshot after
+   * a turn is not a transcript of the turn.
+   *
+   * A MutationObserver accumulates every node added while the call runs, so the question becomes
+   * "was this ever said" instead of "is it still on screen". */
   const goRes = await rig.page.evaluate(async () => {
     const t = document.getElementById("hcThreadBody") || document.getElementById("hcThread");
     t.innerHTML = "";
+    const said = [];
+    const obs = new MutationObserver((ms) => {
+      for (const m of ms) for (const n of m.addedNodes) {
+        const s = (n.innerText || n.textContent || "").replace(/\s+/g, " ").trim();
+        if (s) said.push(s);
+      }
+    });
+    obs.observe(t, { childList: true, subtree: true });
     const r = await window.hublyGoUI.go("planner");
-    return { r, text: t.innerText.replace(/\s+/g, " ").trim() };
+    await new Promise((res) => setTimeout(res, 250));
+    obs.disconnect();
+    return { r, text: t.innerText.replace(/\s+/g, " ").trim(), said };
   });
-  say("6 a day holding rows is NOT reported as 'not set up on this account'",
+  /* ══ L98 — THE #1 VACUOUS LEG IN THE REPO, AND OF ALL THE LEGS TO BE ONE ═════════════════════
+   *
+   * It asserted ONLY that "not set up on this account" was ABSENT. A blank render has no text at
+   * all, so it passed on an unrendered room, a failed load, and a thread wiped and never refilled —
+   * every state that looks exactly like the defect. **This is the leg guarding the sentence that
+   * told Graef he had no schedule**: the check written to prevent Lesson 86 contained Lesson 86's
+   * own defect, being unable to tell an emptiness from a failure to look.
+   *
+   * AND WRITING THE POSITIVE CLAUSE FOUND A SECOND THING. The leg read the THREAD TEXT after
+   * `go("planner")`, on the assumption that the day lands there. It does not: entering a room puts
+   * the day in the CANVAS and the room's own conversation in the thread (ruled 2026-09-17 — "Home
+   * is the conversation; if he ASKS for his day it renders in the thread", which is
+   * hcShowInThread, leg 1 above). So the old leg was reading a surface that never carries the
+   * sentence it was looking for — vacuous twice over.
+   *
+   * THE POSITIVE CLAUSE IS THE DOOR'S OWN RECEIPT: it COUNTED rows and it opened. That cannot be
+   * true of a blank render, and `counted > 0` is the exact fact the 2026-09-15 defect got wrong. */
+  declareBreak({
+    leg: "6 the day's rows were COUNTED",
+    why: "RESTORE LESSON 86's OWN DEFECT — gate hcGoToPlace on business_places ROWS instead of on " +
+         "content, so a day holding a driveway job and a doctor's appointment is told it 'isn't set " +
+         "up on this account yet'. That sentence was said to a real owner on 2026-09-15",
+    file: "public/platform-home.html",
+    find: "    var n = await hcViewCount(kind === 'planner' ? 'day' : kind);",
+    with: "    var n = hcWorkspaces().some(function(w){ return w.id === kind; }) ? 1 : 0;\n" +
+          "    if(n === 0){ hcAppendMessage('hubly', 'Your ' + p.say + ' isn\u2019t set up on this account yet.'); return { ok:false, error:'not_set_up' }; }",
+  });
+  say("6 the day's rows were COUNTED and the door opened, and it was NOT called 'not set up on this account'",
+    !!goRes.r && goRes.r.ok === true && Number(goRes.r.counted) > 0 &&
     !/isn’t set up|isn't set up|not set up/i.test(goRes.text),
-    JSON.stringify(goRes.text.slice(0, 150)));
-  say("7 and nothing announces the action before the outcome is known",
-    !/^Opening|Opening your/i.test(goRes.text) && !/pulling up|fetching/i.test(goRes.text),
-    "no optimistic line from the client");
+    `the door counted ${goRes.r && goRes.r.counted} row(s) and opened (ok=${goRes.r && goRes.r.ok}); the ` +
+    `blames-the-account sentence is absent. The POSITIVE clause is the point — the old leg asserted ` +
+    `only the absence and passed on every state that looks like the defect.`);
+  /* ALSO PURELY NEGATIVE, in the same block: "nothing was announced first" is trivially true of a
+   * thread with nothing in it. The positive clause is that the door RETURNED A RECEIPT, so a turn
+   * demonstrably happened and the absence is a statement about it. */
+  declareBreak({
+    leg: "7 the door returned a receipt",
+    why: "announce the action before the outcome is known — the premature 'Adding X' class, which " +
+         "claims a placement before it has landed",
+    file: "public/platform-home.html",
+    // ANCHORED ON A LINE UNIQUE TO hcGoToPlace. `var p = HC_GO_PLACES[kind];` appears TWICE —
+    // here and in hcGoToPlaceLine, its message composer — and the runner refused the break rather
+    // than picking one, which is the behaviour that makes a declared break trustworthy.
+    find: "    if(!p){ hcAppendMessage('hubly', 'I cannot take you there yet.'); return { ok:false, error:'unknown_place' }; }",
+    with: "    if(!p){ hcAppendMessage('hubly', 'I cannot take you there yet.'); return { ok:false, error:'unknown_place' }; }\n    hcAppendMessage('hubly', 'Opening your ' + p.say + '\u2026');",
+  });
+  say("7 the door returned a receipt, and nothing optimistic was EVER said during the turn",
+    !!goRes.r && typeof goRes.r === "object" && goRes.said.length > 0 &&
+    !goRes.said.some((l) => /^Opening|Opening your|pulling up|fetching/i.test(l)),
+    `hcGoToPlace returned ${JSON.stringify(goRes.r).slice(0, 60)} and ${goRes.said.length} thing(s) ` +
+    `were said during the turn, none of them announcing the action before its outcome. Read from a ` +
+    `MutationObserver, not the final DOM — the room's own conversation load wipes the thread, so a ` +
+    `snapshot afterwards cannot see an optimistic line at all`);
 
   // AN EMPTY COLLECTION IS SAID TO BE EMPTY — not 'not set up', which blames the account.
   await boot({ uid: "u2", email: "x@y.com", displayName: "Adrian", tables: { jobs: [], customers: [] }, hours: [] });
@@ -252,11 +321,26 @@ try {
     emptyRes.text.includes(composed) && composed.length > 12,
     JSON.stringify(composed));
 
-  say("9 with no jobs, no customers, no sales and no bookings, none of those doors is offered",
+  /* FOUR `!includes` OVER A LIST THAT IS EMPTY ON AN UNRENDERED THREAD. Leg 9a beside it measures
+   * that the furniture rendered, but a leg must not depend on its neighbour having run: the
+   * guarantee belongs inside the assertion that makes the claim. */
+  declareBreak({
+    leg: "9 the promises rendered",
+    why: "offer a door to an empty room — drop the needs(ctx) gate so every card renders whether " +
+         "its room holds anything or not, which is prohibition 5 inverted",
+    file: "public/platform-home.html",
+    // THE CARD RENDERER SPECIFICALLY. The same gate line exists in hcRenderSuggestions (the chips),
+    // so the bare line matched twice and was refused; the `kind !== 'card'` line above it is unique.
+    find: "      if(p.kind !== 'card') return false;\n      try{ return p.needs(ctx); }catch(e){ return false; }",
+    with: "      if(p.kind !== 'card') return false;\n      return true;",
+  });
+  say("9 the promises rendered, and none of them is a door to an empty room",
     !empties.labels.includes("schedule") && !empties.labels.includes("customers") &&
     !empties.labels.includes("sales") && !empties.labels.includes("q-bookings") &&
-    !empties.labels.includes("q-regulars") && !empties.labels.includes("q-earned"),
-    `offered: ${JSON.stringify(empties.labels)}`);
+    !empties.labels.includes("q-regulars") && !empties.labels.includes("q-earned") &&
+    empties.labels.length > 0,
+    `${empties.labels.length} promise(s) actually rendered, and none of the four empty-room doors is ` +
+    `among them — offered: ${JSON.stringify(empties.labels)}`);
 
   // ══ 6. WHAT WE CALL HIM. ═════════════════════════════════════════════════════════════
   //
@@ -309,9 +393,23 @@ try {
     noName.isEmail === true && noName.first === null && /@/.test(noName.label),
     `label=${JSON.stringify(noName.label)} first=${JSON.stringify(noName.first)}`);
   // AND NO NAME IS MANUFACTURED FROM THE CREDENTIAL.
-  say("12 a name is never derived from the email local-part",
+  /* `indexOf("@") >= 0` looks positive and is not: it is satisfied by the RAW EMAIL, so a reader
+   * that never ran and one that correctly fell back to the address are indistinguishable. The
+   * positive clause that matters is that the reader ANSWERED — a non-empty label, an explicit
+   * isEmail verdict, and a first name of exactly null. */
+  declareBreak({
+    leg: "12 the name reader answered",
+    why: "manufacture a name out of the credential — the email local-part heuristic, which passes " +
+         "off 'Adriansmithee' as something the owner told us",
+    file: "public/platform-home.html",
+    find: "    var em = String(hcIdentity.email || '').trim();\n    return em || '';",
+    with: "    var em = String(hcIdentity.email || '').trim();\n    if(em) return em.split('@')[0].replace(/^./, function(c){ return c.toUpperCase(); });\n    return em || '';",
+  });
+  say("12 the name reader answered, and no name was derived from the email local-part",
+    typeof noName.label === "string" && noName.label.length > 0 && noName.isEmail === true &&
     noName.label.indexOf("@") >= 0 && !/^Adriansmithee$/i.test(noName.label),
-    "the local-part heuristic is gone");
+    `the reader returned ${JSON.stringify(noName.label)} and called it an email — it is not the ` +
+    `local-part dressed up as a name`);
   // WITH NOTHING ON RECORD, "Good morning." IS CORRECT — and it is the only case in which it is.
   const bare = await rig.page.evaluate(() => {
     const e = document.querySelector(".hc-idw-hi");

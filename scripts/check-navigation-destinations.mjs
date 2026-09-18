@@ -40,6 +40,7 @@
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openRig } from "./lib/browser-rig.mjs";
+import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PAGE = "file://" + join(ROOT, "public/platform-home.html");
@@ -77,15 +78,45 @@ try {
 
   // ── 1. A ROW IN THE RAIL OPENS SOMETHING. ───────────────────────────────────────────────
   const noRoom = reg.surfaces.filter((k) => k !== reg.canvas && !reg.rooms.includes(k));
-  say("1 every place that can appear in the rail has something that renders it",
-    noRoom.length === 0, noRoom.length ? `no renderer for: ${noRoom.join(", ")}` : `${reg.surfaces.length} surfaces`);
+  /* ══ L98 — SEVEN LEGS IN THIS FILE SHARED ONE FAILURE MODE ═══════════════════════════════════
+   * Every one was `<derived list>.length === 0`, and every one of those derived lists comes from ONE
+   * registry read. If that read returns nothing — a renamed seam, a shell that did not boot, a
+   * `window.hublyNavUI` that is not published yet — all seven pass at once and the file reports the
+   * whole navigation contract upheld having examined nothing. The positive clause on each leg is
+   * that ITS OWN input was non-empty, inside the assertion that makes the claim rather than in a
+   * neighbour. */
+  declareBreak({
+    leg: "1 the surface registry was read",
+    // RENAMING THE KEY WAS NOT NARROW ENOUGH: `plannerBROKEN` is then a room with no surface, so
+    // leg 2 fired too and the pair proved nothing (L98). Removing `quotes` DELETES a renderer
+    // without inventing an unreachable one, and nothing else in this file reads `quotes`.
+    why: "delete the `quotes` renderer from HC_ROOMS, so a place that can appear in the rail has " +
+         "nothing to render it — a rail row that opens an empty canvas",
+    file: "public/platform-home.html",
+    find: "leads: hcRoomFromView('leads'), quotes: hcRoomFromView('quotes') };",
+    with: "leads: hcRoomFromView('leads') };",
+  });
+  say("1 the surface registry was read, and every place that can appear in the rail has something that renders it",
+    reg.surfaces.length > 0 && noRoom.length === 0,
+    noRoom.length ? `no renderer for: ${noRoom.join(", ")}`
+      : `${reg.surfaces.length} surface(s) read — a zero would satisfy "none lacks a renderer" while ` +
+        `reading nothing — and every one has a renderer`);
 
   // ── 2. AND THE OTHER SIDE: nothing renders a room the rail can never reach. Guard both
   //       sides — a room with no surface is built and doorless, which is the diagnosis that
   //       has been right four times this month. ────────────────────────────────────────────
   const noSurface = reg.rooms.filter((k) => !reg.surfaces.includes(k));
-  say("2 and nothing renders a room that can never appear in the rail",
-    noSurface.length === 0, noSurface.length ? `no surface for: ${noSurface.join(", ")}` : `${reg.rooms.length} rooms`);
+  declareBreak({
+    leg: "2 the room registry was read",
+    why: "add a room nothing can reach — a renderer for `store`, which is not a surface, so it is " +
+         "built and doorless: the diagnosis that has been right four times this month",
+    file: "public/platform-home.html",
+    find: "  var HC_ROOMS = { planner:",
+    with: "  var HC_ROOMS = { store: function(){ return null; }, planner:",
+  });
+  say("2 the room registry was read, and nothing renders a room that can never appear in the rail",
+    reg.rooms.length > 0 && noSurface.length === 0,
+    noSurface.length ? `no surface for: ${noSurface.join(", ")}` : `${reg.rooms.length} room(s) read, every one reachable`);
 
   // ── 3. A SENTENCE CANNOT OFFER A PLACE THAT OPENS NOTHING. ──────────────────────────────
   //
@@ -101,20 +132,34 @@ try {
   // the product's own resolver rather than knowing where planner goes.
   const resolved = await rig.page.evaluate((ks) => ks.map((k) => [k, window.hublyNavUI.resolve(k)]), reg.goPlaces);
   const deadDoors = resolved.filter(([, to]) => to !== "home" && !reg.surfaces.includes(to)).map(([k, to]) => `${k}->${to}`);
-  say("3 every place a sentence can take someone to opens something — a surface, or Home",
-    deadDoors.length === 0, deadDoors.length ? `opens nothing: ${deadDoors.join(", ")}` : resolved.map(([k, t]) => `${k}->${t}`).join(", "));
-  // AND HOME IS NOT A DUMPING GROUND. RETARGETED 2026-09-17 when Adrian reversed the "Home is the
-  // day" ruling: the old leg asserted that EXACTLY ONE destination (`planner`) resolves to Home,
-  // which was a fact about that ruling, not the rule underneath it. My Day has its own surface now,
-  // so ZERO destinations fall through to Home — which is the cleaner state, and the old leg went red
-  // against an improvement. That is a leg encoding a shape (Lesson 92), and the fix is the leg.
-  //
-  // THE RULE, which survives both rulings: nothing may be routed to Home that Home cannot answer
-  // for. Home answers for the conversation and nothing else, so a destination landing there must be
-  // one whose subject Home actually renders — and today none do.
+  /* ══ 3 AND 3b WERE ONE CLAIM IN TWO HALVES, AND THE LEDGER IS WHAT SAID SO ═══════════════════
+   *
+   * Leg 3 asserted "a destination opens a surface, OR Home"; leg 3b asserted "and nothing is routed
+   * to Home". Together that is one sentence: **a destination opens its own surface.** Split in two,
+   * neither half was independently red-proofable with a single edit — leg 3 can only fail if a
+   * destination is missing a surface AND the resolver stops falling back to Home, which is two
+   * changes, so every single-edit break on it came back NOT RED or fired its neighbour. Merged, one
+   * edit fires it.
+   *
+   * [SHAPE], DECLARED: today ZERO destinations fall through to Home, because My Day got its own
+   * surface. If a destination legitimately lands on Home in future, this leg goes red and the leg is
+   * what changes — that is the shape moving, not a defect (Lesson 92). The RULE underneath is
+   * unchanged: nothing may be routed to a screen that cannot answer for it. */
   const toHome = resolved.filter(([k, to]) => to === "home" && k !== "home").map(([k]) => k);
-  say("3b nothing is quietly routed to Home — a destination opens its own surface or it is not one",
-    toHome.length === 0, `-> home: ${toHome.join(", ") || "(none)"}`);
+  declareBreak({
+    leg: "3 [SHAPE] the destinations were resolved",
+    why: "route an existing destination to Home instead of to its own surface, so something lands " +
+         "on a screen that cannot answer for it",
+    file: "public/platform-home.html",
+    find: "  function hcResolvePlace(id){",
+    with: "  function hcResolvePlace(id){ if(String(id) === 'customers') return 'home';",
+  });
+  say("3 [SHAPE] the destinations were resolved, and every destination opens its OWN surface",
+    resolved.length > 0 && deadDoors.length === 0 && toHome.length === 0,
+    deadDoors.length ? `opens nothing: ${deadDoors.join(", ")}`
+      : toHome.length ? `falls through to Home: ${toHome.join(", ")}`
+      : `${resolved.length} destination(s), each opening its own surface: ` +
+        resolved.map(([k, t]) => `${k}->${t}`).join(", "));
 
   // ── 4. AND EVERY DOOR CAN COUNT ITS ROOM BEFORE IT MOVES ANYONE. This is the leg that
   //       catches "your schedule isn't set up" said about a room with two jobs on it: the
@@ -123,13 +168,34 @@ try {
     .filter(([k]) => k !== reg.canvas)
     .filter(([, c]) => !reg.threadViews.includes(c))
     .map(([k, c]) => `${k}->${c}`);
-  say("4 every door can count what is in the room before offering it",
-    uncountable.length === 0, uncountable.length ? `no countable view for: ${uncountable.join(", ")}` : reg.countKeys.map(([k, c]) => `${k}->${c}`).join(", "));
+  declareBreak({
+    leg: "4 the count keys were read",
+    why: "make the planner door count by a key no thread view answers — `planner->planner` instead " +
+         "of `planner->day`. THIS IS THE EXACT SHAPE of 'your schedule isn\u2019t set up' said about a " +
+         "room with two jobs on it: the door counts by a different key than it navigates by",
+    file: "public/platform-home.html",
+    find: "    countKeyFor: function(kind){ return kind === 'planner' ? 'day' : kind; },",
+    with: "    countKeyFor: function(kind){ return kind; },",
+  });
+  say("4 the count keys were read, and every door can count what is in the room before offering it",
+    reg.countKeys.length > 0 && uncountable.length === 0,
+    uncountable.length ? `no countable view for: ${uncountable.join(", ")}`
+      : `${reg.countKeys.length} door(s): ` + reg.countKeys.map(([k, c]) => `${k}->${c}`).join(", "));
 
   // ── 5. WHAT A NEW BUSINESS IS OFFERED IS A SUBSET OF WHAT EXISTS. ───────────────────────
   const badDefault = reg.railDefault.filter((k) => !reg.surfaces.includes(k));
-  say("5 nothing is offered by default that is not a surface",
-    badDefault.length === 0, badDefault.length ? `defaulted but unknown: ${badDefault.join(", ")}` : reg.railDefault.join(", "));
+  declareBreak({
+    leg: "5 the default rail was read",
+    why: "offer a place by default that no surface renders — `store: true` in HC_RAIL_DEFAULT, so " +
+         "every new business is given a rail row that opens nothing",
+    file: "public/platform-home.html",
+    find: "  var HC_RAIL_DEFAULT = { website: true };",
+    with: "  var HC_RAIL_DEFAULT = { website: true, store: true };",
+  });
+  say("5 the default rail was read, and nothing is offered by default that is not a surface",
+    reg.railDefault.length > 0 && badDefault.length === 0,
+    badDefault.length ? `defaulted but unknown: ${badDefault.join(", ")}`
+      : `${reg.railDefault.length} default(s): ` + reg.railDefault.join(", "));
 
   // ── 6. THE DOOR ITSELF, EXECUTED: an unknown place is REFUSED, never guessed at. ────────
   const refused = await rig.page.evaluate(async () => {

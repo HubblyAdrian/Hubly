@@ -44,6 +44,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const MIN_ROWS = 30;
@@ -123,6 +124,15 @@ leg("RULE", "every recorded failure carries its error kinds, or the comparison i
 // confirm-served.mjs refuses a bare-identifier absence marker at all.
 const regSrc = readFileSync(join(ROOT, "supabase/functions/_shared/hubly_capability_registry.ts"), "utf8")
   .split("\n").filter((L) => !/^\s*(\/\/|\*|\/\*)/.test(L)).join("\n");
+declareBreak({
+  leg: "schema_mode is read from the call",
+  why: "put the literal \"json_object\" back in place of the value reported by the AI layer — which " +
+       "is what would make every row say json_object after the flag is flipped, and the whole " +
+       "before/after comparison silently wrong",
+  file: "supabase/functions/_shared/hubly_capability_registry.ts",
+  find: "          schema_mode: schemaModeUsed ?? \"unrecorded\",",
+  with: "          schema_mode: \"json_object\",",
+});
 leg("SHAPE", "schema_mode is read from the call, not written as a literal",
   !/schema_mode:\s*["'`]json_object["'`]/.test(regSrc),
   `It WAS the literal "json_object" under a comment claiming it was recorded — so flipping the flag ` +

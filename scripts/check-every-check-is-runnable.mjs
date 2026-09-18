@@ -35,6 +35,7 @@ import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { everyCheckFile } from "./run-all-checks.mjs";
+import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 let failed = 0;
@@ -91,9 +92,25 @@ for (const v of Object.values(scripts)) {
   for (const m of String(v).matchAll(/scripts\/(check-[A-Za-z0-9._-]+\.mjs)/g)) named.add(m[1]);
 }
 const onlyNamed = onDisk.filter((f) => named.has(f) && !found.includes(f));
-say("6 no check depends on a hand-written name to be reached",
-    onlyNamed.length === 0,
-    `${named.size} have a convenience entry; ${onlyNamed.length} depend on one`);
+/* ══ L98 — AND THIS ONE HIDES DARK CHECKS, WHICH HAS ALREADY HAPPENED ═══════════════════════════
+ * `onlyNamed.length === 0` is satisfied when `named` is empty — when the scan for convenience
+ * entries found nothing at all. The leg then reports "no check depends on a hand-written name"
+ * having failed to read the hand-written names. Six checks reading `hubly.html` at the repo root
+ * went dark once already; a false green here is how that class stays invisible. Both sides have to
+ * be non-empty for the comparison to mean anything. */
+declareBreak({
+  leg: "6 both sides of the comparison were read",
+  why: "make the glob miss a check that a convenience entry names, so a check is reachable ONLY by " +
+       "its hand-written name — the route-list disease, whose failure mode is silent",
+  file: "scripts/check-every-check-is-runnable.mjs",
+  find: "const onlyNamed = onDisk.filter((f) => named.has(f) && !found.includes(f));",
+  with: "const onlyNamed = onDisk.filter((f) => named.has(f) && !found.includes(f));\nif (named.size) found.length = 0;",
+});
+say("6 both sides of the comparison were read, and no check depends on a hand-written name to be reached",
+    named.size > 0 && found.length > 0 && onlyNamed.length === 0,
+    `${named.size} check(s) have a convenience entry and ${found.length} were reached by the glob — ` +
+    `both counts must be non-zero or "none depends on a name" is a statement about an empty set — ` +
+    `and ${onlyNamed.length} depend on one`);
 
 console.log(failed ? `\n${failed} FAILED\n` : `\nALL PASS — ${onDisk.length} checks, reached by a glob, and the banned command's guard runs.\n`);
 process.exit(failed ? 1 : 0);

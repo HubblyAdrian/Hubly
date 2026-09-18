@@ -33,6 +33,7 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const FILES = ["public/hubly.html", "public/platform-home.html"];
@@ -110,11 +111,33 @@ const delegatesToOpen = (fn) => {
 
 // THE DEFECT: every entry point is idle-only, and it delegates to nothing that is not.
 const idleOnly = offeredInEmpty.filter(([fn, a]) => a.open === 0 && !delegatesToOpen(fn));
-say("1 no creation action is reachable ONLY from an empty state",
-  idleOnly.length === 0,
+/* ══ L98 — `idleOnly.length === 0` IS TRUE OF AN EMPTY ENUMERATION ═══════════════════════════════
+ * If the scan that builds `offeredInEmpty` returns nothing — a renamed function, a moved file, a
+ * regex that stopped matching — then nothing is idle-only and the leg reports "every creation
+ * action has a persistent door" having examined none of them. It is the flattering answer, and it
+ * is the one a broken scan produces. The positive clause is that there was something to examine. */
+declareBreak({
+  leg: "1 the scan found creation actions",
+  // AIMED AT LEG 1 ALONE, AND THE FIRST ATTEMPT WAS NOT. Removing `nav-jobs-new` fired leg 1 AND
+  // leg 2, because leg 2 asserts that exact door from the other direction — the two legs are one
+  // fact measured twice, so a break on the door necessarily fires both and proves nothing about
+  // either (L98). This break instead makes the check's OWN delegation test blind, which is the
+  // condition leg 1 exists to detect — "an entry point is idle-only and delegates to nothing that
+  // is not" — while leg 2's source assertion is untouched. Declaring a break inside the check is
+  // legitimate precisely when the leg's claim is about a set the check derives.
+  why: "make the delegation test blind, so every empty-state entry point counts as idle-only — the " +
+       "condition leg 1 exists to detect, without touching the door leg 2 asserts",
+  file: "scripts/check-doors-open-when-needed.mjs",
+  find: "const idleOnly = offeredInEmpty.filter(([fn, a]) => a.open === 0 && !delegatesToOpen(fn));",
+  with: "const idleOnly = offeredInEmpty.filter(([fn, a]) => true);",
+});
+say("1 the scan found creation actions, and none is reachable ONLY from an empty state",
+  offeredInEmpty.length > 0 && idleOnly.length === 0,
   idleOnly.length
     ? idleOnly.map(([fn, a]) => `${fn}() — ${a.idle} idle-only caller(s) at line(s) ${a.lines.join(", ")}, 0 persistent`).join(" · ")
-    : `${offeredInEmpty.length} checked, every one also reachable outside an empty state`);
+    : `${offeredInEmpty.length} creation action(s) examined — a non-zero count is half the assertion, ` +
+      `because "none is idle-only" is trivially true of an empty scan — and every one is also ` +
+      `reachable outside an empty state`);
 
 // AND THE POSITIVE HALF: the case that named the rule must still be covered by a persistent door.
 const picker = actions.get("HublyJourneyOS") || actions.get("openJobCustomerPicker");

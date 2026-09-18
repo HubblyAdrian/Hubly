@@ -57,6 +57,7 @@ import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openRig } from "./lib/browser-rig.mjs";
 import { installOwnerFake } from "./lib/owner-rig.mjs";
+import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PAGE = "file://" + join(ROOT, "public/platform-home.html");
@@ -113,8 +114,25 @@ try {
     line: window.hublyDayUI.addLine,
     onPage: (document.getElementById("daytest") || document.body).textContent,
   }));
-  say("2 the page no longer instructs a gesture that does not exist on touch",
+  /* ══ L98 — "NO DOUBLE-CLICK" IS TRUE OF AN EMPTY STRING ══════════════════════════════════════
+   * `copy.line` is `window.hublyDayUI.addLine`. If the seam is gone, renamed, or the day never
+   * rendered, `line` is undefined and `onPage` is "" — and both negations pass. **This is the leg
+   * guarding the double-click scar**, one of the three-for-three: a check written against one
+   * surface while the person was on another. A leg that passes when the surface is absent is the
+   * same failure wearing a different coat. The positive clause is that there IS copy to inspect. */
+  declareBreak({
+    leg: "2 there IS add-copy",
+    why: "put the dead gesture back in the add-row copy — instruct a double-click, which does not " +
+         "exist on touch, on the surface Adrian was actually looking at",
+    file: "public/platform-home.html",
+    find: "  var HC_DAY_ADD_LINE = ",
+    with: "  var HC_DAY_ADD_LINE = 'Double-click a slot to add something. ' + ",
+  });
+  say("2 there IS add-copy, and it does not instruct a gesture that does not exist on touch",
+      typeof copy.line === "string" && copy.line.length > 0 &&
       !/double[- ]?click/i.test(copy.line) && !/double[- ]?click/i.test(copy.onPage),
+      `${copy.line ? copy.line.length : 0} char(s) of add-copy were read — a zero means the seam or ` +
+      `the render is gone, not that the gesture is absent — and it names no double-click: ` +
       JSON.stringify(copy.line));
 
   // ── A REAL CLICK ON THE + BUTTON ──────────────────────────────────────────────────────

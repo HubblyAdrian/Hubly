@@ -23,6 +23,7 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const FILE = resolve(ROOT, "public/platform-home.html");
@@ -144,9 +145,31 @@ const PRAISE = /\b(great|nice|well done|good (job|work)|awesome|amazing|congrat)
   const jobTurn = api.hcTurnWrites([{ capability: "business", capabilityAction: "addJob", ok: true, real: true }]);
   const closed = api.hcClosedGaps(before, after, jobTurn);
   const line = api.hcChainLine(closed, null);
-  say("7 a job write is NOT reported as a change to his page prices",
+  /* ══ L98 — `closed.length === 0 && line === ""` IS WHAT A DEAD FUNCTION RETURNS ══════════════
+   * `hcClosedGaps` returning `[]` for any reason — a renamed capability, a changed write shape, a
+   * thrown-and-swallowed error — satisfies both clauses, and the leg reports "a job write is not
+   * misreported as a price change" having exercised nothing. The positive clause is that the turn it
+   * was handed was a REAL write the reader could have acted on: a non-empty writes list, and a
+   * before-state that genuinely differs from the after-state on the gap being tested. */
+  declareBreak({
+    leg: "7 a real job write was read",
+    // NARROWED, AFTER THE FIRST ATTEMPT TURNED FOUR LEGS RED. Breaking hcClosedGaps itself fires
+    // every leg in this file that asks the reader anything, which proves nothing about any one of
+    // them (L98). The precise defect leg 7 guards is ONE WRONG ENTRY in the writer-to-gap map — a
+    // job write listed among the things that can close the priced-services gap. That is the shape a
+    // careless edit to that table takes, and no other leg reads that entry.
+    why: "add `business.addJob` to the writers that can close the priced-services gap — one wrong " +
+         "entry in HC_GAP_WRITERS, which is how a job write comes to be announced as a price change",
+    file: "public/platform-home.html",
+    find: "    has_priced_services: ['business.setServices', 'business.addServicesSection', 'website.patchDocument'],",
+    with: "    has_priced_services: ['business.setServices', 'business.addServicesSection', 'website.patchDocument', 'business.addJob'],",
+  });
+  say("7 a real job write was read, and it is NOT reported as a change to his page prices",
+    jobTurn.length > 0 && before.has_priced_services !== after.has_priced_services &&
     closed.length === 0 && line === "",
-    `writes=${JSON.stringify(jobTurn)} closed=${JSON.stringify(closed)} line=${JSON.stringify(line)}`);
+    `${jobTurn.length} write(s) handed in and the gap genuinely differs between before and after — ` +
+    `so the reader had something to get wrong — yet closed=${JSON.stringify(closed)} and it said ` +
+    `nothing: ${JSON.stringify(line)}`);
 }
 
 // 8. AND THE SAME CLOSE, BY THE WRITER THAT ACTUALLY CLOSES IT, IS STILL SAID. A guard that

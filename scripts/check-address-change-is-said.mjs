@@ -34,6 +34,7 @@
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openRig } from "./lib/browser-rig.mjs";
+import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PAGE = "file://" + join(ROOT, "public/platform-home.html");
@@ -78,8 +79,29 @@ try {
   // It is a statement, never a question — so it takes no floor and leaves no ask unanswered.
   say("4 it is a statement, not a question — it takes no floor",
     !/\?\s*$/.test(moved.text), JSON.stringify(moved.text.slice(-40)));
-  say("5 and it points at no button, tab or menu",
-    !/\b(button|tab|menu|sidebar|click|tap)\b/i.test(moved.text), "no control named");
+  /* ══ L98 — AN EMPTY SENTENCE NAMES NO CONTROL ════════════════════════════════════════════════
+   * The leg guards "Hubly never points at a control it cannot see" — and the composer returning ""
+   * satisfies it perfectly. The positive clause is that a sentence exists AND says the thing it is
+   * supposed to say: it names the new address. Then "it names no control" is a statement about a
+   * real sentence rather than about silence. */
+  declareBreak({
+    leg: "5 the sentence exists, names the new address",
+    why: "make the sentence point at a control — Hubly does not render the page and cannot know " +
+         "what is on screen, so naming a button is claiming a capability it has not verified",
+    file: "public/platform-home.html",
+    find: "    var line = 'One thing \\u2014 the address changed to ' + next + ', so ' + told + ' won\\u2019t work any more.';",
+    // APPENDED, NOT REWRITTEN. Replacing the sentence fired three legs — leg 3 (it reaches the
+    // record) and leg 6 (a second rename names the last address) both read the same text, so a
+    // different sentence breaks them too and proves nothing about leg 5 (L98). Adding a clause to
+    // the END leaves every other leg's subject intact and changes exactly one thing: whether the
+    // sentence points at a control Hubly cannot see.
+    with: "    var line = 'One thing \\u2014 the address changed to ' + next + ', so ' + told + ' won\\u2019t work any more. Tap the Settings tab to see it.';",
+  });
+  say("5 the sentence exists, names the new address, and points at no button, tab or menu",
+    typeof moved.text === "string" && moved.text.trim().length > 0 &&
+    !/\b(button|tab|menu|sidebar|click|tap)\b/i.test(moved.text), 
+    `${moved.text.trim().length} char(s) of sentence — a zero would satisfy "names no control" while ` +
+    `saying nothing at all — and no control is named in it`);
 
   // ── 6. AFTER SAYING IT, THAT IS NOW WHAT HE WAS TOLD. A second rename names the right old
   //       one — apollo-weeds was renamed THREE times in 108 seconds, so this is not academic. ─

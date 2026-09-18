@@ -1,0 +1,407 @@
+{
+  "ratchetSince": "2026-09-18",
+  "runs": [
+    {
+      "at": "2026-09-18T01:23:54.901Z",
+      "applied": 3,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 3,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T01:26:16.711Z",
+      "applied": 3,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 3,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T01:27:40.871Z",
+      "applied": 2,
+      "alone": 1,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 2
+    },
+    {
+      "at": "2026-09-18T01:28:51.267Z",
+      "applied": 4,
+      "alone": 2,
+      "compound": 1,
+      "notRed": 1,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T01:30:06.548Z",
+      "applied": 4,
+      "alone": 3,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T01:31:32.325Z",
+      "applied": 1,
+      "alone": 0,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 2
+    },
+    {
+      "at": "2026-09-18T01:32:51.035Z",
+      "applied": 2,
+      "alone": 2,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T01:33:36.757Z",
+      "applied": 1,
+      "alone": 1,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T01:34:54.798Z",
+      "applied": 3,
+      "alone": 2,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T01:36:17.473Z",
+      "applied": 1,
+      "alone": 0,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T01:36:47.012Z",
+      "applied": 2,
+      "alone": 1,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T01:37:04.568Z",
+      "applied": 1,
+      "alone": 1,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T01:38:24.295Z",
+      "applied": 6,
+      "alone": 3,
+      "compound": 3,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T01:39:23.110Z",
+      "applied": 5,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T01:40:34.278Z",
+      "applied": 2,
+      "alone": 2,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 3
+    },
+    {
+      "at": "2026-09-18T01:40:56.949Z",
+      "applied": 4,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 1
+    },
+    {
+      "at": "2026-09-18T01:41:16.647Z",
+      "applied": 5,
+      "alone": 5,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T01:41:36.573Z",
+      "applied": 16,
+      "alone": 15,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T01:45:10.265Z",
+      "applied": 1,
+      "alone": 0,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T01:45:39.544Z",
+      "applied": 1,
+      "alone": 1,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T01:46:22.260Z",
+      "applied": 0,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T01:47:05.194Z",
+      "applied": 17,
+      "alone": 16,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0
+    }
+  ],
+  "legs": {
+    "check-conversation-is-the-surface.mjs::6 a day holding rows RENDERS": {
+      "check": "check-conversation-is-the-surface.mjs",
+      "leg": "6 a day holding rows RENDERS",
+      "why": "make the day render nothing at all — the vacuous version passed on exactly this",
+      "at": "2026-09-18T01:26:16.711Z",
+      "also": [
+        "FAIL  1 'show me my day' renders the day IN THE THREAD — rows=0 (expected the 2 real rows, in bands or under Later this ",
+        "FAIL  2 each row is a real record carrying its own fields, in 12-hour time — \"s and prices is what makes it bookable. Vi",
+        "FAIL  4 a day row and a job card open the SAME panel — one mechanism, not two — no day row",
+        "FAIL — TypeError: Cannot read properties of undefined (reading 'slice')"
+      ],
+      "status": "NOT RED",
+      "newlyRed": 4
+    },
+    "check-conversation-is-the-surface.mjs::7 the door reported an outcome": {
+      "check": "check-conversation-is-the-surface.mjs",
+      "leg": "7 the door reported an outcome",
+      "why": "make the client announce the action before the outcome is known",
+      "at": "2026-09-18T01:26:16.711Z",
+      "also": [],
+      "status": "NOT RED",
+      "newlyRed": 0
+    },
+    "check-conversation-is-the-surface.mjs::9 the promises rendered": {
+      "check": "check-conversation-is-the-surface.mjs",
+      "leg": "9 the promises rendered",
+      "why": "offer a door to an empty room — drop the needs(ctx) gate so every card renders whether its room holds anything or not, which is prohibition 5 inverted",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-conversation-is-the-surface.mjs::12 the name reader answered": {
+      "check": "check-conversation-is-the-surface.mjs",
+      "leg": "12 the name reader answered",
+      "why": "manufacture a name out of the credential — the email local-part heuristic, which passes off 'Adriansmithee' as something the owner told us",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [
+        "FAIL  11 with NO name anywhere, the email is the fallback and is not passed off as a name — label=\"Adriansmithee+ever\" f",
+        "FAIL  12a with no name on record the greeting drops it rather than using his email — \"Good evening, Adriansmithee+ever.\""
+      ],
+      "status": "COMPOUND",
+      "newlyRed": 3
+    },
+    "check-conversation-is-the-surface.mjs::6 the day's rows were COUNTED": {
+      "check": "check-conversation-is-the-surface.mjs",
+      "leg": "6 the day's rows were COUNTED",
+      "why": "RESTORE LESSON 86's OWN DEFECT — gate hcGoToPlace on business_places ROWS instead of on content, so a day holding a driveway job and a doctor's appointment is told it 'isn't set up on this account yet'. That sentence was said to a real owner on 2026-09-15",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-conversation-is-the-surface.mjs::7 the door returned a receipt": {
+      "check": "check-conversation-is-the-surface.mjs",
+      "leg": "7 the door returned a receipt",
+      "why": "announce the action before the outcome is known — the premature 'Adding X' class, which claims a placement before it has landed",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-doors-open-when-needed.mjs::1 the scan found creation actions": {
+      "check": "check-doors-open-when-needed.mjs",
+      "leg": "1 the scan found creation actions",
+      "why": "make the delegation test blind, so every empty-state entry point counts as idle-only — the condition leg 1 exists to detect, without touching the door leg 2 asserts",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-editable-set-is-derived.mjs::1 [RULE] the markers were found": {
+      "check": "check-editable-set-is-derived.mjs",
+      "leg": "1 [RULE] the markers were found",
+      "why": "remove one marker's editor branch — `footer-tag` — so a marker the page renders has nowhere to be edited: the affordance painted over a capability that is not there",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-every-check-is-runnable.mjs::6 both sides of the comparison were read": {
+      "check": "check-every-check-is-runnable.mjs",
+      "leg": "6 both sides of the comparison were read",
+      "why": "make the glob miss a check that a convenience entry names, so a check is reachable ONLY by its hand-written name — the route-list disease, whose failure mode is silent",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-day-controls-work.mjs::2 there IS add-copy": {
+      "check": "check-day-controls-work.mjs",
+      "leg": "2 there IS add-copy",
+      "why": "put the dead gesture back in the add-row copy — instruct a double-click, which does not exist on touch, on the surface Adrian was actually looking at",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-chain-acknowledgement.mjs::7 a real job write was read": {
+      "check": "check-chain-acknowledgement.mjs",
+      "leg": "7 a real job write was read",
+      "why": "add `business.addJob` to the writers that can close the priced-services gap — one wrong entry in HC_GAP_WRITERS, which is how a job write comes to be announced as a price change",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-address-change-is-said.mjs::5 the sentence exists and names the address": {
+      "check": "check-address-change-is-said.mjs",
+      "leg": "5 the sentence exists and names the address",
+      "why": "make the sentence point at a control — Hubly does not render the page and cannot know what is on screen, so naming a button is claiming a capability it has not verified",
+      "at": "2026-09-18T01:34:54.798Z",
+      "status": "SKIPPED",
+      "note": "declaration names leg \"5 the sentence exists and names the address\", which appears nowhere in this check's output — the declaration is STALE, which is a different fault from a vacuous leg"
+    },
+    "check-arrival-in-dom.mjs::2c the arrival IS in the thread": {
+      "check": "check-arrival-in-dom.mjs",
+      "leg": "2c the arrival IS in the thread",
+      "why": "speak a second time while the name question is on the floor — a page-view count beside the arrival, which is two composers talking over each other",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-address-change-is-said.mjs::5 the sentence exists, names the new address": {
+      "check": "check-address-change-is-said.mjs",
+      "leg": "5 the sentence exists, names the new address",
+      "why": "make the sentence point at a control — Hubly does not render the page and cannot know what is on screen, so naming a button is claiming a capability it has not verified",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-navigation-destinations.mjs::1 the surface registry was read": {
+      "check": "check-navigation-destinations.mjs",
+      "leg": "1 the surface registry was read",
+      "why": "delete the `quotes` renderer from HC_ROOMS, so a place that can appear in the rail has nothing to render it — a rail row that opens an empty canvas",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-navigation-destinations.mjs::2 the room registry was read": {
+      "check": "check-navigation-destinations.mjs",
+      "leg": "2 the room registry was read",
+      "why": "add a room nothing can reach — a renderer for `store`, which is not a surface, so it is built and doorless: the diagnosis that has been right four times this month",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-navigation-destinations.mjs::3 the destinations were resolved": {
+      "check": "check-navigation-destinations.mjs",
+      "leg": "3 the destinations were resolved",
+      "why": "make the resolver hand back an unknown place instead of falling back to Home, so a sentence can offer a door that opens onto nothing",
+      "at": "2026-09-18T01:39:23.110Z",
+      "also": [
+        "FAIL  3b the destinations were resolved, and nothing is quietly routed to Home — 5 destination(s) resolved · -> home: st",
+        "FAIL  4 the count keys were read, and every door can count what is in the room before offering it — no countable view fo"
+      ],
+      "status": "NOT RED",
+      "newlyRed": 2
+    },
+    "check-navigation-destinations.mjs::3b the destinations were resolved": {
+      "check": "check-navigation-destinations.mjs",
+      "leg": "3b the destinations were resolved",
+      "why": "route an existing destination to Home rather than to its own surface, so something lands on a screen that cannot answer for it",
+      "at": "2026-09-18T01:39:23.110Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-navigation-destinations.mjs::4 the count keys were read": {
+      "check": "check-navigation-destinations.mjs",
+      "leg": "4 the count keys were read",
+      "why": "make the planner door count by a key no thread view answers — `planner->planner` instead of `planner->day`. THIS IS THE EXACT SHAPE of 'your schedule isn’t set up' said about a room with two jobs on it: the door counts by a different key than it navigates by",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-navigation-destinations.mjs::5 the default rail was read": {
+      "check": "check-navigation-destinations.mjs",
+      "leg": "5 the default rail was read",
+      "why": "offer a place by default that no surface renders — `store: true` in HC_RAIL_DEFAULT, so every new business is given a rail row that opens nothing",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-navigation-destinations.mjs::3 every destination opens its OWN surface": {
+      "check": "check-navigation-destinations.mjs",
+      "leg": "3 every destination opens its OWN surface",
+      "why": "route an existing destination to Home instead of to its own surface, so something lands on a screen that cannot answer for it",
+      "at": "2026-09-18T01:40:56.949Z",
+      "status": "SKIPPED",
+      "note": "declaration names leg \"3 every destination opens its OWN surface\", which appears nowhere in this check's output — the declaration is STALE, which is a different fault from a vacuous leg"
+    },
+    "check-navigation-destinations.mjs::3 [SHAPE] the destinations were resolved": {
+      "check": "check-navigation-destinations.mjs",
+      "leg": "3 [SHAPE] the destinations were resolved",
+      "why": "route an existing destination to Home instead of to its own surface, so something lands on a screen that cannot answer for it",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-baseline-before-schema.mjs::schema_mode is read from the call": {
+      "check": "check-baseline-before-schema.mjs",
+      "leg": "schema_mode is read from the call",
+      "why": "put the literal \"json_object\" back in place of the value reported by the AI layer — which is what would make every row say json_object after the flag is flipped, and the whole before/after comparison silently wrong",
+      "at": "2026-09-18T01:47:05.194Z",
+      "also": [],
+      "status": "RED ALONE",
+      "newlyRed": 1
+    },
+    "check-no-mailto-reaches-a-customer.mjs::no latest stored page carries a mailto": {
+      "check": "check-no-mailto-reaches-a-customer.mjs",
+      "leg": "no latest stored page carries a mailto",
+      "why": "plant a mailto anchor in a stored page and confirm this leg alone goes red",
+      "at": "2026-09-18T01:47:05.194Z",
+      "status": "DECLARED, PROVEN BY HAND",
+      "note": "BY HAND, 2026-09-17: planted into hubly-classic-fixture's website.heroHeadline via `supabase db query --linked -f`. Leg 1 went RED, leg 2 stayed GREEN. Restored and the fixture read back byte-identical (5347 bytes, json-equal). NEVER graefs-autocare."
+    }
+  }
+}

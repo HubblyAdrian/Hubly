@@ -24,6 +24,7 @@
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 let failed = 0;
@@ -49,9 +50,28 @@ const unreachable = rendered.filter((m) => {
   if (partRule && /^svc-/.test(m)) return false;      // resolved to its record's editor
   return true;
 });
-say("1 [RULE] every marker the page renders can be edited from the page",
-  unreachable.length === 0,
-  unreachable.length ? `NO EDITOR FOR: ${unreachable.join(", ")}` : `${rendered.length} markers, all reachable`);
+/* ══ L98 — "EVERYTHING IS EDITABLE" IS GREEN OVER AN EMPTY SET ═══════════════════════════════════
+ * `unreachable.length === 0` is satisfied when `rendered` is empty, i.e. when the marker scan found
+ * NOTHING. Leg 0 above measures that the scan found some, and that is the right instinct — but a leg
+ * must not depend on its neighbour having run: the guarantee belongs inside the assertion making the
+ * claim, or deleting leg 0 silently makes this one vacuous. */
+declareBreak({
+  leg: "1 [RULE] the markers were found",
+  // A MARKER THE `svc-*` PART RULE DOES NOT COVER. `svc-price` is exempt by design (it resolves to
+  // its record's editor), so breaking it changes nothing here and fires leg 2 instead — the first
+  // two attempts at this break found that out: `case'svc-price':` matched nothing at all, and
+  // `if(pe==='svc-price'){` matched twice. `footer-tag` is handled by name and by nothing else.
+  why: "remove one marker's editor branch — `footer-tag` — so a marker the page renders has nowhere " +
+       "to be edited: the affordance painted over a capability that is not there",
+  file: "public/hubly.html",
+  find: "  if(type==='footer-tag'){",
+  with: "  if(type==='footer-tag-BROKEN'){",
+});
+say("1 [RULE] the markers were found, and every one the page renders can be edited from the page",
+  rendered.length > 0 && unreachable.length === 0,
+  unreachable.length ? `NO EDITOR FOR: ${unreachable.join(", ")}`
+    : `${rendered.length} marker(s) found and all reachable — the count is half the assertion, because ` +
+      `"none is unreachable" is trivially true of a scan that found none`);
 
 // THE ONES HE ACTUALLY HIT, named so a regression here is unmistakable rather than a count.
 for (const m of ["svc-price", "svc-name", "svc-dur"]) {

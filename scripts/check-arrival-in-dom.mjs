@@ -41,6 +41,7 @@
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openRig } from "./lib/browser-rig.mjs";
+import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PAGE = "file://" + join(ROOT, "public/platform-home.html");
@@ -205,9 +206,24 @@ try {
   say("2b it congratulates, and says it is their assistant",
     /congratulations on finishing your website/i.test(a.arrival) && /business assistant/i.test(a.arrival),
     "congratulate + who I am");
-  say("2c NOTHING ELSE SPEAKS while the name is on the floor — no booking line, no page-view count",
+  /* ══ L98 — "NOTHING ELSE SPEAKS" IS TRUE OF AN EMPTY THREAD ══════════════════════════════════
+   * Three negations over `a.thread`. A thread that never rendered, or rendered and was wiped, passes
+   * all three — and the leg reports the one-ask-at-a-time rule as upheld on a screen with nothing on
+   * it. The positive clause is that the ARRIVAL IS IN THE THREAD: something spoke, exactly one
+   * thing, and it was the arrival. */
+  declareBreak({
+    leg: "2c the arrival IS in the thread",
+    why: "speak a second time while the name question is on the floor — a page-view count beside the " +
+         "arrival, which is two composers talking over each other",
+    file: "public/platform-home.html",
+    find: "      hcRenderArrival(biz);",
+    with: "      hcRenderArrival(biz);\n      hcAppendMessage('hubly', '3 people looked at your page this week.');",
+  });
+  say("2c the arrival IS in the thread and NOTHING ELSE SPOKE while the name is on the floor",
+    a.thread.length > 0 && a.arrival.length > 0 && a.thread.includes(a.arrival.slice(0, 40)) &&
     !/booking works/i.test(a.thread) && !/looked at your page/i.test(a.thread) && !/service you priced/i.test(a.thread),
-    JSON.stringify(a.thread.slice(0, 200)));
+    `the arrival is present in a ${a.thread.length}-char thread — the old leg's three negations were ` +
+    `all true of an EMPTY thread — and nothing else spoke: ${JSON.stringify(a.thread.slice(0, 150))}`);
   say("2d and no cards, chips or history button under the question",
     a.furniture.cards === 0 && a.furniture.chips === 0 && a.furniture.history === 0 && a.furniture.news === 0,
     `cards=${a.furniture.cards} chips=${a.furniture.chips} history=${a.furniture.history} news=${a.furniture.news}`);

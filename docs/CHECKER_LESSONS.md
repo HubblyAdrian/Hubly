@@ -3482,6 +3482,40 @@ that reprioritises a day, reaches a customer, and becomes the thing everyone rem
 whole lugnuts alarm rested on reading `customer_name` and an `account_kind` label. One query —
 *is this address the owner's own?* — was the entire disproof, and it took eleven seconds.
 
+### Third instance, 2026-09-17, and it is the worst of the three: A CORRECTION IS A CLAIM
+
+**A CORRECTION IS A CLAIM AND CARRIES THE SAME BURDEN AS THE THING IT CORRECTS.** When the advisor
+says *"that number is wrong, use this one"*, **the definition of the new number must be stated
+alongside it.** A correction that silently changes what is being counted is **worse than the stale
+figure**, because it arrives with authority and an instruction to propagate.
+
+Recorded by Adrian, about himself:
+
+> *"I told you 403 was stale and to replace it everywhere. 403 was never stale. I substituted a
+> different measurement (version > 1) for the original (created_by = 'patch') without saying I had
+> changed the definition, then told you to propagate it into every document in the repo."*
+
+**What actually happened, measured:** `created_by = 'patch'` is **403 today and was 403 then** — it
+never moved. The stale half was the TOTAL: 623 → 648. `460` is `version > 1`, which counts
+regenerations as well as patches, so it answers a different question. One phrase — "patched versions"
+— had been carrying two definitions, and the correction swapped them without saying so.
+
+**Why this is worse than the first two instances.** Instance 1 (17:00) and instance 2 (lugnuts) were
+both *amplification*: a caveated finding went up the chain and the caveat fell off. This one was
+**manufacture** — the error was created in the act of correcting, and shipped with an instruction to
+write it into every document in the repo. An amplified finding can be walked back where it was
+amplified. A propagated correction has to be unpicked from wherever it was propagated to.
+
+**What stopped it, and it is the same move as every other instance:** the blanket replace was refused
+and both definitions were MEASURED before anything was edited. That surfaced a third figure, better
+than either: **164 of 188 businesses have a live page whose latest version was created by `patch`** —
+units of *owners who would lose hand-corrections*, which is the thing the prohibition protects.
+
+**The rule, for both directions.** Down the chain: never quote a figure without the query that
+produced it. Up the chain: a correction states its definition, and "propagate this everywhere" is an
+instruction to be measured before it is obeyed — because the one thing an authoritative instruction
+guarantees is reach.
+
 ## Lesson 97
 
 **A CHECK THAT COVERS ONE INSTANCE OF A SURFACE COVERS NONE OF THEM.**
