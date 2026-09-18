@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-09-17T20:47:31.352Z",
+  "checkedAt": "2026-09-18T06:32:30.142Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -272,7 +272,7 @@
     "timing": [
       {
         "expertId": "experience_director",
-        "executionTimeMs": 4
+        "executionTimeMs": 2
       },
       {
         "expertId": "research",
@@ -284,7 +284,7 @@
       },
       {
         "expertId": "creative_director",
-        "executionTimeMs": 0
+        "executionTimeMs": 1
       },
       {
         "expertId": "critic",
@@ -1094,7 +1094,7 @@
         {
           "expertName": "Creative Director",
           "expertId": "creative_director",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "reasoning": [
             {
               "reason": "Creative direction leans pressure washing that earns trust with before/after proof before asking for a booking so the first screen earns trust before asking for a booking.",
@@ -1664,7 +1664,7 @@
           "output": {
             "type": "Builder Intent",
             "builderIntent": {
-              "intentId": "bint_mu603qbu_idlz5u",
+              "intentId": "bint_mu6l00qb_v6a657",
               "version": "1.0.0",
               "originalRequest": "I'm starting a pressure washing company.",
               "intentCategory": "Business Strategy",
@@ -1695,7 +1695,7 @@
                   "confidence": 81
                 }
               ],
-              "timestamp": "2026-09-17T20:47:31.338Z",
+              "timestamp": "2026-09-18T06:32:30.131Z",
               "applied": false,
               "changePlanGenerated": false
             },
@@ -1708,7 +1708,7 @@
         {
           "expertName": "Experience Director",
           "expertId": "experience_director",
-          "executionTimeMs": 4,
+          "executionTimeMs": 2,
           "reasoning": [
             {
               "reason": "Experience Director kept the answer conversational and short so Hubly feels like a partner, not a report.",
@@ -1912,7 +1912,7 @@
           "changedFromPrevious": "Strategy Expert produced Business Strategy; Creative Director advanced that into Creative Plan (confidence 88 → 84).",
           "confidence": 84,
           "status": "ok",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "outputType": "Creative Plan",
           "retries": 0
         },
@@ -1990,7 +1990,7 @@
           "changedFromPrevious": "Builder Expert produced Builder Intent; Experience Director advanced that into Experience Review (confidence 81 → 87).",
           "confidence": 87,
           "status": "ok",
-          "executionTimeMs": 4,
+          "executionTimeMs": 2,
           "outputType": "Experience Review",
           "retries": 0
         }

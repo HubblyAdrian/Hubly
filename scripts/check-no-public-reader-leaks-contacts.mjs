@@ -173,6 +173,7 @@ leg("RULE", "every anon reader hands back an explicit field list, and no contact
     `carrying ${x.fields.join(", ")}`).join("\n") : ""));
 
 const bad = legs.filter((l) => !l.pass);
+// not-a-corpus-rate: this check's own leg count, not a corpus
 console.log(`\n${bad.length ? "FAIL" : "PASS"} — ${legs.length - bad.length}/${legs.length} legs`);
 if (bad.length) {
   console.log(`\nNO VALUES WERE PRINTED. Counts, paths and field NAMES only.`);

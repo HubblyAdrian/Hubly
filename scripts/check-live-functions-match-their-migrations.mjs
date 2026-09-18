@@ -132,5 +132,6 @@ leg("SHAPE", "every live function has a migration that defines it",
   `so it is not evidence either way about dashboard edits.`);
 
 const bad = legs.filter((l) => !l.pass);
+// not-a-corpus-rate: this check's own leg count, not a corpus
 console.log(`\n${bad.length ? "FAIL" : "PASS"} — ${legs.length - bad.length}/${legs.length} legs`);
 process.exit(bad.length ? 1 : 0);

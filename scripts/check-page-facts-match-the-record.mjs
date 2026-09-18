@@ -182,5 +182,6 @@ console.log(`\nSCOPED: a page stating the number WITHOUT a separator and WITHOUT
   `looks like, and reading one as the other manufactured four contradictions on 2026-09-17.`);
 
 const bad = legs.filter((l) => !l.pass);
+// not-a-corpus-rate: this check's own leg count, not a corpus
 console.log(`\n${bad.length ? "FAIL" : "PASS"} — ${legs.length - bad.length}/${legs.length} legs`);
 process.exit(bad.length ? 1 : 0);

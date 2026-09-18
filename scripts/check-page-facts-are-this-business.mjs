@@ -126,6 +126,7 @@ if (isPageStore.length < 2) {
     `the defect this rewrite removes. Do not let it pass as a narrow green.`);
   process.exit(2);
 }
+// not-a-corpus-rate: COLUMNS of a table, not businesses
 console.log(`DERIVED PAGE STORES — public-reader-exposed AND page-shaped (${isPageStore.length} of ${cols.length} candidate columns):`);
 for (const s of isPageStore) console.log(`  ${s.key}  (${s.rows} row(s) carry page-shaped content)`);
 if (excluded.length) {

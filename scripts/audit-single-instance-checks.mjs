@@ -166,6 +166,7 @@ console.log(`dimensions are single-instance, then by name.\n`);
 rows.sort((a, b) => b.partial.length - a.partial.length || a.f.localeCompare(b.f));
 for (const r of rows) {
   console.log(`  ${r.f}`);
+  // not-a-corpus-rate: dimensions of one check, not businesses
   for (const d of r.partial) console.log(`      ${d.dim}: touches ${d.hit[0]} — 1 of ${d.of}` +
     (d.why ? `\n          ${d.why}` : ""));
 }

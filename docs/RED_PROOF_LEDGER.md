@@ -13,7 +13,7 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-18T06:25:53.607Z** · 54 run(s) recorded.
+**Last run: 2026-09-18T14:46:18.680Z** · 55 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
@@ -120,3 +120,4 @@ have made the rule the first thing anyone switched off.
 - **2026-09-18T06:24:45.188Z** — 2 break(s) applied · 2 red alone · 0 compound · 0 not red · 2 skipped
 - **2026-09-18T06:25:15.554Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 1 skipped
 - **2026-09-18T06:25:53.607Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-18T14:46:18.680Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped

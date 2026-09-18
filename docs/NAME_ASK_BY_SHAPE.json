@@ -1,5 +1,5 @@
 {
-  "measured_at": "2026-09-18T06:31:29.447Z",
+  "measured_at": "2026-09-18T06:48:46.833Z",
   "complete": false,
   "results": [
     {
@@ -28,6 +28,33 @@
       "reply": "Yes — what kind of business is it? Yes — what kind of business is it?",
       "pass": true,
       "failures": []
+    },
+    {
+      "shape": "BARE-TRADE",
+      "said": "i do lawn care",
+      "mustAsk": true,
+      "askedForName": true,
+      "built": true,
+      "recordName": null,
+      "slug": "site-960075",
+      "reply": "Lawn care needs to feel reliable before anything else, so I’m giving this a grounded, clean look that feels local and easy to trust. People usually want to know what you handle fast — mowing, cleanup, maintenance — so the page will lead with the work instead of a long pitch. I’ll keep it practical a",
+      "pass": true,
+      "failures": []
+    },
+    {
+      "shape": "TRADE-PLACE",
+      "said": "I do mobile detailing in los angeles",
+      "mustAsk": true,
+      "askedForName": false,
+      "built": true,
+      "recordName": null,
+      "slug": "site-e81cc0",
+      "reply": "Mobile detailing needs to look clean before anyone reads a word, so I’m giving this a sharp, polished feel. Los Angeles customers should immediately understand that you come to them. The page should make the service feel convenient, professional, and easy to book. I’m keeping the focus on clean resu",
+      "pass": false,
+      "failures": [
+        "TRADE-PLACE — did not ask what the business is called",
+        "TRADE-PLACE — no page was rendered within 4 minutes, so nothing could be checked on it"
+      ]
     }
   ]
 }

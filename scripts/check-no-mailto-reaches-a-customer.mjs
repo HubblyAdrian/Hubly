@@ -227,6 +227,7 @@ for (const h of hitsW.sort((a, b) => (a.scope === b.scope ? 0 : a.scope === "IN"
   console.log(`          [${h.scope === "IN" ? "IN SCOPE" : "out     "}] ${h.at}  — ${h.why}`);
 
 const bad = legs.filter((l) => !l.pass);
+// not-a-corpus-rate: this check's own leg count, not a corpus
 console.log(`\n${bad.length ? "FAIL" : "PASS"} — ${legs.length - bad.length}/${legs.length} legs`);
 if (bad.length) console.log(`An enquiry sent by email never reaches Hubly: no booking, no lead, no record.`);
 process.exit(bad.length ? 1 : 0);

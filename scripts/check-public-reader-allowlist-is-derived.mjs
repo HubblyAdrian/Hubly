@@ -135,5 +135,6 @@ leg("SHAPE", "the column allowlist matches the fields the two callers read",
   `and update the function; a red here is the shape moving, not a defect.`);
 
 const bad = legs.filter((l) => !l.pass);
+// not-a-corpus-rate: this check's own leg count, not a corpus
 console.log(`\n${bad.length ? "FAIL" : "PASS"} — ${legs.length - bad.length}/${legs.length} legs`);
 process.exit(bad.length ? 1 : 0);

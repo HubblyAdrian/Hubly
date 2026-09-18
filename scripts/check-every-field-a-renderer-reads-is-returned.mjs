@@ -81,6 +81,7 @@ if (SHIPPING !== DECLARED_IN_BREAKS) {
   console.log("        shipping migration is now " + SHIPPING + ". Update the two break declarations'");
   console.log("        file/find values — as written they would edit a file this check no longer reads.");
 }
+// not-a-corpus-rate: migration FILES that define a function, not businesses
 console.log(`  reader declared by: supabase/migrations/${SHIPPING}  (latest of ${defining.length} that define it)`);
 console.log(`  it declares ${allow.cols.size} top-level key(s)\n`);
 
@@ -99,6 +100,7 @@ for (const p of per) for (const [k, v] of p.fields) {
 }
 const unreturned = [...union].filter(([k]) => !allow.cols.has(k));
 const findings = unreturned.filter(([, v]) => v.exempt < v.reads);
+// not-a-corpus-rate: FIELDS of one row, not businesses
 console.log(`\n  union of fields read: ${union.size} · declared by the reader: ${union.size - unreturned.length} · ` +
   `not declared: ${unreturned.length} (${unreturned.map(([k, v]) => `${k} ${v.exempt}/${v.reads} marked PUBLIC-READER-OPTIONAL`).join("; ") || "none"})\n`);
 
@@ -206,5 +208,6 @@ leg("RULE", "4 no field is reached by a computed key, so the derivation is compl
       `pass cannot be taken as "nothing is missing".`);
 
 const bad = legs.filter((l) => !l.pass);
+// not-a-corpus-rate: this check's own leg count, not a corpus
 console.log(`\n  ${bad.length ? "FAIL" : "PASS"} — ${legs.length - bad.length}/${legs.length} legs`);
 process.exit(bad.length ? 1 : 0);
