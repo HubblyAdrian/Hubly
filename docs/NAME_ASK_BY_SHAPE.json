@@ -1,5 +1,5 @@
 {
-  "measured_at": "2026-09-18T06:48:46.833Z",
+  "measured_at": "2026-09-18T19:21:28.665Z",
   "complete": false,
   "results": [
     {
@@ -9,8 +9,8 @@
       "askedForName": false,
       "built": true,
       "recordName": null,
-      "slug": "site-f7203b",
-      "reply": "Aviation needs to feel calm, precise, and trustworthy before anyone reads the details. I’m giving this a clean Los Angeles aviation feel — confident, not flashy. The writing will stay broad until you tell me the exact pilot services you offer, so it doesn’t overclaim. The first draft will give you a",
+      "slug": "site-e7b142",
+      "reply": "It’s building now — the page will appear in a moment. Aviation needs to feel composed before anything else, so I’m giving this a clean, confident look — not flashy, not corporate noise. Los Angeles adds a polished, high-expectation feel, so the page should read professional from the first line. I’m ",
       "pass": false,
       "failures": [
         "NEED — brand_color is the column default #1a3a6e, so no palette was chosen and every trade gets the same navy page",
@@ -33,13 +33,15 @@
       "shape": "BARE-TRADE",
       "said": "i do lawn care",
       "mustAsk": true,
-      "askedForName": true,
+      "askedForName": false,
       "built": true,
       "recordName": null,
-      "slug": "site-960075",
-      "reply": "Lawn care needs to feel reliable before anything else, so I’m giving this a grounded, clean look that feels local and easy to trust. People usually want to know what you handle fast — mowing, cleanup, maintenance — so the page will lead with the work instead of a long pitch. I’ll keep it practical a",
-      "pass": true,
-      "failures": []
+      "slug": "site-badc2b",
+      "reply": "Your lawn care page is being built now and should appear in about a minute. Lawn care needs to feel dependable fast, so I’m keeping this clean, green, and easy to scan. People should understand in seconds that you handle yard upkeep and can be reached without digging around. I’m leading with the wor",
+      "pass": false,
+      "failures": [
+        "BARE-TRADE — did not ask what the business is called"
+      ]
     },
     {
       "shape": "TRADE-PLACE",
@@ -48,12 +50,11 @@
       "askedForName": false,
       "built": true,
       "recordName": null,
-      "slug": "site-e81cc0",
-      "reply": "Mobile detailing needs to look clean before anyone reads a word, so I’m giving this a sharp, polished feel. Los Angeles customers should immediately understand that you come to them. The page should make the service feel convenient, professional, and easy to book. I’m keeping the focus on clean resu",
+      "slug": "site-355356",
+      "reply": "I've gathered what I can for now — what would you like to do next? Mobile detailing needs to feel clean before anyone reads a sentence, so I’m giving this a sharp, polished look that matches the work. Los Angeles customers also need to know fast that you come to them, so that stays front and center.",
       "pass": false,
       "failures": [
-        "TRADE-PLACE — did not ask what the business is called",
-        "TRADE-PLACE — no page was rendered within 4 minutes, so nothing could be checked on it"
+        "TRADE-PLACE — did not ask what the business is called"
       ]
     }
   ]

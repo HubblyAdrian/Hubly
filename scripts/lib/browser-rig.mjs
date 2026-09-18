@@ -42,6 +42,8 @@
  * because "the control did nothing" is a RESULT and "I could not press the control" is not.
  */
 import { createRequire } from "node:module";
+import { readFileSync, existsSync } from "node:fs";
+import { dirname, join } from "node:path";
 
 const require_ = createRequire(import.meta.url);
 
@@ -189,6 +191,36 @@ export async function openRig(opts = {}) {
 
     /** RULE 1 — a full navigation, never a same-document hash change, then settle. */
     async load(url, { fresh = true } = {}) {
+      // ══ A file:// SHELL CANNOT RESOLVE A ROOT-ABSOLUTE <script src="/x.js"> ═════════════════════
+      //
+      // Under file://, `/status-words.js` resolves to the FILESYSTEM ROOT. It 404s, silently, and the
+      // shell's inline code then runs with whatever that script was supposed to define `undefined`.
+      // No error reaches the check. 31 checks in this repo load a shell over file://, and on
+      // 2026-09-18 every one of them was measuring a platform-home with HC_STATUS_WORDS.quote = {} —
+      // only check-quote-pipeline ASSERTED on those words, so only it went red. The other 30 were
+      // silently degraded and green.
+      //
+      // This is the /contact-pick.js class in a third form: not a missing route and not a missing
+      // list entry, but a BASE URL under which a root-absolute path cannot resolve. The stylesheet
+      // precondition below already warns about exactly this for `href`; it was never extended to
+      // `src`, because stylesheets were what had bitten us.
+      //
+      // So the rig SUPPLIES them, derived from the shell's own tags and read off disk, through
+      // addInitScript — which runs BEFORE any of the page's own scripts, which is the only ordering
+      // that helps: a script injected after the inline block is too late to be read by it.
+      const fileShell = url.startsWith("file://") ? url.slice("file://".length).split("?")[0] : null;
+      const rootAbs = [];
+      if (fileShell) {
+        try {
+          const html = readFileSync(fileShell, "utf8");
+          const dir = dirname(fileShell);
+          for (const m of html.matchAll(/<script[^>]+src="(\/[^"]+)"/g)) {
+            const onDisk = join(dir, "." + m[1]);
+            if (existsSync(onDisk)) rootAbs.push({ src: m[1], content: readFileSync(onDisk, "utf8") });
+            else rootAbs.push({ src: m[1], content: null });
+          }
+        } catch (_) {}
+      }
       if (fresh) {
         // A new context per load: a same-document repeat is not an independent trial, and
         // neither is a second load carrying the first one's history entry for this fragment.
@@ -200,6 +232,19 @@ export async function openRig(opts = {}) {
         await applyRoutes(ctx);
         rig.page = page;
       }
+      for (const r of rootAbs) {
+        if (r.content === null) {
+          const e = new Error(`RIG PRECONDITION FAILED — the shell asks for <script src="${r.src}"> and ` +
+            `no such file exists beside it. Under file:// that request resolves to the filesystem ROOT ` +
+            `and 404s silently, so everything the script defines would be undefined and no error would ` +
+            `reach this check.`);
+          e.rigPrecondition = true;
+          throw e;
+        }
+        try { await page.addInitScript({ content: r.content }); } catch (_) {}
+      }
+      if (rootAbs.length) log(`  [load] supplied ${rootAbs.length} root-absolute script(s) a file:// base cannot resolve: ` +
+        rootAbs.map((r) => r.src).join(" "));
       await page.goto(url, { waitUntil: "domcontentloaded" });
       const s = await settle(() => document.readyState + "|" + document.body.innerText.length, "load");
       log(`  [load] ${url}  settled in ${s.ms}ms`);
