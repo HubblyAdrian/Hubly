@@ -160,7 +160,7 @@ is worse than no check: it is a smoke alarm that has been beeping so long the ba
 > about."* — Adrian, 2026-09-17
 
 **AND THE COUNT IN THIS FILE WAS WRONG.** The summary above says *"Three of the twenty are OURS and
-correct to be red"*. Counted properly against the 20, it is **seven** — a hand-written total in a
+correct to be red"*. Counted properly against the 20, it was **seven** (eight since 2026-09-17, with `check-baseline-before-schema`) — a hand-written total in a
 file whose whole subject is untrustworthy totals, which is the same defect as the lessons file
 miscounting its own lessons. The three it meant were the three product defects; it silently left out
 the tripwire, the two rulings and the write audit, and those are exactly the ones that look like
@@ -175,6 +175,8 @@ forgotten bugs from the outside.
 | `check-graefs-page` | **a TRIPWIRE doing its job, not a failure.** It recorded `#p-storefront` and the container is `#p-classic-site` now. A tripwire that goes off on a rename is correct; silencing it by widening the matcher would destroy the only thing it does | the rename is confirmed as intended and the snapshot is re-recorded **deliberately** with `--update`. Green means the recorded page matches what is served, and the next unexplained change trips it again |
 | `check-booking-link-subdomain` | **a routing ruling, not a code fix.** It asserts the apex serves `hubly.html`'s Welcome. The apex serves the owner shell now, which is almost certainly right and is Adrian's call, not a session's | Adrian rules what the apex serves. If it is the owner shell, the check's assertion is a SHAPE it froze and the check is what changes. Green means the assertion matches the ruling |
 | `check-draft-token-truthiness` | **the claimed-owner write audit, open.** One writer still has no owner alternative, so a claimed site cannot use it. Fixing it blind risks the exact class the audit exists to find | every page-write path accepts `p_owner_id` and is exercised as a signed-in owner. Green means no writer is dead on a claimed site — and that is the one it cannot prove alone, because Claude Code cannot sign in |
+
+| `check-baseline-before-schema` (leg 2) | **RED ON PURPOSE, added 2026-09-17.** `document_generation_events` holds ZERO rows: no page has been generated since the table was created, so the `json_object` baseline that the schema change must be measured against does not exist yet. Adrian ruled "collect the baseline first, do not flip the flag" — and a leg that went green on an empty table would be the check agreeing that nothing needs collecting | the first document generated writes a row. The leg goes green on its own, with no edit, the moment the measurement actually starts. Its three siblings guard the rest: the flag cannot be flipped while the baseline is unusable, every failure must carry its `error_kinds`, and `schema_mode` must be read from the call rather than written as a literal |
 
 **Not on this list, and therefore NOT deliberate:** the ten marketing/milestone checks
 (`homepage-craft`, `onboarding-priority`, `landing-intent`, `customer-journey-os`, `m2-epic1/2/7`,

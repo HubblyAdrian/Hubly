@@ -107,6 +107,55 @@ try {
   }
 } catch (_) {}
 
+/* ── MISSING DOOR OR DEAD ROOM — the distinction that is the whole value of this sweep ─────────
+ *
+ * Adrian, 2026-09-17: *"An unreferenced table with owner RLS on it is a capability somebody MEANT to
+ * reach. That distinction is the whole value of the sweep and right now it is not in the output."*
+ *
+ * `ask_hubly_conversations` is why. It sat here for seven weeks with zero rows and zero references,
+ * and it was not dead: it had owner RLS on both tables, which is somebody having decided who is
+ * allowed in. The fix was one column and a caller, not a build.
+ *
+ * READ FROM pg_policy, not guessed:
+ *   MISSING DOOR   RLS on, and at least one policy scoped to auth.uid() or owner_id. Somebody
+ *                  authorised an OWNER to reach this. Nothing calls it. That is a missing door.
+ *   SERVICE-ONLY   RLS on, but no owner-scoped policy — only the service role can touch it. Neither
+ *                  a door nor a room: infrastructure, and it is a THIRD answer rather than being
+ *                  forced into one of two. Forcing it would be the flattering-default error.
+ *   DEAD ROOM      no RLS at all, or no policies. Built, never authorised, never called.
+ */
+let policyOf = new Map();
+try {
+  const pol = q(`select c.relname as t, c.relrowsecurity as rls, count(p.polname) as policies,
+                        count(*) filter (where p.polqual::text like '%auth.uid()%'
+                                            or p.polqual::text like '%owner_id%') as owner_scoped
+                   from pg_class c join pg_namespace n on n.oid=c.relnamespace
+                   left join pg_policy p on p.polrelid=c.oid
+                  where n.nspname='public' and c.relkind='r' group by 1,2`);
+  policyOf = new Map(pol.map((r) => [r.t, r]));
+} catch (_) { console.log("  pg_policy NOT READABLE — every table below will read as UNKNOWN rather than as a dead room"); }
+const doorOf = (name, rows) => {
+  // ══ ROWS DECIDE FIRST, AND THIS WAS WRONG UNTIL IT DIDN'T ═════════════════════════════════════
+  //
+  // The first version tagged `model_calls` (734 rows), `rebuild_outcome_events` (259) and
+  // `first_turn_outcomes` (87) as DEAD ROOMS, on the reasoning "RLS on, no policies, no live code
+  // reference". Every part of that was true and the conclusion was nonsense: SOMETHING IS WRITING
+  // THEM. The writers are RPCs and the service role, and neither mentions the table name in code a
+  // grep of public/ and supabase/functions/ can see — so "0 live references" was a fact about my
+  // reachability test, for the third time in this file.
+  //
+  // A table with rows has answered the question. It is reached; only HOW is unknown.
+  const n = Number(rows);
+  if (Number.isFinite(n) && n > 0)
+    return { tag: "REACHED (has rows)", why: `${n} row(s) exist, so something writes it — the zero live ` +
+      `references mean the writer is INDIRECT (an rpc, a trigger, the service role), not that it is dead` };
+  const p = policyOf.get(name);
+  if (!p) return { tag: "UNKNOWN", why: "policies not readable — not called a dead room on a failed read" };
+  if (Number(p.owner_scoped) > 0) return { tag: "MISSING DOOR", why: `${p.owner_scoped} of ${p.policies} policy(ies) scoped to an OWNER — somebody authorised a PERSON to reach this, and nothing calls it` };
+  if (p.rls && Number(p.policies) > 0) return { tag: "SERVICE-ONLY, unwritten", why: `${p.policies} policy(ies), none owner-scoped — only the service role may touch it, and it never has` };
+  return { tag: "DEAD ROOM", why: `rls=${p.rls}, ${p.policies} policy, 0 rows — built, never authorised, never written` };
+};
+
 /* ── DIMENSION 2: EDGE FUNCTIONS ─────────────────────────────────────────────────────────────── */
 const fnDir = join(ROOT, "supabase/functions");
 const fns = readdirSync(fnDir, { withFileTypes: true })
@@ -116,7 +165,7 @@ const fns = readdirSync(fnDir, { withFileTypes: true })
 const out = [];
 for (const { t } of tables) {
   const r = refs(t);
-  out.push({ kind: "table", name: t, rows: rowsOf[t], added: bornTable(t), refs: r.all, live: r.live, where: r.where });
+  out.push({ kind: "table", name: t, rows: rowsOf[t], added: bornTable(t), refs: r.all, live: r.live, where: r.where, ...doorOf(t, rowsOf[t]) });
 }
 /* ── AND A TRIGGER OR A CRON JOB IS A CALLER. ────────────────────────────────────────────────
    The first run of this sweep reported NINE edge functions as "nothing live reaches", and two of
@@ -163,12 +212,66 @@ console.log(`discovered: AN EXTERNAL SERVICE POSTING TO A FUNCTION. \`stripe-web
 console.log(`Stripe, not by us; an OAuth redirect is called by the provider. Nothing in this repo or`);
 console.log(`this database records those, so a function below may be fully live and reached only from`);
 console.log(`outside. Check the provider's dashboard before treating any webhook-shaped name as dead.\n`);
-console.log(`  ${"WHAT".padEnd(40)} ${"ROWS".padStart(7)}  ${"ADDED".padEnd(11)} ${"REFS".padStart(5)} ${"LIVE".padStart(5)}`);
+console.log(`  ${"WHAT".padEnd(40)} ${"ROWS".padStart(7)}  ${"ADDED".padEnd(11)} ${"REFS".padStart(5)} ${"LIVE".padStart(5)}  WHICH IS IT`);
 for (const o of dead) {
   console.log(`  ${(o.kind + " " + o.name).padEnd(40)} ${String(o.rows ?? "—").padStart(7)}  ${String(o.added).padEnd(11)} ` +
-    `${String(o.refs).padStart(5)} ${String(o.live).padStart(5)}` +
-    (o.rows === 0 || o.rows === "0" ? "   ← zero rows AND nothing live reads it" : ""));
+    `${String(o.refs).padStart(5)} ${String(o.live).padStart(5)}  ${o.tag || "(edge fn — a door, by definition)"}`);
 }
+const tally = {};
+for (const o of dead) if (o.tag) tally[o.tag] = (tally[o.tag] || 0) + 1;
+console.log(`\n  BY WHICH IT IS: ${Object.entries(tally).map(([k, n]) => `${k} ${n}`).join(" · ") || "(no tables)"}`);
+console.log(`  MISSING DOOR = authorised for an owner and never called. That is the ask_hubly_conversations`);
+console.log(`  shape, and it is a REASON TO KEEP: the fix for one of those is a caller, not a build.`);
+for (const o of dead.filter((x) => x.tag && x.tag !== "MISSING DOOR").slice(0, 20))
+  console.log(`      ${o.name.padEnd(38)} ${o.tag} — ${o.why}`);
+/* ══ THE THIRD CALLER CLASS, MADE VISIBLE — 2026-09-17 ═════════════════════════════════════════
+ *
+ * The header names a caller this sweep cannot see: an external service posting in. Adrian:
+ * *"Find out. A function with recent invocations and zero code references is the opposite of an
+ * orphan — it is a door with no map."*
+ *
+ * There is no invocation log reachable from here (`supabase functions list` gives a DEPLOY time, not
+ * a call count). But a function that ran LEFT ROWS, and rows are readable. So each unreferenced
+ * function is asked the only question that can be answered: do the tables you write hold anything?
+ *
+ * It found `page-view` immediately: 223 rows in `page_loads`. That function is fully live and the
+ * sweep had it in the dead list, because the public page builds its URL at run time and no grep of
+ * ours sees it. Fourth time in this one file that "nothing reaches it" was a fact about the test.
+ *
+ * WHAT THIS STILL CANNOT DO, said rather than implied: a function that ran and wrote NOTHING — a
+ * webhook that rejected a signature, a handler that 400'd — is indistinguishable from one that never
+ * ran. `no rows anywhere` is "no evidence of an invocation", never "it has never been invoked". */
+const writesOf = (fn) => {
+  try {
+    const src = readFileSync(join(fnDir, fn, "index.ts"), "utf8");
+    return [...new Set([...src.matchAll(/\.from\(\s*["'`]([a-z_]+)["'`]\s*\)/g)].map((m) => m[1]))];
+  } catch (_) { return []; }
+};
+const deadFns = dead.filter((o) => o.kind === "edge fn");
+if (deadFns.length) {
+  console.log(`\nDID THE UNREFERENCED FUNCTIONS EVER RUN? Asked of the tables they write, because there is`);
+  console.log(`no invocation log reachable from here. Rows are evidence of a call; no rows is NOT evidence`);
+  console.log(`of no call — a rejected webhook writes nothing and looks identical.`);
+  // ONLY AN EXCLUSIVE TABLE IS EVIDENCE. The first version credited `booking-confirmed` and
+  // `studio-api` with "EVIDENCE OF A CALL" off `businesses:211` — a table almost every function
+  // touches. Rows in a shared table say nothing about WHICH writer put them there. A table whose only
+  // writer is this one function does.
+  const writerCount = {};
+  for (const f of fns) for (const t of writesOf(f)) writerCount[t] = (writerCount[t] || 0) + 1;
+  for (const o of deadFns) {
+    const tabs = writesOf(o.name).filter((t) => rowsOf[t] !== undefined);
+    const exclusive = tabs.filter((t) => writerCount[t] === 1);
+    if (!exclusive.length) {
+      console.log(`  ${o.name.padEnd(26)} UNANSWERABLE — it writes ${tabs.length} table(s) and none is exclusive ` +
+        `to it${tabs.length ? " (" + tabs.map((t) => `${t}:${writerCount[t]} writers`).join(", ") + ")" : ""}, so rows prove nothing about THIS function`);
+      continue;
+    }
+    const withRows = exclusive.filter((t) => Number(rowsOf[t]) > 0);
+    console.log(`  ${o.name.padEnd(26)} ${withRows.length ? "EVIDENCE OF A CALL" : "NO evidence of a call"} — exclusive table(s): ` +
+      exclusive.map((t) => `${t}:${rowsOf[t]}`).join(" · "));
+  }
+}
+
 console.log(`\nREACHED BY LIVE CODE (not orphans, listed so the count above has a denominator): ${out.length - dead.length}`);
 const thin = out.filter((o) => o.live > 0 && o.live <= 2 && (o.rows === 0 || o.rows === "0"));
 if (thin.length) {

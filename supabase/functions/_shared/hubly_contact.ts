@@ -189,8 +189,30 @@ function contactList(facts: ContactBlockFacts): string {
     const tel = phoneDigitsKey(facts.phone);
     items.push(`<li><a href="tel:${escAttr(tel)}" data-hc="contact.phone" data-hubly-phone>${escText(facts.phone)}</a></li>`);
   }
+  // ══ THE EMAIL IS INFORMATION, NOT A CALL TO ACTION — 2026-09-17, RULED BY ADRIAN ══════════════
+  //
+  // This emitted `<a href="mailto:…">` while the document validator REJECTS mailto:
+  // (hubly_document.ts:648). One of our own modules wrote what another refuses, and three of the
+  // four stored pages carrying a mailto were written AFTER the ban went in on 2026-08-17 — the ban
+  // could not stop them because it guards the AST and this writes HTML.
+  //
+  // The ban's reason is kept: an enquiry sent by email never reaches Hubly, so there is no booking,
+  // no lead and no record, and it lands in an inbox the owner may not watch. Its own error message
+  // already said what to do instead — "show the address as plain text if it is useful information".
+  //
+  // SO THE ADDRESS STAYS AND THE LINK GOES. Both marks are preserved deliberately: `data-hc` keeps
+  // click-to-edit and the sync-every-occurrence path working, `data-hubly-email` keeps the
+  // fact-already-present detector working. Dropping either would break the editor to fix a link.
+  //
+  // WHAT IS DELIBERATELY *NOT* DONE HERE: no `<a href="hubly:contact">` call to action is added.
+  // That scheme is bound by wireHublyDocumentReserved, which listens inside `#hc-doc-root` ONLY —
+  // so it is live on a mounted document and DEAD inside the full-document iframe renderer, the
+  // second of the two mount paths. Shipping a CTA that works on one renderer and silently does
+  // nothing on the other is worse than the mailto it replaced, and "never ship copy that offers an
+  // action until a working path to it has been tested end to end" is the standing rule. The CTA is
+  // named as outstanding in docs/OWNER_VERIFICATIONS.md rather than guessed at.
   if (facts.email) {
-    items.push(`<li><a href="mailto:${escAttr(facts.email)}" data-hc="contact.email" data-hubly-email>${escText(facts.email)}</a></li>`);
+    items.push(`<li><span data-hc="contact.email" data-hubly-email>${escText(facts.email)}</span></li>`);
   }
   if (facts.address) {
     items.push(`<li><address data-hc="contact.address" data-hubly-address>${escText(facts.address)}</address></li>`);
@@ -373,7 +395,11 @@ function addIntoExistingBlock(html: string, facts: ContactBlockFacts): { html: s
   const added: string[] = [];
   const rows: string[] = [];
   if (facts.phone) { const tel = phoneDigitsKey(facts.phone); rows.push(`<li><a href="tel:${escAttr(tel)}" data-hc="contact.phone" data-hubly-phone>${escText(facts.phone)}</a></li>`); added.push("phone"); }
-  if (facts.email) { rows.push(`<li><a href="mailto:${escAttr(facts.email)}" data-hc="contact.email" data-hubly-email>${escText(facts.email)}</a></li>`); added.push("email"); }
+  // THE SECOND WRITER OF THE SAME ROW. A bug is a CLASS, not a line: this file builds the email row
+  // in TWO places — contactList() for a new block and here for a row added into an existing one — and
+  // fixing only the first would have left the mailto alive on exactly the path an owner takes when he
+  // adds his email to a page that already has a contact block. Same change, same reasons, see above.
+  if (facts.email) { rows.push(`<li><span data-hc="contact.email" data-hubly-email>${escText(facts.email)}</span></li>`); added.push("email"); }
   if (facts.address) { rows.push(`<li><address data-hc="contact.address" data-hubly-address>${escText(facts.address)}</address></li>`); added.push("address"); }
   if (!rows.length) return { html, changed: false, added };
   const rowsHtml = rows.join("");
@@ -577,7 +603,11 @@ export function contactHoursLayoutCss(): string {
     "[data-hubly-contact-block] dd{margin:0;text-align:right}" +
     "[data-hubly-contact-block] .hubly-ch-note{margin:0 0 20px}" +
     "[data-hubly-contact-block] .hubly-ch-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}" +
-    "[data-hubly-contact-block] .hubly-ch-list a{color:inherit;text-decoration:none}" +
+    // The email is a <span> now rather than an <a> (see contactList), so the rule that gave contact
+    // rows their look has to cover both or the address renders in a different colour from the phone
+    // beside it. A legibility regression introduced while removing a link would be the layout defect
+    // this repo treats as equal to any other.
+    "[data-hubly-contact-block] .hubly-ch-list a,[data-hubly-contact-block] .hubly-ch-list span{color:inherit;text-decoration:none}" +
     "[data-hubly-contact-block] address{font-style:normal}" +
     "</style>"
   );

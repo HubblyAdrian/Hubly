@@ -1550,6 +1550,7 @@ function factsFromRecord(record: BusinessRecord, customerCount?: number): Busine
 export async function generateAndValidateDocument(system: string, brief: string, businessId: string, tag: string, modelOverride?: string, reasoningEffortOverride?: "low" | "medium" | "high", facts?: BusinessFacts): Promise<DocGenOutcome> {
   const usage = emptyUsage();
   let modelUsed: string | undefined;
+  let schemaModeUsed: string | null = null;
   // Standard approach as of 2026-08-06 (see buildDesignRationaleInstructions'
   // header comment for the real benchmark this was decided from) — the
   // model must state its structural reasoning, in-band, as part of the same
@@ -1560,6 +1561,9 @@ export async function generateAndValidateDocument(system: string, brief: string,
     const ai = await HublyAI.complete({ feature: "hubly-document-generate", task: "document_generate", system: fullSystem, messages, jsonMode: true, model: modelOverride || undefined, reasoningEffort: reasoningEffortOverride || undefined });
     addUsage(usage, ai.usage);
     modelUsed = ai.model;
+    // WHICH JSON CONTRACT THIS ATTEMPT RAN UNDER, reported by the layer that sent it. See the note on
+    // schema_mode below: a literal here is the same assumption written twice.
+    schemaModeUsed = (ai as { schemaMode?: string }).schemaMode ?? null;
     const raw = String(ai.text || "");
     if (!raw) {
       // Reasoning-tier models can spend their whole token budget on hidden
@@ -1613,9 +1617,18 @@ export async function generateAndValidateDocument(system: string, brief: string,
         headers: { ...adminHeaders(), "content-type": "application/json", prefer: "return=minimal" },
         body: JSON.stringify({
           business_id: businessId, tag, model: model ?? null,
-          // THE MODE IS RECORDED, NOT ASSUMED. When the strict contract is turned on this string
-          // changes with it and the comparison is one GROUP BY rather than an argument.
-          schema_mode: "json_object",
+          // ══ THE MODE IS RECORDED, NOT ASSUMED — AND NOW IT ACTUALLY IS ════════════════════════
+          //
+          // This said `schema_mode: "json_object"` as a LITERAL, under a comment claiming it was
+          // recorded. It was not: it was the same assumption written twice, and it is the one field
+          // that must move when the contract moves. Flip the flag in hubly_ai.ts and every row here
+          // would still have said json_object, making the before/after comparison silently wrong in
+          // exactly the moment the measurement exists for.
+          //
+          // It comes from the AI layer now, which reports the response_format it actually sent.
+          // "none" is a real answer — no JSON contract was in force — and is distinguishable from
+          // both contracts, so a row can never be mistaken for a baseline row it is not.
+          schema_mode: schemaModeUsed ?? "unrecorded",
           first_attempt_ok: okFirst,
           error_kinds: [...new Set((errs || []).map((e) => kindOf(String(e.message || ""))))],
           error_count: (errs || []).length,

@@ -430,6 +430,17 @@ export type HublyAIResult = {
   provider: HublyAIProvider;
   model: string;
   task: HublyAITask;
+  /** ══ WHICH JSON CONTRACT THIS CALL ACTUALLY USED ════════════════════════════════════════════
+   *
+   *  `document_generation_events.schema_mode` was written as the literal "json_object" by the
+   *  registry. That literal is the ONE FIELD that has to change when the contract changes, so a
+   *  hardcoded copy of it guarantees the before/after comparison is wrong in exactly the moment it
+   *  matters: flip the flag and every row still says json_object.
+   *
+   *  So the AI layer reports what it SENT. Recorded, never assumed — the same rule as every other
+   *  number in this repo. "none" means no response_format was set at all, which is its own honest
+   *  answer and distinguishable from both contracts. */
+  schemaMode?: "none" | "json_object" | "json_schema";
   /** Echo of memory keys present (not full payload) for debugging. */
   memoryKeys?: string[];
   /** Section 1 — Brain execution id for this call. */
@@ -698,6 +709,10 @@ type InternalCall = HublyAICallOpts & {
   model: string;
 };
 
+// THE CLAUDE PATH SETS NO response_format AT ALL, and says so rather than leaving the field
+// undefined. A missing value would read as "we did not record it"; "none" records that no JSON
+// contract was in force, which is a different and more useful fact — and it is the answer that makes
+// a row from this provider impossible to mistake for a baseline row.
 async function callClaude(opts: InternalCall): Promise<HublyAIResult> {
   const apiKey = env("ANTHROPIC_API_KEY");
   if (!apiKey) {
@@ -748,6 +763,7 @@ async function callClaude(opts: InternalCall): Promise<HublyAIResult> {
     model: opts.model,
     task: opts.task,
     memoryKeys: memoryKeys(opts.memory),
+    schemaMode: "none",
   };
 }
 
@@ -816,7 +832,13 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
     messages,
   };
   if (typeof opts.temperature === "number") body.temperature = opts.temperature;
+  // ONE PLACE DECIDES THE CONTRACT, AND IT REPORTS WHAT IT DECIDED. When this becomes json_schema,
+  // `schemaMode` below changes with it because it is read off the body rather than written twice.
   if (opts.jsonMode) body.response_format = { type: "json_object" };
+  const schemaMode: "none" | "json_object" | "json_schema" =
+    ((body.response_format as { type?: string } | undefined)?.type === "json_schema") ? "json_schema"
+    : ((body.response_format as { type?: string } | undefined)?.type === "json_object") ? "json_object"
+    : "none";
   if (opts.reasoningEffort) body.reasoning_effort = opts.reasoningEffort;
 
   // RETRY THE RETRYABLE ONES.
@@ -926,6 +948,7 @@ async function callOpenAI(opts: InternalCall): Promise<HublyAIResult> {
     memoryKeys: memoryKeys(opts.memory),
     usage,
     finishReason,
+    schemaMode,
   };
 }
 

@@ -40534,7 +40534,19 @@ function renderWsHeroContact(){
   const pills=[];
   if(city)pills.push(`<span class="ws-hero-contact-pill">📍 ${escPeHtml(city)}</span>`);
   if(phone)pills.push(`<a class="ws-hero-contact-pill" href="tel:${escPeHtml(phone.replace(/[^\d+]/g,''))}">📞 ${escPeHtml(phone)}</a>`);
-  if(email)pills.push(`<a class="ws-hero-contact-pill" href="mailto:${escPeHtml(email)}">✉️ ${escPeHtml(email)}</a>`);
+  // ══ THE EMAIL PILL IS INFORMATION, NOT A CALL TO ACTION — 2026-09-17 ════════════════════════
+  //
+  // This was an `<a href="mailto:">` on the CLASSIC public hero, and it is the reason "classic ships
+  // zero mailto links" was true and misleading at the same time: no classic page STORES one, because
+  // this pill is built at render time from `S.email`. A visitor saw a mailto that no sweep over
+  // `businesses.meta` could ever find. Two renderers, one of them invisible to the measurement — the
+  // hazard this repo has now paid for six times.
+  //
+  // Same ruling as the freeform contact block: an enquiry sent by email never reaches Hubly, so no
+  // booking, no lead, no record, and it may land in an inbox the owner does not watch. The address
+  // STAYS — it is useful information — and stops being a link. The phone pill beside it is a real
+  // `tel:` and is untouched, so the hero still offers a working way to make contact.
+  if(email)pills.push(`<span class="ws-hero-contact-pill">✉️ ${escPeHtml(email)}</span>`);
   if(contact){
     contact.style.display='flex';
     contact.innerHTML=pills.length?pills.join(''):(typeof isEditorViewOpen==='function'&&isEditorViewOpen()?'<span class="ws-hero-contact-pill">Tap to add contact</span>':'');
@@ -41034,7 +41046,12 @@ function renderWebsite(prefix){
   if(footContact){
     let contactHtml=`<h4>${t('wsContact')}</h4>`;
     if(phone)contactHtml+=`<div class="ws-footer-contact-item"><a href="tel:${phone.replace(/\D/g,'')}">${phone}</a></div>`;
-    if(email)contactHtml+=`<div class="ws-footer-contact-item"><a href="mailto:${email}">${email}</a></div>`;
+    // THE SECOND INSTANCE IN THIS FILE, AND IT WAS ONE LINE AWAY. The hero pill above was fixed
+    // first; this footer row is the same mailto on the same classic public page, and finding it took
+    // a check rather than a re-read — "a bug is a CLASS, not a line" earning its place again. Same
+    // ruling: the address is information and stays, the link goes, and the `tel:` row above it is
+    // untouched so the footer still offers a working way to make contact.
+    if(email)contactHtml+=`<div class="ws-footer-contact-item"><span>${email}</span></div>`;
     if(city)contactHtml+=`<div class="ws-footer-contact-item"><p>📍 ${city}</p></div>`;
     if(!phone&&!email&&!city)contactHtml+=`<div class="ws-footer-contact-item"><p>${t('wsAddContactInfo')}</p></div>`;
     footContact.innerHTML=contactHtml;

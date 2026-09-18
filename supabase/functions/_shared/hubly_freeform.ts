@@ -82,6 +82,17 @@ function syncedHref(el: ScannedEl, label: string, newText: string): string | nul
     // is a caption change, not a number change, and must not blank the link.
     return digits.replace(/\D/g, "").length >= 7 ? `tel:${digits}` : null;
   }
+  // ══ THIS SURVIVES THE mailto BAN ON PURPOSE — 2026-09-17 ═══════════════════════════════════
+  //
+  // It looks like an emitter and it is not one: the branch only runs when the element ALREADY has a
+  // mailto href (`/^mailto:/i.test(href)` above), and all it does is keep that href truthful when the
+  // owner edits the visible address. Returning null instead would produce exactly the defect the
+  // comment above this function names — a page that SAYS the new address and MAILS the old one.
+  //
+  // It has no live instances left: every stored page's mailto was patched out on 2026-09-17
+  // (scripts/patch-remove-mailto.mjs), and neither writer emits one any more. It stays for an older
+  // stored version, which history does not rewrite. check-no-mailto-reaches-a-customer classifies it
+  // as out of scope for a stated reason rather than by an exception list.
   if (label === "contact.email" && /^mailto:/i.test(href)) {
     const m = /[^\s<>@]+@[^\s<>@]+\.[^\s<>@]+/.exec(newText);
     return m ? `mailto:${m[0]}` : null;
