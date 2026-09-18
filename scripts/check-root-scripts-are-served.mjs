@@ -57,7 +57,40 @@ const code = codeOf(router);
 // and a red is what a broken router must produce. The list form is detectable on its own, so it is
 // asserted on its own, first.
 const listForm = /urlPath === '\/[A-Za-z0-9._-]+\.js'/.test(code);
-const m = /(\/(?:[^/\\\n]|\\.)+\/)\.test\(urlPath\)/.exec(code);
+// ══ EXTRACTING A REGEX LITERAL NEEDS A SCANNER, NOT A REGEX ═══════════════════════════════════
+//
+// This was `/(\/(?:[^/\\\n]|\\.)+\/)\.test\(urlPath\)/`, which stops at the first unescaped `/`.
+// On 2026-09-18 the router's pattern was widened from `.js` to every extension and became
+// `/^\/[^/]*\.[^/.]+$/` — a `/` inside a CHARACTER CLASS, which needs no escape and is not a
+// delimiter. The extractor truncated it, applied the fragment, and reported that the router "cannot
+// serve" five scripts it demonstrably does serve — /status-words.js returns its own bytes in
+// production, verified. A [SHAPE] leg going red because the shape moved is not an alarm; the leg is
+// what is wrong, and undoing the improvement to satisfy it would have been the real defect
+// (CLAUDE.md on [RULE] vs [SHAPE]).
+//
+// So the literal is scanned: inside `[...]` a `/` is a character, outside it is the delimiter.
+const extractRegexLiteral = (src) => {
+  const at = src.indexOf(".test(urlPath)");
+  if (at < 0) return null;
+  // walk back from `.test(` to the `/` that closes the literal, then back to the one that opens it
+  let end = src.lastIndexOf("/", at);
+  if (end < 0) return null;
+  let i = end - 1, inClass = false, esc = false;
+  const chars = [];
+  for (; i >= 0; i--) {
+    const c = src[i];
+    chars.push(c);
+    if (esc) { esc = false; continue; }
+    if (src[i - 1] === "\\") { esc = true; continue; }
+    if (c === "]") { inClass = true; continue; }
+    if (c === "[") { inClass = false; continue; }
+    if (c === "/" && !inClass) return "/" + chars.reverse().slice(1).join("") + "/";
+    if (c === "\n") return null;
+  }
+  return null;
+};
+const extracted = extractRegexLiteral(code);
+const m = extracted ? [extracted, extracted] : null;
 
 say("1 the router decides by a PATTERN, not by a list of filenames",
     !listForm && !!m, listForm ? "a filename equality test is back in api/router.js" : (m ? m[1] : "no pattern found"));

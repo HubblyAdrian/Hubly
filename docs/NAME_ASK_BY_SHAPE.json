@@ -1,20 +1,19 @@
 {
-  "measured_at": "2026-09-18T19:21:28.665Z",
+  "measured_at": "2026-09-18T19:25:06.971Z",
   "complete": false,
   "results": [
     {
       "shape": "NEED",
       "said": "Im an aviation pilot in Los Angeles I need a website",
       "mustAsk": true,
-      "askedForName": false,
+      "askedForName": true,
       "built": true,
       "recordName": null,
-      "slug": "site-e7b142",
-      "reply": "It’s building now — the page will appear in a moment. Aviation needs to feel composed before anything else, so I’m giving this a clean, confident look — not flashy, not corporate noise. Los Angeles adds a polished, high-expectation feel, so the page should read professional from the first line. I’m ",
+      "slug": "site-38cce0",
+      "reply": "It’s building now — the page will appear as soon as it’s ready. Aviation work needs to feel calm, precise, and credible from the first glance, so I’m giving this a clean, controlled look rather than anything flashy. Los Angeles matters here — the page should make you feel available, professional, an",
       "pass": false,
       "failures": [
-        "NEED — brand_color is the column default #1a3a6e, so no palette was chosen and every trade gets the same navy page",
-        "NEED — did not ask what the business is called"
+        "NEED — brand_color is the column default #1a3a6e, so no palette was chosen and every trade gets the same navy page"
       ]
     },
     {
@@ -28,34 +27,6 @@
       "reply": "Yes — what kind of business is it? Yes — what kind of business is it?",
       "pass": true,
       "failures": []
-    },
-    {
-      "shape": "BARE-TRADE",
-      "said": "i do lawn care",
-      "mustAsk": true,
-      "askedForName": false,
-      "built": true,
-      "recordName": null,
-      "slug": "site-badc2b",
-      "reply": "Your lawn care page is being built now and should appear in about a minute. Lawn care needs to feel dependable fast, so I’m keeping this clean, green, and easy to scan. People should understand in seconds that you handle yard upkeep and can be reached without digging around. I’m leading with the wor",
-      "pass": false,
-      "failures": [
-        "BARE-TRADE — did not ask what the business is called"
-      ]
-    },
-    {
-      "shape": "TRADE-PLACE",
-      "said": "I do mobile detailing in los angeles",
-      "mustAsk": true,
-      "askedForName": false,
-      "built": true,
-      "recordName": null,
-      "slug": "site-355356",
-      "reply": "I've gathered what I can for now — what would you like to do next? Mobile detailing needs to feel clean before anyone reads a sentence, so I’m giving this a sharp, polished look that matches the work. Los Angeles customers also need to know fast that you come to them, so that stays front and center.",
-      "pass": false,
-      "failures": [
-        "TRADE-PLACE — did not ask what the business is called"
-      ]
     }
   ]
 }

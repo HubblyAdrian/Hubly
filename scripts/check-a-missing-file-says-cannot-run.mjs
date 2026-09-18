@@ -136,7 +136,29 @@ for (const f of files) {
     // An unconditional public/ fallback made every bare shell filename resolve, which is exactly
     // the six-dark-checks defect made invisible; red-proofing caught it returning NOTHING.
     const nearPublic = /\bPUBLIC\b|publicDir|["'`]public["'`]/.test(line);
-    const candidates = [join(ROOT, rel), join(DIR, rel), rel].concat(nearPublic ? [join(ROOT, "public", rel)] : []);
+    // ══ AND ANY OTHER DIRECTORY THE LINE ITSELF NAMES, not just public/ ═════════════════════════
+    //
+    // The public/ case above is right and was too narrow: public/ was simply the directory that had
+    // bitten us. `join(ROOT, "api", "sitemap.js")` and
+    // `join(ROOT, "supabase", "migrations", "20260918200000_….sql")` name their directories on the
+    // same line in exactly the same way, and this scan reported all three as "not on disk" — three
+    // false positives on files that exist, while leg 2 (the strong per-read-path test) passed on all
+    // 59. A detector that produces flattering-looking findings about real files gets believed, and
+    // then ignored.
+    //
+    // Derived from the line: every quoted bare segment on it, in order, tried as a directory prefix.
+    // Not a list of directory names — the same reason the router stopped listing filenames.
+    const segs = [...line.matchAll(/["'`]([A-Za-z_][\w.-]*)["'`]/g)].map((m) => m[1])
+      .filter((x) => x !== rel && !/[./]/.test(x));
+    // EVERY PREFIX, because the quoted segments on a line are not all directories: the first attempt
+    // took the whole list and got ["supabase","migrations","utf8"] — the encoding argument of
+    // readFileSync — and reported a real file as missing. Trying prefixes means the right one is
+    // found without my having to know which arguments are path segments.
+    const segCandidates = [];
+    for (let i = segs.length; i > 0; i--) segCandidates.push(join(ROOT, ...segs.slice(0, i), rel));
+    const candidates = [join(ROOT, rel), join(DIR, rel), rel]
+      .concat(nearPublic ? [join(ROOT, "public", rel)] : [])
+      .concat(segCandidates);
     if (candidates.some((c) => existsSync(c))) continue;
     const window = lines.slice(Math.max(0, lineNo - 10), lineNo + 10).join("\n");
     // ANY existence test, not just the node builtin. Several checks assert a file is ABSENT — a

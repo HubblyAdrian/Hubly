@@ -251,7 +251,13 @@ module.exports = async (req, res) => {
       // kind. So the test is now structural: the LAST SEGMENT CONTAINS A DOT, with no bound on
       // either side of it. Still root-level only (no slash after the first), so this does not become
       // a general file server for public/.
-      /^\/[^/]*\.[^/.]+$/.test(urlPath)
+      // NO PERCENT-ENCODING IN THE BASENAME. `/..%2Fx.js` satisfies "one segment with a dot"
+      // because %2F is not a literal slash — caught by check-root-scripts-are-served leg 3 the
+      // moment this pattern was widened. The resolved-path prefix guard below already stops the
+      // traversal, so this is defence in depth rather than the only defence; the old `.js`-only
+      // pattern happened to exclude `%` and widening it silently gave that up. Excluding `%`
+      // covers every encoding of a separator rather than the two I would have thought to list.
+      /^\/[^/%]*\.[^/.%]+$/.test(urlPath)
     ) {
       const publicRoot = path.resolve(__dirname, '../public');
       const filePath = path.resolve(publicRoot, '.' + urlPath);

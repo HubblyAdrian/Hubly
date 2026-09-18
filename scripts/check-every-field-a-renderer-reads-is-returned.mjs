@@ -75,7 +75,11 @@ const allow = allowlistFromMigration(readFileSync(join(MIGDIR, SHIPPING), "utf8"
 // The break declarations below name this file as a LITERAL (the ledger parses them statically). If a
 // newer migration redefines the function, those breaks would edit a file this check no longer reads
 // and register as NOT RED rather than as a mistake — so say it out loud here.
-const DECLARED_IN_BREAKS = "20260918200000_one_indexable_predicate.sql";
+// THE FULL REPO-RELATIVE PATH, not a bare basename. A bare filename here is a string no scan can
+// resolve — check-a-missing-file-says-cannot-run reported it as a dead path, correctly by its own
+// rule, and the right fix is the string rather than the scan.
+const DECLARED_IN_BREAKS_PATH = "supabase/migrations/20260918200000_one_indexable_predicate.sql";
+const DECLARED_IN_BREAKS = DECLARED_IN_BREAKS_PATH.split("/").pop();
 if (SHIPPING !== DECLARED_IN_BREAKS) {
   console.log("  NOTE: the red-proof breaks in this file name " + DECLARED_IN_BREAKS + ", but the");
   console.log("        shipping migration is now " + SHIPPING + ". Update the two break declarations'");
