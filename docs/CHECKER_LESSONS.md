@@ -3561,6 +3561,29 @@ before it was used, in the same way every hand-maintained set in this repo has g
   `public/` that carry the seam, read off disk — not a filename typed into the check.
 - **Loop, and label the leg with the instance** (`2.website`, `2.quotes`). A single pass/fail over a
   set hides which member failed, and the member is the finding.
+### A fourth instance, 2026-09-18: a change measured against its own rule and nothing beside it
+
+Adrian: *"if the rail 260 -> 180 change did degrade the preview, that is the L97 shape one more time —
+a change measured against the rule it was made for and never against the surface beside it."* **The
+rail change was refuted as the cause** (the preview's scale is height-bound at his window, so 80px of
+width converts entirely to margin — proven arithmetically and by git: the scale expression has not
+changed since 2026-08-21). **But two OTHER changes from the same day did exactly what he described:**
+
+- **Bug 1's fix hid the account chip for the life of the page.** `html.hc-boot-owner
+  #navSignin{visibility:hidden}` was written to stop the landing's "Log in or sign up" painting to
+  someone signed in. It was measured against that rule — ten legs, all green, the landing never painted
+  — and never against **the control living inside the thing being hidden**. `hc-boot-owner` is removed
+  only when the account owns nothing, so for a real owner the sign-out door was invisible forever. The
+  composer rule THREE LINES AWAY in the same block had the `body:not(.hc-active)` guard the chip needed.
+- **Bug 2's fix took the identity load with it.** `hcLoadIdentity` had exactly one call site, inside
+  `hcRenderHome`, which the fix correctly makes unreachable when a room is open — so a reload straight
+  to `#website` left the rail with no location and no logo.
+
+**The instance generalises L97 from "which INSTANCES does the check visit" to "which SURFACES does the
+change touch".** A guard added to a CSS block covers every control in that block. A guard added to a
+function stops every side effect inside it. Both were invisible to a leg written for the rule, and both
+were found by someone opening the product — which is Lesson 100's half of the same episode.
+
 - **A derived list that comes back empty or with one entry is a broken instrument**, not a passing
   check. Assert the count is plausible and say the number in the output: *"derived 6 place(s) from
   HC_PLACE_SURFACES"*. The number is what lets the next reader see the coverage without reading the

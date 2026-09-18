@@ -328,37 +328,46 @@
       "compound": 0,
       "notRed": 0,
       "skipped": 0
+    },
+    {
+      "at": "2026-09-18T05:03:15.073Z",
+      "applied": 24,
+      "alone": 23,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T05:08:22.668Z",
+      "applied": 22,
+      "alone": 21,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 2
+    },
+    {
+      "at": "2026-09-18T05:13:27.874Z",
+      "applied": 1,
+      "alone": 1,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
+    },
+    {
+      "at": "2026-09-18T05:13:39.711Z",
+      "applied": 6,
+      "alone": 6,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0
     }
   ],
   "legs": {
-    "check-conversation-is-the-surface.mjs::6 a day holding rows RENDERS": {
-      "check": "check-conversation-is-the-surface.mjs",
-      "leg": "6 a day holding rows RENDERS",
-      "why": "make the day render nothing at all — the vacuous version passed on exactly this",
-      "at": "2026-09-18T01:26:16.711Z",
-      "also": [
-        "FAIL  1 'show me my day' renders the day IN THE THREAD — rows=0 (expected the 2 real rows, in bands or under Later this ",
-        "FAIL  2 each row is a real record carrying its own fields, in 12-hour time — \"s and prices is what makes it bookable. Vi",
-        "FAIL  4 a day row and a job card open the SAME panel — one mechanism, not two — no day row",
-        "FAIL — TypeError: Cannot read properties of undefined (reading 'slice')"
-      ],
-      "status": "NOT RED",
-      "newlyRed": 4
-    },
-    "check-conversation-is-the-surface.mjs::7 the door reported an outcome": {
-      "check": "check-conversation-is-the-surface.mjs",
-      "leg": "7 the door reported an outcome",
-      "why": "make the client announce the action before the outcome is known",
-      "at": "2026-09-18T01:26:16.711Z",
-      "also": [],
-      "status": "NOT RED",
-      "newlyRed": 0
-    },
     "check-conversation-is-the-surface.mjs::9 the promises rendered": {
       "check": "check-conversation-is-the-surface.mjs",
       "leg": "9 the promises rendered",
       "why": "offer a door to an empty room — drop the needs(ctx) gate so every card renders whether its room holds anything or not, which is prohibition 5 inverted",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -367,7 +376,7 @@
       "check": "check-conversation-is-the-surface.mjs",
       "leg": "12 the name reader answered",
       "why": "manufacture a name out of the credential — the email local-part heuristic, which passes off 'Adriansmithee' as something the owner told us",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [
         "FAIL  11 with NO name anywhere, the email is the fallback and is not passed off as a name — label=\"Adriansmithee+ever\" f",
         "FAIL  12a with no name on record the greeting drops it rather than using his email — \"Good evening, Adriansmithee+ever.\""
@@ -379,7 +388,7 @@
       "check": "check-conversation-is-the-surface.mjs",
       "leg": "6 the day's rows were COUNTED",
       "why": "RESTORE LESSON 86's OWN DEFECT — gate hcGoToPlace on business_places ROWS instead of on content, so a day holding a driveway job and a doctor's appointment is told it 'isn't set up on this account yet'. That sentence was said to a real owner on 2026-09-15",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -388,7 +397,7 @@
       "check": "check-conversation-is-the-surface.mjs",
       "leg": "7 the door returned a receipt",
       "why": "announce the action before the outcome is known — the premature 'Adding X' class, which claims a placement before it has landed",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -397,7 +406,7 @@
       "check": "check-doors-open-when-needed.mjs",
       "leg": "1 the scan found creation actions",
       "why": "make the delegation test blind, so every empty-state entry point counts as idle-only — the condition leg 1 exists to detect, without touching the door leg 2 asserts",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -406,7 +415,7 @@
       "check": "check-editable-set-is-derived.mjs",
       "leg": "1 [RULE] the markers were found",
       "why": "remove one marker's editor branch — `footer-tag` — so a marker the page renders has nowhere to be edited: the affordance painted over a capability that is not there",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -415,7 +424,7 @@
       "check": "check-every-check-is-runnable.mjs",
       "leg": "6 both sides of the comparison were read",
       "why": "make the glob miss a check that a convenience entry names, so a check is reachable ONLY by its hand-written name — the route-list disease, whose failure mode is silent",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -424,7 +433,7 @@
       "check": "check-day-controls-work.mjs",
       "leg": "2 there IS add-copy",
       "why": "put the dead gesture back in the add-row copy — instruct a double-click, which does not exist on touch, on the surface Adrian was actually looking at",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -433,24 +442,16 @@
       "check": "check-chain-acknowledgement.mjs",
       "leg": "7 a real job write was read",
       "why": "add `business.addJob` to the writers that can close the priced-services gap — one wrong entry in HC_GAP_WRITERS, which is how a job write comes to be announced as a price change",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
-    },
-    "check-address-change-is-said.mjs::5 the sentence exists and names the address": {
-      "check": "check-address-change-is-said.mjs",
-      "leg": "5 the sentence exists and names the address",
-      "why": "make the sentence point at a control — Hubly does not render the page and cannot know what is on screen, so naming a button is claiming a capability it has not verified",
-      "at": "2026-09-18T01:34:54.798Z",
-      "status": "SKIPPED",
-      "note": "declaration names leg \"5 the sentence exists and names the address\", which appears nowhere in this check's output — the declaration is STALE, which is a different fault from a vacuous leg"
     },
     "check-arrival-in-dom.mjs::2c the arrival IS in the thread": {
       "check": "check-arrival-in-dom.mjs",
       "leg": "2c the arrival IS in the thread",
       "why": "speak a second time while the name question is on the floor — a page-view count beside the arrival, which is two composers talking over each other",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -459,7 +460,7 @@
       "check": "check-address-change-is-said.mjs",
       "leg": "5 the sentence exists, names the new address",
       "why": "make the sentence point at a control — Hubly does not render the page and cannot know what is on screen, so naming a button is claiming a capability it has not verified",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -468,7 +469,7 @@
       "check": "check-navigation-destinations.mjs",
       "leg": "1 the surface registry was read",
       "why": "delete the `quotes` renderer from HC_ROOMS, so a place that can appear in the rail has nothing to render it — a rail row that opens an empty canvas",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:13:39.711Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -477,28 +478,7 @@
       "check": "check-navigation-destinations.mjs",
       "leg": "2 the room registry was read",
       "why": "add a room nothing can reach — a renderer for `store`, which is not a surface, so it is built and doorless: the diagnosis that has been right four times this month",
-      "at": "2026-09-18T04:18:14.627Z",
-      "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
-    },
-    "check-navigation-destinations.mjs::3 the destinations were resolved": {
-      "check": "check-navigation-destinations.mjs",
-      "leg": "3 the destinations were resolved",
-      "why": "make the resolver hand back an unknown place instead of falling back to Home, so a sentence can offer a door that opens onto nothing",
-      "at": "2026-09-18T01:39:23.110Z",
-      "also": [
-        "FAIL  3b the destinations were resolved, and nothing is quietly routed to Home — 5 destination(s) resolved · -> home: st",
-        "FAIL  4 the count keys were read, and every door can count what is in the room before offering it — no countable view fo"
-      ],
-      "status": "NOT RED",
-      "newlyRed": 2
-    },
-    "check-navigation-destinations.mjs::3b the destinations were resolved": {
-      "check": "check-navigation-destinations.mjs",
-      "leg": "3b the destinations were resolved",
-      "why": "route an existing destination to Home rather than to its own surface, so something lands on a screen that cannot answer for it",
-      "at": "2026-09-18T01:39:23.110Z",
+      "at": "2026-09-18T05:13:39.711Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -507,7 +487,7 @@
       "check": "check-navigation-destinations.mjs",
       "leg": "4 the count keys were read",
       "why": "make the planner door count by a key no thread view answers — `planner->planner` instead of `planner->day`. THIS IS THE EXACT SHAPE of 'your schedule isn’t set up' said about a room with two jobs on it: the door counts by a different key than it navigates by",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:13:39.711Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -516,24 +496,16 @@
       "check": "check-navigation-destinations.mjs",
       "leg": "5 the default rail was read",
       "why": "offer a place by default that no surface renders — `store: true` in HC_RAIL_DEFAULT, so every new business is given a rail row that opens nothing",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:13:39.711Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
-    },
-    "check-navigation-destinations.mjs::3 every destination opens its OWN surface": {
-      "check": "check-navigation-destinations.mjs",
-      "leg": "3 every destination opens its OWN surface",
-      "why": "route an existing destination to Home instead of to its own surface, so something lands on a screen that cannot answer for it",
-      "at": "2026-09-18T01:40:56.949Z",
-      "status": "SKIPPED",
-      "note": "declaration names leg \"3 every destination opens its OWN surface\", which appears nowhere in this check's output — the declaration is STALE, which is a different fault from a vacuous leg"
     },
     "check-navigation-destinations.mjs::3 [SHAPE] the destinations were resolved": {
       "check": "check-navigation-destinations.mjs",
       "leg": "3 [SHAPE] the destinations were resolved",
       "why": "route an existing destination to Home instead of to its own surface, so something lands on a screen that cannot answer for it",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:13:39.711Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -542,7 +514,7 @@
       "check": "check-baseline-before-schema.mjs",
       "leg": "schema_mode is read from the call",
       "why": "put the literal \"json_object\" back in place of the value reported by the AI layer — which is what would make every row say json_object after the flag is flipped, and the whole before/after comparison silently wrong",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -551,25 +523,15 @@
       "check": "check-no-mailto-reaches-a-customer.mjs",
       "leg": "no latest stored page carries a mailto",
       "why": "plant a mailto anchor in a stored page and confirm this leg alone goes red",
-      "at": "2026-09-18T04:18:14.627Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "status": "DECLARED, PROVEN BY HAND",
       "note": "BY HAND, 2026-09-17: planted into hubly-classic-fixture's website.heroHeadline via `supabase db query --linked -f`. Leg 1 went RED, leg 2 stayed GREEN. Restored and the fixture read back byte-identical (5347 bytes, json-equal). NEVER graefs-autocare."
-    },
-    "check-no-public-reader-leaks-contacts.mjs::no anon-readable reader returns a collection of contact records": {
-      "check": "check-no-public-reader-leaks-contacts.mjs",
-      "leg": "no anon-readable reader returns a collection of contact records",
-      "why": "revert get_public_business to `to_jsonb(b) - 'draft_token'` — the whole-row shape — which is exactly the regression this leg exists to catch",
-      "at": "2026-09-18T04:20:45.358Z",
-      "also": [],
-      "newlyRed": 0,
-      "note": "a FUNCTION-ONLY database break, applied and restored by the runner; no row was written",
-      "status": "NOT RED"
     },
     "check-no-public-reader-leaks-contacts.mjs::every anon reader hands back an explicit field list": {
       "check": "check-no-public-reader-leaks-contacts.mjs",
       "leg": "every anon reader hands back an explicit field list",
       "why": "revert get_public_business to `to_jsonb(b) - 'draft_token'` — the whole-row shape — which is exactly the regression this leg exists to catch",
-      "at": "2026-09-18T04:38:51.975Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "newlyRed": 1,
       "note": "a FUNCTION-ONLY database break, applied and restored by the runner; no row was written",
@@ -579,25 +541,17 @@
       "check": "check-public-reader-allowlist-is-derived.mjs",
       "leg": "the meta allowlist covers every subtree a renderer reads",
       "why": "drop `website` from the live function's meta allowlist — the single most-read subtree (16 reads) — so the classic page loses its hero and NOTHING errors: the renderer reads undefined. That is the route-list failure mode arriving in a column list, which is why this check exists",
-      "at": "2026-09-18T04:38:51.975Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "newlyRed": 1,
       "note": "a FUNCTION-ONLY database break, applied and restored by the runner; no row was written",
       "status": "RED ALONE"
     },
-    "check-page-facts-match-the-record.mjs::every business whose record holds a phone says that phone on its page": {
-      "check": "check-page-facts-match-the-record.mjs",
-      "leg": "every business whose record holds a phone says that phone on its page",
-      "why": "make the freeform fact-sync write the FIRST business's phone instead of this one's — the borrowed-context defect that put bucket-mobile-detailing's email on bucket-…-09616's page, reproduced in the writer rather than waited for",
-      "at": "2026-09-18T04:30:44.725Z",
-      "status": "SKIPPED",
-      "note": "declaration names leg \"every business whose record holds a phone says that phone on its page\", which appears nowhere in this check's output — the declaration is STALE, which is a different fault from a vacuous leg"
-    },
     "check-page-facts-match-the-record.mjs::the classic renderer still injects the recorded phone": {
       "check": "check-page-facts-match-the-record.mjs",
       "leg": "the classic renderer still injects the recorded phone",
       "why": "stop the classic hero pill building a tel: link from S.phone, so eleven live pages silently lose the only phone number they show and nothing errors",
-      "at": "2026-09-18T04:31:06.885Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -606,7 +560,7 @@
       "check": "check-live-functions-match-their-migrations.mjs",
       "leg": "every public function's live body matches the last migration that defines it",
       "why": "add a behaviour-neutral expression to get_public_business's live body so it no longer matches its migration — a stand-in for a dashboard edit, which is the thing this check exists to catch",
-      "at": "2026-09-18T04:38:51.975Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "newlyRed": 1,
       "note": "a FUNCTION-ONLY database break, applied and restored by the runner; no row was written",
@@ -616,7 +570,7 @@
       "check": "check-status-words-are-one-vocabulary.mjs",
       "leg": "neither shell holds its own copy of the words",
       "why": "paste the five words back into hubly.html as a literal — the duplication this file exists to prevent, and it is one paste away at all times",
-      "at": "2026-09-18T04:43:26.793Z",
+      "at": "2026-09-18T05:13:27.874Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
@@ -625,25 +579,16 @@
       "check": "check-the-landing-never-paints-for-an-owner.mjs",
       "leg": "the account chip is visible once the business is open",
       "why": "make the pre-paint hide unconditional again — `hc-boot-owner` is never removed on a successful owner load, so the sign-out door stays invisible for the life of the page",
-      "at": "2026-09-18T04:53:46.656Z",
+      "at": "2026-09-18T05:08:22.668Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1
-    },
-    "check-a-different-conversation-in-every-tab.mjs::R5 [RULE] entering a room directly still loads the identity the rail renders from": {
-      "check": "check-a-different-conversation-in-every-tab.mjs",
-      "leg": "R5 [RULE] entering a room directly still loads the identity the rail renders from",
-      "why": "put the identity load back inside hcRenderHome, where R1's guard makes it unreachable on any entry path that is not Home — the rail loses its location and its logo",
-      "at": "2026-09-18T04:59:55.782Z",
-      "also": [],
-      "status": "NOT RED",
-      "newlyRed": 0
     },
     "check-a-different-conversation-in-every-tab.mjs::R5 [SHAPE] the identity load is reachable from outside hcRenderHome": {
       "check": "check-a-different-conversation-in-every-tab.mjs",
       "leg": "R5 [SHAPE] the identity load is reachable from outside hcRenderHome",
       "why": "put the identity load back inside hcRenderHome, where R1's guard makes it unreachable on any entry path that is not Home — the rail loses its location and its logo",
-      "at": "2026-09-18T05:02:31.168Z",
+      "at": "2026-09-18T05:13:39.711Z",
       "also": [],
       "status": "RED ALONE",
       "newlyRed": 1

@@ -30,7 +30,7 @@
  *
  * Exit: 0 every declared break produced RED ALONE · 1 any COMPOUND / NOT RED / SKIPPED · 2 cannot run.
  */
-import { readFileSync, writeFileSync, readdirSync, existsSync, mkdtempSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdtempSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
@@ -52,6 +52,37 @@ const run = (f) => {
   } catch (e) { return { out: String(e.stdout || "") + String(e.stderr || ""), code: e.status ?? 1 }; }
 };
 
+/* ══ ONE RUNNER AT A TIME, OR THE TREE IS CORRUPTED ══════════════════════════════════════════════
+ *
+ * THIS HAPPENED, 2026-09-18. Two full passes were launched in the background minutes apart. They
+ * overlapped: pass A wrote a break into platform-home.html, pass B read that file as its "before",
+ * pass A restored, and pass B then restored ITS stale copy — leaving TWO breaks in the working tree,
+ * including a deleted `quotes` room and a reverted identity fix. Nothing warned. It was found only
+ * because two later breaks came back `find matched 0 times`, which is the runner reporting that the
+ * file no longer says what the check says it says.
+ *
+ * A tool whose whole method is "edit a file, measure, put it back" cannot be safe to run twice at
+ * once, and the honest fix is a lock rather than a convention. The lock carries the pid and the start
+ * time so a stale one from a killed run can be identified rather than guessed at.
+ *
+ * It does NOT protect against an editor saving the file mid-run — nothing here can. What it does is
+ * make the one collision that actually happened impossible. */
+const LOCK = join(ROOT, "docs", ".redproof-run.lock");
+if (existsSync(LOCK)) {
+  const held = readFileSync(LOCK, "utf8").trim();
+  console.error(`REFUSING TO RUN — another red-proof pass holds the lock: ${held}`);
+  console.error(`Two passes overlapping corrupt the working tree: one restores a file the other is`);
+  console.error(`still treating as its baseline, and a break is left behind with no warning.`);
+  console.error(`If that run is dead, delete ${LOCK.slice(ROOT.length + 1)} and check \`git status public/\` first.`);
+  process.exit(2);
+}
+if (!DRY) {
+  writeFileSync(LOCK, `pid ${process.pid} · started ${new Date().toISOString()}`);
+  const release = () => { try { if (existsSync(LOCK)) unlinkSync(LOCK); } catch (_) {} };
+  process.on("exit", release);
+  for (const sig of ["SIGINT", "SIGTERM"]) process.on(sig, () => { release(); process.exit(130); });
+}
+
 const ledger = readLedger();
 const stamp = new Date().toISOString();
 let applied = 0, alone = 0, compound = 0, notRed = 0, skipped = 0;
@@ -67,7 +98,27 @@ for (const f of files) {
     skipped++;
   }
 
-  console.log(`\n══ ${f} — ${breaks.length - broken.length} declared break(s)`);
+  /* ══ PRUNE THE LEDGER'S MEMORY OF LEGS THAT NO LONGER EXIST ══════════════════════════════════
+   *
+   * The ledger is keyed `check::leg`, and a leg RENAMED between runs leaves its old key behind with
+   * whatever status it had. After one long session it held EIGHT stale entries — five NOT RED and
+   * three SKIPPED — all of them legs that had since been renamed and were RED ALONE under their new
+   * names. A ledger that accumulates a memory of a leg that is gone is the staleness disease arriving
+   * in the thing built to cure it, and it reads as a worse result than the truth.
+   *
+   * So: for every check this run actually examined, any key whose leg is no longer DECLARED in that
+   * check is dropped. Scoped deliberately to checks examined in this run — pruning a check that was
+   * not run would delete the record of a leg that still exists. */
+  const declaredNow = new Set(breaks.filter((b) => !b.__broken).map((b) => `${f}::${b.leg}`));
+  let pruned = 0;
+  for (const k of Object.keys(ledger.legs)) {
+    if (!k.startsWith(f + "::")) continue;
+    if (declaredNow.has(k)) continue;
+    delete ledger.legs[k]; pruned++;
+  }
+
+  console.log(`\n══ ${f} — ${breaks.length - broken.length} declared break(s)` +
+    (pruned ? ` · pruned ${pruned} stale ledger entr(ies) for legs no longer declared here` : ""));
   if (DRY) { for (const b of breaks) if (!b.__broken) console.log(`   would break: leg ${JSON.stringify(b.leg)} via ${b.file || "sql"}`); continue; }
 
   const base = run(f);

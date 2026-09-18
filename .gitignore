@@ -16,3 +16,4 @@ scripts/*/squeeze_results.json
 # Deliberately never committed; see exports/<slug>-<ts>/README.md.
 exports/
 scripts/.editor-fixes.generated.mjs
+.redproof-run.lock
