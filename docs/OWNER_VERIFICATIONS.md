@@ -323,3 +323,14 @@ missing feature; it is a confident machine-readable claim nobody made.
 
 **Neither is scoped, estimated, or scheduled. Recorded as open at Adrian's instruction, awaiting a
 ruling.**
+
+## 6.2 — STILL ADRIAN'S, carried forward unchanged
+
+Nothing in this repo can assert any of these. Listed so they are not quietly absorbed into "done".
+
+| | what it needs |
+|---|---|
+| **Submitting the sitemap in Search Console** | doing it today, per Adrian. `https://myhubly.app/sitemap.xml` is live and serves **10** URLs; `robots.txt` names it on every host, so Google will find it unaided eventually — submitting is faster and gives a coverage report. Also: the Request Indexing he pressed on `graefs-autocare.myhubly.app` |
+| **Stripe's webhook delivery log** | has `stripe-webhook` ever run? Only Stripe's dashboard knows; rows are evidence of a call, and no rows is not evidence of no call (§5.4) |
+| **The mobile preview at 390px on a real device** | there is no true 390px viewport and no soft keyboard in this environment. The preview's mobile path is asserted in a rig, which is evidence about the CODE PATH and not about a phone |
+| **The 5th rail tab, and the phone's "More" overflow** | prohibition 5 is a mobile claim. Same limitation |
