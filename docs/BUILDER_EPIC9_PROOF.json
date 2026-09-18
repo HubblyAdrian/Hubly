@@ -4,7 +4,7 @@
   "name": "Automation Intelligence Builder",
   "title": "Automation Intelligence Builder",
   "passed": true,
-  "checkedAt": "2026-09-18T06:29:46.944Z",
+  "checkedAt": "2026-09-18T19:17:34.519Z",
   "proofs": {
     "automationIntelligenceExists": true,
     "customerFacingName": "Automation Intelligence Builder",
@@ -131,7 +131,7 @@
     },
     "discoverySample": [
       {
-        "id": "disc_mu6kwit8_uybrtn",
+        "id": "disc_mu7cbws2_nnlm8o",
         "observation": "I noticed you've done this manually 14 times this week.",
         "manualCount": 14,
         "period": "this_week",
@@ -144,7 +144,7 @@
     ],
     "recommendationsSample": [
       {
-        "id": "arec_mu6kwit8_4bc1zy",
+        "id": "arec_mu7cbws2_l8tbmv",
         "title": "Automate review requests",
         "detail": "I noticed you're manually sending review requests. I can automate that.",
         "why": "Estimated time saved: ~2.5 hours per month. Businesses like yours get more reviews sending after 24 hours (+18% expected).",
@@ -154,7 +154,7 @@
         "requiresOwnerApproval": true
       },
       {
-        "id": "arec_mu6kwit8_bfcbrv",
+        "id": "arec_mu7cbws2_wmth0q",
         "title": "Quote follow-up automation",
         "detail": "Silent quotes lose deals. A 5-day follow-up recovers opportunity.",
         "why": "Sales outcome — lost opportunity recovery without manual chasing.",

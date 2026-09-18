@@ -91,3 +91,64 @@ list is what this lesson is worth."*
 thing that would move the most rows down this page is one incognito load of a market business's page
 with the social links and phone visible — it would close rows 1 and 3, which are the two where being
 wrong costs a real owner a visibly broken page.
+
+---
+
+## CANDIDATE, HIGH SEVERITY, UNVERIFIED — a truncated `meta` write-back could destroy an owner's CRM leads
+
+**Status: CANDIDATE, not a finding.** A sweep produces candidates; a candidate graduates by being
+ACTED ON, never by being re-read (CLAUDE.md). I could not act on this one, and the reason is a standing
+rule, not a lack of effort: verifying it requires a signed-in owner session, and I may never create an
+account. **Stated before the claim: three conditions must all hold, and I have confirmed one.**
+
+### The mechanism
+
+`get_public_business` returns `meta` as an **allowlisted subset** — 56 permitted subtrees, with
+`pipeline` (the owner's CRM leads, stage edits, lost reasons, follow-ups) deliberately withheld.
+`applyBizMeta(parseBizMeta(data.meta))` then populates session state `S.*` from that subset, so on a
+publicly-loaded page **`S.pipeline` is never populated**.
+
+`buildBizMeta()` composes the whole `meta` object from `S.*` and emits `pipeline: ensurePipelineState()`.
+`ensurePipelineState()` returns `{deleted:[],stages:{},lostReasons:{},manual:[],stageDefs:null,edits:{},seen:{},followUps:[]}`
+when `S.pipeline` is unset — **confirmed by reading the function**. Three call sites then write that
+object straight back over the column:
+
+| site | function | what it does |
+|---|---|---|
+| `public/hubly.html:34146` | `setLogoScale()` | `db.from('businesses').update({meta: buildBizMeta()})` |
+| `public/hubly.html:34204` | `setHeroFocus()` | same |
+| `public/hubly.html:25107` | (editor persist) | same |
+
+If `S.pipeline` was empty because the page loaded through the public reader, any of those three
+**overwrites the owner's real pipeline with an empty one.** This is the L99 shape exactly: *"you would
+have overwritten real lead records to fix a page that was never wrong."*
+
+### What would make this wrong — the three conditions
+
+| condition | status |
+|---|---|
+| 1. `ensurePipelineState()` returns a lossy default when `S.pipeline` is unset | **CONFIRMED** by reading it |
+| 2. an **authed owner** session performs one of those three writes **while `currentBusiness` came from `get_public_business`** rather than from the authed `select('*')` at `hubly.html:14645` | **NOT VERIFIED.** The normal editor path loads via the authed select, which returns the full meta and populates `S.pipeline` correctly. The risk window is inline click-to-edit on a claimed *public* page — one SPA serving both — and I cannot reach it |
+| 3. RLS permits the write | **Anonymous: NO** — anon has column access to `(id, slug)` only, so a visitor destroys nothing and the `.catch(()=>{})` swallows the refusal. **Owner: YES** — they own the row |
+
+**So the anonymous case is safe and the owner case is unproven.**
+
+### It is mine, and it is new
+
+Before the allowlist (2026-09-17 22:28), `get_public_business` returned `to_jsonb(b)` — the **entire**
+meta, `pipeline` included — so `applyBizMeta` on a public page populated `S.pipeline` correctly and no
+write-back could truncate it. **The allowlist introduced this risk.** Exposure: **2 claimed market
+businesses currently hold real `pipeline` data** (counted 2026-09-18).
+
+### What would settle it, and it needs Adrian
+
+Sign in as an owner, open a claimed business's **public** page, drag the hero focus or change the logo
+scale (either fires `buildBizMeta()`), then read `meta->'pipeline'` back out of the record. If it is
+empty where it was not, this is confirmed and urgent. **Do this on a business with no real pipeline
+data first** — not on `graefs-autocare`, which is read-only, and not on one of the two that hold leads.
+
+**The structural fix, if confirmed, is not to patch those three call sites.** It is that a writer must
+never compose a full record from state that was hydrated from a *filtered* read. Either the reader
+marks its output as partial and `buildBizMeta()` refuses to write a full object from it, or the write
+becomes a merge rather than a replace. That is the same rule as "assert the postcondition" pointed at a
+write path: a payload assembled from an incomplete read is not a record.
