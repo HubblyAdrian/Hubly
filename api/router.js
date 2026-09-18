@@ -8,6 +8,12 @@ const path = require('path');
 
 const MIME = {
   '.js': 'application/javascript; charset=utf-8',
+  '.html': 'text/html; charset=utf-8',
+  '.txt': 'text/plain; charset=utf-8',
+  '.xml': 'application/xml; charset=utf-8',
+  '.ico': 'image/x-icon',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
+  '.map': 'application/json; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
@@ -235,9 +241,17 @@ module.exports = async (req, res) => {
       // a file that deployed and did not serve.
       //
       // `fs.existsSync` + `isFile()` already decide whether a path is real, so the allowlist was
-      // adding nothing but the chance to forget. Scoped to ROOT-LEVEL .js only (no slash after the
-      // first), so this does not become a general file server for public/.
-      /^\/[A-Za-z0-9._-]+\.js$/.test(urlPath)
+      // adding nothing but the chance to forget.
+      //
+      // WIDENED 2026-09-18 FROM `.js` TO EVERY EXTENSION. Scoping it to .js was the same mistake one
+      // size smaller: .js was simply what had bitten us. Measured on the live site that day,
+      // `/marketplace-landing.html` and `/pro-landing.html` — both real files — were answered with
+      // 3,092,140 bytes of hubly.html, and `/manifest.webmanifest` and `/.env` fell through because
+      // an 8-character extension bound and a non-empty basename were hand-tuned shapes of the same
+      // kind. So the test is now structural: the LAST SEGMENT CONTAINS A DOT, with no bound on
+      // either side of it. Still root-level only (no slash after the first), so this does not become
+      // a general file server for public/.
+      /^\/[^/]*\.[^/.]+$/.test(urlPath)
     ) {
       const publicRoot = path.resolve(__dirname, '../public');
       const filePath = path.resolve(publicRoot, '.' + urlPath);
@@ -250,11 +264,15 @@ module.exports = async (req, res) => {
         res.setHeader('Content-Type', MIME[ext] || 'application/octet-stream');
         // Blueprint/theme/layout JS+JSON change often; avoid sticky CDN caches breaking Runtime helpers.
         const noSticky = urlPath.endsWith('.js') || urlPath.endsWith('.json');
+        // A page is revalidated every time, matching the explicit page branches further down; an
+        // asset is cached. A stale HTML document is a different kind of wrong from a stale icon.
         res.setHeader(
           'Cache-Control',
-          noSticky
-            ? 'public, max-age=60, stale-while-revalidate=600'
-            : 'public, max-age=3600, stale-while-revalidate=86400'
+          urlPath.endsWith('.html')
+            ? 'public, max-age=0, must-revalidate'
+            : noSticky
+              ? 'public, max-age=60, stale-while-revalidate=600'
+              : 'public, max-age=3600, stale-while-revalidate=86400'
         );
         return res.status(200).send(fs.readFileSync(filePath));
       }
@@ -287,9 +305,11 @@ module.exports = async (req, res) => {
     // fs.existsSync already answers "is this real" (CLAUDE.md). Client-side routes are untouched
     // because they have no extension — /store, /app, /enter and every business page still fall
     // through to the SPA, which is what the catch-all is legitimately for.
-    const looksLikeARootFile = /^\/[^/]+\.[A-Za-z0-9]{1,8}$/.test(urlPath);
+    // The block above already answers every ROOT-LEVEL file-shaped path — serving the real file or
+    // 404ing. What is left is the reserved /.well-known/ namespace, which is never a client route
+    // and where we serve nothing today.
     const isWellKnown = urlPath.startsWith('/.well-known/');
-    if (looksLikeARootFile || isWellKnown) {
+    if (isWellKnown) {
       const publicRoot = path.resolve(__dirname, '../public');
       const filePath = path.resolve(publicRoot, '.' + urlPath);
       const real =

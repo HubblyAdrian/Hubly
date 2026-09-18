@@ -70,12 +70,14 @@ function probe(path) {
 
 /* ── DERIVED SET A: root-level files that exist in public/ ──────────────────────────────────── */
 const PUB = join(ROOT, "public");
+// EVERY root-level file, with its SIZE — which is how "did it serve ITSELF" gets answered without
+// guessing. Nothing is excluded by name: the two shells are real files too, and the previous version
+// of this leg excluded them and then judged the rest by "is the body HTML", which failed
+// /enter.html and /portal.html for being HTML documents when that is exactly what they are.
 const onDisk = readdirSync(PUB)
-  .filter((f) => /\.[A-Za-z0-9]{1,8}$/.test(f))
-  .filter((f) => { try { return statSync(join(PUB, f)).isFile(); } catch { return false; } })
-  // The two SHELLS are HTML documents and are SUPPOSED to answer with HTML — excluded by what they
-  // ARE (a .html file that the router serves as a page), not by name.
-  .filter((f) => !/^(hubly|platform-home)\.html$/.test(f));
+  .filter((f) => /\.[^.]+$/.test(f))
+  .map((f) => { try { const st = statSync(join(PUB, f)); return st.isFile() ? { f, size: st.size } : null; } catch { return null; } })
+  .filter(Boolean);
 
 /* ── DERIVED SET B: paths vercel.json routes by name ────────────────────────────────────────── */
 const routed = (JSON.parse(readFileSync(join(ROOT, "vercel.json"), "utf8")).routes || [])
@@ -94,13 +96,13 @@ const SAMPLE = ["/favicon.ico", "/apple-touch-icon.png", "/manifest.json", "/man
   "/browserconfig.xml", "/crossdomain.xml", "/humans.txt", "/.env"];
 
 console.log(`  origin ${ORIGIN}`);
-console.log(`  derived from public/:   ${onDisk.length} root file(s)  [${onDisk.join(" ")}]`);
+console.log(`  derived from public/:   ${onDisk.length} root file(s)  [${onDisk.map((d) => d.f).join(" ")}]`);
 console.log(`  derived from vercel.json: ${routed.length} literal route(s)  [${routed.join(" ")}]`);
 console.log(`  structural nonce path:  ${nonce}`);
 console.log(`  declared SAMPLE of client-requested paths: ${SAMPLE.length}\n`);
 
 const results = new Map();
-for (const p of [...new Set([...onDisk.map((f) => "/" + f), ...routed, nonce, ...SAMPLE])])
+for (const p of [...new Set([...onDisk.map((d) => "/" + d.f), ...routed, nonce, ...SAMPLE])])
   results.set(p, probe(p));
 for (const [p, r] of results)
   console.log(`  ${p.padEnd(44)} ${String(r.code).padEnd(4)} ${String(r.size).padEnd(9)} ${r.ctype}` +
@@ -157,14 +159,26 @@ declareBreak({
             "was answered with hubly.html, and HublyContactPick was undefined in both shells with " +
             "no error anywhere. It reads 200 application/javascript today.",
 });
-const badSelf = onDisk.map((f) => "/" + f).filter((p) => { const r = results.get(p); return !r || r.code !== 200 || r.isHtmlDoc; });
-leg("RULE", "3 every root file in public/ serves itself, not the SPA",
-  onDisk.length > 0 && badSelf.length === 0,
+// ══ "SERVED ITSELF" IS A BYTE COUNT, NOT A CONTENT TYPE ══════════════════════════════════════
+//
+// Judging by "is the response HTML" cannot work: /enter.html and /portal.html ARE HTML and are
+// supposed to be, while /marketplace-landing.html was ALSO HTML and was the wrong HTML — 3,092,140
+// bytes of hubly.html instead of its own 16,238. The two cases are indistinguishable by type and
+// obvious by size, so the assertion is size: what came back is what is on disk.
+const selfBad = onDisk.filter((d) => {
+  const r = results.get("/" + d.f);
+  return !r || r.code !== 200 || r.size !== d.size;
+});
+leg("RULE", "3 every root file in public/ serves ITSELF, byte for byte",
+  onDisk.length > 0 && selfBad.length === 0,
   onDisk.length === 0 ? `no root-level files found in public/ — VACUOUS, not a pass`
-    : badSelf.length ? `not serving themselves: ${badSelf.map((p) => `${p} (${(results.get(p) || {}).code})`).join(" ")}`
-    : `all ${onDisk.length} root file(s) in public/ return 200 with their own content type and none is ` +
-      `an HTML document. Derived by reading the directory, so a file added tomorrow is covered ` +
-      `without touching this check — which is the whole lesson of /contact-pick.js.`);
+    : selfBad.length ? `not serving themselves: ` + selfBad.map((d) => {
+        const r = results.get("/" + d.f) || {};
+        return `/${d.f} (${r.code}, ${r.size} bytes served vs ${d.size} on disk)`; }).join(" ")
+    : `all ${onDisk.length} root file(s) in public/ returned 200 with EXACTLY their on-disk byte ` +
+      `count. Asserted by size, not by content type: the failure mode is the right type and the ` +
+      `wrong document, which no type check can see. Derived by reading the directory, so a file ` +
+      `added tomorrow is covered without editing this check — the lesson of /contact-pick.js.`);
 
 /* ── LEG 4 — the literal routes in vercel.json reach their own destination ─────────────────── */
 declareBreak({
