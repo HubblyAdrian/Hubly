@@ -5,8 +5,15 @@
 # an unclaimed draft from a real customer's live site, and blanket-disallowing
 # *.myhubly.app would deindex every business we host. Keeping drafts out of
 # search is done per-page instead: hcNoIndex() in hubly.html adds
-# <meta name="robots" content="noindex, nofollow"> when businesses.owner_id is
-# null, and stops adding it the moment the site is claimed.
+# <meta name="robots" content="noindex, nofollow"> when the page is not claimed
+# or the account is a test account, and stops the moment the site is claimed.
+#
+# That gate is asked of what get_public_business() RETURNED, via hcRowIsClaimed(row)
+# -- not of businesses.owner_id, which the public reader deliberately no longer
+# returns. Reading owner_id here was true when this file was written and stopped
+# being true on 2026-09-18; `!undefined` is `true`, so for a while every public page
+# carried the noindex tag. The sitemap below derives its membership from the SAME
+# reader for exactly that reason.
 
 User-agent: *
 Allow: /
@@ -14,3 +21,12 @@ Allow: /
 # Builder and app surfaces — never useful in search results.
 Disallow: /app
 Disallow: /*?hcEdit=
+
+# THE SITEMAP. Generated from the record on every request (api/sitemap.js ->
+# public.get_indexable_business_slugs), never hand-maintained. It lists every CLAIMED,
+# non-test business's public URL and nothing else.
+#
+# Named here on EVERY host, which is deliberate: this one robots.txt is served for the
+# apex and for every *.myhubly.app business subdomain, so naming the apex sitemap here
+# is the cross-submission that lets one sitemap carry URLs on all of those hosts.
+Sitemap: https://myhubly.app/sitemap.xml

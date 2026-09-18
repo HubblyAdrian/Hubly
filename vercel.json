@@ -34,6 +34,10 @@
       "dest": "/robots.txt"
     },
     {
+      "src": "/sitemap.xml$",
+      "dest": "/api/sitemap.js"
+    },
+    {
       "src": "/(.*)",
       "dest": "/api/router.js"
     }
