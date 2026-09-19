@@ -8236,3 +8236,33 @@ it is already the thing whose 56-subtree allowlist caused two live regressions t
 to it means adding a subtree to that allowlist — a one-line change that, if forgotten, makes memberships
 invisible on every public page with no error. `check-every-field-a-renderer-reads-is-returned` leg 5
 already covers exactly that class, which is the reason this is an acceptable cost rather than a repeat.
+
+---
+
+## 5.2 — ACCEPTED LIVE CONDITION (not a defect): `show_price` in two stores
+
+**Ruled by Adrian, 2026-09-18: accepted for now, resolved catalogue-wins, same as price.**
+
+**The condition, measured:** `services.show_price` (added 20260918240000) and `pricing.show_price` on a
+catalogue offer both answer "is this price shown". `get_business_services` resolves a disagreement by
+**preferring the catalogue** — the identical rule it already applies to `price`, for the identical stated
+reason: the catalogue is what the page renders and what a customer is quoted.
+
+**It is LIVE, not theoretical.** `evergreen-yard-care` reads `source: "both"` for its services, so that
+business holds them in both stores today. A disagreement is possible right now; it simply has not
+happened, because nothing writes a `false` to either yet.
+
+**Why it is not a defect:** the two describe the same intention for two stores that different renderers
+read, the resolution is stated and consistent with the field beside it, and the alternative — one store
+for all offers — is a migration of every business's services that was not ruled.
+
+**The named future tidy:** one store for services. When that happens, **the field and its reader go
+together** — `services.show_price` and the `coalesce(c.show_price, t.show_price, true)` in
+`get_business_services` are one unit, and removing either alone leaves a reader with no value or a value
+with no reader.
+
+**Where a disagreement would surface first:** `get_business_services` already returns a `conflicts`
+boolean for exactly this class — it currently covers `price` and `description`. **Extending it to
+`show_price` is the obvious next step and is NOT done**, which means a two-store disagreement about
+price visibility would today be resolved silently rather than reported on the row. That is the one piece
+of this worth doing before the tidy.
