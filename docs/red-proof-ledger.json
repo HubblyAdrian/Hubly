@@ -606,6 +606,48 @@
       "declaredTotal": 18,
       "recorded": 18,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-19T03:17:32.700Z",
+      "applied": 0,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 4,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T03:17:45.858Z",
+      "applied": 4,
+      "alone": 3,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T03:18:14.889Z",
+      "applied": 4,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -1063,6 +1105,42 @@
       "leg": "6 the meta derivation is alive — it crosses parseBizMeta and finds no computed key",
       "why": "remove the return-value taint, so a named function that RETURNS the meta object stops carrying it. The chain is data.meta -> parseBizMeta(data.meta) -> applyBizMeta(m) -> m.faqs, and applyBizMeta is where all 55 subtree reads live — so the derivation drops from 56 subtrees to a handful and leg 5 passes by LOOKING FOR ALMOST NOTHING. That is the direction that matters: an empty derivation must never read as 'nothing is missing'.",
       "at": "2026-09-19T03:01:06.428Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-postmessage-pairs-are-derived.mjs::1 every type the canvas sends is compared by the parent": {
+      "check": "check-postmessage-pairs-are-derived.mjs",
+      "leg": "1 every type the canvas sends is compared by the parent",
+      "why": "DELETE the parent's hcFreeformAddService branch. The canvas keeps sending it, nothing matches, and the ONLY working add control in the product silently stops adding — the exact shape hcFreeformLinkEdit shipped in for 16 days. Deleted rather than RENAMED: a rename is the obvious break and it is too wide, because it removes one comparison and introduces another, so it fires leg 2 as well and proves nothing about either (L98). This one changes the sent-but-unhandled set and leaves the handled-but-unsent set untouched.",
+      "at": "2026-09-19T03:18:14.889Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-postmessage-pairs-are-derived.mjs::2 every type the parent compares is sent by the canvas, or declares itself pending": {
+      "check": "check-postmessage-pairs-are-derived.mjs",
+      "leg": "2 every type the parent compares is sent by the canvas, or declares itself pending",
+      "why": "remove the CANVAS-SENDER-PENDING marker from the hcFreeformNodeMove handler. It is a real handler with a real writer and no sender; without the marker that fact is invisible, and with a marker nobody can tell it from a handler whose sender was deleted by accident.",
+      "at": "2026-09-19T03:18:14.889Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-postmessage-pairs-are-derived.mjs::3 the reverse channel pairs too — parent to canvas": {
+      "check": "check-postmessage-pairs-are-derived.mjs",
+      "leg": "3 the reverse channel pairs too — parent to canvas",
+      "why": "rename the parent's hcAuthState send. The canvas never learns the owner is signed in, so click-to-edit never ungates — which is the missing-handshake defect that closed on 2026-08-31, reintroduced from the other end.",
+      "at": "2026-09-19T03:18:14.889Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-postmessage-pairs-are-derived.mjs::4 an unhandled message is LOUD at run time, not a silent else": {
+      "check": "check-postmessage-pairs-are-derived.mjs",
+      "leg": "4 an unhandled message is LOUD at run time, not a silent else",
+      "why": "put the listener's chain back to ending at a bare `}`. Every static pairing leg above still passes — the types still match — while a KNOWN type whose payload guard rejects it goes back to vanishing with no trace. That run-time case is the half a static check cannot see.",
+      "at": "2026-09-19T03:18:14.889Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

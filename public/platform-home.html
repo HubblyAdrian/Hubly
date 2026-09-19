@@ -6160,6 +6160,14 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         prevText: typeof data.prevText === 'string' ? data.prevText : undefined } });
     } else if(data.type === 'hcFreeformInlineImageEdit' && typeof data.label === 'string' && data.label && typeof data.imageBase64 === 'string'){
       hcSendDirectEdit({ directFreeformImageEdit: { label: data.label, imageBase64: data.imageBase64, mediaType: data.mediaType || 'image/png' } });
+    // CANVAS-SENDER-PENDING: hcFreeformNodeMove — this parent half is COMPLETE (this handler plus
+    // the hcNodeMove writer) and NOTHING SENDS IT. Derived 2026-09-18, not assumed: no postMessage
+    // in either shell carries this type. Its counterpart `hcFreeformSectionMove` was written the
+    // same day (2026-09-03) in the canvas with an INCOMPATIBLE payload — {label, dir} against this
+    // {node, ref, place} — and no caller, so it was deleted rather than wired: two different move
+    // features, each missing a different half, neither ever reachable. This half is kept because
+    // drag-to-reorder is wanted and the writer works; the marker lets the derived check pass while
+    // the fact stays visible instead of becoming folklore.
     } else if(data.type === 'hcFreeformNodeMove' && data.node && data.ref && (data.place === 'before' || data.place === 'after')){
       hcNodeMove(data.node, data.ref, data.place);
     } else if(data.type === 'hcFreeformAddService' && typeof data.name === 'string' && data.name.trim()){
@@ -6171,6 +6179,26 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
       // server — this message arrives from an iframe, and the origin check above is
       // the only thing that says who sent it.
       hcStyleEdit({ label: data.label, on: data.on === 'section' ? 'section' : 'element', style: data.style });
+    } else if(typeof data.type === 'string' && /^hc[A-Z]/.test(data.type)){
+      // ══ A MESSAGE FROM OUR OWN CANVAS THAT NOTHING HANDLED IS LOUD ═══════════════════════════
+      //
+      // This chain used to end at a bare `}`. A type nobody handled — or a KNOWN type whose payload
+      // failed one of the `&&` guards above — fell out of it and vanished. Measured 2026-09-18:
+      // `hcFreeformLinkEdit` had been sent from a live "Link · Change where this goes" menu item
+      // since 2026-09-02 and was never handled anywhere. SIXTEEN DAYS of an owner typing a URL into
+      // a prompt, pressing OK, and nothing happening. No error, no log, no clue.
+      //
+      // A postMessage type is a HAND-MAINTAINED SET WITH ITS TWO HALVES IN TWO FILES, and its
+      // failure mode is silent-dropped — the same shape as the route list and the root-script list.
+      // check-postmessage-pairs-are-derived.mjs derives both halves; this is the RUNTIME half of the
+      // same guard, for the case a static check cannot see: a real payload rejected at run time.
+      //
+      // SCOPED TO `hc` + A CAPITAL. This listener receives from Stripe, from extensions and from any
+      // other frame on the page; those are not ours and must not be reported. Anything matching our
+      // own naming convention is ours, and if it reached here it was dropped.
+      console.error('[canvas] NOTHING HANDLED a message from the canvas: ' + data.type +
+        " — the owner's action was dropped. Either no branch matches this type, or one matches and " +
+        'its payload guard rejected it. Keys present: ' + Object.keys(data).join(','));
     }
   });
 

@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-19T03:01:06.428Z** · 69 run(s) recorded.
+**Last run: 2026-09-19T03:18:14.889Z** · 72 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 43 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 47 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 1 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -58,6 +58,10 @@ have made the rule the first thing anyone switched off.
 | `check-no-well-known-path-returns-html.mjs` | 3 every root file in public/ serves ITSELF, byte for byte | **DECLARED, PROVEN BY HAND** | — | — |
 | `check-no-well-known-path-returns-html.mjs` | 4 every literal route in vercel.json reaches its own destination | **DECLARED, PROVEN BY HAND** | — | — |
 | `check-page-facts-match-the-record.mjs` | the classic renderer still injects the recorded phone | **RED ALONE** | stop the classic hero pill building a tel: link from S.phone, so eleven live pages silently lose the only phone number they show and nothing errors | — |
+| `check-postmessage-pairs-are-derived.mjs` | 1 every type the canvas sends is compared by the parent | **RED ALONE** | DELETE the parent's hcFreeformAddService branch. The canvas keeps sending it, nothing matches, and the ONLY working add control in the product silently stops adding — the exact shape hcFreeformLinkEdit shipped in for 16 days. Deleted rather than RENAMED: a rename is the obvious break and it is too wide, because it removes one comparison and introduces another, so it fires leg 2 as well and proves nothing about either (L98). This one changes the sent-but-unhandled set and leaves the handled-but-unsent set untouched. | — |
+| `check-postmessage-pairs-are-derived.mjs` | 2 every type the parent compares is sent by the canvas, or declares itself pending | **RED ALONE** | remove the CANVAS-SENDER-PENDING marker from the hcFreeformNodeMove handler. It is a real handler with a real writer and no sender; without the marker that fact is invisible, and with a marker nobody can tell it from a handler whose sender was deleted by accident. | — |
+| `check-postmessage-pairs-are-derived.mjs` | 3 the reverse channel pairs too — parent to canvas | **RED ALONE** | rename the parent's hcAuthState send. The canvas never learns the owner is signed in, so click-to-edit never ungates — which is the missing-handshake defect that closed on 2026-08-31, reintroduced from the other end. | — |
+| `check-postmessage-pairs-are-derived.mjs` | 4 an unhandled message is LOUD at run time, not a silent else | **RED ALONE** | put the listener's chain back to ending at a bare `}`. Every static pairing leg above still passes — the types still match — while a KNOWN type whose payload guard rejects it goes back to vanishing with no trace. That run-time case is the half a static check cannot see. | — |
 | `check-preview-is-a-true-device.mjs` | 1 the device's LOGICAL viewport is 1440x900 at every pane size | **RED ALONE** | make the stage's logical height follow the pane instead of staying 900 — the preview then LOOKS right and a 100vh hero measures something no visitor has, which is the failure mode the width-fit ruling exists to avoid | — |
 | `check-preview-is-a-true-device.mjs` | 2 the scale never exceeds 1 | **RED ALONE** | remove the 1:1 ceiling, so a pane wider than 1440 upscales the device and shows the owner text BIGGER than a visitor gets — lying in the opposite direction from the clipped fold | — |
 | `check-preview-is-a-true-device.mjs` | 3 the scale tracks the pane's WIDTH | **RED ALONE** | put the height fit back into the scale — `min(paneW/dev.w, paneH/dev.h)` — which is the state Adrian reported as 'the website got small': a wider window adds only beige | — |
@@ -149,3 +153,6 @@ have made the rule the first thing anyone switched off.
 - **2026-09-18T19:15:28.581Z** — 6 break(s) applied · 6 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-18T19:33:54.533Z** — 12 break(s) applied · 10 red alone · 2 compound · 0 not red · 0 skipped
 - **2026-09-19T03:01:06.428Z** — 12 break(s) applied · 12 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-19T03:17:32.700Z** — 0 break(s) applied · 0 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-19T03:17:45.858Z** — 4 break(s) applied · 3 red alone · 1 compound · 0 not red · 0 skipped
+- **2026-09-19T03:18:14.889Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped

@@ -56316,9 +56316,14 @@ function wireHcEditingSurface(doc, root){
      server — is two implementations of one rule, which is how a page and its own
      record come to disagree. So the server does it, and the canvas reloads onto the
      saved document. Slower by one round trip, and it cannot drift. */
-  function hcMoveSection(label, dir){
-    post({ type:'hcFreeformSectionMove', label: label, dir: dir });
-  }
+  // hcMoveSection() WAS HERE AND IS DELETED, 2026-09-18. It posted hcFreeformSectionMove,
+  // which NOTHING handled, and it had exactly ONE occurrence in this file: its own
+  // definition. No caller, no handler — a sender that could only ever drop. Its intended
+  // counterpart hcFreeformNodeMove exists in the parent with a working writer and an
+  // INCOMPATIBLE payload ({node, ref, place} against this {label, dir}), so wiring the two
+  // together would have been building a feature, not fixing a mismatch. Both halves written
+  // 2026-09-03; neither ever reachable.
+
 
   function hcBuildBar(el, kind){
     hcStyleTag(); hcCloseBar();
@@ -56475,7 +56480,18 @@ function wireHcEditingSurface(doc, root){
         });
         b.className = 'hc-ctx-colour';
       })();
-      if(kind === 'button'){ sep(); mk('Link', 'Change where this goes', function(){ hcEditLink(el); }); }
+      // 'Link · Change where this goes' WAS HERE AND IS REMOVED, 2026-09-18. It called
+      // window.prompt, took a URL from the owner, posted hcFreeformLinkEdit — and NOTHING handled
+      // it, in the parent OR the server. There is no directFreeformLinkEdit key anywhere in
+      // supabase/functions: the write path was never built, so this was not an unhandled message,
+      // it was a door onto a room that does not exist. Live and reachable from this menu since
+      // 2026-09-02 — sixteen days of an owner typing a URL, pressing OK, and nothing changing, not
+      // even locally, because it never touched the DOM either.
+      //
+      // A DEAD CONTROL IS WORSE THAN NO CONTROL — the same ruling this file already applied to the
+      // language button on the document view — and prohibition 4 forbids inviting a request we
+      // cannot honour. The control goes until the write path exists; the missing capability is
+      // recorded in docs/OPEN_FINDINGS.md rather than silently dropped.
       // DELETE — the same addressing and the same undoable pipe as a move.
       sep();
       mk('✕', 'Remove this block', function(){ post({ type:'hcFreeformNodeDelete', node: hcAddressOf(el) }); });
@@ -56815,12 +56831,9 @@ function wireHcEditingSurface(doc, root){
     hcBar.appendChild(n);
     setTimeout(function(){ try{ n.remove(); }catch(e){} }, 1400);
   }
-  function hcEditLink(el){
-    var cur = el.getAttribute('href') || '';
-    var next = win.prompt ? win.prompt('Where should this go?', cur) : null;
-    if(next === null) return;
-    post({ type:'hcFreeformLinkEdit', label: el.getAttribute('data-hc'), href: String(next) });
-  }
+  // hcEditLink() WAS HERE AND IS DELETED with the menu item that called it — see the note
+  // above. It was the ONLY sender of hcFreeformLinkEdit, so that type no longer exists on
+  // either side of the channel.
 
   /* SELECT — the one entry point. Click, or tap; never hover. */
   function hcSelect(el, pt){

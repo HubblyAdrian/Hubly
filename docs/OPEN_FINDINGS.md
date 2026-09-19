@@ -7874,3 +7874,61 @@ not design, at a rate of 4.8% of all text — the exact thing the rescue's comme
 not entitled to do. The existing button rescue already acts on the model's own CTAs, but only
 where text is *unreadable* (<3.0), never merely sub-AA. Extending that to all page text is a
 product decision about how far Hubly overrides the model's design, and Adrian rules on it.
+
+---
+
+## RULED-AND-DEFERRED / NOT-BUILT — recorded 2026-09-18 so none is rediscovered as a question
+
+### A link on a freeform page cannot be re-pointed. The write path was never built
+
+`hcEditLink()` and its `'Link · Change where this goes'` menu item are **removed** (2026-09-18). They
+prompted the owner for a URL and posted `hcFreeformLinkEdit`, which **nothing handled** — not the
+parent, and not the server: there is **no `directFreeformLinkEdit` key anywhere in
+`supabase/functions/`**. The server knows `directFreeformEdit`, `directFreeformImageEdit`,
+`directDocumentPatch`, `directDocumentImageEdit`, `directEdit` — and no link key.
+
+So this was not an unhandled message; it was a **door onto a room that does not exist**, reachable from
+a real menu since **2026-09-02 — sixteen days**. It did not even update the DOM locally, so there was
+no false feedback either: the owner typed a URL, pressed OK, and nothing anywhere changed.
+
+**What it would take:** a server-side link-edit key that rewrites an `href` on a labelled element
+(the `data-hc` label is already carried), the parent branch, and the control back. It is a small
+feature, not a door, and it is **not built**.
+
+### Moving a section on a freeform page: two halves, neither reachable
+
+| half | state |
+|---|---|
+| `hcMoveSection` → `hcFreeformSectionMove` `{label, dir}` | **deleted.** One occurrence in the file — its own definition. No caller, no handler. |
+| parent `hcFreeformNodeMove` `{node, ref, place}` + `hcNodeMove` writer | **kept**, marked `CANVAS-SENDER-PENDING` at the site. Complete and unsent. |
+
+Both written **2026-09-03**, same day, incompatible payloads. Wiring them together would have been
+building a feature, not fixing a mismatch. The kept half is the one with a working writer;
+drag-to-reorder needs a canvas sender and a control.
+
+### Membership creation — RULED AND DEFERRED by Adrian, 2026-09-18
+
+> *"Make service-add work on freeform first, then membership follows the same shape. A membership
+> capability built before the service path is proven would be a second untested path beside an
+> untested one."*
+
+**There is no membership action in the capability registry at all** — `setServices` exists, a full
+product set exists (`createProduct`, `addVariant`, `createCollection`, `addProductsToCollection`,
+`setProductVisibility`, `configureStore`, `generateStorefront`, `patchStorefront`, `listCatalog`), and
+nothing creates a membership plan. `openAddMembershipCustomer` adds a *customer to a plan*, not a plan.
+`add-membership` is rendered and labelled on the classic canvas and handled only by
+`handleWsPeClick` inside hubly.html's `/dashboard`. **Deferred, not missed. Sequenced behind
+service-add on freeform.**
+
+### `meta.pricingVisibility` — RULED: stays, doorless, on purpose
+
+Adrian, 2026-09-18: hiding price is **per service via `showPrice`**, not per page. `pricingVisibility`
+is **not to be deleted and its door is not to be built**. My assessment of the risk of leaving it, as
+asked: **low, and worth a later tidy rather than a fix.** It is read by exactly one function
+(`showPricesOnLanding`), its only meaningful non-default value is `'after_select'`, **no business has
+ever held that value** (10 hold `'landing'`, 204 hold nothing), and both write sites read DOM elements
+(`#ed-pricing-vis`, `#ob-pricing-vis`) that **do not exist**, through optional chaining, so they are
+silent no-ops. The hazard is not behavioural, it is a **second half-meaningful answer to a question
+that now has a better one** — the next person to ask "how do I hide a price" will find it first,
+because it is the one with a config-shaped name. If it is ever tidied, the honest end is to delete the
+field and its reader together, not to give it a control.
