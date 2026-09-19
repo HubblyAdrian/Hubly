@@ -6170,6 +6170,12 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     // the fact stays visible instead of becoming folklore.
     } else if(data.type === 'hcFreeformNodeMove' && data.node && data.ref && (data.place === 'before' || data.place === 'after')){
       hcNodeMove(data.node, data.ref, data.place);
+    } else if(data.type === 'hcFreeformPriceEdit' && typeof data.name === 'string' && data.name.trim() && typeof data.price === 'number' && isFinite(data.price)){
+      // A PRICE EDIT IS A RECORD EDIT. The canvas already parsed and refused anything it could not
+      // read, so what arrives here is a number. op 'edit' writes the services row AND places the
+      // value on the page in one version — which is what stops the page and the record disagreeing,
+      // the way they did on evergreen-yard-care (record 95/220/40, page 111.222.333/$111,222,333/50).
+      hcPriceEditFromCanvas(data);
     } else if(data.type === 'hcFreeformAddService' && typeof data.name === 'string' && data.name.trim()){
       hcAddServiceFromCanvas(data);
     } else if(data.type === 'hcFreeformNodeDelete' && data.node){
@@ -12991,6 +12997,21 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   // applyOwnerRecordEdit): the service lands in the RECORD and on the PAGE in one
   // undoable version. There is deliberately no page-only route — a card a customer can
   // read and not book is a defect this codebase already has a scar for.
+  // ONE PRICE, ONE WRITE, BOTH STORES. Same pipe as hcAddServiceFromCanvas below: the record edit
+  // writes the `services` row and places the value on the page in a single undoable version. There
+  // is deliberately no page-only route for a price — that route is what produced the divergence this
+  // exists to end.
+  async function hcPriceEditFromCanvas(d){
+    if(!hc.draftBusiness){ hcFlashAtControl('Reload and try again'); return; }
+    var r = null;
+    try{ r = await hcRecordEdit({ kind:'service', op:'edit', name: String(d.name).trim(), price: Number(d.price) }); }
+    catch(e){ r = null; }
+    // PROHIBITION 6: a state change the owner asked for may not complete in silence, and may not be
+    // reported as done when it was not. hcRecordEdit's own return is what decides the sentence.
+    if(r && r.ok) hcSayVoluntary('Updated ' + String(d.name).trim() + ' to ' + hcMoney(Number(d.price)) + ' on your page and in your list.');
+    else hcSayVoluntary('I could not save that price just now — it is unchanged. Try again in a moment.');
+  }
+
   async function hcAddServiceFromCanvas(d){
     if(!hc.draftBusiness){ hcFlashAtControl('Reload and try again'); return; }
     var edit = { kind: 'service', op: 'add', name: String(d.name).trim(),

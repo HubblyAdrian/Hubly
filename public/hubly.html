@@ -15851,14 +15851,65 @@ function hublyMoney(n){
   return '$'+(v%1===0?String(v):v.toFixed(2));
 }
 
+/** ══ ONE PARSER AND ONE FORMATTER FOR A PRICE. RULED BY ADRIAN, 2026-09-18 ═════════════════════
+ *
+ *  "Accept what a human types — separators, currency symbol, spaces — parse it to a number, store
+ *   the number, render it through svcDisplayPrice. One value, one formatter, one rendering,
+ *   everywhere. If a typed value cannot be parsed to a number, REFUSE IT AND SAY SO at the point of
+ *   entry. Do not store an unparseable string and do not silently substitute zero."
+ *
+ *  MEASURED, on evergreen-yard-care's stored document, which is what produced the ruling: the three
+ *  prices Adrian edited inline came out as `111.222.333`, `$111,222,333` and `50` — three formats in
+ *  one section — while the three he did NOT touch read `$130`, `$150`, `$85`. So it was never three
+ *  formatters: generation has exactly one, and the inline-edit path stored the raw keystrokes
+ *  without going near it.
+ *
+ *  RETURNS null RATHER THAN 0 for anything it cannot read. A zero is a PRICE — it renders as $0 and
+ *  a customer can act on it — so substituting one for "I could not understand this" would publish a
+ *  number the owner never typed, which is the 801-888-8888 defect with a different field. */
+function hcParsePrice(raw){
+  var t = String(raw == null ? '' : raw).trim();
+  if(!t) return null;
+  // Currency symbols, spaces and non-breaking spaces go. Letters do NOT — "50 dollars" is not a
+  // number we should guess at, and neither is "call me".
+  t = t.replace(/[$£€¥]/g, '').replace(/[\s\u00a0]/g, '');
+  if(!t) return null;
+  var hasDot = t.indexOf('.') >= 0, hasComma = t.indexOf(',') >= 0;
+  if(hasDot && hasComma){
+    // Both present: whichever comes LAST is the decimal point. "1,234.56" and "1.234,56" both work.
+    var dec = t.lastIndexOf('.') > t.lastIndexOf(',') ? '.' : ',';
+    var grp = dec === '.' ? ',' : '.';
+    t = t.split(grp).join('');
+    if(dec === ',') t = t.replace(',', '.');
+  } else if(hasDot || hasComma){
+    var ch = hasDot ? '.' : ',';
+    var parts = t.split(ch);
+    // One separator with 1–2 trailing digits is a decimal point; anything else is grouping.
+    // "111.222.333" has two, so it is grouping -> 111222333. "12,50" is a decimal -> 12.50.
+    if(parts.length === 2 && parts[1].length <= 2) t = parts[0] + '.' + parts[1];
+    else t = parts.join('');
+  }
+  if(!/^\d+(\.\d{1,2})?$/.test(t)) return null;      // anything else is REFUSED, not coerced
+  var n = Number(t);
+  if(!isFinite(n) || n < 0) return null;
+  return n;
+}
+/** The ONE rendering of a price. Everything that shows a service price goes through here. */
+function hcPriceText(n){
+  if(n === null || n === undefined || n === '' || isNaN(Number(n))) return '';
+  var v = Number(n);
+  return '$' + (v % 1 === 0 ? String(v) : v.toFixed(2));
+}
 function svcDisplayPrice(s){
   if(s.showPrice===false)return t('quoteAtBooking');
   if(s.pricingType==='variable'){
     const vals=[s.varPrices?.sedan,s.varPrices?.coupe,s.varPrices?.crossover,s.varPrices?.suv,s.varPrices?.truck,s.varPrices?.van].filter(v=>v!==''&&v!=null).map(Number).filter(v=>v>0);
     if(!vals.length)return '$--';
-    return t('fromPrice')+' $'+Math.min(...vals);
+    return t('fromPrice')+' '+hcPriceText(Math.min(...vals));
   }
-  return s.price?('$'+s.price):'$--';
+  // hcPriceText IS the one rendering (Adrian, 2026-09-18). '$--' stays for "there is no number",
+  // which is a different statement from "the number is zero".
+  return s.price?hcPriceText(s.price):'$--';
 }
 
 function normalizeJobDate(d){
@@ -56903,9 +56954,34 @@ function wireHcEditingSurface(doc, root){
       el.addEventListener('blur', function onBlur(){
         el.removeEventListener('blur', onBlur);
         var now = el.textContent || '';
-        if(now.trim() && now !== before){
-          post({ type:'hcFreeformInlineEdit', op:'update_text', label: el.getAttribute('data-hc'), text: now.trim(), prevText: before });
+        if(!now.trim() || now === before) return;
+        // ══ A PRICE IS A NUMBER, AND IT GOES TO THE RECORD — NOT A TEXT PATCH ════════════════════
+        //
+        // Measured on evergreen-yard-care 2026-09-18: the record held 95 / 220 / 40 while the stored
+        // DOCUMENT held 111.222.333 / $111,222,333 / 50. Editing a price inline patched the page's
+        // TEXT and never touched `services`, so the page and its own record disagreed about what the
+        // owner charges — and the page is the half a customer reads.
+        //
+        // The pairing needs no layout guessing: the anchor pass stamps
+        // `data-hubly-price="<service name>"`, and all six keys on this page match `services` rows
+        // exactly. So the service is read off the stamp (CLAUDE.md: patched by an anchor stamped at
+        // build time, never by re-recognising layout afterward), and the edit goes down the record
+        // path, which writes the row AND the page in one version.
+        var priceKey = el.getAttribute && el.getAttribute('data-hubly-price');
+        if(priceKey){
+          var n = hcParsePrice(now);
+          if(n === null){
+            // REFUSED AT ENTRY, WITH A SENTENCE THE OWNER CAN ACT ON — and the old text put back,
+            // so the page never shows a value that was not stored.
+            el.textContent = before;
+            hcFlash(el, 'I could not read "' + now.trim().slice(0, 18) + '" as a price — try a number like 95 or 95.50');
+            return;
+          }
+          el.textContent = hcPriceText(n);   // show exactly what is being stored
+          post({ type:'hcFreeformPriceEdit', name: priceKey, price: n });
+          return;
         }
+        post({ type:'hcFreeformInlineEdit', op:'update_text', label: el.getAttribute('data-hc'), text: now.trim(), prevText: before });
       });
     }
   }
