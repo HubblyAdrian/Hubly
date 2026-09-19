@@ -403,3 +403,41 @@ clear and step 4 can finally run. If it does not, the frame is not being replace
 `hcRefreshCanvasFrame` implies and the finding is there.
 
 **Step 4 has still never been performed.** Nothing in this repo asserts it.
+
+## 4.1 — THE FREEFORM SECOND EDIT: SETTLED IN A RIG, AND IT WAS NOT THE GUARD
+
+Measured 2026-09-18, reproducing the mechanism rather than reading the code path:
+
+| step | result |
+|---|---|
+| wire the surface on a freeform-shaped document (`#hc-doc-root` + same-origin `srcdoc` frame) | **2 of 2 elements marked**, `data-hc-wired="1"` on that body |
+| replace the inner document — what a save does | a **genuinely new** document (`newDoc !== oldDoc`), 0 marked, and **`data-hc-wired` is `null` on the new body** |
+| wire again, as the frame's own `load` handler does | **2 of 2 marked again** |
+
+**So the freeform path rebinds correctly and always did.** The flag cannot carry across a save because
+the save produces a new `body`, and the outer A/B crossfade is the stronger case still — it reloads
+`hubly.html` entirely.
+
+### Which means the thing Adrian hit on evergreen is NOT explained by the fix
+
+The `data-hc-wired` defect was **real, confirmed, and fixed** — on the **classic** path, where the root
+(`#p-classic-site #ws-page`) survives a re-render and the flag persists. That is `graefs-autocare`'s
+path. **It is not `evergreen-yard-care`'s**, and evergreen is where he could not get back into the
+field. So: a real defect was found and fixed, and **his report remains unexplained.** Saying otherwise
+would be claiming a fix for a symptom it cannot have caused.
+
+### A named candidate, not a finding
+
+After a save the inner document is replaced, and `hcSel` and `hcBar` — the selection and the contextual
+toolbar — are **module-level variables in the OUTER `hubly.html` scope holding references into the OLD
+inner document.** After the swap those references are detached. `hcSelect`'s first line is
+`if(hcSel === el){ hcPlaceBar(el); return; }`, and the toolbar is built in a document that no longer
+exists. The codebase already reasons about this class for the selection chip (*"a wrapper's address is a
+path through a document this reload just replaced"*), so the concern is not novel — but **whether an
+orphaned `hcBar` is what stopped him re-entering the field is NOT established**, and it is a candidate
+to try, not a diagnosis.
+
+**What would settle it:** on `evergreen-yard-care`, edit a price, let it save, then try to edit the same
+price again — and say whether the toolbar appears at all, or whether the field simply will not open. The
+difference between those two answers picks between the candidate above and something else. **Step 4 of
+the save test is still unperformed.**
