@@ -8266,3 +8266,64 @@ boolean for exactly this class — it currently covers `price` and `description`
 `show_price` is the obvious next step and is NOT done**, which means a two-store disagreement about
 price visibility would today be resolved silently rather than reported on the row. That is the one piece
 of this worth doing before the tidy.
+
+---
+
+## 2.4 — MEASURED ACROSS THE CORPUS, AND IT UNDERCUTS "SHIP THE TILE FIRST"
+
+Adrian authorised the anchor job and said *"ship the add tile first, since everything downstream already
+exists"* — on the strength of my own 3.2 finding that a patch can stamp an anchor retroactively. That
+finding still holds. **But the finder's input is mostly absent, and that changes the order.**
+
+### The measurement, stated with what would make it wrong FIRST
+
+The number below is meaningless unless a page's missing anchor means a missing *grid* rather than a
+business with no services. So it is split on exactly that, and the unsplit version was **wrong by 3× in
+the alarming direction**:
+
+| across 191 freeform pages (latest `website` document each) | count |
+|---|---|
+| **zero anchors AND zero services** — nothing to anchor, **no gap, expected** | **105** |
+| **zero anchors BUT the business HAS services** — a real stamping gap | **53** |
+| exactly one anchor — not enough to infer a container | 13 |
+| **two or more anchors — a grid is directly inferable** | **20** |
+
+**Claimed market businesses: 2 have services and no anchors; 1 has a usable grid.**
+
+### What that means for the build, and it is a conflict worth naming
+
+**A grid finder keyed on `data-hubly-service` anchors would find nothing on 83% of pages**, including
+5 of the 6 claimed market businesses. So "everything downstream already exists" is true and
+**everything UPSTREAM mostly does not**: the tile would appear for 20 pages and be silently absent for
+158.
+
+**The 105 are not a defect and must not be treated as one.** A business with no services has nothing to
+put a tile beside — the panel is its door, and the panel now works and is findable. Counting those as
+failures is the empty-reader mistake: reporting our missing setup as the owner's missing data.
+
+**The 53 are the real work**, and the retroactive finder cannot key on anchors for them — there are
+none. It has to find the section by the business's own service NAMES, which is exactly what
+`placeOneServicePrice`'s legacy branch already does (`findServiceHeading(html, name)`). So the template
+exists, but it is a *text* finder, not an anchor reader, and its success rate on 53 real pages is
+**unmeasured**.
+
+### 2.4's stated outcome, as ruled
+
+When the finder finds nothing the tile is **absent, and that is reported, never a silent no-op.** The
+three honest categories, which the outcome must distinguish:
+
+| category | outcome |
+|---|---|
+| no services at all (105) | no grid expected. The tile is absent **correctly**; the panel is the door |
+| services but no anchor (53) | the retroactive finder should stamp one. **If it cannot, say which page and why** |
+| two or more anchors (20) | the container is directly inferable |
+
+### Why I stopped before building
+
+**The authorisation rests on a premise my own measurement has now weakened.** Building a finder that
+serves 20 pages and silently skips 158 — 5 of 6 real customers — would ship a feature that looks
+delivered and is not, which is the false-green this repo exists to prevent. **The honest next step is to
+measure the text finder's hit rate on the 53 before building the tile on top of it**, because if that
+rate is low the answer is an anchor at generation plus a REBUILD path, and rebuilds are banned.
+
+**Your ruling. I have not built it.**

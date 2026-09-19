@@ -167,12 +167,15 @@ declareBreak({
        "still appears to work — and unticking it changes nothing, which is a control that lies. That is " +
        "the shape of every dead control this codebase has removed.",
   file: "public/platform-home.html",
-  find: "description: wrap.querySelector('.mng-sd').value.trim(), showPrice: showEdit });",
-  with: "description: wrap.querySelector('.mng-sd').value.trim() });",
+  // UPDATED 2026-09-18 when the edit save was refactored into `editPayload` to carry the sale
+  // declaration. The old find named a line that no longer exists and the runner reported SKIPPED —
+  // correctly, and it is the fourth stale declaration this week. A break is code about code.
+  find: "description: wrap.querySelector('.mng-sd').value.trim(), showPrice: showEdit };",
+  with: "description: wrap.querySelector('.mng-sd').value.trim() };",
 });
 const boxes = (shell.match(/class="mng-sshow"/g) || []).length;
-const savesEdit = /showPrice: showEdit \}\)/.test(shell);
-const savesAdd = /showPrice: showAdd \}\)/.test(shell);
+const savesEdit = /showPrice: showEdit \};/.test(shell);   // now an object literal, not a call
+const savesAdd = /showPrice: showAdd \};/.test(shell);    // same refactor as the edit row above
 const besidePrice = shell.indexOf('class="hc-mng-showp"') > shell.indexOf('placeholder="Price"');
 const readsState = /showPrice: r\.show_price !== false/.test(shell);
 leg("RULE", "5 the control sits beside the price and writes what it says",
@@ -182,6 +185,39 @@ leg("RULE", "5 the control sits beside the price and writes what it says",
   `thinks about its price; both save paths send it (edit ${savesEdit}, add ${savesAdd}); and it reflects ` +
   `the record via \`r.show_price !== false\` (${readsState}) — \`!== false\` and not \`=== true\`, so a ` +
   `reader that stops returning the field shows prices rather than hiding every one of them.`);
+
+/* ── LEG 6 — a two-store disagreement about visibility is REPORTED, not resolved in silence ── */
+declareBreak({
+  leg: "6 [SHAPE] a show_price disagreement between the two stores is reported on the row",
+  provenBy: "Reads the live function, so no repo edit moves it. PROVEN BY HAND on 2026-09-18 across " +
+            "20260918260000: BEFORE, `conflicts` covered price and description only and a disagreement " +
+            "about whether a price is VISIBLE resolved catalogue-wins in silence; AFTER, the clause is " +
+            "in the live definition. And both directions were checked in SQL rather than assumed: " +
+            "coalesce(true,true) IS DISTINCT FROM coalesce(false,true) is TRUE (a real disagreement " +
+            "fires) while coalesce(NULL,true) IS DISTINCT FROM coalesce(true,true) is FALSE (an ABSENT " +
+            "flag is not a disagreement). Without that second direction the field would have lit up on " +
+            "all 283 rows, because no catalogue entry carries pricing.show_price yet — and a field that " +
+            "is always true teaches everybody to ignore it.",
+});
+const cdef = liveRead(["db", "query", "--linked",
+  "select (pg_get_functiondef('public.get_business_services(uuid,uuid)'::regprocedure) like " +
+  "'%coalesce(t.show_price, true) is distinct from coalesce(c.show_price, true)%') as has_clause"]);
+const spur = liveRead(["db", "query", "--linked",
+  "select count(*) filter (where s.conflicts) as conflicting, count(*) as total from businesses b " +
+  "cross join lateral public.get_business_services(b.id, b.owner_id) s where b.owner_id is not null"]);
+let hasClause = null, conflicting = null, ownedRows = null;   // `total` is leg 1's — renamed rather than shadowed
+if (cdef.out) { const m = cdef.out.match(/"has_clause":\s*(true|false)/); if (m) hasClause = m[1] === "true"; }
+if (spur.out) { const a = spur.out.match(/"conflicting":\s*(\d+)/), b = spur.out.match(/"total":\s*(\d+)/);
+  if (a) conflicting = Number(a[1]); if (b) ownedRows = Number(b[1]); }
+leg("SHAPE", "6 [SHAPE] a show_price disagreement between the two stores is reported on the row",
+  hasClause === true && ownedRows !== null && conflicting === 0,
+  hasClause === null ? `could not read the live function (${cdef.err || "no row"}) — FAILURE, not skipped`
+    : !hasClause ? `the live function does not carry the show_price clause`
+    : `the clause is live, and across ${ownedRows} owned service row(s) it currently reports ${conflicting} ` +
+      `conflict(s) — zero, which is the RIGHT answer and is the half worth asserting: every catalogue ` +
+      `entry has an ABSENT pricing.show_price today, so a naive \`is distinct from\` would have flagged ` +
+      `all of them. The resolution is unchanged (catalogue wins, as for price); only whether the panel ` +
+      `can SAY there is a disagreement.`);
 
 const bad = legs.filter((l) => !l.pass);
 // not-a-corpus-rate: this check's own leg count, not a corpus
