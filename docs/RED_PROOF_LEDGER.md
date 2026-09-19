@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-19T04:56:21.541Z** · 91 run(s) recorded.
+**Last run: 2026-09-19T05:11:52.977Z** · 93 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 62 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 66 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -26,6 +26,10 @@ have made the rule the first thing anyone switched off.
 
 | check | leg | status | break | also went red |
 | --- | --- | --- | --- | --- |
+| `check-a-blank-sale-stays-blank.mjs` | 1 an unrelated edit sends NO sale key, so a derived answer stays derived | **RED ALONE** | send the select's value unconditionally. Every edit then carries sale, so the first time an owner corrects a description every service becomes DECLARED — and "bookable because nobody said" and "bookable because the owner chose it" become the same record, product-wide, with no way back. The control still looks identical and nothing errors. | — |
+| `check-a-blank-sale-stays-blank.mjs` | 2 the three states exist and use the product's OWN wording, not new copy | **RED ALONE** | reword one option. The control still works, the blank rule still holds, and the editor now asks the sale question in different words from the `+` flow — which is how an owner comes to think they are answering two different questions about the same thing. | — |
+| `check-a-blank-sale-stays-blank.mjs` | 3 an explicit pick sends the declaration | **RED ALONE** | drop the key on a pick as well. The control then does nothing at all in either direction — the blank rule satisfied by a control that cannot write, which is the dead-control shape and would leave legs 1 and 2 green. | — |
+| `check-a-blank-sale-stays-blank.mjs` | 4 the server writes a declaration only for an explicit bookable/quoted | **RED ALONE** | accept any truthy value. A stray `sale: true` from a future caller then writes a declaration that offerType cannot read, and `offerType` refuses an unreadable declaration as "unknown" — so the service would resolve to unknown and a booking flow cannot act on unknown. Refusing at the writer is what keeps that out of the record. | — |
 | `check-a-different-conversation-in-every-tab.mjs` | R5 [SHAPE] the identity load is reachable from outside hcRenderHome | **RED ALONE** | put the identity load back inside hcRenderHome, where R1's guard makes it unreachable on any entry path that is not Home — the rail loses its location and its logo | — |
 | `check-a-hidden-price-stays-reachable.mjs` | 1 services.show_price exists, is NOT NULL, and defaults to showing | **DECLARED, PROVEN BY HAND** | — | — |
 | `check-a-hidden-price-stays-reachable.mjs` | 2 the owner's reader returns show_price, so the control can show its own state | **DECLARED, PROVEN BY HAND** | — | — |
@@ -192,3 +196,5 @@ have made the rule the first thing anyone switched off.
 - **2026-09-19T04:55:22.880Z** — 4 break(s) applied · 2 red alone · 2 compound · 0 not red · 0 skipped
 - **2026-09-19T04:56:06.554Z** — 4 break(s) applied · 2 red alone · 2 compound · 0 not red · 0 skipped
 - **2026-09-19T04:56:21.541Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-19T05:10:27.729Z** — 4 break(s) applied · 3 red alone · 0 compound · 1 not red · 0 skipped
+- **2026-09-19T05:11:52.977Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped

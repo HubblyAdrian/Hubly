@@ -12297,6 +12297,13 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
                  // defaults to true, so an absent value means SHOWN. Reading it the other way round
                  // would hide every price the moment a reader stopped returning the field.
                  showPrice: r.show_price !== false,
+                 // SALE AND ITS PROVENANCE. The union reader does not return these yet, so both are
+                 // undefined here and the control renders "not declared" — which is the TRUTHFUL state
+                 // for every service that exists today, because nothing has ever written a declaration.
+                 // When the reader carries them, this line starts reflecting the record with no other
+                 // change. Deliberately NOT defaulted to the derived answer: see the control below.
+                 sale: (r.sale === 'bookable' || r.sale === 'quoted') ? r.sale : null,
+                 saleFrom: r.sale_from || null,
                  source: r.source, conflicts: r.conflicts === true };
       }) : [];
     }
@@ -12344,6 +12351,25 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         '<label class="hc-mng-showp" title="Unticked, the page shows &quot;Quote at booking&quot; instead of the number. The service can still be booked or quoted — hiding a price never removes the way a customer reaches you.">'+
           '<input type="checkbox" class="mng-sshow"'+(s.showPrice===false?'':' checked')+'> Show price'+
         '</label>'+
+        // ══ HOW PEOPLE GET IT — THREE STATES, AND THE FIRST ONE IS NOT A CHOICE ═════════════════
+        //
+        // The wording is OFFER_TYPE_QUESTIONS.sale's, not new copy: "They book it" / "They ask for a
+        // price". That table is exported as data in service_engine.ts precisely so the `+` flow and the
+        // editor cannot word the same question differently.
+        //
+        // THE EMPTY OPTION IS THE POINT (Adrian, 2026-09-18). A service nobody has answered for resolves
+        // by STRUCTURE — saleFrom "structure" — and rendering that derived answer as a selected option
+        // would show the owner a choice they never made. Then the first unrelated save would write it
+        // back as a declaration, and "bookable because nobody said" would become "bookable because the
+        // owner chose it", for every service in the product, with no way back. So: a real third state,
+        // selected whenever nothing is declared, and the save sends `sale` ONLY when it is not that.
+        '<label class="hc-mng-showp" title="Booked means the price is the price and a customer can book it themselves. Asked means it depends on the job, so you quote it. Left blank, Hubly works it out from whether the service has a price.">'+
+          '<select class="hc-mng-in mng-ssale" style="max-width:150px">'+
+            '<option value=""'+(s.sale?'':' selected')+'>How people get it…</option>'+
+            '<option value="bookable"'+(s.sale==='bookable'?' selected':'')+'>They book it</option>'+
+            '<option value="quoted"'+(s.sale==='quoted'?' selected':'')+'>They ask for a price</option>'+
+          '</select>'+
+        '</label>'+
         '<input class="hc-mng-in mng-sd" value="'+hcEscA(s.description||'')+'" placeholder="Short description">'+
         '<button type="button" class="hc-mng-btn mng-ssave">Save</button>'+
         '<button type="button" class="hc-mng-btn danger mng-srem">Remove</button>'+
@@ -12377,6 +12403,9 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
           '<input class="hc-mng-in mng-sn" placeholder="New service name">'+
           '<input class="hc-mng-in mng-sp" placeholder="Price" inputmode="decimal" style="max-width:88px">'+
           '<label class="hc-mng-showp" title="Unticked, the page shows &quot;Quote at booking&quot; instead of the number. The service can still be booked or quoted."><input type="checkbox" class="mng-sshow" checked> Show price</label>'+
+          // The same three states on the add row, so a service can be created with its sale declared —
+          // or, by leaving it alone, created undeclared and left to the structure derivation.
+          '<label class="hc-mng-showp" title="Booked means the price is the price. Asked means it depends on the job. Left blank, Hubly works it out from whether the service has a price."><select class="hc-mng-in mng-ssale" style="max-width:150px"><option value="" selected>How people get it…</option><option value="bookable">They book it</option><option value="quoted">They ask for a price</option></select></label>'+
           '<input class="hc-mng-in mng-sd" placeholder="Short description">'+
           '<button type="button" class="hc-mng-btn" id="hcMngSvcAdd">Add</button>'+
         '</div>'+
@@ -12416,7 +12445,11 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
       }
       this.disabled = true; hcManageStatus('Saving…', true);
       var showAdd = !wrap.querySelector('.mng-sshow') || wrap.querySelector('.mng-sshow').checked;
-      var r = await hcRecordEdit({ kind:'service', op:'add', name: name, price: priceAdd, description: wrap.querySelector('.mng-sd').value.trim(), showPrice: showAdd });
+      var saleSelA = wrap.querySelector('.mng-ssale');
+      var saleAdd = saleSelA && (saleSelA.value === 'bookable' || saleSelA.value === 'quoted') ? saleSelA.value : null;
+      var addPayload = { kind:'service', op:'add', name: name, price: priceAdd, description: wrap.querySelector('.mng-sd').value.trim(), showPrice: showAdd };
+      if(saleAdd) addPayload.sale = saleAdd;
+      var r = await hcRecordEdit(addPayload);
       await hcAfterRecordEdit(r); this.disabled = false;
     });
     Array.prototype.forEach.call(body.querySelectorAll('.hc-mng-svc:not(.hc-mng-add)'), function(wrap){
@@ -12435,7 +12468,18 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         // showPrice travels with the save. Read off the box rather than remembered, so the value
         // written is the one on screen at the moment the owner pressed Save.
         var showEdit = !!(wrap.querySelector('.mng-sshow') && wrap.querySelector('.mng-sshow').checked);
-        var r = await hcRecordEdit({ kind:'service', op:'edit', id: wrap.getAttribute('data-id'), prevName: wrap.getAttribute('data-prev'), name: name, price: priceEdit, description: wrap.querySelector('.mng-sd').value.trim(), showPrice: showEdit });
+        // A BLANK STAYS BLANK. `edit` carries `sale` ONLY when the owner picked one of the two real
+        // options; an empty select means "not declared" and the key is left off entirely, so the server
+        // block that writes it does not run. Editing a price or a name therefore cannot convert a
+        // derived answer into a declared one — which is the requirement, not a nicety.
+        var saleSel = wrap.querySelector('.mng-ssale');
+        var saleEdit = saleSel && (saleSel.value === 'bookable' || saleSel.value === 'quoted') ? saleSel.value : null;
+        // THE KEY IS ADDED, NOT PASSED AS A SECOND ARGUMENT — hcRecordEdit takes ONE object, and my
+        // first version passed a second that would have been silently ignored: the control would have
+        // looked wired and written nothing, which is the dead-control shape.
+        var editPayload = { kind:'service', op:'edit', id: wrap.getAttribute('data-id'), prevName: wrap.getAttribute('data-prev'), name: name, price: priceEdit, description: wrap.querySelector('.mng-sd').value.trim(), showPrice: showEdit };
+        if(saleEdit) editPayload.sale = saleEdit;
+        var r = await hcRecordEdit(editPayload);
         await hcAfterRecordEdit(r); this.disabled = false;
       });
       wrap.querySelector('.mng-srem').addEventListener('click', async function(){

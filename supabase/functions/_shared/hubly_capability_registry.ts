@@ -5489,6 +5489,65 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
   // ALONE. So every service added from Edit details or from the canvas "+" wrote a `services`
   // row and nothing a classic page reads: the morning's defect, in the evening's other path.
   // Found by reading rather than by a customer, which is the only reason it is not a third scar.
+  // ══ THE SALE DECLARATION — WRITTEN ONLY ON AN EXPLICIT PICK ═══════════════════════════════════
+  //
+  // RULED BY ADRIAN, 2026-09-18: "A BLANK STAYS BLANK. This is the requirement, not a detail. Three
+  // states — not declared, declared bookable, declared quoted — and the writer touches sale ONLY on an
+  // explicit pick. An owner editing a price, a name or a description must leave sale exactly as it was,
+  // including absent."
+  //
+  // WHY THAT IS THE WHOLE JOB. `offerType` answers with a PROVENANCE: `saleFrom: "declared"` when the
+  // owner said so, `"structure"` when it was derived from the pricing mode. Writing a declaration on
+  // every ordinary edit would turn every service in the product from derived into declared — silently,
+  // permanently, and with no way back, because "bookable, because nobody ever said" and "bookable,
+  // because the owner chose it" would become the same record. Nobody would notice until something
+  // depended on the difference.
+  //
+  // So: the key is absent unless the caller passes one, and this block does nothing at all in that case.
+  // Same discipline as show_price, one field over.
+  //
+  // WHERE IT GOES, and it is not the `services` row: a declaration lives at `offer.sale` on a CATALOGUE
+  // entry (`offerType` reads `o.offer.sale`). The catalogue normaliser already carries it —
+  // `offer: normalizeOfferDeclaration(raw.offer)`, "preserved verbatim, not validated" — so the shape
+  // has always supported this and no existing entry has one. NOT gated on classic/freeform, unlike the
+  // catalogue write below: sale changes what the BOOKING FLOW does, and the booking flow reads the
+  // catalogue on both formats, while the freeform page renders from its stored document and is
+  // untouched by this.
+  let saleWrite: { status: string; detail?: string } | null = null;
+  const declaredSale = (edit as { sale?: unknown }).sale;
+  if (declaredSale === "bookable" || declaredSale === "quoted") {
+    try {
+      const bizRow = await selectOne("businesses", "id", draftId, "meta");
+      const prior = bizRow ? getCatalog(bizRow as Record<string, unknown>) : null;
+      const key = name.trim().toLowerCase();
+      const idx = prior ? prior.services.findIndex((sv) => String(sv.name || "").trim().toLowerCase() === key) : -1;
+      if (!prior || idx < 0) {
+        // NO CATALOGUE ENTRY TO DECLARE IT ON. Reported, never invented: creating an entry here would
+        // put a service into the store the booking flow reads on the strength of a visibility pick,
+        // which is a different act from the one the owner performed.
+        saleWrite = { status: "no_catalogue_entry", detail: `no catalogue entry named ${name}` };
+      } else {
+        const next = prior.services.slice();
+        const cur = next[idx] as Record<string, unknown>;
+        const priorOffer = (cur.offer && typeof cur.offer === "object") ? cur.offer as Record<string, unknown> : {};
+        next[idx] = { ...cur, offer: { ...priorOffer, sale: declaredSale } } as typeof next[number];
+        const payload = buildCatalogWritePayload({ ...prior, services: next } as never, {}) as Record<string, unknown>;
+        const rr = await callBusinessRpc("set_business_service_catalog", {
+          p_business_id: draftId,
+          p_owner_id: ownerUid || null,
+          p_catalog: payload.service_catalog,
+          p_draft_token: draftToken || null,
+        });
+        const nn = Number((rr as { set_business_service_catalog?: unknown } | null)?.set_business_service_catalog ?? rr ?? -99);
+        saleWrite = (nn === -1) ? { status: "not_owner" }
+          : (nn < 0 || !Number.isFinite(nn)) ? { status: "failed", detail: `rpc returned ${nn}` }
+          : { status: "written" };
+      }
+    } catch (e) {
+      saleWrite = { status: "failed", detail: String((e as Error)?.message || e).slice(0, 120) };
+    }
+  }
+
   let classic: ClassicServicesWrite | null = null;
   if (placement.status === "not_freeform") {
     try { classic = await applyServicesToClassic(draftId, draftToken, one, ownerUid); }

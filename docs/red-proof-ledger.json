@@ -931,6 +931,36 @@
       "declaredTotal": 3,
       "recorded": 3,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-19T05:10:27.729Z",
+      "applied": 4,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T05:11:52.977Z",
+      "applied": 4,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -1571,6 +1601,42 @@
       "leg": "3 the STRUCTURE derivation still answers when nothing is declared",
       "why": "delete the structure fallback, which an earlier ruling asked for and Adrian then struck: 'A membership offer has no pricing.mode, so structure-derived sale is the only thing that can answer for it.' Without it every existing service and every membership resolves to 'unknown', and a booking flow cannot act on unknown.",
       "at": "2026-09-19T04:56:21.541Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-blank-sale-stays-blank.mjs::1 an unrelated edit sends NO sale key, so a derived answer stays derived": {
+      "check": "check-a-blank-sale-stays-blank.mjs",
+      "leg": "1 an unrelated edit sends NO sale key, so a derived answer stays derived",
+      "why": "send the select's value unconditionally. Every edit then carries sale, so the first time an owner corrects a description every service becomes DECLARED — and \"bookable because nobody said\" and \"bookable because the owner chose it\" become the same record, product-wide, with no way back. The control still looks identical and nothing errors.",
+      "at": "2026-09-19T05:11:52.977Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-blank-sale-stays-blank.mjs::3 an explicit pick sends the declaration": {
+      "check": "check-a-blank-sale-stays-blank.mjs",
+      "leg": "3 an explicit pick sends the declaration",
+      "why": "drop the key on a pick as well. The control then does nothing at all in either direction — the blank rule satisfied by a control that cannot write, which is the dead-control shape and would leave legs 1 and 2 green.",
+      "at": "2026-09-19T05:11:52.977Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-blank-sale-stays-blank.mjs::4 the server writes a declaration only for an explicit bookable/quoted": {
+      "check": "check-a-blank-sale-stays-blank.mjs",
+      "leg": "4 the server writes a declaration only for an explicit bookable/quoted",
+      "why": "accept any truthy value. A stray `sale: true` from a future caller then writes a declaration that offerType cannot read, and `offerType` refuses an unreadable declaration as \"unknown\" — so the service would resolve to unknown and a booking flow cannot act on unknown. Refusing at the writer is what keeps that out of the record.",
+      "at": "2026-09-19T05:11:52.977Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-blank-sale-stays-blank.mjs::2 the three states exist and use the product's OWN wording, not new copy": {
+      "check": "check-a-blank-sale-stays-blank.mjs",
+      "leg": "2 the three states exist and use the product's OWN wording, not new copy",
+      "why": "reword one option. The control still works, the blank rule still holds, and the editor now asks the sale question in different words from the `+` flow — which is how an owner comes to think they are answering two different questions about the same thing.",
+      "at": "2026-09-19T05:11:52.977Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
