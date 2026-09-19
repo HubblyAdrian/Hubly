@@ -8012,3 +8012,69 @@ and `hcAddServiceFromCanvas` — **the door is the only missing piece, and the w
 
 **So: restore it as part of one anchor-at-generation change that also serves membership, not as a
 standalone injector. Your ruling.**
+
+---
+
+## 5.1 — INCIDENT: three price coercions, one class. Two stored NaN at the moment of creation
+
+**One incident, not three bugs.** Every one of them turned what a human typed into a number by
+coercion rather than by parsing, and coercion has two failure modes that point in opposite directions:
+`Number('$95')` is **NaN** (refuses a price anyone would call clear) and `parseFloat('95 dollars')` is
+**95** (invents a price out of a sentence).
+
+| site | code | what it did |
+|---|---|---|
+| `platform-home.html` — "Edit details" **ADD** row | `price: priceRaw?Number(priceRaw):null` | **stored NaN at the moment a service was created.** This is the one control in the owner shell that can add a service |
+| `platform-home.html` — the same panel's **EDIT** row | the same line | the sibling. Fixing only the reported one would have left an owner able to store NaN by editing a price they had just added correctly |
+| `hubly.html` — the recurring-plan form (`rp-price`) | `parseFloat(priceRaw)` | NaN for `$95`, and **95 for `"95 dollars"`** |
+
+**The third was found by the check, not by either of us.** `check-one-price-one-formatter` leg 5 scans
+both shells for a bare `Number()`/`parseFloat()` on a price; it reported the recurring-plan site on its
+first run, in a form nobody had mentioned. That is the whole argument for a leg that asserts the CLASS
+rather than the instance.
+
+**And the same leg's first version reported its own documentation as the defect** — six lines across the
+two shells quote `Number(priceRaw)` while explaining its removal, and the scan counted the `<head>`'s
+HTML comment as live code until comments were stripped.
+
+**Fixed by `public/hubly-price.js`** — one parse, one format, read by both shells, following
+`status-words.js`. It refuses what it cannot read and returns `null`, never `0`: a zero is a PRICE a
+customer can act on, and "I could not read this" is not.
+
+**Related, and the deeper half:** the freeform inline price edit patched the document's TEXT and never
+wrote the record, so `services` held 95/220/40 while the page said `111.222.333` / `$111,222,333` / `50`.
+Corrected by `20260918220000`; the edit now goes down the record path, which writes the row and the page
+in one version.
+
+## 5.2 — INCIDENT: a reachable owner control posting into the void for sixteen days
+
+`hcFreeformLinkEdit`. From **2026-09-02 to 2026-09-18**:
+
+- the control was **reachable** — a `Link · Change where this goes` item on the freeform contextual
+  toolbar, offered for any button;
+- pressing it opened `window.prompt('Where should this go?')` and took a URL from the owner;
+- it posted `hcFreeformLinkEdit` to the parent, which **had no handler**;
+- **and there is no `directFreeformLinkEdit` key anywhere in `supabase/functions/`** — so it was not an
+  unhandled message, it was a **door onto a room that was never built**;
+- it did not even touch the DOM, so there was no false feedback either. The owner typed a URL, pressed
+  OK, and nothing anywhere changed.
+
+**Removed**, with the missing capability recorded — a dead control is worse than no control, and
+prohibition 4 forbids inviting a request we cannot honour.
+
+### The corrected reading of SectionMove / NodeMove — NOT one name mismatch
+
+I first reported this as a name mismatch. It is not, and the correction matters because it changes what
+the fix would be:
+
+| half | state |
+|---|---|
+| canvas `hcMoveSection` → `hcFreeformSectionMove` `{label, dir}` | **one occurrence in the file: its own definition.** No caller, no handler. A sender that could only ever drop. **Deleted.** |
+| parent `hcFreeformNodeMove` `{node, ref, place}` + the working `hcNodeMove` writer | complete, and **nothing sends it.** Marked `CANVAS-SENDER-PENDING` at the site |
+
+**Incompatible payloads**, both written **2026-09-03**. So they are **two different move features, each
+missing a different half, neither ever reachable** — and wiring them together would have been building a
+feature, not fixing a mismatch.
+
+**The class, which is why `check-postmessage-pairs-are-derived` exists:** a postMessage type is a
+hand-maintained set with its two halves in two files, and its failure mode is silent-dropped.
