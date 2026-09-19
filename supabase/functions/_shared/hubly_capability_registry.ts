@@ -5467,8 +5467,41 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
   // edit — the column's `not null default true` supplies the value for a new row, and PATCH leaves an
   // absent key alone. Never publishing a fact the owner did not state, one field over.
   if (typeof (edit as { showPrice?: boolean }).showPrice === "boolean") row.show_price = (edit as { showPrice?: boolean }).showPrice;
-  if (edit.op === "edit" && edit.id) {
-    await adminWrite("PATCH", "services", `?id=eq.${encodeURIComponent(edit.id)}&business_id=eq.${draftId}`, row);
+  // ══ AN EDIT UPDATES A ROW. IT DOES NOT INSERT ONE. ══════════════════════════════════════════
+  //
+  // THIS READ `edit.op === "edit" && edit.id`, AND `edit.id` IS ALWAYS NULL. hcReadRecord sets it
+  // so on purpose and says why: `get_business_services` is a UNION of two stores, a service can
+  // exist in both, and there is no single id to hand back. Its comment then adds "the panel keys
+  // on the NAME it is editing, which is what the writer matches on anyway" — and that last clause
+  // was simply false. The writer matched on id, found none, and fell through to the else branch,
+  // which INSERTS.
+  //
+  // So every service edit ever made from "Services, hours & contact" added a row instead of
+  // changing one. A price correction left two rows with the same name and different prices —
+  // which is precisely what `conflicts` reports, so the product has been showing this bug back to
+  // the owner as a fact about his data ("two different prices on file for this one"). A RENAME
+  // left the old service standing and added a second one: measured on evergreen 2026-09-19,
+  // "Full Service" and "Premium Lawn Service" both in the record and both on the page.
+  //
+  // Found by renaming a service as the owner on the real site. It could not have been found in the
+  // rig: the owner fake answers the edge call `{ok:true}` without performing a write, so the
+  // payload was correct and the outcome was never exercised (owner-rig.mjs limitation 2/3, and it
+  // is now a worked example of them).
+  if (edit.op === "edit") {
+    // Match by id when one is genuinely available; otherwise by the name being edited, which is
+    // the key the client actually holds and the same key removeServiceCard and the anchor pass use.
+    const keyName = (edit.prevName && edit.prevName.trim()) || name;
+    const patched = edit.id
+      ? await adminWrite("PATCH", "services", `?id=eq.${encodeURIComponent(edit.id)}&business_id=eq.${draftId}`, row)
+      : await adminWrite("PATCH", "services", `?business_id=eq.${draftId}&name=eq.${encodeURIComponent(keyName)}`, row);
+    // PATCH with a filter that matches nothing changes nothing and reports no error — so an edit
+    // to a service that lives ONLY in the catalogue would silently do nothing. `return=representation`
+    // makes that distinguishable: no rows back means nothing was updated, and only then do we add
+    // the row. Insert is the FALLBACK here, never the default.
+    if (!Array.isArray(patched) || patched.length === 0) {
+      row.business_id = draftId;
+      await adminWrite("POST", "services", "", row);
+    }
     // A name change moves the anchor — remove the old card, then place the new one.
     if (edit.prevName && edit.prevName.trim() && edit.prevName.trim().toLowerCase() !== name.toLowerCase()) {
       await removeServiceCard(draftId, draftToken, ownerUid, edit.prevName.trim());

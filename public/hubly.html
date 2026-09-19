@@ -18071,6 +18071,15 @@ window.addEventListener('message', function(ev){
   // ('no_label', 'already_first', 'bad_price'), because the band has to SAY why a control did
   // nothing rather than look like it worked. The reply carries the element's fresh state so the
   // band's indicators are re-read from the element after every change.
+  // RE-SELECT AFTER A RELOAD. A record edit changes the page, so the canvas is re-read and the
+  // selection is lost with it — the owner is left looking at the card they were editing with the
+  // band gone. The label survives a rename (only the words inside it change), and
+  // hcOpenEditByLabel is the restore path the auth handshake already uses; this gives the builder
+  // the same door without inventing a second one.
+  if(d.type === 'hcSelectByLabel' && typeof d.label === 'string' && d.label){
+    try{ if(typeof hcOpenEditByLabel === 'function' && hcOpenEditByLabel) hcOpenEditByLabel(d.label); }catch(e){}
+    return;
+  }
   if(d.type === 'hcCtxCommand' && d.cmd && typeof d.cmd === 'object'){
     var out = { ok:false, why:'not_wired' };
     try{ if(typeof hcCtxRunCommandFromBuilder === 'function' && hcCtxRunCommandFromBuilder) out = hcCtxRunCommandFromBuilder(d.cmd); }catch(e){ out = { ok:false, why:'threw' }; }
@@ -55953,7 +55962,24 @@ function wireHcEditingSurface(doc, root){
         color: hcRgbToHex(cs.color) || null,
         align: (['left','center','right'].indexOf(String(cs.textAlign)) >= 0) ? String(cs.textAlign) : null,
         transform: (['uppercase','lowercase','capitalize','none'].indexOf(String(cs.textTransform)) >= 0) ? String(cs.textTransform) : null,
-        letterSpacing: (cs.letterSpacing && cs.letterSpacing !== 'normal') ? cs.letterSpacing : 'normal'
+        // BACK TO THE UNIT IT WAS SENT IN. getComputedStyle answers letter-spacing in px
+        // (0.12em at 64px reads back as "7.68px"), so reporting it raw meant the control could
+        // never recognise the value it had just set and displayed "Normal" over spaced text.
+        // Converted to em against the element's own font-size and snapped only when it lands on
+        // one of our steps — never rounded into the nearest one, because a value we did not set
+        // must read as "not one of mine", not as a step the owner never chose.
+        letterSpacing: (function(){
+          var ls = cs.letterSpacing;
+          if(!ls || ls === 'normal') return 'normal';
+          var px = parseFloat(ls), fs = parseFloat(cs.fontSize);
+          if(!isFinite(px) || !isFinite(fs) || fs <= 0) return String(ls);
+          var em = px / fs;
+          var steps = ['0.02em','0.06em','0.12em'];
+          for(var i = 0; i < steps.length; i++){
+            if(Math.abs(em - parseFloat(steps[i])) < 0.004) return steps[i];
+          }
+          return String(ls);
+        })()
       };
     }catch(e){ return null; }
   }

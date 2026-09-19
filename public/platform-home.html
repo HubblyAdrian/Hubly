@@ -3204,9 +3204,23 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
         // The page and the record changed together; show the page that changed.
         try{ hcRefreshCanvasFrame(); }catch(e){}
         try{ await hcReadRecord(); }catch(e){}
-        // Follow the rename, so the band stays on the card the owner is editing.
+        // ══ FOLLOW THE CARD THROUGH THE RELOAD ═══════════════════════════════════════════════
+        //
+        // A record edit changes the PAGE, so unlike a style edit there is nothing to paint — the
+        // canvas has to be re-read, and that reload drops the selection on the floor. Observed on
+        // the live site: the name saved, and the band vanished mid-edit with the owner still
+        // looking at the card they were changing.
+        //
+        // The canvas already knows how to restore a selection after a reload (hcOpenEditByLabel,
+        // driven off the handshake) — the label is what it needs, and a rename does not change the
+        // label, only the words inside it. So the selection is re-asserted under the NEW service
+        // name once the frame is back.
         if(hc.selection && hc.selection.card) hc.selection.card.service = nm;
         hcRenderCtx();
+        if(hc.selection && hc.selection.label){
+          var _lbl = hc.selection.label;
+          setTimeout(function(){ hcPostToCanvas({ type:'hcSelectByLabel', label: _lbl }); }, 1600);
+        }
         // ══ SAID AFTER THE RE-RENDER, NOT BEFORE IT — PROHIBITION 6 ═════════════════════════
         //
         // This was above the re-render and the confirmation never reached the screen:
@@ -3295,7 +3309,16 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
                (a === 'left' ? '≡‹' : a === 'center' ? '≡' : '≡›') + '</button>';
       }).join('') + '</span>' +
       '<span class="hc-ctx-sep"></span>' +
+      // SPACING REPORTED "Normal" FOR TEXT THAT WAS NOT. The control sends `0.12em` and the
+      // element computes `7.68px`, so the comparison never matched and the select fell back to
+      // its first option — a status indicator confidently naming a state the element was not in
+      // (prohibition 2), one step after the same class of bug in the font key. The snapshot now
+      // converts back to the em step it came from; anything that is not one of our steps shows
+      // "—" rather than being rounded into one, the same way Font shows a blank for a face that
+      // is not ours.
       '<span class="hc-ctx-grp"><label>Spacing</label><select id="hcCtxSpacing">' +
+        (['normal','0.02em','0.06em','0.12em'].indexOf(String(st.letterSpacing)) < 0
+          ? '<option value="" selected>—</option>' : '') +
         ['normal','0.02em','0.06em','0.12em'].map(function(v){
           return '<option value="' + v + '"' + (String(st.letterSpacing) === v ? ' selected' : '') + '>' +
                  (v === 'normal' ? 'Normal' : v) + '</option>';
@@ -3329,7 +3352,7 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
       });
     });
     var sp = document.getElementById('hcCtxSpacing');
-    if(sp) sp.addEventListener('change', function(){ send({ 'letter-spacing': this.value }); });
+    if(sp) sp.addEventListener('change', function(){ if(this.value) send({ 'letter-spacing': this.value }); });
     var tr = document.getElementById('hcCtxTransform');
     if(tr) tr.addEventListener('change', function(){ send({ 'text-transform': this.value }); });
   }
@@ -3429,6 +3452,18 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
         var v = ta ? ta.value : '';
         if(!v.trim()){ hcCtxSay('That can’t be left empty — nothing changed.', false); return; }
         if(v === (hc.selection && hc.selection.text)) return;   // nothing to do, and say nothing
+        // ══ BLUR AND APPLY ARE ONE COMMIT, NOT TWO ═══════════════════════════════════════
+        //
+        // Clicking Apply BLURS the textarea first, so both handlers fired: the first changed
+        // the page, the second arrived with the same words, and the canvas answered
+        // "no_change" — which the band painted RED over a change that had just worked.
+        // Observed on the live site: the heading updated correctly and the status said
+        // "That's already how it's set."
+        //
+        // Recording the text as sent — before the answer — makes the second call a no-op at
+        // the guard above. If the command fails, the reply re-reads the element and puts the
+        // real text back, so this can never leave the band claiming words the page does not have.
+        if(hc.selection) hc.selection.text = v;
         hcCtxCommand({ op:'text', text: v });
       };
       var sv2 = document.getElementById('hcCtxTextSave');
