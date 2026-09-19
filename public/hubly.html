@@ -18052,6 +18052,7 @@ var hcClearSelectionFromBuilder = null;
 // Set by wireHcEditingSurface, the same scope and for the same reason as the line above.
 var hcStepSelectionFromBuilder = null;
 var hcReplaceCardImageFromBuilder = null;
+var hcCtxRunCommandFromBuilder = null;
 
 // The top contextual editor asking for one of the two operations above. Both answer with a
 // BOOLEAN that is sent back: "there is no next element" and "that card has no picture I can
@@ -18064,6 +18065,16 @@ window.addEventListener('message', function(ev){
     var okStep = false;
     try{ if(typeof hcStepSelectionFromBuilder === 'function' && hcStepSelectionFromBuilder) okStep = !!hcStepSelectionFromBuilder(d.dir); }catch(e){}
     try{ window.parent.postMessage({ type:'hcCtxStepDone', dir: d.dir, moved: okStep }, '*'); }catch(e){}
+    return;
+  }
+  // THE TOP EDITOR RUNNING A COMMAND. Every answer goes back — including the refusals
+  // ('no_label', 'already_first', 'bad_price'), because the band has to SAY why a control did
+  // nothing rather than look like it worked. The reply carries the element's fresh state so the
+  // band's indicators are re-read from the element after every change.
+  if(d.type === 'hcCtxCommand' && d.cmd && typeof d.cmd === 'object'){
+    var out = { ok:false, why:'not_wired' };
+    try{ if(typeof hcCtxRunCommandFromBuilder === 'function' && hcCtxRunCommandFromBuilder) out = hcCtxRunCommandFromBuilder(d.cmd); }catch(e){ out = { ok:false, why:'threw' }; }
+    try{ window.parent.postMessage({ type:'hcCtxCommandDone', id: d.id || null, op: d.cmd.op || null, result: out }, '*'); }catch(e){}
     return;
   }
   if(d.type === 'hcCtxReplaceImage' && typeof d.service === 'string' && d.service){
@@ -55925,6 +55936,27 @@ function wireHcEditingSurface(doc, root){
    * inconsistently across engines, and the first family is what actually distinguishes the
    * seven. Null is a real answer and the dropdown shows a blank rather than naming a face the
    * page is not using — the same rule the sale control follows for "not declared". */
+  /* THE ELEMENT'S OWN STATE, READ OFF THE ELEMENT — one reader, two callers (the selection
+   * message and every command reply), so the top editor's indicators cannot report one thing
+   * on select and a different thing after a change. Computed, not inline: an element styled by
+   * the page's own stylesheet has no style attribute, and reading the attribute would report
+   * "not set" for text that is plainly bold on screen. */
+  function hcStyleSnapshot(el){
+    try{
+      var cs = win.getComputedStyle(el);
+      return {
+        fontFamily: hcFontKeyOf(cs.fontFamily),
+        fontSize: Math.round(parseFloat(cs.fontSize) || 0),
+        fontWeight: String(parseInt(cs.fontWeight, 10) || 400),
+        italic: String(cs.fontStyle || '').indexOf('italic') >= 0,
+        underline: String(cs.textDecorationLine || cs.textDecoration || '').indexOf('underline') >= 0,
+        color: hcRgbToHex(cs.color) || null,
+        align: (['left','center','right'].indexOf(String(cs.textAlign)) >= 0) ? String(cs.textAlign) : null,
+        transform: (['uppercase','lowercase','capitalize','none'].indexOf(String(cs.textTransform)) >= 0) ? String(cs.textTransform) : null,
+        letterSpacing: (cs.letterSpacing && cs.letterSpacing !== 'normal') ? cs.letterSpacing : 'normal'
+      };
+    }catch(e){ return null; }
+  }
   function hcFontKeyOf(stack){
     try{
       var first = String(stack || '').split(',')[0].replace(/["']/g, '').trim().toLowerCase();
@@ -56965,21 +56997,7 @@ function wireHcEditingSurface(doc, root){
       // Computed, not inline: an element styled by the page's own stylesheet has no style
       // attribute, and reading the attribute would report "not set" for text that is plainly
       // bold on screen.
-      var st = null;
-      try{
-        var cs = win.getComputedStyle(el);
-        st = {
-          fontFamily: hcFontKeyOf(cs.fontFamily),
-          fontSize: Math.round(parseFloat(cs.fontSize) || 0),
-          fontWeight: String(parseInt(cs.fontWeight, 10) || 400),
-          italic: String(cs.fontStyle || '').indexOf('italic') >= 0,
-          underline: String(cs.textDecorationLine || cs.textDecoration || '').indexOf('underline') >= 0,
-          color: hcRgbToHex(cs.color) || null,
-          align: (['left','center','right'].indexOf(String(cs.textAlign)) >= 0) ? String(cs.textAlign) : null,
-          transform: (['uppercase','lowercase','capitalize','none'].indexOf(String(cs.textTransform)) >= 0) ? String(cs.textTransform) : null,
-          letterSpacing: (cs.letterSpacing && cs.letterSpacing !== 'normal') ? cs.letterSpacing : 'normal'
-        };
-      }catch(e){}
+      var st = hcStyleSnapshot(el);
       post({ type:'hcSelection', label: label || null, on: on, kind: kind,
              name: hcHumanName(el, kind),
              text: hcTrimName(el.textContent || ''),
@@ -56990,6 +57008,11 @@ function wireHcEditingSurface(doc, root){
              card: card,
              node: addr });
     }catch(e){}
+  }
+  /* The element changed under the selection — re-report its state without re-reporting the
+   * selection itself (which is de-duplicated by key and would be swallowed). */
+  function hcPostSelectionStyle(el){
+    try{ post({ type:'hcSelectionStyle', style: hcStyleSnapshot(el), text: hcTrimName(el.textContent || '') }); }catch(e){}
   }
   function hcPostSelectionCleared(){
     if(hcSelSwapping) return;
@@ -57008,6 +57031,7 @@ function wireHcEditingSurface(doc, root){
      builder has already cleared its own chip by then — the echo is idempotent, so the
      two cannot ping-pong. */
   hcClearSelectionFromBuilder = function(){ try{ hcClearSel(); }catch(e){} };
+  hcCtxRunCommandFromBuilder = function(cmd){ try{ return hcCtxRunCommand(cmd); }catch(e){ return { ok:false, why:'threw' }; } };
   /* THE CARD READER, EXPOSED READ-ONLY. A check cannot reach the "this container holds two
    * cards" case through a click — the leaf-only rule refuses a container before the reader is
    * ever consulted — so a leg asserting it through a click asserts nothing, which is exactly
@@ -57130,6 +57154,137 @@ function wireHcEditingSurface(doc, root){
   // above. It was the ONLY sender of hcFreeformLinkEdit, so that type no longer exists on
   // either side of the channel.
 
+  /* ══ COMMIT A TEXT CHANGE — ONE BODY, TWO CALLERS ═══════════════════════════════════════
+   *
+   * Lifted verbatim out of the inline blur handler so the top editor's text field and typing
+   * on the page run the SAME code. A second copy of this would be a second text-editing
+   * engine, and the price branch below is exactly the kind of thing that would drift between
+   * two copies — one of them would keep patching the page's text and leave the record behind,
+   * which is the evergreen divergence (record 95, page 111.222.333) all over again.
+   */
+  function hcCommitTextChange(el, now, before){
+    if(!el) return { ok:false, why:'no_element' };
+    now = String(now == null ? '' : now);
+    if(!now.trim()) return { ok:false, why:'empty' };
+    if(now === before) return { ok:false, why:'no_change' };
+    // ══ A PRICE IS A NUMBER, AND IT GOES TO THE RECORD — NOT A TEXT PATCH ════════════════════
+    // The anchor pass stamps `data-hubly-price="<service name>"`, so the service is read off
+    // the stamp rather than guessed from layout, and the edit goes down the record path, which
+    // writes the row AND the page in one version.
+    var priceKey = el.getAttribute && el.getAttribute('data-hubly-price');
+    if(priceKey){
+      var n = hcParsePrice(now);
+      if(n === null){
+        el.textContent = before;   // never show a value that was not stored
+        hcFlash(el, 'I could not read "' + now.trim().slice(0, 18) + '" as a price — try a number like 95 or 95.50');
+        return { ok:false, why:'bad_price' };
+      }
+      el.textContent = hcPriceText(n);   // show exactly what is being stored
+      post({ type:'hcFreeformPriceEdit', name: priceKey, price: n });
+      return { ok:true, kind:'price' };
+    }
+    if(el.textContent !== now) el.textContent = now;   // the top editor's field paints here
+    post({ type:'hcFreeformInlineEdit', op:'update_text', label: el.getAttribute('data-hc'),
+           text: now.trim(), prevText: before });
+    return { ok:true, kind:'text' };
+  }
+
+  /* ══ THE ONE COMMAND PATH — WHAT THE BLACK TOOLBAR DID, CALLED FROM THE TOP EDITOR ════════
+   *
+   * THE BUG THIS EXISTS TO FIX, measured on the live site 2026-09-19: the top editor sent its
+   * style straight to `hcStyleEdit` and never painted. The save LANDED — evergreen's stored
+   * document went to font-weight:700 and the live page computes 700 — but `hcStyleEdit`
+   * deliberately does not reload on success, because it was written for a caller that had
+   * already painted. So the owner clicked B, the band said "Saved", and the heading on screen
+   * did not move until a reload nobody had a reason to perform.
+   *
+   * That is a SILENT SUCCESS: the operation worked and the screen said otherwise. It reads as
+   * a dead control, and a dead control is what this whole surface was built to remove.
+   *
+   * PAINT, THEN SEND. That pairing is the entire content of the black toolbar's handlers
+   * (`el.style.fontWeight = ...; hcSendStyle(...)`), and it is why they always appeared to
+   * work. Rather than copy the pairing into the parent — a second styling path — the top
+   * editor now CALLS THIS, which is the same code the black bar's buttons ran.
+   *
+   * Every command answers with the element's fresh state, so the top editor's indicators are
+   * re-derived from the element after every change instead of from what it hoped happened.
+   */
+  function hcCtxRunCommand(cmd){
+    var el = hcSel;
+    if(!el || !cmd) return { ok:false, why:'nothing_selected' };
+    var kind = hcKindOf(el);
+    var label = (kind === 'section') ? el.getAttribute('data-hc-section') : el.getAttribute('data-hc');
+    var on = (kind === 'section') ? 'section' : 'element';
+    var res = { ok:false, why:'unknown_op' };
+
+    if(cmd.op === 'style' && cmd.style && typeof cmd.style === 'object'){
+      if(!label){
+        // NO LABEL, NO WRITE PATH. Refused here rather than painted and lost: a paint the
+        // server cannot be told about is a change that disappears on the next load.
+        return { ok:false, why:'no_label' };
+      }
+      try{
+        for(var prop in cmd.style){
+          if(!Object.prototype.hasOwnProperty.call(cmd.style, prop)) continue;
+          var v = String(cmd.style[prop]);
+          // ══ THE FONT IS SENT AS A KEY AND MUST BE PAINTED AS A STACK ════════════════════
+          //
+          // `font-family` travels the wire as one of the seven NAMES the writer accepts
+          // ("rounded", "slab", …) — FONT_STACKS on the server turns it into the real stack.
+          // Painting the key raw puts `font-family:rounded` on the element, which is not a
+          // CSS font and renders as nothing. It would have been invisible in testing because
+          // "serif" and "mono" ARE valid CSS and happen to work — the five that are not would
+          // have saved correctly and shown no change, which is the exact bug this command
+          // path was written to fix, surviving in the one property that needs translating.
+          if(prop === 'font-family' && HC_FONT_STACKS[v]) v = HC_FONT_STACKS[v];
+          el.style.setProperty(prop, v);   // setProperty handles --custom too
+        }
+      }catch(e){}
+      hcSendStyle(label, on, cmd.style);
+      res = { ok:true };
+    } else if(cmd.op === 'text'){
+      res = hcCommitTextChange(el, cmd.text, el.textContent || '');
+    } else if(cmd.op === 'scale' && (cmd.dir === 1 || cmd.dir === -1)){
+      if(!label) return { ok:false, why:'no_label' };
+      hcStepScale(el, label, on, cmd.dir);
+      res = { ok:true };
+    } else if(cmd.op === 'space' && (cmd.dir === 1 || cmd.dir === -1)){
+      if(!label) return { ok:false, why:'no_label' };
+      hcStepSpace(el, label, on, cmd.dir);
+      res = { ok:true };
+    } else if(cmd.op === 'parent'){
+      // THE BREADCRUMB, MOVED NOT LOST. Same one-level climb the black bar's "↑ Card" did,
+      // including its refusal to select our own editor chrome.
+      var up = (kind !== 'section' && el.parentNode && el.parentNode.nodeType === 1 && el.parentNode !== doc.body) ? el.parentNode : null;
+      if(up && up.hasAttribute && up.hasAttribute('data-hc-editor')) up = null;
+      if(!up) return { ok:false, why:'no_parent' };
+      hcSelect(up);
+      return { ok:true, reselected:true };
+    } else if(cmd.op === 'move' && (cmd.dir === 'up' || cmd.dir === 'down')){
+      var sibs = hcPlaceableSiblings(el);
+      if(!sibs.length) return { ok:false, why:'nowhere_to_go' };
+      var kids = [], all = el.parentNode ? el.parentNode.children : [];
+      for(var i=0;i<all.length;i++) if(all[i] === el || sibs.indexOf(all[i]) > -1) kids.push(all[i]);
+      var at = kids.indexOf(el);
+      if(cmd.dir === 'up'){
+        if(at <= 0) return { ok:false, why:'already_first' };
+        hcSendNodeMove(el, kids[at-1], 'before');
+      } else {
+        if(at < 0 || at >= kids.length - 1) return { ok:false, why:'already_last' };
+        hcSendNodeMove(el, kids[at+1], 'after');
+      }
+      res = { ok:true };
+    } else if(cmd.op === 'delete'){
+      post({ type:'hcFreeformNodeDelete', node: hcAddressOf(el) });
+      return { ok:true, deleted:true };
+    }
+    // RE-READ THE ELEMENT, ALWAYS. The top editor's B, size and colour are status indicators
+    // (prohibition 2) and must report the element, never the click.
+    try{ res.style = hcStyleSnapshot(el); }catch(e){}
+    try{ res.text = el.textContent || ''; }catch(e){}
+    return res;
+  }
+
   /* SELECT — the one entry point. Click, or tap; never hover. */
   function hcSelect(el, pt){
     if(!el) return;
@@ -57153,7 +57308,28 @@ function wireHcEditingSurface(doc, root){
     try{ hcShowGripFor(el); }catch(e){}
     var kind = hcKindOf(el);
     el.setAttribute(kind === 'section' ? 'data-hc-sel-section' : 'data-hc-sel', '1');
-    hcBuildBar(el, kind);
+    // ══ THE BLACK FLOATING TOOLBAR IS GONE — ONE MANUAL EDITING SYSTEM, 2026-09-19 ═══════════
+    //
+    // `hcBuildBar(el, kind)` was called here and built the dark bar that floated over the
+    // selected element. It is not hidden and it is not disabled: the call is removed, and with
+    // it the only thing that ever created the bar.
+    //
+    // NOTHING IT DID WAS LOST, because none of it lived in the bar. Every button was a thin
+    // wrapper around a command that still exists and is still the only implementation:
+    //
+    //   A- / A+        -> hcStepScale          (top editor: Size, and the same steps)
+    //   B / font / size-> el.style + hcSendStyle -> hcCtxRunCommand('style')
+    //   align, colour  -> the same, same writer
+    //   ↑ Card/Block   -> hcSelect(parent)     -> hcCtxRunCommand('parent')
+    //   ↑ / ↓          -> hcSendNodeMove       -> hcCtxRunCommand('move')
+    //   ✕              -> hcFreeformNodeDelete -> hcCtxRunCommand('delete')
+    //
+    // The top contextual editor calls those commands. This was a PRESENTATION layer sitting on
+    // top of them, and removing it removes a second place to edit, not a capability.
+    //
+    // The drag handle (hcShowGripFor) STAYS: it is the grab affordance for drag-to-reorder,
+    // not a toolbar, and nothing in the top editor replaces the gesture.
+    hcPostSelectionStyle(el);
     // TELL THE COMPOSER. One selection, two surfaces: the toolbar beside the element
     // and the chip in the chat box. They are the same fact, so they are set in the
     // same place — a chip that can disagree with the toolbar is two states for one
@@ -57197,35 +57373,7 @@ function wireHcEditingSurface(doc, root){
       if(win.requestAnimationFrame) win.requestAnimationFrame(function(){ hcPlaceBar(el); });
       el.addEventListener('blur', function onBlur(){
         el.removeEventListener('blur', onBlur);
-        var now = el.textContent || '';
-        if(!now.trim() || now === before) return;
-        // ══ A PRICE IS A NUMBER, AND IT GOES TO THE RECORD — NOT A TEXT PATCH ════════════════════
-        //
-        // Measured on evergreen-yard-care 2026-09-18: the record held 95 / 220 / 40 while the stored
-        // DOCUMENT held 111.222.333 / $111,222,333 / 50. Editing a price inline patched the page's
-        // TEXT and never touched `services`, so the page and its own record disagreed about what the
-        // owner charges — and the page is the half a customer reads.
-        //
-        // The pairing needs no layout guessing: the anchor pass stamps
-        // `data-hubly-price="<service name>"`, and all six keys on this page match `services` rows
-        // exactly. So the service is read off the stamp (CLAUDE.md: patched by an anchor stamped at
-        // build time, never by re-recognising layout afterward), and the edit goes down the record
-        // path, which writes the row AND the page in one version.
-        var priceKey = el.getAttribute && el.getAttribute('data-hubly-price');
-        if(priceKey){
-          var n = hcParsePrice(now);
-          if(n === null){
-            // REFUSED AT ENTRY, WITH A SENTENCE THE OWNER CAN ACT ON — and the old text put back,
-            // so the page never shows a value that was not stored.
-            el.textContent = before;
-            hcFlash(el, 'I could not read "' + now.trim().slice(0, 18) + '" as a price — try a number like 95 or 95.50');
-            return;
-          }
-          el.textContent = hcPriceText(n);   // show exactly what is being stored
-          post({ type:'hcFreeformPriceEdit', name: priceKey, price: n });
-          return;
-        }
-        post({ type:'hcFreeformInlineEdit', op:'update_text', label: el.getAttribute('data-hc'), text: now.trim(), prevText: before });
+        hcCommitTextChange(el, el.textContent || '', before);
       });
     }
   }

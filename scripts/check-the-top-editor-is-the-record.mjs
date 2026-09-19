@@ -46,7 +46,8 @@ const leg = (kind, name, pass, detail) => { legs.push({ kind, name, pass: !!pass
   console.log(`  ${pass ? "ok  " : "FAIL"} [${kind}] ${name}\n        ${detail}`); };
 
 /* The real card, out of the stored document. */
-const CARD = `<div class="cards">
+const CARD = `<section data-hc-section="hero"><div class="cards">
+  <h1 data-hc="hero.headline" style="font-weight:400;font-size:48px">Best Lawn Mowing alive</h1>
   <article class="card"><div class="card-body">
     <h2 data-hc="hero.item.2.title" data-hubly-service="Full Service" style="font-weight:700;font-size:28px;color:rgb(15,81,50)">Full Service</h2>
     <div class="price"><strong><span data-hc="hero.item.2.body" data-hubly-price="Full Service">$95</span></strong><span data-hc="hero.item.2.body.2">per visit</span></div>
@@ -55,7 +56,7 @@ const CARD = `<div class="cards">
   <article class="card"><div class="card-body">
     <h2 data-hc="hero.item.3.title" data-hubly-service="Basic Mow">Basic Mow</h2>
     <span data-hc="hero.item.3.body" data-hubly-price="Basic Mow">$40</span>
-  </div></article></div>`;
+  </div></article></div></section>`;
 
 const BIZ = { id: "5ebedc20-1061-46b9-b393-a6ef57225910", slug: "hubly-classic-fixture",
               name: "Fixture Detailing", hasPage: true, url: "https://hubly-classic-fixture.myhubly.app" };
@@ -106,6 +107,49 @@ try {
     while (r.done && r.done.moved && guard++ < 20) { order.push(r.sel ? r.sel.label : null); r = step("next"); }
     R.order = order;
     R.endSaysSo = !!(r.done && r.done.moved === false);
+
+    // ══ THE COMMAND PATH — DOES IT PAINT, OR ONLY SAVE? ═══════════════════════════════════
+    // This is the leg for the defect Adrian found on the live site: every control saved and
+    // nothing on the page moved.
+    const h1 = host.querySelector('[data-hc="hero.headline"]');
+    sent.length = 0;
+    h1.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 5, clientY: 5 }));
+    R.barAfterSelect = !!document.querySelector('div.hc-ctx[data-hc-editor="1"]');
+    const run = (cmd) => { sent.length = 0;
+      window.dispatchEvent(new MessageEvent("message", { source: window.parent, data: { type: "hcCtxCommand", id: "t", cmd } }));
+      return { done: sent.find((m) => m.type === "hcCtxCommandDone"), sent: sent.slice() }; };
+    const weightBefore = getComputedStyle(h1).fontWeight;
+    const b = run({ op: "style", style: { "font-weight": "700" } });
+    R.paint = { before: weightBefore, afterComputed: getComputedStyle(h1).fontWeight,
+                alsoSent: b.sent.some((m) => m.type === "hcFreeformStyleEdit"),
+                reported: b.done?.result?.style?.fontWeight };
+    // Every one of the other controls, painted.
+    const f = run({ op: "style", style: { "font-family": "slab" } });
+    R.fontStack = { inline: h1.style.fontFamily, reported: f.done?.result?.style?.fontFamily };
+    R.painted = {};
+    for (const [cmd, read] of [
+      [{ op:"style", style:{ "font-style":"italic" } },      () => h1.style.fontStyle],
+      [{ op:"style", style:{ "text-decoration":"underline" } }, () => h1.style.textDecoration],
+      [{ op:"style", style:{ "font-size":"64px" } },         () => h1.style.fontSize],
+      [{ op:"style", style:{ "text-align":"center" } },      () => h1.style.textAlign],
+      [{ op:"style", style:{ "letter-spacing":"0.06em" } },  () => h1.style.letterSpacing],
+      [{ op:"style", style:{ "text-transform":"uppercase" } },() => h1.style.textTransform],
+      [{ op:"style", style:{ "color":"#123456" } },          () => h1.style.color],
+    ]) { run(cmd); R.painted[Object.keys(cmd.style)[0]] = read(); }
+
+    // ── TEXT from the top runs the page's own commit, price branch included ──
+    const t = run({ op: "text", text: "Denver lawns, done right" });
+    R.topText = { onPage: h1.textContent, ok: t.done?.result?.ok,
+                  payload: t.sent.find((m) => m.type === "hcFreeformInlineEdit") || null };
+    const price = host.querySelector("[data-hubly-price]");
+    price.dispatchEvent(new MouseEvent("click", { bubbles: true, clientX: 5, clientY: 5 }));
+    const pr = run({ op: "text", text: "120" });
+    R.topPrice = { kind: pr.done?.result?.kind, toRecord: pr.sent.some((m) => m.type === "hcFreeformPriceEdit"),
+                   asText: pr.sent.some((m) => m.type === "hcFreeformInlineEdit") };
+    const bad = run({ op: "text", text: "call us" });
+    R.topBadPrice = { ok: bad.done?.result?.ok, why: bad.done?.result?.why, restored: price.textContent };
+    const mv = run({ op: "move", dir: "up" });
+    R.refusalNamed = { ok: mv.done?.result?.ok, why: mv.done?.result?.why };
     return R;
   }, CARD);
   if (canvas && canvas.why) { console.error("CANNOT RUN — " + canvas.why); await rig.close(); srv.close(); process.exit(2); }
@@ -257,7 +301,7 @@ declareBreak({
   with: "      if(n < 0) return false;\n      if(n >= list.length) return true;",
 });
 leg("RULE", "3 Next walks in document order and the end of the list says so",
-  canvas.order.length >= 4 && canvas.order[0] === "hero.item.2.title" &&
+  canvas.order.length >= 5 && canvas.order[0] === "hero.headline" &&
   canvas.order[canvas.order.length - 1] === "hero.item.3.body" && canvas.endSaysSo === true,
   `walked ${JSON.stringify(canvas.order)} then answered moved=false (${canvas.endSaysSo}). Document ` +
   `order is the order the owner's eye follows; "there is nothing after this" is a real outcome and is ` +
@@ -406,24 +450,120 @@ leg("RULE", "11 the formatting row reports the element's real state, not default
   `for text that is plainly bold on screen.`);
 
 declareBreak({
-  leg: "12 formatting writes through hcStyleEdit",
-  why: "send a label the writer cannot address. Every formatting control then fails server-side with " +
-       "invalid_label while the button still paints itself on — a toolbar that looks like it worked.",
-  file: "public/platform-home.html",
-  find: "      await hcStyleEdit({ label: sel.label, on: sel.on === 'section' ? 'section' : 'element', style: style });",
-  with: "      await hcStyleEdit({ label: '', on: 'element', style: style });",
+  leg: "12 a style command PAINTS the element",
+  why: "send without painting — which is exactly what shipped on 2026-09-19 and what Adrian hit in the " +
+       "live editor. The save LANDS (evergreen's document went to font-weight:700 and the live page " +
+       "computes 700) and the canvas never moves, because hcStyleEdit does not reload on success: it " +
+       "was written for a caller that had already painted. Every control then says \"Saved\" over an " +
+       "unchanged page, which reads as a dead control and is a SILENT SUCCESS.",
+  file: "public/hubly.html",
+  find: "          el.style.setProperty(prop, v);   // setProperty handles --custom too",
+  with: "",
 });
-leg("RULE", "12 formatting writes through hcStyleEdit — no second styling path",
-  parent.style.length === 1 && parent.style[0].label === "hero.item.2.title" &&
-  parent.style[0].on === "element" &&
-  // THE ROUTE, NOT THE DIRECTION. This asserted font-weight==="400", which is only true
-  // because leg 11's snapshot reports the element as already bold — so breaking leg 11 turned
-  // this leg red too and neither proved anything alone. WHICH value a toggle sends is leg 11's
-  // fact; this leg owns "it went out through the one writer, correctly addressed".
-  ["400", "700"].includes(parent.style[0].style["font-weight"]),
-  `one styleEdit went out: ${JSON.stringify(parent.style[0] || null)}. It is the SAME call the canvas's ` +
-  `floating bar makes, so it inherits that path's queue, its optimistic-paint reconciliation and its ` +
-  `undo mark — the manual and AI histories stay one history because there is one writer.`);
+const P = canvas.painted || {};
+leg("RULE", "12 a style command PAINTS the element — every control, font as a real stack",
+  canvas.paint.before === "400" && canvas.paint.afterComputed === "700" && canvas.paint.reported === "700" &&
+  P["font-style"] === "italic" && /underline/.test(P["text-decoration"] || "") && P["font-size"] === "64px" &&
+  P["text-align"] === "center" && P["letter-spacing"] === "0.06em" && P["text-transform"] === "uppercase" &&
+  /18, 52, 86|#123456/.test(P["color"] || "") && /Rockwell/i.test(canvas.fontStack.inline || ""),
+  `computed weight ${canvas.paint.before} -> ${canvas.paint.afterComputed}; painted ${JSON.stringify(P)}; ` +
+  `font-family:"slab" became ${JSON.stringify((canvas.fontStack.inline || "").slice(0, 32))}. ` +
+  `THIS IS THE LEG FOR THE BUG THAT SHIPPED — the first version sent without painting, so it saved ` +
+  `correctly and showed nothing. ENUMERATED, not sampled: "colour works, the others don't" is how the ` +
+  `bug was actually reported, and a fix that painted only bold would satisfy a leg testing only bold. ` +
+  `MERGED from three legs on purpose — paint-exists, paint-every-property and paint-the-font-stack are ` +
+  `one loop, and a break in it turned all three red together, which proves nothing about any of them (L98).`);
+
+/* ── LEG 12b — and the change still reaches the one writer ───────────────────────────────── */
+declareBreak({
+  leg: "12b the style still reaches the one writer",
+  why: "paint and do not send. The page then changes under the owner's hand and the record does not, so " +
+       "it looks right until a reload silently takes it away — the mirror image of the shipped bug, and " +
+       "the reason both halves are asserted separately instead of as one \"it works\".",
+  file: "public/hubly.html",
+  find: "      hcSendStyle(label, on, cmd.style);\n      res = { ok:true };",
+  with: "      res = { ok:true };",
+});
+const ph = readFileSync(join(ROOT, "public/platform-home.html"), "utf8");
+const topCallsCommand = /function send\(style\)\{ hcCtxCommand\(\{ op:'style', style: style \}\); \}/.test(ph);
+const noDirectStyleWrite = !/hcCtxSendStyle/.test(ph);
+leg("RULE", "12b the style still reaches the one writer — through the canvas, not around it",
+  canvas.paint.alsoSent === true && topCallsCommand && noDirectStyleWrite,
+  `the command sent hcFreeformStyleEdit (${canvas.paint.alsoSent}); the top editor's controls call ` +
+  `hcCtxCommand (${topCallsCommand}) and the old direct-to-hcStyleEdit helper is gone ` +
+  `(${noDirectStyleWrite}). The writer is unchanged — hcSendStyle -> hcFreeformStyleEdit -> hcStyleEdit, ` +
+  `the path the black toolbar always used. What was removed is the top editor's SECOND way in.`);
+
+/* ── LEG 12e — the black toolbar is gone, and its commands are not ──────────────────────── */
+declareBreak({
+  leg: "12e the black floating toolbar is gone",
+  why: "build the bar again on selection. Two manual editing surfaces then sit on one page, which is " +
+       "what Adrian reported. [SHAPE]-adjacent but asserted as a RULE: the rule is one editing system, " +
+       "and the bar's return would break it however it looked.",
+  file: "public/hubly.html",
+  find: "    hcPostSelectionStyle(el);",
+  with: "    hcBuildBar(el, kind); hcPostSelectionStyle(el);",
+});
+const hb = readFileSync(join(ROOT, "public/hubly.html"), "utf8");
+const commandsKept = /function hcStepScale/.test(hb) && /function hcSendNodeMove/.test(hb) &&
+                     /function hcCommitTextChange/.test(hb) && /hcCtxRunCommand/.test(hb);
+leg("RULE", "12e the black floating toolbar is gone, and its commands are not",
+  canvas.barAfterSelect === false && commandsKept,
+  `after selecting an element, div.hc-ctx[data-hc-editor] in the canvas: ${canvas.barAfterSelect}. The ` +
+  `commands it wrapped are all still the only implementation (${commandsKept}) — hcStepScale, ` +
+  `hcSendNodeMove, hcCommitTextChange, hcCtxRunCommand. The PRESENTATION layer was removed; nothing ` +
+  `it did was lost, and the top editor calls the same functions its buttons called.`);
+
+/* ── LEG 12f — the words are editable from the top, through the page's own commit ───────── */
+declareBreak({
+  leg: "12f text typed at the top reaches the page",
+  why: "drop the text op. The field then accepts typing, says nothing, and changes neither the page nor " +
+       "the record — the instructional note it replaced was at least honest about where to type.",
+  file: "public/hubly.html",
+  find: "    post({ type:'hcFreeformInlineEdit', op:'update_text', label: el.getAttribute('data-hc'),\n           text: now.trim(), prevText: before });",
+  with: "",
+});
+leg("RULE", "12f text typed at the top reaches the page through the page's OWN commit",
+  canvas.topText.ok === true && canvas.topText.onPage === "Denver lawns, done right" &&
+  canvas.topText.payload && canvas.topText.payload.label === "hero.headline" &&
+  canvas.topText.payload.prevText === "Best Lawn Mowing alive",
+  `the element now reads ${JSON.stringify(canvas.topText.onPage)} and the edit went out as ` +
+  `${JSON.stringify(canvas.topText.payload)}. Same hcCommitTextChange the inline blur handler calls — ` +
+  `one text path with two entry points, not a second editing engine.`);
+
+/* ── LEG 12g — and the price branch survives the new entry point ────────────────────────── */
+declareBreak({
+  leg: "12g a price typed at the top goes to the RECORD",
+  why: "strip the price branch out of the shared commit, so a price typed anywhere becomes a TEXT patch. " +
+       "The page then shows a number the services row does not have — the evergreen divergence exactly " +
+       "(record 95/220/40, page 111.222.333/$111,222,333/50), arriving through the new field.",
+  file: "public/hubly.html",
+  find: "    var priceKey = el.getAttribute && el.getAttribute('data-hubly-price');\n    if(priceKey){\n      var n = hcParsePrice(now);",
+  with: "    var priceKey = null;\n    if(priceKey){\n      var n = hcParsePrice(now);",
+});
+leg("RULE", "12g a price typed at the top goes to the RECORD, and an unreadable one is refused",
+  canvas.topPrice.kind === "price" && canvas.topPrice.toRecord === true && canvas.topPrice.asText === false &&
+  canvas.topBadPrice.ok === false && canvas.topBadPrice.why === "bad_price" && canvas.topBadPrice.restored === "$120",
+  `"120" went to the record (${canvas.topPrice.toRecord}) and NOT as a text patch ` +
+  `(${canvas.topPrice.asText === false}); "call us" was refused (${canvas.topBadPrice.why}) and the ` +
+  `displayed text put back to ${JSON.stringify(canvas.topBadPrice.restored)} — the page never shows a ` +
+  `value that was not stored.`);
+
+/* ── LEG 12h — a refused command says WHICH refusal ─────────────────────────────────────── */
+declareBreak({
+  leg: "12h a refused command names its reason",
+  why: "answer a bare false. The band then falls back to one generic sentence for every refusal, and " +
+       "\"there is nowhere for this to move\" becomes indistinguishable from \"I cannot style that\" — " +
+       "which is the \"something went wrong\" this repo bans outright.",
+  file: "public/hubly.html",
+  find: "      if(!sibs.length) return { ok:false, why:'nowhere_to_go' };",
+  with: "      if(!sibs.length) return { ok:false };",
+});
+leg("RULE", "12h a refused command names its reason, so the band can say which one",
+  canvas.refusalNamed.ok === false && canvas.refusalNamed.why === "nowhere_to_go",
+  `moving an element with no placeable siblings answered ${JSON.stringify(canvas.refusalNamed)}. Every ` +
+  `refusal carries its own key and the band maps it to its own sentence (HC_CTX_WHY) — a control that ` +
+  `declines must say why, or it is a control that did nothing.`);
 
 /* ── LEG 13 — the vocabulary, read off the shipping file ─────────────────────────────────────── */
 declareBreak({

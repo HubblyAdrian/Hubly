@@ -1355,6 +1355,7 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   font:inherit;font-size:12px;color:var(--ink-2);padding:5px 10px;cursor:pointer;white-space:nowrap}
 .hc-ctx-nav button:hover:not(:disabled){border-color:var(--brand-600,#D9632D);color:var(--ink)}
 .hc-ctx-nav button:disabled{opacity:.42;cursor:default}
+.hc-ctx-navsep{width:1px;height:18px;background:var(--line);margin:0 2px;flex-shrink:0}
 .hc-ctx-del{color:#b23!important}
 .hc-ctx-del:hover:not(:disabled){border-color:#b23!important;background:#fff5f5}
 .hc-ctx-done{background:var(--ink,#1c1610)!important;color:#fff!important;border-color:var(--ink,#1c1610)!important;font-weight:600}
@@ -2584,6 +2585,15 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
             '<span><b id="hcCtxWhat"></b><i id="hcCtxSub"></i></span>' +
           '</div>' +
           '<div class="hc-ctx-nav">' +
+            // ══ MOVED OVER FROM THE BLACK TOOLBAR, NOT DROPPED ═══════════════════════════
+            // Its breadcrumb ("↑ Card") and its move arrows were the two things it could do
+            // that this band could not, and removing the bar without these would have been
+            // "hide it and lose functionality" — explicitly ruled out. Both call the same
+            // commands the bar's buttons called (hcSelect(parent), hcSendNodeMove).
+            '<button type="button" id="hcCtxUp" title="Select the card or block around this">&#8593; Out</button>' +
+            '<button type="button" id="hcCtxMoveUp" title="Move this up the page">&#8593;</button>' +
+            '<button type="button" id="hcCtxMoveDn" title="Move this down the page">&#8595;</button>' +
+            '<span class="hc-ctx-navsep"></span>' +
             '<button type="button" id="hcCtxPrev" title="Select the element before this one">&#8249; Previous</button>' +
             '<button type="button" id="hcCtxNext" title="Select the next element on the page">Next &#8250;</button>' +
             '<button type="button" id="hcCtxDel" class="hc-ctx-del" title="Remove this from the page">&#10005;</button>' +
@@ -3232,6 +3242,15 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
     if(focusId){ var f = document.getElementById(focusId); if(f){ try{ f.focus(); f.select && f.select(); }catch(e){} } }
   }
 
+  /* The owner typed on the PAGE — the field up here must not keep showing the old words.
+   * Skipped while the field has focus, so this can never overwrite what they are typing. */
+  function hcCtxSyncTextField(){
+    var ta = document.getElementById('hcCtxText');
+    if(!ta || document.activeElement === ta) return;
+    var t = (hc.selection && hc.selection.text) || '';
+    if(ta.value !== t) ta.value = t;
+  }
+
   /* ── THE FORMATTING ROW ──────────────────────────────────────────────────────────────── */
   var HC_CTX_FONTS = [['sans','Sans'],['serif','Serif'],['rounded','Rounded'],['condensed','Condensed'],
                       ['humanist','Humanist'],['slab','Slab'],['mono','Mono']];
@@ -3286,7 +3305,7 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
           return '<option value="' + t[0] + '"' + (st.transform === t[0] ? ' selected' : '') + '>' + t[1] + '</option>';
         }).join('') + '</select></span>';
 
-    function send(style){ hcCtxSendStyle(style); }
+    function send(style){ hcCtxCommand({ op:'style', style: style }); }
     var fo = document.getElementById('hcCtxFont');
     if(fo) fo.addEventListener('change', function(){ if(this.value) send({ 'font-family': this.value }); });
     var sz = document.getElementById('hcCtxSize');
@@ -3315,17 +3334,53 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
     if(tr) tr.addEventListener('change', function(){ send({ 'text-transform': this.value }); });
   }
 
-  /* ONE STYLE WRITER — hcStyleEdit, which the floating bar has used all along, with its queue,
-   * its optimistic-paint reconciliation and its undo mark. This adds a caller, not a path. */
-  async function hcCtxSendStyle(style){
-    var sel = hc.selection;
-    if(!sel || !sel.label){ hcCtxSay('I couldn’t tell which part of the page that was — nothing changed.', false); return; }
-    hcCtxSay('Saving…', true);
-    try{
-      await hcStyleEdit({ label: sel.label, on: sel.on === 'section' ? 'section' : 'element', style: style });
-      hcCtxSaved('Saved');
-    }catch(e){ hcCtxSay('That didn’t save — nothing changed.', false); }
+  /* ══ THE TOP EDITOR RUNS THE CANVAS'S COMMANDS — IT DOES NOT WRITE STYLE ITSELF ═══════════
+   *
+   * THIS CALLED hcStyleEdit DIRECTLY AND THAT WAS THE BUG Adrian hit on the live site: the
+   * save LANDED (evergreen's document went to font-weight:700, and the live page computes 700)
+   * and the canvas never moved, because hcStyleEdit deliberately does not reload on success —
+   * it was written for a caller that had ALREADY painted. So every control said "Saved" over
+   * an unchanged page. A silent success reads exactly like a dead control.
+   *
+   * The canvas's own handlers never had that problem because they paint and send together. So
+   * the fix is not to add a paint here — that would be a second copy of the pairing — it is to
+   * CALL THE CANVAS'S COMMAND, which is the same code the black toolbar's buttons ran.
+   * hcStyleEdit is still the one writer; it is now reached the way it always was.
+   *
+   * Every command answers, including its refusals, and the band says what came back. */
+  var hcCtxCmdSeq = 0;
+  var hcCtxCmdWaiting = {};
+  function hcCtxCommand(cmd, opts){
+    opts = opts || {};
+    var id = 'c' + (++hcCtxCmdSeq);
+    if(!hcPostToCanvas({ type:'hcCtxCommand', id: id, cmd: cmd })){
+      hcCtxSay('I couldn’t reach your page just now — nothing changed.', false);
+      return;
+    }
+    if(opts.quiet !== true) hcCtxSay('Saving…', true);
+    // A COMMAND THAT IS NEVER ANSWERED IS NOT A SUCCESS. Without this the band would sit on
+    // "Saving…" forever if the canvas reloaded mid-command, which is the silent state this
+    // surface exists to remove.
+    hcCtxCmdWaiting[id] = setTimeout(function(){
+      delete hcCtxCmdWaiting[id];
+      hcCtxSay('Your page didn’t answer — reload and try that again.', false);
+    }, 8000);
   }
+  /* WHY EACH REFUSAL HAS ITS OWN SENTENCE: "no_label" and "already_first" are different facts,
+   * and a control that says nothing for either is the thing Adrian reported. */
+  var HC_CTX_WHY = {
+    no_label:        'I can’t style that part of the page — it isn’t one I can address.',
+    nothing_selected:'Nothing is selected on your page any more — click the part you want to change.',
+    no_parent:       'That’s already the outermost part here.',
+    nowhere_to_go:   'There’s nowhere for this one to move.',
+    already_first:   'That’s already at the top.',
+    already_last:    'That’s already at the bottom.',
+    no_change:       'That’s already how it’s set.',
+    empty:           'That can’t be left empty — nothing changed.',
+    bad_price:       'I couldn’t read that as a price — nothing changed.',
+    threw:           'That didn’t go through — nothing changed.',
+    not_wired:       'Your page isn’t ready for that yet — reload and try again.'
+  };
 
   /* ── THE BAND ────────────────────────────────────────────────────────────────────────── */
   function hcRenderCtx(){
@@ -3356,10 +3411,33 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
       body.innerHTML = '<div class="hc-ctx-note">This picture is selected. Use <b>Replace</b> on the toolbar beside it to choose another, or tell me in the chat what you want here.</div>';
     }
     else if(sel.kind === 'text' || sel.kind === 'button'){
-      // The words themselves are edited ON the page, where the owner clicked — the existing,
-      // proven inline path. Saying so is better than a second text box up here that would be
-      // a second way to write the same words.
-      body.innerHTML = '<div class="hc-ctx-note">Click the text on your page to type in it. Use the controls below to change how it looks.</div>';
+      // ══ THE WORDS, EDITABLE FROM HERE ════════════════════════════════════════════════════
+      //
+      // This was a sentence telling the owner to go and click the page instead — which is the
+      // top editor pointing at another way to do the thing it exists to do. It is a field now.
+      //
+      // NOT A SECOND TEXT ENGINE: committing it runs `hcCtxCommand({op:'text'})`, and the
+      // canvas answers it with hcCommitTextChange — the SAME function the page's own inline
+      // blur handler calls, price branch and all. Typing here and typing on the page are one
+      // code path with two entry points.
+      body.innerHTML =
+        hcCtxFieldHtml('hc-ctx-f-desc', sel.kind === 'button' ? 'Button text' : 'Text',
+          '<textarea class="hc-ctx-in" id="hcCtxText" rows="2" placeholder="The words on your page">' + hcEsc(sel.text || '') + '</textarea>') +
+        '<button type="button" class="hc-ctx-mini" id="hcCtxTextSave">Apply</button>';
+      var ta = document.getElementById('hcCtxText');
+      var commit = function(){
+        var v = ta ? ta.value : '';
+        if(!v.trim()){ hcCtxSay('That can’t be left empty — nothing changed.', false); return; }
+        if(v === (hc.selection && hc.selection.text)) return;   // nothing to do, and say nothing
+        hcCtxCommand({ op:'text', text: v });
+      };
+      var sv2 = document.getElementById('hcCtxTextSave');
+      if(sv2) sv2.addEventListener('click', commit);
+      if(ta){
+        ta.addEventListener('blur', commit);
+        // Enter commits, Shift+Enter is a new line — the convention everywhere else.
+        ta.addEventListener('keydown', function(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); commit(); } });
+      }
     }
     else {
       body.innerHTML = '<div class="hc-ctx-note">Selected: <b>' + hcEsc(sel.name) + '</b>. Use Previous and Next to move between elements, or tell me in the chat what to change here.</div>';
@@ -3384,6 +3462,12 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
       hcPostToCanvas({ type:'hcCtxStep', dir: dir });
       setTimeout(function(){ hcCtx.stepping = false; }, 350);
     }
+    var upB = document.getElementById('hcCtxUp');
+    var muB = document.getElementById('hcCtxMoveUp');
+    var mdB = document.getElementById('hcCtxMoveDn');
+    if(upB) upB.addEventListener('click', function(){ hcCtxCommand({ op:'parent' }, { quiet:true }); });
+    if(muB) muB.addEventListener('click', function(){ hcCtxCommand({ op:'move', dir:'up' }); });
+    if(mdB) mdB.addEventListener('click', function(){ hcCtxCommand({ op:'move', dir:'down' }); });
     if(prev) prev.addEventListener('click', function(){ step('prev'); });
     if(next) next.addEventListener('click', function(){ step('next'); });
     if(done) done.addEventListener('click', function(){ hcClearSelection(true); });
@@ -6764,6 +6848,37 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
     // The canvas answering Previous/Next. "There is nothing after this" is a real outcome
     // and it is SAID — a button that silently does nothing is the defect this file is full
     // of notes about.
+    // THE CANVAS ANSWERING A COMMAND. Success is said, and so is every refusal — by name.
+    if(data.type === 'hcCtxCommandDone'){
+      if(data.id && hcCtxCmdWaiting[data.id]){ clearTimeout(hcCtxCmdWaiting[data.id]); delete hcCtxCmdWaiting[data.id]; }
+      var r = data.result || {};
+      if(r.ok){
+        // A command that re-selects (parent) reports its own selection; nothing to say here.
+        if(!r.reselected && !r.deleted){ hcCtxSaved('Saved'); try{ hcMarkUndoAvailable('that change'); }catch(e){} }
+        if(r.deleted){ hcCtxSaved('Removed'); try{ hcMarkUndoAvailable('that change'); }catch(e){} }
+        // THE ELEMENT CHANGED — RE-READ IT. The band's B, size and colour describe the
+        // element, so after a change they are re-derived from what the element now IS.
+        if(r.style && hc.selection){ hc.selection.style = r.style; }
+        if(typeof r.text === 'string' && hc.selection){ hc.selection.text = r.text.slice(0, 160); }
+        try{ hcCtxRenderFmt(); hcCtxSyncTextField(); }catch(e){}
+      } else {
+        hcCtxSay(HC_CTX_WHY[r.why] || 'That didn’t change — nothing was saved.', false);
+        // The optimistic paint never happened (the canvas refuses before painting), so there
+        // is nothing to take back — but the CONTROL may have painted itself, so re-render it
+        // from the element rather than leaving a lit button over an unchanged page.
+        try{ hcCtxRenderFmt(); }catch(e){}
+      }
+      return;
+    }
+    // The element's state after a change the canvas made on its own (typing on the page).
+    if(data.type === 'hcSelectionStyle'){
+      if(hc.selection){
+        if(data.style && typeof data.style === 'object') hc.selection.style = data.style;
+        if(typeof data.text === 'string') hc.selection.text = data.text.slice(0, 160);
+        try{ hcCtxRenderFmt(); hcCtxSyncTextField(); }catch(e){}
+      }
+      return;
+    }
     if(data.type === 'hcCtxStepDone'){
       if(!data.moved) hcCtxSay(data.dir === 'prev' ? 'That’s the first thing you can edit on the page.' : 'That’s the last thing you can edit on the page.', false);
       return;

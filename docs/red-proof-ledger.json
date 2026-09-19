@@ -1096,6 +1096,36 @@
       "declaredTotal": 15,
       "recorded": 15,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-19T20:13:04.130Z",
+      "applied": 21,
+      "alone": 17,
+      "compound": 4,
+      "notRed": 0,
+      "skipped": 1,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 22,
+      "recorded": 22,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T20:17:31.769Z",
+      "applied": 20,
+      "alone": 20,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 20,
+      "recorded": 20,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -1788,7 +1818,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "2 the grid holding two cards is not a card",
       "why": "remove the multi-stamp stop, so a container holding two cards resolves to the FIRST of them. Selecting the grid then opens Full Service's editor over a element that is not a service — and a click anywhere in the section would silently edit the first card's record.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1797,7 +1827,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "3 Next walks in document order and the end of the list says so",
       "why": "let the index run past the end instead of refusing. Next then reports moved:true forever while selecting nothing, and the parent's 'that is the last thing' sentence never fires — a button that looks like it worked and did nothing.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1806,7 +1836,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "4 the parent CARRIES the card the canvas named",
       "why": "title a carried service card 'Text'. The owner is then editing a service's real fields under a heading that says they are editing a paragraph — the band describing itself wrongly. NARROWED: the obvious break (dropping `card` from the rebuild, which is the bug this leg was written for) starves SEVEN legs at once and proves nothing about any of them. That defect is caught here by the title and by leg 5, whose fields cannot render from a card that was never carried.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1815,7 +1845,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "6 an un-read record is not reported as a missing service",
       "why": "say 'no service by that name' while the read is still in flight. The owner is told his page shows a service his record does not have, before anything has looked — our bookkeeping reported as his missing data, which is Lesson 86 exactly and has reached a paying customer once. NARROWED to the copy: removing the un-read BRANCH turns six legs red together, because every later leg needs the fields that branch is protecting.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1824,7 +1854,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "8 a blank sale stays blank",
       "why": "send the select's value unconditionally. An untouched control then writes sale='' or a default onto a service nobody declared — a fact the owner never stated, published to a page a customer reads. This is the leg that can pass vacuously, so it is asserted on a fixture whose service IS undeclared and whose save DID happen (leg 7 proves the save happened).",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1833,7 +1863,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "13 the three new properties are in the closed vocabulary",
       "why": "remove text-decoration from STYLE_VOCAB. The Underline button then paints itself on and the server rejects the declaration as all_rejected — a control the editor offers and the writer refuses, which is the dead-control shape this whole surface was meant to remove.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1842,7 +1872,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "14 the toolbar is the approved set",
       "why": "put the Design button back. The leg then sees a sixth control that the approved design removed — this is a SHAPE leg, so it going red means the shape moved and the question is whether that was intended, not that something is broken.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1851,7 +1881,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "15 the band is absent until something is selected",
       "why": "leave the band shown when there is no selection. An empty editing band then stands between the toolbar and the page at all times, costing the owner canvas height for a surface with nothing in it. Aimed at the RENDER, not the markup: dropping `hidden` from the initial HTML is masked a moment later by hcRenderCtx setting it — correct of the product, and it made the markup break NOT RED.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1860,7 +1890,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "1 the canvas names the card, and the field inside it",
       "why": "stop reading the price stamp, so hcServiceFieldOf answers 'name' for a click on the price. The top editor then opens with the caret in the wrong box every time an owner clicks a price — the card is still named correctly, so legs 2 and 4 stay green and only this one moves.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1869,7 +1899,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "5 the fields hold the record's values, not placeholders",
       "why": "blank the DESCRIPTION the row carries, leaving name and price alone. The band then shows an empty box over a service that HAS a description — and an empty box invites the owner to fill in what the record already holds. Aimed away from name/price on purpose: the save legs type their own values into those two, so blanking them would starve leg 7 as well and prove nothing about either — which is exactly the COMPOUND this break scored on its first run.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1878,7 +1908,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "7 a save goes through hcRecordEdit",
       "why": "drop prevName from the edit. The writer is then handed the NEW name with no way to match the old one, so a rename either fails to find the row or writes a second one. NARROWED on purpose: the obvious break (sending the raw string where the parsed number belongs) also turns leg 9 red, because both legs lean on the one parser call — prevName is this leg's own clause.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1887,7 +1917,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "9 an unreadable price writes nothing",
       "why": "save it anyway when the parser returns null. The record then takes a null price from a typed \"call us\" and the owner is told it saved — a value nobody stated, reported as stored.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1896,7 +1926,7 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "10 a save that landed is confirmed on screen",
       "why": "say it BEFORE the re-render, which is where it was. hcRenderCtx clears the status line, so the confirmation is wiped a moment later by the very refresh that proves the save worked — the owner changes a price, the record changes, and nothing says so. Found by measurement, not by reading: the drive returned statusAfterSave:\"\" with the row correctly written.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1905,16 +1935,61 @@
       "check": "check-the-top-editor-is-the-record.mjs",
       "leg": "11 the formatting row reports the element's real state",
       "why": "ignore the carried style and render the row from an empty object. Every toggle then opens on a default — an un-bolded B over bold text, an empty size box over a 28px heading — and the owner's first click SETS what the control appeared to be reporting (prohibition 2). Aimed at the PARENT: the canvas-side break (style:null in hcPostSelection) was NOT RED and could not be otherwise, because this probe writes the selection payload by hand and never runs the canvas's snapshot.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
     },
-    "check-the-top-editor-is-the-record.mjs::12 formatting writes through hcStyleEdit": {
+    "check-the-top-editor-is-the-record.mjs::12 a style command PAINTS the element": {
       "check": "check-the-top-editor-is-the-record.mjs",
-      "leg": "12 formatting writes through hcStyleEdit",
-      "why": "send a label the writer cannot address. Every formatting control then fails server-side with invalid_label while the button still paints itself on — a toolbar that looks like it worked.",
-      "at": "2026-09-19T19:00:13.917Z",
+      "leg": "12 a style command PAINTS the element",
+      "why": "send without painting — which is exactly what shipped on 2026-09-19 and what Adrian hit in the live editor. The save LANDS (evergreen's document went to font-weight:700 and the live page computes 700) and the canvas never moves, because hcStyleEdit does not reload on success: it was written for a caller that had already painted. Every control then says \"Saved\" over an unchanged page, which reads as a dead control and is a SILENT SUCCESS.",
+      "at": "2026-09-19T20:17:31.769Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-top-editor-is-the-record.mjs::12b the style still reaches the one writer": {
+      "check": "check-the-top-editor-is-the-record.mjs",
+      "leg": "12b the style still reaches the one writer",
+      "why": "paint and do not send. The page then changes under the owner's hand and the record does not, so it looks right until a reload silently takes it away — the mirror image of the shipped bug, and the reason both halves are asserted separately instead of as one \"it works\".",
+      "at": "2026-09-19T20:17:31.769Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-top-editor-is-the-record.mjs::12e the black floating toolbar is gone": {
+      "check": "check-the-top-editor-is-the-record.mjs",
+      "leg": "12e the black floating toolbar is gone",
+      "why": "build the bar again on selection. Two manual editing surfaces then sit on one page, which is what Adrian reported. [SHAPE]-adjacent but asserted as a RULE: the rule is one editing system, and the bar's return would break it however it looked.",
+      "at": "2026-09-19T20:17:31.769Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-top-editor-is-the-record.mjs::12f text typed at the top reaches the page": {
+      "check": "check-the-top-editor-is-the-record.mjs",
+      "leg": "12f text typed at the top reaches the page",
+      "why": "drop the text op. The field then accepts typing, says nothing, and changes neither the page nor the record — the instructional note it replaced was at least honest about where to type.",
+      "at": "2026-09-19T20:17:31.769Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-top-editor-is-the-record.mjs::12g a price typed at the top goes to the RECORD": {
+      "check": "check-the-top-editor-is-the-record.mjs",
+      "leg": "12g a price typed at the top goes to the RECORD",
+      "why": "strip the price branch out of the shared commit, so a price typed anywhere becomes a TEXT patch. The page then shows a number the services row does not have — the evergreen divergence exactly (record 95/220/40, page 111.222.333/$111,222,333/50), arriving through the new field.",
+      "at": "2026-09-19T20:17:31.769Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-top-editor-is-the-record.mjs::12h a refused command names its reason": {
+      "check": "check-the-top-editor-is-the-record.mjs",
+      "leg": "12h a refused command names its reason",
+      "why": "answer a bare false. The band then falls back to one generic sentence for every refusal, and \"there is nowhere for this to move\" becomes indistinguishable from \"I cannot style that\" — which is the \"something went wrong\" this repo bans outright.",
+      "at": "2026-09-19T20:17:31.769Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
