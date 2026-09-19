@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 2 — Business Discovery Conversation
 
 **Status:** FAIL  
-**Checked:** 2026-09-19T20:44:40.729Z  
+**Checked:** 2026-09-19T21:43:14.083Z  
 **Gate:** `npm run check:m2-epic2`
 
 > First consulting session — not a questionnaire.  

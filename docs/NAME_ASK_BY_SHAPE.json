@@ -1,5 +1,5 @@
 {
-  "measured_at": "2026-09-19T20:46:01.617Z",
+  "measured_at": "2026-09-19T21:44:26.789Z",
   "complete": false,
   "results": [
     {
@@ -9,11 +9,12 @@
       "askedForName": true,
       "built": true,
       "recordName": null,
-      "slug": "site-1df82e",
-      "reply": "Aviation has to feel calm, precise, and trustworthy before anyone reads a sentence. I’m giving this a clean Los Angeles pilot feel — polished, direct, and confident, without making it look like an airline brochure. The page should make it clear what kind of flying work you do and make the next step ",
+      "slug": "site-fa1378",
+      "reply": "Your page is being built now — it should appear in about a minute. Aviation needs to feel precise and trusted before anyone reads a line, so I’m giving this a clean, calm look with a strong professional edge. For Los Angeles, the page should make your role clear fast — who you fly for, what kind of ",
       "pass": false,
       "failures": [
-        "NEED — brand_color is the column default #1a3a6e, so no palette was chosen and every trade gets the same navy page"
+        "NEED — brand_color is the column default #1a3a6e, so no palette was chosen and every trade gets the same navy page",
+        "NEED — the page names the business \"los angeles aviation\" (place + trade, contiguous) in <div mark>: \"Los Angeles Aviation Pilot\""
       ]
     },
     {

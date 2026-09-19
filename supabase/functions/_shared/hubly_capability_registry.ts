@@ -5400,16 +5400,35 @@ export function renameServiceInFreeform(html: string, prevName: string, newName:
   // 3. THE BOOKING CTA. `?svc=` selects the service on the booking form, so a rename that left it
   //    pointing at the old name would send the customer to a service that no longer exists — a
   //    dead booking link is the one defect on a card that costs money.
-  //    THE `&` IS HTML-ESCAPED IN THE HREF. The link reads `?book=1&amp;svc=Full%20Service`, so the
-  //    character before `svc=` is a SEMICOLON, not an `&` — a `[?&]svc=` pattern matches nothing and
-  //    the rename silently leaves the customer pointed at a service that no longer exists. Caught by
-  //    asserting the href after a rename rather than by reading the regex.
-  e = e.replace(/(<a\b[^>]*\bdata-hubly-runtime="card-book"[^>]*>)([\s\S]*?)(<\/a>)/i,
-    (_m, open, inner, close) => {
-      const openFixed = open.replace(/(\bsvc=)[^"'&\s]*/gi, (_x: string, a: string) => a + encodeURIComponent(next));
-      const swapped = inner.replace(new RegExp("Book\\s+" + escapeRegExp(prev), "i"), "Book " + textVal);
-      return openFixed + swapped + close;
-    });
+  //    MATCHED BY WHERE IT POINTS, NOT BY HOW IT WAS BUILT.
+  //
+  //    This keyed on `data-hubly-runtime="card-book"` — the stamp Hubly puts on booking links it
+  //    inserts. Measured on evergreen: SEVEN booking links, only FOUR stamped. The other three are
+  //    the model's own from build time, e.g. `<a data-hc="hero.item.1.body.4" href="...?book=1&
+  //    svc=Basic%20Mow">Book Basic Mow</a>`. So a rename updated the card's name and left its
+  //    button pointing at a service that no longer exists — found by renaming a real service in
+  //    the live editor and reading the button, not by any test of mine, which used the stamped
+  //    form because that is the form I had looked at.
+  //
+  //    That is the enumerate-the-harmless-side rule again: I listed the FORMS a booking link takes
+  //    and the list was short by one. The fix keys on the thing that cannot vary — the service name
+  //    in the `svc=` parameter, which is what makes the link point HERE. The nav's "Book lawn care"
+  //    carries `?book=1` with no `svc=`, so it is untouched, and the whole pass is already scoped
+  //    to this entry's bounds.
+  //
+  //    THE `&` IS HTML-ESCAPED: the href reads `?book=1&amp;svc=Basic%20Mow`, so the character
+  //    before `svc=` is a SEMICOLON. A `[?&]svc=` pattern matches nothing — the first bug this
+  //    line had, caught by asserting the href rather than reading the regex.
+  const prevSvcEnc = encodeURIComponent(prev);
+  e = e.replace(/<a\b[^>]*>[\s\S]*?<\/a>/gi, (tagAndText) => {
+    if (!/\bsvc=/i.test(tagAndText)) return tagAndText;                       // not a service link
+    const pointsHere = new RegExp("\\bsvc=" + escapeRegExp(prevSvcEnc) + "(?![A-Za-z0-9%])", "i").test(tagAndText)
+      || new RegExp("\\bsvc=" + escapeRegExp(prev) + "(?![A-Za-z0-9%])", "i").test(tagAndText);
+    if (!pointsHere) return tagAndText;                                       // another service's link
+    return tagAndText
+      .replace(/(\bsvc=)[^"'&\s]*/gi, (_x: string, a: string) => a + encodeURIComponent(next))
+      .replace(new RegExp("Book\\s+" + escapeRegExp(prev) + "\\b", "i"), "Book " + textVal);
+  });
 
   if (e === before) return { html, renamed: false, why: "nothing_matched" };
   return { html: html.slice(0, bounds.start) + e + html.slice(bounds.end), renamed: true };

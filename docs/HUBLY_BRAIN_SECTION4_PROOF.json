@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-09-19T20:46:33.156Z",
+  "checkedAt": "2026-09-19T21:45:09.068Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -280,7 +280,7 @@
       },
       {
         "expertId": "strategy",
-        "executionTimeMs": 1
+        "executionTimeMs": 0
       },
       {
         "expertId": "creative_director",
@@ -621,7 +621,7 @@
         {
           "expertName": "Strategy Expert",
           "expertId": "strategy",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "reasoning": [
             {
               "reason": "I'm positioning around visible proof and clear next step instead of generic price competition. Strategy used Business DNA website/pricing evidence (read-only).",
@@ -1664,7 +1664,7 @@
           "output": {
             "type": "Builder Intent",
             "builderIntent": {
-              "intentId": "bint_mu8uy6rc_e62mob",
+              "intentId": "bint_mu8x1jnk_9iyq7i",
               "version": "1.0.0",
               "originalRequest": "I'm starting a pressure washing company.",
               "intentCategory": "Business Strategy",
@@ -1695,7 +1695,7 @@
                   "confidence": 81
                 }
               ],
-              "timestamp": "2026-09-19T20:46:33.144Z",
+              "timestamp": "2026-09-19T21:45:09.056Z",
               "applied": false,
               "changePlanGenerated": false
             },
@@ -1888,7 +1888,7 @@
           "changedFromPrevious": "Research Expert produced Research Report; Strategy Expert advanced that into Business Strategy (confidence 90 → 88).",
           "confidence": 88,
           "status": "ok",
-          "executionTimeMs": 1,
+          "executionTimeMs": 0,
           "outputType": "Business Strategy",
           "retries": 0
         },

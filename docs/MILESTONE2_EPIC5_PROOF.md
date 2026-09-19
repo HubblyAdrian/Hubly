@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 5 — Business Reveal
 
 **Status:** PASS  
-**Checked:** 2026-09-19T20:44:40.840Z  
+**Checked:** 2026-09-19T21:43:14.191Z  
 **Gate:** `npm run check:m2-epic5`
 
 > Unveil a new business — not "website finished."  

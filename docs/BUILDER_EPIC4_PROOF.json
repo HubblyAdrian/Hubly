@@ -4,7 +4,7 @@
   "name": "Collaboration & Approval Engine",
   "title": "Collaboration & Approval Engine",
   "passed": true,
-  "checkedAt": "2026-09-19T20:44:10.166Z",
+  "checkedAt": "2026-09-19T21:42:42.755Z",
   "proofs": {
     "collaborationLoop": true,
     "hublyRecommends": true,
@@ -25,11 +25,11 @@
         "request": "Make my homepage more premium.",
         "passed": true,
         "preview": {
-          "id": "prv_mu8uv4f4_ybgzew",
+          "id": "prv_mu8wyer2_t08aet",
           "primarySurface": "website"
         },
         "collaboration": {
-          "id": "collab_mu8uv4f7_rbunii",
+          "id": "collab_mu8wyer5_ynw3hk",
           "openingPrompt": "What do you think?",
           "iterations": 4,
           "recommendation": {
@@ -181,11 +181,11 @@
         "request": "I want arrival windows.",
         "passed": true,
         "preview": {
-          "id": "prv_mu8uv4fb_oy8eli",
+          "id": "prv_mu8wyer8_l3ed02",
           "primarySurface": "booking"
         },
         "collaboration": {
-          "id": "collab_mu8uv4fc_73eoku",
+          "id": "collab_mu8wyer9_somzpx",
           "openingPrompt": "What do you think?",
           "iterations": 3,
           "recommendation": {
@@ -307,11 +307,11 @@
         "request": "Move Jobs above Customers.",
         "passed": true,
         "preview": {
-          "id": "prv_mu8uv4fd_slgmvq",
+          "id": "prv_mu8wyerb_unzaw0",
           "primarySurface": "workspace"
         },
         "collaboration": {
-          "id": "collab_mu8uv4fe_li1zwm",
+          "id": "collab_mu8wyerb_qbffqh",
           "openingPrompt": "What do you think?",
           "iterations": 3,
           "recommendation": {
@@ -433,11 +433,11 @@
         "request": "Organize my portfolio.",
         "passed": true,
         "preview": {
-          "id": "prv_mu8uv4ff_bjcdjv",
+          "id": "prv_mu8wyerc_dxy89m",
           "primarySurface": "portfolio"
         },
         "collaboration": {
-          "id": "collab_mu8uv4fg_2k2bgd",
+          "id": "collab_mu8wyerd_82vvdo",
           "openingPrompt": "What do you think?",
           "iterations": 3,
           "recommendation": {
@@ -559,11 +559,11 @@
         "request": "Add arrival windows and update my website.",
         "passed": true,
         "preview": {
-          "id": "prv_mu8uv4fh_tbcsgu",
+          "id": "prv_mu8wyere_wbwn5c",
           "primarySurface": "multi"
         },
         "collaboration": {
-          "id": "collab_mu8uv4fi_e4l904",
+          "id": "collab_mu8wyerf_glp4t8",
           "openingPrompt": "What do you think?",
           "iterations": 2,
           "recommendation": {

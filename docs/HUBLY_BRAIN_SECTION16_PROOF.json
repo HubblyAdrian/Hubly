@@ -4,7 +4,7 @@
   "title": "Validation & Quality Assurance",
   "status": "pass",
   "passed": true,
-  "provenAt": "2026-09-19T20:46:33.035Z",
+  "provenAt": "2026-09-19T21:45:08.758Z",
   "summary": "Intelligence validation suite: Brain, Experts, Memory, Business Generation, Multi-Industry, Identity, Capabilities, Security, Performance, Scenario Library, Founder Benchmark Suite, and Mission Control Quality Score.",
   "proofs": {
     "suites": [
@@ -122,7 +122,7 @@
     },
     "performance": {
       "parallel_ai_requests": 6,
-      "memory_lookups_1000": 4,
+      "memory_lookups_1000": 3,
       "dna_loads": 0
     },
     "qualityScore": {
@@ -137,7 +137,7 @@
         "capabilities": 100,
         "builder_readiness": 100
       },
-      "checkedAt": "2026-09-19T20:46:33.024Z",
+      "checkedAt": "2026-09-19T21:45:08.748Z",
       "note": "Engineering Quality Score — Mission Control. Measures intelligence validation health."
     },
     "missionControl": {

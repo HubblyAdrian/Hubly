@@ -769,18 +769,22 @@ try {
         <h2 data-hc="i.title" data-hubly-service="Full Service">Full Service</h2>
         <span data-hc="i.body" data-hubly-price="Full Service">$95</span>
         <p data-hubly-desc="Full Service">Mowing plus trimming.</p>
-        <a data-hubly-runtime="card-book" href="https://x.myhubly.app/?book=1&amp;svc=Full%20Service">Book Full Service</a>
+        <a data-hc="hero.item.1.body.4" target="_top" href="https://x.myhubly.app/?book=1&amp;svc=Full%20Service">Book Full Service</a>
       </div></article>
       <article class="card"><h2 data-hubly-service="Basic Mow">Basic Mow</h2>
-      <p data-hubly-desc="Basic Mow">Nothing like Full Service.</p></article></div>\`;
+      <p data-hubly-desc="Basic Mow">Nothing like Full Service.</p>
+      <a data-hubly-runtime="card-book" href="https://x.myhubly.app/?book=1&amp;svc=Basic%20Mow">Book Basic Mow</a></article>
+      <a data-hc="nav.item.1" href="https://x.myhubly.app/?book=1">Book lawn care</a></div>\`;
     const r = renameServiceInFreeform(CARD, "Full Service", "Premium Lawn Service");
     console.log(JSON.stringify({ renamed: r.renamed,
       photoKept: /photos\\/12916204/.test(r.html),
       positionKept: r.html.indexOf('data-hubly-service="Premium Lawn Service"') < r.html.indexOf('data-hubly-service="Basic Mow"'),
       priceRekeyed: /data-hubly-price="Premium Lawn Service"[^>]*>\\$95</.test(r.html),
       descRekeyed: /data-hubly-desc="Premium Lawn Service"/.test(r.html),
-      ctaSvc: (r.html.match(/svc=([^"&\\s]*)/) || [])[1],
-      ctaText: (r.html.match(/card-book"[^>]*>([^<]*)</) || [])[1],
+      ctaSvc: (r.html.match(/svc=(Premium[^"&\\s]*)/) || [])[1],
+      ctaText: /Book Premium Lawn Service/.test(r.html),
+      neighbourLinkIntact: /svc=Basic%20Mow">Book Basic Mow/.test(r.html),
+      navLinkIntact: /nav\\.item\\.1" href="[^"]*\\?book=1">Book lawn care/.test(r.html),
       oldGone: !/data-hubly-service="Full Service"/.test(r.html),
       neighbourIntact: /Nothing like Full Service\\./.test(r.html) && /data-hubly-service="Basic Mow"/.test(r.html) }));
   `], { encoding: "utf8", cwd: ROOT, timeout: 180000 });
@@ -789,13 +793,17 @@ try {
 leg("RULE", "20 a rename edits the card in place — photo, position, price, link and neighbours",
   !!rename && rename.renamed === true && rename.photoKept === true && rename.positionKept === true &&
   rename.priceRekeyed === true && rename.descRekeyed === true && rename.oldGone === true &&
-  rename.ctaSvc === "Premium%20Lawn%20Service" && rename.ctaText === "Book Premium Lawn Service" &&
-  rename.neighbourIntact === true,
-  `renaming against evergreen's real card markup: ${JSON.stringify(rename)}. The BOOKING LINK is ` +
-  `in this leg because the first version of the rename missed it — the href carries \`&amp;svc=\`, ` +
-  `so the character before svc= is a semicolon and a [?&] pattern matched nothing. A rename would ` +
-  `have left every renamed card pointing at a service that no longer exists. The neighbour check ` +
-  `is here because that card mentions "Full Service" in its prose on purpose.`);
+  rename.ctaSvc === "Premium%20Lawn%20Service" && rename.ctaText === true &&
+  rename.neighbourIntact === true && rename.neighbourLinkIntact === true && rename.navLinkIntact === true,
+  `renaming against evergreen's real card markup: ${JSON.stringify(rename)}. THE BOOKING LINK IN ` +
+  `THIS FIXTURE IS THE UNSTAMPED FORM ON PURPOSE. The first version keyed on ` +
+  `data-hubly-runtime="card-book" and passed — against a fixture I wrote carrying that stamp. On ` +
+  `evergreen only FOUR of SEVEN booking links carry it; the rest are the model's own from build ` +
+  `time. So a rename updated the card and left its button pointing at a service that no longer ` +
+  `existed, and it took renaming a real service in the live editor to see it. The link is now ` +
+  `matched by the service it POINTS AT, and the leg asserts three things the form-matching version ` +
+  `could not: the unstamped link follows, another service's stamped link does NOT, and the nav's ` +
+  `"Book lawn care" (?book=1 with no svc=) is left alone.`);
 
 const bad = legs.filter((l) => !l.pass);
 // not-a-corpus-rate: this check's own leg count, not a corpus

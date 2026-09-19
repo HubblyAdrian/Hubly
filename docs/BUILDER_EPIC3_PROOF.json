@@ -4,7 +4,7 @@
   "name": "Preview Engine",
   "title": "Preview Engine",
   "passed": true,
-  "checkedAt": "2026-09-19T20:44:09.831Z",
+  "checkedAt": "2026-09-19T21:42:42.419Z",
   "proofs": {
     "previewEngineExists": true,
     "everyBuilderSupportsPreviews": true,
@@ -31,21 +31,21 @@
         "request": "Make my homepage feel premium.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mu8uv45r_aaonu2",
+          "intentId": "bint_mu8wyeho_lru8kh",
           "category": "Website",
           "goal": "Premium Branding"
         },
         "changePlan": {
-          "id": "cpl_mu8uv45w_cvzgpm",
+          "id": "cpl_mu8wyehs_hmauyf",
           "builderType": "website_builder",
           "title": "Website Improvement",
           "actionCount": 2
         },
         "preview": {
-          "id": "prv_mu8uv45w_9gsc96",
+          "id": "prv_mu8wyeht_k2m5ci",
           "version": "1.0.0",
-          "changePlanId": "cpl_mu8uv45w_cvzgpm",
-          "intentId": "bint_mu8uv45r_aaonu2",
+          "changePlanId": "cpl_mu8wyehs_hmauyf",
+          "intentId": "bint_mu8wyeho_lru8kh",
           "headline": "Here's what I built.",
           "primarySurface": "website",
           "surfaces": [
@@ -141,28 +141,28 @@
               "label": "Researching how the best service businesses present this…",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.812Z"
+              "completedAt": "2026-09-19T21:42:42.401Z"
             },
             {
               "id": "build_website",
               "label": "Building homepage…",
               "status": "complete",
               "surface": "website",
-              "completedAt": "2026-09-19T20:44:09.812Z"
+              "completedAt": "2026-09-19T21:42:42.401Z"
             },
             {
               "id": "review",
               "label": "Reviewing everything…",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.812Z"
+              "completedAt": "2026-09-19T21:42:42.401Z"
             },
             {
               "id": "recommend",
               "label": "I think this version is stronger.",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.812Z"
+              "completedAt": "2026-09-19T21:42:42.401Z"
             }
           ],
           "versions": [
@@ -174,43 +174,43 @@
           ],
           "conversationSample": [
             {
-              "turnId": "pturn_mu8uv460_cwgjku",
+              "turnId": "pturn_mu8wyehw_lga0xw",
               "role": "owner",
               "message": "I like Option 2.",
-              "at": "2026-09-19T20:44:09.816Z",
+              "at": "2026-09-19T21:42:42.404Z",
               "resultingVersion": 2
             },
             {
-              "turnId": "pturn_mu8uv460_3p76ib",
+              "turnId": "pturn_mu8wyehw_gcipdo",
               "role": "hubly",
               "message": "I switched to Option Modern. Here's the updated preview.",
-              "at": "2026-09-19T20:44:09.816Z",
+              "at": "2026-09-19T21:42:42.404Z",
               "resultingVersion": 2
             },
             {
-              "turnId": "pturn_mu8uv460_5v3mca",
+              "turnId": "pturn_mu8wyehw_emttrj",
               "role": "owner",
               "message": "Make it darker.",
-              "at": "2026-09-19T20:44:09.816Z",
+              "at": "2026-09-19T21:42:42.404Z",
               "resultingVersion": 3
             },
             {
-              "turnId": "pturn_mu8uv460_ueqt33",
+              "turnId": "pturn_mu8wyehw_p9l1ey",
               "role": "hubly",
               "message": "Made it darker — preview updated.",
-              "at": "2026-09-19T20:44:09.816Z",
+              "at": "2026-09-19T21:42:42.404Z",
               "resultingVersion": 3
             }
           ],
           "lifecycle": "waiting_for_approval",
           "lifecycleLog": [
             {
-              "at": "2026-09-19T20:44:09.812Z",
+              "at": "2026-09-19T21:42:42.401Z",
               "state": "created",
               "note": "Preview created from Change Plan"
             },
             {
-              "at": "2026-09-19T20:44:09.812Z",
+              "at": "2026-09-19T21:42:42.401Z",
               "state": "waiting_for_approval",
               "note": "Waiting for Approval Engine (Epic 4)"
             }
@@ -220,7 +220,7 @@
           "published": false,
           "mutatedLiveState": false,
           "waitingFor": "approval_engine",
-          "missionControlExecutionId": "flt_mu8uv45z_12iqnp"
+          "missionControlExecutionId": "flt_mu8wyehv_9dlvws"
         }
       },
       {
@@ -228,21 +228,21 @@
         "request": "Add arrival windows.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mu8uv461_tg6q5n",
+          "intentId": "bint_mu8wyehx_c8cxnb",
           "category": "Booking",
           "goal": "Arrival Windows"
         },
         "changePlan": {
-          "id": "cpl_mu8uv462_mb0792",
+          "id": "cpl_mu8wyehy_vcbkl3",
           "builderType": "booking",
           "title": "Booking Intelligence",
           "actionCount": 1
         },
         "preview": {
-          "id": "prv_mu8uv462_m306wg",
+          "id": "prv_mu8wyehz_s3gc5j",
           "version": "1.0.0",
-          "changePlanId": "cpl_mu8uv462_mb0792",
-          "intentId": "bint_mu8uv461_tg6q5n",
+          "changePlanId": "cpl_mu8wyehy_vcbkl3",
+          "intentId": "bint_mu8wyehx_c8cxnb",
           "headline": "Here's what I built.",
           "primarySurface": "booking",
           "surfaces": [
@@ -313,28 +313,28 @@
               "label": "Researching how the best service businesses present this…",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.818Z"
+              "completedAt": "2026-09-19T21:42:42.406Z"
             },
             {
               "id": "build_booking",
               "label": "Updating booking experience…",
               "status": "complete",
               "surface": "booking",
-              "completedAt": "2026-09-19T20:44:09.818Z"
+              "completedAt": "2026-09-19T21:42:42.406Z"
             },
             {
               "id": "review",
               "label": "Reviewing everything…",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.818Z"
+              "completedAt": "2026-09-19T21:42:42.406Z"
             },
             {
               "id": "recommend",
               "label": "I think this version is stronger.",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.818Z"
+              "completedAt": "2026-09-19T21:42:42.406Z"
             }
           ],
           "versions": [
@@ -346,29 +346,29 @@
           ],
           "conversationSample": [
             {
-              "turnId": "pturn_mu8uv464_4bsamh",
+              "turnId": "pturn_mu8wyei0_pa5p0l",
               "role": "owner",
               "message": "Looks good — keep going.",
-              "at": "2026-09-19T20:44:09.820Z",
+              "at": "2026-09-19T21:42:42.408Z",
               "resultingVersion": 2
             },
             {
-              "turnId": "pturn_mu8uv464_zovbe7",
+              "turnId": "pturn_mu8wyei0_udr065",
               "role": "hubly",
               "message": "Got it — I updated the preview.",
-              "at": "2026-09-19T20:44:09.820Z",
+              "at": "2026-09-19T21:42:42.408Z",
               "resultingVersion": 2
             }
           ],
           "lifecycle": "waiting_for_approval",
           "lifecycleLog": [
             {
-              "at": "2026-09-19T20:44:09.818Z",
+              "at": "2026-09-19T21:42:42.406Z",
               "state": "created",
               "note": "Preview created from Change Plan"
             },
             {
-              "at": "2026-09-19T20:44:09.818Z",
+              "at": "2026-09-19T21:42:42.406Z",
               "state": "waiting_for_approval",
               "note": "Waiting for Approval Engine (Epic 4)"
             }
@@ -378,7 +378,7 @@
           "published": false,
           "mutatedLiveState": false,
           "waitingFor": "approval_engine",
-          "missionControlExecutionId": "flt_mu8uv463_7lzgvu"
+          "missionControlExecutionId": "flt_mu8wyei0_3l80ya"
         }
       },
       {
@@ -386,21 +386,21 @@
         "request": "Move Jobs above Customers.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mu8uv464_egsccc",
+          "intentId": "bint_mu8wyei1_a4eq2r",
           "category": "Workspace",
           "goal": "Navigation Order"
         },
         "changePlan": {
-          "id": "cpl_mu8uv465_64eoo1",
+          "id": "cpl_mu8wyei1_e8jrgt",
           "builderType": "workspace_builder",
           "title": "Workspace Intelligence",
           "actionCount": 1
         },
         "preview": {
-          "id": "prv_mu8uv465_0m63ni",
+          "id": "prv_mu8wyei1_4e2ulr",
           "version": "1.0.0",
-          "changePlanId": "cpl_mu8uv465_64eoo1",
-          "intentId": "bint_mu8uv464_egsccc",
+          "changePlanId": "cpl_mu8wyei1_e8jrgt",
+          "intentId": "bint_mu8wyei1_a4eq2r",
           "headline": "Here's what I built.",
           "primarySurface": "workspace",
           "surfaces": [
@@ -466,28 +466,28 @@
               "label": "Researching how the best service businesses present this…",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.821Z"
+              "completedAt": "2026-09-19T21:42:42.409Z"
             },
             {
               "id": "build_workspace",
               "label": "Adjusting workspace layout…",
               "status": "complete",
               "surface": "workspace",
-              "completedAt": "2026-09-19T20:44:09.821Z"
+              "completedAt": "2026-09-19T21:42:42.409Z"
             },
             {
               "id": "review",
               "label": "Reviewing everything…",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.821Z"
+              "completedAt": "2026-09-19T21:42:42.409Z"
             },
             {
               "id": "recommend",
               "label": "I think this version is stronger.",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.821Z"
+              "completedAt": "2026-09-19T21:42:42.409Z"
             }
           ],
           "versions": [
@@ -499,29 +499,29 @@
           ],
           "conversationSample": [
             {
-              "turnId": "pturn_mu8uv465_jp0mk3",
+              "turnId": "pturn_mu8wyei2_rlxgir",
               "role": "owner",
               "message": "Looks good — keep going.",
-              "at": "2026-09-19T20:44:09.821Z",
+              "at": "2026-09-19T21:42:42.410Z",
               "resultingVersion": 2
             },
             {
-              "turnId": "pturn_mu8uv465_kytjeq",
+              "turnId": "pturn_mu8wyei2_12s28b",
               "role": "hubly",
               "message": "Got it — I updated the preview.",
-              "at": "2026-09-19T20:44:09.821Z",
+              "at": "2026-09-19T21:42:42.410Z",
               "resultingVersion": 2
             }
           ],
           "lifecycle": "waiting_for_approval",
           "lifecycleLog": [
             {
-              "at": "2026-09-19T20:44:09.821Z",
+              "at": "2026-09-19T21:42:42.409Z",
               "state": "created",
               "note": "Preview created from Change Plan"
             },
             {
-              "at": "2026-09-19T20:44:09.821Z",
+              "at": "2026-09-19T21:42:42.409Z",
               "state": "waiting_for_approval",
               "note": "Waiting for Approval Engine (Epic 4)"
             }
@@ -531,7 +531,7 @@
           "published": false,
           "mutatedLiveState": false,
           "waitingFor": "approval_engine",
-          "missionControlExecutionId": "flt_mu8uv465_332itr"
+          "missionControlExecutionId": "flt_mu8wyei1_fhicmb"
         }
       },
       {
@@ -539,21 +539,21 @@
         "request": "Organize these portfolio photos.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mu8uv466_xrxoy5",
+          "intentId": "bint_mu8wyei2_9k26q0",
           "category": "Portfolio",
           "goal": "Gallery Organization"
         },
         "changePlan": {
-          "id": "cpl_mu8uv466_25omd7",
+          "id": "cpl_mu8wyei3_nezh8b",
           "builderType": "portfolio_builder",
           "title": "Media Intelligence",
           "actionCount": 2
         },
         "preview": {
-          "id": "prv_mu8uv466_zjahoc",
+          "id": "prv_mu8wyei3_6mmfkc",
           "version": "1.0.0",
-          "changePlanId": "cpl_mu8uv466_25omd7",
-          "intentId": "bint_mu8uv466_xrxoy5",
+          "changePlanId": "cpl_mu8wyei3_nezh8b",
+          "intentId": "bint_mu8wyei2_9k26q0",
           "headline": "Here's what I built.",
           "primarySurface": "portfolio",
           "surfaces": [
@@ -621,28 +621,28 @@
               "label": "Researching how the best service businesses present this…",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.822Z"
+              "completedAt": "2026-09-19T21:42:42.411Z"
             },
             {
               "id": "build_portfolio",
               "label": "Organizing portfolio photos…",
               "status": "complete",
               "surface": "portfolio",
-              "completedAt": "2026-09-19T20:44:09.822Z"
+              "completedAt": "2026-09-19T21:42:42.411Z"
             },
             {
               "id": "review",
               "label": "Reviewing everything…",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.822Z"
+              "completedAt": "2026-09-19T21:42:42.411Z"
             },
             {
               "id": "recommend",
               "label": "I think this version is stronger.",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.822Z"
+              "completedAt": "2026-09-19T21:42:42.411Z"
             }
           ],
           "versions": [
@@ -654,29 +654,29 @@
           ],
           "conversationSample": [
             {
-              "turnId": "pturn_mu8uv468_cx9sb8",
+              "turnId": "pturn_mu8wyei4_9c7w0j",
               "role": "owner",
               "message": "Looks good — keep going.",
-              "at": "2026-09-19T20:44:09.824Z",
+              "at": "2026-09-19T21:42:42.412Z",
               "resultingVersion": 2
             },
             {
-              "turnId": "pturn_mu8uv468_l48ww8",
+              "turnId": "pturn_mu8wyei4_5cf5h0",
               "role": "hubly",
               "message": "Got it — I updated the preview.",
-              "at": "2026-09-19T20:44:09.824Z",
+              "at": "2026-09-19T21:42:42.412Z",
               "resultingVersion": 2
             }
           ],
           "lifecycle": "waiting_for_approval",
           "lifecycleLog": [
             {
-              "at": "2026-09-19T20:44:09.822Z",
+              "at": "2026-09-19T21:42:42.411Z",
               "state": "created",
               "note": "Preview created from Change Plan"
             },
             {
-              "at": "2026-09-19T20:44:09.822Z",
+              "at": "2026-09-19T21:42:42.411Z",
               "state": "waiting_for_approval",
               "note": "Waiting for Approval Engine (Epic 4)"
             }
@@ -686,7 +686,7 @@
           "published": false,
           "mutatedLiveState": false,
           "waitingFor": "approval_engine",
-          "missionControlExecutionId": "flt_mu8uv467_cn8lpx"
+          "missionControlExecutionId": "flt_mu8wyei4_mhv3jd"
         }
       },
       {
@@ -694,21 +694,21 @@
         "request": "Build an automation that sends prep instructions after ceramic coating bookings.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mu8uv468_pom0mt",
+          "intentId": "bint_mu8wyei4_046j1a",
           "category": "Automations",
           "goal": "Post-Booking Prep Instructions"
         },
         "changePlan": {
-          "id": "cpl_mu8uv469_l8q7x0",
+          "id": "cpl_mu8wyei5_tgepqr",
           "builderType": "automation",
           "title": "Automation Intelligence",
           "actionCount": 1
         },
         "preview": {
-          "id": "prv_mu8uv469_duw0zl",
+          "id": "prv_mu8wyei5_r0nasx",
           "version": "1.0.0",
-          "changePlanId": "cpl_mu8uv469_l8q7x0",
-          "intentId": "bint_mu8uv468_pom0mt",
+          "changePlanId": "cpl_mu8wyei5_tgepqr",
+          "intentId": "bint_mu8wyei4_046j1a",
           "headline": "Here's what I built.",
           "primarySurface": "automations",
           "surfaces": [
@@ -859,28 +859,28 @@
               "label": "Researching how the best service businesses present this…",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.825Z"
+              "completedAt": "2026-09-19T21:42:42.413Z"
             },
             {
               "id": "build_automations",
               "label": "Sketching the automation flow…",
               "status": "complete",
               "surface": "automations",
-              "completedAt": "2026-09-19T20:44:09.825Z"
+              "completedAt": "2026-09-19T21:42:42.413Z"
             },
             {
               "id": "review",
               "label": "Reviewing everything…",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.825Z"
+              "completedAt": "2026-09-19T21:42:42.413Z"
             },
             {
               "id": "recommend",
               "label": "I think this version is stronger.",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.825Z"
+              "completedAt": "2026-09-19T21:42:42.413Z"
             }
           ],
           "versions": [
@@ -892,29 +892,29 @@
           ],
           "conversationSample": [
             {
-              "turnId": "pturn_mu8uv46a_983lxp",
+              "turnId": "pturn_mu8wyei6_680nfv",
               "role": "owner",
               "message": "Looks good — keep going.",
-              "at": "2026-09-19T20:44:09.826Z",
+              "at": "2026-09-19T21:42:42.414Z",
               "resultingVersion": 2
             },
             {
-              "turnId": "pturn_mu8uv46a_yosyx9",
+              "turnId": "pturn_mu8wyei6_p02d55",
               "role": "hubly",
               "message": "Got it — I updated the preview.",
-              "at": "2026-09-19T20:44:09.826Z",
+              "at": "2026-09-19T21:42:42.414Z",
               "resultingVersion": 2
             }
           ],
           "lifecycle": "waiting_for_approval",
           "lifecycleLog": [
             {
-              "at": "2026-09-19T20:44:09.825Z",
+              "at": "2026-09-19T21:42:42.413Z",
               "state": "created",
               "note": "Preview created from Change Plan"
             },
             {
-              "at": "2026-09-19T20:44:09.825Z",
+              "at": "2026-09-19T21:42:42.413Z",
               "state": "waiting_for_approval",
               "note": "Waiting for Approval Engine (Epic 4)"
             }
@@ -924,7 +924,7 @@
           "published": false,
           "mutatedLiveState": false,
           "waitingFor": "approval_engine",
-          "missionControlExecutionId": "flt_mu8uv46a_1rh7bg"
+          "missionControlExecutionId": "flt_mu8wyei6_ai8m8u"
         }
       },
       {
@@ -932,21 +932,21 @@
         "request": "Add arrival windows and update my homepage.",
         "passed": true,
         "builderIntent": {
-          "intentId": "bint_mu8uv46b_zugkv8",
+          "intentId": "bint_mu8wyei7_lyjbuf",
           "category": "Multiple Systems",
           "goal": "Arrival Windows · Website Update"
         },
         "changePlan": {
-          "id": "cpl_mu8uv46b_lpwz1o",
+          "id": "cpl_mu8wyei7_ywp3gb",
           "builderType": "multi",
           "title": "Multi-System: Website + Booking",
           "actionCount": 2
         },
         "preview": {
-          "id": "prv_mu8uv46b_6cpsx5",
+          "id": "prv_mu8wyei7_kxz3p7",
           "version": "1.0.0",
-          "changePlanId": "cpl_mu8uv46b_lpwz1o",
-          "intentId": "bint_mu8uv46b_zugkv8",
+          "changePlanId": "cpl_mu8wyei7_ywp3gb",
+          "intentId": "bint_mu8wyei7_lyjbuf",
           "headline": "Here's what I built.",
           "primarySurface": "multi",
           "surfaces": [
@@ -1066,35 +1066,35 @@
               "label": "Researching how the best service businesses present this…",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.827Z"
+              "completedAt": "2026-09-19T21:42:42.415Z"
             },
             {
               "id": "build_website",
               "label": "Building homepage…",
               "status": "complete",
               "surface": "website",
-              "completedAt": "2026-09-19T20:44:09.827Z"
+              "completedAt": "2026-09-19T21:42:42.415Z"
             },
             {
               "id": "build_booking",
               "label": "Updating booking experience…",
               "status": "complete",
               "surface": "booking",
-              "completedAt": "2026-09-19T20:44:09.827Z"
+              "completedAt": "2026-09-19T21:42:42.415Z"
             },
             {
               "id": "review",
               "label": "Reviewing everything…",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.827Z"
+              "completedAt": "2026-09-19T21:42:42.415Z"
             },
             {
               "id": "recommend",
               "label": "I think this version is stronger.",
               "status": "complete",
               "surface": null,
-              "completedAt": "2026-09-19T20:44:09.827Z"
+              "completedAt": "2026-09-19T21:42:42.415Z"
             }
           ],
           "versions": [
@@ -1106,29 +1106,29 @@
           ],
           "conversationSample": [
             {
-              "turnId": "pturn_mu8uv46c_593ory",
+              "turnId": "pturn_mu8wyei8_cij6nt",
               "role": "owner",
               "message": "Looks good — keep going.",
-              "at": "2026-09-19T20:44:09.828Z",
+              "at": "2026-09-19T21:42:42.416Z",
               "resultingVersion": 2
             },
             {
-              "turnId": "pturn_mu8uv46c_z3v07f",
+              "turnId": "pturn_mu8wyei8_l816f6",
               "role": "hubly",
               "message": "Got it — I updated the preview.",
-              "at": "2026-09-19T20:44:09.828Z",
+              "at": "2026-09-19T21:42:42.416Z",
               "resultingVersion": 2
             }
           ],
           "lifecycle": "waiting_for_approval",
           "lifecycleLog": [
             {
-              "at": "2026-09-19T20:44:09.827Z",
+              "at": "2026-09-19T21:42:42.415Z",
               "state": "created",
               "note": "Preview created from Change Plan"
             },
             {
-              "at": "2026-09-19T20:44:09.827Z",
+              "at": "2026-09-19T21:42:42.415Z",
               "state": "waiting_for_approval",
               "note": "Waiting for Approval Engine (Epic 4)"
             }
@@ -1138,7 +1138,7 @@
           "published": false,
           "mutatedLiveState": false,
           "waitingFor": "approval_engine",
-          "missionControlExecutionId": "flt_mu8uv46b_1rz0sk"
+          "missionControlExecutionId": "flt_mu8wyei8_5ljoth"
         }
       }
     ]
