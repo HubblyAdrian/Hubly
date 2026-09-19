@@ -1175,6 +1175,31 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
    gutter — no more narrow centred stack with dead cream either side. */
 .hc-app.hc-has-draft .hc-thread-inner{padding:20px 16px 16px;gap:16px}
 .hc-app.hc-has-draft .hc-msg{max-width:none}
+/* ══ HOME IS A READING COLUMN, NOT A WALL — ADRIAN, 2026-09-19: "it looks bad design wise" ═══
+ *
+ * MEASURED before changing anything: in Home the thread is 1530px wide with `max-width:none`,
+ * and every message measured 1498px. The greeting, the "Edit my website" card and the composer
+ * all ran the full width of a 1710px window — a 1498px-wide card holding an icon and three
+ * words, with a thousand pixels of nothing after it.
+ *
+ * THE MEASURE ALREADY EXISTED AND WAS BEING SWITCHED OFF. `.hc-msg{max-width:640px}` is the
+ * rule; the line directly above removes it for every claimed owner, and the home furniture
+ * (.hc-idw, .hc-news, .hc-acts) each set `max-width:none` on top. All of that is RIGHT in
+ * Website mode, where the chat is a ~350px panel and every pixel of it is wanted.
+ *
+ * So the column is constrained, not the messages — the furniture still fills whatever column
+ * it is given, and only Home gets a column. Website mode is untouched: same selectors, same
+ * max-width:none, in a panel that is already narrow.
+ *
+ * 760px, matching the 640px message measure with room for the two-across suggestion grid; the
+ * unclaimed home already uses exactly this pattern at 640 (see .hc-app:not(.hc-has-draft)). */
+.hc-app.hc-has-draft[data-mode="home"] .hc-thread-inner,
+.hc-app.hc-has-draft[data-mode="home"] .hc-input-bar > .ask-wrap{
+  max-width:760px;margin-left:auto;margin-right:auto;width:100%;
+}
+/* The composer is a sibling of the thread, so it needs the same column or the page reads as
+   two different widths stacked — the thing that made it look unfinished. */
+.hc-app.hc-has-draft[data-mode="home"] .hc-input-bar{ padding-left:clamp(22px,4vw,60px);padding-right:clamp(22px,4vw,60px) }
 
 /* The preview's view bar — outside #hcCanvas so it survives every view's
    innerHTML, which is the whole reason there was no way back. */
