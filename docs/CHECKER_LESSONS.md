@@ -3573,6 +3573,20 @@ around building something that existed. *"svcDisplayPrice already renders 'quote
 rendering half is built"* was true of the classic/meta path and false of the freeform path every new
 business takes — so the half that was missing was the half that mattered.
 
+**AND IT HAPPENED AGAIN IN THE SAME ROUND, TO BOTH OF US.** Adrian, the next prompt: *"I authorised
+building an axis that exists. service_engine.ts already carries declared.sale, saleFrom provenance, and
+refuses an unreadable declaration as 'unknown'. I asked for a schema change because I did not look."*
+And within the hour of writing this lesson down I did the same thing one level smaller: I wrote a test
+fixture that set `sale` at the TOP LEVEL of an offer record, when `offerType` reads `o.offer.sale` — so
+every declared case resolved by STRUCTURE instead, including the deliberately-unreadable one. **I assumed
+a record shape instead of reading it.** The legs went red and were right to; the fixture was describing a
+record that does not exist.
+
+The two are the same error at two scales: **asserting the shape of something instead of looking at it.**
+His cost a round's authorisation; mine cost three red legs and would have cost a wrong writer if the legs
+had happened to pass. So the rule below applies to a FIXTURE as much as to a report — read the reader
+before you write the thing that feeds it.
+
 **What actually caught both:** the instruction *"verify both before building anything — do not accept
 either from me"*, and *"correct me if the code disagrees."* Not a check, not a sweep. A standing
 instruction to disbelieve the premise, issued by the person who wrote it. That is the only instrument
