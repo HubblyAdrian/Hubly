@@ -334,3 +334,33 @@ Nothing in this repo can assert any of these. Listed so they are not quietly abs
 | **Stripe's webhook delivery log** | has `stripe-webhook` ever run? Only Stripe's dashboard knows; rows are evidence of a call, and no rows is not evidence of no call (§5.4) |
 | **The mobile preview at 390px on a real device** | there is no true 390px viewport and no soft keyboard in this environment. The preview's mobile path is asserted in a rig, which is evidence about the CODE PATH and not about a phone |
 | **The 5th rail tab, and the phone's "More" overflow** | prohibition 5 is a mobile claim. Same limitation |
+
+## 7.2/7.3 — Search Console, and what is still Adrian's (updated 2026-09-18)
+
+### CONFIRMED BY ADRIAN, and it is the only measurement anyone has of what Google knows
+
+| | |
+|---|---|
+| Domain property for `myhubly.app` | **verified 2026-09-18** by DNS TXT at Vercel. Covers every `*.myhubly.app` subdomain. Did not exist before that day — which is why the noindex window was unmeasurable at the time |
+| `https://myhubly.app/sitemap.xml` | **submitted and ACCEPTED** |
+| Request Indexing on `graefs-autocare.myhubly.app` | **pressed** |
+| Before all of it | *"URL is unknown to Google"*, every crawl field **N/A** — no referring sitemap, no referring page. And the Live Test on the same URL **rendered his real site** and said *"Page can be indexed"* |
+
+So: rendering was never the problem, the noindex fix is confirmed by Google's own tooling, and discovery is now wired at both ends — a sitemap that exists and is submitted, referenced from `robots.txt` on every host.
+
+### The three internal businesses dropped from the sitemap — RULING CONFIRMED
+
+`cotter-aviation`, `lugnutz`, `my-auto-detailing`. Adrian, 2026-09-18: **none is a demo he wants
+findable.** Sitemap is **10** URLs (10 claimed market), not 13. The predicate is
+`business_is_indexable(owner_id, account_kind)` — one place, read by `hcRowIsIndexable` and by the
+sitemap, so this cannot drift into disagreeing with what the page stamps.
+
+### Still Adrian's — OPEN, none of it done
+
+| | note |
+|---|---|
+| **ACCEPT on `adrians-lawn-service`'s pending booking** | **OPEN — not pressed.** Corrected here: an earlier entry listed this among things to do; it has not been done, and nothing in the repo can assert it |
+| Stripe's webhook delivery log | has `stripe-webhook` ever run? Only Stripe's dashboard knows. Rows are evidence of a call; no rows is not evidence of no call |
+| The 5th rail tab and the phone's "More" overflow | prohibition 5 is a mobile claim. No true 390px viewport here |
+| The mobile preview at 390px on a real device | the mobile path is asserted in a rig — evidence about the CODE PATH, not about a phone |
+| The truncated-`meta` write-back candidate | needs an owner session. **Not on `graefs-autocare`, and not on either of the two claimed market businesses that hold real `pipeline` data** |

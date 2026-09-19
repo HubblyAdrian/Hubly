@@ -13,12 +13,12 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-19T03:34:36.666Z** · 77 run(s) recorded.
+**Last run: 2026-09-19T03:37:40.501Z** · 79 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 50 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
-| COMPOUND | 1 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
+| **RED ALONE** | 51 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
 
@@ -31,7 +31,7 @@ have made the rule the first thing anyone switched off.
 | `check-arrival-in-dom.mjs` | 2c the arrival IS in the thread | **RED ALONE** | speak a second time while the name question is on the floor — a page-view count beside the arrival, which is two composers talking over each other | — |
 | `check-baseline-before-schema.mjs` | schema_mode is read from the call | **RED ALONE** | put the literal "json_object" back in place of the value reported by the AI layer — which is what would make every row say json_object after the flag is flipped, and the whole before/after comparison silently wrong | — |
 | `check-chain-acknowledgement.mjs` | 7 a real job write was read | **RED ALONE** | add `business.addJob` to the writers that can close the priced-services gap — one wrong entry in HC_GAP_WRITERS, which is how a job write comes to be announced as a price change | — |
-| `check-conversation-is-the-surface.mjs` | 12 the name reader answered | **COMPOUND** | manufacture a name out of the credential — the email local-part heuristic, which passes off 'Adriansmithee' as something the owner told us | FAIL  11 with NO name anywhere, the email is the fallback and is not passed off as a name — label="Adriansmithee+ever" f<br>FAIL  12a with no name on record the greeting drops it rather than using his email — "Good evening, Adriansmithee+ever." |
+| `check-conversation-is-the-surface.mjs` | 12 the name reader answered | **RED ALONE** | make hcOwnerLabelIsEmail return false for an email. The label is still the email and no name is invented, so legs 11 and 12a are untouched — but every surface that asks whether it is holding a credential is now told it is holding a name, which is how 'adriansmithee+ever…' came to be shown to Adrian as his name for a whole session. | — |
 | `check-conversation-is-the-surface.mjs` | 6 the day's rows were COUNTED | **RED ALONE** | RESTORE LESSON 86's OWN DEFECT — gate hcGoToPlace on business_places ROWS instead of on content, so a day holding a driveway job and a doctor's appointment is told it 'isn't set up on this account yet'. That sentence was said to a real owner on 2026-09-15 | — |
 | `check-conversation-is-the-surface.mjs` | 7 the door returned a receipt | **RED ALONE** | announce the action before the outcome is known — the premature 'Adding X' class, which claims a placement before it has landed | — |
 | `check-conversation-is-the-surface.mjs` | 9 the promises rendered | **RED ALONE** | offer a door to an empty room — drop the needs(ctx) gate so every card renders whether its room holds anything or not, which is prohibition 5 inverted | — |
@@ -165,3 +165,5 @@ have made the rule the first thing anyone switched off.
 - **2026-09-19T03:32:09.052Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-19T03:33:49.559Z** — 5 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-19T03:34:36.666Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-19T03:36:21.920Z** — 4 break(s) applied · 3 red alone · 1 compound · 0 not red · 0 skipped
+- **2026-09-19T03:37:40.501Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped

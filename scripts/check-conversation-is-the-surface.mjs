@@ -389,8 +389,14 @@ try {
     const b = document.getElementById("navSignin");
     return { label: N.label(), first: N.first(), isEmail: N.isEmail(), chip: b ? b.innerText.replace(/\s+/g, " ").trim() : "" };
   });
+  // `isEmail === true` WAS ALSO ASSERTED HERE, AND THAT WAS THE COUPLING. Legs 11 and 12 shared the
+  // clause, so every break to it fired both and leg 12 sat COMPOUND in the ledger — the same fault,
+  // and the same fix, as the rail check's leg 1 asserting text that belonged to its leg 3. One clause,
+  // one leg: the reader's own contract ("it answered, and it said the answer is an email") is leg 12's
+  // subject. What leg 11 claims on its own is complete without it — the label IS the address, and no
+  // name was derived from it.
   say("11 with NO name anywhere, the email is the fallback and is not passed off as a name",
-    noName.isEmail === true && noName.first === null && /@/.test(noName.label),
+    noName.first === null && /@/.test(noName.label),
     `label=${JSON.stringify(noName.label)} first=${JSON.stringify(noName.first)}`);
   // AND NO NAME IS MANUFACTURED FROM THE CREDENTIAL.
   /* `indexOf("@") >= 0` looks positive and is not: it is satisfied by the RAW EMAIL, so a reader
@@ -399,11 +405,24 @@ try {
    * isEmail verdict, and a first name of exactly null. */
   declareBreak({
     leg: "12 the name reader answered",
-    why: "manufacture a name out of the credential — the email local-part heuristic, which passes " +
-         "off 'Adriansmithee' as something the owner told us",
+    // AIMED AT THIS LEG'S OWN CLAUSE, NOT AT THE SHARED BEHAVIOUR. The first break manufactured a
+    // name from the email local-part, which is the right DEFECT but too wide a break: legs 11, 12 and
+    // 12a all assert the same "never invent a name from the credential" behaviour from three angles,
+    // so any break to it fires all three and proves nothing about any of them (L98). It sat COMPOUND
+    // in the ledger for that reason.
+    //
+    // What leg 12 alone claims is that the READER ANSWERED AND SAID WHAT KIND OF THING IT RETURNED —
+    // `isEmail === true` for an email. So the break makes hcOwnerLabelIsEmail lie, which is a real
+    // defect and the precondition for the 2026-09-15 bug: a surface that asks "is this label a
+    // credential" and is told no will render it as a name. Leg 11 reads `first`, and leg 12a reads
+    // the greeting, and neither consults this predicate — so neither moves.
+    why: "make hcOwnerLabelIsEmail return false for an email. The label is still the email and no name " +
+         "is invented, so legs 11 and 12a are untouched — but every surface that asks whether it is " +
+         "holding a credential is now told it is holding a name, which is how 'adriansmithee+ever…' " +
+         "came to be shown to Adrian as his name for a whole session.",
     file: "public/platform-home.html",
-    find: "    var em = String(hcIdentity.email || '').trim();\n    return em || '';",
-    with: "    var em = String(hcIdentity.email || '').trim();\n    if(em) return em.split('@')[0].replace(/^./, function(c){ return c.toUpperCase(); });\n    return em || '';",
+    find: "    return !!l && l.indexOf('@') >= 0;\n  }",
+    with: "    return false;\n  }",
   });
   say("12 the name reader answered, and no name was derived from the email local-part",
     typeof noName.label === "string" && noName.label.length > 0 && noName.isEmail === true &&

@@ -721,6 +721,36 @@
       "declaredTotal": 5,
       "recorded": 5,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-19T03:36:21.920Z",
+      "applied": 4,
+      "alone": 3,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T03:37:40.501Z",
+      "applied": 4,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -728,40 +758,37 @@
       "check": "check-conversation-is-the-surface.mjs",
       "leg": "9 the promises rendered",
       "why": "offer a door to an empty room — drop the needs(ctx) gate so every card renders whether its room holds anything or not, which is prohibition 5 inverted",
-      "at": "2026-09-18T05:08:22.668Z",
+      "at": "2026-09-19T03:37:40.501Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-conversation-is-the-surface.mjs::12 the name reader answered": {
       "check": "check-conversation-is-the-surface.mjs",
       "leg": "12 the name reader answered",
-      "why": "manufacture a name out of the credential — the email local-part heuristic, which passes off 'Adriansmithee' as something the owner told us",
-      "at": "2026-09-18T05:08:22.668Z",
-      "also": [
-        "FAIL  11 with NO name anywhere, the email is the fallback and is not passed off as a name — label=\"Adriansmithee+ever\" f",
-        "FAIL  12a with no name on record the greeting drops it rather than using his email — \"Good evening, Adriansmithee+ever.\""
-      ],
-      "status": "COMPOUND",
-      "newlyRed": 3
+      "why": "make hcOwnerLabelIsEmail return false for an email. The label is still the email and no name is invented, so legs 11 and 12a are untouched — but every surface that asks whether it is holding a credential is now told it is holding a name, which is how 'adriansmithee+ever…' came to be shown to Adrian as his name for a whole session.",
+      "at": "2026-09-19T03:37:40.501Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-conversation-is-the-surface.mjs::6 the day's rows were COUNTED": {
       "check": "check-conversation-is-the-surface.mjs",
       "leg": "6 the day's rows were COUNTED",
       "why": "RESTORE LESSON 86's OWN DEFECT — gate hcGoToPlace on business_places ROWS instead of on content, so a day holding a driveway job and a doctor's appointment is told it 'isn't set up on this account yet'. That sentence was said to a real owner on 2026-09-15",
-      "at": "2026-09-18T05:08:22.668Z",
+      "at": "2026-09-19T03:37:40.501Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-conversation-is-the-surface.mjs::7 the door returned a receipt": {
       "check": "check-conversation-is-the-surface.mjs",
       "leg": "7 the door returned a receipt",
       "why": "announce the action before the outcome is known — the premature 'Adding X' class, which claims a placement before it has landed",
-      "at": "2026-09-18T05:08:22.668Z",
+      "at": "2026-09-19T03:37:40.501Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-doors-open-when-needed.mjs::1 the scan found creation actions": {
       "check": "check-doors-open-when-needed.mjs",
