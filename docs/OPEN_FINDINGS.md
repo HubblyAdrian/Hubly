@@ -8386,3 +8386,48 @@ with later as an implementation detail.**
 - **3.4 creation is BLOCKED on Part 2's anchor**, and Part 2 is now blocked on a ruling (see 2.4). Built
   on top of an anchor that is absent from 83% of pages, membership placement would be invisible for the
   same 158 pages — the same false green, one feature over.
+
+---
+
+## 2026-09-19 — THE CONTEXTUAL TOP EDITOR, AND THE ONE DOOR IT COULD NOT OPEN
+
+### Shipped
+Selecting a service card on the canvas now opens its **real record fields** above the page — name,
+price, show-price, description, how-people-get-it — written through `hcRecordEdit`, the same writer
+the Services panel uses. Text formatting (font, size, bold, italic, underline, colour, alignment,
+spacing, effects) writes through `hcStyleEdit`, the same writer the floating bar uses. Previous / Next
+/ Done / Delete reuse the canvas's own element order and `hcNodeDelete`. **No second writer, no second
+data model, no second styling system.** `check-the-top-editor-is-the-record` — 15 legs, 15 RED ALONE.
+
+The vocabulary in `hubly_freeform.ts` grew by exactly three closed-value properties
+(`text-decoration`, `letter-spacing`, `text-transform`) to give Underline, Spacing and Effects
+somewhere to write. Nothing else moved.
+
+### OPEN — `styleEdit` drops the node address, so an unlabelled element cannot be styled
+
+**`applyFreeformStyle` accepts a `NodeAddress`** for exactly this case (the comment there says so:
+*"A service card is a `<div>` with no stamp of its own"*), fingerprint-checks it against the stored
+page, and writes through the same merge as a labelled edit. **The edge handler never forwards it.**
+`supabase/functions/hubly-conversation/index.ts:2060` destructures `{ label, on, style }` and rebuilds
+the edit from those three — `address` is dropped on the floor.
+
+**The capability is built and the door is missing** — the exact shape CLAUDE.md says to look for
+before treating an area as greenfield.
+
+**What it costs today:** any element without a `data-hc` stamp cannot be styled from either surface.
+The concrete one is the service card's **Book button** (`<a data-hubly-runtime="card-book">`, no
+`data-hc`), which is why the approved design's **Button Style** control is not in the shipped band —
+rather than render a dropdown that would answer *"I couldn't tell which part of the page that was"*
+on every use. Same for styling the card wrapper itself.
+
+**The smallest safe change** is to pass `address: e.address ?? null` through that one handler and let
+the client send `hc.selection.node`, which it already holds. **Not done this round** because it widens
+what an owner can write to the stored page and wants its own red-proofed check rather than riding in
+on a UI change. Recorded here so it is a known missing line, not a mystery.
+
+### Deliberately NOT built, and why
+- **Button Text as an editable field.** The card's CTA text is *generated* (`Book ${service}`,
+  `hubly_page_runtime.ts:442`), so it follows the service name. A box offering to edit it independently
+  would be a field with no record behind it — a fact the owner states that nothing stores.
+- **Crop / alt text on images.** `Replace` reuses the canvas's existing picker through one message;
+  crop and alt text have no write path today and would have been controls that do nothing.

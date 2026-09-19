@@ -4092,3 +4092,55 @@ list of readers mechanically, because the list I produced by hand was short by s
 **And the fix is structural, not vigilance:** ask a field that *means the answer*, hand the consumer a
 **verdict rather than the ingredients**, and test the absent case **explicitly** (`=== true`), never
 through the accident of a `!`. A tri-state question answered by `!x` has already lost the third state.
+
+## Lesson 105
+
+**A LEG THAT DRIVES THROUGH A GESTURE THE PRODUCT REFUSES IS ASSERTING ABOUT THE GESTURE, NOT ABOUT
+THE CODE IT NAMES.**
+
+`check-the-top-editor-is-the-record` leg 2 — "the grid holding two cards is not a card" — asserted
+that clicking the `.cards` container reports no service. It passed. Its break (make the walk resolve
+a multi-card container to the first card) scored **NOT RED**, and that is the only reason anyone
+looked.
+
+The click never reached the reader. The canvas's selection handler requires a `[data-hc]`/`[data-node]`
+ancestor and refuses non-leaf nodes, both **before** `hcServiceCardOf` is consulted. So `grid` was the
+*clear-selection* message whatever the card reader did, and the leg was green about the leaf-only rule
+while claiming to be green about the walk's stopping condition.
+
+**The tell is the break, and nothing else.** The leg's own output looked right, its name described a
+real rule, and the rule it named is genuinely implemented. A check can be green, well-named, and about
+a completely different function than its title says — and the only instrument that finds it is a break
+aimed at the function the title names.
+
+**The fix is to ask the reader directly.** Leg 2 now calls `window.__hcTestServiceCardOf(grid)` through
+a read-only seam, and its break is red alone. Where a rule lives *below* a gate the product applies
+first, a check must reach past the gate or it is measuring the gate. This is the same shape as
+**L98** (a break that turns no leg red is a finding about the leg) pointed at reachability rather than
+at coupling: **"my break did not go red" is never "my code is fine"; it is always "my leg is not about
+what I think it is".**
+
+## Lesson 106
+
+**AN INITIAL VALUE THAT IS ALSO A VALID ANSWER DESTROYS THE THIRD STATE BEFORE ANY READER RUNS.**
+
+`var hcManage = { services: [], ... }` — and `[]` is exactly what "this owner has no services" looks
+like. Every reader of `hcManage.services` was therefore structurally unable to tell **"we have not
+looked yet"** from **"we looked and he has none"**, and those two produce opposite sentences: *"reading
+your services…"* versus *"your page shows a service your record does not have."*
+
+The Services panel never noticed, because it **always reads before it renders** — the unread state
+exists for zero frames there. The contextual editor renders the instant a card is clicked, which is
+before any read, so it met the state immediately and would have shipped Lesson 86's exact defect
+(**our bookkeeping reported as his missing data**) through a brand-new door.
+
+**This is L86 relocated from the reader to the declaration.** Every previous instance was a *query*
+that could not distinguish absent from empty. This one is an *initialiser* that pre-answered the
+question — the ambiguity was baked in at `var`, and no amount of care in the reader could recover it.
+
+**So: when a field can legitimately be empty, its "not yet loaded" state needs its own flag, set only
+by a read that actually came back** (`hcManage.read`, set in the success branch, left false on a read
+failure so a dead network call can never be rendered as an empty record). And the general rule:
+**initialise to a value that is NOT a valid answer** — `null`, `undefined`, or a companion flag —
+whenever a reader will run before the loader does. A default that is indistinguishable from a real
+answer is a lie the code tells itself at startup.

@@ -406,6 +406,21 @@ const STYLE_VOCAB: Record<string, (v: string) => string | null> = {
   "--hubly-type-scale":  (v) => ["0.8", "0.9", "1", "1.1", "1.25", "1.5"].includes(v.trim()) ? v.trim() : null,
   "--hubly-space-scale": (v) => ["0.8", "0.9", "1", "1.15", "1.3"].includes(v.trim()) ? v.trim() : null,
   "--hubly-radius-scale":(v) => ["0", "0.5", "1", "1.6"].includes(v.trim()) ? v.trim() : null,
+  // ── ADDED FOR THE CONTEXTUAL TOP EDITOR, 2026-09-19 ──────────────────────────────────
+  // Three properties, chosen because three controls in the approved design had nowhere to
+  // write: Underline, Spacing and Effects. Same closed-vocabulary rule as everything above —
+  // each one enumerates the values it accepts and returns null for anything else, so the
+  // editor cannot widen what is storable by sending a new string.
+  //
+  // NOT A SECOND STYLING SYSTEM: these join the same table, are validated by the same
+  // validateStyleDecls, merge through the same mergeInlineStyle, and are written as the same
+  // inline style on the same stamped element. The vocabulary grew by three; nothing else moved.
+  "text-decoration":  (v) => ["none", "underline"].includes(v.trim()) ? v.trim() : null,
+  // A SMALL LADDER, NOT A NUMBER BOX. Letter spacing is the fastest way to make text
+  // unreadable, and "a layout that cannot be read is a defect" — so the owner picks from
+  // steps that cannot collapse or shred a line, the same reasoning as the type-scale knob.
+  "letter-spacing":   (v) => ["normal", "0.02em", "0.06em", "0.12em"].includes(v.trim()) ? v.trim() : null,
+  "text-transform":   (v) => ["none", "uppercase", "lowercase", "capitalize"].includes(v.trim()) ? v.trim() : null,
   // Image fit, for the image toolbar.
   "object-fit":       (v) => ["cover", "contain"].includes(v.trim()) ? v.trim() : null,
   "aspect-ratio":     (v) => ["16/9", "16/10", "4/3", "1/1", "auto"].includes(v.trim().replace(/\s/g, "")) ? v.trim().replace(/\s/g, "") : null,

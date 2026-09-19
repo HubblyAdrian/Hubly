@@ -1326,6 +1326,103 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   font-family:ui-monospace,'SF Mono',Menlo,monospace;flex-shrink:0;
 }
 #hcAddressPill{display:inline-flex;align-items:center;gap:8px;min-width:0;overflow:hidden}
+
+/* ══ THE CONTEXTUAL TOP EDITOR ═══════════════════════════════════════════════════════════
+ *
+ * IT SITS ABOVE THE PAGE, NOT ON IT. The floating bar it stands beside still exists and is
+ * still what a click opens on the canvas; what changed is that the fields an owner actually
+ * types into are up here, where they cover nothing. The bar over the element could not show
+ * six labelled fields without hiding the card it was editing — that is the whole reason this
+ * surface exists, and it is why this one is a BAND, in flow, that the canvas shrinks under.
+ *
+ * NOT A PANEL AND NOT A MODAL. It appears with a selection and leaves with it, it never
+ * scrolls the canvas away, and it holds nothing the owner has to dismiss to see their page.
+ */
+.hc-ctx{
+  flex-shrink:0;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#fbfaf8,#f6f4f0);
+  font-family:inherit;
+}
+.hc-ctx[hidden]{display:none!important}
+.hc-ctx-hd{display:flex;align-items:center;gap:10px;padding:9px 14px 7px}
+.hc-ctx-ttl{display:flex;align-items:center;gap:9px;min-width:0}
+.hc-ctx-ico{width:26px;height:26px;border-radius:7px;background:var(--brand,#D9632D);color:#fff;
+  display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.hc-ctx-ttl b{display:block;font-size:13px;color:var(--ink);font-weight:650;line-height:1.25}
+.hc-ctx-ttl i{display:block;font-size:11px;color:var(--ink-3);font-style:normal;line-height:1.25}
+.hc-ctx-nav{margin-left:auto;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.hc-ctx-nav button{border:1px solid var(--line);background:#fff;border-radius:8px;
+  font:inherit;font-size:12px;color:var(--ink-2);padding:5px 10px;cursor:pointer;white-space:nowrap}
+.hc-ctx-nav button:hover:not(:disabled){border-color:var(--brand-600,#D9632D);color:var(--ink)}
+.hc-ctx-nav button:disabled{opacity:.42;cursor:default}
+.hc-ctx-del{color:#b23!important}
+.hc-ctx-del:hover:not(:disabled){border-color:#b23!important;background:#fff5f5}
+.hc-ctx-done{background:var(--ink,#1c1610)!important;color:#fff!important;border-color:var(--ink,#1c1610)!important;font-weight:600}
+.hc-ctx-done:hover{opacity:.88}
+
+/* THE FIELD ROW — wraps rather than clips. The editor is used at pane widths we do not
+ * control (the chat keeps its width; this band gets what is left), so a row that laid its
+ * fields out in one line would push the last of them off the edge at the narrow end. That
+ * is the squeeze the column-header probe was written for, arriving in a new place. */
+.hc-ctx-body{display:flex;flex-wrap:wrap;gap:9px;padding:0 14px 10px;align-items:flex-end}
+.hc-ctx-f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.hc-ctx-f>label{font-size:10.5px;color:var(--ink-3);font-weight:600;letter-spacing:.02em}
+.hc-ctx-in{border:1px solid var(--line);border-radius:8px;background:#fff;font:inherit;font-size:12.5px;
+  color:var(--ink);padding:7px 9px;min-width:0;width:100%}
+.hc-ctx-in:focus{outline:none;border-color:var(--brand,#D9632D);box-shadow:0 0 0 3px rgba(217,99,45,.14)}
+textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
+.hc-ctx-f-name{flex:1 1 190px;max-width:260px}
+.hc-ctx-f-price{flex:0 0 118px}
+/* WIDE ENOUGH FOR ITS OWN WORDS. "How people get it…" was clipped to "How people g…" in
+ * the closed state, so the one control whose blank is a MEANINGFUL state could not be read
+ * while it was in it. */
+.hc-ctx-f-sale{flex:0 0 172px}
+.hc-ctx-f-desc{flex:2 1 280px}
+.hc-ctx-f-img{flex:0 0 auto}
+.hc-ctx-img-row{display:flex;align-items:center;gap:7px}
+.hc-ctx-thumb{width:54px;height:38px;border-radius:7px;object-fit:cover;border:1px solid var(--line);background:var(--panel-2,#f2efea);flex-shrink:0}
+.hc-ctx-mini{border:1px solid var(--line);background:#fff;border-radius:8px;font:inherit;font-size:12px;
+  color:var(--ink-2);padding:7px 10px;cursor:pointer;white-space:nowrap}
+.hc-ctx-mini:hover:not(:disabled){border-color:var(--brand-600,#D9632D);color:var(--ink)}
+.hc-ctx-mini:disabled{opacity:.45;cursor:default}
+.hc-ctx-chk{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);padding-bottom:8px;white-space:nowrap}
+
+/* THE FORMATTING ROW — its own band under the fields, as in the approved design. */
+.hc-ctx-fmt{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 14px;
+  border-top:1px solid var(--line);background:rgba(255,255,255,.55)}
+/* A LABEL AND ITS CONTROL WRAP TOGETHER OR NOT AT ALL, and so do the three alignment
+ * buttons. Measured, not guessed: at 1440 the row put "Effects" on one line and its
+ * dropdown on the next, and at 1100 it split the alignment trio across two rows — two
+ * controls that read as broken because a flex container is free to break between any two
+ * children. Each group is its own nowrap flex item, so the row still reflows at every
+ * width we support and never separates a control from the word that names it. */
+.hc-ctx-grp{display:inline-flex;align-items:center;gap:6px;flex-wrap:nowrap}
+.hc-ctx-fmt label{font-size:10.5px;color:var(--ink-3);font-weight:600;margin-right:1px}
+.hc-ctx-fmt select,.hc-ctx-fmt .hc-ctx-b{border:1px solid var(--line);background:#fff;border-radius:8px;
+  font:inherit;font-size:12px;color:var(--ink-2);padding:6px 8px;cursor:pointer}
+.hc-ctx-b{min-width:32px;display:inline-flex;align-items:center;justify-content:center}
+.hc-ctx-b:hover{border-color:var(--brand-600,#D9632D);color:var(--ink)}
+.hc-ctx-b.is-on{background:var(--ink,#1c1610);color:#fff;border-color:var(--ink,#1c1610)}
+.hc-ctx-b-b{font-weight:800}.hc-ctx-b-i{font-style:italic}.hc-ctx-b-u{text-decoration:underline}
+.hc-ctx-sep{width:1px;height:20px;background:var(--line);margin:0 3px}
+.hc-ctx-sw{width:15px;height:15px;border-radius:50%;border:1px solid rgba(0,0,0,.18);flex-shrink:0}
+.hc-ctx-colour{display:inline-flex;align-items:center;gap:6px}
+
+/* THE STATUS LINE — one line, no banner. Prohibition 6 wants the success SAID; the design
+ * wants it subtle. It is a sentence that appears where the change was made and fades; it is
+ * never a standing green badge, and it is never shown before the save answered. */
+.hc-ctx-status{padding:0 14px 8px;font-size:11.5px;color:var(--ink-3);min-height:0}
+.hc-ctx-status:empty{display:none}
+.hc-ctx-status.is-ok{color:#1b7f3b}
+.hc-ctx-status.is-bad{color:#b23}
+.hc-ctx-note{flex:1 1 100%;font-size:11.5px;color:#8a6d3b;background:#fffaf0;border:1px solid #f0e2c8;
+  border-radius:8px;padding:7px 9px}
+@media (max-width:760px){
+  .hc-ctx-hd{padding:8px 11px 6px}
+  .hc-ctx-body{padding:0 11px 9px}
+  .hc-ctx-nav button{padding:5px 8px;font-size:11.5px}
+}
+
 .hc-canvas-url .hc-live-dot{width:6px;height:6px;border-radius:50%;background:#3ecf7a;box-shadow:0 0 6px rgba(62,207,122,.7);flex-shrink:0}
 /* Reserved (unclaimed): the address is NOT a live link yet, so it says so — a
    muted dot and a lock, and it doesn't navigate. It becomes the green live link
@@ -2465,11 +2562,37 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         // is UNVERIFIED and Adrian's to check. If it does not, the shorter form that keeps the noun
         // first is "Services & details".
         '<button type="button" id="hcManageBtn" title="Your services and their prices, your hours, and how customers reach you">Services, hours &amp; contact</button>' +
-        // THE DOOR FOR THE DESIGN KNOBS. It lives here, beside Edit details, because the
-        // canvas bar is the one claimed-owner surface that survives phone width — the rail
-        // is display:none at <=760px (see OPEN_FINDINGS #13). A control whose only entry
-        // point disappears on a phone is the failure we just finished writing up.
-        '<button type="button" id="hcDesignBtn" title="Change how your page looks — text size, spacing, corners">&#9670; Design</button>' +
+        // ══ THE DESIGN BUTTON WAS HERE AND IS REMOVED — RULED BY ADRIAN, 2026-09-19 ═══════════
+        //
+        // Not deleted as dead weight: it worked, and its door-on-a-phone argument (the rail is
+        // display:none at <=760px) was right. It is removed because a GENERIC design button is
+        // the wrong shape for this editor. Design belongs to the thing you are changing — the
+        // formatting row under a selected heading, the style control on a selected button —
+        // not to a panel that asks the owner to find the knob for what they were already
+        // pointing at. The knobs themselves are NOT deleted: hcOpenDesign and the whole
+        // designEdit path are untouched and still reachable by asking in the chat, so this
+        // removes a door, not a capability. If the contextual surface turns out not to cover
+        // a knob someone needs, the button is five lines and comes back.
+      '</div>' +
+      // THE CONTEXTUAL EDITOR, IN FLOW, BETWEEN THE TOOLBAR AND THE PAGE. Rendered empty and
+      // hidden: it has no content until something is selected, and an empty band that still
+      // takes up height would be the interface changing shape for no reason (prohibition 4).
+      '<div class="hc-ctx" id="hcCtx" hidden>' +
+        '<div class="hc-ctx-hd">' +
+          '<div class="hc-ctx-ttl">' +
+            '<span class="hc-ctx-ico" id="hcCtxIco">&#9635;</span>' +
+            '<span><b id="hcCtxWhat"></b><i id="hcCtxSub"></i></span>' +
+          '</div>' +
+          '<div class="hc-ctx-nav">' +
+            '<button type="button" id="hcCtxPrev" title="Select the element before this one">&#8249; Previous</button>' +
+            '<button type="button" id="hcCtxNext" title="Select the next element on the page">Next &#8250;</button>' +
+            '<button type="button" id="hcCtxDel" class="hc-ctx-del" title="Remove this from the page">&#10005;</button>' +
+            '<button type="button" id="hcCtxDone" class="hc-ctx-done" title="Finish editing this element">Done</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="hc-ctx-body" id="hcCtxBody"></div>' +
+        '<div class="hc-ctx-fmt" id="hcCtxFmt" hidden></div>' +
+        '<div class="hc-ctx-status" id="hcCtxStatus" aria-live="polite"></div>' +
       '</div>' +
       '<div class="hc-canvas-frame-wrap" id="hcCanvasFrameWrap">' +
         '<div class="hc-canvas-loading" id="hcCanvasLoading"><span class="hc-live-dot"></span>&nbsp;Loading your site…</div>' +
@@ -2553,6 +2676,9 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     }
     var vst = document.getElementById('hcVisitBtn');
     if(vst) vst.addEventListener('click', function(){ try{ window.open(liveUrl, '_blank', 'noopener'); }catch(e){} });
+    // The contextual band is rendered with this bar and wired with it, so its buttons exist
+    // for exactly as long as the canvas they act on.
+    try{ hcCtxWire(); hcRenderCtx(); }catch(e){}
   }
 
   // THE PREVIEW IS A REAL DEVICE, SCALED TO FIT.
@@ -2904,10 +3030,382 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   /* Clearing the chip clears the selection on the page, because they are one thing.
      tellCanvas is false only when the canvas is the one that told US (it deselected,
      or it reloaded and the element is gone) — echoing back would be a loop. */
+  /* THE ONE WAY TO SPEAK TO THE CANVAS. Three copies of this frame lookup + origin dance
+   * already existed (hcClearSelection, hcFlashAtControl, hcShowMeWhere) and a fourth was
+   * about to be written for the contextual editor. Same shape, same live-frame selector,
+   * same swallow-on-failure — the copies are left where they are rather than churned, but
+   * nothing new gets its own. */
+  function hcPostToCanvas(msg){
+    try{
+      var origin = new URL(hc.draftBusiness.url).origin;
+      var frame = document.querySelector('#hcCanvasFrameWrap iframe.is-live') || document.getElementById('hcCanvasFrameA');
+      if(frame && frame.contentWindow){ frame.contentWindow.postMessage(msg, origin); return true; }
+    }catch(e){}
+    return false;
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════════════════
+   * THE CONTEXTUAL TOP EDITOR
+   * ══════════════════════════════════════════════════════════════════════════════════════
+   *
+   * SELECT → EDIT THE STRUCTURED VALUE → SEE THE LIVE RESULT. One band above the page that
+   * changes with what is selected, so the owner edits a service's real fields instead of
+   * retyping its rendered text.
+   *
+   * IT ADDS NO WRITER. Every control here calls something that already existed and is already
+   * exercised by another surface:
+   *   · service fields  → hcRecordEdit({kind:'service', op:'edit'})  — the panel's writer
+   *   · text formatting → hcStyleEdit({label, on, style})            — the floating bar's writer
+   *   · delete          → hcNodeDelete(node)                         — the bar's ✕
+   *   · image           → the canvas's own picker, opened by message
+   * That is the point: two interfaces over one system. A field here and the same field in
+   * "Services, hours & contact" write the same row through the same call, so they cannot
+   * drift, and Undo sees one history because there is only one.
+   *
+   * IT INVENTS NO DATA. The service shown is the one the page STAMPED (data-hubly-service),
+   * and its values come from get_business_services — the union reader, both stores. If the
+   * record has not been read yet it says so; if the page names a service the record does not
+   * have, it says THAT, and the fields are disabled rather than offered as empty boxes that
+   * would write a row nobody asked for. An empty reader has told you about itself. */
+  var hcCtx = { busy: false, svcKey: null, stepping: false };
+
+  function hcCtxSay(msg, ok){
+    var s = document.getElementById('hcCtxStatus'); if(!s) return;
+    s.textContent = msg || '';
+    s.className = 'hc-ctx-status' + (msg ? (ok ? ' is-ok' : ' is-bad') : '');
+  }
+  /* A SAVE THAT LANDED IS SAID, AND THEN GETS OUT OF THE WAY (prohibition 6 + the design's
+   * "subtle autosave state"). Never a standing badge: a "Saved" that is always on screen is
+   * green by default, and it would still be showing after a save that failed. */
+  function hcCtxSaved(word){
+    hcCtxSay(word || 'Saved', true);
+    clearTimeout(hcCtx._t);
+    hcCtx._t = setTimeout(function(){
+      var s = document.getElementById('hcCtxStatus');
+      if(s && s.classList.contains('is-ok')) hcCtxSay('', true);
+    }, 2400);
+  }
+
+  /* The record row behind the selected card, or null. Matched on the STAMPED name, which is
+   * the same key the price writer and the anchor pass use — not on the chip text. */
+  function hcCtxServiceRow(name){
+    if(!hcManage || hcManage.read !== true) return undefined;   // NOT LOOKED YET — say so, ask nothing
+    var list = hcManage.services;
+    if(!Array.isArray(list)) return undefined;
+    for(var i = 0; i < list.length; i++){
+      if(String(list[i].name || '') === String(name)) return list[i];
+    }
+    return null;                                       // read, and genuinely not there
+  }
+
+  function hcCtxFieldHtml(cls, label, inner){
+    return '<div class="hc-ctx-f ' + cls + '"><label>' + hcEsc(label) + '</label>' + inner + '</div>';
+  }
+
+  /* ── SERVICE CARD ────────────────────────────────────────────────────────────────────── */
+  function hcCtxRenderService(body, svcName){
+    var row = hcCtxServiceRow(svcName);
+    if(row === undefined){
+      // NOT AN EMPTY STATE. We have not looked yet, and saying "no services" here would be
+      // our bookkeeping reported as his missing data (Lesson 86). Read, then re-render.
+      body.innerHTML = '<div class="hc-ctx-note">Reading your services…</div>';
+      if(!hcCtx._reading){
+        hcCtx._reading = true;
+        hcReadRecord().then(function(){ hcCtx._reading = false; hcRenderCtx(); })
+                      .catch(function(){ hcCtx._reading = false;
+                        var b = document.getElementById('hcCtxBody');
+                        if(b) b.innerHTML = '<div class="hc-ctx-note">I couldn’t read your services just now — that’s a read failure, not an empty list. Try selecting it again.</div>';
+                      });
+      }
+      return;
+    }
+    if(row === null){
+      // The page names a service the record does not hold. That is a real divergence and it
+      // is HIS to know about — not something to paper over with blank boxes that would write
+      // a row he never asked for.
+      body.innerHTML = '<div class="hc-ctx-note">Your page shows <b>' + hcEsc(svcName) +
+        '</b>, but there’s no service by that name in your record, so I can’t edit its details from here. ' +
+        'Open <b>Services, hours &amp; contact</b> to add it, or tell me in the chat and I’ll sort it out.</div>';
+      return;
+    }
+
+    var conflict = row.conflicts === true
+      ? '<div class="hc-ctx-note">Two different prices are on file for this one — saving here sets both.</div>' : '';
+
+    body.innerHTML =
+      hcCtxFieldHtml('hc-ctx-f-name', 'Service Name',
+        '<input class="hc-ctx-in" id="hcCtxSvcName" value="' + hcEscA(row.name) + '" placeholder="Service name">') +
+      hcCtxFieldHtml('hc-ctx-f-price', 'Price',
+        '<input class="hc-ctx-in" id="hcCtxSvcPrice" inputmode="decimal" value="' + hcEscA(row.price != null ? row.price : '') + '" placeholder="e.g. 95">') +
+      '<label class="hc-ctx-chk" title="Unticked, the page shows &quot;Quote at booking&quot; instead of the number. The service can still be booked or quoted.">' +
+        '<input type="checkbox" id="hcCtxSvcShow"' + (row.showPrice === false ? '' : ' checked') + '> Show price</label>' +
+      hcCtxFieldHtml('hc-ctx-f-desc', 'Description',
+        '<textarea class="hc-ctx-in" id="hcCtxSvcDesc" rows="2" placeholder="What this includes">' + hcEsc(row.description || '') + '</textarea>') +
+      hcCtxFieldHtml('hc-ctx-f-img', 'Image',
+        '<div class="hc-ctx-img-row"><button type="button" class="hc-ctx-mini" id="hcCtxSvcImg">Replace</button></div>') +
+      // HOW PEOPLE GET IT — the same three states and the same words as the panel and the `+`
+      // flow, because OFFER_TYPE_QUESTIONS.sale is the one place that question is worded.
+      // A BLANK STAYS BLANK: "not declared" is a real state and selecting nothing writes nothing.
+      hcCtxFieldHtml('hc-ctx-f-sale', 'How people get it',
+        '<select class="hc-ctx-in" id="hcCtxSvcSale">' +
+          '<option value=""' + (row.sale ? '' : ' selected') + '>How people get it…</option>' +
+          '<option value="bookable"' + (row.sale === 'bookable' ? ' selected' : '') + '>They book it</option>' +
+          '<option value="quoted"' + (row.sale === 'quoted' ? ' selected' : '') + '>They ask for a price</option>' +
+        '</select>') +
+      '<button type="button" class="hc-ctx-mini" id="hcCtxSvcSave">Save</button>' +
+      conflict;
+
+    var prevName = row.name;
+    async function saveService(){
+      if(hcCtx.busy) return;
+      var nameEl = document.getElementById('hcCtxSvcName');
+      var priceEl = document.getElementById('hcCtxSvcPrice');
+      var descEl = document.getElementById('hcCtxSvcDesc');
+      var showEl = document.getElementById('hcCtxSvcShow');
+      var saleEl = document.getElementById('hcCtxSvcSale');
+      if(!nameEl || !priceEl) return;
+      var nm = nameEl.value.trim();
+      if(!nm){ hcCtxSay('A service needs a name — nothing saved.', false); return; }
+      // THE ONE PARSER. hcParsePriceInput delegates to window.HUBLY_PRICE, the same reader the
+      // canvas uses on an inline price edit, so a value this box accepts is a value that box
+      // accepts. Blank is a real value (no price); unreadable is refused with a sentence.
+      var raw = priceEl.value.trim();
+      var priceEdit = null;
+      if(raw){
+        priceEdit = hcParsePriceInput(raw);
+        if(priceEdit === null){
+          hcCtxSay('I couldn’t read "' + raw.slice(0, 18) + '" as a price — try a number like 95 or 95.50. Nothing saved.', false);
+          return;
+        }
+      }
+      hcCtx.busy = true; hcCtxSay('Saving…', true);
+      var payload = { kind:'service', op:'edit', id: null, prevName: prevName, name: nm,
+                      price: priceEdit, description: descEl ? descEl.value.trim() : '',
+                      showPrice: showEl ? !!showEl.checked : true };
+      // A BLANK STAYS BLANK. `sale` is only sent when the owner picked one; an untouched
+      // control must not write "bookable" onto a service nobody declared.
+      var saleVal = saleEl ? saleEl.value : '';
+      if(saleVal === 'bookable' || saleVal === 'quoted') payload.sale = saleVal;
+      var r = null;
+      try{ r = await hcRecordEdit(payload); }catch(e){ r = null; }
+      hcCtx.busy = false;
+      if(r && r.ok){
+        try{ hcMarkUndoAvailable('that change'); }catch(e){}
+        // The page and the record changed together; show the page that changed.
+        try{ hcRefreshCanvasFrame(); }catch(e){}
+        try{ await hcReadRecord(); }catch(e){}
+        // Follow the rename, so the band stays on the card the owner is editing.
+        if(hc.selection && hc.selection.card) hc.selection.card.service = nm;
+        hcRenderCtx();
+        // ══ SAID AFTER THE RE-RENDER, NOT BEFORE IT — PROHIBITION 6 ═════════════════════════
+        //
+        // This was above the re-render and the confirmation never reached the screen:
+        // hcRenderCtx clears the status line (it has to — a stale message from the last
+        // element must not sit over a new one), so a "Saved" set first was wiped a moment
+        // later by the very refresh that proved the save worked. Measured, not reasoned:
+        // the save's own drive returned statusAfterSave:"" with the row correctly written.
+        //
+        // That is the silent success this repo treats as equal in severity to a false green —
+        // the owner types a new price, the record changes, and nothing on screen says so.
+        hcCtxSaved('Saved');
+        try{ if(document.getElementById('hcMngOv')) hcRenderManageBody(); }catch(e){}
+      } else {
+        hcCtxSay((r && r.reply) || 'That didn’t save — nothing changed.', false);
+      }
+    }
+    var sv = document.getElementById('hcCtxSvcSave');
+    if(sv) sv.addEventListener('click', saveService);
+    // ENTER SAVES, in the single-line fields only — a textarea's Enter is a new line.
+    ['hcCtxSvcName','hcCtxSvcPrice'].forEach(function(id){
+      var el = document.getElementById(id); if(!el) return;
+      el.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); saveService(); } });
+    });
+    var img = document.getElementById('hcCtxSvcImg');
+    if(img) img.addEventListener('click', function(){
+      hcCtxSay('Opening your picture chooser…', true);
+      hcPostToCanvas({ type:'hcCtxReplaceImage', service: svcName });
+    });
+    // Put the caret in the field they actually clicked on the page.
+    var want = hc.selection && hc.selection.card && hc.selection.card.field;
+    var focusId = want === 'price' ? 'hcCtxSvcPrice' : want === 'description' ? 'hcCtxSvcDesc'
+                : want === 'name' ? 'hcCtxSvcName' : null;
+    if(focusId){ var f = document.getElementById(focusId); if(f){ try{ f.focus(); f.select && f.select(); }catch(e){} } }
+  }
+
+  /* ── THE FORMATTING ROW ──────────────────────────────────────────────────────────────── */
+  var HC_CTX_FONTS = [['sans','Sans'],['serif','Serif'],['rounded','Rounded'],['condensed','Condensed'],
+                      ['humanist','Humanist'],['slab','Slab'],['mono','Mono']];
+  var HC_CTX_SIZES = [12,14,16,18,20,24,28,32,40,48,56,64,72];
+
+  function hcCtxRenderFmt(){
+    var fmt = document.getElementById('hcCtxFmt'); if(!fmt) return;
+    var sel = hc.selection;
+    // STYLE IS WRITTEN THROUGH THE LABEL. An element with no data-hc has no address the
+    // styleEdit writer accepts today (applyFreeformStyle takes a node address, but the edge
+    // handler does not forward one — see OPEN_FINDINGS). Rather than paint a row of controls
+    // that would each answer "I couldn't tell which part of the page that was", the row is
+    // not rendered at all. A dead control is worse than no control.
+    if(!sel || !sel.label || (sel.kind !== 'text' && sel.kind !== 'button')){ fmt.hidden = true; fmt.innerHTML = ''; return; }
+    var st = sel.style || {};
+    fmt.hidden = false;
+    fmt.innerHTML =
+      '<span class="hc-ctx-grp"><label>Font</label><select id="hcCtxFont">' +
+        '<option value=""' + (st.fontFamily ? '' : ' selected') + '>—</option>' +
+        HC_CTX_FONTS.map(function(f){
+          return '<option value="' + f[0] + '"' + (st.fontFamily === f[0] ? ' selected' : '') + '>' + f[1] + '</option>';
+        }).join('') + '</select></span>' +
+      '<span class="hc-ctx-grp"><label>Size</label><select id="hcCtxSize">' +
+        '<option value=""' + (st.fontSize ? '' : ' selected') + '>—</option>' +
+        HC_CTX_SIZES.map(function(n){
+          return '<option value="' + n + '"' + (st.fontSize === n ? ' selected' : '') + '>' + n + '</option>';
+        }).join('') + '</select></span>' +
+      '<span class="hc-ctx-sep"></span>' +
+      '<span class="hc-ctx-grp">' +
+      '<button type="button" class="hc-ctx-b hc-ctx-b-b' + (Number(st.fontWeight) >= 600 ? ' is-on' : '') + '" id="hcCtxB" title="Bold">B</button>' +
+      '<button type="button" class="hc-ctx-b hc-ctx-b-i' + (st.italic ? ' is-on' : '') + '" id="hcCtxI" title="Italic">I</button>' +
+      '<button type="button" class="hc-ctx-b hc-ctx-b-u' + (st.underline ? ' is-on' : '') + '" id="hcCtxU" title="Underline">U</button></span>' +
+      '<span class="hc-ctx-sep"></span>' +
+      // ONE SWATCH, NOT TWO. This drew a coloured dot beside a colour input that shows the
+      // same colour — the owner reads that as two controls and has to find out which one
+      // acts. The input IS the swatch.
+      '<span class="hc-ctx-grp"><label>Colour</label>' +
+        '<input type="color" id="hcCtxColour" value="' + hcEscA(st.color || '#000000') + '" title="Text colour" style="width:34px;height:28px;padding:0;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer"></span>' +
+      '<span class="hc-ctx-sep"></span>' +
+      '<span class="hc-ctx-grp">' + ['left','center','right'].map(function(a){
+        return '<button type="button" class="hc-ctx-b' + (st.align === a ? ' is-on' : '') + '" data-hc-align="' + a + '" title="Align ' + a + '">' +
+               (a === 'left' ? '≡‹' : a === 'center' ? '≡' : '≡›') + '</button>';
+      }).join('') + '</span>' +
+      '<span class="hc-ctx-sep"></span>' +
+      '<span class="hc-ctx-grp"><label>Spacing</label><select id="hcCtxSpacing">' +
+        ['normal','0.02em','0.06em','0.12em'].map(function(v){
+          return '<option value="' + v + '"' + (String(st.letterSpacing) === v ? ' selected' : '') + '>' +
+                 (v === 'normal' ? 'Normal' : v) + '</option>';
+        }).join('') + '</select></span>' +
+      '<span class="hc-ctx-grp"><label>Effects</label><select id="hcCtxTransform">' +
+        [['none','None'],['uppercase','UPPERCASE'],['lowercase','lowercase'],['capitalize','Capitalize']].map(function(t){
+          return '<option value="' + t[0] + '"' + (st.transform === t[0] ? ' selected' : '') + '>' + t[1] + '</option>';
+        }).join('') + '</select></span>';
+
+    function send(style){ hcCtxSendStyle(style); }
+    var fo = document.getElementById('hcCtxFont');
+    if(fo) fo.addEventListener('change', function(){ if(this.value) send({ 'font-family': this.value }); });
+    var sz = document.getElementById('hcCtxSize');
+    if(sz) sz.addEventListener('change', function(){ if(this.value) send({ 'font-size': this.value + 'px' }); });
+    var b = document.getElementById('hcCtxB');
+    if(b) b.addEventListener('click', function(){
+      var on = this.classList.toggle('is-on'); send({ 'font-weight': on ? '700' : '400' }); });
+    var it = document.getElementById('hcCtxI');
+    if(it) it.addEventListener('click', function(){
+      var on = this.classList.toggle('is-on'); send({ 'font-style': on ? 'italic' : 'normal' }); });
+    var un = document.getElementById('hcCtxU');
+    if(un) un.addEventListener('click', function(){
+      var on = this.classList.toggle('is-on'); send({ 'text-decoration': on ? 'underline' : 'none' }); });
+    var col = document.getElementById('hcCtxColour');
+    if(col) col.addEventListener('change', function(){ send({ 'color': this.value }); });
+    Array.prototype.forEach.call(fmt.querySelectorAll('[data-hc-align]'), function(el){
+      el.addEventListener('click', function(){
+        Array.prototype.forEach.call(fmt.querySelectorAll('[data-hc-align]'), function(o){ o.classList.remove('is-on'); });
+        this.classList.add('is-on');
+        send({ 'text-align': this.getAttribute('data-hc-align') });
+      });
+    });
+    var sp = document.getElementById('hcCtxSpacing');
+    if(sp) sp.addEventListener('change', function(){ send({ 'letter-spacing': this.value }); });
+    var tr = document.getElementById('hcCtxTransform');
+    if(tr) tr.addEventListener('change', function(){ send({ 'text-transform': this.value }); });
+  }
+
+  /* ONE STYLE WRITER — hcStyleEdit, which the floating bar has used all along, with its queue,
+   * its optimistic-paint reconciliation and its undo mark. This adds a caller, not a path. */
+  async function hcCtxSendStyle(style){
+    var sel = hc.selection;
+    if(!sel || !sel.label){ hcCtxSay('I couldn’t tell which part of the page that was — nothing changed.', false); return; }
+    hcCtxSay('Saving…', true);
+    try{
+      await hcStyleEdit({ label: sel.label, on: sel.on === 'section' ? 'section' : 'element', style: style });
+      hcCtxSaved('Saved');
+    }catch(e){ hcCtxSay('That didn’t save — nothing changed.', false); }
+  }
+
+  /* ── THE BAND ────────────────────────────────────────────────────────────────────────── */
+  function hcRenderCtx(){
+    var band = document.getElementById('hcCtx'); if(!band) return;
+    var body = document.getElementById('hcCtxBody');
+    var what = document.getElementById('hcCtxWhat');
+    var sub  = document.getElementById('hcCtxSub');
+    var sel  = hc.selection;
+    if(!sel || !sel.name){
+      band.hidden = true;
+      if(body) body.innerHTML = '';
+      var f0 = document.getElementById('hcCtxFmt'); if(f0){ f0.hidden = true; f0.innerHTML = ''; }
+      hcCtxSay('', true);
+      return;
+    }
+    band.hidden = false;
+    var isCard = !!(sel.card && sel.card.service);
+    if(what) what.textContent = isCard ? 'Service Card'
+                              : sel.kind === 'text' ? 'Text'
+                              : sel.kind === 'button' ? 'Button'
+                              : sel.kind === 'image' ? 'Image'
+                              : sel.kind === 'section' ? 'Section' : 'Element';
+    if(sub) sub.textContent = isCard ? sel.card.service : (sel.name || '');
+    hcCtxSay('', true);
+
+    if(isCard){ hcCtxRenderService(body, sel.card.service); }
+    else if(sel.kind === 'image'){
+      body.innerHTML = '<div class="hc-ctx-note">This picture is selected. Use <b>Replace</b> on the toolbar beside it to choose another, or tell me in the chat what you want here.</div>';
+    }
+    else if(sel.kind === 'text' || sel.kind === 'button'){
+      // The words themselves are edited ON the page, where the owner clicked — the existing,
+      // proven inline path. Saying so is better than a second text box up here that would be
+      // a second way to write the same words.
+      body.innerHTML = '<div class="hc-ctx-note">Click the text on your page to type in it. Use the controls below to change how it looks.</div>';
+    }
+    else {
+      body.innerHTML = '<div class="hc-ctx-note">Selected: <b>' + hcEsc(sel.name) + '</b>. Use Previous and Next to move between elements, or tell me in the chat what to change here.</div>';
+    }
+    hcCtxRenderFmt();
+    // DELETE IS OFFERED ONLY WHERE IT CAN ACT. hcNodeDelete needs the node address the canvas
+    // sent; without one the button would be a control that does nothing.
+    var del = document.getElementById('hcCtxDel');
+    if(del) del.disabled = !(sel.node);
+  }
+
+  function hcCtxWire(){
+    var prev = document.getElementById('hcCtxPrev');
+    var next = document.getElementById('hcCtxNext');
+    var done = document.getElementById('hcCtxDone');
+    var del  = document.getElementById('hcCtxDel');
+    function step(dir){
+      if(hcCtx.stepping) return;
+      hcCtx.stepping = true;
+      // NO OPTIMISTIC MOVE. The canvas owns the element order; it answers whether it moved,
+      // and "there is nothing after this" is said rather than swallowed.
+      hcPostToCanvas({ type:'hcCtxStep', dir: dir });
+      setTimeout(function(){ hcCtx.stepping = false; }, 350);
+    }
+    if(prev) prev.addEventListener('click', function(){ step('prev'); });
+    if(next) next.addEventListener('click', function(){ step('next'); });
+    if(done) done.addEventListener('click', function(){ hcClearSelection(true); });
+    if(del) del.addEventListener('click', async function(){
+      var sel = hc.selection;
+      if(!sel || !sel.node){ hcCtxSay('I can’t remove that one from here.', false); return; }
+      this.disabled = true;
+      hcCtxSay('Removing…', true);
+      try{
+        await hcNodeDelete(sel.node);
+        hcCtxSaved('Removed');
+        hcClearSelection(true);
+      }catch(e){ hcCtxSay('That didn’t come off the page — nothing changed.', false); }
+      this.disabled = false;
+    });
+  }
+
   function hcClearSelection(tellCanvas){
     if(!hc.selection && !tellCanvas) return;
     hc.selection = null;
     hcRenderSelChip();
+    try{ hcRenderCtx(); }catch(e){}
     if(!tellCanvas) return;
     try{
       var origin = new URL(hc.draftBusiness.url).origin;
@@ -6226,10 +6724,53 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
           kind: typeof data.kind === 'string' ? data.kind : '',
           name: String(data.name).slice(0, 60),
           text: typeof data.text === 'string' ? data.text.slice(0, 160) : '',
+          // ══ CARRY WHAT THE CANVAS SENT — L104, AND I WALKED INTO IT ════════════════════════
+          //
+          // This object is rebuilt FIELD BY FIELD, so a key the canvas adds and this list does
+          // not copy is not "passed through with a null" — it is simply absent, and every
+          // reader of it gets `undefined`. Adding `card` to hcPostSelection and not to this
+          // list is precisely that, and it is what the band's first run did: it opened saying
+          // "Text" over a service card, because `sel.card` was undefined here and the service
+          // branch could never be taken. The payload and this list are two halves of one
+          // shape in two files — the hand-maintained-set disease, arriving by omission.
+          //
+          // Both are VALIDATED, not trusted: they cross a frame boundary, so a string is
+          // length-capped and the style object is rebuilt from known keys rather than spread.
+          card: (data.card && typeof data.card === 'object' && typeof data.card.service === 'string' && data.card.service)
+            ? { service: String(data.card.service).slice(0, 120),
+                field: (['name','price','description','button','image'].indexOf(data.card.field) >= 0) ? data.card.field : null }
+            : null,
+          style: (data.style && typeof data.style === 'object')
+            ? { fontFamily: typeof data.style.fontFamily === 'string' ? data.style.fontFamily : null,
+                fontSize: (typeof data.style.fontSize === 'number' && isFinite(data.style.fontSize)) ? data.style.fontSize : null,
+                fontWeight: typeof data.style.fontWeight === 'string' ? data.style.fontWeight : null,
+                italic: data.style.italic === true,
+                underline: data.style.underline === true,
+                color: (typeof data.style.color === 'string' && /^#[0-9a-f]{3,8}$/i.test(data.style.color)) ? data.style.color : null,
+                align: (['left','center','right'].indexOf(data.style.align) >= 0) ? data.style.align : null,
+                transform: (['none','uppercase','lowercase','capitalize'].indexOf(data.style.transform) >= 0) ? data.style.transform : null,
+                letterSpacing: typeof data.style.letterSpacing === 'string' ? data.style.letterSpacing : 'normal' }
+            : null,
           node: (data.node && typeof data.node === 'object') ? data.node : null
         };
         hcRenderSelChip();
       }
+      // THE CHIP AND THE BAND ARE ONE FACT, so they are set in the same place — the same
+      // argument the canvas makes for the chip and the toolbar. A band showing a different
+      // element than the chip would be two states for one selection.
+      try{ hcRenderCtx(); }catch(e){}
+      return;
+    }
+    // The canvas answering Previous/Next. "There is nothing after this" is a real outcome
+    // and it is SAID — a button that silently does nothing is the defect this file is full
+    // of notes about.
+    if(data.type === 'hcCtxStepDone'){
+      if(!data.moved) hcCtxSay(data.dir === 'prev' ? 'That’s the first thing you can edit on the page.' : 'That’s the last thing you can edit on the page.', false);
+      return;
+    }
+    if(data.type === 'hcCtxReplaceImageDone'){
+      if(!data.opened) hcCtxSay('I couldn’t find a picture on that card to replace.', false);
+      else hcCtxSay('', true);
       return;
     }
     if(data.type === 'hcCanvasScroll'){
@@ -12256,7 +12797,16 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   // the PAGE and is undoable — never just the record. Re-reads on open and after
   // any assistant action so the panel and the chat never disagree.
   var HC_DAYS = [['Mon',1],['Tue',2],['Wed',3],['Thu',4],['Fri',5],['Sat',6],['Sun',0]];
-  var hcManage = { services: [], contact: {}, hours: {}, note: '' };
+  // `read` IS NOT DECORATION — IT IS THE DIFFERENCE BETWEEN TWO SENTENCES (Lesson 86).
+  //
+  // `services: []` alone cannot tell "we have not looked yet" from "we looked and he has
+  // none", and those produce opposite copy: one is "reading your services…", the other is
+  // "your page shows a service your record does not have". The panel never needed the
+  // distinction because it ALWAYS reads before it renders; the contextual band renders the
+  // instant a card is clicked, which is before any read has happened, so it does. Set true
+  // only on a read that actually came back — a read FAILURE leaves it false, so a failed
+  // network call can never be shown to the owner as an empty record.
+  var hcManage = { services: [], contact: {}, hours: {}, note: '', read: false };
   function hcEscA(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
   async function hcReadRecord(){
     var id = hc.draftBusiness && hc.draftBusiness.id; if(!id) return;
@@ -12306,6 +12856,7 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
                  saleFrom: r.sale_from || null,
                  source: r.source, conflicts: r.conflicts === true };
       }) : [];
+      hcManage.read = true;   // answered — and only now is an empty list HIS empty list
     }
     hcManage.contact = (biz && biz.data) || {};
     hcManage.note = (biz && biz.data && biz.data.hours_note) || '';

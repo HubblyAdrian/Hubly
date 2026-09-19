@@ -18049,6 +18049,30 @@ window.addEventListener('message', function(ev){
 });
 // Set by wireHcEditingSurface — the only scope that owns the selection.
 var hcClearSelectionFromBuilder = null;
+// Set by wireHcEditingSurface, the same scope and for the same reason as the line above.
+var hcStepSelectionFromBuilder = null;
+var hcReplaceCardImageFromBuilder = null;
+
+// The top contextual editor asking for one of the two operations above. Both answer with a
+// BOOLEAN that is sent back: "there is no next element" and "that card has no picture I can
+// address" are real outcomes the builder has to show, not silences it can treat as success.
+window.addEventListener('message', function(ev){
+  if(ev.source !== window.parent) return;
+  var d = ev.data;
+  if(!d) return;
+  if(d.type === 'hcCtxStep' && (d.dir === 'prev' || d.dir === 'next')){
+    var okStep = false;
+    try{ if(typeof hcStepSelectionFromBuilder === 'function' && hcStepSelectionFromBuilder) okStep = !!hcStepSelectionFromBuilder(d.dir); }catch(e){}
+    try{ window.parent.postMessage({ type:'hcCtxStepDone', dir: d.dir, moved: okStep }, '*'); }catch(e){}
+    return;
+  }
+  if(d.type === 'hcCtxReplaceImage' && typeof d.service === 'string' && d.service){
+    var okImg = false;
+    try{ if(typeof hcReplaceCardImageFromBuilder === 'function' && hcReplaceCardImageFromBuilder) okImg = !!hcReplaceCardImageFromBuilder(d.service); }catch(e){}
+    try{ window.parent.postMessage({ type:'hcCtxReplaceImageDone', service: d.service, opened: okImg }, '*'); }catch(e){}
+    return;
+  }
+});
 
 // ── SHOW ME WHERE — the third door, and the first mechanism for it in the product ──────────
 //
@@ -55882,6 +55906,65 @@ function wireHcEditingSurface(doc, root){
   }
 
   /* What kind of thing is this, for the purpose of "which controls apply". */
+  /* ══ WHICH SERVICE CARD IS THIS, AND WHICH OF ITS FIELDS? ════════════════════════════════
+   *
+   * NOT A NEW CLASSIFIER AND NOT A NEW DATA MODEL. The card's fields were stamped at
+   * generation — `data-hubly-service` on the name, `data-hubly-price` on the price,
+   * `data-hubly-desc` on the description, `data-hubly-runtime="card-book"` on the button —
+   * which is the anchor discipline CLAUDE.md already requires. This reads those stamps; it
+   * does not re-recognise layout, and it invents nothing.
+   *
+   * THE CARD IS THE NEAREST ANCESTOR HOLDING EXACTLY ONE NAME STAMP. One is a card; two or
+   * more means we have climbed out of the card into the grid that holds them, and the walk
+   * stops rather than reporting the grid as a card. That is the whole rule, and it is why
+   * this needs no class names — `.card` and `.card-body` are the model's words this build and
+   * something else the next, and matching them is the shape-matching the anchors exist to
+   * replace. */
+  /* A computed font stack back to the KEY the writer accepts, or null for "not one of ours".
+   * Matched on the first family only: the browser returns the whole stack, normalises quotes
+   * inconsistently across engines, and the first family is what actually distinguishes the
+   * seven. Null is a real answer and the dropdown shows a blank rather than naming a face the
+   * page is not using — the same rule the sale control follows for "not declared". */
+  function hcFontKeyOf(stack){
+    try{
+      var first = String(stack || '').split(',')[0].replace(/["']/g, '').trim().toLowerCase();
+      if(!first) return null;
+      for(var k in HC_FONT_STACKS){
+        if(!Object.prototype.hasOwnProperty.call(HC_FONT_STACKS, k)) continue;
+        var mine = String(HC_FONT_STACKS[k]).split(',')[0].replace(/["']/g, '').trim().toLowerCase();
+        if(mine === first) return k;
+      }
+    }catch(e){}
+    return null;
+  }
+  function hcServiceCardOf(el){
+    if(!el) return null;
+    var a = el, guard = 0;
+    while(a && a !== doc.body && guard++ < 12){
+      var names = a.querySelectorAll ? a.querySelectorAll('[data-hubly-service]') : [];
+      if(names.length > 1) return null;                     // climbed past the card
+      if(names.length === 1){
+        var nm = names[0].getAttribute('data-hubly-service') || '';
+        return nm ? { name: nm, card: a } : null;
+      }
+      a = a.parentNode;
+    }
+    // The name element itself has no name stamp BELOW it, so the walk above never sees it.
+    var own = el.getAttribute && el.getAttribute('data-hubly-service');
+    return own ? { name: own, card: el } : null;
+  }
+  /* Which of the card's fields the owner actually clicked — so the top editor can put the
+   * caret in that field instead of making them find it again. Null is a real answer (they
+   * clicked the card's padding), and the editor opens with nothing focused. */
+  function hcServiceFieldOf(el){
+    if(!el || !el.getAttribute) return null;
+    if(el.getAttribute('data-hubly-service')) return 'name';
+    if(el.getAttribute('data-hubly-price')) return 'price';
+    if(el.getAttribute('data-hubly-desc')) return 'description';
+    if(el.getAttribute('data-hubly-runtime') === 'card-book') return 'button';
+    if((el.tagName || '').toLowerCase() === 'img') return 'image';
+    return null;
+  }
   function hcKindOf(el){
     if(!el) return null;
     if(el.hasAttribute && el.hasAttribute('data-hc-section')) return 'section';
@@ -56857,13 +56940,54 @@ function wireHcEditingSurface(doc, root){
       // silently pointing at a different element than the toolbar, which is exactly the
       // wrong-element restyle this whole feature exists to prevent. Found by climbing
       // the breadcrumb twice on the real page, not by reading this.
+      // THE CARD IS PART OF THE IDENTITY TOO, for the same reason the address is: the name,
+      // the price and the description of one card are three different elements, and a chip
+      // that could not tell them apart would let the top editor open on the wrong field.
+      var card = null;
+      try{
+        var sc = hcServiceCardOf(el);
+        if(sc) card = { service: sc.name, field: hcServiceFieldOf(el) };
+      }catch(e){}
       var key = (label || '') + '|' + on + '|' + kind + '|' +
-                (addr ? (addr.anchorKind + ':' + addr.anchor + ':' + (addr.steps || []).join(',')) : '');
+                (addr ? (addr.anchorKind + ':' + addr.anchor + ':' + (addr.steps || []).join(',')) : '') +
+                '|' + (card ? (card.service + ':' + (card.field || '')) : '');
       if(hcSelSent === key) return;                 // the same element, already said
       hcSelSent = key;
+      // ══ THE ELEMENT'S OWN STATE, READ OFF THE ELEMENT ═══════════════════════════════════
+      //
+      // The top editor shows Bold as ON or OFF, a size in a box and a colour in a swatch, and
+      // every one of those is a STATUS INDICATOR. Prohibition 2: it may not show a value
+      // unless the surface it describes confirmed it. The parent cannot read into this frame,
+      // so if this message did not carry the real computed values the row would have to open
+      // on defaults — an unbolded B over bold text, a 16 in the box over a 32px heading — and
+      // the owner's first click would then SET what it appeared to be reporting.
+      //
+      // Computed, not inline: an element styled by the page's own stylesheet has no style
+      // attribute, and reading the attribute would report "not set" for text that is plainly
+      // bold on screen.
+      var st = null;
+      try{
+        var cs = win.getComputedStyle(el);
+        st = {
+          fontFamily: hcFontKeyOf(cs.fontFamily),
+          fontSize: Math.round(parseFloat(cs.fontSize) || 0),
+          fontWeight: String(parseInt(cs.fontWeight, 10) || 400),
+          italic: String(cs.fontStyle || '').indexOf('italic') >= 0,
+          underline: String(cs.textDecorationLine || cs.textDecoration || '').indexOf('underline') >= 0,
+          color: hcRgbToHex(cs.color) || null,
+          align: (['left','center','right'].indexOf(String(cs.textAlign)) >= 0) ? String(cs.textAlign) : null,
+          transform: (['uppercase','lowercase','capitalize','none'].indexOf(String(cs.textTransform)) >= 0) ? String(cs.textTransform) : null,
+          letterSpacing: (cs.letterSpacing && cs.letterSpacing !== 'normal') ? cs.letterSpacing : 'normal'
+        };
+      }catch(e){}
       post({ type:'hcSelection', label: label || null, on: on, kind: kind,
              name: hcHumanName(el, kind),
              text: hcTrimName(el.textContent || ''),
+             style: st,
+             // NAMED, NOT INFERRED. The parent does not guess a service from the chip text —
+             // it is handed the stamped name or it is handed nothing, and "nothing" renders
+             // the ordinary element editor rather than a service editor for a guessed row.
+             card: card,
              node: addr });
     }catch(e){}
   }
@@ -56884,6 +57008,70 @@ function wireHcEditingSurface(doc, root){
      builder has already cleared its own chip by then — the echo is idempotent, so the
      two cannot ping-pong. */
   hcClearSelectionFromBuilder = function(){ try{ hcClearSel(); }catch(e){} };
+  /* THE CARD READER, EXPOSED READ-ONLY. A check cannot reach the "this container holds two
+   * cards" case through a click — the leaf-only rule refuses a container before the reader is
+   * ever consulted — so a leg asserting it through a click asserts nothing, which is exactly
+   * what the red-proof found. Same seam pattern as window.hublyEditSurfaceUI above it; it
+   * reads and returns a name, and nothing here can change the page. */
+  try{ window.__hcTestServiceCardOf = function(el){ var r = hcServiceCardOf(el); return r ? { service: r.name } : null; }; }catch(e){}
+  /* ══ THE TOP EDITOR'S TWO DOORS INTO THIS CLOSURE ══════════════════════════════════════
+   *
+   * Same pattern as hcClearSelectionFromBuilder directly above, and for the same reason: the
+   * selection, the element list and the image picker all live in THIS scope and nothing
+   * outside it can reach them. Exposing two named functions is how the builder asks; it is
+   * not a second selection system, and neither of these selects anything the click handler
+   * could not already select.
+   *
+   * STEP — Previous/Next. The order is DOCUMENT ORDER over the elements the editor has
+   * already marked editable, which is the order the owner's eye follows down the page. No
+   * new registry: `[data-hc-editable-marked]` is stamped by markAllEditable and is the same
+   * set a click can reach, so Next can never land on something that is not editable. */
+  hcStepSelectionFromBuilder = function(dir){
+    try{
+      var list = Array.prototype.slice.call(root.querySelectorAll('[data-hc-editable-marked]'));
+      if(!list.length) return false;
+      var i = hcSel ? list.indexOf(hcSel) : -1;
+      // Nothing selected yet: Next starts at the top, Previous at the bottom.
+      var n = (i < 0) ? (dir === 'prev' ? list.length - 1 : 0)
+                      : (dir === 'prev' ? i - 1 : i + 1);
+      if(n < 0 || n >= list.length) return false;     // AT THE END IS A REAL ANSWER
+      var el = list[n];
+      try{ el.scrollIntoView({ block:'center', behavior:'smooth' }); }catch(e){}
+      hcSelect(el);
+      return true;
+    }catch(e){ return false; }
+  };
+  /* REPLACE A CARD'S PICTURE — the picker that already exists, opened on a named card.
+   * pendingImage* and imgFileInput are the SAME ones the floating bar's Replace uses, so the
+   * chosen file travels the existing hcFreeformInlineImageEdit path. A second uploader here
+   * would be a second write path, which is exactly what we are not doing. */
+  hcReplaceCardImageFromBuilder = function(serviceName){
+    try{
+      var names = root.querySelectorAll('[data-hubly-service]');
+      var card = null;
+      for(var k = 0; k < names.length; k++){
+        if((names[k].getAttribute('data-hubly-service') || '') === serviceName){
+          var a = names[k];
+          // Climb to the nearest ancestor that actually holds a picture.
+          for(var g = 0; a && g < 6; g++, a = a.parentNode){
+            if(a.querySelector && a.querySelector('img')){ card = a; break; }
+          }
+          break;
+        }
+      }
+      if(!card) return false;
+      var img = card.querySelector('img');
+      if(!img) return false;
+      pendingImageNodeId = img.getAttribute('data-node');
+      pendingImageLabel  = img.getAttribute('data-hc');
+      pendingImageEl     = img;
+      // NO LABEL, NO WRITE PATH. The image edit is addressed by data-hc; without one the
+      // picker would open, the owner would choose a file, and nothing would be saved.
+      if(!pendingImageLabel && !pendingImageNodeId) return false;
+      imgFileInput.click();
+      return true;
+    }catch(e){ return false; }
+  };
   hcReselectByLabel = function(label, on){
     if(!label) return false;
     var el = null;

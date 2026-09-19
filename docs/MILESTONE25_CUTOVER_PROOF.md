@@ -1,7 +1,7 @@
 # Milestone 2.5 — Production Cutover
 
 **Status:** PASS (wiring A–D)  
-**Checked:** 2026-09-18T19:23:56.157Z  
+**Checked:** 2026-09-19T19:04:04.216Z  
 **Gate:** `npm run check:m25-cutover`
 
 > Engineer green ≠ done.  
