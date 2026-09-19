@@ -441,3 +441,13 @@ to try, not a diagnosis.
 price again — and say whether the toolbar appears at all, or whether the field simply will not open. The
 difference between those two answers picks between the candidate above and something else. **Step 4 of
 the save test is still unperformed.**
+
+## 5.3 — STILL ADRIAN'S, updated 2026-09-18. None of it done
+
+| | state |
+|---|---|
+| **ACCEPT on `adrians-lawn-service`'s pending booking** | **OPEN — not pressed.** Carried forward again |
+| **Step 4 of the save test** — save again with nothing changed | **NEVER PERFORMED.** And now more interesting than before: the freeform rebind is measured working, so what blocked him is unexplained (§4.1 names one candidate to try) |
+| Stripe's webhook delivery log | has `stripe-webhook` ever run? Only Stripe's dashboard knows. Rows are evidence of a call; no rows is not evidence of no call |
+| The 5th rail tab and the phone's "More" overflow | prohibition 5 is a mobile claim |
+| The mobile preview at 390px on a real device | and now one more: **does "Services, hours & contact" fit a phone?** It is 214px and unclipped at 1440 and 900; at 390px the button is not in the DOM in the rig, and Claude Code cannot verify mobile. Fallback if it does not fit: "Services & details" |
