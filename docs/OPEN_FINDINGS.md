@@ -8327,3 +8327,62 @@ measure the text finder's hit rate on the 53 before building the tile on top of 
 rate is low the answer is an anchor at generation plus a REBUILD path, and rebuilds are banned.
 
 **Your ruling. I have not built it.**
+
+---
+
+## 3.3 — THE DELIVERABLES REFUSAL. SHIPPED AS A RULE, BEFORE THE FEATURE, AS RULED
+
+Adrian, 2026-09-18: *"THE DELIVERABLES REFUSAL IS A RULE AND IT SHIPS BEFORE THE FEATURE. The one you
+underlined is the one I want enforced hardest: AN EMPTY LIST IS A DELIBERATE STATE AND A REPAIR PASS
+MUST LEAVE IT ALONE."*
+
+### The rule, in force from 2026-09-18, before any membership creation exists
+
+> **A membership's list of deliverables may never be suggested, seeded, defaulted, completed, or
+> repaired. It is written only from words the owner said in the current exchange, or it stays empty.**
+
+**And the clause to enforce hardest, in his words and mine:**
+
+> **AN EMPTY DELIVERABLES LIST IS A DELIBERATE STATE. A REPAIR PASS MUST LEAVE IT ALONE.** *"A repair
+> undoing a deliberate emptiness is indistinguishable from inventing content, because that is what it
+> is."*
+
+**Why it is a rule and not a validation:** *"a price is a number someone can argue with; A LIST OF
+DELIVERABLES IS A PROMISE A CUSTOMER CAN HOLD HIM TO."* Graef's Bi-Weekly plan shipped *"Monthly wash ·
+Interior refresh · Priority scheduling"* under a Join button and he never said any of it.
+
+**The five prohibitions, unchanged and now in force:**
+
+1. **No seeded `includes`** from the trade, the plan name, the price, or another plan — not in a
+   placeholder that could be saved, not in a draft that renders.
+2. **No completion.** An owner who names two things gets two. Three is an invention.
+3. **No repair pass may refill an empty one.** Not hypothetical: `scrubMembershipTradeLeaks` treated an
+   empty description as a leak and refilled it — the exact shape, and it would have silently undone the
+   fix that stopped the seeding.
+4. **No inference from the service it is built on.** A membership of a $95 full detail does not
+   therefore include "a full detail every month" unless the owner said the cadence and the contents.
+5. **An empty list renders as empty.** A Join button on a plan with no stated contents is allowed; a
+   Join button over invented contents is not. If the empty state reads badly, the fix is the WORDING.
+
+**The one permitted affordance:** a "use this" suggestion the owner must **see and accept** before it
+enters the record — never a value already in the record awaiting removal.
+
+**What "in force" means concretely, since nothing is built yet:** any future repair or scrub pass that
+touches a membership offer must treat an empty `includes` as a value to preserve, and any check written
+for membership creation must include a leg asserting that an empty list survives a repair pass. That leg
+does not exist yet because the feature does not; **the rule is recorded now so it cannot be negotiated
+with later as an implementation detail.**
+
+### 3.1/3.2/3.4 — blocked on Part 2, and stated rather than half-built
+
+- **3.1 `meta.membershipOffers` approved and recorded** — `HOME_KIND.membership_offers` already maps to
+  `kind: "membership"`, so kind resolves by structure with no new code. The silent-omission cost (a
+  subtree missing from the meta allowlist) is covered by leg 5 of
+  `check-every-field-a-renderer-reads-is-returned`, which is why it is acceptable rather than a repeat.
+- **3.2 membership ASKS the sale question**, per the corrected C1: structure answers sale for a SERVICE
+  (mode → sale) and resolves to **`unknown`** for a membership — measured. `OFFER_TYPE_QUESTIONS.sale`
+  supplies the wording, and the panel control shipped this round already uses it verbatim, so the
+  membership flow inherits it rather than restating it.
+- **3.4 creation is BLOCKED on Part 2's anchor**, and Part 2 is now blocked on a ruling (see 2.4). Built
+  on top of an anchor that is absent from 83% of pages, membership placement would be invisible for the
+  same 158 pages — the same false green, one feature over.
