@@ -51,6 +51,24 @@ import { createRequire } from "node:module";
 import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+/** A LIVE READ THAT FAILS IS A FAILURE, AND MUST NOT ALSO BE FLAKY. See the identical note in
+ *  check-every-field-a-renderer-reads-is-returned.mjs: legs 7 and 8 read production and report
+ *  FAILURE rather than SKIP when they cannot, which is right and makes them load-sensitive. On
+ *  2026-09-18 a three-check pass timed one out, and it recorded as "also red" against leg 3's
+ *  break — corrupting a red-proof that was clean. Bounded retry, then fail. Never skip. */
+function liveRead(args, tries = 3) {
+  let lastErr = null;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return { out: execFileSync("supabase", args, { cwd: ROOT, encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"], timeout: 90000 }) };
+    } catch (e) { lastErr = e.message.split("\n")[0]; }
+  }
+  return { out: null, err: `${tries} attempt(s) failed; last: ${lastErr}` };
+}
+
+
 const require_ = createRequire(import.meta.url);
 const legs = [];
 const leg = (kind, name, pass, detail) => { legs.push({ kind, name, pass: !!pass, detail });
@@ -59,14 +77,14 @@ const leg = (kind, name, pass, detail) => { legs.push({ kind, name, pass: !!pass
 /* ── THE EXPECTED SET, FROM THE TABLE ──────────────────────────────────────────────────────── */
 let expected = null, expErr = null;
 try {
-  const out = execFileSync("supabase", ["db", "query", "--linked",
+  const r0 = liveRead(["db", "query", "--linked",
     "select coalesce(string_agg(slug, ',' order by slug), '') as slugs, count(*) as n from businesses " +
     // RULED BY ADRIAN 2026-09-18: internal accounts come out. Spelled here as the TABLE predicate
     // on purpose -- the generator derives from business_is_indexable(), and this half must stay an
     // independent statement of the same rule or the check is comparing the rule with itself.
-    "where owner_id is not null and coalesce(account_kind,'') not in ('test','internal')"],
-    { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 90000 });
-  const m = out.match(/"slugs":\s*"([^"]*)"/);
+    "where owner_id is not null and coalesce(account_kind,'') not in ('test','internal')"]);
+  if (!r0.out) throw new Error(r0.err);
+  const m = r0.out.match(/"slugs":\s*"([^"]*)"/);
   if (m) expected = new Set(m[1].split(",").filter(Boolean));
 } catch (e) { expErr = e.message.split("\n")[0]; }
 if (!expected) { console.error("CANNOT RUN — could not read the expected set from the record: " + (expErr || "no rows")); process.exit(2); }
@@ -231,11 +249,11 @@ declareBreak({
 });
 let internals = null, intErr = null;
 try {
-  const out = execFileSync("supabase", ["db", "query", "--linked",
+  const r1 = liveRead(["db", "query", "--linked",
     "select coalesce(string_agg(slug || '=' || coalesce((public.get_public_business(slug)->>'is_indexable'),'absent'), ',' order by slug), '') as v " +
-    "from businesses where owner_id is not null and account_kind = 'internal'"],
-    { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 90000 });
-  const m = out.match(/"v":\s*"([^"]*)"/);
+    "from businesses where owner_id is not null and account_kind = 'internal'"]);
+  if (!r1.out) throw new Error(r1.err);
+  const m = r1.out.match(/"v":\s*"([^"]*)"/);
   if (m) internals = m[1].split(",").filter(Boolean);
 } catch (e) { intErr = e.message.split("\n")[0]; }
 const intBad = (internals || []).filter((x) => !/=false$/.test(x));
@@ -264,10 +282,10 @@ declareBreak({
 const norm = (t) => String(t).replace(/--[^\n]*/g, " ").replace(/\s+/g, " ").replace(/[()'"]/g, "").toLowerCase().trim();
 let liveDef = null, defErr = null;
 try {
-  const out = execFileSync("supabase", ["db", "query", "--linked",
-    "select replace(pg_get_functiondef('public.business_is_indexable(uuid,text)'::regprocedure), chr(10), ' ') as d"],
-    { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 90000 });
-  const m = out.match(/"d":\s*"([^"]*)"/);
+  const r2 = liveRead(["db", "query", "--linked",
+    "select replace(pg_get_functiondef('public.business_is_indexable(uuid,text)'::regprocedure), chr(10), ' ') as d"]);
+  if (!r2.out) throw new Error(r2.err);
+  const m = r2.out.match(/"d":\s*"([^"]*)"/);
   if (m) liveDef = m[1];
 } catch (e) { defErr = e.message.split("\n")[0]; }
 const migSrc = readFileSync(join(ROOT, "supabase", "migrations", "20260918200000_one_indexable_predicate.sql"), "utf8");

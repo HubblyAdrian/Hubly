@@ -58,6 +58,30 @@ import { readShell, allowlistFromMigration } from "./lib/public-row-fields.mjs";
 import { declareBreak } from "./lib/redproof.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+
+/** A LIVE READ THAT FAILS IS A FAILURE, AND MUST NOT ALSO BE FLAKY.
+ *
+ *  Both legs that read production report FAILURE rather than SKIP when they cannot — deliberately:
+ *  a leg that makes another leg meaningful cannot be allowed to pass by not running. But that makes
+ *  them sensitive to load, and on 2026-09-18 a pass running three checks together produced TWO
+ *  COMPOUNDs from exactly this: a supabase CLI call timed out, the leg reported FAILURE as designed,
+ *  and it landed in the ledger as "also red" against a NEIGHBOURING leg's break — muddying a
+ *  red-proof that was actually clean. A transient is not a disagreement, and recording it as one
+ *  corrupts the evidence the ledger exists to hold.
+ *
+ *  So: bounded retry, then fail. Still never skip. */
+function liveRead(args, tries = 3) {
+  let lastErr = null;
+  for (let i = 0; i < tries; i++) {
+    try {
+      return { out: execFileSync("supabase", args, { cwd: ROOT, encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"], timeout: 90000 }) };
+    } catch (e) { lastErr = e.message.split("\n")[0]; }
+  }
+  return { out: null, err: `${tries} attempt(s) failed; last: ${lastErr}` };
+}
+
+
 const SHELLS = ["public/platform-home.html", "public/hubly.html"];
 const legs = [];
 const leg = (kind, name, pass, detail) => { legs.push({ kind, name, pass: !!pass, detail });
@@ -168,11 +192,11 @@ declareBreak({
 });
 let live = null, liveErr = null;
 try {
-  const out = execFileSync("supabase", ["db", "query", "--linked",
+  const r = liveRead(["db", "query", "--linked",
     "select string_agg(k, ',' order by k) as keys from jsonb_object_keys(public.get_public_business(" +
-    "(select slug from businesses where owner_id is not null order by created_at limit 1))) as k"],
-    { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"], timeout: 90000 });
-  const m = out.match(/"keys":\s*"([^"]*)"/);
+    "(select slug from businesses where owner_id is not null order by created_at limit 1))) as k"]);
+  if (!r.out) throw new Error(r.err);
+  const m = r.out.match(/"keys":\s*"([^"]*)"/);
   if (m) live = new Set(m[1].split(",").filter(Boolean));
 } catch (e) { liveErr = e.message.split("\n")[0]; }
 if (!live) {
