@@ -2617,14 +2617,36 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
      *
      * Never upscale past 1:1 — unchanged, and it is why `scale` is still capped. */
     var scale = paneW / dev.w;
-    if(scale > 1) scale = 1;                       // 1:1 is the ceiling
+    if(scale > 1) scale = 1;                       // 1:1 is the ceiling — Adrian is keeping it
     if(!(scale > 0)) scale = 1;                    // pathological pane: show it 1:1 and clip
-    var frameH = Math.min(dev.h * scale, paneH);   // the WINDOW, not the whole device
+
+    /* ══ AND THE HEIGHT FOLLOWS THE PANE — RULED BY ADRIAN, 2026-09-18, GIVING UP THE FIXED 900 ══
+     *
+     * The width fit left beige BELOW at nearly every window size, and that was never the 1:1
+     * ceiling. Measured: at 1900x1100 the pane was 1296x1001, scale 0.9, frame 1296x810 — 191px of
+     * unused pane. The device was a fixed 1440x900 box, so fitting the width set the height to
+     * 900*scale and whatever the pane had left over was margin.
+     *
+     * Three things could not all hold off-16:10 — "no beige", "a true 1440x900 viewport", and "never
+     * upscale". Adrian gave up the 900: *"The device becomes 1440 wide by whatever height the pane
+     * gives it… A 100vh hero will then measure the owner's pane rather than 900px — and 900 was as
+     * arbitrary as any other number, since no visitor has exactly that."*
+     *
+     * So the logical height is paneH / scale: the device is still 1440 CSS px wide, a `100vh` hero
+     * still measures a real viewport, and the frame now fills the pane exactly — no bottom margin at
+     * any size. Right-side beige above roughly 2044px stays, and stays on purpose: that is the
+     * ceiling, and upscaling would show the owner text larger than a visitor gets.
+     *
+     * check-preview-is-a-true-device leg 1 ASSERTED the 900 and would have gone red. The assertion
+     * was CHANGED to "1440 wide, and a logical height that matches the pane" — changed deliberately,
+     * recorded here and in the report, not left to fail quietly. That is a [SHAPE] leg going red
+     * because the shape moved (CLAUDE.md), and the fix is the leg. */
+    var logicalH = Math.max(1, Math.round(paneH / scale));
     stage.style.setProperty('--hc-pw', dev.w + 'px');
-    stage.style.setProperty('--hc-ph', dev.h + 'px');
+    stage.style.setProperty('--hc-ph', logicalH + 'px');
     stage.style.setProperty('--hc-scale', String(scale));
     frame.style.setProperty('--hc-fw', (dev.w * scale) + 'px');
-    frame.style.setProperty('--hc-fh', frameH + 'px');
+    frame.style.setProperty('--hc-fh', paneH + 'px');
     var toggle = document.getElementById('hcDeviceToggle');
     if(toggle){
       var btns = toggle.querySelectorAll('[data-hc-device]');

@@ -104,28 +104,50 @@ try {
   console.log();
 
   declareBreak({
-    leg: "1 the device's LOGICAL viewport is 1440x900 at every pane size",
-    why: "make the stage's logical height follow the pane instead of staying 900 — the preview then " +
-         "LOOKS right and a 100vh hero measures something no visitor has, which is the failure mode " +
-         "the width-fit ruling exists to avoid",
+    leg: "1 the device is 1440 CSS px WIDE and its logical height matches the pane",
+    // THE OLD BREAK'S `why` DESCRIBED, AS THE DEFECT, EXACTLY WHAT ADRIAN HAS NOW RULED CORRECT:
+    // "make the stage's logical height follow the pane instead of staying 900". A leg can encode a
+    // shape so specifically that its own break text becomes the next spec — which is the clearest
+    // possible demonstration of why [SHAPE] and [RULE] have to be declared at write time.
+    why: "pin the logical height back to the device's fixed 900. The preview still looks plausible, a " +
+         "100vh hero goes back to measuring a height the pane does not have, and 191px of pane goes " +
+         "back to being beige at an ordinary window size — which is what the ruling ended.",
     file: "public/platform-home.html",
-    find: "    stage.style.setProperty('--hc-ph', dev.h + 'px');",
-    with: "    stage.style.setProperty('--hc-ph', Math.round(paneH / (scale || 1)) + 'px');",
+    find: "    stage.style.setProperty('--hc-ph', logicalH + 'px');",
+    with: "    stage.style.setProperty('--hc-ph', dev.h + 'px');",
   });
-  leg("RULE", "1 the device's LOGICAL viewport is 1440x900 at every pane size",
-    seen.length === SHAPES.length && seen.every((m) => m.stageW === 1440 && m.stageH === 900),
+  // ══ THE ASSERTION WAS CHANGED, NOT LEFT TO FAIL ═════════════════════════════════════════════
+  //
+  // It asserted stageH === 900. Adrian ruled on 2026-09-18 that the height follows the pane, giving
+  // up the fixed 900 because no visitor has exactly that height and the alternative was permanent
+  // bottom margin. So this leg would have gone red for the product IMPROVING — a [SHAPE] leg whose
+  // shape moved, where the LEG is what is wrong. Changed here deliberately and recorded in the
+  // report, never quietly relaxed. 1440 WIDE still holds absolutely; the height is now asserted to
+  // MATCH THE PANE, which is a stronger statement than 900 ever was — it ties the logical viewport
+  // to the real space instead of to a constant nobody has.
+  leg("RULE", "1 the device is 1440 CSS px WIDE and its logical height matches the pane",
+    seen.length === SHAPES.length &&
+      seen.every((m) => m.stageW === 1440 && Math.abs(m.stageH * m.scale - m.paneH) <= 2),
     `${seen.length} of ${SHAPES.length} pane shape(s) measured — the count is part of the assertion, ` +
-    `because "every one is 1440x900" is trivially true of none — and the stage was ` +
-    `${[...new Set(seen.map((m) => m.stageW + "x" + m.stageH))].join(", ")} across all of them. ` +
-    `A 100vh hero measures a real 900px only while this holds.`);
+    `because "every one is 1440 wide" is trivially true of none. Stage: ` +
+    `${seen.map((m) => m.stageW + "x" + m.stageH).join(", ")}; stageH x scale against paneH: ` +
+    `${seen.map((m) => Math.round(m.stageH * m.scale) + "/" + Math.round(m.paneH)).join(", ")}. ` +
+    `A 100vh hero measures the owner's real pane while this holds, and 1440 wide is what keeps every ` +
+    `width breakpoint honest.`);
 
   declareBreak({
     leg: "2 the scale never exceeds 1",
     why: "remove the 1:1 ceiling, so a pane wider than 1440 upscales the device and shows the owner " +
          "text BIGGER than a visitor gets — lying in the opposite direction from the clipped fold",
     file: "public/platform-home.html",
-    find: "    if(scale > 1) scale = 1;                       // 1:1 is the ceiling",
-    with: "    /* BREAK: the ceiling is gone */",
+    // THE WHOLE LINE, TRAILING COMMENT INCLUDED. This `find` was the line up to "// 1:1 is the
+    // ceiling", and on 2026-09-18 that comment gained " — Adrian is keeping it". The old find was
+    // still a SUBSTRING of the new line, so the break spliced mid-line and left a stray em-dash
+    // outside a comment: a syntax error, the shell dead, the check unable to run — and the runner
+    // scored the absence of FAIL lines as NOT RED, i.e. "your leg is vacuous". A `find` that is a
+    // PREFIX of a line is a break that can silently start editing something else.
+    find: "    if(scale > 1) scale = 1;                       // 1:1 is the ceiling — Adrian is keeping it\n",
+    with: "    /* BREAK: the ceiling is gone */\n",
   });
   const over = seen.filter((m) => m.scale > 1.0001);
   leg("RULE", "2 the scale never exceeds 1",

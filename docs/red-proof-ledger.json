@@ -662,6 +662,65 @@
       "declaredTotal": 4,
       "recorded": 4,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-19T03:30:47.702Z",
+      "applied": 5,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T03:32:09.052Z",
+      "applied": 5,
+      "alone": 5,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T03:33:49.559Z",
+      "applied": 5,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 1,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T03:34:36.666Z",
+      "applied": 5,
+      "alone": 5,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -895,50 +954,41 @@
       "status": "RED ALONE",
       "newlyRed": 1
     },
-    "check-preview-is-a-true-device.mjs::1 the device's LOGICAL viewport is 1440x900 at every pane size": {
-      "check": "check-preview-is-a-true-device.mjs",
-      "leg": "1 the device's LOGICAL viewport is 1440x900 at every pane size",
-      "why": "make the stage's logical height follow the pane instead of staying 900 — the preview then LOOKS right and a 100vh hero measures something no visitor has, which is the failure mode the width-fit ruling exists to avoid",
-      "at": "2026-09-18T05:37:39.491Z",
-      "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
-    },
     "check-preview-is-a-true-device.mjs::2 the scale never exceeds 1": {
       "check": "check-preview-is-a-true-device.mjs",
       "leg": "2 the scale never exceeds 1",
       "why": "remove the 1:1 ceiling, so a pane wider than 1440 upscales the device and shows the owner text BIGGER than a visitor gets — lying in the opposite direction from the clipped fold",
-      "at": "2026-09-18T05:37:39.491Z",
+      "at": "2026-09-19T03:34:36.666Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-preview-is-a-true-device.mjs::3 the scale tracks the pane's WIDTH": {
       "check": "check-preview-is-a-true-device.mjs",
       "leg": "3 the scale tracks the pane's WIDTH",
       "why": "put the height fit back into the scale — `min(paneW/dev.w, paneH/dev.h)` — which is the state Adrian reported as 'the website got small': a wider window adds only beige",
-      "at": "2026-09-18T05:37:39.491Z",
+      "at": "2026-09-19T03:34:36.666Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-preview-is-a-true-device.mjs::4 the pane never needs its own scrollbar": {
       "check": "check-preview-is-a-true-device.mjs",
       "leg": "4 the pane never needs its own scrollbar",
       "why": "restore `align-items:center; overflow:auto` on the wrap — the obvious implementation of a width fit, which puts the WORKSPACE's scrollbar beside the PAGE's and, worse, centres an overflowing frame so its top sits above the scroll origin and cannot be reached at all",
-      "at": "2026-09-18T05:37:39.491Z",
+      "at": "2026-09-19T03:34:36.666Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-preview-is-a-true-device.mjs::5 mobile still renders native-width": {
       "check": "check-preview-is-a-true-device.mjs",
       "leg": "5 mobile still renders native-width",
       "why": "make hcIsMobile() always false, so a phone gets the desktop device simulation — a 1440px viewport scaled into a 390px screen, which is the one thing a phone must never do because the phone IS the device",
-      "at": "2026-09-18T05:37:39.491Z",
+      "at": "2026-09-19T03:34:36.666Z",
       "also": [],
-      "status": "RED ALONE",
-      "newlyRed": 1
+      "newlyRed": 1,
+      "status": "RED ALONE"
     },
     "check-the-rail-says-who-you-are.mjs::1 a known first name is on its own line ABOVE the business name": {
       "check": "check-the-rail-says-who-you-are.mjs",
@@ -1193,6 +1243,15 @@
       "at": "2026-09-19T03:27:36.684Z",
       "note": "This leg reads PRODUCTION — the stored document and the services table — so no repo edit can move it. PROVEN BY HAND on 2026-09-18 across one correction: BEFORE, three of six prices on evergreen-yard-care's page disagreed with their rows and each other (111.222.333 vs 95, $111,222,333 vs 220, 50 vs 40) while the untouched three matched; AFTER 20260918220000, all six read $95 $220 $40 $130 $150 $85 and every one equals hcPriceText(services.price) for its key. That is this assertion observed red and then green for the reason it claims to catch.",
       "status": "DECLARED, PROVEN BY HAND"
+    },
+    "check-preview-is-a-true-device.mjs::1 the device is 1440 CSS px WIDE and its logical height matches the pane": {
+      "check": "check-preview-is-a-true-device.mjs",
+      "leg": "1 the device is 1440 CSS px WIDE and its logical height matches the pane",
+      "why": "pin the logical height back to the device's fixed 900. The preview still looks plausible, a 100vh hero goes back to measuring a height the pane does not have, and 191px of pane goes back to being beige at an ordinary window size — which is what the ruling ended.",
+      "at": "2026-09-19T03:34:36.666Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
     }
   }
 }

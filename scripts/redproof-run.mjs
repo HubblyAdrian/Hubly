@@ -119,7 +119,7 @@ let applied = 0, alone = 0, compound = 0, notRed = 0, skipped = 0;
 // reconciled out loud at the end. `provenByHand` and `errored` are counted because the old tally
 // printed applied/alone/compound/notRed/skipped and a PROVEN BY HAND leg appeared in NONE of them —
 // six legs in, five numbers out, and nothing noticed.
-let declaredTotal = 0, provenByHand = 0, errored = 0, unparseable = 0;
+let declaredTotal = 0, provenByHand = 0, errored = 0, unparseable = 0, brokeCheck = 0;
 const outcomes = new Map();          // `check::leg` -> status, one entry per declaration, ever
 const record = (key, rec, status) => {
   rec.status = status;
@@ -366,6 +366,27 @@ for (const f of files) {
     }
     applied++;
 
+    // ══ A BREAK THAT KILLS THE CHECK IS NOT A VACUOUS LEG ══════════════════════════════════════
+    //
+    // 2026-09-18: a `find` that was a PREFIX of its line spliced mid-line, left a syntax error in
+    // public/platform-home.html, and the check could not run at all. It printed no leg lines, so
+    // `newly` was empty and this scored NOT RED — which reads as "your leg is vacuous or your break
+    // misses it". Both were false: the leg was fine and the break hit far too much.
+    //
+    // The tell is available and was being thrown away: the UNBROKEN run produced leg lines and the
+    // BROKEN run produced none, or the broken run reported CANNOT RUN. Either way the break did not
+    // test the leg, it destroyed the instrument, and that is its own state.
+    const brokeLegLines = (broke.out.match(/^\s*(ok|FAIL|PASS)\b/gm) || []).length;
+    const baseLegLines = (base.out.match(/^\s*(ok|FAIL|PASS)\b/gm) || []).length;
+    if (broke.code === 2 || broke.timedOut || (baseLegLines > 0 && brokeLegLines === 0)) {
+      rec.note = broke.timedOut ? `the broken run timed out — ${broke.err}`
+        : broke.code === 2 ? "the broken run reported CANNOT RUN, so no leg was measured"
+        : `the broken run printed NO leg lines (unbroken printed ${baseLegLines}) — the break did not ` +
+          `test this leg, it destroyed the check. A \`find\` that is a PREFIX of its line is the usual cause.`;
+      record(key, rec, "BROKE THE CHECK"); brokeCheck++;
+      console.error(`   leg ${JSON.stringify(b.leg)}  BROKE THE CHECK — ${rec.note}`);
+      continue;
+    }
     const now = failedLines(broke.out);
     const newly = now.filter((l) => !baseFails.has(l));
     const hit = newly.filter((l) => l.includes(String(b.leg)));
@@ -401,7 +422,7 @@ if (DRY) { console.log("\nDry run. Nothing applied, nothing recorded."); process
  * job is to catch silent shortfalls. */
 function accounting(prefix) {
   const recorded = outcomes.size;
-  const tallied = alone + compound + notRed + skipped + provenByHand + errored + unparseable;
+  const tallied = alone + compound + notRed + skipped + provenByHand + errored + unparseable + brokeCheck;
   const byStatus = {};
   for (const v of outcomes.values()) byStatus[v] = (byStatus[v] || 0) + 1;
   console.log(`\n${prefix}`);
@@ -409,7 +430,7 @@ function accounting(prefix) {
   console.log(`  outcomes recorded    ${recorded}`);
   console.log(`  tallied              ${tallied}   (RED ALONE ${alone} · COMPOUND ${compound} · ` +
               `NOT RED ${notRed} · SKIPPED ${skipped} · PROVEN BY HAND ${provenByHand} · ` +
-              `ERRORED ${errored} · UNPARSEABLE ${unparseable})`);
+              `ERRORED ${errored} · UNPARSEABLE ${unparseable} · BROKE THE CHECK ${brokeCheck})`);
   console.log(`  breaks actually applied to a file or the database: ${applied}`);
   const faults = [];
   if (recorded !== declaredTotal)
@@ -418,7 +439,7 @@ function accounting(prefix) {
   if (tallied !== recorded)
     faults.push(`${recorded} outcome(s) recorded but ${tallied} tallied — a status exists that no counter counts`);
   for (const [k, v] of Object.entries(byStatus))
-    if (!["RED ALONE", "COMPOUND", "NOT RED", "SKIPPED", "DECLARED, PROVEN BY HAND", "ERRORED", "UNPARSEABLE"].includes(k))
+    if (!["RED ALONE", "COMPOUND", "NOT RED", "SKIPPED", "DECLARED, PROVEN BY HAND", "ERRORED", "UNPARSEABLE", "BROKE THE CHECK"].includes(k))
       faults.push(`unknown status recorded: ${k} (${v})`);
   if (faults.length) {
     console.error(`\n  ACCOUNTING DOES NOT RECONCILE — this run's summary cannot be trusted:`);
@@ -428,10 +449,11 @@ function accounting(prefix) {
 }
 
 const unreconciled = accounting(`${applied} break(s) applied · ${alone} RED ALONE · ${compound} COMPOUND · ` +
-  `${notRed} NOT RED · ${skipped} SKIPPED · ${provenByHand} PROVEN BY HAND · ${errored} ERRORED`);
+  `${notRed} NOT RED · ${skipped} SKIPPED · ${provenByHand} PROVEN BY HAND · ${errored} ERRORED · ` +
+  `${brokeCheck} BROKE THE CHECK`);
 
 ledger.runs.push({ at: stamp, applied, alone, compound, notRed, skipped, provenByHand, errored,
-                   unparseable, declaredTotal, recorded: outcomes.size, reconciled: !unreconciled });
+                   unparseable, brokeCheck, declaredTotal, recorded: outcomes.size, reconciled: !unreconciled });
 writeLedger(ledger);
 
 console.log(`Ledger written: docs/red-proof-ledger.json + docs/RED_PROOF_LEDGER.md`);
@@ -439,4 +461,5 @@ if (compound) console.log(`A COMPOUND proves nothing about its leg — it needs 
 if (notRed) console.log(`A NOT RED leg is VACUOUS or its break misses it. Either way it is a finding.`);
 if (errored) console.log(`An ERRORED leg was never tested. The runner faulted on it and carried on.`);
 if (unparseable) console.log(`An UNPARSEABLE declaration was never read at all — fix the literal.`);
-process.exit(compound + notRed + skipped + errored + unparseable + unreconciled ? 1 : 0);
+if (brokeCheck) console.log(`A break that BROKE THE CHECK tested nothing — narrow its \`find\` to a whole line.`);
+process.exit(compound + notRed + skipped + errored + unparseable + brokeCheck + unreconciled ? 1 : 0);
