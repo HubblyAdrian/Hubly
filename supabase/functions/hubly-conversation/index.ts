@@ -2202,6 +2202,13 @@ Deno.serve(async (req) => {
       messages: incoming,
       actions: [{ capability: "business", capabilityAction: "recordEdit", args: {}, ok: !!result.ok, real: !!result.real }],
       interimMessages: [],
+      // WHETHER THE PAGE CHANGED SHAPE. The client uses this to decide between painting the new
+      // values on the canvas it already has and re-reading the whole document — the difference
+      // between keeping the owner's selection and throwing it away mid-edit. Absent means
+      // "structural" to every reader, which is the safe direction: see the note on the verdict
+      // in applyOwnerRecordEdit. Only the raw VERDICT crosses the wire, never the placement bag.
+      ...(typeof (result as { pageChange?: string }).pageChange === "string"
+        ? { pageChange: (result as { pageChange?: string }).pageChange } : {}),
       ...(result.error ? { error: result.error } : {}),
     });
   }

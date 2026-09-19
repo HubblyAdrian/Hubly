@@ -3079,6 +3079,18 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
    * would write a row nobody asked for. An empty reader has told you about itself. */
   var hcCtx = { busy: false, svcKey: null, stepping: false };
 
+  /* THE SAME WORDS THE SERVER WRITES. placeOneServicePrice renders "Quote at booking" when a
+   * price is hidden and fmtServicePrice otherwise; if this painted anything else the canvas and
+   * the stored page would disagree until the next reload — a local paint that tells a different
+   * story from the record is the divergence this whole path exists to prevent. */
+  function hcCtxPriceText(price, showPrice){
+    if(showPrice === false) return 'Quote at booking';
+    try{
+      if(window.HUBLY_PRICE && typeof window.HUBLY_PRICE.text === 'function') return window.HUBLY_PRICE.text(price);
+    }catch(e){}
+    return (price == null || price === '') ? '' : String(price);
+  }
+
   function hcCtxSay(msg, ok){
     var s = document.getElementById('hcCtxStatus'); if(!s) return;
     s.textContent = msg || '';
@@ -3201,8 +3213,25 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
       hcCtx.busy = false;
       if(r && r.ok){
         try{ hcMarkUndoAvailable('that change'); }catch(e){}
-        // The page and the record changed together; show the page that changed.
-        try{ hcRefreshCanvasFrame(); }catch(e){}
+        // ══ PAINT IF THE PAGE ONLY CHANGED VALUE; RE-READ IF IT CHANGED SHAPE ═════════════════
+        //
+        // This reloaded the canvas unconditionally, and that reload is what threw the owner's
+        // selection away mid-edit — measured live twice: the name saved and the editor vanished
+        // with them still looking at the card.
+        //
+        // The server now answers WHICH kind of change it made. `in_place` means it rewrote text
+        // at anchors that already existed, so the card on screen is correct in every way except
+        // those few words — and the canvas can be told the words. Anything else, including a
+        // missing answer from an older function, re-reads: a skipped reload that was needed
+        // leaves a page that disagrees with the record, which is worse than a flicker.
+        var inPlace = (r.pageChange === 'in_place');
+        if(inPlace){
+          hcCtxCommand({ op:'serviceValues', service: prevName, name: nm,
+                         priceText: (priceEdit == null ? '' : hcCtxPriceText(priceEdit, payload.showPrice)),
+                         description: payload.description }, { quiet:true });
+        } else {
+          try{ hcRefreshCanvasFrame(); }catch(e){}
+        }
         try{ await hcReadRecord(); }catch(e){}
         // ══ FOLLOW THE CARD THROUGH THE RELOAD ═══════════════════════════════════════════════
         //
@@ -3217,7 +3246,10 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
         // name once the frame is back.
         if(hc.selection && hc.selection.card) hc.selection.card.service = nm;
         hcRenderCtx();
-        if(hc.selection && hc.selection.label) hcCtxReselect(hc.selection.label);
+        // ONLY A REPLACED FRAME LOSES THE SELECTION. When the canvas was painted instead, the
+        // element is still selected and still the same node — re-selecting would be a round trip
+        // that changes nothing, and would re-scroll the page under the owner's hand.
+        if(!inPlace && hc.selection && hc.selection.label) hcCtxReselect(hc.selection.label);
         // ══ SAID AFTER THE RE-RENDER, NOT BEFORE IT — PROHIBITION 6 ═════════════════════════
         //
         // This was above the re-render and the confirmation never reached the screen:
@@ -3325,7 +3357,8 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
           return '<option value="' + t[0] + '"' + (st.transform === t[0] ? ' selected' : '') + '>' + t[1] + '</option>';
         }).join('') + '</select></span>';
 
-    function send(style){ hcCtxCommand({ op:'style', style: style }); }
+    // Style is the drag/step case the debounce exists for.
+    function send(style){ hcCtxCommandDebounced({ op:'style', style: style }); }
     var fo = document.getElementById('hcCtxFont');
     if(fo) fo.addEventListener('change', function(){ if(this.value) send({ 'font-family': this.value }); });
     var sz = document.getElementById('hcCtxSize');
@@ -3370,7 +3403,70 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
    * Every command answers, including its refusals, and the band says what came back. */
   var hcCtxCmdSeq = 0;
   var hcCtxCmdWaiting = {};
+
+  /* ══ A REAL DEBOUNCE — ONE SAVE AFTER THE OWNER PAUSES ════════════════════════════════════
+   *
+   * MEASURED FIRST, 2026-09-19: there was no debounce anywhere. Five style changes 700ms apart
+   * produced FIVE writes; five changes 60ms apart produced two, and that "two" was not a design
+   * — it was in-flight coalescing, so the window was however long the request happened to take.
+   * Dragging a colour picker or stepping a size is a dozen document versions.
+   *
+   * THIS IS NOT A SECOND SAVE SYSTEM. It holds the command for HC_CTX_DEBOUNCE_MS and then hands
+   * it to the same hcCtxCommand -> canvas -> hcSendStyle -> hcStyleEdit path as before. The
+   * canvas still paints IMMEDIATELY (see the paint note below), so the page keeps up with the
+   * owner's hand; only the write waits.
+   *
+   * COALESCED BY TARGET, not globally. Two style changes to the same element merge into one
+   * command — later value wins per property, which is what "the latest state" means for CSS.
+   * A different op or a different element FLUSHES the pending one first, so a save can never be
+   * silently replaced by an unrelated edit.
+   *
+   * THE PAINT IS NOT DEBOUNCED. `paintNow` goes to the canvas on the keystroke, so typing feels
+   * instant; the debounce governs persistence alone. That split is the whole point — immediate
+   * local feedback, background save.
+   */
+  var HC_CTX_DEBOUNCE_MS = 600;
+  var hcCtxPending = null;      // { key, cmd, timer, opts }
+
+  function hcCtxCommandKey(cmd){
+    var sel = hc.selection || {};
+    return String(cmd.op) + '|' + String(sel.label || '') + '|' + String(cmd.service || '');
+  }
+  /* Merge a newer command into the pending one. Only `style` merges per-property; everything
+   * else REPLACES, because "the latest text" is the latest text, not a merge of two texts. */
+  function hcCtxMerge(prev, next){
+    if(prev.op === 'style' && next.op === 'style'){
+      return { op:'style', style: Object.assign({}, prev.style, next.style) };
+    }
+    return next;
+  }
+  function hcCtxFlushPending(){
+    if(!hcCtxPending) return;
+    var p = hcCtxPending; hcCtxPending = null;
+    clearTimeout(p.timer);
+    hcCtxSend(p.cmd, p.opts);
+  }
+  /* The debounced entry point. Everything the controls call goes through here. */
+  function hcCtxCommandDebounced(cmd, opts){
+    opts = opts || {};
+    var key = hcCtxCommandKey(cmd);
+    // PAINT NOW, ALWAYS. The canvas applies the change on this call; only the SAVE is held.
+    if(opts.paintNow !== false) hcPostToCanvas({ type:'hcCtxCommand', id:'paint', cmd: cmd, paintOnly: true });
+    if(hcCtxPending && hcCtxPending.key !== key) hcCtxFlushPending();   // a different target: send the old one
+    var merged = hcCtxPending ? hcCtxMerge(hcCtxPending.cmd, cmd) : cmd;
+    if(hcCtxPending) clearTimeout(hcCtxPending.timer);
+    hcCtxSay('Saving…', true);
+    hcCtxPending = { key: key, cmd: merged, opts: opts,
+                     timer: setTimeout(function(){ hcCtxFlushPending(); }, HC_CTX_DEBOUNCE_MS) };
+  }
+  /* Leaving the element must not leave an unsaved change behind — the owner has moved on and
+   * has every reason to believe it is saved. Both of these flush rather than cancel. */
+  try{ window.addEventListener('beforeunload', hcCtxFlushPending); }catch(e){}
+
   function hcCtxCommand(cmd, opts){
+    return hcCtxSend(cmd, opts);
+  }
+  function hcCtxSend(cmd, opts){
     opts = opts || {};
     var id = 'c' + (++hcCtxCmdSeq);
     if(!hcPostToCanvas({ type:'hcCtxCommand', id: id, cmd: cmd })){

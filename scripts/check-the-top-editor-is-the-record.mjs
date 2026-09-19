@@ -33,6 +33,7 @@
  * Exit: 0 PASS · 1 FAIL · 2 CANNOT RUN
  */
 import { readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { openRig } from "./lib/browser-rig.mjs";
@@ -244,6 +245,39 @@ try {
     document.getElementById("hcCtxB")?.click();
     await new Promise((r) => setTimeout(r, 900));
     R.style = posts.filter((p) => p.styleEdit).map((p) => p.styleEdit);
+
+    // ══ THE DEBOUNCE, MEASURED AT THE FRAME BOUNDARY ═══════════════════════════════════════
+    // The canvas is cross-origin here, so its real contentWindow is unreachable — replacing the
+    // getter on the ELEMENT makes the parent's own postMessage land in this counter. That is
+    // the right place to measure: the debounce is parent-side.
+    const sentToCanvas = [];
+    const fakeWin = { postMessage: (m) => {
+      if (m && m.type === "hcCtxCommand") sentToCanvas.push({ paintOnly: !!m.paintOnly, op: m.cmd && m.cmd.op }); } };
+    for (const id of ["hcCanvasFrameA", "hcCanvasFrameB"]) {
+      const f = document.getElementById(id); if (!f) continue;
+      Object.defineProperty(f, "contentWindow", { configurable: true, get(){ return fakeWin; } });
+    }
+    say({ ...SEL, card: null });
+    await new Promise((r) => setTimeout(r, 700));
+    const pick = (id, v) => { const e = document.getElementById(id); e.value = v; e.dispatchEvent(new Event("change", { bubbles: true })); };
+
+    sentToCanvas.length = 0;
+    for (const v of ["20", "24", "28", "32", "40", "48"]) { pick("hcCtxSize", v); await new Promise((r) => setTimeout(r, 80)); }
+    await new Promise((r) => setTimeout(r, 1800));
+    R.debounce = { changes: 6, paints: sentToCanvas.filter((x) => x.paintOnly).length,
+                   saves: sentToCanvas.filter((x) => !x.paintOnly).length };
+
+    sentToCanvas.length = 0;
+    pick("hcCtxSize", "56"); await new Promise((r) => setTimeout(r, 80));
+    const cc = document.getElementById("hcCtxColour"); cc.value = "#111111"; cc.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise((r) => setTimeout(r, 1800));
+    R.merge = { changes: 2, paints: sentToCanvas.filter((x) => x.paintOnly).length,
+                saves: sentToCanvas.filter((x) => !x.paintOnly).length };
+
+    sentToCanvas.length = 0;
+    pick("hcCtxSize", "40"); await new Promise((r) => setTimeout(r, 1400));
+    pick("hcCtxSize", "64"); await new Promise((r) => setTimeout(r, 1400));
+    R.spaced = { changes: 2, saves: sentToCanvas.filter((x) => !x.paintOnly).length };
     return R;
   }, { biz: BIZ });
   if (parent && parent.why) { console.error("CANNOT RUN — " + parent.why); await rig.close(); srv.close(); process.exit(2); }
@@ -481,11 +515,14 @@ declareBreak({
        "it looks right until a reload silently takes it away — the mirror image of the shipped bug, and " +
        "the reason both halves are asserted separately instead of as one \"it works\".",
   file: "public/hubly.html",
-  find: "      hcSendStyle(label, on, cmd.style);\n      res = { ok:true };",
-  with: "      res = { ok:true };",
+  find: "  function hcSendStyle(label, on, style){\n    post({ type:'hcFreeformStyleEdit', label: label, on: on, style: style });\n  }",
+  with: "  function hcSendStyle(label, on, style){}",
 });
 const ph = readFileSync(join(ROOT, "public/platform-home.html"), "utf8");
-const topCallsCommand = /function send\(style\)\{ hcCtxCommand\(\{ op:'style', style: style \}\); \}/.test(ph);
+// The controls route through the DEBOUNCE, which hands the same command to the same canvas
+// path — the shape changed when persistence was debounced (2026-09-19), the route did not.
+const topCallsCommand = /function send\(style\)\{ hcCtxCommandDebounced\(\{ op:'style', style: style \}\); \}/.test(ph)
+  && /hcCtxFlushPending\(\);?\s*\n?\s*\}/.test(ph) && /function hcCtxSend\(cmd, opts\)\{/.test(ph);
 const noDirectStyleWrite = !/hcCtxSendStyle/.test(ph);
 leg("RULE", "12b the style still reaches the one writer — through the canvas, not around it",
   canvas.paint.alsoSent === true && topCallsCommand && noDirectStyleWrite,
@@ -621,6 +658,144 @@ leg("RULE", "15 the band is absent until something is selected",
   parent.hiddenAtRest === true,
   `with nothing selected the band's hidden flag is ${parent.hiddenAtRest}. It appears with a selection ` +
   `and leaves with it; it never covers the page and there is nothing to dismiss to see the site.`);
+
+/* ── LEG 16 — the debounce ──────────────────────────────────────────────────────────────── */
+declareBreak({
+  leg: "16 rapid changes coalesce into ONE save",
+  why: "send on every change, which is what shipped before this round and what the measurement " +
+       "found: five changes 700ms apart produced FIVE document versions, and the only reason a " +
+       "fast burst produced fewer was accidental in-flight coalescing whose window was however " +
+       "long the request happened to take. Dragging a colour picker is then a dozen versions.",
+  file: "public/platform-home.html",
+  find: "  var HC_CTX_DEBOUNCE_MS = 600;",
+  with: "  var HC_CTX_DEBOUNCE_MS = 0;",
+});
+leg("RULE", "16 rapid changes coalesce into ONE save, and each still paints immediately",
+  parent.debounce.changes === 6 && parent.debounce.paints === 6 && parent.debounce.saves === 1 &&
+  parent.merge.saves === 1 && parent.merge.paints === 2 && parent.spaced.saves === 2,
+  `six size steps 80ms apart: ${parent.debounce.paints} paints, ${parent.debounce.saves} save. ` +
+  `A size and a colour in one burst: ${parent.merge.paints} paints, ${parent.merge.saves} save ` +
+  `(merged per property). Two changes 1400ms apart: ${parent.spaced.saves} saves — the debounce ` +
+  `COALESCES a burst, it does not swallow a later edit. The paint count matching the change count ` +
+  `is the half that matters as much: persistence is debounced, feedback is not.`);
+
+/* ── LEG 17 — a paint is not a save ──────────────────────────────────────────────────────── */
+declareBreak({
+  leg: "17 a paint-only pass writes nothing",
+  why: "let the paint-only pass fall through to hcSendStyle. Every keystroke of a debounced burst " +
+       "then writes after all — the debounce becomes decoration, and the page still churns a " +
+       "document version per step while the code claims otherwise.",
+  file: "public/hubly.html",
+  find: "      if(cmd.paintOnly !== true) hcSendStyle(label, on, cmd.style);",
+  with: "      hcSendStyle(label, on, cmd.style);",
+});
+const hb2 = readFileSync(join(ROOT, "public/hubly.html"), "utf8");
+const paintOnlySkipsWrite = /if\(cmd\.paintOnly !== true\) hcSendStyle\(label, on, cmd\.style\);/.test(hb2);
+const paintOnlyAnswersNothing = /if\(d\.paintOnly === true\) return;/.test(hb2);
+leg("RULE", "17 a paint-only pass writes nothing and confirms nothing",
+  paintOnlySkipsWrite && paintOnlyAnswersNothing,
+  `the paint pass skips the writer (${paintOnlySkipsWrite}) and sends no answer back ` +
+  `(${paintOnlyAnswersNothing}). The second half matters on its own: a reply would make the band ` +
+  `say "Saved" for a save that has not happened yet — an unearned checkmark introduced BY the ` +
+  `debounce, which is exactly the defect a debounce is most likely to add.`);
+
+/* ── LEG 18 — reload only when the page changed shape ────────────────────────────────────── */
+declareBreak({
+  leg: "18 a value-only service edit paints",
+  why: "reload on every service save, which is what shipped and what threw the owner's selection " +
+       "away mid-edit — measured live twice: the name saved and the editor vanished with them " +
+       "still looking at the card.",
+  file: "public/platform-home.html",
+  find: "        var inPlace = (r.pageChange === 'in_place');",
+  with: "        var inPlace = false;",
+});
+const phD = readFileSync(join(ROOT, "public/platform-home.html"), "utf8");
+const readsVerdict = /var inPlace = \(r\.pageChange === 'in_place'\);/.test(phD);
+const paintsWhenInPlace = /if\(inPlace\)\{\s*\n\s*hcCtxCommand\(\{ op:'serviceValues'/.test(phD);
+const reloadsOtherwise = /\} else \{\s*\n\s*try\{ hcRefreshCanvasFrame\(\); \}catch\(e\)\{\}/.test(phD);
+const reselectOnlyOnReload = /if\(!inPlace && hc\.selection && hc\.selection\.label\) hcCtxReselect/.test(phD);
+leg("RULE", "18 a value-only service edit paints; a structural one re-reads",
+  readsVerdict && paintsWhenInPlace && reloadsOtherwise && reselectOnlyOnReload,
+  `the client reads the server's verdict (${readsVerdict}), paints the card's values when the page ` +
+  `only changed value (${paintsWhenInPlace}), reloads otherwise (${reloadsOtherwise}), and only ` +
+  `re-selects when the frame was actually replaced (${reselectOnlyOnReload}). The verdict is ` +
+  `computed once on the server and handed over as a verdict, not as a bag of placement internals ` +
+  `for the client to re-derive.`);
+
+/* ── LEG 19 — the verdict's default direction ────────────────────────────────────────────── */
+declareBreak({
+  leg: "19 anything not provably value-only reloads",
+  why: "default to in_place. A page that DID change shape is then never re-read, so the owner is " +
+       "left looking at a canvas that no longer matches their record — a stale page that says it " +
+       "saved. The costs are not symmetric: an unnecessary reload is a flicker, a skipped one is a " +
+       "lie, so the tie goes to re-reading.",
+  file: "supabase/functions/_shared/hubly_capability_registry.ts",
+  find: '      if ((placement.inserted || []).length > 0) return "structural";    // a new entry was cloned in',
+  with: '      if ((placement.inserted || []).length > 0) return "in_place";',
+});
+const regD = readFileSync(join(ROOT, "supabase/functions/_shared/hubly_capability_registry.ts"), "utf8");
+const defaultsStructural = /if \(classic\) return "structural";/.test(regD) &&
+  /if \(\(placement\.inserted \|\| \[\]\)\.length > 0\) return "structural";/.test(regD) &&
+  /if \(\(placement\.missing \|\| \[\]\)\.length > 0\) return "structural";/.test(regD) &&
+  /if \(edit\.op !== "edit"\) return "structural";/.test(regD);
+const clientTreatsAbsentAsStructural = !/r\.pageChange !== 'structural'/.test(phD);
+leg("RULE", "19 anything not provably value-only reloads — including an absent verdict",
+  defaultsStructural && clientTreatsAbsentAsStructural,
+  `the server returns "structural" for a classic page, an inserted entry, a missing placement and ` +
+  `any op that is not an edit (${defaultsStructural}); the client tests for 'in_place' rather than ` +
+  `against 'structural', so an OLDER function that sends no verdict at all still reloads ` +
+  `(${clientTreatsAbsentAsStructural}). A deploy where the two halves disagree degrades to the ` +
+  `old behaviour, not to a stale page.`);
+
+/* ── LEG 20 — the rename keeps the card ──────────────────────────────────────────────────── */
+declareBreak({
+  leg: "20 a rename edits the card in place",
+  why: "fall back to remove-then-place for every rename. The re-placed entry is CLONED from a " +
+       "sibling, so the owner's photo comes back as an empty slot, the card jumps to the end of " +
+       "the section, and when the bounds guard refuses the cut the OLD card stays and the page " +
+       "shows both names. All three measured on evergreen, 2026-09-19.",
+  file: "supabase/functions/_shared/hubly_capability_registry.ts",
+  find: '  e = e.replace(/(\\bdata-hubly-price=")[^"]*(")/gi, (_m, a, b) => a + keyAttr + b);',
+  with: "",
+});
+let rename = null;
+try {
+  // DRIVE THE REAL FUNCTION, against markup copied out of evergreen's stored document.
+  const out = execFileSync("deno", ["eval", "--ext=ts", `
+    import { renameServiceInFreeform } from "${join(ROOT, "supabase/functions/_shared/hubly_capability_registry.ts")}";
+    const CARD = \`<div class="cards"><article class="card">
+      <img data-hc="i.image" src="https://images.pexels.com/photos/12916204/x.jpeg" data-hubly-photo-slot="card" alt="">
+      <div class="card-body">
+        <h2 data-hc="i.title" data-hubly-service="Full Service">Full Service</h2>
+        <span data-hc="i.body" data-hubly-price="Full Service">$95</span>
+        <p data-hubly-desc="Full Service">Mowing plus trimming.</p>
+        <a data-hubly-runtime="card-book" href="https://x.myhubly.app/?book=1&amp;svc=Full%20Service">Book Full Service</a>
+      </div></article>
+      <article class="card"><h2 data-hubly-service="Basic Mow">Basic Mow</h2>
+      <p data-hubly-desc="Basic Mow">Nothing like Full Service.</p></article></div>\`;
+    const r = renameServiceInFreeform(CARD, "Full Service", "Premium Lawn Service");
+    console.log(JSON.stringify({ renamed: r.renamed,
+      photoKept: /photos\\/12916204/.test(r.html),
+      positionKept: r.html.indexOf('data-hubly-service="Premium Lawn Service"') < r.html.indexOf('data-hubly-service="Basic Mow"'),
+      priceRekeyed: /data-hubly-price="Premium Lawn Service"[^>]*>\\$95</.test(r.html),
+      descRekeyed: /data-hubly-desc="Premium Lawn Service"/.test(r.html),
+      ctaSvc: (r.html.match(/svc=([^"&\\s]*)/) || [])[1],
+      ctaText: (r.html.match(/card-book"[^>]*>([^<]*)</) || [])[1],
+      oldGone: !/data-hubly-service="Full Service"/.test(r.html),
+      neighbourIntact: /Nothing like Full Service\\./.test(r.html) && /data-hubly-service="Basic Mow"/.test(r.html) }));
+  `], { encoding: "utf8", cwd: ROOT, timeout: 180000 });
+  rename = JSON.parse(out.trim().split("\n").pop());
+} catch (e) { rename = { err: String(e.message).split("\n")[0] }; }
+leg("RULE", "20 a rename edits the card in place — photo, position, price, link and neighbours",
+  !!rename && rename.renamed === true && rename.photoKept === true && rename.positionKept === true &&
+  rename.priceRekeyed === true && rename.descRekeyed === true && rename.oldGone === true &&
+  rename.ctaSvc === "Premium%20Lawn%20Service" && rename.ctaText === "Book Premium Lawn Service" &&
+  rename.neighbourIntact === true,
+  `renaming against evergreen's real card markup: ${JSON.stringify(rename)}. The BOOKING LINK is ` +
+  `in this leg because the first version of the rename missed it — the href carries \`&amp;svc=\`, ` +
+  `so the character before svc= is a semicolon and a [?&] pattern matched nothing. A rename would ` +
+  `have left every renamed card pointing at a service that no longer exists. The neighbour check ` +
+  `is here because that card mentions "Full Service" in its prose on purpose.`);
 
 const bad = legs.filter((l) => !l.pass);
 // not-a-corpus-rate: this check's own leg count, not a corpus

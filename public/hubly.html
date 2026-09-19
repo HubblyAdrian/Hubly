@@ -18092,8 +18092,14 @@ window.addEventListener('message', function(ev){
     return;
   }
   if(d.type === 'hcCtxCommand' && d.cmd && typeof d.cmd === 'object'){
+    // The paint-only flag rides on the envelope so a caller cannot half-set it on the command.
+    if(d.paintOnly === true){ try{ d.cmd.paintOnly = true; }catch(e){} }
     var out = { ok:false, why:'not_wired' };
     try{ if(typeof hcCtxRunCommandFromBuilder === 'function' && hcCtxRunCommandFromBuilder) out = hcCtxRunCommandFromBuilder(d.cmd); }catch(e){ out = { ok:false, why:'threw' }; }
+    // A PAINT-ONLY PASS ANSWERS NOTHING. It wrote nothing, so there is nothing to confirm, and a
+    // "Saved" here would be a checkmark for a save that has not happened yet — the exact defect
+    // the debounce could otherwise introduce.
+    if(d.paintOnly === true) return;
     try{ window.parent.postMessage({ type:'hcCtxCommandDone', id: d.id || null, op: d.cmd.op || null, result: out }, '*'); }catch(e){}
     return;
   }
@@ -57287,8 +57293,11 @@ function wireHcEditingSurface(doc, root){
           el.style.setProperty(prop, v);   // setProperty handles --custom too
         }
       }catch(e){}
-      hcSendStyle(label, on, cmd.style);
-      res = { ok:true };
+      // PAINT-ONLY: the builder is debouncing the SAVE and wants the page to keep up with the
+      // owner's hand in the meantime. The same paint, without the write — so a drag across a
+      // colour picker is one document version instead of thirty, and still looks live.
+      if(cmd.paintOnly !== true) hcSendStyle(label, on, cmd.style);
+      res = { ok:true, paintOnly: cmd.paintOnly === true };
     } else if(cmd.op === 'text'){
       res = hcCommitTextChange(el, cmd.text, el.textContent || '');
     } else if(cmd.op === 'scale' && (cmd.dir === 1 || cmd.dir === -1)){
@@ -57321,6 +57330,66 @@ function wireHcEditingSurface(doc, root){
         hcSendNodeMove(el, kids[at+1], 'after');
       }
       res = { ok:true };
+    } else if(cmd.op === 'serviceValues' && cmd.service){
+      // ══ PAINT A SERVICE'S VALUES ON THE CARD THAT IS ALREADY THERE ═════════════════════════
+      //
+      // The counterpart of the style paint, for the record path. A service edit that only
+      // changed TEXT at stamped anchors needs no document re-read — the three anchors say
+      // exactly which elements hold the name, the price and the description, and they were
+      // stamped at generation for precisely this.
+      //
+      // NO WRITE HAPPENS HERE. The save already went out through hcRecordEdit and already
+      // succeeded; this is the optimistic paint arriving late rather than a second writer.
+      // That is why it is safe for it to be the ONLY thing that touches the canvas: if the
+      // save had failed, the builder reloads instead of calling this.
+      var painted = { name:false, price:false, desc:false };
+      try{
+        var key = String(cmd.service);
+        var nameEl = null, all = root.querySelectorAll('[data-hubly-service]');
+        for(var i2 = 0; i2 < all.length; i2++){
+          if((all[i2].getAttribute('data-hubly-service') || '') === key){ nameEl = all[i2]; break; }
+        }
+        if(!nameEl) return { ok:false, why:'card_not_found' };
+        var card = nameEl;
+        for(var g = 0; card && g < 6; g++){
+          if(card.querySelector && card.querySelector('[data-hubly-price],[data-hubly-desc]')) break;
+          card = card.parentNode;
+        }
+        var scope = card && card.querySelector ? card : root;
+        if(typeof cmd.name === 'string' && cmd.name.trim()){
+          nameEl.textContent = cmd.name;
+          nameEl.setAttribute('data-hubly-service', cmd.name);
+          painted.name = true;
+        }
+        if(typeof cmd.priceText === 'string'){
+          var pEl = scope.querySelector('[data-hubly-price="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]')
+                 || scope.querySelector('[data-hubly-price]');
+          if(pEl){ pEl.textContent = cmd.priceText;
+                   if(painted.name) pEl.setAttribute('data-hubly-price', cmd.name);
+                   painted.price = true; }
+        }
+        if(typeof cmd.description === 'string'){
+          var dEl = scope.querySelector('[data-hubly-desc="' + (window.CSS && CSS.escape ? CSS.escape(key) : key) + '"]')
+                 || scope.querySelector('[data-hubly-desc]');
+          if(dEl){ dEl.textContent = cmd.description;
+                   if(painted.name) dEl.setAttribute('data-hubly-desc', cmd.name);
+                   painted.desc = true; }
+        }
+        // The booking link selects the service by name — a rename that left it behind would
+        // send the customer to a service that no longer exists.
+        if(painted.name){
+          var cta = scope.querySelector('[data-hubly-runtime="card-book"]');
+          if(cta){
+            try{
+              var href = cta.getAttribute('href') || '';
+              cta.setAttribute('href', href.replace(/(\bsvc=)[^&\s]*/, function(_m, a){ return a + encodeURIComponent(cmd.name); }));
+            }catch(e){}
+            if(/^\s*Book\s+/i.test(cta.textContent || '')) cta.textContent = 'Book ' + cmd.name;
+          }
+        }
+      }catch(e){ return { ok:false, why:'threw' }; }
+      res = { ok: painted.name || painted.price || painted.desc, painted: painted };
+      if(!res.ok) res.why = 'nothing_to_paint';
     } else if(cmd.op === 'delete'){
       post({ type:'hcFreeformNodeDelete', node: hcAddressOf(el) });
       return { ok:true, deleted:true };

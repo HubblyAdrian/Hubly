@@ -5092,7 +5092,11 @@ export type OwnerRecordEdit =
   | { kind: "service"; op: "remove"; id?: string; name: string }
   | { kind: "design"; knob: KnobId; value?: string; direction?: "up" | "down"; op?: "set" | "reset" };
 
-export type OwnerEditResult = { ok: boolean; real: boolean; summary: string; error?: string; raw?: unknown };
+export type OwnerEditResult = { ok: boolean; real: boolean; summary: string; error?: string; raw?: unknown;
+  /** Whether this edit changed the page's SHAPE or only values at existing anchors. Absent means
+   *  "structural" to every reader — the safe direction, because a skipped reload that was needed
+   *  leaves the owner looking at a page that no longer matches their record. */
+  pageChange?: "in_place" | "structural" };
 
 /**
  * Turn one design knob on the owner's page — or put it back.
@@ -5338,6 +5342,86 @@ async function adminWrite(method: "POST" | "PATCH" | "DELETE", table: string, fi
   return await res.json().catch(() => null);
 }
 
+/** ══ RENAME A SERVICE IN PLACE — THE CARD STAYS WHERE IT IS, WITH ITS PHOTO ══════════════════
+ *
+ *  A rename used to be remove-then-place: `removeServiceCard(prevName)` followed by
+ *  `applyServicesToFreeform([newName])`. Three things fell out of that, all measured on
+ *  evergreen 2026-09-19:
+ *
+ *    1. The re-placed entry is CLONED FROM A SIBLING, so `<img data-hubly-photo-slot="card">`
+ *       comes back with no src — the owner's chosen photo is gone.
+ *    2. The clone is appended, so the card jumps to the END of the section.
+ *    3. When `findServiceEntryBounds` refuses the cut (its guard exists because a bad cut once
+ *       deleted a footer's address and phone), the OLD card stays and the page shows both names
+ *       while the record shows one.
+ *
+ *  None of that is necessary. A rename changes TEXT and KEYS on an entry that already exists.
+ *  This edits that entry in place and touches nothing else:
+ *
+ *    · the anchor element's visible text, and its own `data-hubly-service` key
+ *    · `data-hubly-price` / `data-hubly-desc` keys, which are keyed BY SERVICE NAME
+ *    · the booking CTA's `?book=1&svc=` parameter and its "Book <name>" wording
+ *
+ *  SCOPED TO THE ENTRY. Every replacement runs on the slice `findServiceEntryBounds` returns —
+ *  the same anchor+bounds pair removeServiceCard uses — so a service whose name appears in
+ *  another card's prose cannot be rewritten by accident.
+ *
+ *  Returns `renamed:false` when there is no anchor or no bounds, and the CALLER falls back to
+ *  the old remove-then-place. A rename that cannot be done in place is still a rename. */
+export function renameServiceInFreeform(html: string, prevName: string, newName: string): { html: string; renamed: boolean; why?: string } {
+  const prev = String(prevName || "").trim();
+  const next = String(newName || "").trim();
+  if (!prev || !next || normServiceKey(prev) === normServiceKey(next)) return { html, renamed: false, why: "no_change" };
+  const anchor = findServiceAnchor(html, prev);
+  if (!anchor) return { html, renamed: false, why: "no_anchor" };
+  const tag = (/<([a-z0-9]+)/i.exec(html.slice(anchor.index)) || [])[1]?.toLowerCase() || "";
+  const bounds = findServiceEntryBounds(html, anchor.index, anchor.length, tag);
+  if (!bounds) return { html, renamed: false, why: "no_bounds" };
+
+  let e = html.slice(bounds.start, bounds.end);
+  const before = e;
+  const keyAttr = escapeAttrValue(next);
+  const textVal = escHtmlText(next);
+
+  // 1. THE NAME ELEMENT: its key, then its text. The text swap is bounded to the anchor
+  //    element itself so a description that happens to repeat the name is left alone.
+  e = e.replace(/<([a-z0-9]+)\b([^>]*\bdata-hubly-service=")([^"]*)("[^>]*)>([\s\S]*?)<\/\1>/i,
+    (_m, t, pre, _oldKey, post, inner) => {
+      // Replace only the TEXT RUN that is the old name; markup inside (a <span>, a <br>) survives.
+      const swapped = inner.replace(new RegExp(escapeRegExp(prev), "i"), textVal);
+      return `<${t}${pre}${keyAttr}${post}>${swapped === inner ? textVal : swapped}</${t}>`;
+    });
+
+  // 2. THE OTHER TWO ANCHORS are keyed by service name, so they must follow the rename or the
+  //    next price/description write will not find them.
+  e = e.replace(/(\bdata-hubly-price=")[^"]*(")/gi, (_m, a, b) => a + keyAttr + b);
+  e = e.replace(/(\bdata-hubly-desc=")[^"]*(")/gi, (_m, a, b) => a + keyAttr + b);
+
+  // 3. THE BOOKING CTA. `?svc=` selects the service on the booking form, so a rename that left it
+  //    pointing at the old name would send the customer to a service that no longer exists — a
+  //    dead booking link is the one defect on a card that costs money.
+  //    THE `&` IS HTML-ESCAPED IN THE HREF. The link reads `?book=1&amp;svc=Full%20Service`, so the
+  //    character before `svc=` is a SEMICOLON, not an `&` — a `[?&]svc=` pattern matches nothing and
+  //    the rename silently leaves the customer pointed at a service that no longer exists. Caught by
+  //    asserting the href after a rename rather than by reading the regex.
+  e = e.replace(/(<a\b[^>]*\bdata-hubly-runtime="card-book"[^>]*>)([\s\S]*?)(<\/a>)/i,
+    (_m, open, inner, close) => {
+      const openFixed = open.replace(/(\bsvc=)[^"'&\s]*/gi, (_x: string, a: string) => a + encodeURIComponent(next));
+      const swapped = inner.replace(new RegExp("Book\\s+" + escapeRegExp(prev), "i"), "Book " + textVal);
+      return openFixed + swapped + close;
+    });
+
+  if (e === before) return { html, renamed: false, why: "nothing_matched" };
+  return { html: html.slice(0, bounds.start) + e + html.slice(bounds.end), renamed: true };
+}
+
+/** Literal text -> safe inside a regex. */
+function escapeRegExp(s: string): string { return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+/** Literal text -> safe inside a double-quoted attribute. */
+function escapeAttrValue(s: string): string {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 /** Remove one service's card from a freeform page (find its anchor, cut the whole
  *  entry) and persist a version. Mirrors applyServicesToFreeform's save. */
 async function removeServiceCard(draftId: string, draftToken: string, ownerUid: string | null, name: string): Promise<boolean> {
@@ -5502,9 +5586,44 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
       row.business_id = draftId;
       await adminWrite("POST", "services", "", row);
     }
-    // A name change moves the anchor — remove the old card, then place the new one.
+    // ══ A RENAME IS AN EDIT TO AN ENTRY THAT EXISTS — NOT A DELETE AND A RE-ADD ═══════════════
+    //
+    // This was `removeServiceCard(prevName)`, leaving applyServicesToFreeform below to clone a
+    // fresh entry from a sibling. That cost the card its PHOTO (the clone's photo slot has no
+    // src), moved it to the END of the section, and — when the bounds guard refused the cut —
+    // left the old card standing so the page showed both names while the record showed one.
+    // All three measured on evergreen, 2026-09-19.
+    //
+    // In place first: swap the text and re-key the three anchors on the entry that is already
+    // there. The card keeps its position and its picture, and because the anchors now carry the
+    // NEW name, applyServicesToFreeform below finds them and reports `paths.anchor` — a
+    // value-only update — instead of `inserted`. That distinction is what lets the client skip
+    // the canvas reload, so this fix is also what makes the next one possible.
+    //
+    // THE OLD PATH IS THE FALLBACK, not a deletion. A page with no anchor for the old name
+    // (built before the anchor pass) still renames the way it always did.
+    let renamedInPlace = false;
     if (edit.prevName && edit.prevName.trim() && edit.prevName.trim().toLowerCase() !== name.toLowerCase()) {
-      await removeServiceCard(draftId, draftToken, ownerUid, edit.prevName.trim());
+      const prevTrimmed = edit.prevName.trim();
+      const latestDoc = await selectLatestBusinessDocument(draftId, "website");
+      if (latestDoc && latestDoc.format === "html") {
+        const rn = renameServiceInFreeform(latestDoc.renderedHtml, prevTrimmed, name);
+        if (rn.renamed) {
+          const savedRename = await callBusinessRpc("create_business_document", {
+            p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
+            p_document: latestDoc.brief, p_rendered_html: stripEditorChrome(rn.html, "service-rename"),
+            p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
+          });
+          renamedInPlace = !!(savedRename && savedRename.ok === true);
+          notePlacement("renameServiceInFreeform", renamedInPlace ? "renamed" : "save_failed", draftId,
+            `${prevTrimmed} -> ${name}`);
+        } else {
+          notePlacement("renameServiceInFreeform", "fell_back", draftId, `${prevTrimmed} -> ${name}: ${rn.why}`);
+        }
+      }
+      // Only cut the old card when the in-place rename did NOT happen — otherwise the entry we
+      // just renamed IS the old card, and removing it would delete the rename.
+      if (!renamedInPlace) await removeServiceCard(draftId, draftToken, ownerUid, prevTrimmed);
     }
   } else {
     row.business_id = draftId;
@@ -5608,6 +5727,33 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
       ? `${edit.op === "add" ? "Added" : "Updated"} ${name} on your page, in the services section.`
       : `Saved ${name} to your list. It is not showing on the page.`),
     raw: { services: placement, classic },
+    // ══ DID THE PAGE CHANGE SHAPE, OR ONLY VALUE? — A VERDICT, NOT INGREDIENTS ════════════════
+    //
+    // The client reloads the whole canvas after every service save, which throws away the
+    // owner's selection mid-edit. It does not have to: an edit that only rewrote TEXT at stamped
+    // anchors can be painted locally, and only a STRUCTURAL change (a new entry cloned in, a
+    // card cut out, a section created) genuinely needs the document re-read.
+    //
+    // The placement result already knows which happened — `inserted` names entries added as a
+    // new entry, `paths.inserted` counts them. But it is a bag of internals, and handing the
+    // client a bag invites it to re-derive the answer and get it wrong (Lesson 101: hand the
+    // consumer a VERDICT, never the ingredients). So the verdict is computed here, once.
+    //
+    // THE DEFAULT IS "structural", AND THAT IS THE SAFE DIRECTION. An unnecessary reload costs a
+    // flicker and a lost selection; a SKIPPED reload that was needed leaves the owner looking at
+    // a page that no longer matches their record — a stale page that says it saved. When in
+    // doubt, re-read.
+    pageChange: ((): "in_place" | "structural" => {
+      if (classic) return "structural";                                  // different renderer entirely
+      if (placement.status === "not_freeform") return "structural";
+      if ((placement.inserted || []).length > 0) return "structural";    // a new entry was cloned in
+      if ((placement.paths?.inserted ?? 0) > 0) return "structural";
+      if ((placement.missing || []).length > 0) return "structural";     // something could not be placed
+      if ((placement.noSection) === true) return "structural";           // a section was created
+      if (edit.op !== "edit") return "structural";                       // add/remove change the shape
+      if ((placement.verifiedPlaced || []).length === 0) return "structural";
+      return "in_place";
+    })(),
   };
 }
 
