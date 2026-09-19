@@ -1156,6 +1156,51 @@
       "declaredTotal": 25,
       "recorded": 25,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-19T22:28:05.712Z",
+      "applied": 5,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T22:28:33.646Z",
+      "applied": 5,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T22:29:15.011Z",
+      "applied": 5,
+      "alone": 5,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -1390,7 +1435,7 @@
       "check": "check-preview-is-a-true-device.mjs",
       "leg": "2 the scale never exceeds 1",
       "why": "remove the 1:1 ceiling, so a pane wider than 1440 upscales the device and shows the owner text BIGGER than a visitor gets — lying in the opposite direction from the clipped fold",
-      "at": "2026-09-19T03:34:36.666Z",
+      "at": "2026-09-19T22:29:15.011Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1399,7 +1444,7 @@
       "check": "check-preview-is-a-true-device.mjs",
       "leg": "3 the scale tracks the pane's WIDTH",
       "why": "put the height fit back into the scale — `min(paneW/dev.w, paneH/dev.h)` — which is the state Adrian reported as 'the website got small': a wider window adds only beige",
-      "at": "2026-09-19T03:34:36.666Z",
+      "at": "2026-09-19T22:29:15.011Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1408,7 +1453,7 @@
       "check": "check-preview-is-a-true-device.mjs",
       "leg": "4 the pane never needs its own scrollbar",
       "why": "restore `align-items:center; overflow:auto` on the wrap — the obvious implementation of a width fit, which puts the WORKSPACE's scrollbar beside the PAGE's and, worse, centres an overflowing frame so its top sits above the scroll origin and cannot be reached at all",
-      "at": "2026-09-19T03:34:36.666Z",
+      "at": "2026-09-19T22:29:15.011Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1417,7 +1462,7 @@
       "check": "check-preview-is-a-true-device.mjs",
       "leg": "5 mobile still renders native-width",
       "why": "make hcIsMobile() always false, so a phone gets the desktop device simulation — a 1440px viewport scaled into a 390px screen, which is the one thing a phone must never do because the phone IS the device",
-      "at": "2026-09-19T03:34:36.666Z",
+      "at": "2026-09-19T22:29:15.011Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1675,15 +1720,6 @@
       "at": "2026-09-19T03:43:08.169Z",
       "note": "This leg reads PRODUCTION — the stored document and the services table — so no repo edit can move it. PROVEN BY HAND on 2026-09-18 across one correction: BEFORE, three of six prices on evergreen-yard-care's page disagreed with their rows and each other (111.222.333 vs 95, $111,222,333 vs 220, 50 vs 40) while the untouched three matched; AFTER 20260918220000, all six read $95 $220 $40 $130 $150 $85 and every one equals hcPriceText(services.price) for its key. That is this assertion observed red and then green for the reason it claims to catch.",
       "status": "DECLARED, PROVEN BY HAND"
-    },
-    "check-preview-is-a-true-device.mjs::1 the device is 1440 CSS px WIDE and its logical height matches the pane": {
-      "check": "check-preview-is-a-true-device.mjs",
-      "leg": "1 the device is 1440 CSS px WIDE and its logical height matches the pane",
-      "why": "pin the logical height back to the device's fixed 900. The preview still looks plausible, a 100vh hero goes back to measuring a height the pane does not have, and 191px of pane goes back to being beige at an ordinary window size — which is what the ruling ended.",
-      "at": "2026-09-19T03:34:36.666Z",
-      "also": [],
-      "newlyRed": 1,
-      "status": "RED ALONE"
     },
     "check-one-price-one-formatter.mjs::5 no shell parses a typed price with a bare Number() or parseFloat": {
       "check": "check-one-price-one-formatter.mjs",
@@ -2065,6 +2101,15 @@
       "leg": "19 anything not provably value-only reloads",
       "why": "default to in_place. A page that DID change shape is then never re-read, so the owner is left looking at a canvas that no longer matches their record — a stale page that says it saved. The costs are not symmetric: an unnecessary reload is a flicker, a skipped one is a lie, so the tie goes to re-reading.",
       "at": "2026-09-19T21:34:13.248Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-preview-is-a-true-device.mjs::1 the stage IS the page's layout width": {
+      "check": "check-preview-is-a-true-device.mjs",
+      "leg": "1 the stage IS the page's layout width",
+      "why": "pin the desktop layout width back to a fixed 1440 regardless of the pane. The preview still looks plausible and every page is silently shrunk again — 0.768 in an 1106px pane, which is 16px text arriving at about 10. That is the state Adrian reported as \"it looks small\", and nothing on screen says the page is being scaled.",
+      "at": "2026-09-19T22:29:15.011Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

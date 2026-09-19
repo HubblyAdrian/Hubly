@@ -2749,6 +2749,43 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
     }
     var dev = HC_DEVICES[hc.previewDevice] || HC_DEVICES.desktop;
 
+    /* ══ DESKTOP FITS THE PANE 1:1 — RULED BY ADRIAN, 2026-09-19: "it looks small" ════════════
+     *
+     * MEASURED FIRST, on evergreen in the real editor: the pane is 1106px of usable width, the
+     * page was laid out at a fixed 1440 and scaled by 0.768, and the site's own `main` is a
+     * centred 1180px column. So content designed at 16px reached the owner's eye at about 10 —
+     * ~63% of true size. That is why it read small, and it was not the padding.
+     *
+     * THIS CHANGES AN EARLIER RULING OF YOURS and the change is named rather than slipped in.
+     * The preview was pinned to a true 1440x900 device so the owner saw exactly what a 1440px
+     * visitor sees. The cost of that fidelity is a permanent shrink whenever the pane is
+     * narrower than 1440, which it always is.
+     *
+     * WHAT IS KEPT: it is still a TRUE viewport — the page really is laid out at this width, so
+     * `100vh` heroes and every media query behave exactly as they would for a visitor whose
+     * window is this size. And it still never upscales: the scale is exactly 1, which is the
+     * ceiling the old code clamped to. What changes is only WHICH desktop width is shown, and
+     * the honest description is now "your site at this window's width" rather than "your site
+     * at 1440".
+     *
+     * CLAMPED 1024-1600, because a pane can be any size: below 1024 a desktop layout starts
+     * hitting tablet breakpoints and stops being a desktop preview, and above 1600 the page
+     * would be laid out wider than most visitors' screens. Inside that range the owner gets 1:1.
+     *
+     * MOBILE IS UNTOUCHED — it returns above, and 390x844 stays a true phone viewport scaled to
+     * fit, which is the whole point of a phone preview. */
+    if(hc.previewDevice !== 'mobile'){
+      var paneForDev = 0;
+      try{
+        var wcs = window.getComputedStyle(wrap);
+        var wpad = (parseFloat(wcs.paddingLeft) || 0) + (parseFloat(wcs.paddingRight) || 0);
+        paneForDev = Math.round((wrap.clientWidth || 0) - wpad);
+      }catch(e){}
+      if(paneForDev > 0){
+        dev = { w: Math.max(1024, Math.min(1600, paneForDev)), h: dev.h };
+      }
+    }
+
     /* ══ clientWidth INCLUDES PADDING. THE OLD COMMENT SAID IT DID NOT. ═══════════════════════
      *
      * It read "clientWidth/Height already exclude the wrap's own padding" — false by

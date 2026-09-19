@@ -104,17 +104,18 @@ try {
   console.log();
 
   declareBreak({
-    leg: "1 the device is 1440 CSS px WIDE and its logical height matches the pane",
+    leg: "1 the stage IS the page's layout width",
     // THE OLD BREAK'S `why` DESCRIBED, AS THE DEFECT, EXACTLY WHAT ADRIAN HAS NOW RULED CORRECT:
     // "make the stage's logical height follow the pane instead of staying 900". A leg can encode a
     // shape so specifically that its own break text becomes the next spec — which is the clearest
     // possible demonstration of why [SHAPE] and [RULE] have to be declared at write time.
-    why: "pin the logical height back to the device's fixed 900. The preview still looks plausible, a " +
-         "100vh hero goes back to measuring a height the pane does not have, and 191px of pane goes " +
-         "back to being beige at an ordinary window size — which is what the ruling ended.",
+    why: "pin the desktop layout width back to a fixed 1440 regardless of the pane. The preview " +
+         "still looks plausible and every page is silently shrunk again — 0.768 in an 1106px pane, " +
+         "which is 16px text arriving at about 10. That is the state Adrian reported as \"it looks " +
+         "small\", and nothing on screen says the page is being scaled.",
     file: "public/platform-home.html",
-    find: "    stage.style.setProperty('--hc-ph', logicalH + 'px');",
-    with: "    stage.style.setProperty('--hc-ph', dev.h + 'px');",
+    find: "        dev = { w: Math.max(1024, Math.min(1600, paneForDev)), h: dev.h };",
+    with: "        dev = { w: 1440, h: dev.h };",
   });
   // ══ THE ASSERTION WAS CHANGED, NOT LEFT TO FAIL ═════════════════════════════════════════════
   //
@@ -125,15 +126,24 @@ try {
   // report, never quietly relaxed. 1440 WIDE still holds absolutely; the height is now asserted to
   // MATCH THE PANE, which is a stronger statement than 900 ever was — it ties the logical viewport
   // to the real space instead of to a constant nobody has.
-  leg("RULE", "1 the device is 1440 CSS px WIDE and its logical height matches the pane",
-    seen.length === SHAPES.length &&
-      seen.every((m) => m.stageW === 1440 && Math.abs(m.stageH * m.scale - m.paneH) <= 2),
-    `${seen.length} of ${SHAPES.length} pane shape(s) measured — the count is part of the assertion, ` +
-    `because "every one is 1440 wide" is trivially true of none. Stage: ` +
-    `${seen.map((m) => m.stageW + "x" + m.stageH).join(", ")}; stageH x scale against paneH: ` +
-    `${seen.map((m) => Math.round(m.stageH * m.scale) + "/" + Math.round(m.paneH)).join(", ")}. ` +
-    `A 100vh hero measures the owner's real pane while this holds, and 1440 wide is what keeps every ` +
-    `width breakpoint honest.`);
+  leg("RULE", "1 the stage IS the page's layout width — a real viewport, never a shrunk one",
+  seen.length === 4 &&
+  // THE RULE IS 1:1 WITH THE PANE, clamped to the desktop band — not merely "inside the band",
+  // which the 1440 break satisfied while re-introducing the shrink. Asserted as an equality
+  // against the pane the owner actually has.
+  seen.every((sh) => sh.stageW === Math.max(1024, Math.min(1600, Math.round(sh.paneW)))) &&
+  seen.every((sh) => Math.abs(sh.stageH * sh.scale - sh.paneH) <= 2),
+  `${seen.length} of ${seen.length} pane shape(s) measured — the count is part of the ` +
+  `assertion, because "every one is a real viewport" is trivially true of none. Stage: ` +
+  `${seen.map((sh) => sh.stageW + "x" + sh.stageH + " (pane " + Math.round(sh.paneW) + ")").join(", ")}; stageH x scale against paneH: ` +
+  `${seen.map((sh) => Math.round(sh.stageH * sh.scale) + "/" + sh.paneH).join(", ")}. ` +
+  `RE-AIMED 2026-09-19, and the leg is what was wrong: it asserted the literal 1440, which is a ` +
+  `SHAPE, under a [RULE] label — so when Adrian ruled the desktop preview should fit its pane ` +
+  `1:1 ("it looks small": a 1440 layout scaled to 0.768 in an 1106px pane put 16px text on ` +
+  `screen at about 10), a [RULE] leg went red for a product IMPROVEMENT. That is the tell my own ` +
+  `standing rule names. The durable rule is what is asserted now: whatever width is chosen, the ` +
+  `page is really LAID OUT at it (so 100vh and every width breakpoint stay honest) and it stays ` +
+  `inside the desktop band 1024-1600. Leg 2 still holds the never-upscale ceiling.`);
 
   declareBreak({
     leg: "2 the scale never exceeds 1",

@@ -13,7 +13,7 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-19T21:34:13.248Z** · 106 run(s) recorded.
+**Last run: 2026-09-19T22:29:15.011Z** · 109 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
@@ -81,7 +81,7 @@ have made the rule the first thing anyone switched off.
 | `check-postmessage-pairs-are-derived.mjs` | 2 every type the parent compares is sent by the canvas, or declares itself pending | **RED ALONE** | remove the CANVAS-SENDER-PENDING marker from the hcFreeformNodeMove handler. It is a real handler with a real writer and no sender; without the marker that fact is invisible, and with a marker nobody can tell it from a handler whose sender was deleted by accident. | — |
 | `check-postmessage-pairs-are-derived.mjs` | 3 the reverse channel pairs too — parent to canvas | **RED ALONE** | rename the parent's hcAuthState send. The canvas never learns the owner is signed in, so click-to-edit never ungates — which is the missing-handshake defect that closed on 2026-08-31, reintroduced from the other end. | — |
 | `check-postmessage-pairs-are-derived.mjs` | 4 an unhandled message is LOUD at run time, not a silent else | **RED ALONE** | put the listener's chain back to ending at a bare `}`. Every static pairing leg above still passes — the types still match — while a KNOWN type whose payload guard rejects it goes back to vanishing with no trace. That run-time case is the half a static check cannot see. | — |
-| `check-preview-is-a-true-device.mjs` | 1 the device is 1440 CSS px WIDE and its logical height matches the pane | **RED ALONE** | pin the logical height back to the device's fixed 900. The preview still looks plausible, a 100vh hero goes back to measuring a height the pane does not have, and 191px of pane goes back to being beige at an ordinary window size — which is what the ruling ended. | — |
+| `check-preview-is-a-true-device.mjs` | 1 the stage IS the page's layout width | **RED ALONE** | pin the desktop layout width back to a fixed 1440 regardless of the pane. The preview still looks plausible and every page is silently shrunk again — 0.768 in an 1106px pane, which is 16px text arriving at about 10. That is the state Adrian reported as "it looks small", and nothing on screen says the page is being scaled. | — |
 | `check-preview-is-a-true-device.mjs` | 2 the scale never exceeds 1 | **RED ALONE** | remove the 1:1 ceiling, so a pane wider than 1440 upscales the device and shows the owner text BIGGER than a visitor gets — lying in the opposite direction from the clipped fold | — |
 | `check-preview-is-a-true-device.mjs` | 3 the scale tracks the pane's WIDTH | **RED ALONE** | put the height fit back into the scale — `min(paneW/dev.w, paneH/dev.h)` — which is the state Adrian reported as 'the website got small': a wider window adds only beige | — |
 | `check-preview-is-a-true-device.mjs` | 4 the pane never needs its own scrollbar | **RED ALONE** | restore `align-items:center; overflow:auto` on the wrap — the obvious implementation of a width fit, which puts the WORKSPACE's scrollbar beside the PAGE's and, worse, centres an overflowing frame so its top sits above the scroll origin and cannot be reached at all | — |
@@ -237,3 +237,6 @@ have made the rule the first thing anyone switched off.
 - **2026-09-19T20:17:31.769Z** — 20 break(s) applied · 20 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-19T21:26:52.205Z** — 22 break(s) applied · 20 red alone · 1 compound · 1 not red · 3 skipped
 - **2026-09-19T21:34:13.248Z** — 25 break(s) applied · 25 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-19T22:28:05.712Z** — 5 break(s) applied · 4 red alone · 0 compound · 1 not red · 0 skipped
+- **2026-09-19T22:28:33.646Z** — 5 break(s) applied · 4 red alone · 0 compound · 1 not red · 0 skipped
+- **2026-09-19T22:29:15.011Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
