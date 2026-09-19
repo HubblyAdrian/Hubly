@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-19T03:37:40.501Z** · 79 run(s) recorded.
+**Last run: 2026-09-19T03:43:08.169Z** · 80 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 51 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 52 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -61,6 +61,7 @@ have made the rule the first thing anyone switched off.
 | `check-one-price-one-formatter.mjs` | 2 the service price renderer goes through the one formatter | **RED ALONE** | put svcDisplayPrice back to building its own '$' + s.price. It renders identically TODAY, so nothing looks wrong — and the next change to how a price reads happens in one place and not the other, which is how this section came to show three formats at once. | — |
 | `check-one-price-one-formatter.mjs` | 3 a price anchor edit goes to the RECORD, not a document text patch | **RED ALONE** | send the price down the plain text-patch path like any other element. The page changes and the `services` row does not — which is exactly the divergence measured on evergreen-yard-care (record 95/220/40, page 111.222.333/$111,222,333/50) and invisible from the page alone. | — |
 | `check-one-price-one-formatter.mjs` | 4 [SHAPE] every price on the live page equals its own record value, formatted once | **DECLARED, PROVEN BY HAND** | — | — |
+| `check-one-price-one-formatter.mjs` | 5 no shell parses a typed price with a bare Number() or parseFloat | **RED ALONE** | put `Number(priceRaw)` back on the Edit-details ADD row. It is the one control in the owner shell that can create a service, and Number('$95') is NaN — so a price an owner typed perfectly readably gets stored as NaN, silently, at the moment the service is created. | — |
 | `check-page-facts-match-the-record.mjs` | the classic renderer still injects the recorded phone | **RED ALONE** | stop the classic hero pill building a tel: link from S.phone, so eleven live pages silently lose the only phone number they show and nothing errors | — |
 | `check-postmessage-pairs-are-derived.mjs` | 1 every type the canvas sends is compared by the parent | **RED ALONE** | DELETE the parent's hcFreeformAddService branch. The canvas keeps sending it, nothing matches, and the ONLY working add control in the product silently stops adding — the exact shape hcFreeformLinkEdit shipped in for 16 days. Deleted rather than RENAMED: a rename is the obvious break and it is too wide, because it removes one comparison and introduces another, so it fires leg 2 as well and proves nothing about either (L98). This one changes the sent-but-unhandled set and leaves the handled-but-unsent set untouched. | — |
 | `check-postmessage-pairs-are-derived.mjs` | 2 every type the parent compares is sent by the canvas, or declares itself pending | **RED ALONE** | remove the CANVAS-SENDER-PENDING marker from the hcFreeformNodeMove handler. It is a real handler with a real writer and no sender; without the marker that fact is invisible, and with a marker nobody can tell it from a handler whose sender was deleted by accident. | — |
@@ -167,3 +168,4 @@ have made the rule the first thing anyone switched off.
 - **2026-09-19T03:34:36.666Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-19T03:36:21.920Z** — 4 break(s) applied · 3 red alone · 1 compound · 0 not red · 0 skipped
 - **2026-09-19T03:37:40.501Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-19T03:43:08.169Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped

@@ -751,6 +751,21 @@
       "declaredTotal": 4,
       "recorded": 4,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-19T03:43:08.169Z",
+      "applied": 4,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 1,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -1240,7 +1255,7 @@
       "check": "check-one-price-one-formatter.mjs",
       "leg": "1 an unparseable price is REFUSED, never coerced to a number",
       "why": "fall back to parseFloat, which is the obvious implementation and the dangerous one: parseFloat('50 dollars') is 50 and parseFloat('call me') is NaN — so a value the owner did not type gets stored for the first, silently, on a page a customer reads.",
-      "at": "2026-09-19T03:27:36.684Z",
+      "at": "2026-09-19T03:43:08.169Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1249,7 +1264,7 @@
       "check": "check-one-price-one-formatter.mjs",
       "leg": "2 the service price renderer goes through the one formatter",
       "why": "put svcDisplayPrice back to building its own '$' + s.price. It renders identically TODAY, so nothing looks wrong — and the next change to how a price reads happens in one place and not the other, which is how this section came to show three formats at once.",
-      "at": "2026-09-19T03:27:36.684Z",
+      "at": "2026-09-19T03:43:08.169Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1258,7 +1273,7 @@
       "check": "check-one-price-one-formatter.mjs",
       "leg": "3 a price anchor edit goes to the RECORD, not a document text patch",
       "why": "send the price down the plain text-patch path like any other element. The page changes and the `services` row does not — which is exactly the divergence measured on evergreen-yard-care (record 95/220/40, page 111.222.333/$111,222,333/50) and invisible from the page alone.",
-      "at": "2026-09-19T03:27:36.684Z",
+      "at": "2026-09-19T03:43:08.169Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -1267,7 +1282,7 @@
       "check": "check-one-price-one-formatter.mjs",
       "leg": "4 [SHAPE] every price on the live page equals its own record value, formatted once",
       "why": null,
-      "at": "2026-09-19T03:27:36.684Z",
+      "at": "2026-09-19T03:43:08.169Z",
       "note": "This leg reads PRODUCTION — the stored document and the services table — so no repo edit can move it. PROVEN BY HAND on 2026-09-18 across one correction: BEFORE, three of six prices on evergreen-yard-care's page disagreed with their rows and each other (111.222.333 vs 95, $111,222,333 vs 220, 50 vs 40) while the untouched three matched; AFTER 20260918220000, all six read $95 $220 $40 $130 $150 $85 and every one equals hcPriceText(services.price) for its key. That is this assertion observed red and then green for the reason it claims to catch.",
       "status": "DECLARED, PROVEN BY HAND"
     },
@@ -1276,6 +1291,15 @@
       "leg": "1 the device is 1440 CSS px WIDE and its logical height matches the pane",
       "why": "pin the logical height back to the device's fixed 900. The preview still looks plausible, a 100vh hero goes back to measuring a height the pane does not have, and 191px of pane goes back to being beige at an ordinary window size — which is what the ruling ended.",
       "at": "2026-09-19T03:34:36.666Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-one-price-one-formatter.mjs::5 no shell parses a typed price with a bare Number() or parseFloat": {
+      "check": "check-one-price-one-formatter.mjs",
+      "leg": "5 no shell parses a typed price with a bare Number() or parseFloat",
+      "why": "put `Number(priceRaw)` back on the Edit-details ADD row. It is the one control in the owner shell that can create a service, and Number('$95') is NaN — so a price an owner typed perfectly readably gets stored as NaN, silently, at the moment the service is created.",
+      "at": "2026-09-19T03:43:08.169Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

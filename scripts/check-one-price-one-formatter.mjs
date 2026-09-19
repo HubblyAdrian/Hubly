@@ -52,14 +52,21 @@ function liveRead(args, tries = 3) {
   return { out: null, err: `${tries} attempt(s); last: ${last}` };
 }
 
-/* THE REAL FUNCTIONS, lifted out of the shipping file and run — not reimplemented here. */
-const srcSlice = canvas.slice(canvas.indexOf("function hcParsePrice(raw){"), canvas.indexOf("function svcDisplayPrice(s){"));
-if (!/function hcParsePrice/.test(srcSlice) || !/function hcPriceText/.test(srcSlice)) {
-  console.error("CANNOT RUN — could not lift hcParsePrice/hcPriceText out of public/hubly.html"); process.exit(2);
-}
+/* THE REAL MODULE, loaded and run — not reimplemented here. It moved out of hubly.html into a shared
+   file the moment platform-home needed the same parse, so this now loads the file both shells load. */
+const MODULE = "public/hubly-price.js";
+const modSrc = readFileSync(join(ROOT, MODULE), "utf8");
 let hcParsePrice, hcPriceText;
-try { ({ hcParsePrice, hcPriceText } = new Function(srcSlice + "\nreturn { hcParsePrice, hcPriceText };")()); }
-catch (e) { console.error("CANNOT RUN — the lifted source did not evaluate: " + e.message); process.exit(2); }
+try {
+  const W = {};
+  new Function("window", modSrc)(W);
+  hcParsePrice = W.HUBLY_PRICE && W.HUBLY_PRICE.parse;
+  hcPriceText = W.HUBLY_PRICE && W.HUBLY_PRICE.text;
+} catch (e) { console.error("CANNOT RUN — " + MODULE + " did not evaluate: " + e.message); process.exit(2); }
+if (typeof hcParsePrice !== "function" || typeof hcPriceText !== "function") {
+  console.error("CANNOT RUN — " + MODULE + " did not define window.HUBLY_PRICE.parse/.text"); process.exit(2);
+}
+const shells = { "public/hubly.html": canvas, "public/platform-home.html": readFileSync(join(ROOT, "public/platform-home.html"), "utf8") };
 
 /* ── LEG 1 ─────────────────────────────────────────────────────────────────────────────────── */
 declareBreak({
@@ -67,9 +74,9 @@ declareBreak({
   why: "fall back to parseFloat, which is the obvious implementation and the dangerous one: " +
        "parseFloat('50 dollars') is 50 and parseFloat('call me') is NaN — so a value the owner did " +
        "not type gets stored for the first, silently, on a page a customer reads.",
-  file: "public/hubly.html",
-  find: "  if(!/^\\d+(\\.\\d{1,2})?$/.test(t)) return null;      // anything else is REFUSED, not coerced",
-  with: "  t = String(parseFloat(t));",
+  file: "public/hubly-price.js",
+  find: "    if (!/^\\d+(\\.\\d{1,2})?$/.test(t)) return null;   // anything else is REFUSED, not coerced",
+  with: "    t = String(parseFloat(t));",
 });
 const REFUSE = ["", "call me", "50 dollars", "-5", "abc", "..", "$", "1e5"];
 const ACCEPT = [["95", 95], ["$95", 95], ["  95  ", 95], ["111.222.333", 111222333],
@@ -171,6 +178,43 @@ if (pageP === null || recP === null) {
         `their own key: ${page.map(([k, v]) => k + " " + v).join(", ")}. The count is part of the ` +
         `claim — "every one agrees" is trivially true of none.`);
 }
+
+/* ── LEG 5 — THE CLASS, ACROSS BOTH SHELLS ─────────────────────────────────────────────────── */
+declareBreak({
+  leg: "5 no shell parses a typed price with a bare Number() or parseFloat",
+  why: "put `Number(priceRaw)` back on the Edit-details ADD row. It is the one control in the owner " +
+       "shell that can create a service, and Number('$95') is NaN — so a price an owner typed " +
+       "perfectly readably gets stored as NaN, silently, at the moment the service is created.",
+  file: "public/platform-home.html",
+  find: "      var priceAdd = null;\n      if(priceRaw){",
+  with: "      var priceAdd = priceRaw ? Number(priceRaw) : null;\n      if(false){",
+});
+// COMMENTS STRIPPED FIRST. Every one of these fixes left a comment quoting the defect it removed —
+// six lines across the two shells say `Number(priceRaw)` — and a scan that counted those would report
+// the fix as the defect. That is the absent-vs-broken direction, aimed at prose.
+// HTML comments too. The first version stripped only JS comments and then reported the <head>'s
+// `<!-- … Number(priceRaw) … -->` note in BOTH shells as live code — a scan reporting its own
+// documentation as the defect.
+const stripComments = (src) => src
+  .replace(/<!--[\s\S]*?-->/g, (m) => m.replace(/[^\n]/g, " "))
+  .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
+  .replace(/(^|[^:])\/\/[^\n]*/g, (m, p1) => p1 + m.slice(p1.length).replace(/./g, " "));
+const bareParse = [];
+for (const [f, src] of Object.entries(shells)) {
+  const code = stripComments(src);
+  for (const m of code.matchAll(/(?:Number|parseFloat)\s*\(\s*(price[A-Za-z]*|[a-z]*[Pp]riceRaw)\b/g))
+    bareParse.push(`${f}:${code.slice(0, m.index).split("\n").length}  ${m[0]}`);
+}
+leg("RULE", "5 no shell parses a typed price with a bare Number() or parseFloat",
+  bareParse.length === 0,
+  bareParse.length
+    ? `a price is being coerced rather than parsed: ${bareParse.join("; ")}`
+    : `neither shell coerces a typed price. Checked in BOTH, because this is the two-of-everything ` +
+      `shape: the parser shipped in hubly.html for the canvas, and the SAME defect was sitting on ` +
+      `platform-home's Edit-details add AND edit rows — the control Adrian reported as missing was ` +
+      `present and storing NaN for "$95". Comments are stripped first: six lines across the two ` +
+      `shells quote \`Number(priceRaw)\` while explaining its removal, and counting those would ` +
+      `report the fix as the defect.`);
 
 const bad = legs.filter((l) => !l.pass);
 // not-a-corpus-rate: this check's own leg count, not a corpus

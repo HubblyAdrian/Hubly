@@ -12,6 +12,11 @@
      was looking at and not its sibling is Lesson 97, in the act of applying Lesson 97.
      Not `defer`: it is 1KB and removing the ordering question is worth more than the parse. -->
 <script src="/status-words.js"></script>
+<!-- THE ONE PRICE PARSER AND FORMATTER, read by BOTH shells (public/hubly-price.js). Same
+     reasoning and same placement as status-words.js above: the canvas parses a typed price on
+     inline edit, and platform-home parses one in the "Edit details" panel. Two shells, one rule
+     for what a price IS — and the panel was doing `Number(priceRaw)`, which is NaN for "$95". -->
+<script src="/hubly-price.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>hubly · Hubly gets it done.</title>
 <meta name="description" content="Tell us what you need and we'll take care of the rest. Hubly connects you with trusted providers for any home service.">
@@ -12276,16 +12281,34 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
       var wrap = this.closest('.hc-mng-svc');
       var name = wrap.querySelector('.mng-sn').value.trim(); if(!name){ hcManageStatus('A service needs a name.', false); return; }
       var priceRaw = wrap.querySelector('.mng-sp').value.trim();
+      // A PRICE IS PARSED, OR THE ADD IS REFUSED AND SAID OUT LOUD. This was
+      // `priceRaw ? Number(priceRaw) : null`, which stores NaN for "$95" and for "111.222.333" —
+      // both of which a human would call perfectly clear. EMPTY still means no price, and no price
+      // is a legitimate, deliberate state: a service with no number is quote-required, which is
+      // what the booking engine already derives from it. Adding and pricing are separate acts.
+      var priceAdd = null;
+      if(priceRaw){
+        priceAdd = hcParsePriceInput(priceRaw);
+        if(priceAdd === null){ hcManageStatus('I could not read "' + priceRaw + '" as a price — try a number like 95 or 95.50, or leave it blank to ask for a quote.', false); return; }
+      }
       this.disabled = true; hcManageStatus('Saving…', true);
-      var r = await hcRecordEdit({ kind:'service', op:'add', name: name, price: priceRaw?Number(priceRaw):null, description: wrap.querySelector('.mng-sd').value.trim() });
+      var r = await hcRecordEdit({ kind:'service', op:'add', name: name, price: priceAdd, description: wrap.querySelector('.mng-sd').value.trim() });
       await hcAfterRecordEdit(r); this.disabled = false;
     });
     Array.prototype.forEach.call(body.querySelectorAll('.hc-mng-svc:not(.hc-mng-add)'), function(wrap){
       wrap.querySelector('.mng-ssave').addEventListener('click', async function(){
         var name = wrap.querySelector('.mng-sn').value.trim(); if(!name){ hcManageStatus('A service needs a name.', false); return; }
         var priceRaw = wrap.querySelector('.mng-sp').value.trim();
+        // THE SIBLING OF THE ADD ROW ABOVE, and the reason this repo greps for a class: the same
+        // `Number(priceRaw)` sat on the EDIT row too. Fixing only the one reported would have left an
+        // owner able to store NaN by editing a price they had just added correctly.
+        var priceEdit = null;
+        if(priceRaw){
+          priceEdit = hcParsePriceInput(priceRaw);
+          if(priceEdit === null){ hcManageStatus('I could not read "' + priceRaw + '" as a price — try a number like 95 or 95.50, or clear it to ask for a quote.', false); return; }
+        }
         this.disabled = true; hcManageStatus('Saving…', true);
-        var r = await hcRecordEdit({ kind:'service', op:'edit', id: wrap.getAttribute('data-id'), prevName: wrap.getAttribute('data-prev'), name: name, price: priceRaw?Number(priceRaw):null, description: wrap.querySelector('.mng-sd').value.trim() });
+        var r = await hcRecordEdit({ kind:'service', op:'edit', id: wrap.getAttribute('data-id'), prevName: wrap.getAttribute('data-prev'), name: name, price: priceEdit, description: wrap.querySelector('.mng-sd').value.trim() });
         await hcAfterRecordEdit(r); this.disabled = false;
       });
       wrap.querySelector('.mng-srem').addEventListener('click', async function(){
@@ -12639,6 +12662,20 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   // pressed, not in the thread. Writing these into chat turned the conversation into a
   // receipt log for arrow presses (reported 2026-09-03: four messages, in pairs, for a
   // handful of presses).
+  /** THE ONE PARSER, from public/hubly-price.js. See the note in that file: the "Edit details" panel
+   *  used to do `priceRaw ? Number(priceRaw) : null`, and Number('$95') is NaN — so a price an owner
+   *  typed perfectly readably was stored as NaN, from the one control in this shell that can add a
+   *  service. A missing module REFUSES rather than falling back; a fallback would be the duplicate
+   *  this removed. */
+  function hcParsePriceInput(raw){
+    var P = window.HUBLY_PRICE;
+    if(!P || typeof P.parse !== 'function'){
+      console.error('[price] /hubly-price.js did not load — refusing to parse a price rather than guess at one');
+      return null;
+    }
+    return P.parse(raw);
+  }
+
   function hcFlashAtControl(text){
     if(!text) return;
     var origin; try{ origin = new URL(hc.draftBusiness.url).origin; }catch(e){ return; }

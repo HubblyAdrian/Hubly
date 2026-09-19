@@ -10,6 +10,11 @@
      generated HTML at byte 2.7M and the shell never loaded it. Not `defer`: it is 1KB, and removing
      the ordering question is worth more than the parse. -->
 <script src="/status-words.js"></script>
+<!-- THE ONE PRICE PARSER AND FORMATTER, read by BOTH shells (public/hubly-price.js). Same
+     reasoning and same placement as status-words.js above: the canvas parses a typed price on
+     inline edit, and platform-home parses one in the "Edit details" panel. Two shells, one rule
+     for what a price IS — and the panel was doing `Number(priceRaw)`, which is NaN for "$95". -->
+<script src="/hubly-price.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="google" content="notranslate">
 <title>Hubly · Book more jobs</title>
@@ -15851,54 +15856,32 @@ function hublyMoney(n){
   return '$'+(v%1===0?String(v):v.toFixed(2));
 }
 
-/** ══ ONE PARSER AND ONE FORMATTER FOR A PRICE. RULED BY ADRIAN, 2026-09-18 ═════════════════════
+/** ══ THE PRICE PARSER AND FORMATTER NOW LIVE IN public/hubly-price.js ══════════════════════════
  *
- *  "Accept what a human types — separators, currency symbol, spaces — parse it to a number, store
- *   the number, render it through svcDisplayPrice. One value, one formatter, one rendering,
- *   everywhere. If a typed value cannot be parsed to a number, REFUSE IT AND SAY SO at the point of
- *   entry. Do not store an unparseable string and do not silently substitute zero."
+ *  They shipped here first, for the canvas's inline price edit. The SAME parse then turned out to be
+ *  needed in platform-home.html's "Edit details" panel, which was doing `Number(priceRaw)` — NaN for
+ *  "$95" and for "111.222.333". Two shells needing one rule for what a price IS is the status-words.js
+ *  situation exactly, so the rule moved to a shared file rather than being copied.
  *
- *  MEASURED, on evergreen-yard-care's stored document, which is what produced the ruling: the three
- *  prices Adrian edited inline came out as `111.222.333`, `$111,222,333` and `50` — three formats in
- *  one section — while the three he did NOT touch read `$130`, `$150`, `$85`. So it was never three
- *  formatters: generation has exactly one, and the inline-edit path stored the raw keystrokes
- *  without going near it.
- *
- *  RETURNS null RATHER THAN 0 for anything it cannot read. A zero is a PRICE — it renders as $0 and
- *  a customer can act on it — so substituting one for "I could not understand this" would publish a
- *  number the owner never typed, which is the 801-888-8888 defect with a different field. */
+ *  A MISSING MODULE REFUSES; IT DOES NOT FALL BACK. If /hubly-price.js did not load, there is no
+ *  second-best parse to reach for — a fallback would be the duplicate this move just removed, and a
+ *  silent one would store whatever the owner typed. So parse returns null (which every caller already
+ *  treats as "refuse and say so") and says why, loudly, once. */
 function hcParsePrice(raw){
-  var t = String(raw == null ? '' : raw).trim();
-  if(!t) return null;
-  // Currency symbols, spaces and non-breaking spaces go. Letters do NOT — "50 dollars" is not a
-  // number we should guess at, and neither is "call me".
-  t = t.replace(/[$£€¥]/g, '').replace(/[\s\u00a0]/g, '');
-  if(!t) return null;
-  var hasDot = t.indexOf('.') >= 0, hasComma = t.indexOf(',') >= 0;
-  if(hasDot && hasComma){
-    // Both present: whichever comes LAST is the decimal point. "1,234.56" and "1.234,56" both work.
-    var dec = t.lastIndexOf('.') > t.lastIndexOf(',') ? '.' : ',';
-    var grp = dec === '.' ? ',' : '.';
-    t = t.split(grp).join('');
-    if(dec === ',') t = t.replace(',', '.');
-  } else if(hasDot || hasComma){
-    var ch = hasDot ? '.' : ',';
-    var parts = t.split(ch);
-    // One separator with 1–2 trailing digits is a decimal point; anything else is grouping.
-    // "111.222.333" has two, so it is grouping -> 111222333. "12,50" is a decimal -> 12.50.
-    if(parts.length === 2 && parts[1].length <= 2) t = parts[0] + '.' + parts[1];
-    else t = parts.join('');
+  var P = window.HUBLY_PRICE;
+  if(!P || typeof P.parse !== 'function'){
+    console.error('[price] /hubly-price.js did not load — refusing to parse a price rather than guess at one');
+    return null;
   }
-  if(!/^\d+(\.\d{1,2})?$/.test(t)) return null;      // anything else is REFUSED, not coerced
-  var n = Number(t);
-  if(!isFinite(n) || n < 0) return null;
-  return n;
+  return P.parse(raw);
 }
-/** The ONE rendering of a price. Everything that shows a service price goes through here. */
 function hcPriceText(n){
-  if(n === null || n === undefined || n === '' || isNaN(Number(n))) return '';
-  var v = Number(n);
-  return '$' + (v % 1 === 0 ? String(v) : v.toFixed(2));
+  var P = window.HUBLY_PRICE;
+  if(!P || typeof P.text !== 'function'){
+    console.error('[price] /hubly-price.js did not load — cannot format a price');
+    return '';
+  }
+  return P.text(n);
 }
 function svcDisplayPrice(s){
   if(s.showPrice===false)return t('quoteAtBooking');
@@ -47199,8 +47182,17 @@ async function saveManagedRecurringPlan(id){
   plan.serviceName=document.getElementById('rp-service')?.value||'';
   plan.cadence=document.getElementById('rp-cadence')?.value||'monthly';
   plan.defaultDuration=parseFloat(document.getElementById('rp-duration')?.value||'')||null;
+  // THE THIRD PRICE COERCION, found by check-one-price-one-formatter leg 5 and not by a report.
+  // `parseFloat('$95')` is NaN and `parseFloat('95 dollars')` is 95 — one refuses a price the owner
+  // typed clearly, the other invents one out of a sentence. Same parser as everywhere else, and an
+  // unreadable value REFUSES the save with a sentence instead of silently storing null or NaN.
   const priceRaw=document.getElementById('rp-price')?.value;
-  plan.defaultPrice=priceRaw!==''&&priceRaw!=null?parseFloat(priceRaw):null;
+  let planPrice=null;
+  if(priceRaw!==''&&priceRaw!=null){
+    planPrice=hcParsePrice(priceRaw);
+    if(planPrice===null){ toast('I could not read "'+String(priceRaw).trim()+'" as a price — try a number like 95 or 95.50'); return; }
+  }
+  plan.defaultPrice=planPrice;
   plan.nextDueDate=document.getElementById('rp-next-due')?.value||'';
   plan.status=document.getElementById('rp-status')?.value||'active';
   const vType=document.getElementById('rp-vtype')?.value||'';
