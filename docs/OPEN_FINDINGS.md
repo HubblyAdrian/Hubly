@@ -8078,3 +8078,161 @@ feature, not fixing a mismatch.
 
 **The class, which is why `check-postmessage-pairs-are-derived` exists:** a postMessage type is a
 hand-maintained set with its two halves in two files, and its failure mode is silent-dropped.
+
+---
+
+## 2.2 — THE SALE WRITER: the shape, before building
+
+**Where a declaration lives, measured:** `offerType` reads **`o.offer.sale`** — a nested `offer` object
+on the catalog record, not a column. So a writer sets `offer: { sale: 'quoted' }`. (I got this wrong in
+a test fixture first, which is how it was established rather than assumed.)
+
+### Proposal: BOTH doors, and the panel is the one an owner reaches first
+
+**The panel, beside `show_price`.** They are the same decision made twice: *what does a customer see
+about this price, and what do they do next?* An owner who has just unticked "Show price" is one field
+away from wanting "they ask for a price" — and `show_price` is already there. A `<select>` with the two
+options **in the words the product already owns** (`OFFER_TYPE_QUESTIONS.sale`, which exists and is
+exported as data for exactly this reason):
+
+- **They book it** — *"The price is the price, and they can book it themselves."*
+- **They ask for a price** — *"It depends on the job, so you quote it."*
+
+**The conversational path, second.** `setServices` already accepts a service list; an owner saying *"the
+full detail depends on the vehicle — people should ask"* is a sale declaration and the model should be
+able to write it. But this is the door that needs the model to be RIGHT about an inference, and the panel
+is the one where the owner states it themselves.
+
+**Which comes first for an owner:** the **panel** — because the sale question only arises once a service
+exists, and by then they are already in the panel that created it. The chip is for an owner who does not
+yet know what they are adding; sale is a question about a thing that already exists.
+
+### The one thing to get right, and it is a rule not a control
+
+**A blank must stay blank.** An owner who has never answered gets `saleFrom: "structure"`, which is
+correct and must not be overwritten by a control defaulting to "bookable" — that would write a
+declaration nobody made and turn every existing service from *derived* into *declared*, permanently
+losing the distinction the provenance field exists to keep. So the control renders **three** states —
+*(not set)*, *They book it*, *They ask for a price* — and only writes `offer.sale` when the owner picks
+one of the latter two. Same discipline as `show_price`: an edit that does not mention it does not set it.
+
+**Not built. Shape submitted for ruling.**
+
+---
+
+## PART 3 — ONE ANCHOR JOB, TWO FEATURES. The shape and the cost
+
+### 3.1 What "stamp an anchor at generation" means concretely
+
+**The generator** is the freeform document build (`hubly-document-build`, and the generation path in
+`hubly_capability_registry.ts` that already runs `markServiceAnchorsInFreeform`). That pass already
+exists and already stamps `data-hubly-service` on a service's name element and `data-hubly-price` on its
+price span, *keyed off the page's own text*. **So the mechanism is built; what is missing is two more
+anchors of the same kind:**
+
+| anchor | what it marks | what it unblocks |
+|---|---|---|
+| `data-hubly-services-grid` | the CONTAINER the service cards sit in | the on-page `+ Add service` tile — it needs somewhere to mount, which is precisely what `hcServicesGrid()` used to guess at and why it raced the renderer |
+| `data-hubly-memberships` | the membership section, or its absence | membership placement — today there is no anchor at all, so adding a plan means inserting a section |
+
+**What the anchor looks like:** an attribute on an element the generator already emits, stamped at build
+time when the fact and its element are both in hand — never re-recognised later. Exactly the rule
+CLAUDE.md already settled for service prices.
+
+### 3.2 THE PART THAT MATTERS MOST — and the answer is YES, a patch can add an anchor
+
+**A patch CAN add an anchor to an existing page without a rebuild, and this is already proven in the
+product.** `placeOneServicePrice` contains a **retroactive anchor stamp**: when it cannot find an
+anchor it finds the service HEADING by text, wraps the bare price, and writes a correctly keyed
+`data-hubly-price` span — then saves the patched document as a new version. `placeServicesInFreeform`
+carries the same "RETROACTIVE ANCHOR STAMP (patch-time)" pass.
+
+**So the fear is unfounded**: existing customers do NOT keep the broken behaviour forever, and this is
+not a feature only new businesses get. The cost is that a retroactive stamp is a **text-anchored
+one-off** — it has to find the grid once, by the same kind of reasoning the old injector used — and it
+is done **once, at patch time, with the result saved**, rather than on every render in a race with the
+renderer. That is the whole difference between this and `hcMountAddService`, and it is why this is the
+honest version.
+
+**The 167-version pages** are not a problem: a patch adds version 168. Nothing is rebuilt, and every
+earlier version stays exactly as it was.
+
+### 3.3 The cost, and which feature it unblocks first
+
+| piece | size |
+|---|---|
+| `data-hubly-services-grid` stamped at generation | small — one attribute in an existing pass |
+| the retroactive grid stamp at patch time | **the real work.** One text-anchored finder, run once per page, saved. The service-price version is the template |
+| the on-page `+` tile mounting on that anchor | small — the click handler, the message, the parent handler and the writer all already exist and already send `price: null` |
+| `data-hubly-memberships` + a membership insert path | larger, and it needs the plan-definition store decided first (4.3) |
+
+**It unblocks the ADD TILE first**, and by a wide margin: everything downstream of the anchor is already
+built and proven. Membership needs the anchor *plus* a store *plus* cadence *plus* the deliverables rule.
+
+**Not built. Shape and cost submitted.**
+
+### 3.4 Three doors, one writer — ruling accepted and recorded
+
+Adrian, 2026-09-18: *"Three doors is only a problem when they disagree. Make them share one writer, and
+they cannot."* Recorded as the constraint on the tile: it must post `hcFreeformAddService` into
+`hcAddServiceFromCanvas` — **the same writer the panel and the chip already reach** — and must not gain
+a second write path. The panel writes through `hcRecordEdit`, the chip through `business.setServices`,
+and both land in `applyOwnerRecordEdit`. That is one writer with three doors, which is the shape ruled.
+
+---
+
+## 4.2 — THE DELIVERABLES REFUSAL. Written as a RULE, before anything is built
+
+**A membership's list of deliverables may never be suggested, seeded, defaulted, completed, or repaired.
+It is written only from words the owner said in the current exchange, or it stays empty.**
+
+**Why it is a rule and not a validation:** *"a price is a number someone can argue with; A LIST OF
+DELIVERABLES IS A PROMISE A CUSTOMER CAN HOLD HIM TO."* Graef's Bi-Weekly plan shipped *"Monthly wash ·
+Interior refresh · Priority scheduling"* under a Join button and he never said any of it. A wrong price
+is embarrassing; a wrong promise is a thing a customer can demand.
+
+**What it forbids, specifically:**
+
+1. **No seeded `includes`** from the trade, the plan name, the price, or any other plan. Not in a
+   placeholder that could be saved, not in a draft that renders.
+2. **No completion.** An owner who names two things gets two. Three is an invention.
+3. **No repair pass may refill an empty one.** An EMPTY deliverables list is a VALID, DELIBERATE state
+   and must be indistinguishable to a repair pass from a state it should leave alone. This is not
+   hypothetical: `scrubMembershipTradeLeaks` treated an empty description as a leak and refilled it,
+   which would have silently undone the fix that stopped the seeding.
+4. **No inference from the service it is built on.** A membership of a $95 full detail does not
+   therefore include "a full detail every month" unless the owner said the cadence and the contents.
+5. **An empty list renders as empty** — a Join button on a plan with no stated contents is allowed; a
+   Join button over invented contents is not. If the empty state reads badly, the fix is the WORDING,
+   never a default.
+
+**The one permitted affordance:** a "use this" suggestion the owner must **see and accept** before it
+enters the record — never a value already in the record awaiting removal. Ruled 2026-09-16:
+*"a seed belongs in a placeholder, a 'use this' affordance, or a draft state — never in the record
+that renders."*
+
+**This rule exists before the feature so it cannot be negotiated with later as an implementation
+detail.**
+
+---
+
+## 4.3 — WHERE A MEMBERSHIP PLAN DEFINITION SHOULD LIVE
+
+**Measured:** `memberships` has a **`customer_id`** — it stores a *customer's subscription*, not a plan
+— and holds **0 rows**. `meta.membershipOffers` is the offer store and is **empty across every
+business**. `service_engine.ts` already knows `membership_offers` as an `OfferHome`.
+
+| option | cost | verdict |
+|---|---|---|
+| **A new `membership_plans` table** | a migration, RLS, an owner reader, a union reader (because the catalog also holds offers), plus everything the freeform placement needs. And it creates a THIRD store for offers beside `services` and the catalog | **most expensive, and it repeats the mistake we are already paying for** — `show_price` in two stores is today's known live duplication |
+| **`meta.serviceCatalog` alongside services** | `offerType` already returns `kind: "membership"`, `OFFER_TYPE_QUESTIONS` already has the membership wording, and the catalog is already read by the union reader | cheap, but it puts plans in the store that is EMPTY on freeform businesses — the path every new business takes |
+| **`meta.membershipOffers`** — the store the code already names | `HOME_KIND.membership_offers → "membership"` already exists, so `offerType` resolves kind by structure with no new code. No migration. No third table | **my recommendation** |
+
+**Recommendation: `meta.membershipOffers`, and decide it now rather than at build time** — because the
+`data-hubly-memberships` anchor in Part 3 has to know what it is placing before it can be shaped.
+
+**The one cost to state plainly:** `meta` is a TEXT column carrying every offer and every setting, and
+it is already the thing whose 56-subtree allowlist caused two live regressions this week. Adding plans
+to it means adding a subtree to that allowlist — a one-line change that, if forgotten, makes memberships
+invisible on every public page with no error. `check-every-field-a-renderer-reads-is-returned` leg 5
+already covers exactly that class, which is the reason this is an acceptable cost rather than a repeat.
