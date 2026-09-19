@@ -4,7 +4,7 @@
   "name": "Business Deployment Engine",
   "title": "Business Deployment Engine",
   "passed": true,
-  "checkedAt": "2026-09-19T19:03:32.611Z",
+  "checkedAt": "2026-09-19T20:44:09.287Z",
   "proofs": {
     "deploymentEngineExists": true,
     "onlyApprovedPlansDeploy": true,

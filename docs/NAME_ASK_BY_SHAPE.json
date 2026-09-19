@@ -1,6 +1,6 @@
 {
-  "measured_at": "2026-09-19T19:24:32.390Z",
-  "complete": true,
+  "measured_at": "2026-09-19T20:46:01.617Z",
+  "complete": false,
   "results": [
     {
       "shape": "NEED",
@@ -9,10 +9,12 @@
       "askedForName": true,
       "built": true,
       "recordName": null,
-      "slug": "site-6f93c5",
-      "reply": "It’s building now and should appear in about a minute. Aviation needs to feel calm, precise, and trustworthy before anyone reads a sentence, so I’m giving this a clean, professional look with space to breathe. I’ll make the page speak to Los Angeles clients who need a capable pilot, not a flashy bro",
-      "pass": true,
-      "failures": []
+      "slug": "site-1df82e",
+      "reply": "Aviation has to feel calm, precise, and trustworthy before anyone reads a sentence. I’m giving this a clean Los Angeles pilot feel — polished, direct, and confident, without making it look like an airline brochure. The page should make it clear what kind of flying work you do and make the next step ",
+      "pass": false,
+      "failures": [
+        "NEED — brand_color is the column default #1a3a6e, so no palette was chosen and every trade gets the same navy page"
+      ]
     },
     {
       "shape": "ASK-BUILD",
@@ -22,81 +24,7 @@
       "built": false,
       "recordName": null,
       "slug": null,
-      "reply": "What kind of business is it for? What kind of business is it for?",
-      "pass": true,
-      "failures": []
-    },
-    {
-      "shape": "BARE-TRADE",
-      "said": "i do lawn care",
-      "mustAsk": true,
-      "askedForName": true,
-      "built": true,
-      "recordName": null,
-      "slug": "site-2e4903",
-      "reply": "Lawn care needs to feel clean and dependable before anyone reads much, so I’m giving this a grounded, outdoor look rather than something flashy. I’m leading with what people can hire you for, because that’s what turns a visitor into a call or booking. The writing will stay plain and local-feeling, l",
-      "pass": true,
-      "failures": []
-    },
-    {
-      "shape": "TRADE-PLACE",
-      "said": "I do mobile detailing in los angeles",
-      "mustAsk": true,
-      "askedForName": true,
-      "built": true,
-      "recordName": null,
-      "slug": "site-2421d5",
-      "reply": "Mobile detailing needs to feel sharp and trustworthy before anyone hands over their keys, so I’m giving this a clean, high-contrast look that feels precise. Los Angeles customers will be scanning fast, so the page should make what you do obvious right away. The tone should feel polished without soun",
-      "pass": true,
-      "failures": []
-    },
-    {
-      "shape": "PROSE",
-      "said": "Im looking to make a storefront to sell detailing chemicals",
-      "mustAsk": true,
-      "askedForName": false,
-      "built": true,
-      "recordName": null,
-      "slug": "site-56b571",
-      "reply": "Detailing chemicals need to feel trustworthy fast — people want to know what each product does, what surfaces it’s safe for, and why it’s worth buying. I’m giving this a clean, product-first feel so it reads like a real store, not a generic service page. The copy will lean practical and confident, b",
-      "pass": false,
-      "failures": [
-        "PROSE — did not ask what the business is called"
-      ]
-    },
-    {
-      "shape": "FIRST-PERSON",
-      "said": "I'm a nail tech",
-      "mustAsk": true,
-      "askedForName": true,
-      "built": true,
-      "recordName": null,
-      "slug": "site-195cac",
-      "reply": "It’s building now — it’ll appear as soon as it’s ready. Nail clients decide fast: does the work feel clean, polished, and worth booking. I’m giving this a refined salon feel — confident, pretty, and not cluttered — so your sets can feel premium before anyone reads much. Services will lead, because p",
-      "pass": true,
-      "failures": []
-    },
-    {
-      "shape": "EXTRACT",
-      "said": "I run Ridgeline Detail, mobile detailing in LA",
-      "mustAsk": false,
-      "askedForName": false,
-      "built": true,
-      "recordName": "Ridgeline Detail",
-      "slug": "ridgeline-detail-5f979",
-      "reply": "The page is building now and should appear in a moment. Detailing needs to look precise before anyone reads a word, so I’m giving Ridgeline a sharp, high-contrast feel that matches clean paint, glass, and finished interiors. LA customers need to understand fast that you come to them, so the page wil",
-      "pass": true,
-      "failures": []
-    },
-    {
-      "shape": "MIDDLE",
-      "said": "I do detailing, people just call it Ridgeline",
-      "mustAsk": false,
-      "askedForName": false,
-      "built": true,
-      "recordName": "Ridgeline",
-      "slug": "ridgeline",
-      "reply": "Your Ridgeline page is building now — it’ll appear in about a minute. Detailing needs to feel sharp before anyone reads a word, so I’m giving Ridgeline a clean, high-contrast look that feels precise and premium. The page should make the work feel meticulous, not fussy. I’m putting the services front",
+      "reply": "Yes — what kind of business is it? Yes — what kind of business is it?",
       "pass": true,
       "failures": []
     }

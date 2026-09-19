@@ -4,7 +4,7 @@
   "name": "Media Intelligence Engine",
   "title": "Media Intelligence Engine",
   "passed": true,
-  "checkedAt": "2026-09-19T19:03:31.401Z",
+  "checkedAt": "2026-09-19T20:44:08.050Z",
   "proofs": {
     "mediaIntelligenceExists": true,
     "customerFacingName": "Media Intelligence Engine",
@@ -181,7 +181,7 @@
     },
     "recommendationsSample": [
       {
-        "id": "mrec_mu8r9ow5_pb7bt9",
+        "id": "mrec_mu8uv2su_qc0520",
         "title": "Stronger homepage photos",
         "detail": "These 3 photos would make a stronger homepage.",
         "why": "Highest website quality + trust scores among this upload.",
@@ -190,7 +190,7 @@
         "requiresOwnerApproval": true
       },
       {
-        "id": "mrec_mu8r9ow5_6te1j8",
+        "id": "mrec_mu8uv2su_9f18yt",
         "title": "Before/after pairs found",
         "detail": "I found 2 before/after pair(s).",
         "why": "Paired transformations convert better than isolated shots.",
@@ -201,7 +201,7 @@
     ],
     "missingSample": [
       {
-        "id": "miss_mu8r9ow5_g2mrdw",
+        "id": "miss_mu8uv2su_g94wht",
         "gap": "Gallery freshness",
         "detail": "Your gallery hasn't been updated in 43 days (simulated).",
         "why": "Fresh work signals an active, trustworthy business.",

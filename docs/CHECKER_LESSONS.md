@@ -4144,3 +4144,61 @@ failure so a dead network call can never be rendered as an empty record). And th
 **initialise to a value that is NOT a valid answer** — `null`, `undefined`, or a companion flag —
 whenever a reader will run before the loader does. A default that is indistinguishable from a real
 answer is a lie the code tells itself at startup.
+
+## Lesson 107
+
+**A CHECK THAT ASSERTS THE PAYLOAD HAS NOT TESTED THE FEATURE. ASSERT THE THING THE PERSON LOOKS AT.**
+
+The contextual editor shipped with 15 red-proofed legs. Every style control saved correctly and
+**none of them changed the page**, and Adrian found it in about a minute of using the live editor.
+
+The leg said *"formatting writes through hcStyleEdit — no second styling path"* and it asserted that
+one `styleEdit` went out, correctly addressed. All true. What it never asked was whether the
+**element changed**, and it could not have: `hcStyleEdit` deliberately does not reload the canvas on
+success, because it was written for a caller that had already painted. The new caller had not. So the
+payload was right, the writer was right, the save landed — evergreen's stored document went to
+`font-weight:700` and the live page computes 700 — and the owner clicked B, read "Saved", and watched
+nothing happen.
+
+**This is "don't test the code, test the EXPERIENCE" with a new edge on it.** The rule was already
+written down, twice, and the check still tested the call rather than the consequence — because the
+call is the thing the code *does* and the consequence is the thing the person *sees*, and those are
+genuinely different assertions. `posts.filter(p => p.styleEdit)` felt like evidence. It was evidence
+about a message.
+
+**The leg now reads `getComputedStyle(el).fontWeight` before and after, and enumerates every control**
+— because the bug was reported as *"colour works, the other controls do not appear to change the
+selected element"*, and a fix that painted only bold would have satisfied a leg that only tested bold.
+
+**The general form:** when a control's whole purpose is a visible effect, the assertion is the visible
+effect. A payload leg is a useful *second* leg — it catches the mirror bug, a paint with no save —
+but on its own it certifies a feature that does nothing.
+
+## Lesson 108
+
+**A FIXTURE THAT ANSWERS `{ok:true}` WITHOUT PERFORMING THE WRITE CANNOT SEE AN OUTCOME BUG — AND
+THOSE ARE THE EXPENSIVE ONES.**
+
+Renaming a service from the editor **added a second service instead of renaming the first**. The
+writer read `if (edit.op === "edit" && edit.id)` and `edit.id` is always null — `hcReadRecord` sets it
+so deliberately, because `get_business_services` is a union of two stores with no single id — so every
+edit ever made fell through to the `POST` branch and **inserted**.
+
+A price correction therefore left two rows with the same name and different prices, **which is exactly
+what the `conflicts` flag reports**. The product has been showing this bug back to owners as a fact
+about their own data: *"two different prices on file for this one."*
+
+**Six legs covered this path and none could see it.** The owner rig answers the edge call
+`{ok: true, reply: "Saved."}` and performs no write, so a leg can verify the payload was perfect and
+the outcome is simply not in the world. `owner-rig.mjs` says so in its own header — limitation 2 (RLS
+is not simulated) and 3 (shapes are declared, not derived) — and this is the worked example those
+limitations were waiting for.
+
+**So: when a fixture stubs the writer, the check is scoped to "the right call was made" and must SAY
+so** — which the check did. The failure was not the scope; it was believing the scope was enough for a
+feature whose whole content is what happens to the record. **A path that ends in a write needs at
+least one exercise against something that actually writes**, and if this environment cannot provide
+one, that is a stated gap and a reason to drive the real product — not a green check.
+
+Both lessons have the same shape and the same cure: **the assertion has to reach the thing that
+matters — the pixel, or the row — and a message in between is not a substitute for either.**

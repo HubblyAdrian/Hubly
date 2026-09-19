@@ -8431,3 +8431,51 @@ on a UI change. Recorded here so it is a known missing line, not a mystery.
   would be a field with no record behind it — a fact the owner states that nothing stores.
 - **Crop / alt text on images.** `Replace` reuses the canvas's existing picker through one message;
   crop and alt text have no write path today and would have been controls that do nothing.
+
+---
+
+## 2026-09-19 (evening) — ONE EDITING SYSTEM, AND FOUR THINGS THE LIVE TEST FOUND
+
+Verified as the owner, signed in, on evergreen-yard-care (`account_kind = 'test'`), clicking the real
+controls and reading the record back. Not a code trace.
+
+### Fixed and verified live
+- **Every style control paints and saves** (the shipped bug: saved, never painted). Measured
+  before/after on the element, enumerated across font, size, bold, italic, underline, colour,
+  alignment, spacing, effects.
+- **`font-family` is painted as a stack, not the wire key** — five of the seven faces would have
+  saved correctly and shown nothing.
+- **A service edit UPDATES its row** instead of inserting a duplicate (see Lesson 108).
+- **Text is editable from the top**, through the page's own `hcCommitTextChange` (price branch and all).
+- **The black floating toolbar is gone**; its breadcrumb and move arrows are buttons in the band.
+- **Spacing reports the element's real state** (it compared `0.12em` against a computed `7.68px` and
+  displayed "Normal" over spaced text).
+- **The selection survives a record save** — the canvas answers whether it re-selected and the parent
+  retries, rather than firing one timed shot that usually missed.
+
+### OPEN — a rename can leave the OLD card on the page
+`removeServiceCard` refuses the cut when its safety guard cannot prove the slice is exactly one
+service entry. That refusal is correct — the guard exists because a bad cut once deleted a footer's
+address and phone — but the caller treats it as done. The record ends up right and the page shows
+**both** names.
+
+Reproduced twice. **Hubly reports it honestly when asked** ("I couldn't remove the Premium Lawn
+Service card yet — nothing on the page changed"), so this is a gap, not a lie. Left on evergreen: one
+stale `Premium Lawn Service` card from this test. **Adrian's call whether to clear it.**
+
+### OPEN — a rename loses the card's photo and moves it to the end
+Remove-then-place builds a *fresh* card, so `<img data-hubly-photo-slot="card">` comes back with no
+`src` (an empty tile) and the card lands at the end of the section. The photo the owner chose is not
+carried through the rename.
+
+### OPEN — `applyServicesToFreeform` re-stamps a bad anchor on every run
+evergreen carries `data-hubly-service="Leaf removal and a full bed cleanup."` — a *description*
+stamped as a service name. **Pre-existing** (present at v188) and **it multiplies**: measured 1 across
+versions 186–201, including all 14 style edits, then 2 at v202 and 3 at v203 — the two service
+renames. So it is not every save; it is each `applyServicesToFreeform` run adding another stamp.
+Stated before the number, as required: this holds only if the anchor count is read from the stored
+`rendered_html` rather than the rendered DOM, which is how it was measured.
+
+### Still open from this morning
+`styleEdit` drops the node address (`index.ts:2060`), so an element with no `data-hc` cannot be
+styled — which is why **Button Style** is still not in the band.
