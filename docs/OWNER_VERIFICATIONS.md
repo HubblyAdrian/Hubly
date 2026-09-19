@@ -451,3 +451,63 @@ the save test is still unperformed.**
 | Stripe's webhook delivery log | has `stripe-webhook` ever run? Only Stripe's dashboard knows. Rows are evidence of a call; no rows is not evidence of no call |
 | The 5th rail tab and the phone's "More" overflow | prohibition 5 is a mobile claim |
 | The mobile preview at 390px on a real device | and now one more: **does "Services, hours & contact" fit a phone?** It is 214px and unclipped at 1440 and 900; at 390px the button is not in the DOM in the rig, and Claude Code cannot verify mobile. Fallback if it does not fit: "Services & details" |
+
+## 🔴 OPEN DEFECT — "I could not re-edit a price on evergreen." NOT reproduced, NOT closed
+
+Adrian, 2026-09-18: three prices edited inline, saved, survived a refresh — then he could not get back
+into the field at all. **Not reproduced. Recorded open, per his instruction: better a known-open bug
+than a closed one that comes back.**
+
+### Ruled OUT, by measurement
+
+| candidate | how it was ruled out |
+|---|---|
+| `data-hc-wired` blocking the rebind on freeform | the save produces a **new `body`** with the flag `null`; wiring marks 2 of 2 again. The flag cannot carry across a save |
+| **orphaned `hcSel` / `hcBar`** (my own candidate) | they are declared **inside** `wireHcEditingSurface` (line 55797, within 55463–57135), so every wire call gets fresh closure variables. **No outer-scope references to orphan.** My candidate was wrong |
+
+### Ruled IN as a real mechanism — but NOT established as his bug
+
+A **real click** through the toolbar path, both before and after a document swap, posts
+`hcEditAuthNeeded` and leaves the element **not selected and not editable**. So the click gate
+`if(!hcAuthedFlag)` produces *exactly* "I clicked and nothing happened" in any fresh document until a
+handshake lands. There is a recovery path — the gated click asks, the parent answers with
+`openEditLabel`, and `hcOpenEditByLabel` reopens the field — so the designed behaviour is **one wasted
+click, then the field opens.** Whether that recovery completes on a live save is unverified.
+
+**The code already carries its own diagnostic:**
+`[hc-edit] click gated: hcAuthedFlag=false, requesting auth for <label>`.
+
+### FIXED on the way — a genuine latent defect, independent of whether it is his
+
+`hcEditableEnabled()` read the URL **and nothing else**, while the `hcAuthState` handler set
+`hcAuthedFlag` and **wired nothing**. `hcBust` appends `hcEditable=1` only when
+`hc.draftClaimed && hcIsAuthed()` are both true *at the moment the frame's src is built* — so if either
+is momentarily false, the frame loads with **no editing surface**, and the handshake that follows sets a
+flag gating a handler that was never attached. **Permanently uneditable, symptom: a click that does
+nothing.** Both halves fixed: the gate honours the parent's word, and the handshake wires.
+
+### What the rig does NOT reproduce (1.2), and which could leave a live page uneditable
+
+| difference | could it leave a page uneditable? |
+|---|---|
+| the **A/B crossfade** — two frames, `is-live` swapped | possible but unlikely to be silent; the old frame is still in the DOM |
+| **`hcTellPreviewAuthed`'s timing** — up to 16 retries over 8s, with an ACK | **yes, as a WINDOW.** Between wiring and the flag landing, every click is gated |
+| a real **network round-trip** for the save | widens that window |
+| **`hcBust`'s `hcEditable=1` decision** at src-build time | **YES — this was the real hole, and it is now fixed.** It had no recovery at all |
+| the outer `hubly.html` reloading entirely (new closure, new listeners) vs the rig's inner-document swap | the rig tested the harder case; a full reload is cleaner |
+
+### What would settle it — one step, and it needs Adrian
+
+On `evergreen-yard-care`: **open the browser console**, edit a price, let it save, then click the same
+price again. Then say which of these you see:
+
+1. **`[hc-edit] click gated: hcAuthedFlag=false…` in the console** → the handshake is not landing after
+   a save, and the fix above may already have closed it. Reproduced.
+2. **Nothing in the console, and no toolbar** → the surface did not wire; look at the frame's URL for
+   `hcEditable=1`.
+3. **The toolbar appears but the field will not open** → something else, and the candidates above are
+   all wrong.
+
+**1.4 is not built**, because per 1.3 the check waits on a reproduction — and a check written against
+the wrong mechanism is worse than none. The toolbar-driving harness exists and is proven (it is what
+ruled my own candidate out), so the check is cheap the moment there is a reproduction to aim it at.
