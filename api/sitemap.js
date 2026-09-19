@@ -93,7 +93,7 @@ module.exports = async (req, res) => {
     console.error('[sitemap] the record returned ZERO indexable businesses — serving an empty sitemap');
   }
 
-  const urls = rows.concat([{ slug: 'zz-not-in-the-record' }]).map((row) => {
+  const urls = rows.map((row) => {
     const slug = row && row.slug;
     if (!slug) return '';
     const loc = `https://${slug}.${HOST_SUFFIX}/`;
