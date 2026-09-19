@@ -7932,3 +7932,83 @@ silent no-ops. The hazard is not behavioural, it is a **second half-meaningful a
 that now has a better one** — the next person to ask "how do I hide a price" will find it first,
 because it is the one with a config-shaped name. If it is ever tidied, the honest end is to delete the
 field and its reader together, not to give it a control.
+
+---
+
+## 4.2 — WHAT MEMBERSHIP CREATION COSTS. Measured, not built (Adrian asked for the size)
+
+### What generalises — already built, already proven, free
+
+| part of `setServices` | generalises? |
+|---|---|
+| the draft guard (`No draft business exists yet — call startDraft first`) | **yes, unchanged** |
+| **owner authorisation** — `p_owner_id: ownerUid` on the RPC | **yes.** This is the half that made the claimed-owner writes work, and it is the expensive one to get wrong |
+| the value-grounding refusal (`error: "needs_value"`) | **yes**, and it binds *harder* here — see the deliverables note below |
+| reconcile-not-replace (`selectMany` the existing rows first) | **yes.** The discipline that stopped a filter deleting five live services |
+| the truth-based summary (`servicesTruth` — the reply composed from what actually happened) | **yes** |
+| **the offer type model** | **already there.** `service_engine.ts` has `kind: service \| membership \| other` **×** `sale: bookable \| quoted`, and `OFFER_TYPE_QUESTIONS` already contains the membership wording: *"A membership — Someone pays on a schedule and keeps getting it."* |
+
+**So the authorisation, the refusal discipline, the reconcile rule, the reply pattern and the type model
+are all done.** That is most of what made `setServices` hard.
+
+### What is service-specific — the actual work, in size order
+
+1. **THE PAGE PLACEMENT, AND THIS IS THE BIG ONE.** `applyServicesToFreeform` fills
+   `data-hubly-service` / `data-hubly-price` anchors that the generation pass stamps. **There is no
+   membership anchor**, on any page. So on an existing freeform page "add a membership" is not filling
+   an anchor, it is **INSERTING A SECTION** — the `insertServiceIntoFreeform` path, which exists for
+   services and has no membership sibling. And CLAUDE.md forbids the cheap way out: a generated page is
+   patched by an anchor stamped at build time, never by re-recognising layout afterwards. So this needs
+   an anchor convention *plus* an insert path, and the anchor only helps pages generated after it ships.
+2. **THE STORE.** `set_business_draft_services` writes the `services` table. There is no plan table:
+   `memberships` has a **`customer_id`** — it stores a customer's SUBSCRIPTION, not a plan definition —
+   and holds **0 rows**. `meta.membershipOffers` is the offer store and is **empty across every
+   business**. So this is a storage decision (new table vs the meta offer list), not a port.
+3. **CADENCE.** Monthly / bi-weekly / quarterly has no analogue in a service, and it is what makes a
+   membership a membership. New field, new wording, new validation.
+4. **THE DELIVERABLES REFUSAL, and it is a rule not a feature.** CLAUDE.md: *"a price is a number
+   someone can argue with; A LIST OF DELIVERABLES IS A PROMISE A CUSTOMER CAN HOLD HIM TO."* Graef's
+   Bi-Weekly plan once shipped "Monthly wash · Interior refresh · Priority scheduling" under a Join
+   button and he never said any of it. So membership creation must refuse to invent `includes`, and a
+   repair pass must not re-seed an empty one. That is a constraint to honour, not code to write, but it
+   is the thing most likely to be got wrong.
+
+### The size, stated plainly
+
+**Two thirds of it already exists.** What remains is one storage decision, one cadence field, and — the
+real cost — **a membership anchor convention and an insert path for pages that have neither.** The
+insert path is the same shape as the service one, so it is a port rather than a design; the anchor is a
+generation-time change whose benefit arrives only on pages built after it. **Not built. Deferred under
+R2 and still deferred.**
+
+---
+
+## 4.3 — THE ON-PAGE ADD TILE: my read, for Adrian's ruling
+
+`hcMountAddService` **injected** a `+` tile into the rendered services grid — format-agnostic, so it
+worked on freeform. On 2026-09-13 (`3c3a902`, *"Build the + in the renderer: four lines added, 142
+deleted"*) it was replaced by a tile inside `renderWebsite()`'s `innerHTML`, which **freeform never
+runs**. The commit was a genuine improvement for classic — it deleted 142 lines of race scaffolding, a
+MutationObserver and a gate — and it removed the only mechanism that put the tile on a freeform page.
+
+**My read: restore it, and it is worth more than the renamed panel — but it is worth doing SECOND.**
+
+**Why worth it.** The panel is a list; the page is where the owner is looking at the gap. "Add a
+service" next to the last service card is the only affordance that appears at the moment the owner
+notices something is missing, and it needs no knowledge that a panel exists. The whole cross-frame
+path is already built and proven: the tile's click handler, `hcFreeformAddService`, the parent handler,
+and `hcAddServiceFromCanvas` — **the door is the only missing piece, and the writer already sends
+`price: null`,** which is exactly the "adding and pricing are separate acts" ruling.
+
+**Why second.** Three reasons, and the third is the one I would not argue with:
+1. The panel is now findable (Part 1), so an owner is no longer stuck — the urgency is gone.
+2. `hcMountAddService` was deleted *because it was racing the renderer*, and the fix for that race was
+   to draw the tile in the renderer. Putting an injector back means re-entering that race on the
+   freeform side; the honest version stamps an **anchor at generation** for where the tile goes, which
+   is the same work item as the membership anchor in 4.2 — so they should be done together, once.
+3. It would be a **third** add door (panel, chip, tile) for one capability. Two is fine; three needs a
+   reason, and "the page is where the gap is visible" is a good one — but it should be a decision, not
+   an accident.
+
+**So: restore it as part of one anchor-at-generation change that also serves membership, not as a
+standalone injector. Your ruling.**
