@@ -18083,7 +18083,12 @@ window.addEventListener('message', function(ev){
     // screen: a dark modal over the card, with its own input and its own Save, one commit after
     // the black toolbar was removed for being the second one. Caught by watching the screen after
     // a rename, not by reading the call.
-    try{ if(typeof hcSelectByLabelFromBuilder === 'function' && hcSelectByLabelFromBuilder) hcSelectByLabelFromBuilder(d.label); }catch(e){}
+    var okSel = false;
+    try{ if(typeof hcSelectByLabelFromBuilder === 'function' && hcSelectByLabelFromBuilder) okSel = !!hcSelectByLabelFromBuilder(d.label); }catch(e){}
+    // ANSWER, SO THE BUILDER CAN STOP GUESSING WHEN THE FRAME IS READY. A record edit reloads
+    // this document, and "is it wired yet" is not knowable from the other side — a single timed
+    // shot either lands or silently does not, which is how the band kept vanishing after a save.
+    try{ window.parent.postMessage({ type:'hcSelectByLabelDone', label: d.label, selected: okSel }, '*'); }catch(e){}
     return;
   }
   if(d.type === 'hcCtxCommand' && d.cmd && typeof d.cmd === 'object'){

@@ -3217,10 +3217,7 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
         // name once the frame is back.
         if(hc.selection && hc.selection.card) hc.selection.card.service = nm;
         hcRenderCtx();
-        if(hc.selection && hc.selection.label){
-          var _lbl = hc.selection.label;
-          setTimeout(function(){ hcPostToCanvas({ type:'hcSelectByLabel', label: _lbl }); }, 1600);
-        }
+        if(hc.selection && hc.selection.label) hcCtxReselect(hc.selection.label);
         // ══ SAID AFTER THE RE-RENDER, NOT BEFORE IT — PROHIBITION 6 ═════════════════════════
         //
         // This was above the re-render and the confirmation never reached the screen:
@@ -3482,6 +3479,31 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
     // sent; without one the button would be a control that does nothing.
     var del = document.getElementById('hcCtxDel');
     if(del) del.disabled = !(sel.node);
+  }
+
+  /* ══ PUT THE SELECTION BACK AFTER A RECORD SAVE ══════════════════════════════════════════
+   *
+   * A record edit changes the PAGE, so the canvas has to be re-read — and that reload drops the
+   * selection, taking the band with it. Observed twice on the live site: the rename saved
+   * correctly and the owner was left staring at the card with the editor gone.
+   *
+   * A SINGLE TIMED SHOT IS NOT A FIX. The first version fired once at 1600ms and usually missed,
+   * because "the new document is wired" is not knowable from this side and does not happen at a
+   * fixed time. The canvas now ANSWERS whether it selected, and this retries until it does or
+   * until the budget runs out — and if it runs out it SAYS so, rather than leaving the owner with
+   * a silently empty band. */
+  function hcCtxReselect(label, tries){
+    tries = tries || 0;
+    if(!label) return;
+    if(tries > 12){                       // ~7s at 550ms
+      hcCtxSay('Saved — select it again to keep editing.', true);
+      return;
+    }
+    hcCtx._reselect = { label: label, tries: tries };
+    setTimeout(function(){
+      if(!hcCtx._reselect || hcCtx._reselect.label !== label) return;   // superseded
+      hcPostToCanvas({ type:'hcSelectByLabel', label: label });
+    }, tries === 0 ? 900 : 550);
   }
 
   function hcCtxWire(){
@@ -6912,6 +6934,13 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
         if(typeof data.text === 'string') hc.selection.text = data.text.slice(0, 160);
         try{ hcCtxRenderFmt(); hcCtxSyncTextField(); }catch(e){}
       }
+      return;
+    }
+    if(data.type === 'hcSelectByLabelDone'){
+      var want = hcCtx._reselect;
+      if(!want || want.label !== data.label) return;
+      if(data.selected){ hcCtx._reselect = null; }       // the canvas re-reports the selection
+      else hcCtxReselect(data.label, want.tries + 1);
       return;
     }
     if(data.type === 'hcCtxStepDone'){
