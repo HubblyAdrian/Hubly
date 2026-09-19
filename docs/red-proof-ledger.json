@@ -886,6 +886,51 @@
       "declaredTotal": 5,
       "recorded": 5,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-19T04:55:22.880Z",
+      "applied": 4,
+      "alone": 2,
+      "compound": 2,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T04:56:06.554Z",
+      "applied": 4,
+      "alone": 2,
+      "compound": 2,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T04:56:21.541Z",
+      "applied": 3,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -1499,6 +1544,33 @@
       "leg": "5 the control sits beside the price and writes what it says",
       "why": "drop showPrice from the edit save. The tick box still renders, still reflects the record, and still appears to work — and unticking it changes nothing, which is a control that lies. That is the shape of every dead control this codebase has removed.",
       "at": "2026-09-19T04:39:14.625Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-sale-is-its-own-axis.mjs::1 a DECLARED quoted sale wins over a price that is present": {
+      "check": "check-sale-is-its-own-axis.mjs",
+      "leg": "1 a DECLARED quoted sale wins over a price that is present",
+      "why": "make a declared sale lose to the structure derivation. Every existing row behaves identically — nothing declares sale yet — so nothing looks broken, and the one thing an owner can state about how their service is sold is silently discarded. That is the state this change ended.",
+      "at": "2026-09-19T04:56:21.541Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-sale-is-its-own-axis.mjs::2 the booking DTO's quote_required follows SALE, not the pricing mode": {
+      "check": "check-sale-is-its-own-axis.mjs",
+      "leg": "2 the booking DTO's quote_required follows SALE, not the pricing mode",
+      "why": "read the pricing mode again. offerType still resolves sale correctly, so leg 1 still passes and the owner's declaration is still stored — and the BOOKING FLOW ignores it, which is exactly the state that made priced-and-quoted impossible while looking supported.",
+      "at": "2026-09-19T04:56:21.541Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-sale-is-its-own-axis.mjs::3 the STRUCTURE derivation still answers when nothing is declared": {
+      "check": "check-sale-is-its-own-axis.mjs",
+      "leg": "3 the STRUCTURE derivation still answers when nothing is declared",
+      "why": "delete the structure fallback, which an earlier ruling asked for and Adrian then struck: 'A membership offer has no pricing.mode, so structure-derived sale is the only thing that can answer for it.' Without it every existing service and every membership resolves to 'unknown', and a booking flow cannot act on unknown.",
+      "at": "2026-09-19T04:56:21.541Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

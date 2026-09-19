@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-19T04:39:14.625Z** · 88 run(s) recorded.
+**Last run: 2026-09-19T04:56:21.541Z** · 91 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 59 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 62 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -82,6 +82,9 @@ have made the rule the first thing anyone switched off.
 | `check-preview-is-a-true-device.mjs` | 4 the pane never needs its own scrollbar | **RED ALONE** | restore `align-items:center; overflow:auto` on the wrap — the obvious implementation of a width fit, which puts the WORKSPACE's scrollbar beside the PAGE's and, worse, centres an overflowing frame so its top sits above the scroll origin and cannot be reached at all | — |
 | `check-preview-is-a-true-device.mjs` | 5 mobile still renders native-width | **RED ALONE** | make hcIsMobile() always false, so a phone gets the desktop device simulation — a 1440px viewport scaled into a 390px screen, which is the one thing a phone must never do because the phone IS the device | — |
 | `check-public-reader-allowlist-is-derived.mjs` | the meta allowlist covers every subtree a renderer reads | **RED ALONE** | drop `website` from the live function's meta allowlist — the single most-read subtree (16 reads) — so the classic page loses its hero and NOTHING errors: the renderer reads undefined. That is the route-list failure mode arriving in a column list, which is why this check exists | — |
+| `check-sale-is-its-own-axis.mjs` | 1 a DECLARED quoted sale wins over a price that is present | **RED ALONE** | make a declared sale lose to the structure derivation. Every existing row behaves identically — nothing declares sale yet — so nothing looks broken, and the one thing an owner can state about how their service is sold is silently discarded. That is the state this change ended. | — |
+| `check-sale-is-its-own-axis.mjs` | 2 the booking DTO's quote_required follows SALE, not the pricing mode | **RED ALONE** | read the pricing mode again. offerType still resolves sale correctly, so leg 1 still passes and the owner's declaration is still stored — and the BOOKING FLOW ignores it, which is exactly the state that made priced-and-quoted impossible while looking supported. | — |
+| `check-sale-is-its-own-axis.mjs` | 3 the STRUCTURE derivation still answers when nothing is declared | **RED ALONE** | delete the structure fallback, which an earlier ruling asked for and Adrian then struck: 'A membership offer has no pricing.mode, so structure-derived sale is the only thing that can answer for it.' Without it every existing service and every membership resolves to 'unknown', and a booking flow cannot act on unknown. | — |
 | `check-status-words-are-one-vocabulary.mjs` | neither shell holds its own copy of the words | **RED ALONE** | paste the five words back into hubly.html as a literal — the duplication this file exists to prevent, and it is one paste away at all times | — |
 | `check-the-landing-never-paints-for-an-owner.mjs` | the account chip is visible once the business is open | **RED ALONE** | make the pre-paint hide unconditional again — `hc-boot-owner` is never removed on a successful owner load, so the sign-out door stays invisible for the life of the page | — |
 | `check-the-rail-says-who-you-are.mjs` | 1 a known first name is on its own line ABOVE the business name | **RED ALONE** | put the business name FIRST instead — the owner line is still there, still says exactly what the reader says, still on its own line. Only the order Adrian ruled on is gone, which is the narrowest break that can reach this leg: legs 2 and 3 cannot see it at all. | — |
@@ -186,3 +189,6 @@ have made the rule the first thing anyone switched off.
 - **2026-09-19T04:36:50.272Z** — 3 break(s) applied · 1 red alone · 2 compound · 0 not red · 0 skipped
 - **2026-09-19T04:37:57.654Z** — 3 break(s) applied · 2 red alone · 0 compound · 1 not red · 0 skipped
 - **2026-09-19T04:39:14.625Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-19T04:55:22.880Z** — 4 break(s) applied · 2 red alone · 2 compound · 0 not red · 0 skipped
+- **2026-09-19T04:56:06.554Z** — 4 break(s) applied · 2 red alone · 2 compound · 0 not red · 0 skipped
+- **2026-09-19T04:56:21.541Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped

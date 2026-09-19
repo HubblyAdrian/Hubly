@@ -17976,7 +17976,21 @@ window.addEventListener('message', function(ev){
   if(ev.source !== window.parent) return;
   var d = ev.data;
   if(!d || d.type !== 'hcAuthState') return;
+  var _wasAuthed = hcAuthedFlag;
   hcAuthedFlag = !!d.authed;
+  // ══ AND WIRE THE SURFACE, because setting a flag is not turning editing on ═══════════════════
+  //
+  // This handler set `hcAuthedFlag` and stopped. If the frame had loaded WITHOUT `hcEditable=1` in
+  // its URL, nothing had wired the editing surface — no marks, no listeners, no toolbar — and the
+  // flag it just set gates a click handler that was never attached. The parent had done everything
+  // right and the page was still dead.
+  //
+  // Idempotent by `data-hc-wired`, so calling it on every handshake message (this is re-sent up to
+  // 16 times) binds once. Gated on the flag actually FLIPPING, so the common case — a frame that
+  // loaded editable and is being told so again — does no work at all.
+  if(!_wasAuthed && hcAuthedFlag && typeof wireHublyDocumentClickToEdit === 'function'){
+    try{ wireHublyDocumentClickToEdit(); }catch(e){ console.warn('[hc-edit] could not wire on auth handshake', e); }
+  }
   // FIRE THE REOPEN ONCE. hcTellPreviewAuthed re-sends this message ~6x (so the
   // authed flag survives the Google reload where the frame may not be ready yet),
   // but each message used to re-trigger the editor — and openTextEditor tears the
@@ -55048,8 +55062,26 @@ if(document.readyState==='loading'){
   // Editing turns on ONLY when the parent set hcEditable=1 (draft claimed + owner
   // signed in). hcEdit=1 alone means "builder preview, show the draft" and must NOT
   // enable editing — an unclaimed page has no click-to-edit at all.
+  /** ══ THE URL, *OR* THE PARENT'S OWN WORD ══════════════════════════════════════════════════════
+   *
+   *  This read the URL and nothing else, and that is a hole with no recovery. `hcBust` only appends
+   *  `hcEditable=1` when `hc.draftClaimed && hcIsAuthed()` are BOTH true at the moment the frame's src
+   *  is built — so if either is momentarily false (a session still refreshing, a claim flag not yet
+   *  set), the frame loads with no editing surface at all. And the `hcAuthState` handshake that arrives
+   *  a moment later only sets `hcAuthedFlag`; it never wired anything. So the page stayed permanently
+   *  uneditable while the parent believed it had said "you are signed in" — and the only symptom is a
+   *  click that does nothing.
+   *
+   *  `hcAuthedFlag` is set ONLY by a postMessage whose `ev.source === window.parent` with the origin
+   *  pinned, so a public visitor cannot reach it: there is no builder parent to send it. Honouring it
+   *  here therefore opens no door to anyone it was closed against.
+   *
+   *  FOUND while hunting Adrian's un-re-editable price on evergreen. It is NOT established that this is
+   *  what he hit (docs/OWNER_VERIFICATIONS.md keeps that open) — it is a hole found on the way, whose
+   *  failure mode is exactly the symptom he described. */
   function hcEditableEnabled(){
-    try{ return new URL(location.href).searchParams.get('hcEditable')==='1'; }catch(e){ return false; }
+    try{ if(new URL(location.href).searchParams.get('hcEditable')==='1') return true; }catch(e){}
+    return hcAuthedFlag === true;
   }
   if(!hcEditableEnabled()) return;
 

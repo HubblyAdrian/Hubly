@@ -701,7 +701,19 @@ export function toBookingDto(
     })),
     image_url: service.media.photos[0] || null,
     pricing_mode: mode,
-    quote_required: mode === "quote_required",
+    // ══ quote_required FOLLOWS *SALE*, NOT mode — RULED BY ADRIAN, 2026-09-18 ═══════════════════
+    //
+    // This read `mode === "quote_required"`, which made a DECLARED sale of "quoted" invisible to the
+    // booking engine: a service priced "from $95" and marked quoted came through as bookable at $95,
+    // so "$95 starting — call for a quote" was expressible in the offer type and impossible in the
+    // flow. offerType() already resolves sale — declared wins, structure derives as the permanent
+    // fallback (a membership offer has no pricing.mode and structure is the only thing that can answer
+    // for it) — so asking IT is asking the one source.
+    //
+    // INERT FOR EVERY EXISTING ROW: nothing writes `declared.sale` yet, so offerType falls to the same
+    // structure derivation this expression used, and every service resolves exactly as it does today.
+    // That is what makes it the safest possible change and why it lands before the writer.
+    quote_required: offerType(service).sale === "quoted",
     category: service.category,
     subcategory: service.subcategory,
     status: service.status,
@@ -730,11 +742,15 @@ export function toMatchDto(
     includes: service.includes,
     category: service.category,
     subcategory: service.subcategory,
+    // PRICE STILL FOLLOWS MODE, and deliberately: "quoted" means the customer asks, not that there is
+    // no number. A service priced "from $95" and marked quoted keeps its 95 — that IS the feature
+    // ("$95 starting — call for a quote"), and nulling the price here would throw away the half that
+    // makes it useful. Only quote_required moves to sale.
     price_cents: service.pricing.mode === "quote_required"
       ? null
       : service.pricing.price_cents,
     duration_minutes: service.duration_minutes,
-    quote_required: service.pricing.mode === "quote_required",
+    quote_required: offerType(service).sale === "quoted",
     addon_names: addons.map((a) => a.name),
   };
 }
