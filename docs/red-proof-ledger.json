@@ -841,6 +841,51 @@
       "declaredTotal": 2,
       "recorded": 2,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-19T04:36:50.272Z",
+      "applied": 3,
+      "alone": 1,
+      "compound": 2,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 2,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T04:37:57.654Z",
+      "applied": 3,
+      "alone": 2,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 0,
+      "provenByHand": 2,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T04:39:14.625Z",
+      "applied": 3,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 2,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -1411,6 +1456,49 @@
       "leg": "3 [SHAPE] writing moves A to B — the composer's turn un-centres Home",
       "why": "stop recomputing when a turn lands. State A is still correct on entry and state B never arrives: the owner writes, and their message is centred in the middle of the screen with the composer below it. The layout is right exactly until it is used.",
       "at": "2026-09-19T04:04:22.811Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-hidden-price-stays-reachable.mjs::1 services.show_price exists, is NOT NULL, and defaults to showing": {
+      "check": "check-a-hidden-price-stays-reachable.mjs",
+      "leg": "1 services.show_price exists, is NOT NULL, and defaults to showing",
+      "why": null,
+      "at": "2026-09-19T04:39:14.625Z",
+      "note": "Reads the live schema, so no repo edit can move it. PROVEN BY HAND across the migration on 2026-09-18: BEFORE 20260918240000 `information_schema.columns` had no show_price row for `services` at all and the panel had nothing to write; AFTER, the column reads boolean / NO / default true, and all 283 existing rows measured `show_price = true` — so no owner's page changed. That is this assertion red then green for its own reason.",
+      "status": "DECLARED, PROVEN BY HAND"
+    },
+    "check-a-hidden-price-stays-reachable.mjs::2 the owner's reader returns show_price, so the control can show its own state": {
+      "check": "check-a-hidden-price-stays-reachable.mjs",
+      "leg": "2 the owner's reader returns show_price, so the control can show its own state",
+      "why": null,
+      "at": "2026-09-19T04:39:14.625Z",
+      "note": "Also the live schema. PROVEN BY HAND: before 20260918250000 the union reader's RETURNS TABLE was (name, price, duration_hours, description, is_popular, source, conflicts) — no show_price — so the panel's tick box would have rendered unchecked-or-checked from nothing, which is a control that lies about the record. After, the column is returned and evergreen-yard-care reads `true` with source `both`.",
+      "status": "DECLARED, PROVEN BY HAND"
+    },
+    "check-a-hidden-price-stays-reachable.mjs::3 the freeform placement writes the wording, and writes the SAME wording the client does": {
+      "check": "check-a-hidden-price-stays-reachable.mjs",
+      "leg": "3 the freeform placement writes the wording, and writes the SAME wording the client does",
+      "why": "put the number back unconditionally. Every other leg still passes — the column exists, the reader returns it, the control saves it — and the owner's choice simply never reaches the page. A setting that stores correctly and changes nothing is the worst of the three outcomes, because the record agrees with the owner and the page does not.",
+      "at": "2026-09-19T04:39:14.625Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-hidden-price-stays-reachable.mjs::4 hiding a price keeps the anchor and removes no way to get in touch": {
+      "check": "check-a-hidden-price-stays-reachable.mjs",
+      "leg": "4 hiding a price keeps the anchor and removes no way to get in touch",
+      "why": "emit the wording WITHOUT its span. The page still reads correctly to the owner — which is why this is the dangerous version — and the keyed anchor is gone, so the next price change has nothing to find and 'hidden' becomes indistinguishable from 'never had a price' to every later reader. It is also how hiding a price would quietly take the booking affordance with it.",
+      "at": "2026-09-19T04:39:14.625Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-hidden-price-stays-reachable.mjs::5 the control sits beside the price and writes what it says": {
+      "check": "check-a-hidden-price-stays-reachable.mjs",
+      "leg": "5 the control sits beside the price and writes what it says",
+      "why": "drop showPrice from the edit save. The tick box still renders, still reflects the record, and still appears to work — and unticking it changes nothing, which is a control that lies. That is the shape of every dead control this codebase has removed.",
+      "at": "2026-09-19T04:39:14.625Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

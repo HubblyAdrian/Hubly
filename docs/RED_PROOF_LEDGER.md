@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-19T04:04:22.811Z** · 85 run(s) recorded.
+**Last run: 2026-09-19T04:39:14.625Z** · 88 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 56 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 59 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -27,6 +27,11 @@ have made the rule the first thing anyone switched off.
 | check | leg | status | break | also went red |
 | --- | --- | --- | --- | --- |
 | `check-a-different-conversation-in-every-tab.mjs` | R5 [SHAPE] the identity load is reachable from outside hcRenderHome | **RED ALONE** | put the identity load back inside hcRenderHome, where R1's guard makes it unreachable on any entry path that is not Home — the rail loses its location and its logo | — |
+| `check-a-hidden-price-stays-reachable.mjs` | 1 services.show_price exists, is NOT NULL, and defaults to showing | **DECLARED, PROVEN BY HAND** | — | — |
+| `check-a-hidden-price-stays-reachable.mjs` | 2 the owner's reader returns show_price, so the control can show its own state | **DECLARED, PROVEN BY HAND** | — | — |
+| `check-a-hidden-price-stays-reachable.mjs` | 3 the freeform placement writes the wording, and writes the SAME wording the client does | **RED ALONE** | put the number back unconditionally. Every other leg still passes — the column exists, the reader returns it, the control saves it — and the owner's choice simply never reaches the page. A setting that stores correctly and changes nothing is the worst of the three outcomes, because the record agrees with the owner and the page does not. | — |
+| `check-a-hidden-price-stays-reachable.mjs` | 4 hiding a price keeps the anchor and removes no way to get in touch | **RED ALONE** | emit the wording WITHOUT its span. The page still reads correctly to the owner — which is why this is the dangerous version — and the keyed anchor is gone, so the next price change has nothing to find and 'hidden' becomes indistinguishable from 'never had a price' to every later reader. It is also how hiding a price would quietly take the booking affordance with it. | — |
+| `check-a-hidden-price-stays-reachable.mjs` | 5 the control sits beside the price and writes what it says | **RED ALONE** | drop showPrice from the edit save. The tick box still renders, still reflects the record, and still appears to work — and unticking it changes nothing, which is a control that lies. That is the shape of every dead control this codebase has removed. | — |
 | `check-a-second-edit-still-works.mjs` | 2 a re-render really does strip the marks | **RED ALONE** | make the probe's re-render reuse the same children instead of replacing them. The leg then passes for the wrong reason — nothing was invalidated — and leg 3 would be asserting that a surface which never lost its marks still has them. This is the leg that keeps leg 3 honest. | — |
 | `check-a-second-edit-still-works.mjs` | 3 the SECOND wire marks the new elements — the second edit is still an edit | **RED ALONE** | put the guard back to a bare `return`, which is the shipped defect: data-hc-wired is set once and never cleared, so the second call returns before the per-element marking and the owner cannot get back into the field at all. This is the exact line Adrian's report was about. | — |
 | `check-address-change-is-said.mjs` | 5 the sentence exists, names the new address | **RED ALONE** | make the sentence point at a control — Hubly does not render the page and cannot know what is on screen, so naming a button is claiming a capability it has not verified | — |
@@ -178,3 +183,6 @@ have made the rule the first thing anyone switched off.
 - **2026-09-19T04:01:57.439Z** — 2 break(s) applied · 2 red alone · 0 compound · 0 not red · 1 skipped
 - **2026-09-19T04:03:09.327Z** — 3 break(s) applied · 2 red alone · 1 compound · 0 not red · 0 skipped
 - **2026-09-19T04:04:22.811Z** — 2 break(s) applied · 2 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-19T04:36:50.272Z** — 3 break(s) applied · 1 red alone · 2 compound · 0 not red · 0 skipped
+- **2026-09-19T04:37:57.654Z** — 3 break(s) applied · 2 red alone · 0 compound · 1 not red · 0 skipped
+- **2026-09-19T04:39:14.625Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped

@@ -1018,6 +1018,8 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
 .hc-mng-day .hc-mng-in{margin-top:0;flex:1 1 auto;min-width:0}
 .hc-mng-to{font-size:12px;color:var(--ink-500,#6b7280)}
 .hc-mng-cl{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--ink-500,#6b7280);white-space:nowrap}
+.hc-mng-showp{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-500,#6b7280);white-space:nowrap;flex:0 0 auto;cursor:pointer}
+.hc-mng-showp input{margin:0;cursor:pointer}
 /* The trigger — a toolbar item in the canvas bar (address pill · Desktop/Mobile · Edit details),
    shown only to a claimed owner. The panel is the fallback; in-place editing is the primary route. */
 #hcManageBtn{display:none;align-items:center;gap:5px;margin-left:auto;border:1px solid var(--line,#e5e7eb);
@@ -2443,7 +2445,26 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         // there is something to step back, so it is never a control that does nothing.
         '<button type="button" id="hcUndoBtn" title="Undo the last change" hidden disabled>&#8617; Undo</button>' +
         '<button type="button" id="hcVisitBtn" title="Open your live site in a new tab">Visit site</button>' +
-        '<button type="button" id="hcManageBtn" title="Add or edit services, hours and contact yourself">&#9998; Edit details</button>' +
+        // ══ NAMED FOR WHAT IS INSIDE, NOT FOR WHAT YOU DO TO IT — RULED BY ADRIAN, 2026-09-18 ═══
+        //
+        // This said "✎ Edit details", and that is why Adrian told me an owner could not add a
+        // service: the panel behind it has a wired, record-writing, empty-input-refusing Add row for
+        // services, and neither of us found it. "Details" is the word a settings screen uses, so an
+        // owner looking to add a service has no reason to press it — and the primary act of a service
+        // business was hidden behind a word that means configuration.
+        //
+        // Leading with the NOUN, and with Services first because it is the thing owners come for. No
+        // verb: "Edit" describes what the owner does, which they already know, and spends the label's
+        // width saying it.
+        //
+        // WIDTH, MEASURED AND NOT MEASURED — stated precisely because the first draft of this comment
+        // claimed a 390px measurement I had not earned. At 1440px and 900px the button is 214px wide
+        // and NOT clipped (scrollWidth == clientWidth). At 390px it is not in the DOM at all in the
+        // rig, consistent with the phone showing one pane at a time — but CLAUDE CODE CANNOT VERIFY
+        // MOBILE (no true 390px viewport, no soft keyboard), so whether this label fits a real phone
+        // is UNVERIFIED and Adrian's to check. If it does not, the shorter form that keeps the noun
+        // first is "Services & details".
+        '<button type="button" id="hcManageBtn" title="Your services and their prices, your hours, and how customers reach you">Services, hours &amp; contact</button>' +
         // THE DOOR FOR THE DESIGN KNOBS. It lives here, beside Edit details, because the
         // canvas bar is the one claimed-owner surface that survives phone width — the rail
         // is display:none at <=760px (see OPEN_FINDINGS #13). A control whose only entry
@@ -12272,6 +12293,10 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
       // every row would have carried data-id="undefined".
       hcManage.services = Array.isArray(svc && svc.data) ? svc.data.map(function(r){
         return { id: null, name: r.name, price: r.price, description: r.description,
+                 // `!== false` and not `=== true`: the reader coalesces to true and the column
+                 // defaults to true, so an absent value means SHOWN. Reading it the other way round
+                 // would hide every price the moment a reader stopped returning the field.
+                 showPrice: r.show_price !== false,
                  source: r.source, conflicts: r.conflicts === true };
       }) : [];
     }
@@ -12311,6 +12336,14 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         (s.conflicts ? ' data-conflicts="1"' : '')+'>'+
         '<input class="hc-mng-in mng-sn" value="'+hcEscA(s.name)+'" placeholder="Service name">'+
         '<input class="hc-mng-in mng-sp" value="'+hcEscA(s.price!=null?s.price:'')+'" placeholder="Price" inputmode="decimal" style="max-width:88px">'+
+        // BESIDE THE PRICE, because a service is where an owner thinks about its price — ruled by
+        // Adrian, 2026-09-18, against a page-level setting. Phrased POSITIVELY and checked by default
+        // so it matches the field it writes (`show_price`): a "Hide price" box that is unchecked when
+        // the price IS shown inverts the record, and an inverted control is how an owner turns a thing
+        // on by turning it off. The title says what the customer gets, not what the flag is called.
+        '<label class="hc-mng-showp" title="Unticked, the page shows &quot;Quote at booking&quot; instead of the number. The service can still be booked or quoted — hiding a price never removes the way a customer reaches you.">'+
+          '<input type="checkbox" class="mng-sshow"'+(s.showPrice===false?'':' checked')+'> Show price'+
+        '</label>'+
         '<input class="hc-mng-in mng-sd" value="'+hcEscA(s.description||'')+'" placeholder="Short description">'+
         '<button type="button" class="hc-mng-btn mng-ssave">Save</button>'+
         '<button type="button" class="hc-mng-btn danger mng-srem">Remove</button>'+
@@ -12343,6 +12376,7 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         '<div class="hc-mng-svc hc-mng-add">'+
           '<input class="hc-mng-in mng-sn" placeholder="New service name">'+
           '<input class="hc-mng-in mng-sp" placeholder="Price" inputmode="decimal" style="max-width:88px">'+
+          '<label class="hc-mng-showp" title="Unticked, the page shows &quot;Quote at booking&quot; instead of the number. The service can still be booked or quoted."><input type="checkbox" class="mng-sshow" checked> Show price</label>'+
           '<input class="hc-mng-in mng-sd" placeholder="Short description">'+
           '<button type="button" class="hc-mng-btn" id="hcMngSvcAdd">Add</button>'+
         '</div>'+
@@ -12381,7 +12415,8 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
         if(priceAdd === null){ hcManageStatus('I could not read "' + priceRaw + '" as a price — try a number like 95 or 95.50, or leave it blank to ask for a quote.', false); return; }
       }
       this.disabled = true; hcManageStatus('Saving…', true);
-      var r = await hcRecordEdit({ kind:'service', op:'add', name: name, price: priceAdd, description: wrap.querySelector('.mng-sd').value.trim() });
+      var showAdd = !wrap.querySelector('.mng-sshow') || wrap.querySelector('.mng-sshow').checked;
+      var r = await hcRecordEdit({ kind:'service', op:'add', name: name, price: priceAdd, description: wrap.querySelector('.mng-sd').value.trim(), showPrice: showAdd });
       await hcAfterRecordEdit(r); this.disabled = false;
     });
     Array.prototype.forEach.call(body.querySelectorAll('.hc-mng-svc:not(.hc-mng-add)'), function(wrap){
@@ -12397,7 +12432,10 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
           if(priceEdit === null){ hcManageStatus('I could not read "' + priceRaw + '" as a price — try a number like 95 or 95.50, or clear it to ask for a quote.', false); return; }
         }
         this.disabled = true; hcManageStatus('Saving…', true);
-        var r = await hcRecordEdit({ kind:'service', op:'edit', id: wrap.getAttribute('data-id'), prevName: wrap.getAttribute('data-prev'), name: name, price: priceEdit, description: wrap.querySelector('.mng-sd').value.trim() });
+        // showPrice travels with the save. Read off the box rather than remembered, so the value
+        // written is the one on screen at the moment the owner pressed Save.
+        var showEdit = !!(wrap.querySelector('.mng-sshow') && wrap.querySelector('.mng-sshow').checked);
+        var r = await hcRecordEdit({ kind:'service', op:'edit', id: wrap.getAttribute('data-id'), prevName: wrap.getAttribute('data-prev'), name: name, price: priceEdit, description: wrap.querySelector('.mng-sd').value.trim(), showPrice: showEdit });
         await hcAfterRecordEdit(r); this.disabled = false;
       });
       wrap.querySelector('.mng-srem').addEventListener('click', async function(){

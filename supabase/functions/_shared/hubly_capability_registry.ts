@@ -3734,8 +3734,20 @@ function findServiceAnchor(html: string, name: string): { index: number; length:
  *  fall back to the heading-shape matcher (findServiceHeading) that covers the
  *  heading pages predating it. `via` records which path ran so we can watch the
  *  legacy one fall out of use. */
-function placeOneServicePrice(html: string, name: string, price: number): { html: string; placed: boolean; injected: boolean; via: "anchor" | "legacy" } {
-  const priceStr = fmtServicePrice(price);
+/** showPrice=false writes the WORDING instead of the number — Adrian, 2026-09-18: "a service with
+ *  show_price false renders the 'quote at booking' wording svcDisplayPrice already produces, on the
+ *  freeform path too."
+ *
+ *  "Quote at booking" is not a string invented here: it is the exact output of svcDisplayPrice's
+ *  t('quoteAtBooking') in public/hubly.html, so the freeform page and the classic one say the same
+ *  words about the same service. A second wording would be the status-vocabulary defect one field over.
+ *
+ *  THE ANCHOR IS STILL WRITTEN. The span stays, keyed the same way, carrying the wording instead of a
+ *  figure — so the next price change still has an anchor to find, and hiding a price does not remove
+ *  the page's ability to show one later. Deleting the span would make "hide" and "never had a price"
+ *  indistinguishable to every later reader. */
+function placeOneServicePrice(html: string, name: string, price: number, showPrice = true): { html: string; placed: boolean; injected: boolean; via: "anchor" | "legacy" } {
+  const priceStr = showPrice === false ? "Quote at booking" : fmtServicePrice(price);
   let el = findServiceAnchor(html, name);
   let via: "anchor" | "legacy" = "anchor";
   if (!el) {
@@ -4181,7 +4193,7 @@ export function allGuessServiceRows(html: string): { index: number; length: numb
 function replaceGuessServiceRow(
   html: string,
   row: { index: number; length: number; tag: string; text: string },
-  name: string, price?: number, description?: string,
+  name: string, price?: number, description?: string, showPrice = true,
 ): { ok: boolean; html?: string; kind?: string; reason?: string; hadDesc?: boolean; replacedGuess?: boolean } {
   const bounds = findServiceEntryBounds(html, row.index, row.length, row.tag);
   if (!bounds) return { ok: false, reason: "no_entry" };
@@ -4213,7 +4225,7 @@ function replaceGuessServiceRow(
     html: html.slice(0, bounds.start) + out + html.slice(bounds.end),
   };
 }
-export function insertServiceIntoFreeform(html: string, name: string, price?: number, description?: string, useGuessRows?: boolean): { ok: boolean; html?: string; kind?: string; single?: boolean; reason?: string; hadDesc?: boolean; labeled?: boolean; replacedGuess?: boolean } {
+export function insertServiceIntoFreeform(html: string, name: string, price?: number, description?: string, useGuessRows?: boolean, showPrice = true): { ok: boolean; html?: string; kind?: string; single?: boolean; reason?: string; hadDesc?: boolean; labeled?: boolean; replacedGuess?: boolean } {
   const anchors = allServiceAnchors(html);
   // ── FALLBACK ORDER (a) → (b) → (c). ────────────────────────────────────────
   // (a) Real anchors exist: current behaviour, byte for byte. 9 of the 10 pages that
@@ -4229,7 +4241,7 @@ export function insertServiceIntoFreeform(html: string, name: string, price?: nu
   if (useGuessRows === true) {
     const guessRows = allGuessServiceRows(html);
     if (guessRows.length) {
-      const rep = replaceGuessServiceRow(html, guessRows[0], name, price, description);
+      const rep = replaceGuessServiceRow(html, guessRows[0], name, price, description, showPrice);
       // A PRICE THAT DOES NOT LAND IS A PRICE WE LIED ABOUT. The placeholder rows on a
       // generated page are often title + blurb with NO price element (the aviation page
       // is exactly that shape), and buildClonedServiceEntry can only fill a slot that
@@ -4241,7 +4253,10 @@ export function insertServiceIntoFreeform(html: string, name: string, price?: nu
       // slot for one; now that the row carries an anchor it can find it. Reuse that
       // rather than authoring a second price-writing path.
       if (rep.ok && rep.html && typeof price === "number" && !new RegExp(`data-hubly-price="${String(name).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`, "i").test(rep.html)) {
-        const withPrice = placeOneServicePrice(rep.html, name, price);
+        // THE FLAG REACHES THE CLONE PATH TOO. This is the placeholder-row branch, and a service
+        // whose price is hidden must read the same here as on an anchored row — otherwise which
+        // wording an owner sees depends on whether his page happened to ship with guess rows.
+        const withPrice = placeOneServicePrice(rep.html, name, price, showPrice);
         if (withPrice.placed) return { ...rep, html: withPrice.html };
         // Could not place it even by injection: say so, don't claim it.
         return { ...rep, ok: false, reason: "price_not_placed" };
@@ -4327,7 +4342,7 @@ export function insertServiceIntoFreeform(html: string, name: string, price?: nu
   return { ok: true, html: html.slice(0, at) + clone + html.slice(at), kind: tmpl.kind, single: anchors.length === 1, hadDesc, labeled };
 }
 /** Run the whole list over the page; report what landed and what's simply not there. */
-function placeServicesInFreeform(html: string, services: { name: string; price?: number; description?: string }[]): ServicesPlacement {
+function placeServicesInFreeform(html: string, services: { name: string; price?: number; description?: string; show_price?: boolean }[]): ServicesPlacement {
   let out = html;
   const placed: { name: string; price?: number }[] = [];
   const missing: string[] = [];
@@ -4372,8 +4387,8 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   // On a miss, ADD the service as a new entry cloned from a sibling — never the
   // destructive rebuild. Only when there is genuinely no section to clone into does
   // it fall through to `missing` + `noSection` (the sole legitimate rebuild case).
-  const tryInsert = (name: string, price: number | undefined, description?: string): boolean => {
-    const ins = insertServiceIntoFreeform(out, name, price, description, useGuessRows);
+  const tryInsert = (name: string, price: number | undefined, description?: string, showPrice = true): boolean => {
+    const ins = insertServiceIntoFreeform(out, name, price, description, useGuessRows, showPrice);
     if (ins.ok && ins.html) {
       out = ins.html; inserted.push(name); insertedAny = true; paths.inserted++;
       if (ins.replacedGuess) replacedGuessRows++;
@@ -4388,12 +4403,12 @@ function placeServicesInFreeform(html: string, services: { name: string; price?:
   for (const s of services) {
     if (typeof s.price === "number") {
       anyPrice = true;
-      const r = placeOneServicePrice(out, s.name, s.price);
+      const r = placeOneServicePrice(out, s.name, s.price, s.show_price !== false);
       if (r.placed) {
         out = r.html; placed.push({ name: s.name, price: s.price }); if (r.injected) injectedAny = true; paths[r.via]++;
         if (s.description && s.description.trim()) out = placeServiceDescription(out, s.name, s.description); // fill/update the blurb on an existing entry
       }
-      else if (tryInsert(s.name, s.price, s.description)) placed.push({ name: s.name, price: s.price });
+      else if (tryInsert(s.name, s.price, s.description, s.show_price !== false)) placed.push({ name: s.name, price: s.price });
       else missing.push(s.name);
     } else {
       // No price given — confirm the name is on the page (anchor, then legacy
@@ -4709,7 +4724,7 @@ async function applyBusinessNameToFreeform(draftId: string, draftToken: string, 
   return { status: "placed" };
 }
 
-async function applyServicesToFreeform(draftId: string, draftToken: string, services: { name: string; price?: number; description?: string }[], ownerUid?: string | null): Promise<ServicesPlacement> {
+async function applyServicesToFreeform(draftId: string, draftToken: string, services: { name: string; price?: number; description?: string; show_price?: boolean }[], ownerUid?: string | null): Promise<ServicesPlacement> {
   const latest = await selectLatestBusinessDocument(draftId, "website");
   if (!latest || latest.format !== "html") {
     notePlacement("applyServicesToFreeform", "not_freeform", draftId, latest ? `format=${latest.format}` : "no website document");
@@ -5443,7 +5458,15 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
     };
   }
   // add | edit — PER ROW, never the replace-all RPC.
-  const row: Record<string, unknown> = { name, price: typeof edit.price === "number" ? edit.price : (edit.price != null ? Number(edit.price) : null), description: edit.description || null };
+  const row: Record<string, unknown> = { name, price: typeof edit.price === "number" ? edit.price : (edit.price != null ? Number(edit.price) : null), description: edit.description || null  };
+  // ══ show_price ON THE ROW, AND ONLY WHEN THE EDIT SAYS SOMETHING ABOUT IT ════════════════════
+  //
+  // Ruled 2026-09-18. An edit that does not mention it must not set it: an owner changing a PRICE has
+  // said nothing about whether that price is shown, and writing `true` there would silently un-hide a
+  // service every time its price was corrected. So the key is only added when it is present in the
+  // edit — the column's `not null default true` supplies the value for a new row, and PATCH leaves an
+  // absent key alone. Never publishing a fact the owner did not state, one field over.
+  if (typeof (edit as { showPrice?: boolean }).showPrice === "boolean") row.show_price = (edit as { showPrice?: boolean }).showPrice;
   if (edit.op === "edit" && edit.id) {
     await adminWrite("PATCH", "services", `?id=eq.${encodeURIComponent(edit.id)}&business_id=eq.${draftId}`, row);
     // A name change moves the anchor — remove the old card, then place the new one.
@@ -5454,7 +5477,11 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
     row.business_id = draftId;
     await adminWrite("POST", "services", "", row);
   }
-  const one = [{ name, price: row.price as number | undefined, description: (row.description as string) || undefined }];
+  // THE FLAG TRAVELS WITH THE SERVICE TO THE PAGE. Read back off `row` when the edit set it, and
+  // otherwise from the edit's own value — an absent flag means "unchanged", which for placement
+  // purposes is "show it", matching the column default and every row that exists today.
+  const showPriceForPage = row.show_price === undefined ? true : row.show_price !== false;
+  const one = [{ name, price: row.price as number | undefined, description: (row.description as string) || undefined, show_price: showPriceForPage }];
   const placement = await applyServicesToFreeform(draftId, draftToken, one, ownerUid);
 
   // (a) THE SECOND CALL SITE. `applyServicesToFreeform` has exactly two callers — this one and

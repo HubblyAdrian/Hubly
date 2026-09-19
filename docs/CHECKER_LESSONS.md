@@ -3553,6 +3553,46 @@ unspent.* `min(a, b)` has two arguments. Computing the one you did not look at c
 whether the other could possibly matter. Naming a cause is an act — it reprioritises a day and, as
 Lesson 99 records, it can come back as an instruction to write.
 
+### A FIFTH INSTANCE, 2026-09-18 — and it is now the most common way we are wrong: **THE INSTRUMENT WAS A PERSON**
+
+Adrian, recording it himself: *"An owner CAN add a service. I said there was nothing. There is a wired,
+refusing-empty-input, record-writing Add control behind '✎ Edit details', and I did not find it before
+telling you it did not exist. And my showPrice premise was half wrong in the way you corrected. Both
+are the same error: I asserted an absence from my own failure to find something."*
+
+The four earlier instances were all tools: `innerText` blind to a hidden subtree; a grep window that
+structurally cannot see the surface around a branch; a detector reading `display:none` as crushed; a
+name-based scan that cannot see scope. **This one has no tool in it at all.** The instrument was a
+person looking, not finding, and reporting the not-finding as a not-existing — and that is the same
+inference, with the same shape, and no code to blame.
+
+Both halves of it landed in one prompt and both were expensive in the same way: they were **premises
+handed down as settled**, which is the most dangerous form an absence claim can take. *"An owner cannot
+add a service. It is not a missing nicety, it is missing at the premise"* framed an entire round's work
+around building something that existed. *"svcDisplayPrice already renders 'quote at booking', so the
+rendering half is built"* was true of the classic/meta path and false of the freeform path every new
+business takes — so the half that was missing was the half that mattered.
+
+**What actually caught both:** the instruction *"verify both before building anything — do not accept
+either from me"*, and *"correct me if the code disagrees."* Not a check, not a sweep. A standing
+instruction to disbelieve the premise, issued by the person who wrote it. That is the only instrument
+that works against this failure, because the failure is upstream of every tool.
+
+**So the rule extends, and this is the version that binds:** before a report says a capability is
+missing, it must say **where it looked** — which surfaces, which shells, which search terms — so that
+"I could not find X" and "X does not exist" stay visibly different sentences. A capability claim with
+no search record is an absence claim with no denominator. And the same sentence a tool must earn, a
+person must earn: *what would this search have turned up if the thing were there, in a place I did not
+think to look?* For "✎ Edit details" the answer is: nothing, because the search was for the word "add"
+and the control is named after the room rather than the act — which is exactly why Part 1 of that
+prompt renames it.
+
+**The asymmetry that makes this worth a lesson rather than an apology:** a wrong "it exists" is found
+the moment someone tries to use it. A wrong "it does not exist" is found only if somebody disbelieves
+it — and in the meantime it authorises building a second copy of a working feature, which is this
+repo's most expensive recurring mistake and the reason two-of-everything keeps appearing in these
+pages.
+
 ## Lesson 97
 
 **A CHECK THAT COVERS ONE INSTANCE OF A SURFACE COVERS NONE OF THEM.**
