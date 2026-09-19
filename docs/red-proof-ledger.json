@@ -796,6 +796,51 @@
       "declaredTotal": 2,
       "recorded": 2,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-19T04:01:57.439Z",
+      "applied": 2,
+      "alone": 2,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 1,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T04:03:09.327Z",
+      "applied": 3,
+      "alone": 2,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T04:04:22.811Z",
+      "applied": 2,
+      "alone": 2,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 2,
+      "recorded": 2,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -1348,6 +1393,24 @@
       "leg": "3 the SECOND wire marks the new elements — the second edit is still an edit",
       "why": "put the guard back to a bare `return`, which is the shipped defect: data-hc-wired is set once and never cleared, so the second call returns before the per-element marking and the owner cannot get back into the field at all. This is the exact line Adrian's report was about.",
       "at": "2026-09-19T03:54:06.889Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-home-centres-until-you-write.mjs::1 [SHAPE] state A is CENTRED — measured, with no dead zone below": {
+      "check": "check-home-centres-until-you-write.mjs",
+      "leg": "1 [SHAPE] state A is CENTRED — measured, with no dead zone below",
+      "why": "delete the centring rule. The class still goes on, `hc-home-centred` is still in the DOM, and the block goes straight back to the top with ~500px of beige under it — which is exactly why this leg measures gaps and not a class name.",
+      "at": "2026-09-19T04:04:22.811Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-home-centres-until-you-write.mjs::3 [SHAPE] writing moves A to B — the composer's turn un-centres Home": {
+      "check": "check-home-centres-until-you-write.mjs",
+      "leg": "3 [SHAPE] writing moves A to B — the composer's turn un-centres Home",
+      "why": "stop recomputing when a turn lands. State A is still correct on entry and state B never arrives: the owner writes, and their message is centred in the middle of the screen with the composer below it. The layout is right exactly until it is used.",
+      "at": "2026-09-19T04:04:22.811Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

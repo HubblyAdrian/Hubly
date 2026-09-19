@@ -1154,6 +1154,21 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
    screen — a centred, comfortable column at the ask box's width, not a panel
    pushed to one side of an empty canvas. */
 .hc-app:not(.hc-has-draft) .hc-thread-inner{max-width:640px;margin:0 auto;width:100%}
+/* ══ HOME, STATE A: ONE CENTRED BLOCK — RULED BY ADRIAN, 2026-09-18 ═════════════════════════════
+ *
+ * Home had exactly ONE layout and it was the thread: greeting, what's-new, the Edit-my-website card
+ * and the chips stacked from the top, then ~500px of nothing, then the composer pinned at the bottom.
+ * A dashboard header and a chat footer with a hole between them. The top-alignment was never a
+ * decision — `.hc-thread-inner` is a flex column with NO justify-content, so children simply stacked.
+ *
+ * Adrian's framing had it backwards and he said so: state B (the thread) exists and always has; STATE
+ * A is what was never built. Which is why this is a conditional property on one container and not a
+ * restructure — the greeting block and the transcript are already children of the same element.
+ *
+ * min-height:100% is what gives the centring room: the inner block is only as tall as its content,
+ * so without it there is nothing to centre WITHIN. justify-content moves the children as a group,
+ * which is the "one block" half of the ruling. */
+.hc-app.hc-home-centred .hc-thread-inner{justify-content:center;min-height:100%}
 /* A2: once it's a rail, the thread fills the whole column to a single 16px
    gutter — no more narrow centred stack with dead cream either side. */
 .hc-app.hc-has-draft .hc-thread-inner{padding:20px 16px 16px;gap:16px}
@@ -3436,6 +3451,48 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     };
   }catch(e){}
 
+  /** ══ HAS THE CONVERSATION STARTED? ASKED OF THE TRANSCRIPT, NEVER OF A FLAG ══════════════════
+   *
+   *  Adrian, 2026-09-18: *"must be a REAL PREDICATE derived from the conversation, never a flag set by
+   *  the composer's submit handler. A flag disagrees with the transcript the first time a message
+   *  arrives from elsewhere, and Home already has a late-render scar of exactly that shape."*
+   *
+   *  So it counts TURNS IN THE DOM. Anything that puts a turn on screen — the composer, a voluntary
+   *  line from a writer, a conversation loaded from the record on entry, a turn that arrives while the
+   *  owner is looking at another tab — moves this predicate, because it reads the same thing the owner
+   *  reads. There is nothing to keep in step.
+   *
+   *  THE ARRIVAL IS EXCLUDED, and that is the one judgement here. `data-hc-arrival` is the welcome,
+   *  which BELONGS to the centred block — it is part of the greeting, not the start of a conversation.
+   *  Everything else counts. */
+  function hcHomeConversationStarted(){
+    try{
+      var body = document.getElementById('hcThreadBody');
+      if(!body) return false;
+      // FURNITURE AND THE ARRIVAL ARE BOTH PART OF THE BLOCK, not the conversation. Everything else
+      // is a turn — including one inside the loaded-history container, because only that container
+      // itself is tagged and this selector reaches its descendants.
+      return body.querySelectorAll('.hc-msg:not([data-hc-arrival]):not([data-hc-furniture])').length > 0;
+    }catch(e){ return false; }
+  }
+
+  /** State A (centred) or state B (thread). Recomputed, never remembered.
+   *
+   *  MODE-AWARE RATHER THAN MODE-DUPLICATING: it asks hc.mode itself and removes the class anywhere
+   *  that is not Home, so hcRenderHome's own guard is respected instead of being restated here (a
+   *  second copy of that guard is exactly the two-places problem this round has spent its day on). */
+  function hcSyncHomeLayout(){
+    try{
+      var app = document.querySelector('.hc-app');
+      if(!app) return;
+      var onHome = !hc.mode || hc.mode === 'home';
+      var centred = onHome && !hcHomeConversationStarted();
+      app.classList.toggle('hc-home-centred', centred);
+    }catch(e){}
+  }
+  try{ window.hublyHomeLayoutUI = { started: hcHomeConversationStarted, sync: hcSyncHomeLayout,
+        centred: function(){ try{ return !!document.querySelector('.hc-app.hc-home-centred'); }catch(e){ return false; } } }; }catch(e){}
+
   function hcAppendMessage(role, text){
     var thread = hcThreadBody();
     if(!thread) return null;
@@ -3445,6 +3502,10 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     div.className = 'hc-msg ' + (role === 'user' ? 'user' : 'hubly');
     div.textContent = body;
     thread.appendChild(div);
+    // A TURN JUST LANDED, SO THE ANSWER MAY HAVE CHANGED. Recomputed here rather than set by the
+    // composer: this fires for a voluntary line and for a turn loaded from the record too, which a
+    // submit-handler flag would have missed.
+    try{ hcSyncHomeLayout(); }catch(e){}
     hcThreadScrollToEnd();
     return div;
   }
@@ -11847,10 +11908,38 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
     if(hcAskOnFloor()){
       hc._furniturePending = true;
       try{ hcArrivalTrace('ask on the floor \u2014 Home is holding its furniture until it is answered'); }catch(e){}
+      // STATE A OR B, AT THIS EXIT TOO. A sync on only the happy path is a layout that is right
+      // most of the time, which is the shape of the late-render scar this predicate avoids.
+      try{ hcSyncHomeLayout(); }catch(e){}
       hcThreadScrollToEnd();
       return;
     }
+    // ══ TAG WHAT THE FURNITURE PASS DREW, SO A TURN CAN BE TOLD FROM A CARD ═══════════════════
+    //
+    // Home's furniture IS made of `.hc-msg` divs — the what's-new line is `hc-msg hubly hc-news`, and
+    // so are the cards and chips. So "does the thread hold a turn" cannot just count `.hc-msg`: the
+    // first version of the predicate did, measured FOUR turns on an untouched Home, and Home never
+    // centred. The check caught that before it shipped, which is the only reason it is not live.
+    //
+    // DERIVED FROM WHAT THIS PASS ADDED, not from a list of class names: record the child count, run
+    // the pass, tag everything new. A list of furniture classes would go stale the first time a card
+    // was added — and it would go stale SILENTLY.
+    //
+    // AND THE DIRECTION IS THE SAFE ONE. Only DIRECT children are tagged, so a loaded conversation's
+    // turns (which live inside the history container, itself tagged) still count as turns. If a future
+    // card escapes tagging it reads as a turn and Home simply does not centre — a layout the owner can
+    // see, not a silent wrong state.
     await hcRenderHomeFurniture(biz, thread);
+    // EVERY DIRECT CHILD, because Home WIPED this thread and drew all of them. The first version
+    // counted only what the FURNITURE pass added and missed the greeting block (`hc-idw`) drawn
+    // before it — so Home measured one turn on an untouched screen and never centred. Anchoring on
+    // "Home wiped it, therefore Home drew it" needs no list and cannot miss a block added later.
+    for(var _fi = 0; _fi < thread.children.length; _fi++){
+      try{ thread.children[_fi].setAttribute('data-hc-furniture', '1'); }catch(e){}
+    }
+    // AND AT THE END OF THE RENDER. Recomputed, never remembered: the predicate reads the
+    // transcript, so this is a re-ask and not a write.
+    try{ hcSyncHomeLayout(); }catch(e){}
   }
   /** Everything Home draws that is NOT an answer to something the owner just did. Called by
    *  hcRenderHome when the floor is clear, and again by the name handler once it is. */

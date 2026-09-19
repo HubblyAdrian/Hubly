@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-19T03:54:06.889Z** · 82 run(s) recorded.
+**Last run: 2026-09-19T04:04:22.811Z** · 85 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 54 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 56 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -47,6 +47,8 @@ have made the rule the first thing anyone switched off.
 | `check-every-field-a-renderer-reads-is-returned.mjs` | 4 no field is reached by a computed key, so the derivation is complete on this input | **RED ALONE** | count the `row[0]` unwrap as a computed field read again. It makes the derivation report a blind spot it does not have — and the point of the leg is that a blind spot must be LOUD, so it has to be observable when it is there. | — |
 | `check-every-field-a-renderer-reads-is-returned.mjs` | 5 every meta subtree a renderer reads is declared by the reader | **RED ALONE** | drop `hours` from the meta subtree allowlist. Opening hours on every public page, absent, rendering as nothing — no error, no log, a page that loads without them. The seven-field regression one nesting level down, where there are 56 subtrees instead of 31 top-level fields. (The first version of this break named `heroHeadline`, which is in NEITHER list; the runner reported `find matched 0x` and SKIPPED it rather than counting an untested leg as proven — the declaration was wrong, and the ledger said so instead of flattering me.) | — |
 | `check-every-field-a-renderer-reads-is-returned.mjs` | 6 the meta derivation is alive — it crosses parseBizMeta and finds no computed key | **RED ALONE** | remove the return-value taint, so a named function that RETURNS the meta object stops carrying it. The chain is data.meta -> parseBizMeta(data.meta) -> applyBizMeta(m) -> m.faqs, and applyBizMeta is where all 55 subtree reads live — so the derivation drops from 56 subtrees to a handful and leg 5 passes by LOOKING FOR ALMOST NOTHING. That is the direction that matters: an empty derivation must never read as 'nothing is missing'. | — |
+| `check-home-centres-until-you-write.mjs` | 1 [SHAPE] state A is CENTRED — measured, with no dead zone below | **RED ALONE** | delete the centring rule. The class still goes on, `hc-home-centred` is still in the DOM, and the block goes straight back to the top with ~500px of beige under it — which is exactly why this leg measures gaps and not a class name. | — |
+| `check-home-centres-until-you-write.mjs` | 3 [SHAPE] writing moves A to B — the composer's turn un-centres Home | **RED ALONE** | stop recomputing when a turn lands. State A is still correct on entry and state B never arrives: the owner writes, and their message is centred in the middle of the screen with the composer below it. The layout is right exactly until it is used. | — |
 | `check-live-functions-match-their-migrations.mjs` | every public function's live body matches the last migration that defines it | **RED ALONE** | add a behaviour-neutral expression to get_public_business's live body so it no longer matches its migration — a stand-in for a dashboard edit, which is the thing this check exists to catch | — |
 | `check-navigation-destinations.mjs` | 1 the surface registry was read | **RED ALONE** | delete the `quotes` renderer from HC_ROOMS, so a place that can appear in the rail has nothing to render it — a rail row that opens an empty canvas | — |
 | `check-navigation-destinations.mjs` | 2 the room registry was read | **RED ALONE** | add a room nothing can reach — a renderer for `store`, which is not a surface, so it is built and doorless: the diagnosis that has been right four times this month | — |
@@ -173,3 +175,6 @@ have made the rule the first thing anyone switched off.
 - **2026-09-19T03:43:08.169Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-19T03:48:20.270Z** — 3 break(s) applied · 2 red alone · 1 compound · 0 not red · 0 skipped
 - **2026-09-19T03:54:06.889Z** — 2 break(s) applied · 2 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-19T04:01:57.439Z** — 2 break(s) applied · 2 red alone · 0 compound · 0 not red · 1 skipped
+- **2026-09-19T04:03:09.327Z** — 3 break(s) applied · 2 red alone · 1 compound · 0 not red · 0 skipped
+- **2026-09-19T04:04:22.811Z** — 2 break(s) applied · 2 red alone · 0 compound · 0 not red · 0 skipped
