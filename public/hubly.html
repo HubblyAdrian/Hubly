@@ -55456,6 +55456,10 @@ function wireHublyDocumentClickToEdit(){
   frame.addEventListener('load', bind);
 }
 
+/* THE SURFACE, DRIVEABLE BY A CHECK. Same pattern as window.hublyNavUI and the rest: a check must be
+   able to run the real wiring against a real root and look at what it marked, because the defect this
+   exists to catch is about the SECOND call and no amount of reading the function shows that.
+   Registered after the declaration below (hoisted), so the seam and the function cannot drift. */
 function wireHcEditingSurface(doc, root){
   if(!root) return;
   // THE FOURTH GATE, NAMED BY THE INSTRUMENT RATHER THAN GUESSED AT (2026-09-13).
@@ -55474,7 +55478,36 @@ function wireHcEditingSurface(doc, root){
   // GATE 4'S SCAFFOLDING, REMOVED WITH THE RACE IT SERVED. The re-entry branch existed so a
   // second call could re-attempt a mount that the renderer now performs itself. Back to the
   // plain once-only guard, which is all this was ever for: binding listeners exactly once.
-  if(root.getAttribute('data-hc-wired') === '1') return;
+  /** EVERY ELEMENT, EVERY CALL. A function declaration, so the guard below can use it before its
+   *  textual definition, and so markEditable (also hoisted, declared later in this body) is in scope. */
+  function markAllEditable(){
+    try{
+      var els = root.querySelectorAll('[data-node],[data-hc]');
+      for(var i = 0; i < els.length; i++) markEditable(els[i]);
+    }catch(e){}
+  }
+  /* ══ THE GUARD GOVERNED TOO MUCH — THE SECOND-EDIT LOCKOUT ═════════════════════════════════════
+   *
+   * `data-hc-wired` is set here and CLEARED NOWHERE, on a root whose CHILDREN get replaced. On a
+   * classic page that root is `#p-classic-site #ws-page`, a permanent element whose contents
+   * renderWebsite() rewrites: after the first wire it carries the flag forever, so every later call
+   * returned HERE — and the per-element marking never ran again on the NEW elements. The
+   * document-level listeners survive a re-render because they live on `doc`; the per-element ones do
+   * not, because those elements are gone.
+   *
+   * Adrian, 2026-09-18: "I could not edit them again. Not 'the edit failed' — I could not get back
+   * into the field at all." That is this, on the classic path, which is graefs-autocare's path.
+   *
+   * The comment above already said the guard "exists to stop listeners being bound twice". It should
+   * never have governed the per-element marking, which is idempotent by its own attribute check. So
+   * the two are split: bind ONCE, mark EVERY TIME. Clearing the flag instead would have re-bound the
+   * document-level listeners on every render — the opposite bug, and a worse one.
+   *
+   * SCOPED: this fixes the CLASSIC path, which is confirmed. On a FREEFORM page the root is the
+   * nested srcdoc iframe's `body`, and a save loads a whole new document into the standby frame, so
+   * that body is new and the flag absent — argued from the code path and NOT yet measured. Recorded
+   * as the open half in docs/OWNER_VERIFICATIONS.md. */
+  if(root.getAttribute('data-hc-wired') === '1'){ markAllEditable(); return; }
   root.setAttribute('data-hc-wired', '1');
   // This is the document the owner actually scrolls, so this is where "put me back
   // where I was looking" has to be wired.
@@ -55563,8 +55596,7 @@ function wireHcEditingSurface(doc, root){
         "img[data-hubly-photo-slot]{cursor:pointer;background-image:url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><circle cx='32' cy='32' r='29' fill='none' stroke='%23D9632D' stroke-opacity='.75' stroke-width='2' stroke-dasharray='6 5'/><path d='M32 20v24M20 32h24' stroke='%23D9632D' stroke-opacity='.85' stroke-width='2.5' stroke-linecap='round'/></svg>\");background-repeat:no-repeat;background-position:center;}";
       (doc.head || doc.body || root).appendChild(es);
     }
-    var edEls = root.querySelectorAll('[data-node],[data-hc]');
-    for(var edi = 0; edi < edEls.length; edi++) markEditable(edEls[edi]);
+    markAllEditable();   // and again on every later call — see the guard note above
   }catch(e){}
 
   function post(msg){
@@ -57101,6 +57133,7 @@ function wireHcEditingSurface(doc, root){
   // (Real reviews remain a first-class feature; they're just not previewed as an
   // empty scaffold on the site itself.)
 }
+try{ window.hublyEditSurfaceUI = { wire: wireHcEditingSurface }; }catch(e){}
 </script>
 </body>
 </html>

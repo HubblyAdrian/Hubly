@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-19T03:43:08.169Z** · 80 run(s) recorded.
+**Last run: 2026-09-19T03:54:06.889Z** · 82 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 52 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 54 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -27,6 +27,8 @@ have made the rule the first thing anyone switched off.
 | check | leg | status | break | also went red |
 | --- | --- | --- | --- | --- |
 | `check-a-different-conversation-in-every-tab.mjs` | R5 [SHAPE] the identity load is reachable from outside hcRenderHome | **RED ALONE** | put the identity load back inside hcRenderHome, where R1's guard makes it unreachable on any entry path that is not Home — the rail loses its location and its logo | — |
+| `check-a-second-edit-still-works.mjs` | 2 a re-render really does strip the marks | **RED ALONE** | make the probe's re-render reuse the same children instead of replacing them. The leg then passes for the wrong reason — nothing was invalidated — and leg 3 would be asserting that a surface which never lost its marks still has them. This is the leg that keeps leg 3 honest. | — |
+| `check-a-second-edit-still-works.mjs` | 3 the SECOND wire marks the new elements — the second edit is still an edit | **RED ALONE** | put the guard back to a bare `return`, which is the shipped defect: data-hc-wired is set once and never cleared, so the second call returns before the per-element marking and the owner cannot get back into the field at all. This is the exact line Adrian's report was about. | — |
 | `check-address-change-is-said.mjs` | 5 the sentence exists, names the new address | **RED ALONE** | make the sentence point at a control — Hubly does not render the page and cannot know what is on screen, so naming a button is claiming a capability it has not verified | — |
 | `check-arrival-in-dom.mjs` | 2c the arrival IS in the thread | **RED ALONE** | speak a second time while the name question is on the floor — a page-view count beside the arrival, which is two composers talking over each other | — |
 | `check-baseline-before-schema.mjs` | schema_mode is read from the call | **RED ALONE** | put the literal "json_object" back in place of the value reported by the AI layer — which is what would make every row say json_object after the flag is flipped, and the whole before/after comparison silently wrong | — |
@@ -169,3 +171,5 @@ have made the rule the first thing anyone switched off.
 - **2026-09-19T03:36:21.920Z** — 4 break(s) applied · 3 red alone · 1 compound · 0 not red · 0 skipped
 - **2026-09-19T03:37:40.501Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-19T03:43:08.169Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-19T03:48:20.270Z** — 3 break(s) applied · 2 red alone · 1 compound · 0 not red · 0 skipped
+- **2026-09-19T03:54:06.889Z** — 2 break(s) applied · 2 red alone · 0 compound · 0 not red · 0 skipped

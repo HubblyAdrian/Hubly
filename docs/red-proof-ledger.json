@@ -766,6 +766,36 @@
       "declaredTotal": 5,
       "recorded": 5,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-19T03:48:20.270Z",
+      "applied": 3,
+      "alone": 2,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-19T03:54:06.889Z",
+      "applied": 2,
+      "alone": 2,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 2,
+      "recorded": 2,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -1300,6 +1330,24 @@
       "leg": "5 no shell parses a typed price with a bare Number() or parseFloat",
       "why": "put `Number(priceRaw)` back on the Edit-details ADD row. It is the one control in the owner shell that can create a service, and Number('$95') is NaN — so a price an owner typed perfectly readably gets stored as NaN, silently, at the moment the service is created.",
       "at": "2026-09-19T03:43:08.169Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-second-edit-still-works.mjs::2 a re-render really does strip the marks": {
+      "check": "check-a-second-edit-still-works.mjs",
+      "leg": "2 a re-render really does strip the marks",
+      "why": "make the probe's re-render reuse the same children instead of replacing them. The leg then passes for the wrong reason — nothing was invalidated — and leg 3 would be asserting that a surface which never lost its marks still has them. This is the leg that keeps leg 3 honest.",
+      "at": "2026-09-19T03:54:06.889Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-second-edit-still-works.mjs::3 the SECOND wire marks the new elements — the second edit is still an edit": {
+      "check": "check-a-second-edit-still-works.mjs",
+      "leg": "3 the SECOND wire marks the new elements — the second edit is still an edit",
+      "why": "put the guard back to a bare `return`, which is the shipped defect: data-hc-wired is set once and never cleared, so the second call returns before the per-element marking and the owner cannot get back into the field at all. This is the exact line Adrian's report was about.",
+      "at": "2026-09-19T03:54:06.889Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

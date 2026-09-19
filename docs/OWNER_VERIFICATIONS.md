@@ -364,3 +364,42 @@ sitemap, so this cannot drift into disagreeing with what the page stamps.
 | The 5th rail tab and the phone's "More" overflow | prohibition 5 is a mobile claim. No true 390px viewport here |
 | The mobile preview at 390px on a real device | the mobile path is asserted in a rig — evidence about the CODE PATH, not about a phone |
 | The truncated-`meta` write-back candidate | needs an owner session. **Not on `graefs-autocare`, and not on either of the two claimed market businesses that hold real `pipeline` data** |
+
+## ⚠️ 5.4 — THE SAVE TEST IS **PARTIAL**, not done. Steps 1–3 pass; step 4 was blocked
+
+Adrian, 2026-09-18, on `evergreen-yard-care` (freeform, 167 stored document versions):
+
+| step | state |
+|---|---|
+| 1. edit three service prices inline | **PASS** |
+| 2. they saved | **PASS** — three new document versions, 165 → 167, 12–23s apart |
+| 3. refresh; they stayed | **PASS** |
+| 4. **save again with nothing changed** | **BLOCKED — never reached.** *"I could not edit them again. Not 'the edit failed' — I could not get back into the field at all."* |
+
+### The blocker, named
+
+`wireHcEditingSurface` (public/hubly.html). `data-hc-wired` was set once and **cleared nowhere**, on a
+root whose **children** get replaced, while guarding **per-element** listeners. Document-level
+listeners survive a re-render (they live on `doc`); the per-element marks do not, because those
+elements are gone.
+
+**FIXED for the CLASSIC path** — bind ONCE, mark EVERY TIME. Covered by
+`scripts/check-a-second-edit-still-works.mjs`, whose every leg wires, **replaces the content**, wires
+again, and asserts on the state after that: 2 marked → 0 after the re-render → 2 after the second
+wire. 2 legs, both RED ALONE. Clearing the flag instead would have re-bound the document-level
+listeners on every render — the opposite bug.
+
+### Still open, and it is the half Adrian actually hit
+
+**The FREEFORM case is NOT settled.** There the root is the nested `srcdoc` iframe's `body`, and a
+save goes through `hcRefreshCanvasFrame()`, which loads a **whole new document** into the standby
+frame and crossfades — so that `body` is new and the flag absent, and it *should* rebind. **That is an
+argument from the code path, not a measurement.** Settling it needs a real save, which needs an owner
+session; this environment may never create an account, so the rig cannot reach it.
+
+**What would settle it, and it needs Adrian:** on `evergreen-yard-care`, edit a price, let it save,
+then edit the SAME price again without reloading. If the second edit opens, the freeform half is
+clear and step 4 can finally run. If it does not, the frame is not being replaced the way
+`hcRefreshCanvasFrame` implies and the finding is there.
+
+**Step 4 has still never been performed.** Nothing in this repo asserts it.
