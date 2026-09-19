@@ -18053,6 +18053,7 @@ var hcClearSelectionFromBuilder = null;
 var hcStepSelectionFromBuilder = null;
 var hcReplaceCardImageFromBuilder = null;
 var hcCtxRunCommandFromBuilder = null;
+var hcSelectByLabelFromBuilder = null;
 
 // The top contextual editor asking for one of the two operations above. Both answer with a
 // BOOLEAN that is sent back: "there is no next element" and "that card has no picture I can
@@ -18077,7 +18078,12 @@ window.addEventListener('message', function(ev){
   // hcOpenEditByLabel is the restore path the auth handshake already uses; this gives the builder
   // the same door without inventing a second one.
   if(d.type === 'hcSelectByLabel' && typeof d.label === 'string' && d.label){
-    try{ if(typeof hcOpenEditByLabel === 'function' && hcOpenEditByLabel) hcOpenEditByLabel(d.label); }catch(e){}
+    // NOT hcOpenEditByLabel — THAT OPENS THE LEGACY TEXT OVERLAY (openTextEditor), and on an
+    // <img> it fires the file picker. Pointing the restore at it put a THIRD editing surface on
+    // screen: a dark modal over the card, with its own input and its own Save, one commit after
+    // the black toolbar was removed for being the second one. Caught by watching the screen after
+    // a rename, not by reading the call.
+    try{ if(typeof hcSelectByLabelFromBuilder === 'function' && hcSelectByLabelFromBuilder) hcSelectByLabelFromBuilder(d.label); }catch(e){}
     return;
   }
   if(d.type === 'hcCtxCommand' && d.cmd && typeof d.cmd === 'object'){
@@ -57058,6 +57064,16 @@ function wireHcEditingSurface(doc, root){
      two cannot ping-pong. */
   hcClearSelectionFromBuilder = function(){ try{ hcClearSel(); }catch(e){} };
   hcCtxRunCommandFromBuilder = function(cmd){ try{ return hcCtxRunCommand(cmd); }catch(e){ return { ok:false, why:'threw' }; } };
+  /* PUT THE SELECTION BACK AFTER A RELOAD — select it, exactly as a click would, and nothing
+   * more. No overlay, no picker, no second surface. */
+  hcSelectByLabelFromBuilder = function(label){
+    try{
+      var el = root.querySelector('[data-hc="' + (window.CSS && CSS.escape ? CSS.escape(label) : label) + '"]');
+      if(!el) return false;
+      hcSelect(el);
+      return true;
+    }catch(e){ return false; }
+  };
   /* THE CARD READER, EXPOSED READ-ONLY. A check cannot reach the "this container holds two
    * cards" case through a click — the leaf-only rule refuses a container before the reader is
    * ever consulted — so a leg asserting it through a click asserts nothing, which is exactly
