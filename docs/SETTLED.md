@@ -28,6 +28,15 @@ Consequences that bind every piece of work:
   slot.
 *(Adrian, 2026-09-13 — correcting a day of work that assumed one path)*
 
+**1a. AMENDMENT, 2026-09-20 — #1 IS ABOUT PRESENTATION, NOT IDENTITY.** "Same card, different
+action" has been read as "same database entity". It is not. **Offering and Product are separate
+canonical entities with separate stable ids** — `services.id` and `commerce_products.id` — that
+happen to render through one block mechanism. An Offering is something the business DOES; a Product
+is something it SELLS; a photographer has both and they are two records. The card is shared, the
+identity is not. Full statement in `docs/BLOCK_SPEC.md`. Nothing else in #1 changes: one generator,
+one card, one block spec, and the action is still the only service-specific part of the markup.
+*(Adrian, 2026-09-20 — added because the previous wording was being re-derived as an identity claim)*
+
 **2. THERE ARE TWO WEBSITE STORES, and any claim about "pages" states which one.**
 
 - **`business_documents.rendered_html`** — freeform HTML. One writer

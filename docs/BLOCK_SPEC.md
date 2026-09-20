@@ -5,6 +5,33 @@ product are **the same card with a different action**: image tile, name, price, 
 A service block's action is **Book** and opens the booking panel; a product block's action is
 **Buy** and opens checkout. **Nothing here may branch on "is this a storefront."**
 
+## PRESENTATION IS SHARED. IDENTITY IS NOT. (ruled 2026-09-20)
+
+The line above — *"a service and a product are the same card with a different action"* — is about
+**presentation, and only presentation**. It has been read as a statement about identity, and it is
+not one. Both readings are now written down so neither has to be re-derived:
+
+| | Offering | Product |
+|---|---|---|
+| **Presentation** | the same block: image tile, name, price+unit, action button, same CSS | **shared — this spec** |
+| **Identity** | `services.id` (uuid) | `commerce_products.id` (uuid) |
+| **Canonical store** | `services` | `commerce_products` |
+| **Action** | `book` → booking panel | `buy` → checkout panel |
+
+**An Offering is something the business DOES for a customer** (lawn maintenance, wedding
+photography, HVAC installation). **A Product is something the business SELLS** (an 8x10 print, a
+canvas, a car-care kit). A photographer has both: a *Wedding Photography* Offering and an *8x10
+Print* Product. They appear as the same card and they are **not the same record**.
+
+**A shared card does not make them one database entity.** `data-hubly-block-kind="service｜product"`
+is therefore not only a rendering hint — it says which canonical store the block's id belongs to,
+and the two id spaces are separate and never merged.
+
+**Names are attributes, never identity.** The href shapes in the action table below carry a NAME
+today (`svc=<name>`, `sku=<name>`); that is the form this spec was written in, and it is the thing
+the Offering work is changing — a rename must not change what a card points at. The stable id is
+the reference; the name travels beside it.
+
 **Freshness checked 2026-09-13:** evergreen-yard-care is still at **document v162, 31,406
 bytes, byte-identical** to what was transcribed. The spec below is not stale and was not
 re-transcribed.
