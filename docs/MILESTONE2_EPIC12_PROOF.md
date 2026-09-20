@@ -1,7 +1,7 @@
 # Milestone 2 · Epic 12 — Polish & Delight
 
 **Status:** PASS  
-**Checked:** 2026-09-19T21:43:14.039Z  
+**Checked:** 2026-09-19T22:35:19.930Z  
 **Gate:** `npm run check:m2-epic12`
 
 > Craftsmanship — not feature work.  

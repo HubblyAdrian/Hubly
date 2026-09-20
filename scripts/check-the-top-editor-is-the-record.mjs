@@ -805,6 +805,55 @@ leg("RULE", "20 a rename edits the card in place — photo, position, price, lin
   `could not: the unstamped link follows, another service's stamped link does NOT, and the nav's ` +
   `"Book lawn care" (?book=1 with no svc=) is left alone.`);
 
+/* ── LEG 21 — one user edit, one document version ────────────────────────────────────────── */
+declareBreak({
+  leg: "21 a rename persists in ONE document write",
+  why: "save the renamed document before the placement pass, which is how it shipped. MEASURED on " +
+       "evergreen 2026-09-20: one rename wrote TWO versions in the same second (v234, v235) while a " +
+       "value-only edit wrote one. Each version is a full snapshot, Undo steps through them singly, " +
+       "and every extra pass re-runs the anchor stamping — which is what made the byte count creep.",
+  file: "supabase/functions/_shared/hubly_capability_registry.ts",
+  find: "  const placement = await applyServicesToFreeform(draftId, draftToken, one, ownerUid, renamedHtml);",
+  with: "  const placement = await applyServicesToFreeform(draftId, draftToken, one, ownerUid);",
+});
+const regW = readFileSync(join(ROOT, "supabase/functions/_shared/hubly_capability_registry.ts"), "utf8");
+const renameHandsForward = /renamedHtml = stripEditorChrome\(rn\.html, "service-rename"\);/.test(regW) &&
+  /applyServicesToFreeform\(draftId, draftToken, one, ownerUid, renamedHtml\)/.test(regW);
+const renameDoesNotSave = !/const savedRename = await callBusinessRpc\("create_business_document"/.test(regW);
+const preHtmlPersists = /if \(\(r\.changed \|\| \(typeof preHtml === "string" && preHtml\)\) && r\.html\)/.test(regW);
+leg("RULE", "21 a rename persists in ONE document write, not two",
+  renameHandsForward && renameDoesNotSave && preHtmlPersists,
+  `the rename hands its HTML to the placement pass (${renameHandsForward}), no longer saves a version ` +
+  `of its own (${renameDoesNotSave}), and the placement save widens its condition so a rename that ` +
+  `needs no further value change still persists (${preHtmlPersists}). That last clause is the one ` +
+  `that makes consolidation safe rather than lossy: without it, a rename whose values were already ` +
+  `correct would be computed, handed forward, and silently dropped.`);
+
+/* ── LEG 22 — a placement may never lose a card ──────────────────────────────────────────── */
+declareBreak({
+  leg: "22 a placement that would drop a card is refused",
+  why: "save whatever the placement produced. Today this pass has no removal path, so the guard " +
+       "looks redundant — which is exactly the state in which someone changes the function and the " +
+       "loss ships silently. A live page quietly losing a service reads to the owner as their own " +
+       "doing, which is what made the 2026-09-20 investigation cost a day.",
+  file: "supabase/functions/_shared/hubly_capability_registry.ts",
+  find: "  if (r.html && anchorsAfter < anchorsBefore) {",
+  with: "  if (false) {",
+});
+const guardLive = /const anchorsBefore = \(sourceHtml\.match\(\/data-hubly-service="\/g\) \|\| \[\]\)\.length;/.test(regW) &&
+  /if \(r\.html && anchorsAfter < anchorsBefore\)/.test(regW) &&
+  /refused_service_loss/.test(regW);
+// The only DELETE against `services` must remain the explicit remove op — proven, not assumed.
+const deletes = (regW.match(/adminWrite\("DELETE", "services"/g) || []).length;
+const removeCardCallers = (regW.match(/await removeServiceCard\(/g) || []).length;
+leg("RULE", "22 a placement that would drop a card is refused, and removal stays explicit",
+  guardLive && deletes === 2 && removeCardCallers === 2,
+  `the anchor-count postcondition is live (${guardLive}); DELETE against \`services\` appears ` +
+  `${deletes}x (both inside op:"remove") and removeServiceCard has ${removeCardCallers} call sites ` +
+  `(the remove op, and the rename fallback which targets prevName). The counts are asserted because ` +
+  `"an edit cannot remove an unrelated service" is a claim about the SET of removal paths — adding a ` +
+  `third one is exactly how that claim would stop being true without anyone noticing.`);
+
 const bad = legs.filter((l) => !l.pass);
 // not-a-corpus-rate: this check's own leg count, not a corpus
 console.log(`\n  ${bad.length ? "FAIL" : "PASS"} — ${legs.length - bad.length}/${legs.length} legs`);

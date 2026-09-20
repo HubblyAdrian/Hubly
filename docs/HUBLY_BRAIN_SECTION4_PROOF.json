@@ -2,7 +2,7 @@
   "section": 4,
   "title": "Initial Experts",
   "passed": true,
-  "checkedAt": "2026-09-19T21:45:09.068Z",
+  "checkedAt": "2026-09-19T22:37:13.671Z",
   "version": "1.0.0",
   "architectureSummary": {
     "expertsModule": "supabase/functions/_shared/hubly_brain_experts.ts",
@@ -284,7 +284,7 @@
       },
       {
         "expertId": "creative_director",
-        "executionTimeMs": 0
+        "executionTimeMs": 1
       },
       {
         "expertId": "critic",
@@ -1094,7 +1094,7 @@
         {
           "expertName": "Creative Director",
           "expertId": "creative_director",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "reasoning": [
             {
               "reason": "Creative direction leans pressure washing that earns trust with before/after proof before asking for a booking so the first screen earns trust before asking for a booking.",
@@ -1664,7 +1664,7 @@
           "output": {
             "type": "Builder Intent",
             "builderIntent": {
-              "intentId": "bint_mu8x1jnk_9iyq7i",
+              "intentId": "bint_mu8ywim2_a3bu3j",
               "version": "1.0.0",
               "originalRequest": "I'm starting a pressure washing company.",
               "intentCategory": "Business Strategy",
@@ -1695,7 +1695,7 @@
                   "confidence": 81
                 }
               ],
-              "timestamp": "2026-09-19T21:45:09.056Z",
+              "timestamp": "2026-09-19T22:37:13.658Z",
               "applied": false,
               "changePlanGenerated": false
             },
@@ -1912,7 +1912,7 @@
           "changedFromPrevious": "Strategy Expert produced Business Strategy; Creative Director advanced that into Creative Plan (confidence 88 → 84).",
           "confidence": 84,
           "status": "ok",
-          "executionTimeMs": 0,
+          "executionTimeMs": 1,
           "outputType": "Creative Plan",
           "retries": 0
         },

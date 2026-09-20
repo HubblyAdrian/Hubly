@@ -4724,14 +4724,56 @@ async function applyBusinessNameToFreeform(draftId: string, draftToken: string, 
   return { status: "placed" };
 }
 
-async function applyServicesToFreeform(draftId: string, draftToken: string, services: { name: string; price?: number; description?: string; show_price?: boolean }[], ownerUid?: string | null): Promise<ServicesPlacement> {
+/** ══ ONE USER EDIT, ONE DOCUMENT VERSION ═══════════════════════════════════════════════════
+ *
+ *  `preHtml` exists so a caller that has ALREADY transformed the document can hand that HTML
+ *  in rather than saving it and making this function re-read it. MEASURED on evergreen
+ *  2026-09-20: a single rename produced TWO versions in the same second (v234, v235) — the
+ *  rename saved so the placement pass could see the new anchors, then the placement pass saved
+ *  again. A value-only edit produced exactly one, which is why only the rename path amplified.
+ *
+ *  Two versions for one edit is not merely untidy: each version is a full document snapshot,
+ *  Undo steps through them one at a time, and every extra pass re-runs the anchor stamping
+ *  (which is what made the byte count creep across versions).
+ *
+ *  NOT A SECOND PERSISTENCE PATH — it is the same create_business_document below, called once
+ *  instead of twice. When `preHtml` is supplied the save condition widens to include it, so a
+ *  rename that needs no further value change is still persisted rather than silently dropped. */
+async function applyServicesToFreeform(draftId: string, draftToken: string, services: { name: string; price?: number; description?: string; show_price?: boolean }[], ownerUid?: string | null, preHtml?: string | null): Promise<ServicesPlacement> {
   const latest = await selectLatestBusinessDocument(draftId, "website");
   if (!latest || latest.format !== "html") {
     notePlacement("applyServicesToFreeform", "not_freeform", draftId, latest ? `format=${latest.format}` : "no website document");
     return { status: "not_freeform", placed: [], missing: services.map((s) => s.name) };
   }
-  const r = placeServicesInFreeform(latest.renderedHtml, services) as ServicesPlacement & { html: string };
-  if (r.changed && r.html) {
+  const sourceHtml = (typeof preHtml === "string" && preHtml) ? preHtml : latest.renderedHtml;
+  const r = placeServicesInFreeform(sourceHtml, services) as ServicesPlacement & { html: string };
+
+  // ══ A PLACEMENT MAY NEVER LOSE A CARD — ASSERT IT, DO NOT TRUST IT ════════════════════════
+  //
+  // This pass places and updates; by inspection it has no removal path, and the only DELETE
+  // against `services` in this file is the explicit `op:"remove"`. So today an edit to one
+  // service structurally cannot drop another — which is exactly the kind of claim that is true
+  // until someone changes the function and nobody notices.
+  //
+  // The count of name anchors is the cheapest honest postcondition: it is computed from HTML
+  // already in hand, it costs no query, and it holds for every legitimate outcome of this pass.
+  // A rename changes an anchor's VALUE, not the count. An insert raises it. Nothing this
+  // function does may lower it.
+  //
+  // REFUSE RATHER THAN SAVE. A document with fewer services than it started with is silent data
+  // loss on a live page, and the owner's next read would make it look like their own doing —
+  // which is precisely the confusion the 2026-09-20 investigation cost a day to.
+  const anchorsBefore = (sourceHtml.match(/data-hubly-service="/g) || []).length;
+  const anchorsAfter = (String(r.html || sourceHtml).match(/data-hubly-service="/g) || []).length;
+  if (r.html && anchorsAfter < anchorsBefore) {
+    notePlacement("applyServicesToFreeform", "refused_service_loss", draftId,
+      `anchors ${anchorsBefore} -> ${anchorsAfter} placing ${services.map((x) => x.name).join(", ")}`);
+    return { status: "failed", placed: [], missing: services.map((s) => s.name),
+             detail: `refused: placement would drop ${anchorsBefore - anchorsAfter} service card(s)` };
+  }
+
+  // `|| preHtml` : the caller's transform must persist even when placement changes nothing more.
+  if ((r.changed || (typeof preHtml === "string" && preHtml)) && r.html) {
     const saved = await callBusinessRpc("create_business_document", {
       p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
       p_document: latest.brief, p_rendered_html: stripEditorChrome(r.html, "services"), p_created_by: "patch", p_format: "html",
@@ -5590,6 +5632,9 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
   // rig: the owner fake answers the edge call `{ok:true}` without performing a write, so the
   // payload was correct and the outcome was never exercised (owner-rig.mjs limitation 2/3, and it
   // is now a worked example of them).
+  // The renamed document, carried from the rename to the single placement save below so one
+  // user edit writes one version. Null on every path that is not an in-place rename.
+  let renamedHtml: string | null = null;
   if (edit.op === "edit") {
     // Match by id when one is genuinely available; otherwise by the name being edited, which is
     // the key the client actually holds and the same key removeServiceCard and the anchor pass use.
@@ -5628,14 +5673,20 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
       if (latestDoc && latestDoc.format === "html") {
         const rn = renameServiceInFreeform(latestDoc.renderedHtml, prevTrimmed, name);
         if (rn.renamed) {
-          const savedRename = await callBusinessRpc("create_business_document", {
-            p_business_id: draftId, p_draft_token: draftToken || null, p_tag: "website",
-            p_document: latestDoc.brief, p_rendered_html: stripEditorChrome(rn.html, "service-rename"),
-            p_created_by: "patch", p_format: "html", p_owner_id: ownerUid,
-          });
-          renamedInPlace = !!(savedRename && savedRename.ok === true);
-          notePlacement("renameServiceInFreeform", renamedInPlace ? "renamed" : "save_failed", draftId,
-            `${prevTrimmed} -> ${name}`);
+          // ══ HANDED FORWARD, NOT SAVED HERE — ONE EDIT, ONE VERSION ═══════════════════════
+          //
+          // This used to save immediately so applyServicesToFreeform (which re-reads the
+          // document) could see the new anchors. Measured on evergreen 2026-09-20: that made a
+          // single rename write TWO versions in the same second, v234 and v235. The renamed
+          // HTML now travels to the placement pass in memory and ONE save persists both.
+          //
+          // `renamedInPlace` still gates the destructive fallback below, and it is now set on
+          // the RENAME succeeding rather than on a save succeeding — which is the honest
+          // condition: the question that fallback asks is "is the old card still there?", and
+          // the rename answers it whether or not a version has been written yet.
+          renamedHtml = stripEditorChrome(rn.html, "service-rename");
+          renamedInPlace = true;
+          notePlacement("renameServiceInFreeform", "renamed_pending_save", draftId, `${prevTrimmed} -> ${name}`);
         } else {
           notePlacement("renameServiceInFreeform", "fell_back", draftId, `${prevTrimmed} -> ${name}: ${rn.why}`);
         }
@@ -5653,7 +5704,7 @@ export async function applyOwnerRecordEdit(draftId: string, draftToken: string, 
   // purposes is "show it", matching the column default and every row that exists today.
   const showPriceForPage = row.show_price === undefined ? true : row.show_price !== false;
   const one = [{ name, price: row.price as number | undefined, description: (row.description as string) || undefined, show_price: showPriceForPage }];
-  const placement = await applyServicesToFreeform(draftId, draftToken, one, ownerUid);
+  const placement = await applyServicesToFreeform(draftId, draftToken, one, ownerUid, renamedHtml);
 
   // (a) THE SECOND CALL SITE. `applyServicesToFreeform` has exactly two callers — this one and
   // setServices — and when the classic writer shipped (2026-09-13) it was wired into setServices

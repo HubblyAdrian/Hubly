@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-19T22:29:15.011Z** · 109 run(s) recorded.
+**Last run: 2026-09-20T21:24:03.676Z** · 110 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 91 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 93 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -121,6 +121,8 @@ have made the rule the first thing anyone switched off.
 | `check-the-top-editor-is-the-record.mjs` | 19 anything not provably value-only reloads | **RED ALONE** | default to in_place. A page that DID change shape is then never re-read, so the owner is left looking at a canvas that no longer matches their record — a stale page that says it saved. The costs are not symmetric: an unnecessary reload is a flicker, a skipped one is a lie, so the tie goes to re-reading. | — |
 | `check-the-top-editor-is-the-record.mjs` | 2 the grid holding two cards is not a card | **RED ALONE** | remove the multi-stamp stop, so a container holding two cards resolves to the FIRST of them. Selecting the grid then opens Full Service's editor over a element that is not a service — and a click anywhere in the section would silently edit the first card's record. | — |
 | `check-the-top-editor-is-the-record.mjs` | 20 a rename edits the card in place | **RED ALONE** | fall back to remove-then-place for every rename. The re-placed entry is CLONED from a sibling, so the owner's photo comes back as an empty slot, the card jumps to the end of the section, and when the bounds guard refuses the cut the OLD card stays and the page shows both names. All three measured on evergreen, 2026-09-19. | — |
+| `check-the-top-editor-is-the-record.mjs` | 21 a rename persists in ONE document write | **RED ALONE** | save the renamed document before the placement pass, which is how it shipped. MEASURED on evergreen 2026-09-20: one rename wrote TWO versions in the same second (v234, v235) while a value-only edit wrote one. Each version is a full snapshot, Undo steps through them singly, and every extra pass re-runs the anchor stamping — which is what made the byte count creep. | — |
+| `check-the-top-editor-is-the-record.mjs` | 22 a placement that would drop a card is refused | **RED ALONE** | save whatever the placement produced. Today this pass has no removal path, so the guard looks redundant — which is exactly the state in which someone changes the function and the loss ships silently. A live page quietly losing a service reads to the owner as their own doing, which is what made the 2026-09-20 investigation cost a day. | — |
 | `check-the-top-editor-is-the-record.mjs` | 3 Next walks in document order and the end of the list says so | **RED ALONE** | let the index run past the end instead of refusing. Next then reports moved:true forever while selecting nothing, and the parent's 'that is the last thing' sentence never fires — a button that looks like it worked and did nothing. | — |
 | `check-the-top-editor-is-the-record.mjs` | 4 the parent CARRIES the card the canvas named | **RED ALONE** | title a carried service card 'Text'. The owner is then editing a service's real fields under a heading that says they are editing a paragraph — the band describing itself wrongly. NARROWED: the obvious break (dropping `card` from the rebuild, which is the bug this leg was written for) starves SEVEN legs at once and proves nothing about any of them. That defect is caught here by the title and by leg 5, whose fields cannot render from a card that was never carried. | — |
 | `check-the-top-editor-is-the-record.mjs` | 5 the fields hold the record's values, not placeholders | **RED ALONE** | blank the DESCRIPTION the row carries, leaving name and price alone. The band then shows an empty box over a service that HAS a description — and an empty box invites the owner to fill in what the record already holds. Aimed away from name/price on purpose: the save legs type their own values into those two, so blanking them would starve leg 7 as well and prove nothing about either — which is exactly the COMPOUND this break scored on its first run. | — |
@@ -240,3 +242,4 @@ have made the rule the first thing anyone switched off.
 - **2026-09-19T22:28:05.712Z** — 5 break(s) applied · 4 red alone · 0 compound · 1 not red · 0 skipped
 - **2026-09-19T22:28:33.646Z** — 5 break(s) applied · 4 red alone · 0 compound · 1 not red · 0 skipped
 - **2026-09-19T22:29:15.011Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-20T21:24:03.676Z** — 27 break(s) applied · 27 red alone · 0 compound · 0 not red · 0 skipped
