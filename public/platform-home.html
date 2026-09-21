@@ -56,12 +56,47 @@
 (function(){
   var SUPA = 'https://rtwxxkxpkqdrhclkozma.supabase.co';
   function sbKey(){ try{ return 'sb-' + SUPA.split('//')[1].split('.')[0] + '-auth-token'; }catch(e){ return null; } }
+  /* ══ AN EXPIRED ACCESS TOKEN IS NOT A SIGNED-OUT OWNER ════════════════════════════════════
+   *
+   * This asked "is the access token still in date", which is the wrong question. Access tokens
+   * last an hour BY DESIGN and a refresh token sits beside them precisely so that expiry costs a
+   * round trip and nothing else. Answering "not authed" to an aged-out token tells an owner who
+   * has been away for sixty-one minutes that he does not have an account.
+   *
+   * MEASURED on the live app, 2026-09-20: access token expired 366 seconds earlier, refresh token
+   * present, and platform-home rendered the PUBLIC MARKETING PAGE — the hero, "Log in or sign
+   * up" — and stayed there. Not a flash: polled for twenty-five seconds and the shell never
+   * arrived. Calling getSession() by hand refreshed it immediately and returned a live session
+   * with an hour of new life, so the session was never dead; only this predicate said it was.
+   *
+   * AND IT COST MORE THAN THE FIRST PAINT, because of the thing directly above this: one reader.
+   * hcIsAuthed() delegates here, and hcLoadOwnedBusiness() opens with `if(!hcIsAuthed()) return
+   * false`. So the owner's business was never loaded, no client was ever constructed, and NO
+   * REFRESH WAS EVER ATTEMPTED — the expiry became self-fulfilling. One reader is still the right
+   * structure; it is why this is a four-line fix in one place rather than a hunt through twenty
+   * call sites.
+   *
+   * THE CORRECT RULE WAS ALREADY WRITTEN DOWN IN THIS FILE, at hcHandleEditAuthNeeded: "NEVER
+   * re-authenticate someone whose refresh token would have done it silently ... an EXPIRED token
+   * is confirmed with getSession() (which refreshes) before we ever show the modal." That path
+   * has been right the whole time. The BOOT path — the one every owner crosses on every reload —
+   * had the naive test. Two of everything, one of them fixed.
+   *
+   * THE ASYMMETRY IS UNCHANGED AND IS WHY OPTIMISM IS SAFE HERE. Being wrong this way costs a
+   * person with a revoked refresh token one late landing paint: the rpc returns nothing, the
+   * async path calls HublyBoot.notOwner(), and the landing appears. Being wrong the other way
+   * locks a real owner out of his own product with his session sitting in localStorage. */
   function isAuthed(){
     try{
       var raw = localStorage.getItem(sbKey());
       if(!raw) return false;
       var o = JSON.parse(raw);
-      var exp = o && (o.expires_at || (o.currentSession && o.currentSession.expires_at));
+      var s = (o && o.currentSession) ? o.currentSession : o;   // v1 nested it, v2 does not
+      if(!s) return false;
+      // A refresh token is a live session that has not been cashed in yet. The SDK redeems it on
+      // the first call, which hcLoadOwnedBusiness is about to make.
+      if(s.refresh_token) return true;
+      var exp = s.expires_at;
       return !exp || (exp * 1000 > Date.now());
     }catch(e){ return false; }
   }
@@ -4308,7 +4343,94 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
   // target, hcThreadScrollToEnd() scrolls the outer. Both fall back to the outer
   // if the inner isn't present, so nothing breaks if the markup changes.
   function hcThreadBody(){ var b = document.getElementById('hcThreadBody'); return b || document.getElementById('hcThread'); }
-  function hcThreadScrollToEnd(){ var t = document.getElementById('hcThread'); if(t) t.scrollTop = t.scrollHeight; }
+
+  /* ══ THE TRANSCRIPT'S HEIGHT IS A FUNCTION OF THE PANEL'S WIDTH, AND THE WIDTH ARRIVES LATE ══
+   *
+   * `scrollTop = scrollHeight` is a LATCHED MEASUREMENT of a thing that is still moving. Going
+   * Home -> Website, the chat column animates 1530px -> 380px over its own 450ms flex-basis
+   * transition, and every line of every message re-wraps on the way down. MEASURED live, the
+   * same eight-message conversation through one switch:
+   *
+   *     t=10ms    chat 1710px   scrollHeight 730   clientHeight 730   -> NO OVERFLOW AT ALL
+   *     t=1000ms  chat  380px   scrollHeight 912   clientHeight 730   -> scrollTop stuck at 129
+   *
+   * At 10ms the transcript fits, so scrolling to the end is a no-op; by the time it does not
+   * fit, 182px of newly-wrapped text has appeared BELOW the owner and nothing looks again. The
+   * newest message — the reply they just came back to read — is off the bottom of the panel.
+   *
+   * THIS IS THE PREVIEW-FIT BUG IN A SECOND PLACE. Same class, same week: a size measured while
+   * a column was mid-transition and never revisited (see hcObservePreviewPane). The cure is the
+   * same and it is not another caller — there are already THIRTY calls to hcThreadScrollToEnd
+   * and adding a thirty-first only moves which moment is wrong. The panel tells us when it has
+   * finished, instead of every future author guessing how long that takes.
+   *
+   * PINNED, NOT FORCED. Re-scrolling on every resize would yank an owner who has scrolled up to
+   * read history back to the bottom the moment anything reflows. So the tail is followed only
+   * while they are already at it; scrolling away lets go, scrolling back takes hold again.
+   *
+   * Both nodes are observed: #hcThread for the panel's own height (the window, the composer
+   * growing a chip row) and #hcThreadBody for the content's (re-wrapping, images, a new turn).
+   * Both are static markup and are only ever emptied, never replaced — checked, because the
+   * preview's observer died by outliving its node — but the target identity is tracked anyway so
+   * that a future rebuild re-points instead of silently watching a detached element. */
+  var hcTailRO = null, hcTailOuter = null, hcTailInner = null, hcTailPinned = true, hcTailLastTop = 0;
+  function hcThreadAtTail(t){ return (t.scrollHeight - t.scrollTop - t.clientHeight) <= 48; }
+  function hcObserveThreadTail(){
+    var t = document.getElementById('hcThread'); if(!t) return;
+    var body = document.getElementById('hcThreadBody') || t;
+    if(!t.__hcTailScroll){
+      t.__hcTailScroll = true;
+      /* ══ ONLY SCROLLING UP LETS GO. ═══════════════════════════════════════════════════════
+       *
+       * This handler was `hcTailPinned = hcThreadAtTail(t)` — "are we at the bottom right now" —
+       * and it UNPINNED THE THING IT WAS MEANT TO KEEP PINNED. A scroll event is delivered
+       * asynchronously, so the event for our own jump-to-the-end arrives a frame or more later;
+       * by then the column has narrowed another step and the re-wrapped text has pushed the
+       * bottom further away. The handler wakes up, sees it is no longer at the tail, concludes
+       * the owner must have scrolled away, and switches the follow off — mid-transition, every
+       * time. Measured with that version in place: still 159px short on arrival.
+       *
+       * Distance from the bottom cannot distinguish "the owner moved" from "the ground moved".
+       * DIRECTION can: content growing never changes scrollTop, so the only thing that lowers it
+       * is the owner going up. Being at the tail re-takes hold, which is how someone who scrolls
+       * back down starts following again. */
+      t.addEventListener('scroll', function(){
+        var top = t.scrollTop;
+        if(hcThreadAtTail(t)) hcTailPinned = true;
+        else if(top < hcTailLastTop - 2) hcTailPinned = false;
+        hcTailLastTop = top;
+      }, { passive:true });
+    }
+    if(typeof ResizeObserver === 'undefined') return;   // then the explicit calls are all there is
+    if(hcTailRO && hcTailOuter === t && hcTailInner === body) return;
+    if(!hcTailRO){
+      hcTailRO = new ResizeObserver(function(){
+        // Coalesce: a 450ms column transition fires this on every frame.
+        if(hcTailRO._t) return;
+        hcTailRO._t = setTimeout(function(){
+          hcTailRO._t = null;
+          var el = document.getElementById('hcThread');
+          if(el && hcTailPinned){ el.scrollTop = el.scrollHeight; hcTailLastTop = el.scrollTop; }
+        }, 0);
+      });
+    }
+    try{
+      hcTailRO.disconnect(); hcTailRO.observe(t);
+      if(body !== t) hcTailRO.observe(body);
+      hcTailOuter = t; hcTailInner = body;
+    }catch(e){ hcTailRO = null; hcTailOuter = null; hcTailInner = null; }
+  }
+  /* Every existing caller keeps working and now means "put me at the tail AND keep me there".
+   * Installing from here rather than from a new lifecycle hook is deliberate: these thirty
+   * callers already cover every path that renders a transcript, so the observer is installed by
+   * the same event that used to be the whole answer. */
+  function hcThreadScrollToEnd(){
+    var t = document.getElementById('hcThread'); if(!t) return;
+    hcTailPinned = true;
+    t.scrollTop = t.scrollHeight;
+    hcTailLastTop = t.scrollTop;   // so the late event for THIS jump is not read as the owner moving
+    hcObserveThreadTail();
+  }
 
   /** NOTHING HUBLY SAYS MAY BE OUR OWN WIRE FORMAT.
    *

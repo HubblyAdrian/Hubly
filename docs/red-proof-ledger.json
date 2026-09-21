@@ -1381,6 +1381,66 @@
       "declaredTotal": 7,
       "recorded": 7,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-21T01:44:19.202Z",
+      "applied": 0,
+      "alone": 0,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 2,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 2,
+      "recorded": 2,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T01:44:58.596Z",
+      "applied": 2,
+      "alone": 2,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 2,
+      "recorded": 2,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T01:45:34.794Z",
+      "applied": 1,
+      "alone": 1,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 1,
+      "recorded": 1,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T01:46:25.478Z",
+      "applied": 3,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -2416,6 +2476,51 @@
       "leg": "7 Home is still the centred reading column, not bottom-anchored like the rail",
       "why": "move Home's thread off centre. Home is a centred reading column by an explicit ruling (.hc-home-centred) and this phase must not restyle it while fixing the rail beside it.\nThe obvious break — broadening the rail's `margin-top:auto` to every mode — was tried first and came back NOT RED, and the reason is worth keeping: Home's thread is display:block, so an auto top margin is inert there no matter what the selector says. The blast radius is smaller than the selector implies, but a leg that cannot go red is not evidence of that, so the break aims at the property the leg actually names.",
       "at": "2026-09-21T01:19:47.546Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-transcript-arrives-at-its-newest-message.mjs::1 arriving at Website lands on the newest message, first visit and return alike": {
+      "check": "check-the-transcript-arrives-at-its-newest-message.mjs",
+      "leg": "1 arriving at Website lands on the newest message, first visit and return alike",
+      "why": "take the tail-following away and leave only the latched scroll calls. They fire while the column is still animating, when the transcript still fits and scrolling to the end is a no-op; the text then re-wraps taller underneath and nobody looks again.",
+      "at": "2026-09-21T01:44:58.596Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-transcript-arrives-at-its-newest-message.mjs::2 an owner reading history is not dragged back to the bottom": {
+      "check": "check-the-transcript-arrives-at-its-newest-message.mjs",
+      "leg": "2 an owner reading history is not dragged back to the bottom",
+      "why": "follow the tail unconditionally instead of only when the owner is already at it. Every reflow — a mode switch, the window, a chip row appearing — then yanks someone who is reading older messages down to the newest one, which is worse than the bug being fixed.",
+      "at": "2026-09-21T01:44:58.596Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-an-expired-token-is-not-a-signed-out-owner.mjs::1 an expired access token with a live refresh token keeps the owner out of the landing": {
+      "check": "check-an-expired-token-is-not-a-signed-out-owner.mjs",
+      "leg": "1 an expired access token with a live refresh token keeps the owner out of the landing",
+      "why": "ask the old question — is the ACCESS token still in date — which is what shipped. An owner who has been away for sixty-one minutes is shown the marketing page for his own product, and because the same reader gates hcLoadOwnedBusiness, no refresh is attempted.",
+      "at": "2026-09-21T01:46:25.478Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-an-expired-token-is-not-a-signed-out-owner.mjs::2 a session with nothing left to refresh still shows the landing": {
+      "check": "check-an-expired-token-is-not-a-signed-out-owner.mjs",
+      "leg": "2 a session with nothing left to refresh still shows the landing",
+      "why": "over-correct to `always authed`, which is the obvious wrong fix for this defect. Every visitor, signed out or not, is then dropped into an owner shell that has nothing to load — the landing replaced by a permanent empty room.",
+      "at": "2026-09-21T01:46:25.478Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-an-expired-token-is-not-a-signed-out-owner.mjs::3 the ordinary unexpired session is unaffected": {
+      "check": "check-an-expired-token-is-not-a-signed-out-owner.mjs",
+      "leg": "3 the ordinary unexpired session is unaffected",
+      "why": "break the expiry test that was already here and is meant to survive this change. A session whose access token is still perfectly valid would be sent to the landing — the original defect widened from the expiry edge to every reload.",
+      "at": "2026-09-21T01:46:25.478Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-21T01:19:47.546Z** · 121 run(s) recorded.
+**Last run: 2026-09-21T01:46:25.478Z** · 125 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 105 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 110 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -40,6 +40,9 @@ have made the rule the first thing anyone switched off.
 | `check-a-second-edit-still-works.mjs` | 2 a re-render really does strip the marks | **RED ALONE** | make the probe's re-render reuse the same children instead of replacing them. The leg then passes for the wrong reason — nothing was invalidated — and leg 3 would be asserting that a surface which never lost its marks still has them. This is the leg that keeps leg 3 honest. | — |
 | `check-a-second-edit-still-works.mjs` | 3 the SECOND wire marks the new elements — the second edit is still an edit | **RED ALONE** | put the guard back to a bare `return`, which is the shipped defect: data-hc-wired is set once and never cleared, so the second call returns before the per-element marking and the owner cannot get back into the field at all. This is the exact line Adrian's report was about. | — |
 | `check-address-change-is-said.mjs` | 5 the sentence exists, names the new address | **RED ALONE** | make the sentence point at a control — Hubly does not render the page and cannot know what is on screen, so naming a button is claiming a capability it has not verified | — |
+| `check-an-expired-token-is-not-a-signed-out-owner.mjs` | 1 an expired access token with a live refresh token keeps the owner out of the landing | **RED ALONE** | ask the old question — is the ACCESS token still in date — which is what shipped. An owner who has been away for sixty-one minutes is shown the marketing page for his own product, and because the same reader gates hcLoadOwnedBusiness, no refresh is attempted. | — |
+| `check-an-expired-token-is-not-a-signed-out-owner.mjs` | 2 a session with nothing left to refresh still shows the landing | **RED ALONE** | over-correct to `always authed`, which is the obvious wrong fix for this defect. Every visitor, signed out or not, is then dropped into an owner shell that has nothing to load — the landing replaced by a permanent empty room. | — |
+| `check-an-expired-token-is-not-a-signed-out-owner.mjs` | 3 the ordinary unexpired session is unaffected | **RED ALONE** | break the expiry test that was already here and is meant to survive this change. A session whose access token is still perfectly valid would be sent to the landing — the original defect widened from the expiry edge to every reload. | — |
 | `check-arrival-in-dom.mjs` | 2c the arrival IS in the thread | **RED ALONE** | speak a second time while the name question is on the floor — a page-view count beside the arrival, which is two composers talking over each other | — |
 | `check-baseline-before-schema.mjs` | schema_mode is read from the call | **RED ALONE** | put the literal "json_object" back in place of the value reported by the AI layer — which is what would make every row say json_object after the flag is flipped, and the whole before/after comparison silently wrong | — |
 | `check-chain-acknowledgement.mjs` | 7 a real job write was read | **RED ALONE** | add `business.addJob` to the writers that can close the priced-services gap — one wrong entry in HC_GAP_WRITERS, which is how a job write comes to be announced as a price change | — |
@@ -143,6 +146,8 @@ The obvious break — broadening the rail's `margin-top:auto` to every mode — 
 | `check-the-top-editor-is-the-record.mjs` | 7 a save goes through hcRecordEdit | **RED ALONE** | drop prevName from the edit. The writer is then handed the NEW name with no way to match the old one, so a rename either fails to find the row or writes a second one. NARROWED on purpose: the obvious break (sending the raw string where the parsed number belongs) also turns leg 9 red, because both legs lean on the one parser call — prevName is this leg's own clause. | — |
 | `check-the-top-editor-is-the-record.mjs` | 8 a blank sale stays blank | **RED ALONE** | send the select's value unconditionally. An untouched control then writes sale='' or a default onto a service nobody declared — a fact the owner never stated, published to a page a customer reads. This is the leg that can pass vacuously, so it is asserted on a fixture whose service IS undeclared and whose save DID happen (leg 7 proves the save happened). | — |
 | `check-the-top-editor-is-the-record.mjs` | 9 an unreadable price writes nothing | **RED ALONE** | save it anyway when the parser returns null. The record then takes a null price from a typed "call us" and the owner is told it saved — a value nobody stated, reported as stored. | — |
+| `check-the-transcript-arrives-at-its-newest-message.mjs` | 1 arriving at Website lands on the newest message, first visit and return alike | **RED ALONE** | take the tail-following away and leave only the latched scroll calls. They fire while the column is still animating, when the transcript still fits and scrolling to the end is a no-op; the text then re-wraps taller underneath and nobody looks again. | — |
+| `check-the-transcript-arrives-at-its-newest-message.mjs` | 2 an owner reading history is not dragged back to the bottom | **RED ALONE** | follow the tail unconditionally instead of only when the owner is already at it. Every reflow — a mode switch, the window, a chip row appearing — then yanks someone who is reading older messages down to the newest one, which is worse than the bug being fixed. | — |
 
 ## Runs
 
@@ -267,3 +272,7 @@ The obvious break — broadening the rail's `margin-top:auto` to every mode — 
 - **2026-09-21T01:16:33.859Z** — 7 break(s) applied · 5 red alone · 0 compound · 2 not red · 0 skipped
 - **2026-09-21T01:18:38.590Z** — 7 break(s) applied · 6 red alone · 0 compound · 1 not red · 0 skipped
 - **2026-09-21T01:19:47.546Z** — 7 break(s) applied · 7 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T01:44:19.202Z** — 0 break(s) applied · 0 red alone · 0 compound · 0 not red · 2 skipped
+- **2026-09-21T01:44:58.596Z** — 2 break(s) applied · 2 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T01:45:34.794Z** — 1 break(s) applied · 1 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T01:46:25.478Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
