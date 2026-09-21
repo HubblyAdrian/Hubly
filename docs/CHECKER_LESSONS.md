@@ -4202,3 +4202,47 @@ one, that is a stated gap and a reason to drive the real product — not a green
 
 Both lessons have the same shape and the same cure: **the assertion has to reach the thing that
 matters — the pixel, or the row — and a message in between is not a substitute for either.**
+
+## Lesson 109
+
+**A LEG THAT ANOTHER LEG'S BREAK MUST ALSO TURN RED IS NOT A SECOND LEG — IT IS THE SAME LEG,
+MEASURED TWICE. MOVE IT TO A POINT THE OTHER BREAK CANNOT REACH, OR MERGE IT.**
+
+Phase 0.5, 2026-09-20. Two checks written the same afternoon, five breaks declared, and the ledger
+came back COMPOUND or NOT RED four times. Every one of those was the check's fault, not the
+product's, and the four corrections are worth more than the fix they were guarding.
+
+**1 — Two legs, one physical quantity.** The rail check asserted "the rail is 180 for any email"
+(leg 1) and "the workspace gets the remaining width" (leg 2). The workspace is `flex:1 1 auto`: it is
+*defined* as what the rail and chat leave. So the single break that moves the rail moves the
+workspace too, and leg 2 could never be anything but COMPOUND. **A leg whose subject is derived from
+another leg's subject is not independent, and no cleverness in the break will make it so.** The fix
+was to stop pretending: the workspace lost its leg, the two columns that CONSUME width kept theirs,
+and the header now states why the most important number in the check is the one not asserted.
+
+**2 — The same coupling, curable by timing.** The preview check asserted "the preview tracks a pane
+resize" and "a return visit fills the pane". Both went red under either break — until the resize test
+was moved to the FIRST visit to Website, before any canvas rebuild. There the observer is bound to a
+node that is unquestionably live, so the stale-node break cannot reach it. **Same two properties,
+same two breaks, and the only thing that changed was WHERE in the run the measurement was taken.**
+When two legs collide, ask whether one of them can be asked earlier, before the other's failure mode
+exists.
+
+**3 — A hand-set fixture is overwritten by the product's own redraw.** The rail check set
+`.hc-chip-nm` textContent directly and measured 50px for a 33-character email and 50px for a
+6-character one. Both numbers were real; neither was the email. `hcReflectAuthState` rebuilds the
+chip from `hcIdentity` and is registered as a live redraw, so the hand-written text was gone before
+the measurement. **Drive the fixture through the product's own input path** — here the auth shim's
+`getUser()` — **and then assert the fixture actually took.** The check now exits 2 with "every leg
+would pass vacuously" if the chip does not contain the address under test.
+
+**4 — A one-visit route structurally cannot see a rebuild bug.** The preview defect needs a SECOND
+canvas render, because the bug is an observer latched to the first wrap node. The first version of
+the check visited Website once; the break came back NOT RED and the honest reading was "my route
+never creates the condition", not "the break missed". **When the mechanism is staleness, the route
+must leave and come back** — and the check now refuses to run (exit 2) if the wrap was not actually
+rebuilt, because a route that silently stops reproducing is a green check about nothing.
+
+The thread through all four: **a NOT RED or COMPOUND result is information about the CHECK, and it
+is available before anyone is relying on the check.** Three of these four were invisible in a green
+run and obvious the moment the ledger was read. Reading it is the cheapest verification in the repo.
