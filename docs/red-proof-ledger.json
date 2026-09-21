@@ -1336,6 +1336,51 @@
       "declaredTotal": 5,
       "recorded": 5,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-21T01:16:33.859Z",
+      "applied": 7,
+      "alone": 5,
+      "compound": 0,
+      "notRed": 2,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 7,
+      "recorded": 7,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T01:18:38.590Z",
+      "applied": 7,
+      "alone": 6,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 7,
+      "recorded": 7,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T01:19:47.546Z",
+      "applied": 7,
+      "alone": 7,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 7,
+      "recorded": 7,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -2316,7 +2361,7 @@
       "check": "check-the-chat-panel-reads-as-a-conversation.mjs",
       "leg": "1 the owner's bubble is narrower than the column and Hubly's turn is not",
       "why": "remove the cap that was restored for .hc-msg.user, leaving the blanket max-width:none. Both speakers go back to the full column width and the bubble stops reading as a bubble.",
-      "at": "2026-09-21T01:09:08.222Z",
+      "at": "2026-09-21T01:19:47.546Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2325,7 +2370,7 @@
       "check": "check-the-chat-panel-reads-as-a-conversation.mjs",
       "leg": "2 the transcript sits on the composer rather than hanging from the ceiling",
       "why": "drop the auto top margin so the transcript returns to the top of the panel, leaving the newest message as far from the cursor as the panel allows.",
-      "at": "2026-09-21T01:09:08.222Z",
+      "at": "2026-09-21T01:19:47.546Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2334,7 +2379,7 @@
       "check": "check-the-chat-panel-reads-as-a-conversation.mjs",
       "leg": "3 a question and its answer are grouped more tightly than two separate turns",
       "why": "equalise the gaps again, so 'the owner asks / Hubly answers' is spaced exactly like 'and now a different subject' and the transcript stops grouping into turns.",
-      "at": "2026-09-21T01:09:08.222Z",
+      "at": "2026-09-21T01:19:47.546Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2343,7 +2388,7 @@
       "check": "check-the-chat-panel-reads-as-a-conversation.mjs",
       "leg": "4 the panel still scrolls end to end",
       "why": "stop the thread scrolling. The transcript still overflows, so the earliest turns are on the page and unreachable — the failure mode that anchoring the content to the bottom could plausibly introduce, which is why it is asserted rather than assumed. `clip` and not `hidden`: the first attempt used hidden and came back NOT RED, because hidden still permits PROGRAMMATIC scrolling and this check scrolls by setting scrollTop. The rule's own comment, twelve lines above it, already said so about overflow-x.",
-      "at": "2026-09-21T01:09:08.222Z",
+      "at": "2026-09-21T01:19:47.546Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2352,7 +2397,25 @@
       "check": "check-the-chat-panel-reads-as-a-conversation.mjs",
       "leg": "5 the trust line is still on the surface the owner types on",
       "why": "hide the honesty line. It is one sentence — 'Hubly uses your real data. I won't make up information.' — printed where the owner decides whether to believe an answer, and it is the kind of thing a layout pass removes without noticing.",
-      "at": "2026-09-21T01:09:08.222Z",
+      "at": "2026-09-21T01:19:47.546Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-chat-panel-reads-as-a-conversation.mjs::6 in Home every child of the composer bar shares the composer's column": {
+      "check": "check-the-chat-panel-reads-as-a-conversation.mjs",
+      "leg": "6 in Home every child of the composer bar shares the composer's column",
+      "why": "name .ask-wrap alone again, which is how this shipped. The box gets the 760px column and the honesty line stays at full bar width, three hundred pixels to its left — a stray caption in the corner rather than the composer's own footnote.",
+      "at": "2026-09-21T01:19:47.546Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-chat-panel-reads-as-a-conversation.mjs::7 Home is still the centred reading column, not bottom-anchored like the rail": {
+      "check": "check-the-chat-panel-reads-as-a-conversation.mjs",
+      "leg": "7 Home is still the centred reading column, not bottom-anchored like the rail",
+      "why": "move Home's thread off centre. Home is a centred reading column by an explicit ruling (.hc-home-centred) and this phase must not restyle it while fixing the rail beside it.\nThe obvious break — broadening the rail's `margin-top:auto` to every mode — was tried first and came back NOT RED, and the reason is worth keeping: Home's thread is display:block, so an auto top margin is inert there no matter what the selector says. The blast radius is smaller than the selector implies, but a leg that cannot go red is not evidence of that, so the break aims at the property the leg actually names.",
+      "at": "2026-09-21T01:19:47.546Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-21T01:09:08.222Z** · 118 run(s) recorded.
+**Last run: 2026-09-21T01:19:47.546Z** · 121 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 103 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 105 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -96,6 +96,9 @@ have made the rule the first thing anyone switched off.
 | `check-the-chat-panel-reads-as-a-conversation.mjs` | 3 a question and its answer are grouped more tightly than two separate turns | **RED ALONE** | equalise the gaps again, so 'the owner asks / Hubly answers' is spaced exactly like 'and now a different subject' and the transcript stops grouping into turns. | — |
 | `check-the-chat-panel-reads-as-a-conversation.mjs` | 4 the panel still scrolls end to end | **RED ALONE** | stop the thread scrolling. The transcript still overflows, so the earliest turns are on the page and unreachable — the failure mode that anchoring the content to the bottom could plausibly introduce, which is why it is asserted rather than assumed. `clip` and not `hidden`: the first attempt used hidden and came back NOT RED, because hidden still permits PROGRAMMATIC scrolling and this check scrolls by setting scrollTop. The rule's own comment, twelve lines above it, already said so about overflow-x. | — |
 | `check-the-chat-panel-reads-as-a-conversation.mjs` | 5 the trust line is still on the surface the owner types on | **RED ALONE** | hide the honesty line. It is one sentence — 'Hubly uses your real data. I won't make up information.' — printed where the owner decides whether to believe an answer, and it is the kind of thing a layout pass removes without noticing. | — |
+| `check-the-chat-panel-reads-as-a-conversation.mjs` | 6 in Home every child of the composer bar shares the composer's column | **RED ALONE** | name .ask-wrap alone again, which is how this shipped. The box gets the 760px column and the honesty line stays at full bar width, three hundred pixels to its left — a stray caption in the corner rather than the composer's own footnote. | — |
+| `check-the-chat-panel-reads-as-a-conversation.mjs` | 7 Home is still the centred reading column, not bottom-anchored like the rail | **RED ALONE** | move Home's thread off centre. Home is a centred reading column by an explicit ruling (.hc-home-centred) and this phase must not restyle it while fixing the rail beside it.
+The obvious break — broadening the rail's `margin-top:auto` to every mode — was tried first and came back NOT RED, and the reason is worth keeping: Home's thread is display:block, so an auto top margin is inert there no matter what the selector says. The blast radius is smaller than the selector implies, but a leg that cannot go red is not evidence of that, so the break aims at the property the leg actually names. | — |
 | `check-the-landing-never-paints-for-an-owner.mjs` | the account chip is visible once the business is open | **RED ALONE** | make the pre-paint hide unconditional again — `hc-boot-owner` is never removed on a successful owner load, so the sign-out door stays invisible for the life of the page | — |
 | `check-the-preview-refits-its-pane.mjs` | 1 the preview fills the pane on a RETURN visit, after the canvas has been rebuilt | **RED ALONE** | restore the install-once guard on the ResizeObserver. The wrap is rebuilt by the canvas innerHTML on every render, so the observer stays bound to a node that has left the document and the live pane is watched by nobody. This is the live defect exactly. | — |
 | `check-the-preview-refits-its-pane.mjs` | 2 the preview tracks the pane when the pane changes width | **RED ALONE** | point the observer at the stage instead of the pane. The stage is the thing the fit WRITES, so it reports its own changes and never hears about the pane's — the preview stops tracking a resize while the rebuild path in leg 1 still lands correctly. | — |
@@ -261,3 +264,6 @@ have made the rule the first thing anyone switched off.
 - **2026-09-21T01:07:12.130Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-21T01:08:31.598Z** — 5 break(s) applied · 4 red alone · 0 compound · 1 not red · 0 skipped
 - **2026-09-21T01:09:08.222Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T01:16:33.859Z** — 7 break(s) applied · 5 red alone · 0 compound · 2 not red · 0 skipped
+- **2026-09-21T01:18:38.590Z** — 7 break(s) applied · 6 red alone · 0 compound · 1 not red · 0 skipped
+- **2026-09-21T01:19:47.546Z** — 7 break(s) applied · 7 red alone · 0 compound · 0 not red · 0 skipped

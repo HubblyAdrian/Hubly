@@ -116,6 +116,22 @@ try {
     await wait(200);
     const last = qa(".hc-msg").at(-1);
     r.scroll.bottomReachesLast = last.getBoundingClientRect().bottom <= threadEl.getBoundingClientRect().bottom + 4;
+
+    /* ── HOME: the composer is a centred 760px column, and everything in the bar must share it. ── */
+    window.hublyNavUI.openWorkspace("home");
+    await wait(1500);
+    const bar = q(".hc-input-bar");
+    r.home = {
+      mode: document.querySelector(".hc-app").getAttribute("data-mode"),
+      inner: box(q(".hc-thread-inner")),
+      // Home keeps its own ruling: centred, never bottom-anchored.
+      innerMarginTop: getComputedStyle(q(".hc-thread-inner")).marginTop,
+      innerJustify: getComputedStyle(q(".hc-thread-inner")).justifyContent,
+      barChildren: [...bar.children].map((c) => {
+        const b = c.getBoundingClientRect();
+        return { cls: String(c.className).split(" ")[0], w: Math.round(b.width), x: Math.round(b.left) };
+      }),
+    };
     return r;
   }, { biz: BIZ });
 } catch (e) {
@@ -222,6 +238,49 @@ leg("RULE", "5 the trust line is still on the surface the owner types on",
   `trust line ${out.trust.h}px tall, displayed, and below the composer's top edge ` +
   `(${out.trust.top} >= ${out.composer.top}). Given its own leg because this phase moved things ` +
   `around it and a sentence that quietly disappears is the easiest casualty of a spacing change.`);
+
+/* ── LEG 6 ────────────────────────────────────────────────────────────────────────────────── */
+declareBreak({
+  leg: "6 in Home every child of the composer bar shares the composer's column",
+  why: "name .ask-wrap alone again, which is how this shipped. The box gets the 760px column " +
+       "and the honesty line stays at full bar width, three hundred pixels to its left — a " +
+       "stray caption in the corner rather than the composer's own footnote.",
+  file: "public/platform-home.html",
+  find: '.hc-app.hc-has-draft[data-mode="home"] .hc-input-bar > *,',
+  with: '.hc-app.hc-has-draft[data-mode="home"] .hc-input-bar > .ask-wrap:not(*),',
+});
+{
+  const kids = out.home.barChildren.filter((c) => c.w > 0);
+  const widths = [...new Set(kids.map((c) => c.w))];
+  const lefts = [...new Set(kids.map((c) => c.x))];
+  leg("RULE", "6 in Home every child of the composer bar shares the composer's column",
+    out.home.mode === "home" && kids.length > 0 && widths.length === 1 && lefts.length === 1,
+    `${kids.length} rendered bar children at widths [${widths}] and left edges [${lefts}] — one ` +
+    `column, so the honesty line sits under the box it describes. Asserted as "they all agree" ` +
+    `rather than "each is 760px": the column's width is a design choice that may move, while the ` +
+    `bar disagreeing with itself is the defect. Measured before the fix: box 760px at x=565, ` +
+    `honesty line 1406px at x=242.`);
+}
+
+/* ── LEG 7 ────────────────────────────────────────────────────────────────────────────────── */
+declareBreak({
+  leg: "7 Home is still the centred reading column, not bottom-anchored like the rail",
+  why: "move Home's thread off centre. Home is a centred reading column by an explicit ruling " +
+       "(.hc-home-centred) and this phase must not restyle it while fixing the rail beside it.\n" +
+       "The obvious break — broadening the rail's `margin-top:auto` to every mode — was tried " +
+       "first and came back NOT RED, and the reason is worth keeping: Home's thread is " +
+       "display:block, so an auto top margin is inert there no matter what the selector says. " +
+       "The blast radius is smaller than the selector implies, but a leg that cannot go red is " +
+       "not evidence of that, so the break aims at the property the leg actually names.",
+  file: "public/platform-home.html",
+  find: ".hc-app.hc-home-centred .hc-thread-inner{justify-content:center;min-height:100%}",
+  with: ".hc-app.hc-home-centred .hc-thread-inner{justify-content:flex-end;min-height:100%}",
+});
+leg("RULE", "7 Home is still the centred reading column, not bottom-anchored like the rail",
+  out.home.innerJustify === "center" && out.home.innerMarginTop === "0px",
+  `Home's thread: justify-content ${out.home.innerJustify}, margin-top ${out.home.innerMarginTop}. ` +
+  `The rail's anchoring is scoped [data-mode="website"] on purpose, and this leg is what keeps it ` +
+  `scoped — a blast-radius assertion, guarding the surface the change was NOT meant to touch.`);
 
 const bad = legs.filter((l) => !l.pass);
 // not-a-corpus-rate: this check's own leg count, not a corpus

@@ -1269,7 +1269,31 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
  *
  * 760px, matching the 640px message measure with room for the two-across suggestion grid; the
  * unclaimed home already uses exactly this pattern at 640 (see .hc-app:not(.hc-has-draft)). */
+/* EVERY CHILD OF THE BAR, NOT JUST THE BOX. The rule below originally named `.ask-wrap` alone,
+ * and the comment under it gives the reason it must not: "the composer is a sibling of the
+ * thread, so it needs the same column or the page reads as two different widths stacked". The
+ * bar has FOUR children — two chip rows, the box, and the honesty line — and three of them were
+ * left at full bar width.
+ *
+ * MEASURED in Home at 1710: composer 760px starting at x=565, honesty line 1406px starting at
+ * x=242. So the one sentence that says "Hubly uses your real data. I won't make up information."
+ * sat three hundred pixels to the left of the box it describes, reading as a stray caption in
+ * the corner rather than the composer's own footnote. The two chip rows are `hidden` today and
+ * measure 1410px at x=240 — the same defect, latent, waiting for the first Home state that
+ * shows a chip.
+ *
+ * The universal child selector is deliberate: naming the four would be a hand-maintained list of
+ * exactly the kind that produced this, and the fifth child would arrive misaligned.
+ *
+ * `.ask-wrap` IS THEN NAMED AGAIN, AND NOT BY OVERSIGHT — it is a specificity repair. Generalising
+ * to `> *` dropped this rule from five class-level selectors to four, which ties with
+ * `.hc-app.hc-has-draft .hc-input-bar .ask-wrap{max-width:none}` further down the file; on a tie
+ * the later rule wins, so the composer itself snapped back to full width the moment its siblings
+ * were fixed. Measured: box 1410px at x=240, honesty line 760px at x=565 — the same misalignment,
+ * inverted. The explicit selector restores the fifth level and wins on specificity rather than on
+ * position, so it stays correct wherever either rule moves in the file. */
 .hc-app.hc-has-draft[data-mode="home"] .hc-thread-inner,
+.hc-app.hc-has-draft[data-mode="home"] .hc-input-bar > *,
 .hc-app.hc-has-draft[data-mode="home"] .hc-input-bar > .ask-wrap{
   max-width:760px;margin-left:auto;margin-right:auto;width:100%;
 }
