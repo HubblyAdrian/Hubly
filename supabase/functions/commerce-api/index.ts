@@ -31,6 +31,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { applyOrderInventoryDeduction } from "../_shared/hubly_commerce_inventory.ts";
 import { resolveShippingProvider } from "../_shared/hubly_provider_shipping.ts";
+import { planProductImport } from "../_shared/commerce_import.ts";
 // Key resolution goes through _shared/supabase_admin.ts: it THROWS on a missing
 // key instead of continuing with "", reads the plural SUPABASE_PUBLISHABLE_KEYS
 // the platform actually injects, and never sends a non-JWT sb_secret_ key as a
@@ -290,28 +291,49 @@ Deno.serve(async (req: Request) => {
         return json({ product: data }, 201);
       }
       if (req.method === "POST" && id === "import") {
+        // ══ EVERY ROW THE CALLER SENT IS ACCOUNTED FOR IN THE ANSWER ═══════════════════════
+        //
+        // This loop used to be `if (!error && data) inserted.push(data)` — a failed insert
+        // vanished and the response reported a smaller count with no reason. The decisions now
+        // live in _shared/commerce_import.ts (pure, and therefore testable without a database);
+        // this function still owns authorisation, business_id, persistence and the HTTP shape.
         const rows = Array.isArray(body.rows) ? body.rows : [];
         if (!rows.length) return json({ error: "rows required" }, 400);
-        const inserted = [];
-        for (const raw of rows.slice(0, 500)) {
-          const name = String(raw.name || "").trim();
-          if (!name) continue;
-          const row = {
-            business_id: businessId,
-            name,
-            slug: slugify(raw.slug || name),
-            description: String(raw.description || ""),
-            short_description: String(raw.short_description || raw.shortDescription || ""),
-            price_cents: Math.round(Number(raw.price_cents ?? (Number(raw.price) || 0) * 100)),
-            sku: raw.sku || null,
-            status: raw.status || "draft",
-            product_type: raw.product_type || raw.type || "physical",
-            inventory: raw.inventory != null ? Number(raw.inventory) : (raw.stock != null ? Number(raw.stock) : 0),
-          };
-          const { data, error } = await admin.from("commerce_products").insert(row).select("*").single();
-          if (!error && data) inserted.push(data);
+
+        // The slugs this business already holds, so a collision is REPORTED rather than
+        // discovered as a swallowed constraint violation.
+        const { data: existingRows } = await admin.from("commerce_products")
+          .select("id,slug").eq("business_id", businessId);
+        const existingSlugs: Record<string, string> = {};
+        for (const r of existingRows || []) existingSlugs[String(r.slug)] = String(r.id);
+
+        const plan = planProductImport(rows, { existingSlugs });
+        const created: unknown[] = [];
+        const failed: Record<string, unknown>[] = [];
+        for (const item of plan.create) {
+          const { data, error } = await admin.from("commerce_products")
+            .insert({ ...item.row, business_id: businessId }).select("*").single();
+          if (error) {
+            // A REJECTION IS A RESULT. It is reported with the database's own words rather
+            // than being counted as one fewer success.
+            failed.push({
+              sourceIndex: item.sourceIndex, name: item.name, slug: item.slug,
+              reason: "insert_failed", detail: error.message,
+            });
+            continue;
+          }
+          if (data) created.push(data);
         }
-        return json({ imported: inserted.length, products: inserted }, 201);
+        return json({
+          // `imported` kept as an alias so any existing caller keeps reading a number it knows.
+          imported: created.length,
+          created: created.length,
+          skipped: plan.skipped.length,
+          failed: failed.length,
+          products: created,
+          // The rows that did NOT become products, each with a reason a person can act on.
+          rejected: [...plan.skipped, ...failed],
+        }, 201);
       }
       if (req.method === "POST" && !id) {
         const name = String(body.name || "").trim();

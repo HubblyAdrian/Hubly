@@ -7,13 +7,13 @@ Three times we have queued research into whether something could be built that w
 shipping — the design-inference mechanism, Jobs and Customers, and structural editing of a
 freeform page. **Before asking whether we can build something, read what we already built.**
 
-**212 mutation functions** exported from `supabase/functions/_shared`.
-**49 are owner-reachable** — something in the conversation function or a
-capability action calls them. **100 are called only by other shared
-modules** (internal helpers). **63 have NO CALLER ANYWHERE** — built and
+**214 mutation functions** exported from `supabase/functions/_shared`.
+**51 are owner-reachable** — something in the conversation function or a
+capability action calls them. **101 are called only by other shared
+modules** (internal helpers). **62 have NO CALLER ANYWHERE** — built and
 unreferenced, which is the missing-door case.
 
-## Owner-reachable (49)
+## Owner-reachable (51)
 
 | capability | file | lines | reached from |
 |---|---|---|---|
@@ -21,21 +21,21 @@ unreferenced, which is the missing-door case.
 | `applyDirectDocumentPatch` | hubly_capability_registry.ts | 58 | hubly-conversation ×1, registry actions ×1 |
 | `applyDirectFreeformEdit` | hubly_capability_registry.ts | 54 | hubly-conversation ×1, registry actions ×1 |
 | `applyOwnerDesignEdit` | hubly_capability_registry.ts | 86 | hubly-conversation ×1, registry actions ×1 |
+| `applyOwnerSectionMove` | hubly_capability_registry.ts | 48 | hubly-conversation ×1, registry actions ×1 |
 | `applyOwnerStyleEdit` | hubly_capability_registry.ts | 36 | hubly-conversation ×1, registry actions ×1 |
 | `createWebsiteBookingJob` | hubly_booking_execution.ts | 306 | registry actions ×1 |
 | `buildCapabilityKnowledgePromptBlock` | hubly_capability_knowledge_loader.ts | 11 | hubly-conversation ×1 |
-| `applyExtractedFacts` | hubly_capability_registry.ts | 199 | hubly-conversation ×1 |
+| `applyExtractedFacts` | hubly_capability_registry.ts | 250 | hubly-conversation ×1 |
 | `applyFreeformInstruction` | hubly_capability_registry.ts | 129 | registry actions ×1 |
 | `applyOwnerNodeDelete` | hubly_capability_registry.ts | 19 | hubly-conversation ×1 |
 | `applyOwnerNodeMove` | hubly_capability_registry.ts | 31 | hubly-conversation ×1 |
-| `applyOwnerRecordEdit` | hubly_capability_registry.ts | 72 | hubly-conversation ×1 |
-| `applyOwnerSectionMove` | hubly_capability_registry.ts | 48 | hubly-conversation ×1 |
+| `applyOwnerRecordEdit` | hubly_capability_registry.ts | 290 | hubly-conversation ×1 |
 | `applyShapeNet` | hubly_capability_registry.ts | 13 | registry actions ×1 |
 | `buildBusinessRecordBlock` | hubly_capability_registry.ts | 76 | registry actions ×2 |
 | `buildCapabilitiesPromptBlock` | hubly_capability_registry.ts | 18 | hubly-conversation ×1 |
-| `generateAndValidateDocument` | hubly_capability_registry.ts | 62 | registry actions ×2 |
+| `generateAndValidateDocument` | hubly_capability_registry.ts | 115 | registry actions ×2 |
 | `generateFreeformPage` | hubly_capability_registry.ts | 487 | registry actions ×2 |
-| `insertServiceIntoFreeform` | hubly_capability_registry.ts | 113 | registry actions ×1 |
+| `insertServiceIntoFreeform` | hubly_capability_registry.ts | 116 | registry actions ×1 |
 | `markNameSlotInFreeform` | hubly_capability_registry.ts | 8 | registry actions ×1 |
 | `markServiceAnchorsInFreeform` | hubly_capability_registry.ts | 21 | registry actions ×2 |
 | `placeBusinessNameInFreeform` | hubly_capability_registry.ts | 15 | registry actions ×1 |
@@ -52,22 +52,24 @@ unreferenced, which is the missing-door case.
 | `stampFreeformHtml` | hubly_document_labels.ts | 215 | registry actions ×2 |
 | `applyPatchOps` | hubly_document.ts | 83 | registry actions ×2 |
 | `buildDesignRationaleInstructions` | hubly_document.ts | 3 | registry actions ×1 |
-| `buildDocumentSchemaPromptBlock` | hubly_document.ts | 60 | registry actions ×2 |
+| `buildDocumentSchemaPromptBlock` | hubly_document.ts | 61 | registry actions ×2 |
 | `applyFreeformEdit` | hubly_freeform.ts | 213 | registry actions ×5 |
 | `applyFreeformStyle` | hubly_freeform.ts | 78 | registry actions ×1 |
 | `deleteFreeformNode` | hubly_freeform.ts | 14 | registry actions ×1 |
 | `moveFreeformNode` | hubly_freeform.ts | 59 | registry actions ×1 |
 | `moveFreeformSection` | hubly_freeform.ts | 162 | registry actions ×1 |
-| `addressGrounded` | hubly_grounding.ts | 9 | registry actions ×1 |
+| `addressGrounded` | hubly_grounding.ts | 9 | registry actions ×3 |
 | `buildOperationalStateBlock` | hubly_operational_state.ts | 74 | hubly-conversation ×1 |
 | `stripHublyRuntime` | hubly_page_runtime.ts | 22 | registry actions ×1 |
+| `recordEnvelopeSuppression` | hubly_sayable.ts | 16 | hubly-conversation ×2 |
 | `addServicesBlock` | hubly_services_block.ts | 62 | registry actions ×2 |
+| `buildCatalogWritePayload` | service_engine.ts | 22 | registry actions ×2 |
 | `buildPageStructureBlock` | site_identity.ts | 38 | registry actions ×2 |
 | `buildPaletteBlock` | site_identity.ts | 25 | registry actions ×2 |
 | `buildDefaultStorefront` | storefront_ast.ts | 20 | registry actions ×1 |
-| `createAdminClient` | supabase_admin.ts | 32 | hubly-conversation ×5 |
+| `createAdminClient` | supabase_admin.ts | 32 | hubly-conversation ×9 |
 
-## Internal helpers (100)
+## Internal helpers (101)
 
 Called by another shared module, but nothing an owner reaches directly.
 
@@ -140,6 +142,7 @@ Called by another shared module, but nothing an owner reaches directly.
 | `buildWorkspaceIntelligence` | hubly_brain_workspace_intelligence.ts | 69 | 1 |
 | `buildWorkspaceMemorySnapshot` | hubly_brain_workspace_intelligence.ts | 30 | 1 |
 | `buildWorkspaceRecommendations` | hubly_brain_workspace_intelligence.ts | 62 | 1 |
+| `claimsIn` | hubly_claims.ts | 17 | 2 |
 | `applyOrderInventoryDeduction` | hubly_commerce_inventory.ts | 64 | 1 |
 | `sanitizeFreeformHtml` | hubly_document_labels.ts | 74 | 1 |
 | `buildStylingPromptBlock` | hubly_document.ts | 3 | 1 |
@@ -174,7 +177,7 @@ Called by another shared module, but nothing an owner reaches directly.
 | `stripeConfigured` | stripe.ts | 3 | 2 |
 | `stripeLivemode` | stripe.ts | 8 | 3 |
 
-## NO CALLER ANYWHERE (63) — the missing-door list
+## NO CALLER ANYWHERE (62) — the missing-door list
 
 Built and referenced by nothing. This is the "look for the missing door before building the
 room" case, and it is where the photo upload, the inline image editing, the trade-aware booking
@@ -240,11 +243,10 @@ wizard and Stripe Connect were all found built and unreachable.
 | `recordBlueprintSignal` | mission_control.ts | 61 |
 | `recordProofStep` | mission_control.ts | 62 |
 | `recordSmokeRun` | mission_control.ts | 30 |
-| `buildCatalogWritePayload` | service_engine.ts | 22 |
 | `createAccountLink` | stripe.ts | 11 |
 | `createConnectLoginLink` | stripe.ts | 6 |
 | `sanitizeAppReturnUrl` | stripe.ts | 25 |
 | `createUserClient` | supabase_admin.ts | 9 |
 
-*Generated 2026-09-13. The name filter is deliberately loose —
+*Generated 2026-09-21. The name filter is deliberately loose —
 a reader can argue with a name on this list far more easily than notice one missing.*

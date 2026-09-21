@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-21T06:20:13.409Z** · 131 run(s) recorded.
+**Last run: 2026-09-21T19:19:42.939Z** · 137 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 112 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 120 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -94,6 +94,9 @@ have made the rule the first thing anyone switched off.
 | `check-sale-is-its-own-axis.mjs` | 2 the booking DTO's quote_required follows SALE, not the pricing mode | **RED ALONE** | read the pricing mode again. offerType still resolves sale correctly, so leg 1 still passes and the owner's declaration is still stored — and the BOOKING FLOW ignores it, which is exactly the state that made priced-and-quoted impossible while looking supported. | — |
 | `check-sale-is-its-own-axis.mjs` | 3 the STRUCTURE derivation still answers when nothing is declared | **RED ALONE** | delete the structure fallback, which an earlier ruling asked for and Adrian then struck: 'A membership offer has no pricing.mode, so structure-derived sale is the only thing that can answer for it.' Without it every existing service and every membership resolves to 'unknown', and a booking flow cannot act on unknown. | — |
 | `check-status-words-are-one-vocabulary.mjs` | neither shell holds its own copy of the words | **RED ALONE** | paste the five words back into hubly.html as a literal — the duplication this file exists to prevent, and it is one paste away at all times | — |
+| `check-the-ai-writes-commerce-only-through-the-api.mjs` | 1 the action reaches commerce_products only through the commerce-api import route | **RED ALONE** | point the action at a different route. The boundary this whole phase exists to keep — one owner-gated endpoint owning every Commerce write — stops being the only way in. | — |
+| `check-the-ai-writes-commerce-only-through-the-api.mjs` | 2 the model cannot supply an id, a business_id, a slug or a status | **RED ALONE** | let a model-supplied status through. The assistant can then publish on import — twenty items it read off a photograph in front of customers, with nobody having looked. | — |
+| `check-the-ai-writes-commerce-only-through-the-api.mjs` | 3 rejected rows are named back to the owner, not collapsed into a count | **RED ALONE** | report only the number that went in. The owner is told 'added 2' and never learns that his second House Salad is missing — the original defect, moved one layer up. | — |
 | `check-the-chat-panel-reads-as-a-conversation.mjs` | 1 the owner's bubble is narrower than the column and Hubly's turn is not | **RED ALONE** | remove the cap that was restored for .hc-msg.user, leaving the blanket max-width:none. Both speakers go back to the full column width and the bubble stops reading as a bubble. | — |
 | `check-the-chat-panel-reads-as-a-conversation.mjs` | 2 the transcript sits on the composer rather than hanging from the ceiling | **RED ALONE** | drop the auto top margin so the transcript returns to the top of the panel, leaving the newest message as far from the cursor as the panel allows. | — |
 | `check-the-chat-panel-reads-as-a-conversation.mjs` | 3 a question and its answer are grouped more tightly than two separate turns | **RED ALONE** | equalise the gaps again, so 'the owner asks / Hubly answers' is spaced exactly like 'and now a different subject' and the transcript stops grouping into turns. | — |
@@ -102,6 +105,12 @@ have made the rule the first thing anyone switched off.
 | `check-the-chat-panel-reads-as-a-conversation.mjs` | 6 in Home every child of the composer bar shares the composer's column | **RED ALONE** | name .ask-wrap alone again, which is how this shipped. The box gets the 760px column and the honesty line stays at full bar width, three hundred pixels to its left — a stray caption in the corner rather than the composer's own footnote. | — |
 | `check-the-chat-panel-reads-as-a-conversation.mjs` | 7 Home is still the centred reading column, not bottom-anchored like the rail | **RED ALONE** | move Home's thread off centre. Home is a centred reading column by an explicit ruling (.hc-home-centred) and this phase must not restyle it while fixing the rail beside it.
 The obvious break — broadening the rail's `margin-top:auto` to every mode — was tried first and came back NOT RED, and the reason is worth keeping: Home's thread is display:block, so an auto top margin is inert there no matter what the selector says. The blast radius is smaller than the selector implies, but a leg that cannot go red is not evidence of that, so the break aims at the property the leg actually names. | — |
+| `check-the-import-never-drops-a-row.mjs` | 1 every row sent is accounted for, as a create or as a skip with a reason | **RED ALONE** | restore the endpoint's original `if (!name) continue;` — a row the caller sent is discarded without appearing anywhere in the answer, which is the whole defect, reached through the nameless row rather than the duplicate so that leg 2 is untouched. | — |
+| `check-the-import-never-drops-a-row.mjs` | 2 a duplicate is refused rather than guessed at, and nothing existing is overwritten | **RED ALONE** | report the collision without saying WHICH product already holds the address. The row is still refused, so leg 1 is untouched — but 'something already has that name' with no id is not something a caller can act on, and the owner is left to guess which product.
+A first attempt auto-suffixed the slug and BROKE THE CHECK instead of failing a leg: it assigned to a const. A break that stops the module compiling has tested nothing. | — |
+| `check-the-import-never-drops-a-row.mjs` | 3 an imported product with no stock declared is not stock-tracked | **RED ALONE** | restore the shipped behaviour — inventory 0 with tracking left to the column default of true. Checkout then refuses every imported product the moment it is published, with `insufficient_stock (have 0, want 1)`. | — |
+| `check-the-import-never-drops-a-row.mjs` | 4 an imported product is a draft unless the caller says otherwise | **RED ALONE** | publish on import. Anything imported — including anything a model produced — reaches customers with nobody having looked at it. | — |
+| `check-the-import-never-drops-a-row.mjs` | 5 a price that cannot be read is refused, not silently turned into free | **RED ALONE** | coerce an unreadable price to 0 the way `Number(raw.price) || 0` did. A product whose price nobody could read is created at $0.00 and is one publish away from being sold for nothing. | — |
 | `check-the-landing-never-paints-for-an-owner.mjs` | the account chip is visible once the business is open | **RED ALONE** | make the pre-paint hide unconditional again — `hc-boot-owner` is never removed on a successful owner load, so the sign-out door stays invisible for the life of the page | — |
 | `check-the-preview-refits-its-pane.mjs` | 1 the preview fills the pane on a RETURN visit, after the canvas has been rebuilt | **RED ALONE** | restore the install-once guard on the ResizeObserver. The wrap is rebuilt by the canvas innerHTML on every render, so the observer stays bound to a node that has left the document and the live pane is watched by nobody. This is the live defect exactly. | — |
 | `check-the-preview-refits-its-pane.mjs` | 2 the preview tracks the pane when the pane changes width | **RED ALONE** | stop observing once the pane has settled. Navigation still lands correctly (one fit, at the end of the transition) so legs 1 and 3 are untouched, but nothing follows a pane that changes size afterwards — the panel opening, the window, a chip row appearing.
@@ -285,3 +294,9 @@ Two narrower-looking attempts were rejected by the ledger first. Pointing the ob
 - **2026-09-21T06:18:24.099Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 1 skipped
 - **2026-09-21T06:19:17.002Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 1 skipped
 - **2026-09-21T06:20:13.409Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T06:32:11.479Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T19:16:39.612Z** — 4 break(s) applied · 3 red alone · 0 compound · 0 not red · 1 skipped
+- **2026-09-21T19:17:17.018Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T19:19:19.166Z** — 3 break(s) applied · 2 red alone · 0 compound · 1 not red · 0 skipped
+- **2026-09-21T19:19:26.141Z** — 3 break(s) applied · 2 red alone · 0 compound · 1 not red · 0 skipped
+- **2026-09-21T19:19:42.939Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped

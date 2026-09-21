@@ -9472,6 +9472,93 @@ HUBLY_CAPABILITY_REGISTRY.push({
       },
     },
     {
+      /* ══ BULK IMPORT — THE ONE COMMERCE WRITE THE ASSISTANT DID NOT HAVE ══════════════════
+       *
+       * createProduct beside this has existed and works; what was missing was a way to bring in
+       * MANY products in one turn, which is what a catalogue, a price list or a menu actually
+       * arrives as. It is a thin wrapper over the endpoint the owner's own Store screen uses:
+       *
+       *     AI → this action → commerce-api POST /products/import → commerce_products
+       *
+       * Nothing here writes a table, and the owner's own JWT is what callCommerceApi sends, so
+       * the server applies exactly the authorisation it applies to the Store screen. The model
+       * supplies CONTENT; the server owns ids, business_id, slugs, validation and persistence.
+       *
+       * STATUS IS NOT AN ARGUMENT. There is no publish option on this action at all — a bulk
+       * import lands as drafts, always, and publishing stays a separate deliberate act on one
+       * product at a time. A model that has just read a photograph of a price list is exactly
+       * the thing that must not be able to put twenty items in front of customers.
+       */
+      name: "importProducts",
+      description:
+        "Add SEVERAL products to the Store at once — a price list, a catalogue, a menu the owner read out or photographed. Every product is created as a hidden DRAFT that customers cannot see; there is no way to publish from here, and you must tell the owner they are drafts and that you can publish them one at a time when they've checked them. Use createProduct instead for a single item. Some rows may come back skipped — for example two items with the same name — and when they do, say exactly which ones and why, and ask the owner what they want to do; never quietly leave them out.",
+      argsSchema: {
+        type: "object",
+        properties: {
+          businessId: sfBusinessIdArg,
+          products: {
+            type: "array",
+            description:
+              "The products to add. Only include what the owner actually gave you — never invent a price, a description or an item to fill a gap. If a price was not stated or you could not read it, leave price out rather than guessing.",
+            items: {
+              type: "object",
+              properties: {
+                name: { type: "string", description: "The product's real name, as the owner gave it." },
+                price: { type: "number", description: "Price in dollars, ONLY if the owner stated it." },
+                description: { type: "string", description: "A short description, only if the owner gave one." },
+                type: { type: "string", description: "\"physical\" (default), \"digital\" or \"gift_card\"." },
+                inventory: { type: "number", description: "Stock count — ONLY if the owner counts stock for this item. Omit it and the product is simply not stock-tracked." },
+              },
+              required: ["name"],
+            },
+          },
+        },
+        required: ["products"],
+      },
+      handler: async (args) => {
+        const ctx = sfOwnerCtx(args);
+        if (!ctx) return SF_NO_CTX;
+        const list = Array.isArray(args.products) ? args.products : [];
+        if (!list.length) {
+          return { ok: false, real: false, summary: "I need at least one product to add.", error: "no_products" };
+        }
+        const rows = list.map((p: Record<string, unknown>) => {
+          const row: Record<string, unknown> = { name: String(p?.name ?? "").trim() };
+          if (p?.price != null) row.price = sfDollars(p.price);
+          if (p?.description) row.description = String(p.description);
+          if (p?.type) row.type = String(p.type);
+          if (p?.inventory != null) row.inventory = Number(p.inventory);
+          // PROVENANCE, so the owner's Store can tell what a model produced from what he typed.
+          row.metadata = { source: "ai" };
+          return row;
+        });
+        const r = await callCommerceApi(ctx.ownerToken, "POST", "/products/import", {
+          business_id: ctx.businessId,
+          rows,
+        });
+        if (r.status !== 201) {
+          return { ok: false, real: false, summary: "I couldn't add those to the store just now.", error: r.json?.error || `http_${r.status}` };
+        }
+        const created = Number(r.json?.created ?? r.json?.imported ?? 0);
+        const rejected = Array.isArray(r.json?.rejected) ? r.json.rejected : [];
+        // EVERY REJECTED ROW IS NAMED. The endpoint reports them; repeating the count and
+        // dropping the reasons here would re-create the defect one layer up.
+        const problems = rejected.map((x: Record<string, unknown>) =>
+          `${x.name ? `"${x.name}"` : `row ${Number(x.sourceIndex) + 1}`}: ${x.detail || x.reason}`);
+        const head = created
+          ? `Added ${created} product${created === 1 ? "" : "s"} to the store as hidden drafts — customers can't see them yet.`
+          : `I didn't add anything to the store.`;
+        return {
+          ok: created > 0 || rejected.length === 0,
+          real: true,
+          summary: problems.length
+            ? `${head} ${problems.length} didn't go in — ${problems.join(" ")} What would you like to do about ${problems.length === 1 ? "it" : "those"}?`
+            : `${head} Tell me when you've checked them and I'll publish them.`,
+          raw: { created, skipped: r.json?.skipped ?? 0, failed: r.json?.failed ?? 0, rejected },
+        };
+      },
+    },
+    {
       name: "updateProduct",
       description:
         "Change an existing product's details (name, price, description, stock, category). Identify it by the owner's words in productName. If that name matches more than one product, or none, this returns without changing anything and tells you — ask the owner which one; never guess.",
