@@ -8479,3 +8479,31 @@ Stated before the number, as required: this holds only if the anchor count is re
 ### Still open from this morning
 `styleEdit` drops the node address (`index.ts:2060`), so an element with no `data-hc` cannot be
 styled — which is why **Button Style** is still not in the band.
+
+---
+
+## The bulk-import stock behaviour is verified at the column, not at the gate (2026-09-21)
+
+**Deployed and exercised against real Postgres** on `hubly-classic-fixture`: an imported product
+with no stock declared lands `track_inventory=false, inventory=null`, and one declaring
+`inventory: 24` lands `track_inventory=true, inventory=24`. Both read back from the database.
+
+**What was NOT exercised: the checkout gate itself.** The gate lives in
+`_shared/commerce_checkout.ts` and has exactly two callers — `create-store-checkout`, which
+refuses at 503 *"Stripe Connect is not ready for this business"* **before** it builds or validates
+any item, and `stripe-webhook`, which is not callable by hand. `POST /cart` does not gate on
+stock. So on a business without Stripe Connect there is no route that reaches
+
+```ts
+} else if (!isStockless && product.track_inventory !== false && product.inventory != null) {
+  if (Number(product.inventory) < qty) return empty("insufficient_stock", …);
+```
+
+The columns the gate reads are verified; the branch was not run. Closing that would mean
+exercising checkout on a business with live Stripe Connect — the only ones are market
+businesses, and `graefs-autocare` is READ-ONLY. **Not attempted, and this is the reason.**
+
+Residue from the same verification: the live AI-boundary test created one
+`ask_hubly_conversations` row (plus its messages) on `hubly-classic-fixture`. The 8 test products
+were deleted through the Commerce API and the fixture is back to 0 products; the conversation row
+was left, because removing it would need raw SQL against a table the Commerce API does not expose.
