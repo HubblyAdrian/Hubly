@@ -1216,6 +1216,51 @@
       "declaredTotal": 27,
       "recorded": 27,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-21T00:19:45.229Z",
+      "applied": 2,
+      "alone": 0,
+      "compound": 1,
+      "notRed": 1,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 2,
+      "recorded": 2,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T00:25:19.546Z",
+      "applied": 1,
+      "alone": 0,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 2,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T00:26:20.265Z",
+      "applied": 3,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -2143,6 +2188,33 @@
       "leg": "22 a placement that would drop a card is refused",
       "why": "save whatever the placement produced. Today this pass has no removal path, so the guard looks redundant — which is exactly the state in which someone changes the function and the loss ships silently. A live page quietly losing a service reads to the owner as their own doing, which is what made the 2026-09-20 investigation cost a day.",
       "at": "2026-09-20T21:24:03.676Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-rail-is-a-fixed-width.mjs::1 the rail is the same width for a long email and a short one": {
+      "check": "check-the-rail-is-a-fixed-width.mjs",
+      "leg": "1 the rail is the same width for a long email and a short one",
+      "why": "restore min-width:auto on the rail, which is the state that shipped. The declared 180px becomes a suggestion again, the owner's email address sets the rail's min-content, and the width of the navigation becomes a function of how long that address is.",
+      "at": "2026-09-21T00:26:20.265Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-rail-is-a-fixed-width.mjs::2 the chat panel holds its declared 380px in website mode, for either address": {
+      "check": "check-the-rail-is-a-fixed-width.mjs",
+      "leg": "2 the chat panel holds its declared 380px in website mode, for either address",
+      "why": "let the chat column share the leftover width instead of declaring 380px. The rail stays 180 so leg 1 is untouched, but the chat panel and the canvas start negotiating and the work surface stops being a known size.",
+      "at": "2026-09-21T00:26:20.265Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-rail-is-a-fixed-width.mjs::3 the account name is present in the rail and able to truncate": {
+      "check": "check-the-rail-is-a-fixed-width.mjs",
+      "leg": "3 the account name is present in the rail and able to truncate",
+      "why": "hide the name in the rail instead of truncating it. That is the cheap fix for this class and it does hold the rail at 180 — legs 1 and 2 stay green — by removing the owner's account control from the navigation, trading a layout bug for an unreadable chip.",
+      "at": "2026-09-21T00:26:20.265Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

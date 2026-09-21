@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-20T21:24:03.676Z** · 110 run(s) recorded.
+**Last run: 2026-09-21T00:26:20.265Z** · 113 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 93 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 96 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -92,6 +92,9 @@ have made the rule the first thing anyone switched off.
 | `check-sale-is-its-own-axis.mjs` | 3 the STRUCTURE derivation still answers when nothing is declared | **RED ALONE** | delete the structure fallback, which an earlier ruling asked for and Adrian then struck: 'A membership offer has no pricing.mode, so structure-derived sale is the only thing that can answer for it.' Without it every existing service and every membership resolves to 'unknown', and a booking flow cannot act on unknown. | — |
 | `check-status-words-are-one-vocabulary.mjs` | neither shell holds its own copy of the words | **RED ALONE** | paste the five words back into hubly.html as a literal — the duplication this file exists to prevent, and it is one paste away at all times | — |
 | `check-the-landing-never-paints-for-an-owner.mjs` | the account chip is visible once the business is open | **RED ALONE** | make the pre-paint hide unconditional again — `hc-boot-owner` is never removed on a successful owner load, so the sign-out door stays invisible for the life of the page | — |
+| `check-the-rail-is-a-fixed-width.mjs` | 1 the rail is the same width for a long email and a short one | **RED ALONE** | restore min-width:auto on the rail, which is the state that shipped. The declared 180px becomes a suggestion again, the owner's email address sets the rail's min-content, and the width of the navigation becomes a function of how long that address is. | — |
+| `check-the-rail-is-a-fixed-width.mjs` | 2 the chat panel holds its declared 380px in website mode, for either address | **RED ALONE** | let the chat column share the leftover width instead of declaring 380px. The rail stays 180 so leg 1 is untouched, but the chat panel and the canvas start negotiating and the work surface stops being a known size. | — |
+| `check-the-rail-is-a-fixed-width.mjs` | 3 the account name is present in the rail and able to truncate | **RED ALONE** | hide the name in the rail instead of truncating it. That is the cheap fix for this class and it does hold the rail at 180 — legs 1 and 2 stay green — by removing the owner's account control from the navigation, trading a layout bug for an unreadable chip. | — |
 | `check-the-rail-says-who-you-are.mjs` | 1 a known first name is on its own line ABOVE the business name | **RED ALONE** | put the business name FIRST instead — the owner line is still there, still says exactly what the reader says, still on its own line. Only the order Adrian ruled on is gone, which is the narrowest break that can reach this leg: legs 2 and 3 cannot see it at all. | — |
 | `check-the-rail-says-who-you-are.mjs` | 2 no name established renders NOTHING — no node, no placeholder, no email | **RED ALONE** | fall back to the email's local part when the reader returns null, which is exactly the 2026-09-15 bug: a login credential shown to the owner as his name, in the one place he looks to confirm Hubly knows who he is | — |
 | `check-the-rail-says-who-you-are.mjs` | 3 the line is EXACTLY what the one reader returns — no second opinion | **RED ALONE** | restyle the name locally after reading it — one line of 'presentation', which is how every second opinion about a person's name starts. It keeps the node, the order, the geometry and the null decision identical, so ONLY the claim that the surface shows what the reader said can detect it. (The real bug it stands for is larger — an email prefix or the auth provider's guess — but a wider break would take legs 1 and 2 down with it and prove nothing.) | — |
@@ -243,3 +246,6 @@ have made the rule the first thing anyone switched off.
 - **2026-09-19T22:28:33.646Z** — 5 break(s) applied · 4 red alone · 0 compound · 1 not red · 0 skipped
 - **2026-09-19T22:29:15.011Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-20T21:24:03.676Z** — 27 break(s) applied · 27 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T00:19:45.229Z** — 2 break(s) applied · 0 red alone · 1 compound · 1 not red · 0 skipped
+- **2026-09-21T00:25:19.546Z** — 1 break(s) applied · 0 red alone · 1 compound · 0 not red · 2 skipped
+- **2026-09-21T00:26:20.265Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped

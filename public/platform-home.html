@@ -636,7 +636,31 @@ html.hc-boot-owner body:not(.hc-active) .hc-input-bar{opacity:.5;pointer-events:
    own content floor is ~175px (the account chip and the business name), so 180 is the narrowest
    width that is a CHOICE rather than a squeeze. The approved drawing runs it at ~145.
    Measured at 1440: rail 260 -> 3 truncated · 200 -> 1 · 180 -> 0 (with the row fix below). */
-.hc-rail{display:none;flex:0 0 180px;flex-direction:column;align-items:stretch;justify-content:flex-start;
+/* ══ min-width:0 IS WHAT MAKES `flex:0 0 180px` A WIDTH RATHER THAN A SUGGESTION ═══════════
+ *
+ * A flex item defaults to `min-width:auto`: it may not shrink below its CONTENT's min-content
+ * width. So the rail's 180px basis lost to the widest unbreakable thing inside it, which is the
+ * owner's email address — one token with no break opportunity. MEASURED on the live app: rail
+ * rendering **389px** against a declared 180px, and the 209px came straight off the website
+ * workspace (941px instead of 1150). The rail's width was a function of how long the owner's
+ * email is.
+ *
+ * THIS ONE PROPERTY IS THE ENTIRE FIX, and that is a measurement rather than a deduction. The
+ * account-chip rule below (`max-width:none` on the name) reads exactly like a second cause, so
+ * both were varied together at 1710px with the long email:
+ *
+ *     rail min-width:0     x chip max-width:100%+min-width:0  ->  rail 180  workspace 1150
+ *     rail min-width:0     x chip max-width:none              ->  rail 180  workspace 1150
+ *     rail min-width:auto  x chip max-width:100%+min-width:0  ->  rail 389  workspace  941
+ *     rail min-width:auto  x chip max-width:none              ->  rail 389  workspace  941
+ *
+ * The chip column makes no difference in either row, so the chip edit was reverted instead of
+ * shipped alongside as a no-op. The rail is also the only column that was missing this — its
+ * siblings (.hc-app-left, .hc-app-right) both already carry `min-width:0`, which is why the
+ * squeeze showed up here and nowhere else. Guarded by
+ * scripts/check-the-rail-is-a-fixed-width.mjs, which renders the shell with a long email and a
+ * short one and fails if the two disagree. */
+.hc-rail{display:none;flex:0 0 180px;min-width:0;flex-direction:column;align-items:stretch;justify-content:flex-start;
   padding:22px 14px 16px;background:var(--sidebar,#0f2a22);color:#fff;z-index:2;height:100%;box-sizing:border-box;
   animation:hcRailArrive .5s cubic-bezier(.22,.61,.36,1) both}
 .hc-app.hc-claimed .hc-rail{display:flex}
@@ -778,6 +802,15 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
 .hc-rail-acct .nav-signin{width:100%}
 .hc-rail-acct .nav-signin.is-chip{justify-content:flex-start;background:transparent;border-color:transparent;padding:8px 10px;border-radius:12px}
 .hc-rail-acct .nav-signin.is-chip:hover{background:rgba(255,255,255,.07);border-color:transparent}
+/* `max-width:none` HERE IS NOT THE BUG, AND IT WAS MEASURED BEFORE BEING LEFT ALONE. It reads
+ * like the cause — it switches off the generic chip's 150px cap — so it was changed to
+ * `max-width:100%;min-width:0` and the pair was measured against the rail in both states. All
+ * four cells came back identical (see the 2x2 above `.hc-rail`): the name renders 50px and the
+ * rail 180px whichever way this rule is written. The reason is that the generic rule gives the
+ * name `overflow:hidden`, and per flexbox an item that is its own scroll container already has
+ * an automatic minimum size of ZERO — the ellipsis never needed help. The edit was reverted
+ * rather than shipped inert beside the real fix, because a rule that cannot be shown to do
+ * anything is a rule the next person has to re-derive. */
 .hc-rail-acct .nav-signin.is-chip .hc-chip-nm{color:#fff;max-width:none}
 .hc-rail-acct .nav-signin.is-chip .hc-chip-cv{margin-left:auto;color:rgba(255,255,255,.55)}
 @media (max-width:900px){ body.hc-shell-claimed .hc-canvas-bar{padding-right:14px} }
