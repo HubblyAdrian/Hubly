@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-21T00:26:20.265Z** · 113 run(s) recorded.
+**Last run: 2026-09-21T00:38:17.523Z** · 115 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 96 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 98 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -92,6 +92,8 @@ have made the rule the first thing anyone switched off.
 | `check-sale-is-its-own-axis.mjs` | 3 the STRUCTURE derivation still answers when nothing is declared | **RED ALONE** | delete the structure fallback, which an earlier ruling asked for and Adrian then struck: 'A membership offer has no pricing.mode, so structure-derived sale is the only thing that can answer for it.' Without it every existing service and every membership resolves to 'unknown', and a booking flow cannot act on unknown. | — |
 | `check-status-words-are-one-vocabulary.mjs` | neither shell holds its own copy of the words | **RED ALONE** | paste the five words back into hubly.html as a literal — the duplication this file exists to prevent, and it is one paste away at all times | — |
 | `check-the-landing-never-paints-for-an-owner.mjs` | the account chip is visible once the business is open | **RED ALONE** | make the pre-paint hide unconditional again — `hc-boot-owner` is never removed on a successful owner load, so the sign-out door stays invisible for the life of the page | — |
+| `check-the-preview-refits-its-pane.mjs` | 1 the preview fills the pane on a RETURN visit, after the canvas has been rebuilt | **RED ALONE** | restore the install-once guard on the ResizeObserver. The wrap is rebuilt by the canvas innerHTML on every render, so the observer stays bound to a node that has left the document and the live pane is watched by nobody. This is the live defect exactly. | — |
+| `check-the-preview-refits-its-pane.mjs` | 2 the preview tracks the pane when the pane changes width | **RED ALONE** | point the observer at the stage instead of the pane. The stage is the thing the fit WRITES, so it reports its own changes and never hears about the pane's — the preview stops tracking a resize while the rebuild path in leg 1 still lands correctly. | — |
 | `check-the-rail-is-a-fixed-width.mjs` | 1 the rail is the same width for a long email and a short one | **RED ALONE** | restore min-width:auto on the rail, which is the state that shipped. The declared 180px becomes a suggestion again, the owner's email address sets the rail's min-content, and the width of the navigation becomes a function of how long that address is. | — |
 | `check-the-rail-is-a-fixed-width.mjs` | 2 the chat panel holds its declared 380px in website mode, for either address | **RED ALONE** | let the chat column share the leftover width instead of declaring 380px. The rail stays 180 so leg 1 is untouched, but the chat panel and the canvas start negotiating and the work surface stops being a known size. | — |
 | `check-the-rail-is-a-fixed-width.mjs` | 3 the account name is present in the rail and able to truncate | **RED ALONE** | hide the name in the rail instead of truncating it. That is the cheap fix for this class and it does hold the rail at 180 — legs 1 and 2 stay green — by removing the owner's account control from the navigation, trading a layout bug for an unreadable chip. | — |
@@ -249,3 +251,5 @@ have made the rule the first thing anyone switched off.
 - **2026-09-21T00:19:45.229Z** — 2 break(s) applied · 0 red alone · 1 compound · 1 not red · 0 skipped
 - **2026-09-21T00:25:19.546Z** — 1 break(s) applied · 0 red alone · 1 compound · 0 not red · 2 skipped
 - **2026-09-21T00:26:20.265Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T00:35:43.357Z** — 2 break(s) applied · 0 red alone · 1 compound · 1 not red · 0 skipped
+- **2026-09-21T00:38:17.523Z** — 2 break(s) applied · 2 red alone · 0 compound · 0 not red · 0 skipped

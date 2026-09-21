@@ -1261,6 +1261,36 @@
       "declaredTotal": 3,
       "recorded": 3,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-21T00:35:43.357Z",
+      "applied": 2,
+      "alone": 0,
+      "compound": 1,
+      "notRed": 1,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 2,
+      "recorded": 2,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T00:38:17.523Z",
+      "applied": 2,
+      "alone": 2,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 2,
+      "recorded": 2,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -2215,6 +2245,24 @@
       "leg": "3 the account name is present in the rail and able to truncate",
       "why": "hide the name in the rail instead of truncating it. That is the cheap fix for this class and it does hold the rail at 180 — legs 1 and 2 stay green — by removing the owner's account control from the navigation, trading a layout bug for an unreadable chip.",
       "at": "2026-09-21T00:26:20.265Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-preview-refits-its-pane.mjs::1 the preview fills the pane on a RETURN visit, after the canvas has been rebuilt": {
+      "check": "check-the-preview-refits-its-pane.mjs",
+      "leg": "1 the preview fills the pane on a RETURN visit, after the canvas has been rebuilt",
+      "why": "restore the install-once guard on the ResizeObserver. The wrap is rebuilt by the canvas innerHTML on every render, so the observer stays bound to a node that has left the document and the live pane is watched by nobody. This is the live defect exactly.",
+      "at": "2026-09-21T00:38:17.523Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-preview-refits-its-pane.mjs::2 the preview tracks the pane when the pane changes width": {
+      "check": "check-the-preview-refits-its-pane.mjs",
+      "leg": "2 the preview tracks the pane when the pane changes width",
+      "why": "point the observer at the stage instead of the pane. The stage is the thing the fit WRITES, so it reports its own changes and never hears about the pane's — the preview stops tracking a resize while the rebuild path in leg 1 still lands correctly.",
+      "at": "2026-09-21T00:38:17.523Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

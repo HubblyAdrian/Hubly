@@ -2682,7 +2682,7 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
     // re-scales, and `100vh` in the page means one screen (see hcApplyPreviewFit).
     // Size it once from the pane width, then reveal when the frame has loaded.
     hcApplyPreviewFit();
-    hcObservePreviewPane();   // the wrap exists now; re-observing is a no-op
+    hcObservePreviewPane();   // the wrap is NEW on every render — this re-points the observer
     // When we arrive here straight from a reveal — the picker path opens the app
     // and renders the canvas in the same tick — the pane can still be settling
     // its width, which freezes the fit at a thumbnail scale and squeezes the
@@ -2780,17 +2780,42 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
   // So the pane tells the fit when it changed, instead of every future author remembering
   // to. The explicit calls stay: an observer fires AFTER layout, and the panel open/close
   // pair wants the frame correct in the same frame the panel animates.
-  var hcFitRO = null;
+  /* ══ THE OBSERVER WATCHES THE PANE THAT EXISTS NOW, NOT THE ONE THAT EXISTED FIRST ═══════
+   *
+   * This guard used to read `if(hcFitRO || ...) return` — install once, never again. But
+   * `#hcCanvasFrameWrap` is written by the canvas innerHTML above, so EVERY canvas render
+   * destroys the observed node and builds a new one. The observer stayed attached to the first
+   * wrap, which was no longer in the document, and the live pane was watched by nobody.
+   *
+   * MEASURED on the live app, entering Website by clicking the rail: pane 1150px, preview stage
+   * **840px**, and it stayed 840 for twenty seconds — 310px of the pane simply empty. Entering
+   * the same mode by URL gave 1106, because that path renders the canvas once and the first
+   * wrap is the live one. Shrinking the pane by hand moved it 1150 -> 970 and the stage did not
+   * move at all, which is how the dead observer was confirmed rather than deduced.
+   *
+   * The three explicit fits at the call site all fire inside the column's own 450ms flex-basis
+   * transition, so they are all measuring a pane that is still moving — the observer is not an
+   * optimisation here, it is the only thing that sees the final width.
+   *
+   * THE COMMENT ABOVE PREDICTED THIS EXACT FAILURE for the callers and the observer was written
+   * to end it; the observer then acquired the same disease one level up, latching onto a stale
+   * node instead of a stale caller list. So the identity of the target is now part of the
+   * condition: re-observe whenever the live wrap is not the one being watched. */
+  var hcFitRO = null, hcFitROTarget = null;
   function hcObservePreviewPane(){
-    if(hcFitRO || typeof ResizeObserver === 'undefined') return;
+    if(typeof ResizeObserver === 'undefined') return;
     var wrap = document.getElementById('hcCanvasFrameWrap');
     if(!wrap) return;
-    hcFitRO = new ResizeObserver(function(){
-      // Coalesce: a panel animation fires this many times per open.
-      if(hcFitRO._t) return;
-      hcFitRO._t = setTimeout(function(){ hcFitRO._t = null; try{ hcApplyPreviewFit(); }catch(e){} }, 60);
-    });
-    try{ hcFitRO.observe(wrap); }catch(e){ hcFitRO = null; }
+    if(hcFitRO && hcFitROTarget === wrap) return;   // already watching THIS node
+    if(!hcFitRO){
+      hcFitRO = new ResizeObserver(function(){
+        // Coalesce: a panel animation fires this many times per open.
+        if(hcFitRO._t) return;
+        hcFitRO._t = setTimeout(function(){ hcFitRO._t = null; try{ hcApplyPreviewFit(); }catch(e){} }, 60);
+      });
+    }
+    try{ hcFitRO.disconnect(); hcFitRO.observe(wrap); hcFitROTarget = wrap; }
+    catch(e){ hcFitRO = null; hcFitROTarget = null; }
   }
   function hcApplyPreviewFit(){
     var wrap = document.getElementById('hcCanvasFrameWrap');
