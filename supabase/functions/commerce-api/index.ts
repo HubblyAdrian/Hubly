@@ -584,13 +584,46 @@ Deno.serve(async (req: Request) => {
           .eq("id", productId).eq("business_id", businessId).maybeSingle();
         if (!product) return json({ error: "product_not_found" }, 404);
         const qty = Math.max(1, Number(body.qty) || 1);
+        // ══ THE VARIANT IS PART OF WHAT WAS ADDED — HUBLY HAS TWO CARTS ════════════════════
+        //
+        // `commerce_cart_items.variant_id` has existed since the Commerce Engine migration,
+        // `computeAuthoritativeOrder` re-prices off it, and the guest cart
+        // (public/journey-os/commerce/storefront-cart.js) keys every line by product+variant.
+        // This writer -- the OTHER cart, the persisted one -- read neither: it dropped
+        // `variant_id` on the floor and priced every line from `product.price_cents`. A Large
+        // pizza went in and came back out as a Small, with no error anywhere, and the legacy
+        // `cart_id` path in create-store-checkout would then have charged the base price.
+        //
+        // The class: A CHOICE THE CUSTOMER MADE, DISCARDED SILENTLY BY ONE OF TWO WRITERS.
+        // Same shape as the edit queue and the booking exit -- the fix landed on the copy that
+        // was reported and left its sibling live. Found 2026-09-21 by putting a three-size
+        // pizza through the fixture store.
+        //
+        // The variant must belong to THIS product on THIS business, or the add is refused
+        // rather than quietly downgraded to the base product (prohibition 3: assert the
+        // postcondition or fail, and never fall through to a neutral outcome).
+        let variantId: string | null = null;
+        let title = String(product.name || "Item");
+        let unitPriceCents = Number(product.price_cents) || 0;
+        const rawVariant = String(body.variant_id || "").trim();
+        if (rawVariant) {
+          const { data: variant } = await admin.from("commerce_product_variants")
+            .select("id,name,price_cents")
+            .eq("id", rawVariant).eq("product_id", productId).eq("business_id", businessId)
+            .maybeSingle();
+          if (!variant) return json({ error: "variant_not_found", detail: rawVariant }, 404);
+          variantId = variant.id;
+          if (variant.price_cents != null) unitPriceCents = Number(variant.price_cents) || 0;
+          if (variant.name) title = `${title} — ${variant.name}`;
+        }
         const { data: item, error } = await admin.from("commerce_cart_items").insert({
           cart_id: cartId,
           business_id: businessId,
           product_id: productId,
-          title: product.name,
+          variant_id: variantId,
+          title,
           qty,
-          unit_price_cents: product.price_cents,
+          unit_price_cents: unitPriceCents,
         }).select("*").single();
         if (error) return json({ error: error.message }, 400);
         return json({ cart_id: cartId, item }, 201);

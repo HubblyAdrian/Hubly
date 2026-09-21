@@ -1681,6 +1681,21 @@
       "declaredTotal": 5,
       "recorded": 5,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-21T22:54:35.575Z",
+      "applied": 16,
+      "alone": 16,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 16,
+      "recorded": 16,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -2896,6 +2911,150 @@
       "leg": "4b an item priced only through its sizes is not treated as having no price",
       "why": "treat a missing base price as missing even when every size is priced. The pizza arrives flagged 'No price printed' and unticked, and the owner has to resolve something his menu was never ambiguous about — which is what the first live run did.",
       "at": "2026-09-21T21:03:45.270Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::the selected variant's price is the line price": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "the selected variant's price is the line price",
+      "why": "if a variant stops determining the charge, a Large is billed as a Small",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::quantity multiplies the line's own unit price": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "quantity multiplies the line's own unit price",
+      "why": "a line that ignores qty charges for one of everything",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::a variant that prices nothing inherits the product price": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "a variant that prices nothing inherits the product price",
+      "why": "a variant may legitimately carry no price of its own; it must fall back, not go free",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::the order line carries the stable product id AND variant id": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "the order line carries the stable product id AND variant id",
+      "why": "a line identified by name cannot survive a rename, and names are not unique",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::a variant that is not this product's is refused": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "a variant that is not this product's is refused",
+      "why": "without the product scope, any variant id prices any product — and silently",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::a draft product cannot be purchased": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "a draft product cannot be purchased",
+      "why": "an AI-imported draft the owner has not approved must not be sellable",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::a product hidden from the website cannot be purchased": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "a product hidden from the website cannot be purchased",
+      "why": "visibility is the second half of the same gate and has its own way of being lost",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::the public payload projects the product price and every variant id": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "the public payload projects the product price and every variant id",
+      "why": "the projection is read-through; a price it invents is a price the server will not charge",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::a variant's own price survives the projection": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "a variant's own price survives the projection",
+      "why": "cents → dollars is where a price has already been silently rounded once (money.js)",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::collections project in Commerce order": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "collections project in Commerce order",
+      "why": "the owner's collection order is the only ordering Commerce states; the client may not re-sort",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::the variant selector's values are variant ids": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "the variant selector's values are variant ids",
+      "why": "a name in the option value is name-based identity arriving through the UI",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::a product whose variants differ in price is labelled from its lowest": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "a product whose variants differ in price is labelled from its lowest",
+      "why": "one number on a card that has three is a price the customer may not be able to get",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::two variants of one product are two cart lines": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "two variants of one product are two cart lines",
+      "why": "a cart keyed by product alone collapses a Large onto a Medium and charges one of them",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::checkout sends ids and quantities only": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "checkout sends ids and quantities only",
+      "why": "a price the client sends is a price the server could be tempted to trust",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::the persisted cart writer reads, validates, prices and stores the variant": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "the persisted cart writer reads, validates, prices and stores the variant",
+      "why": "this is the writer that dropped variant_id, and it is the one Hubly cannot execute offline",
+      "at": "2026-09-21T22:54:35.575Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-variant-survives-from-shelf-to-order.mjs::no restaurant-specific table, renderer or cart exists": {
+      "check": "check-a-variant-survives-from-shelf-to-order.mjs",
+      "leg": "no restaurant-specific table, renderer or cart exists",
+      "why": "the leg must fire on a restaurant entity anywhere in the storefront or the schema",
+      "at": "2026-09-21T22:54:35.575Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

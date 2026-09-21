@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-21T21:03:45.270Z** · 141 run(s) recorded.
+**Last run: 2026-09-21T22:54:35.575Z** · 142 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 125 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 141 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -45,6 +45,22 @@ The first attempt coerced a null price to 0. That is a worse defect and it came 
 | `check-a-menu-is-read-not-written.mjs` | 4b an item priced only through its sizes is not treated as having no price | **RED ALONE** | treat a missing base price as missing even when every size is priced. The pizza arrives flagged 'No price printed' and unticked, and the owner has to resolve something his menu was never ambiguous about — which is what the first live run did. | — |
 | `check-a-second-edit-still-works.mjs` | 2 a re-render really does strip the marks | **RED ALONE** | make the probe's re-render reuse the same children instead of replacing them. The leg then passes for the wrong reason — nothing was invalidated — and leg 3 would be asserting that a surface which never lost its marks still has them. This is the leg that keeps leg 3 honest. | — |
 | `check-a-second-edit-still-works.mjs` | 3 the SECOND wire marks the new elements — the second edit is still an edit | **RED ALONE** | put the guard back to a bare `return`, which is the shipped defect: data-hc-wired is set once and never cleared, so the second call returns before the per-element marking and the owner cannot get back into the field at all. This is the exact line Adrian's report was about. | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | a draft product cannot be purchased | **RED ALONE** | an AI-imported draft the owner has not approved must not be sellable | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | a product hidden from the website cannot be purchased | **RED ALONE** | visibility is the second half of the same gate and has its own way of being lost | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | a product whose variants differ in price is labelled from its lowest | **RED ALONE** | one number on a card that has three is a price the customer may not be able to get | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | a variant that is not this product's is refused | **RED ALONE** | without the product scope, any variant id prices any product — and silently | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | a variant that prices nothing inherits the product price | **RED ALONE** | a variant may legitimately carry no price of its own; it must fall back, not go free | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | a variant's own price survives the projection | **RED ALONE** | cents → dollars is where a price has already been silently rounded once (money.js) | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | checkout sends ids and quantities only | **RED ALONE** | a price the client sends is a price the server could be tempted to trust | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | collections project in Commerce order | **RED ALONE** | the owner's collection order is the only ordering Commerce states; the client may not re-sort | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | no restaurant-specific table, renderer or cart exists | **RED ALONE** | the leg must fire on a restaurant entity anywhere in the storefront or the schema | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | quantity multiplies the line's own unit price | **RED ALONE** | a line that ignores qty charges for one of everything | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | the order line carries the stable product id AND variant id | **RED ALONE** | a line identified by name cannot survive a rename, and names are not unique | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | the persisted cart writer reads, validates, prices and stores the variant | **RED ALONE** | this is the writer that dropped variant_id, and it is the one Hubly cannot execute offline | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | the public payload projects the product price and every variant id | **RED ALONE** | the projection is read-through; a price it invents is a price the server will not charge | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | the selected variant's price is the line price | **RED ALONE** | if a variant stops determining the charge, a Large is billed as a Small | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | the variant selector's values are variant ids | **RED ALONE** | a name in the option value is name-based identity arriving through the UI | — |
+| `check-a-variant-survives-from-shelf-to-order.mjs` | two variants of one product are two cart lines | **RED ALONE** | a cart keyed by product alone collapses a Large onto a Medium and charges one of them | — |
 | `check-address-change-is-said.mjs` | 5 the sentence exists, names the new address | **RED ALONE** | make the sentence point at a control — Hubly does not render the page and cannot know what is on screen, so naming a button is claiming a capability it has not verified | — |
 | `check-an-expired-token-is-not-a-signed-out-owner.mjs` | 1 an expired access token with a live refresh token keeps the owner out of the landing | **RED ALONE** | ask the old question — is the ACCESS token still in date — which is what shipped. An owner who has been away for sixty-one minutes is shown the marketing page for his own product, and because the same reader gates hcLoadOwnedBusiness, no refresh is attempted. | — |
 | `check-an-expired-token-is-not-a-signed-out-owner.mjs` | 2 a session with nothing left to refresh still shows the landing | **RED ALONE** | over-correct to `always authed`, which is the obvious wrong fix for this defect. Every visitor, signed out or not, is then dropped into an owner shell that has nothing to load — the landing replaced by a permanent empty room. | — |
@@ -310,3 +326,4 @@ Two narrower-looking attempts were rejected by the ledger first. Pointing the ob
 - **2026-09-21T21:03:11.258Z** — 5 break(s) applied · 3 red alone · 2 compound · 0 not red · 0 skipped
 - **2026-09-21T21:03:21.353Z** — 5 break(s) applied · 3 red alone · 2 compound · 0 not red · 0 skipped
 - **2026-09-21T21:03:45.270Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T22:54:35.575Z** — 16 break(s) applied · 16 red alone · 0 compound · 0 not red · 0 skipped

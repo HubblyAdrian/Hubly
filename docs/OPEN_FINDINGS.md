@@ -8507,3 +8507,35 @@ Residue from the same verification: the live AI-boundary test created one
 `ask_hubly_conversations` row (plus its messages) on `hubly-classic-fixture`. The 8 test products
 were deleted through the Commerce API and the fixture is back to 0 products; the conversation row
 was left, because removing it would need raw SQL against a table the Commerce API does not expose.
+
+---
+
+## Phase 1E — two storefront doors, found by giving a store collections for the first time
+
+Both are PRE-EXISTING, both are UI, and neither is about supporting Commerce data — which is why
+Phase 1E fixed the cart-variant defect and left these written down instead of fixed. Full context:
+`docs/PHASE1E_STOREFRONT_PROOF.md` §7. Found 2026-09-21.
+
+**1. A collection filter with no way out — `/store`.** `public/journey-os/commerce/store-page.js:349`
+sets `state.collectionId` from a "Shop by category" card and **nothing anywhere clears it**. Once a
+customer taps "Pizza", the `productGrid` block stays filtered for the rest of the visit: there is no
+"All" chip, tapping the same card again does not toggle it off, and the only escape is reloading the
+page. The section heading also keeps saying "Shop all" while showing a subset
+(`store-page.js:202`). **Verified by use, not by grep** — filtered to Pizza in a browser and could
+not get back. Smallest honest fix is a toggle on the same handler plus a heading that names the
+filter; it is three lines and it is a storefront UI change, so it waits for a phase that is allowed
+to make one.
+
+**2. A collection card the website embed does not listen to.** `components.js:105` `CollectionCard`
+emits `data-collection-id`, and `storefront-renderer.js:74` `renderCollections` renders a grid of
+them on the website Store embed — and **nothing in `public/` binds a click to that attribute**
+(grepped; the `/store` route uses its own `data-store-page="col"` cards instead). On the embed a
+collection is a decorative card naming a count the visitor cannot open. This is the missing-door
+shape — the capability exists one file away — not a missing feature. **Established by grep; NOT
+verified by use**, because it needs a business with a website Store section and the Phase 1E fixture
+is store-only. It is a candidate until someone opens that page.
+
+**Still open from Phase 1D, unchanged:** the checkout stock gate is still unreachable on any
+business without Stripe Connect. Phase 1E hit the same 503 wall from the customer side — the
+refusal fires before any item is validated, so `cart → order` was proven against the real pricing
+module deterministically rather than live.
