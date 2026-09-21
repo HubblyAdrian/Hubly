@@ -1215,6 +1215,51 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   padding:10px 14px;max-width:min(560px,82%);
 }
 .hc-msg.typing{color:var(--ink-3);font-style:italic}
+
+/* ══ THE MENU REVIEW CARD ═══════════════════════════════════════════════════════════════════
+ *
+ * A card in the transcript, not a modal and not a screen. The review belongs in the conversation
+ * because that is where the owner handed the menu over — sending him somewhere else to confirm
+ * what he just sent is the interface changing shape around him (prohibition 4).
+ *
+ * It uses the surfaces already in the palette (--panel, --line, --brand) so it reads as Hubly
+ * rather than as a restaurant tool bolted on. Nothing here is restaurant-specific; it renders
+ * items, prices and sections, which is what a price list is too. */
+.hc-menu{align-self:stretch;max-width:none;background:var(--bg-2);border:1px solid var(--line);
+  border-radius:14px;padding:14px 14px 12px;margin:2px 0}
+.hc-menu-h{font-size:15px;font-weight:700;color:var(--ink);line-height:1.35}
+.hc-menu-secs{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.hc-menu-sec{font-size:12.5px;color:var(--ink-2);background:var(--panel-2);border-radius:999px;padding:3px 9px}
+.hc-menu-sec.is-weak{background:transparent;border:1px dashed var(--line-soft)}
+.hc-menu-warn{margin-top:8px;font-size:12.5px;color:var(--brand-dark,#B84E1F)}
+.hc-menu-body{margin-top:10px;border-top:1px solid var(--line);padding-top:8px;
+  max-height:420px;overflow-y:auto}
+.hc-menu-g{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--ink-2);margin:10px 0 4px}
+.hc-menu-gnote{display:block;text-transform:none;letter-spacing:0;font-weight:500;
+  font-size:11.5px;color:var(--ink-3,rgba(27,23,18,.45));margin-top:2px}
+/* name and price on one line, the item's uncertainty on its own line beneath — a warning must
+   never be squeezed into a corner where it can be missed. */
+.hc-menu-row{display:grid;grid-template-columns:auto 1fr 84px;gap:8px;align-items:center;
+  padding:5px 0}
+.hc-menu-row .hc-menu-issue,.hc-menu-row .hc-menu-sizes{grid-column:1/-1}
+.hc-menu-pick{display:flex;align-items:center}
+.hc-menu-pick input{width:16px;height:16px;accent-color:var(--brand)}
+.hc-menu-n,.hc-menu-p{font:inherit;font-size:14px;color:var(--ink);background:transparent;
+  border:1px solid transparent;border-radius:8px;padding:5px 7px;min-width:0}
+.hc-menu-p{text-align:right}
+.hc-menu-n:hover,.hc-menu-p:hover{border-color:var(--line)}
+.hc-menu-n:focus,.hc-menu-p:focus{outline:none;border-color:var(--brand);background:var(--bg-2)}
+.hc-menu-issue{font-size:12px;color:var(--brand-dark,#B84E1F);padding:0 0 3px 24px;line-height:1.4}
+.hc-menu-sizes{font-size:12px;color:var(--ink-2);padding:0 0 3px 24px}
+.hc-menu-sizenote{display:block;font-size:11.5px;color:var(--ink-3,rgba(27,23,18,.45))}
+.hc-menu-foot{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:10px}
+.hc-menu-open,.hc-menu-add{font:inherit;font-size:14px;font-weight:700;border:0;border-radius:10px;
+  padding:9px 16px;min-height:40px;background:var(--brand);color:#fff;cursor:pointer}
+.hc-menu-open:hover,.hc-menu-add:hover{background:var(--brand-dark)}
+.hc-menu-add:disabled{background:var(--panel-2);color:var(--ink-3,rgba(27,23,18,.45));cursor:default}
+.hc-menu-note{font-size:12px;color:var(--ink-2);flex:1 1 180px;min-width:0}
+.hc-menu-done{font-size:13px;color:var(--ink-2)}
 /* The "Create your account" button inside the reserved-for-you offer message. The
    button IS the action (opens the account door) — never a pointer to a control
    elsewhere. BLOCK level, its own line, full-width, 44px tall so a thumb hits it on
@@ -6266,8 +6311,19 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
     var held = hc.heldPhoto; hc.heldPhoto = null;
     var t = (text || '').toLowerCase();
     var saysLogo = /\blogo\b/.test(t);
+    /* "IT'S MY MENU" IS AN ANSWER THIS ALREADY HAD THE BYTES FOR. The question asked was work-or-
+     * logo, and a third option is NOT added to it: a lawn-care owner should never be asked about a
+     * menu. But someone who volunteers the word is telling us exactly what the file is, and the
+     * image is already in hand — so it routes, with no re-upload and no new prompt. */
+    var saysMenu = /\bmenus?\b/.test(t);
     var saysWork = /\b(work|my work|the work|a photo of|photo of my|job|jobs|portfolio|yes|yeah|yep|yup|it is|correct|please|go ahead|do it|put it)\b/.test(t);
     var saysNo   = /\b(no|nope|nah|not|neither|price|prices|price list|never ?mind)\b/.test(t);
+    if(saysMenu && !saysLogo){
+      // The held object carries the PREPARED bytes (shrunk + JPEG), not the raw File — which is
+      // all the extractor needs, and means the owner never uploads twice.
+      if(held && held.prepared){ hc.messages.push({ role: 'user', content: text });
+        hcMenuExtractFromFile(held.prepared); return; }
+    }
     if(saysLogo && !saysWork){
       hc.pendingLogoUpload = held.prepared;   // { imageBase64, mediaType:'image/jpeg' }
       hc.messages.push({ role: 'user', content: text + "\n[That image is our logo — use it as the logo.]" });
@@ -6321,6 +6377,12 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
    *  cannot drift apart. There is no second list to remember. */
   var HC_FILE_ROUTES = {
     services: { send: function(f){ hcExtractPricesFromImage(f); }, acceptsPdf: true },
+    /* A MENU IS A PRICE LIST WITH SECTIONS — SAME DOOR, SAME EXTRACTOR, DIFFERENT DESTINATION.
+     * `services` above sends the file to import-offers and the answer becomes services on the
+     * page; this sends the same file to the same function with mode:"menu" and the answer becomes
+     * a REVIEW, which only becomes Commerce products if the owner says so. No second upload path,
+     * no second AI transport, no second file-kind table. */
+    menu:     { send: function(f){ hcMenuExtractFromFile(f); }, acceptsPdf: true },
     logo:     { send: function(f){ hcSendLogo(f); } },
     photos:   { send: function(f){ hcSendPhoto(f); } },
     // ADDED 2026-09-16, and this one line is what makes the calendar's empty state start offering
@@ -7023,6 +7085,249 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
       hc.pendingCapture = { askedFor: 'services', tries: 0 };   // keep the guard armed for this turn
       hcCall();
     }).catch(function(){ reArm("That didn't read cleanly — mind typing your prices, or trying a clearer photo?"); });
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════════════════════════
+   *  MENU → REVIEW → COMMERCE
+   *
+   *  The whole point of this path is the gap in the middle. A model reads a photograph of a menu
+   *  and produces facts about somebody's business; those facts do not become products because the
+   *  model understood them, they become products because the OWNER looked at them and said so.
+   *
+   *      file → import-offers (mode:"menu") → review card → owner approves → commerce-api
+   *
+   *  Every piece except the review card already existed. The extractor is the one a service price
+   *  list already goes through; the transport is HublyAI with its PDF-to-claude rule; the write
+   *  boundary is commerce-api, the same endpoint the owner's own Store screen posts to, carrying
+   *  the owner's own token. Nothing here writes a table and nothing here publishes.
+   *
+   *  The extraction is held in `hc.menuDraft` — in this page, in this tab, and nowhere else. It is
+   *  not persisted, which is the cheapest possible guarantee that an unreviewed menu cannot reach
+   *  a customer: there is nothing to reach them from.
+   * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+  /** Accepts a File or already-prepared bytes ({imageBase64, mediaType}) — the held-photo path
+   *  has the second and must not make the owner upload again. */
+  function hcMenuExtractFromFile(fileOrPrepared){
+    if(hc.busy){ hcAppendMessage('hubly', "One moment — I'm still working on the last thing. Send the menu again in a second."); return; }
+    hc.pendingCapture = null;
+    var prepared = (fileOrPrepared && fileOrPrepared.imageBase64) ? fileOrPrepared : null;
+    var file = prepared ? null : fileOrPrepared;
+    if(!prepared && !file) return;
+    if(file){
+      var label = '📎 ' + (file.name || 'menu');
+      hcAppendMessage('user', label); hcPersist('user', label);
+    }
+    var typingEl = hcAppendTyping();
+    function fail(msg){
+      if(typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+      hcAppendMessage('hubly', msg); hcPersist('assistant', msg);
+    }
+    var bytes = prepared
+      ? Promise.resolve({ data: prepared.imageBase64, media: prepared.mediaType || 'image/jpeg' })
+      : hcFileToBase64(file).then(function(b64){
+          return { data: b64, media: file.type || (/\.pdf$/i.test(file.name || '') ? 'application/pdf' : 'image/jpeg') };
+        });
+    bytes.then(function(b){
+      var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var to = setTimeout(function(){ try{ if(ctrl) ctrl.abort(); }catch(e){} }, 60000);
+      return fetch(SUPA_URL + '/functions/v1/import-offers', {
+        method: 'POST',
+        headers: { apikey: SUPA_ANON_KEY, authorization: 'Bearer ' + SUPA_ANON_KEY, 'content-type': 'application/json' },
+        body: JSON.stringify({ mode: 'menu', business_name: (hc.draftBusiness && hc.draftBusiness.name) || '',
+                               files: [{ media_type: b.media, data: b.data }] }),
+        signal: ctrl ? ctrl.signal : undefined
+      }).then(function(r){ clearTimeout(to); return r.ok ? r.json() : null; });
+    }).then(function(o){
+      var items = (o && Array.isArray(o.items)) ? o.items : [];
+      if(!items.length){
+        // AN EMPTY READER HAS TOLD YOU ABOUT ITSELF. This does not say "your menu is empty" —
+        // it says what actually happened, which is that nothing legible came back.
+        fail("I couldn't read any menu items from that. If it's a photo, a straighter or brighter shot usually does it — or type a few items and I'll take them that way.");
+        return;
+      }
+      if(typingEl && typingEl.parentNode) typingEl.parentNode.removeChild(typingEl);
+      hc.menuDraft = { items: items, warnings: (o && o.warnings) || [] };
+      hcMenuRenderCard();
+    }).catch(function(){ fail("That didn't read cleanly — mind trying a clearer photo, or typing a few items?"); });
+  }
+
+  function hcMenuMoney(n){ return '$' + (Math.round(Number(n) * 100) / 100).toFixed(2); }
+
+  /** The summary card: what was found, grouped, with one way in. */
+  function hcMenuRenderCard(){
+    var d = hc.menuDraft; if(!d) return;
+    var thread = hcThreadBody(); if(!thread) return;
+    var counts = {}, order = [];
+    d.items.forEach(function(it){
+      var k = (it.section && it.sectionConfidence === 'high') ? it.section : 'Not grouped';
+      if(!(k in counts)){ counts[k] = 0; order.push(k); }
+      counts[k]++;
+    });
+    var needs = d.items.filter(function(i){ return i.needsReview; }).length;
+    var card = document.createElement('div');
+    card.className = 'hc-menu'; card.id = 'hcMenuCard';
+    card.innerHTML =
+      '<div class="hc-menu-h">I found ' + d.items.length + ' item' + (d.items.length === 1 ? '' : 's') + ' on your menu</div>' +
+      '<div class="hc-menu-secs">' + order.map(function(k){
+        return '<span class="hc-menu-sec' + (k === 'Not grouped' ? ' is-weak' : '') + '">' +
+               hcEscape(k) + ' · ' + counts[k] + '</span>'; }).join('') + '</div>' +
+      (needs ? '<div class="hc-menu-warn">' + needs + ' need' + (needs === 1 ? 's' : '') + ' a look before adding</div>' : '') +
+      '<div class="hc-menu-body" hidden></div>' +
+      '<div class="hc-menu-foot">' +
+        '<button type="button" class="hc-menu-open">Review menu</button>' +
+        '<span class="hc-menu-note">Review before adding to your store.</span>' +
+      '</div>';
+    thread.appendChild(card);
+    hcThreadScrollToEnd();
+    card.querySelector('.hc-menu-open').addEventListener('click', function(){ hcMenuRenderReview(card); });
+  }
+
+  /** The review itself: every item, editable, with its uncertainty stated beside it. */
+  function hcMenuRenderReview(card){
+    var d = hc.menuDraft; if(!d) return;
+    var body = card.querySelector('.hc-menu-body');
+    var foot = card.querySelector('.hc-menu-foot');
+    var groups = {}, order = [];
+    d.items.forEach(function(it, idx){
+      var k = (it.section && it.sectionConfidence === 'high') ? it.section : 'Not grouped';
+      if(!(k in groups)){ groups[k] = []; order.push(k); }
+      groups[k].push(idx);
+    });
+    body.innerHTML = order.map(function(k){
+      return '<div class="hc-menu-g">' + hcEscape(k) +
+             (k === 'Not grouped' ? '<span class="hc-menu-gnote">no clear heading — these are added without a collection</span>' : '') +
+             '</div>' +
+        groups[k].map(function(idx){
+          var it = d.items[idx];
+          // AN ITEM WITH NO PRICE IS UNCHECKED, NOT EXCLUDED. The owner can type one or add it
+          // priced-later; what he cannot do is add it by not noticing.
+          var on = it.price != null;
+          return '<div class="hc-menu-row" data-i="' + idx + '">' +
+            '<label class="hc-menu-pick"><input type="checkbox"' + (on ? ' checked' : '') + '></label>' +
+            '<input class="hc-menu-n" value="' + hcEscape(it.name) + '" aria-label="Item name">' +
+            '<input class="hc-menu-p" inputmode="decimal" placeholder="—" value="' +
+              (it.price != null ? hcEscape(String(it.price)) : '') + '" aria-label="Price in dollars">' +
+            (it.issue ? '<div class="hc-menu-issue">⚠ ' + hcEscape(it.issue) + '</div>' : '') +
+            (it.sizes ? '<div class="hc-menu-sizes">Sizes found: ' + it.sizes.map(function(z){
+                return hcEscape(z.label) + ' — ' + hcMenuMoney(z.price); }).join(' · ') +
+                '<span class="hc-menu-sizenote">added as sizes on this item</span></div>' : '') +
+            (it.sizesUnusable ? '<div class="hc-menu-issue">⚠ The menu mentions ' +
+                it.sizesUnusable.map(function(z){ return hcEscape(z.label); }).join(' and ') +
+                ', but not a price for each — so no sizes were built.</div>' : '') +
+            '</div>';
+        }).join('');
+    }).join('');
+    body.hidden = false;
+    card.querySelector('.hc-menu-open').remove();
+    foot.insertAdjacentHTML('afterbegin',
+      '<button type="button" class="hc-menu-add"></button>');
+    foot.querySelector('.hc-menu-note').textContent =
+      'Nothing is added until you press this, and everything added stays a hidden draft until you publish it.';
+    function count(){
+      var n = body.querySelectorAll('.hc-menu-pick input:checked').length;
+      foot.querySelector('.hc-menu-add').textContent = n ? ('Add ' + n + ' product' + (n === 1 ? '' : 's')) : 'Nothing selected';
+      foot.querySelector('.hc-menu-add').disabled = !n;
+    }
+    body.addEventListener('change', count);
+    count();
+    foot.querySelector('.hc-menu-add').addEventListener('click', function(){ hcMenuApprove(card); });
+  }
+
+  /** APPROVAL. Reads what is on screen (so edits count), then uses the existing Commerce API. */
+  async function hcMenuApprove(card){
+    var d = hc.menuDraft; if(!d) return;
+    var btn = card.querySelector('.hc-menu-add');
+    if(btn){ btn.disabled = true; btn.textContent = 'Adding…'; }
+    var biz = hc.draftBusiness && hc.draftBusiness.id;
+    var token = await hcFreshToken();
+    if(!biz || !token){
+      hcAppendMessage('hubly', "I couldn't reach your store just now — nothing was added.");
+      if(btn){ btn.disabled = false; btn.textContent = 'Try again'; }
+      return;
+    }
+    function api(method, path, body){
+      return fetch(SUPA_URL + '/functions/v1/commerce-api' + path, {
+        method: method,
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token, apikey: SUPA_ANON_KEY },
+        body: body != null ? JSON.stringify(body) : undefined
+      }).then(function(r){ return r.json().then(function(j){ return { status: r.status, json: j }; })
+                            .catch(function(){ return { status: r.status, json: null }; }); });
+    }
+    // Read the SCREEN, not the extraction — the owner may have corrected a name or typed a price.
+    var chosen = [];
+    Array.prototype.forEach.call(card.querySelectorAll('.hc-menu-row'), function(row){
+      if(!row.querySelector('.hc-menu-pick input').checked) return;
+      var it = d.items[Number(row.getAttribute('data-i'))];
+      var name = row.querySelector('.hc-menu-n').value.trim();
+      var priceRaw = row.querySelector('.hc-menu-p').value.trim();
+      var price = priceRaw === '' ? null : Number(priceRaw);
+      if(!name) return;
+      chosen.push({ name: name, price: (price != null && isFinite(price)) ? price : null,
+                    desc: it.desc || '', section: (it.section && it.sectionConfidence === 'high') ? it.section : null,
+                    sizes: it.sizes || null });
+    });
+    if(!chosen.length){ if(btn){ btn.disabled = false; btn.textContent = 'Nothing selected'; } return; }
+
+    var rows = chosen.map(function(c){
+      var r = { name: c.name, description: c.desc, metadata: { source: 'ai' } };
+      if(c.price != null) r.price = c.price;     // a price nobody typed is NOT sent as zero
+      return r;
+    });
+    var imp = await api('POST', '/products/import', { business_id: biz, rows: rows });
+    if(imp.status !== 201){
+      hcAppendMessage('hubly', "I couldn't add those to your store just now — nothing was changed.");
+      if(btn){ btn.disabled = false; btn.textContent = 'Try again'; }
+      return;
+    }
+    var made = (imp.json && imp.json.products) || [];
+    var rejected = (imp.json && imp.json.rejected) || [];
+    var byName = {}; made.forEach(function(p){ byName[String(p.name).trim().toLowerCase()] = p; });
+
+    // SIZES → the existing variant endpoint. Only for items the extractor marked usable.
+    var variantCount = 0;
+    for(var i = 0; i < chosen.length; i++){
+      var c = chosen[i];
+      var prod = byName[c.name.trim().toLowerCase()];
+      if(!prod || !c.sizes) continue;
+      for(var j = 0; j < c.sizes.length; j++){
+        var z = c.sizes[j];
+        var v = await api('POST', '/products/' + prod.id + '/variants',
+          { business_id: biz, name: z.label, price: z.price });
+        if(v.status === 201 || v.status === 200) variantCount++;
+      }
+    }
+    // SECTIONS → the existing collections endpoints. Only high-confidence ones reached here.
+    var sections = {};
+    chosen.forEach(function(c){
+      var prod = byName[c.name.trim().toLowerCase()];
+      if(!c.section || !prod) return;
+      (sections[c.section] = sections[c.section] || []).push(prod.id);
+    });
+    var collCount = 0;
+    for(var name in sections){
+      if(!Object.prototype.hasOwnProperty.call(sections, name)) continue;
+      var col = await api('POST', '/collections', { business_id: biz, name: name, published: false });
+      var cid = col.json && col.json.collection && col.json.collection.id;
+      if(!cid) continue;
+      var att = await api('POST', '/collections/' + cid + '/products', { business_id: biz, product_ids: sections[name] });
+      if(att.status === 200 || att.status === 201) collCount++;
+    }
+
+    card.querySelector('.hc-menu-body').hidden = true;
+    card.querySelector('.hc-menu-foot').innerHTML =
+      '<span class="hc-menu-done">Added ' + made.length + ' product' + (made.length === 1 ? '' : 's') +
+      ' as hidden drafts' + (variantCount ? ', with ' + variantCount + ' size' + (variantCount === 1 ? '' : 's') : '') +
+      (collCount ? ' in ' + collCount + ' collection' + (collCount === 1 ? '' : 's') : '') + '.</span>';
+    // PROHIBITION 6: the state change is announced, and so is every row that did not make it.
+    var msg = 'Added ' + made.length + ' product' + (made.length === 1 ? '' : 's') +
+      ' to your store as hidden drafts — customers cannot see them yet.' +
+      (rejected.length ? ' ' + rejected.length + " didn't go in: " +
+        rejected.map(function(x){ return (x.name ? '"' + x.name + '"' : 'one row') + ' — ' + (x.detail || x.reason); }).join(' ') : '') +
+      ' Tell me when you have checked them and I will publish them.';
+    hcAppendMessage('hubly', msg); hcPersist('assistant', msg);
+    hc.menuDraft = null;
+    hcThreadScrollToEnd();
   }
 
   // Drag and drop onto the chat.

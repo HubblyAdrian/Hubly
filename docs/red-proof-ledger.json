@@ -1621,6 +1621,21 @@
       "declaredTotal": 3,
       "recorded": 3,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-21T20:53:29.668Z",
+      "applied": 4,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -2791,6 +2806,42 @@
       "leg": "3 rejected rows are named back to the owner, not collapsed into a count",
       "why": "report only the number that went in. The owner is told 'added 2' and never learns that his second House Salad is missing — the original defect, moved one layer up.",
       "at": "2026-09-21T19:19:42.939Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-menu-is-read-not-written.mjs::1 a price the menu did not print stays missing, and the words it did print are kept": {
+      "check": "check-a-menu-is-read-not-written.mjs",
+      "leg": "1 a price the menu did not print stays missing, and the words it did print are kept",
+      "why": "fall back to a number when the price is not one. 'Market Price' becomes a real amount on a real product, which is the invention this whole path exists to prevent.",
+      "at": "2026-09-21T20:53:29.668Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-menu-is-read-not-written.mjs::2 sizes become variants only when every size is priced": {
+      "check": "check-a-menu-is-read-not-written.mjs",
+      "leg": "2 sizes become variants only when every size is priced",
+      "why": "accept a partly-priced size list. 'Half' with no price becomes a variant with an invented or zero price — the 'choose your size' case promoted to structure.",
+      "at": "2026-09-21T20:53:29.668Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-menu-is-read-not-written.mjs::3 a collection is only planned from a section the model was confident about": {
+      "check": "check-a-menu-is-read-not-written.mjs",
+      "leg": "3 a collection is only planned from a section the model was confident about",
+      "why": "create a collection from any section at all. A heading the model guessed at — here 'Specials', confidence low — becomes a real Commerce collection the owner never wrote.",
+      "at": "2026-09-21T20:53:29.668Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-menu-is-read-not-written.mjs::4 duplicates and items already in the store are blocked with a reason, not imported twice": {
+      "check": "check-a-menu-is-read-not-written.mjs",
+      "leg": "4 duplicates and items already in the store are blocked with a reason, not imported twice",
+      "why": "import every row. The menu's repeated Wings becomes a second product, and an item the store already has is created again alongside it.",
+      "at": "2026-09-21T20:53:29.668Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

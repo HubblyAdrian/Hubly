@@ -3,6 +3,7 @@
 // Trade-aware: detailing vehicle tiers, photography sessions, etc.
 
 import { HublyAI, extractJson } from "../_shared/hubly_ai.ts";
+import { normalizeMenuExtraction } from "../_shared/menu_extraction.ts";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -86,6 +87,75 @@ Respond with ONLY valid JSON (no markdown fences):
 }`;
 }
 
+
+/* ══ MENU MODE — THE SAME DOOR, A DIFFERENT SHAPE OF ANSWER ═══════════════════════════════════
+ *
+ * A menu arrives exactly as a price list does: a photo or a PDF the owner just handed over. So
+ * this is a second CONTRACT on the existing extractor, not a second extractor — same transport,
+ * same file handling, same PDF-goes-to-claude rule, same "never invent a price" discipline.
+ *
+ * What differs is only the shape of what comes back. A service price list is a flat list of
+ * packages; a menu has SECTIONS and, sometimes, SIZES. Those two map onto Commerce collections
+ * and Commerce variants, which already exist — so the extraction names them and stops there.
+ *
+ * NOTHING HERE WRITES ANYTHING. This function has never had a database client and still does
+ * not; it reads a file and returns a structure for a person to review.
+ */
+function buildMenuSystemPrompt(businessName: string) {
+  return `You read a menu that a business owner has just handed over${businessName ? ` (${businessName})` : ""},
+and you report FAITHFULLY what is printed on it. You are not writing a menu; you are transcribing one.
+
+THE ONE RULE THAT MATTERS: never invent anything. Not a price, not a description, not a section,
+not an ingredient, and never an allergen or dietary claim of any kind — not even a reassuring one.
+If the menu does not say it, it does not exist. A missing thing is reported as missing; it is never
+filled in with something plausible.
+
+PRICES
+- A clear number becomes "price" (14.00 for "$14", 8.5 for "$8.50").
+- Text where a price should be — "Market Price", "MP", "seasonal", "ask your server" — is NOT a
+  price. Set price to null, put the words you actually read in "priceText" EXACTLY as printed, set
+  needsReview true, and say why in "issue".
+- No price shown at all: price null, priceText null, needsReview true, issue "No price printed".
+
+SECTIONS
+- A menu heading above a group of items is that group's "section" ("Appetizers", "Pizza").
+- Only set a section you can actually see. If an item sits under no clear heading, set section to
+  null and sectionConfidence "low" — do NOT sort it into whichever section seems likely.
+
+SIZES
+- Only when the menu clearly prints named sizes AND a price for each: "Small $14 Medium $17".
+  Report them in "sizes" as {label, price} in the order printed.
+- Words like "choose your size", or sizes with no prices, are NOT sizes. Leave sizes null, set
+  needsReview true, and say what you saw in "issue".
+
+DESCRIPTIONS
+- Copy the printed description. If there is none, use an empty string. Never write one yourself.
+
+UNREADABLE TEXT
+- If you cannot read an item confidently, still report it with whatever you can read, confidence
+  "low", needsReview true, and an issue saying what was unclear. Do not drop it and do not guess it.
+
+Respond with ONLY valid JSON (no markdown fences):
+{
+  "sections": [ { "name": string, "confidence": "high" | "medium" | "low" } ],
+  "items": [
+    {
+      "name": string,
+      "section": string | null,
+      "sectionConfidence": "high" | "medium" | "low",
+      "price": number | null,
+      "priceText": string | null,
+      "desc": string,
+      "sizes": [ { "label": string, "price": number | null } ] | null,
+      "needsReview": boolean,
+      "issue": string | null,
+      "confidence": "high" | "medium" | "low"
+    }
+  ],
+  "warnings": string[]
+}`;
+}
+
 function parseAiJson(rawText: string) {
   const cleaned = rawText.replace(/^```(json)?/i, "").replace(/```$/i, "").trim();
   return JSON.parse(cleaned);
@@ -105,6 +175,10 @@ Deno.serve(async (req: Request) => {
     const catalogHints = Array.isArray(body?.catalog_hints)
       ? body.catalog_hints.map((x: any) => String(x || "")).filter(Boolean)
       : [];
+    // "offers" (the original, unchanged) or "menu". Anything unrecognised stays offers, so an
+    // older caller cannot be given a shape it does not expect.
+    const mode = String(body?.mode || "offers") === "menu" ? "menu" : "offers";
+    const businessName = String(body?.business_name || "");
 
     if (!text && !files.length) {
       return new Response(JSON.stringify({ error: "Paste a price list or upload a photo/PDF." }), {
@@ -161,12 +235,14 @@ Deno.serve(async (req: Request) => {
         task: "quote",
         // PDF document blocks are Claude-native — keep provider honest.
         provider: hasPdf ? "claude" : undefined,
-        system: buildSystemPrompt({
-          tradeName,
-          specialty,
-          vehicleDetails,
-          catalogHints,
-        }),
+        system: mode === "menu"
+          ? buildMenuSystemPrompt(businessName)
+          : buildSystemPrompt({
+            tradeName,
+            specialty,
+            vehicleDetails,
+            catalogHints,
+          }),
         messages: [{ role: "user", content }],
         maxTokens: 8000,
         jsonMode: true,
@@ -189,6 +265,16 @@ Deno.serve(async (req: Request) => {
         status: 502,
         headers: { ...CORS, "content-type": "application/json" },
       });
+    }
+
+    if (mode === "menu") {
+      // The normalisation is a pure function in _shared so it can be exercised without an AI
+      // call, a network or a database — the same reason commerce_import.ts exists.
+      const menu = normalizeMenuExtraction(parsed);
+      return new Response(
+        JSON.stringify({ ok: true, mode: "menu", ...menu }),
+        { headers: { ...CORS, "content-type": "application/json" } },
+      );
     }
 
     const packages = Array.isArray(parsed?.packages) ? parsed.packages : [];
