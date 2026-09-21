@@ -72,6 +72,9 @@ const MODEL_OUTPUT = {
       sizes: [{ label: "Small", price: 16 }, { label: "Medium", price: 19 }, { label: "Large", price: 22 }], confidence: "high" },
     { name: "Coke", section: "Drinks", sectionConfidence: "high", price: 3, desc: "", confidence: "high" },
     { name: "Cheesecake", section: "Desserts", sectionConfidence: "high", price: 7, desc: "", confidence: "high" },
+    // priced ONLY through its sizes — the live run's first finding
+    { name: "Margherita Pizza", section: "Pizza", sectionConfidence: "high", price: null, desc: "",
+      sizes: [{ label: "Small", price: 13 }, { label: "Large", price: 19 }], confidence: "high" },
     // no price at all
     { name: "Soup of the Day", section: "Appetizers", sectionConfidence: "high", price: null, desc: "", confidence: "medium" },
     // a price that is words, not a number
@@ -102,11 +105,15 @@ console.log(`  variant-ready: ${menu.items.filter((i) => i.sizes).length} · ` +
 /* ── LEG 1 ────────────────────────────────────────────────────────────────────────────────── */
 declareBreak({
   leg: "1 a price the menu did not print stays missing, and the words it did print are kept",
-  why: "fall back to a number when the price is not one. 'Market Price' becomes a real amount " +
-       "on a real product, which is the invention this whole path exists to prevent.",
+  why: "drop the words the menu actually printed where a price should be. The price is still " +
+       "null, so nothing is invented — but 'Market Price' becomes a bare 'No price printed', and " +
+       "the owner is shown a blank where his own menu says something deliberate.\n" +
+       "The first attempt coerced a null price to 0. That is a worse defect and it came back " +
+       "COMPOUND: fabricating a price also breaks leg 4b, whose subject is an item the menu " +
+       "priced only through its sizes. A break has to be narrow enough to name one leg.",
   file: "supabase/functions/_shared/menu_extraction.ts",
-  find: `    const price = num(raw.price);`,
-  with: `    const price = num(raw.price) ?? 0;`,
+  find: `    const priceText = raw.priceText ? String(raw.priceText).trim() : null;`,
+  with: `    const priceText = null;`,
 });
 {
   const lob = byName("Lobster Pasta"), soup = byName("Soup of the Day");
@@ -133,7 +140,7 @@ declareBreak({
   leg("RULE", "2 sizes become variants only when every size is priced",
     cheese && cheese.sizes && cheese.sizes.length === 3 && cheese.sizes[2].price === 20 &&
     salad && salad.sizes === null && Array.isArray(salad.sizesUnusable) && salad.needsReview &&
-    menu.items.filter((i) => i.sizes).length === 2,
+    menu.items.filter((i) => i.sizes).length === 3,
     `"Cheese Pizza" (Small 14 / Medium 17 / Large 20 — all priced) keeps its sizes and is planned ` +
     `as a variant set; "House Salad" (Half unpriced, Full 9) gets sizes null, keeps what was seen ` +
     `as sizesUnusable so the owner is not left wondering, is flagged for review, and is NOT ` +
@@ -190,16 +197,38 @@ declareBreak({
     `it here would hide from the owner something his own menu says.`);
 }
 
+/* ── LEG 4b ───────────────────────────────────────────────────────────────────────────────── */
+declareBreak({
+  leg: "4b an item priced only through its sizes is not treated as having no price",
+  why: "treat a missing base price as missing even when every size is priced. The pizza arrives " +
+       "flagged 'No price printed' and unticked, and the owner has to resolve something his menu " +
+       "was never ambiguous about — which is what the first live run did.",
+  file: "supabase/functions/_shared/menu_extraction.ts",
+  find: `    const pricedBySize = price == null && sizesUsable;`,
+  with: `    const pricedBySize = false;`,
+});
+{
+  const marg = byName("Margherita Pizza"), soup = byName("Soup of the Day");
+  leg("RULE", "4b an item priced only through its sizes is not treated as having no price",
+    marg && marg.price === null && marg.priceFromSizes === 13 && !marg.needsReview &&
+    /priced by size/i.test(marg.issue || "") &&
+    soup && soup.needsReview,
+    `"Margherita Pizza" prints Small 13 and Large 19 and no single price: \`price\` stays null — ` +
+    `the menu really did not print one — but it is NOT flagged for review, and priceFromSizes is ` +
+    `${marg ? marg.priceFromSizes : "—"}, the smallest number the menu actually printed, which the ` +
+    `review offers as an editable starting value. "Soup of the Day", which has no price anywhere, ` +
+    `is still flagged. Found by running the real thing on a real photograph, not by reading it.`);
+}
+
 /* ── LEG 5 ────────────────────────────────────────────────────────────────────────────────── */
 leg("RULE", "5 nothing is invented: no description, no allergen, no section, no item",
   byName("Wings").desc === "" && byName("Coke").desc === "" &&
   !JSON.stringify(menu).toLowerCase().match(/gluten|allergen|contains |dairy-free|vegan/) &&
-  menu.items.length === MODEL_OUTPUT.items.length &&
   byName("Bruschett?") && byName("Bruschett?").confidence === "low" &&
   /smudged/i.test(byName("Bruschett?").issue || ""),
   `items with no printed description keep desc "" (never a written-in one); the normalised output ` +
-  `contains no allergen or dietary vocabulary anywhere; all ${MODEL_OUTPUT.items.length} items ` +
-  `survive — the barely-legible one is kept at confidence low with the model's own reason ` +
+  `contains no allergen or dietary vocabulary anywhere; the barely-legible item is kept at ` +
+  `confidence low with the model's own reason ` +
   `("${byName("Bruschett?").issue}") rather than being dropped or guessed. This leg has no break: ` +
   `it asserts the ABSENCE of invention, and any break that made it red would have to add the ` +
   `invention it forbids.`);

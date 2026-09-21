@@ -7202,13 +7202,18 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
           var it = d.items[idx];
           // AN ITEM WITH NO PRICE IS UNCHECKED, NOT EXCLUDED. The owner can type one or add it
           // priced-later; what he cannot do is add it by not noticing.
-          var on = it.price != null;
+          // An item the menu priced only through its sizes is NOT missing a price: it arrives
+          // ticked, with the smallest PRINTED size price as the starting number, editable.
+          var shown = it.price != null ? it.price : (it.priceFromSizes != null ? it.priceFromSizes : null);
+          var on = shown != null;
           return '<div class="hc-menu-row" data-i="' + idx + '">' +
             '<label class="hc-menu-pick"><input type="checkbox"' + (on ? ' checked' : '') + '></label>' +
             '<input class="hc-menu-n" value="' + hcEscape(it.name) + '" aria-label="Item name">' +
             '<input class="hc-menu-p" inputmode="decimal" placeholder="—" value="' +
-              (it.price != null ? hcEscape(String(it.price)) : '') + '" aria-label="Price in dollars">' +
-            (it.issue ? '<div class="hc-menu-issue">⚠ ' + hcEscape(it.issue) + '</div>' : '') +
+              (shown != null ? hcEscape(String(shown)) : '') + '" aria-label="Price in dollars">' +
+            (it.issue ? (it.priceFromSizes != null
+                ? '<div class="hc-menu-sizes">' + hcEscape(it.issue) + '</div>'
+                : '<div class="hc-menu-issue">⚠ ' + hcEscape(it.issue) + '</div>') : '') +
             (it.sizes ? '<div class="hc-menu-sizes">Sizes found: ' + it.sizes.map(function(z){
                 return hcEscape(z.label) + ' — ' + hcMenuMoney(z.price); }).join(' · ') +
                 '<span class="hc-menu-sizenote">added as sizes on this item</span></div>' : '') +

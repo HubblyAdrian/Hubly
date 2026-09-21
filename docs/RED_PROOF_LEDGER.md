@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-21T20:53:29.668Z** · 138 run(s) recorded.
+**Last run: 2026-09-21T21:03:45.270Z** · 141 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 124 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 125 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -37,10 +37,12 @@ have made the rule the first thing anyone switched off.
 | `check-a-hidden-price-stays-reachable.mjs` | 4 hiding a price keeps the anchor and removes no way to get in touch | **RED ALONE** | emit the wording WITHOUT its span. The page still reads correctly to the owner — which is why this is the dangerous version — and the keyed anchor is gone, so the next price change has nothing to find and 'hidden' becomes indistinguishable from 'never had a price' to every later reader. It is also how hiding a price would quietly take the booking affordance with it. | — |
 | `check-a-hidden-price-stays-reachable.mjs` | 5 the control sits beside the price and writes what it says | **RED ALONE** | drop showPrice from the edit save. The tick box still renders, still reflects the record, and still appears to work — and unticking it changes nothing, which is a control that lies. That is the shape of every dead control this codebase has removed. | — |
 | `check-a-hidden-price-stays-reachable.mjs` | 6 [SHAPE] a show_price disagreement between the two stores is reported on the row | **DECLARED, PROVEN BY HAND** | — | — |
-| `check-a-menu-is-read-not-written.mjs` | 1 a price the menu did not print stays missing, and the words it did print are kept | **RED ALONE** | fall back to a number when the price is not one. 'Market Price' becomes a real amount on a real product, which is the invention this whole path exists to prevent. | — |
+| `check-a-menu-is-read-not-written.mjs` | 1 a price the menu did not print stays missing, and the words it did print are kept | **RED ALONE** | drop the words the menu actually printed where a price should be. The price is still null, so nothing is invented — but 'Market Price' becomes a bare 'No price printed', and the owner is shown a blank where his own menu says something deliberate.
+The first attempt coerced a null price to 0. That is a worse defect and it came back COMPOUND: fabricating a price also breaks leg 4b, whose subject is an item the menu priced only through its sizes. A break has to be narrow enough to name one leg. | — |
 | `check-a-menu-is-read-not-written.mjs` | 2 sizes become variants only when every size is priced | **RED ALONE** | accept a partly-priced size list. 'Half' with no price becomes a variant with an invented or zero price — the 'choose your size' case promoted to structure. | — |
-| `check-a-menu-is-read-not-written.mjs` | 3 a collection is only planned from a section the model was confident about | **RED ALONE** | create a collection from any section at all. A heading the model guessed at — here 'Specials', confidence low — becomes a real Commerce collection the owner never wrote. | — |
-| `check-a-menu-is-read-not-written.mjs` | 4 duplicates and items already in the store are blocked with a reason, not imported twice | **RED ALONE** | import every row. The menu's repeated Wings becomes a second product, and an item the store already has is created again alongside it. | — |
+| `check-a-menu-is-read-not-written.mjs` | 3 a weak section is preserved as weak, so no collection can be built from it | **RED ALONE** | flatten every section confidence to high. A heading the model guessed at — here 'Specials' — then looks exactly like one it read cleanly, and the review screen would offer a Commerce collection the owner never wrote. | — |
+| `check-a-menu-is-read-not-written.mjs` | 4 a repeated item is kept, not silently merged away before anyone sees it | **RED ALONE** | de-duplicate during extraction. The menu's second Wings disappears before the review screen, so the owner never learns his menu prints it twice and the import never gets the chance to report it. | — |
+| `check-a-menu-is-read-not-written.mjs` | 4b an item priced only through its sizes is not treated as having no price | **RED ALONE** | treat a missing base price as missing even when every size is priced. The pizza arrives flagged 'No price printed' and unticked, and the owner has to resolve something his menu was never ambiguous about — which is what the first live run did. | — |
 | `check-a-second-edit-still-works.mjs` | 2 a re-render really does strip the marks | **RED ALONE** | make the probe's re-render reuse the same children instead of replacing them. The leg then passes for the wrong reason — nothing was invalidated — and leg 3 would be asserting that a surface which never lost its marks still has them. This is the leg that keeps leg 3 honest. | — |
 | `check-a-second-edit-still-works.mjs` | 3 the SECOND wire marks the new elements — the second edit is still an edit | **RED ALONE** | put the guard back to a bare `return`, which is the shipped defect: data-hc-wired is set once and never cleared, so the second call returns before the per-element marking and the owner cannot get back into the field at all. This is the exact line Adrian's report was about. | — |
 | `check-address-change-is-said.mjs` | 5 the sentence exists, names the new address | **RED ALONE** | make the sentence point at a control — Hubly does not render the page and cannot know what is on screen, so naming a button is claiming a capability it has not verified | — |
@@ -305,3 +307,6 @@ Two narrower-looking attempts were rejected by the ledger first. Pointing the ob
 - **2026-09-21T19:19:26.141Z** — 3 break(s) applied · 2 red alone · 0 compound · 1 not red · 0 skipped
 - **2026-09-21T19:19:42.939Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-21T20:53:29.668Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T21:03:11.258Z** — 5 break(s) applied · 3 red alone · 2 compound · 0 not red · 0 skipped
+- **2026-09-21T21:03:21.353Z** — 5 break(s) applied · 3 red alone · 2 compound · 0 not red · 0 skipped
+- **2026-09-21T21:03:45.270Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped

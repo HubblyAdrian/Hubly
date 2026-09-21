@@ -37,6 +37,11 @@ export type MenuItem = {
   desc: string;
   /** Present ONLY when every size is labelled and priced. */
   sizes: MenuSize[] | null;
+  /** The SMALLEST PRINTED size price, when the menu priced the sizes but not the item itself.
+   *  It is not a price the item has — `price` stays null, faithfully — it is the review screen's
+   *  starting suggestion, shown to the owner and editable by him. Derived only from numbers the
+   *  menu actually printed; never computed, rounded or guessed. */
+  priceFromSizes: number | null;
   /** Sizes the menu mentioned but did not price — reported so the owner sees they existed. */
   sizesUnusable: MenuSize[] | null;
   needsReview: boolean;
@@ -87,7 +92,15 @@ export function normalizeMenuExtraction(parsed: unknown): MenuExtraction {
     const sizesUsable = rawSizes.length >= 2 && rawSizes.every((z) => z.price != null);
 
     const issue = raw.issue ? String(raw.issue).trim() : null;
-    const needsReview = raw.needsReview === true || price == null ||
+    /* AN ITEM PRICED BY SIZE IS NOT AN ITEM WITHOUT A PRICE. Measured on the first live run: a
+     * pizza whose Small/Medium/Large were all printed came back flagged "No price printed" and
+     * arrived at the review unticked, because the menu gives such items no single number. The
+     * menu is not ambiguous there and the owner should not have to resolve anything. */
+    const pricedBySize = price == null && sizesUsable;
+    const priceFromSizes = pricedBySize
+      ? rawSizes.reduce((lo: number | null, z) => (lo == null || (z.price as number) < lo ? (z.price as number) : lo), null)
+      : null;
+    const needsReview = raw.needsReview === true || (price == null && !pricedBySize) ||
       (rawSizes.length > 0 && !sizesUsable);
 
     items.push({
@@ -98,11 +111,14 @@ export function normalizeMenuExtraction(parsed: unknown): MenuExtraction {
       priceText,
       desc: raw.desc ? String(raw.desc) : "",
       sizes: sizesUsable ? rawSizes : null,
+      priceFromSizes,
       sizesUnusable: rawSizes.length > 0 && !sizesUsable ? rawSizes : null,
       needsReview,
       // A reason is always present when review is needed — "needs review" with no reason is a
       // question mark the owner cannot act on.
-      issue: issue || (price == null
+      issue: issue || (pricedBySize
+        ? "Priced by size — the sizes below carry the prices."
+        : price == null
         ? (priceText
           ? `The menu says "${priceText}" here, which is not a number.`
           : "No price printed.")
