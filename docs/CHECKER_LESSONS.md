@@ -4246,3 +4246,51 @@ rebuilt, because a route that silently stops reproducing is a green check about 
 The thread through all four: **a NOT RED or COMPOUND result is information about the CHECK, and it
 is available before anyone is relying on the check.** Three of these four were invisible in a green
 run and obvious the moment the ledger was read. Reading it is the cheapest verification in the repo.
+
+## Lesson 110
+
+**A HIDDEN TAB DOES NOT RENDER, SO IT CANNOT TEST ANYTHING THAT WAITS FOR A FRAME. THE READINGS
+LOOK LIKE MEASUREMENTS AND ARE NOT.**
+
+Phase 0.7, 2026-09-20. A ResizeObserver was added so the chat transcript re-pins to its newest
+message after the column finishes its 450ms transition. It passed in the harness, twice, with
+red-proofed breaks. Driven live against the real signed-in account it appeared to FAIL on the
+return route — landing at exactly 129px of a required 182px, the same number as the original
+report. The obvious reading was "the fix does not work".
+
+The actual state of the tab:
+
+    document.visibilityState  "hidden"
+    requestAnimationFrame     0 callbacks in 800ms
+    ResizeObserver            0 callbacks in 800ms — not even the initial one `observe()` always delivers
+
+**A backgrounded tab suspends the rendering loop.** No frames means no rAF and no ResizeObserver
+delivery, so the entire mechanism under test was switched off by the environment. The live runs
+were not evidence about the fix in either direction: the route that read 182 was a latched call
+that happened to land after layout settled, and the route that read 129 was the same call landing
+before. Both were timing luck in a tab that never painted.
+
+Three things this cost and one that saved it:
+
+1. **The stale-layout readings were the same disease.** `.hc-app-left` read 1710px while a
+   screenshot plainly showed 380px, repeatedly, across two phases. Not a flaky product — a tab
+   that had not recomputed layout. `void document.body.offsetHeight` before reading forces a
+   synchronous layout and the numbers become correct immediately. Any geometry read from an
+   automated tab should flush first.
+2. **Screenshots are not proof the page is rendering.** CDP captures a frame out of band; it does
+   NOT resume the rendering loop. A screenshot looked right, the observer stayed dead, and the two
+   facts are perfectly compatible.
+3. **A new tab does not fix it** if the whole browser window is in the background, which is the
+   normal state for an agent driving a browser on someone else's desktop.
+
+What saved it was attaching an OWN ResizeObserver to the same node and finding that it did not
+fire either — including the initial callback that `observe()` is specified to deliver. A product
+bug cannot suppress a brand-new observer created seconds earlier in the console. That one control
+turned "the fix is broken" into "the environment cannot run the fix", and it took two lines.
+
+**So: before reporting that a frame-dependent mechanism fails live — ResizeObserver,
+IntersectionObserver, rAF, CSS transitions, animations, lazy loading, autoplay, anything that
+waits for a paint — read `document.visibilityState` and count rAF callbacks first.** If the tab is
+hidden, the run is not a measurement, and saying so is the finding. This belongs with "Claude Code
+cannot verify mobile": another true statement about what this environment cannot see, and the cost
+of not knowing it is a false ALARM, which travels further than a false green.
