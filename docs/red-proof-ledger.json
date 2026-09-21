@@ -1291,6 +1291,51 @@
       "declaredTotal": 2,
       "recorded": 2,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-21T01:07:12.130Z",
+      "applied": 3,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T01:08:31.598Z",
+      "applied": 5,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T01:09:08.222Z",
+      "applied": 5,
+      "alone": 5,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 5,
+      "recorded": 5,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -2263,6 +2308,51 @@
       "leg": "2 the preview tracks the pane when the pane changes width",
       "why": "point the observer at the stage instead of the pane. The stage is the thing the fit WRITES, so it reports its own changes and never hears about the pane's — the preview stops tracking a resize while the rebuild path in leg 1 still lands correctly.",
       "at": "2026-09-21T00:38:17.523Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-chat-panel-reads-as-a-conversation.mjs::1 the owner's bubble is narrower than the column and Hubly's turn is not": {
+      "check": "check-the-chat-panel-reads-as-a-conversation.mjs",
+      "leg": "1 the owner's bubble is narrower than the column and Hubly's turn is not",
+      "why": "remove the cap that was restored for .hc-msg.user, leaving the blanket max-width:none. Both speakers go back to the full column width and the bubble stops reading as a bubble.",
+      "at": "2026-09-21T01:09:08.222Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-chat-panel-reads-as-a-conversation.mjs::2 the transcript sits on the composer rather than hanging from the ceiling": {
+      "check": "check-the-chat-panel-reads-as-a-conversation.mjs",
+      "leg": "2 the transcript sits on the composer rather than hanging from the ceiling",
+      "why": "drop the auto top margin so the transcript returns to the top of the panel, leaving the newest message as far from the cursor as the panel allows.",
+      "at": "2026-09-21T01:09:08.222Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-chat-panel-reads-as-a-conversation.mjs::3 a question and its answer are grouped more tightly than two separate turns": {
+      "check": "check-the-chat-panel-reads-as-a-conversation.mjs",
+      "leg": "3 a question and its answer are grouped more tightly than two separate turns",
+      "why": "equalise the gaps again, so 'the owner asks / Hubly answers' is spaced exactly like 'and now a different subject' and the transcript stops grouping into turns.",
+      "at": "2026-09-21T01:09:08.222Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-chat-panel-reads-as-a-conversation.mjs::4 the panel still scrolls end to end": {
+      "check": "check-the-chat-panel-reads-as-a-conversation.mjs",
+      "leg": "4 the panel still scrolls end to end",
+      "why": "stop the thread scrolling. The transcript still overflows, so the earliest turns are on the page and unreachable — the failure mode that anchoring the content to the bottom could plausibly introduce, which is why it is asserted rather than assumed. `clip` and not `hidden`: the first attempt used hidden and came back NOT RED, because hidden still permits PROGRAMMATIC scrolling and this check scrolls by setting scrollTop. The rule's own comment, twelve lines above it, already said so about overflow-x.",
+      "at": "2026-09-21T01:09:08.222Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-chat-panel-reads-as-a-conversation.mjs::5 the trust line is still on the surface the owner types on": {
+      "check": "check-the-chat-panel-reads-as-a-conversation.mjs",
+      "leg": "5 the trust line is still on the surface the owner types on",
+      "why": "hide the honesty line. It is one sentence — 'Hubly uses your real data. I won't make up information.' — printed where the owner decides whether to believe an answer, and it is the kind of thing a layout pass removes without noticing.",
+      "at": "2026-09-21T01:09:08.222Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

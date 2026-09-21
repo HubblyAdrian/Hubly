@@ -1208,6 +1208,49 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
    gutter — no more narrow centred stack with dead cream either side. */
 .hc-app.hc-has-draft .hc-thread-inner{padding:20px 16px 16px;gap:16px}
 .hc-app.hc-has-draft .hc-msg{max-width:none}
+
+/* ══ THE LINE ABOVE ALSO SWITCHED OFF THE USER BUBBLE, WHICH IS A DIFFERENT OBJECT ════════
+ *
+ * `max-width:none` is right for Hubly's turns: they are plain text on the surface, and in a
+ * 347px panel every pixel is wanted. It is wrong for the owner's own words, because those are
+ * a FILLED BUBBLE (see .hc-msg.user) and a bubble that reaches both edges of its column is not
+ * a bubble — it is a beige band. The rule ten lines up already says so: "the user's own words
+ * as a filled bubble at the column's right edge", with `max-width:min(560px,82%)`. The blanket
+ * override took the cap off every message, so `align-self:flex-end` had nothing left to do and
+ * the asymmetry that tells you who is speaking disappeared.
+ *
+ * MEASURED in the live rail before the change: column content 347px, user message 347px,
+ * Hubly message 347px — the two speakers were pixel-identical in width and only the fill
+ * distinguished them.
+ *
+ * 88% rather than the original 82%: in the 760px Home column the `min(560px, …)` half binds and
+ * nothing changes, but in the 347px rail 82% costs a whole extra wrapped line on a typical
+ * request. 88% leaves a 42px gutter — plainly a bubble — for one line less wrapping. */
+.hc-app.hc-has-draft .hc-msg.user{max-width:min(560px,88%)}
+
+/* ══ A NEW TURN GETS MORE AIR THAN A REPLY DOES ═══════════════════════════════════════════
+ *
+ * The rail runs a flat 16px gap, so "the owner asks / Hubly answers" is spaced exactly like
+ * "…and now a different subject". Grouping the pair is what makes a transcript scannable: the
+ * answer belongs to the question above it. Only the gap BEFORE a new user turn grows, so the
+ * question and its answer stay a unit. */
+.hc-app.hc-has-draft .hc-msg.hubly + .hc-msg.user{margin-top:8px}
+
+/* ══ THE CONVERSATION SITS ON THE COMPOSER, NOT AT THE CEILING ════════════════════════════
+ *
+ * MEASURED in the live rail: thread 730px tall, content 388px, so **342px of empty surface**
+ * sat between the last thing Hubly said and the box where the owner replies — the newest
+ * message as far from the cursor as the panel allows, and the panel reading half-abandoned.
+ * A transcript accumulates upward from where you type; it does not hang from the top.
+ *
+ * `margin-top:auto` and NOT `justify-content:flex-end`: when the transcript outgrows the
+ * panel an auto margin resolves to zero and normal scrolling continues, while flex-end can
+ * strand the earliest messages above the scroll origin where they cannot be reached.
+ *
+ * WEBSITE ONLY. Home is a centred reading column by an explicit ruling (.hc-home-centred,
+ * "justify-content moves the children as a group") and is left exactly as it is. */
+.hc-app.hc-has-draft[data-mode="website"] .hc-thread{display:flex;flex-direction:column}
+.hc-app.hc-has-draft[data-mode="website"] .hc-thread-inner{margin-top:auto}
 /* ══ HOME IS A READING COLUMN, NOT A WALL — ADRIAN, 2026-09-19: "it looks bad design wise" ═══
  *
  * MEASURED before changing anything: in Home the thread is 1530px wide with `max-width:none`,
