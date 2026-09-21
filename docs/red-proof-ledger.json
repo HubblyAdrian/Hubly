@@ -1486,6 +1486,51 @@
       "declaredTotal": 3,
       "recorded": 3,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-21T06:18:24.099Z",
+      "applied": 3,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 1,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T06:19:17.002Z",
+      "applied": 3,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 1,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T06:20:13.409Z",
+      "applied": 4,
+      "alone": 4,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 4,
+      "recorded": 4,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -2421,7 +2466,7 @@
       "check": "check-the-rail-is-a-fixed-width.mjs",
       "leg": "1 the rail is the same width for a long email and a short one",
       "why": "restore min-width:auto on the rail, which is the state that shipped. The declared 180px becomes a suggestion again, the owner's email address sets the rail's min-content, and the width of the navigation becomes a function of how long that address is.",
-      "at": "2026-09-21T00:26:20.265Z",
+      "at": "2026-09-21T06:20:13.409Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2430,7 +2475,7 @@
       "check": "check-the-rail-is-a-fixed-width.mjs",
       "leg": "2 the chat panel holds its declared 380px in website mode, for either address",
       "why": "let the chat column share the leftover width instead of declaring 380px. The rail stays 180 so leg 1 is untouched, but the chat panel and the canvas start negotiating and the work surface stops being a known size.",
-      "at": "2026-09-21T00:26:20.265Z",
+      "at": "2026-09-21T06:20:13.409Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2439,7 +2484,7 @@
       "check": "check-the-rail-is-a-fixed-width.mjs",
       "leg": "3 the account name is present in the rail and able to truncate",
       "why": "hide the name in the rail instead of truncating it. That is the cheap fix for this class and it does hold the rail at 180 — legs 1 and 2 stay green — by removing the owner's account control from the navigation, trading a layout bug for an unreadable chip.",
-      "at": "2026-09-21T00:26:20.265Z",
+      "at": "2026-09-21T06:20:13.409Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2575,6 +2620,15 @@
       "leg": "3 entering Website lays the preview out once, not once per frame of the transition",
       "why": "go back to a leading-edge throttle, which fires every 60ms for the whole column animation. The final size is still right, so legs 1 and 2 stay green while the owner's page re-wraps eight times on the way there — which is the state Adrian reported.",
       "at": "2026-09-21T06:12:47.484Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-rail-is-a-fixed-width.mjs::4 the chat column never overflows the row while its width is animating": {
+      "check": "check-the-rail-is-a-fixed-width.mjs",
+      "leg": "4 the chat column never overflows the row while its width is animating",
+      "why": "restore shrink 0 on the website chat column. Its basis animates down from Home's `100%` — the whole window — and with nothing allowed to shrink it, the first frames lay the chat out at full window width and push the site preview off the right-hand edge.",
+      "at": "2026-09-21T06:20:13.409Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

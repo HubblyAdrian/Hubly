@@ -78,7 +78,8 @@ async function measure(rig, srv, email) {
     const q = (s) => document.querySelector(s);
     const W = (n) => (n ? Math.round(n.getBoundingClientRect().width) : null);
     const nm = q(".hc-rail-acct .hc-chip-nm");
-    return {
+
+    const resting = {
       windowW: window.innerWidth,
       rail: W(q(".hc-rail")),
       chat: W(q(".hc-app-left")),
@@ -97,6 +98,32 @@ async function measure(rig, srv, email) {
       })(getComputedStyle(nm)) : null,
       docScrollW: document.documentElement.scrollWidth,
     };
+
+    /* ── AND WATCH A MODE SWITCH, FRAME BY FRAME. A resting width that is correct says nothing
+     *    about the journey: the chat column animates its flex-basis from Home's `100%`, and
+     *    100% is the whole window — already wider than the space beside the rail. */
+    const peak = await (async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const railBtn = (label) => [...document.querySelectorAll(".hc-rail button, .hc-rail a")]
+        .find((b) => b.textContent.trim() === label);
+      const go = (label) => { const b = railBtn(label);
+        if (b) b.click(); else window.hublyNavUI.openWorkspace(label.toLowerCase()); };
+      let maxChat = 0, maxRow = 0, sampling = true;
+      (function sample() {
+        if (!sampling) return;
+        const c = W(q(".hc-app-left")) || 0;
+        const row = (W(q(".hc-rail")) || 0) + c + (W(q(".hc-app-right")) || 0);
+        if (c > maxChat) maxChat = c;
+        if (row > maxRow) maxRow = row;
+        requestAnimationFrame(sample);
+      })();
+      go("home"); await wait(1400); go("website"); await wait(2200);
+      sampling = false;
+      return { maxChat, maxRow, windowW: window.innerWidth, rail: W(q(".hc-rail")) };
+    })();
+
+    resting.peak = peak;
+    return resting;
   }, { biz: BIZ });
 }
 
@@ -151,7 +178,7 @@ declareBreak({
        "180 so leg 1 is untouched, but the chat panel and the canvas start negotiating and the " +
        "work surface stops being a known size.",
   file: "public/platform-home.html",
-  find: '.hc-app.hc-claimed[data-mode="website"] .hc-app-left{flex:0 0 380px;min-width:0;',
+  find: '.hc-app.hc-claimed[data-mode="website"] .hc-app-left{flex:0 1 380px;min-width:0;',
   with: '.hc-app.hc-claimed[data-mode="website"] .hc-app-left{flex:1 1 auto;min-width:0;',
 });
 leg("RULE", "2 the chat panel holds its declared 380px in website mode, for either address",
@@ -184,6 +211,28 @@ leg("RULE", "3 the account name is present in the rail and able to truncate",
   `${L.nameContentW > L.nameW}); short address ${S.nameW}px. Computed overflow|text-overflow|` +
   `white-space|displayed = ${L.nameTrunc}. Asserting only "name width <= rail width" was VACUOUS — ` +
   `50 <= 180 holds however the rule is written, including with the name removed entirely.`);
+
+/* ── LEG 4 ────────────────────────────────────────────────────────────────────────────────── */
+declareBreak({
+  leg: "4 the chat column never overflows the row while its width is animating",
+  why: "restore shrink 0 on the website chat column. Its basis animates down from Home's " +
+       "`100%` — the whole window — and with nothing allowed to shrink it, the first frames lay " +
+       "the chat out at full window width and push the site preview off the right-hand edge.",
+  file: "public/platform-home.html",
+  find: '.hc-app.hc-claimed[data-mode="website"] .hc-app-left{flex:0 1 380px;min-width:0;',
+  with: '.hc-app.hc-claimed[data-mode="website"] .hc-app-left{flex:0 0 380px;min-width:0;',
+});
+{
+  const room = L.peak.windowW - L.peak.rail;
+  leg("RULE", "4 the chat column never overflows the row while its width is animating",
+    L.peak.maxChat <= room + 2 && L.peak.maxRow <= L.peak.windowW + 2,
+    `across every frame of a Home -> Website switch the chat column peaked at ` +
+    `${L.peak.maxChat}px against ${room}px of room beside the rail, and the three columns ` +
+    `together peaked at ${L.peak.maxRow}px in a ${L.peak.windowW}px window. Sampled per ` +
+    `FRAME rather than at rest: the resting width was always correct, and the defect lived ` +
+    `entirely in the journey — measured at 1710px on Adrian's shell, the chat flashing wider ` +
+    `than it ever is in Home before sweeping down to 380.`);
+}
 
 const bad = legs.filter((l) => !l.pass);
 // not-a-corpus-rate: this check's own leg count, not a corpus

@@ -595,7 +595,23 @@ html.hc-boot-owner body:not(.hc-active) .hc-input-bar{opacity:.5;pointer-events:
 .hc-inthread-day .hcmd-whatmain,.hc-inthread-day .hcmd-whatsub{white-space:normal}
 /* WEBSITE: the site is the large canvas; chat becomes a narrow assistant panel beside it.
    Fixed proportions (no draggable divider until asked). */
-.hc-app.hc-claimed[data-mode="website"] .hc-app-left{flex:0 0 380px;min-width:0;border-right:1px solid var(--line)}
+/* ══ SHRINK 1, SO THE COLUMN CANNOT OVERFLOW WHILE ITS BASIS IS ANIMATING ════════════════
+ *
+ * This was `flex:0 0 380px`. In Home the same column is `flex:1 1 100%`, and 100% means 100%
+ * of the flex CONTAINER — the full window — which is already 180px wider than the space left
+ * beside the rail. In Home that is harmless because shrink is 1 and it settles at 1530. The
+ * moment this rule takes over, shrink becomes 0 and the basis starts animating down from that
+ * 100%: for the first frames the chat is laid out at the FULL WINDOW WIDTH, 1710px, overflowing
+ * the row and pushing the site preview off the right-hand edge.
+ *
+ * MEASURED on Adrian's shell, first frame after clicking Website: rail 180, chat 1710, canvas
+ * pane 0. So opening Website flashed the chat wider than it ever is in Home before sweeping it
+ * down to 380 — part of what he saw as the screen "changing width so much".
+ *
+ * `0 1 380px` keeps the same resting width (at any normal window the pane grows into the free
+ * space and nothing presses on this column) and simply forbids the overflow: while the basis is
+ * animating, the column can be shrunk to the room that actually exists. */
+.hc-app.hc-claimed[data-mode="website"] .hc-app-left{flex:0 1 380px;min-width:0;border-right:1px solid var(--line)}
 .hc-app.hc-claimed[data-mode="website"] .hc-app-right{display:flex;flex:1 1 auto;min-width:0;animation:hcCanvasArrive .5s cubic-bezier(.22,.61,.36,1) both}
 /* ── THE WORKSPACES TAKE THE CENTRE. Same shape as Website: the conversation narrows
    to a 380px column and the room fills the rest. Records still open in the panel on

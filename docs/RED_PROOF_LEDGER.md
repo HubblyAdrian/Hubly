@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-21T06:12:47.484Z** · 128 run(s) recorded.
+**Last run: 2026-09-21T06:20:13.409Z** · 131 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 111 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 112 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -110,6 +110,7 @@ Two narrower-looking attempts were rejected by the ledger first. Pointing the ob
 | `check-the-rail-is-a-fixed-width.mjs` | 1 the rail is the same width for a long email and a short one | **RED ALONE** | restore min-width:auto on the rail, which is the state that shipped. The declared 180px becomes a suggestion again, the owner's email address sets the rail's min-content, and the width of the navigation becomes a function of how long that address is. | — |
 | `check-the-rail-is-a-fixed-width.mjs` | 2 the chat panel holds its declared 380px in website mode, for either address | **RED ALONE** | let the chat column share the leftover width instead of declaring 380px. The rail stays 180 so leg 1 is untouched, but the chat panel and the canvas start negotiating and the work surface stops being a known size. | — |
 | `check-the-rail-is-a-fixed-width.mjs` | 3 the account name is present in the rail and able to truncate | **RED ALONE** | hide the name in the rail instead of truncating it. That is the cheap fix for this class and it does hold the rail at 180 — legs 1 and 2 stay green — by removing the owner's account control from the navigation, trading a layout bug for an unreadable chip. | — |
+| `check-the-rail-is-a-fixed-width.mjs` | 4 the chat column never overflows the row while its width is animating | **RED ALONE** | restore shrink 0 on the website chat column. Its basis animates down from Home's `100%` — the whole window — and with nothing allowed to shrink it, the first frames lay the chat out at full window width and push the site preview off the right-hand edge. | — |
 | `check-the-rail-says-who-you-are.mjs` | 1 a known first name is on its own line ABOVE the business name | **RED ALONE** | put the business name FIRST instead — the owner line is still there, still says exactly what the reader says, still on its own line. Only the order Adrian ruled on is gone, which is the narrowest break that can reach this leg: legs 2 and 3 cannot see it at all. | — |
 | `check-the-rail-says-who-you-are.mjs` | 2 no name established renders NOTHING — no node, no placeholder, no email | **RED ALONE** | fall back to the email's local part when the reader returns null, which is exactly the 2026-09-15 bug: a login credential shown to the owner as his name, in the one place he looks to confirm Hubly knows who he is | — |
 | `check-the-rail-says-who-you-are.mjs` | 3 the line is EXACTLY what the one reader returns — no second opinion | **RED ALONE** | restyle the name locally after reading it — one line of 'presentation', which is how every second opinion about a person's name starts. It keeps the node, the order, the geometry and the null decision identical, so ONLY the claim that the surface shows what the reader said can detect it. (The real bug it stands for is larger — an email prefix or the auth provider's guess — but a wider break would take legs 1 and 2 down with it and prove nothing.) | — |
@@ -281,3 +282,6 @@ Two narrower-looking attempts were rejected by the ledger first. Pointing the ob
 - **2026-09-21T06:09:59.572Z** — 3 break(s) applied · 2 red alone · 1 compound · 0 not red · 0 skipped
 - **2026-09-21T06:11:19.143Z** — 3 break(s) applied · 2 red alone · 0 compound · 1 not red · 0 skipped
 - **2026-09-21T06:12:47.484Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T06:18:24.099Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 1 skipped
+- **2026-09-21T06:19:17.002Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 1 skipped
+- **2026-09-21T06:20:13.409Z** — 4 break(s) applied · 4 red alone · 0 compound · 0 not red · 0 skipped
