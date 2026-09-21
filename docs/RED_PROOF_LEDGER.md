@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-21T01:46:25.478Z** · 125 run(s) recorded.
+**Last run: 2026-09-21T06:12:47.484Z** · 128 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 110 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 111 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -104,7 +104,9 @@ have made the rule the first thing anyone switched off.
 The obvious break — broadening the rail's `margin-top:auto` to every mode — was tried first and came back NOT RED, and the reason is worth keeping: Home's thread is display:block, so an auto top margin is inert there no matter what the selector says. The blast radius is smaller than the selector implies, but a leg that cannot go red is not evidence of that, so the break aims at the property the leg actually names. | — |
 | `check-the-landing-never-paints-for-an-owner.mjs` | the account chip is visible once the business is open | **RED ALONE** | make the pre-paint hide unconditional again — `hc-boot-owner` is never removed on a successful owner load, so the sign-out door stays invisible for the life of the page | — |
 | `check-the-preview-refits-its-pane.mjs` | 1 the preview fills the pane on a RETURN visit, after the canvas has been rebuilt | **RED ALONE** | restore the install-once guard on the ResizeObserver. The wrap is rebuilt by the canvas innerHTML on every render, so the observer stays bound to a node that has left the document and the live pane is watched by nobody. This is the live defect exactly. | — |
-| `check-the-preview-refits-its-pane.mjs` | 2 the preview tracks the pane when the pane changes width | **RED ALONE** | point the observer at the stage instead of the pane. The stage is the thing the fit WRITES, so it reports its own changes and never hears about the pane's — the preview stops tracking a resize while the rebuild path in leg 1 still lands correctly. | — |
+| `check-the-preview-refits-its-pane.mjs` | 2 the preview tracks the pane when the pane changes width | **RED ALONE** | stop observing once the pane has settled. Navigation still lands correctly (one fit, at the end of the transition) so legs 1 and 3 are untouched, but nothing follows a pane that changes size afterwards — the panel opening, the window, a chip row appearing.
+Two narrower-looking attempts were rejected by the ledger first. Pointing the observer at the STAGE came back COMPOUND: the stage is what the fit writes, so it feeds itself and the preview churns, reddening leg 3 too. Freezing the pane width the fit READS came back NOT RED, and that one taught something real — the stage is sized `dev.w` and then SCALED to the pane, so its rendered width tracks the pane through the scale even when dev.w is frozen. Leg 2 is about what the owner sees, and what he sees still followed. | — |
+| `check-the-preview-refits-its-pane.mjs` | 3 entering Website lays the preview out once, not once per frame of the transition | **RED ALONE** | go back to a leading-edge throttle, which fires every 60ms for the whole column animation. The final size is still right, so legs 1 and 2 stay green while the owner's page re-wraps eight times on the way there — which is the state Adrian reported. | — |
 | `check-the-rail-is-a-fixed-width.mjs` | 1 the rail is the same width for a long email and a short one | **RED ALONE** | restore min-width:auto on the rail, which is the state that shipped. The declared 180px becomes a suggestion again, the owner's email address sets the rail's min-content, and the width of the navigation becomes a function of how long that address is. | — |
 | `check-the-rail-is-a-fixed-width.mjs` | 2 the chat panel holds its declared 380px in website mode, for either address | **RED ALONE** | let the chat column share the leftover width instead of declaring 380px. The rail stays 180 so leg 1 is untouched, but the chat panel and the canvas start negotiating and the work surface stops being a known size. | — |
 | `check-the-rail-is-a-fixed-width.mjs` | 3 the account name is present in the rail and able to truncate | **RED ALONE** | hide the name in the rail instead of truncating it. That is the cheap fix for this class and it does hold the rail at 180 — legs 1 and 2 stay green — by removing the owner's account control from the navigation, trading a layout bug for an unreadable chip. | — |
@@ -276,3 +278,6 @@ The obvious break — broadening the rail's `margin-top:auto` to every mode — 
 - **2026-09-21T01:44:58.596Z** — 2 break(s) applied · 2 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-21T01:45:34.794Z** — 1 break(s) applied · 1 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-21T01:46:25.478Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-21T06:09:59.572Z** — 3 break(s) applied · 2 red alone · 1 compound · 0 not red · 0 skipped
+- **2026-09-21T06:11:19.143Z** — 3 break(s) applied · 2 red alone · 0 compound · 1 not red · 0 skipped
+- **2026-09-21T06:12:47.484Z** — 3 break(s) applied · 3 red alone · 0 compound · 0 not red · 0 skipped

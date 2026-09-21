@@ -69,12 +69,29 @@ try {
     window.hublyNavUI.openWorkspace("home");
     await wait(700);
 
+    /* EVERY WIDTH THE PREVIEW IS LAID OUT AT ON THE WAY IN. The stage is a real viewport onto the
+     * owner's real page, so each distinct width is a full re-layout of it — the thing Adrian saw
+     * as the screen "changing width so much". Sampled per frame, from before the click until the
+     * column has settled. */
+    const seen = [];
+    let sampling = true;
+    (function sample() {
+      if (!sampling) return;
+      const st = q("#hcPreviewStage");
+      const w = st ? Math.round(st.getBoundingClientRect().width) : null;
+      if (w !== null && w !== seen[seen.length - 1]) seen.push(w);
+      requestAnimationFrame(sample);
+    })();
+
     /* ── FIRST VISIT: the property, measured while the observer is bound to a node that is
      *    unquestionably the live one. Doing the resize HERE rather than after a rebuild is what
      *    keeps leg 2 independent of leg 1 — a stale-node regression must not be able to turn
      *    this red, or neither leg would prove anything about itself. */
     (railBtn("Website") || { click() { window.hublyNavUI.openWorkspace("website"); } }).click();
     await wait(3000);
+    sampling = false;
+    // Drop widths that are not a rendered page: 0/1px before the iframe has a document.
+    const layouts = seen.filter((w) => w > 8);
     const firstVisit = { wrap: W(q("#hcCanvasFrameWrap")), stage: W(q("#hcPreviewStage")) };
 
     const left = q(".hc-app-left");
@@ -96,7 +113,7 @@ try {
     await wait(3000);
     const w2 = q("#hcCanvasFrameWrap");
     const secondVisit = { wrap: W(w2), stage: W(q("#hcPreviewStage")), rebuilt: w2 !== w1 && !w2.__tag };
-    return { firstVisit, shrunk, restored, secondVisit };
+    return { firstVisit, shrunk, restored, secondVisit, layouts };
   }, { biz: BIZ });
 } catch (e) {
   console.error("CANNOT RUN — " + String(e.message).split("\n")[0]);
@@ -108,7 +125,8 @@ await rig.close(); srv.close();
 console.log(`  1st visit to Website : pane ${out.firstVisit.wrap}  stage ${out.firstVisit.stage}`);
 console.log(`  pane shrunk by 240px : pane ${out.shrunk.wrap}  stage ${out.shrunk.stage}`);
 console.log(`  pane restored        : pane ${out.restored.wrap}  stage ${out.restored.stage}`);
-console.log(`  2nd visit (rebuilt ${out.secondVisit.rebuilt}) : pane ${out.secondVisit.wrap}  stage ${out.secondVisit.stage}\n`);
+console.log(`  2nd visit (rebuilt ${out.secondVisit.rebuilt}) : pane ${out.secondVisit.wrap}  stage ${out.secondVisit.stage}`);
+console.log(`  widths the preview was laid out at entering Website: [${out.layouts.join(", ")}]\n`);
 
 if (!out.secondVisit.rebuilt) {
   console.error("CANNOT RUN — leaving and returning to Website did not rebuild the canvas wrap, " +
@@ -137,12 +155,18 @@ leg("RULE", "1 the preview fills the pane on a RETURN visit, after the canvas ha
 /* ── LEG 2 ────────────────────────────────────────────────────────────────────────────────── */
 declareBreak({
   leg: "2 the preview tracks the pane when the pane changes width",
-  why: "point the observer at the stage instead of the pane. The stage is the thing the fit " +
-       "WRITES, so it reports its own changes and never hears about the pane's — the preview " +
-       "stops tracking a resize while the rebuild path in leg 1 still lands correctly.",
+  why: "stop observing once the pane has settled. Navigation still lands correctly (one fit, at " +
+       "the end of the transition) so legs 1 and 3 are untouched, but nothing follows a pane that " +
+       "changes size afterwards — the panel opening, the window, a chip row appearing.\n" +
+       "Two narrower-looking attempts were rejected by the ledger first. Pointing the observer at " +
+       "the STAGE came back COMPOUND: the stage is what the fit writes, so it feeds itself and the " +
+       "preview churns, reddening leg 3 too. Freezing the pane width the fit READS came back NOT " +
+       "RED, and that one taught something real — the stage is sized `dev.w` and then SCALED to " +
+       "the pane, so its rendered width tracks the pane through the scale even when dev.w is " +
+       "frozen. Leg 2 is about what the owner sees, and what he sees still followed.",
   file: "public/platform-home.html",
-  find: "    try{ hcFitRO.disconnect(); hcFitRO.observe(wrap); hcFitROTarget = wrap; }",
-  with: "    try{ hcFitRO.disconnect(); hcFitRO.observe(document.getElementById('hcPreviewStage') || wrap); hcFitROTarget = wrap; }",
+  find: "        hcFitRO._t = setTimeout(function(){ hcFitRO._t = null; try{ hcApplyPreviewFit(); }catch(e){} }, 120);",
+  with: "        hcFitRO._t = setTimeout(function(){ hcFitRO._t = null; try{ hcApplyPreviewFit(); hcFitRO.disconnect(); }catch(e){} }, 120);",
 });
 leg("RULE", "2 the preview tracks the pane when the pane changes width",
   out.shrunk.stage !== null && out.shrunk.stage < out.firstVisit.stage &&
@@ -152,6 +176,25 @@ leg("RULE", "2 the preview tracks the pane when the pane changes width",
   `reference to any navigation path, and measured on the FIRST visit so that a stale-node ` +
   `regression cannot reach it — otherwise leg 1 and this leg would fail together and neither would ` +
   `be evidence about itself.`);
+
+/* ── LEG 3 ────────────────────────────────────────────────────────────────────────────────── */
+declareBreak({
+  leg: "3 entering Website lays the preview out once, not once per frame of the transition",
+  why: "go back to a leading-edge throttle, which fires every 60ms for the whole column " +
+       "animation. The final size is still right, so legs 1 and 2 stay green while the owner's " +
+       "page re-wraps eight times on the way there — which is the state Adrian reported.",
+  file: "public/platform-home.html",
+  find: "        if(hcFitRO._t) clearTimeout(hcFitRO._t);\n        hcFitRO._t = setTimeout(function(){ hcFitRO._t = null; try{ hcApplyPreviewFit(); }catch(e){} }, 120);",
+  with: "        if(hcFitRO._t) return;\n        hcFitRO._t = setTimeout(function(){ hcFitRO._t = null; try{ hcApplyPreviewFit(); }catch(e){} }, 60);",
+});
+leg("RULE", "3 entering Website lays the preview out once, not once per frame of the transition",
+  out.layouts.length <= 2,
+  `the preview was laid out at ${out.layouts.length} distinct width(s) on the way in: ` +
+  `[${out.layouts.join(", ")}]. Each one is a full re-layout of a customer-facing page — text ` +
+  `re-wrapping, images resizing, columns collapsing and reopening. Measured on Adrian's own shell ` +
+  `before this was debounced: 1 -> 299 -> 668 -> 734 -> 884 -> 1006 -> 1071 -> 1101 -> 1106, eight ` +
+  `re-layouts per click. The allowance is 2 rather than 1 because a build-time fit followed by one ` +
+  `settled fit is legitimate; what is not is a fit per frame.`);
 
 const bad = legs.filter((l) => !l.pass);
 // not-a-corpus-rate: this check's own leg count, not a corpus

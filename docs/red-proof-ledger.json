@@ -1441,6 +1441,51 @@
       "declaredTotal": 3,
       "recorded": 3,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-21T06:09:59.572Z",
+      "applied": 3,
+      "alone": 2,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T06:11:19.143Z",
+      "applied": 3,
+      "alone": 2,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-21T06:12:47.484Z",
+      "applied": 3,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 3,
+      "recorded": 3,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -2403,7 +2448,7 @@
       "check": "check-the-preview-refits-its-pane.mjs",
       "leg": "1 the preview fills the pane on a RETURN visit, after the canvas has been rebuilt",
       "why": "restore the install-once guard on the ResizeObserver. The wrap is rebuilt by the canvas innerHTML on every render, so the observer stays bound to a node that has left the document and the live pane is watched by nobody. This is the live defect exactly.",
-      "at": "2026-09-21T00:38:17.523Z",
+      "at": "2026-09-21T06:12:47.484Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2411,8 +2456,8 @@
     "check-the-preview-refits-its-pane.mjs::2 the preview tracks the pane when the pane changes width": {
       "check": "check-the-preview-refits-its-pane.mjs",
       "leg": "2 the preview tracks the pane when the pane changes width",
-      "why": "point the observer at the stage instead of the pane. The stage is the thing the fit WRITES, so it reports its own changes and never hears about the pane's — the preview stops tracking a resize while the rebuild path in leg 1 still lands correctly.",
-      "at": "2026-09-21T00:38:17.523Z",
+      "why": "stop observing once the pane has settled. Navigation still lands correctly (one fit, at the end of the transition) so legs 1 and 3 are untouched, but nothing follows a pane that changes size afterwards — the panel opening, the window, a chip row appearing.\nTwo narrower-looking attempts were rejected by the ledger first. Pointing the observer at the STAGE came back COMPOUND: the stage is what the fit writes, so it feeds itself and the preview churns, reddening leg 3 too. Freezing the pane width the fit READS came back NOT RED, and that one taught something real — the stage is sized `dev.w` and then SCALED to the pane, so its rendered width tracks the pane through the scale even when dev.w is frozen. Leg 2 is about what the owner sees, and what he sees still followed.",
+      "at": "2026-09-21T06:12:47.484Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2521,6 +2566,15 @@
       "leg": "3 the ordinary unexpired session is unaffected",
       "why": "break the expiry test that was already here and is meant to survive this change. A session whose access token is still perfectly valid would be sent to the landing — the original defect widened from the expiry edge to every reload.",
       "at": "2026-09-21T01:46:25.478Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-preview-refits-its-pane.mjs::3 entering Website lays the preview out once, not once per frame of the transition": {
+      "check": "check-the-preview-refits-its-pane.mjs",
+      "leg": "3 entering Website lays the preview out once, not once per frame of the transition",
+      "why": "go back to a leading-edge throttle, which fires every 60ms for the whole column animation. The final size is still right, so legs 1 and 2 stay green while the owner's page re-wraps eight times on the way there — which is the state Adrian reported.",
+      "at": "2026-09-21T06:12:47.484Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

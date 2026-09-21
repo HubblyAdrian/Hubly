@@ -2911,9 +2911,30 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
     if(hcFitRO && hcFitROTarget === wrap) return;   // already watching THIS node
     if(!hcFitRO){
       hcFitRO = new ResizeObserver(function(){
-        // Coalesce: a panel animation fires this many times per open.
-        if(hcFitRO._t) return;
-        hcFitRO._t = setTimeout(function(){ hcFitRO._t = null; try{ hcApplyPreviewFit(); }catch(e){} }, 60);
+        /* ══ FIT WHEN THE PANE STOPS MOVING, NOT ALL THE WAY DOWN ════════════════════════════
+         *
+         * This was a LEADING-edge throttle — `if(_t) return` then a 60ms timer — so it fired
+         * roughly every 60ms for the whole 480ms column animation. Each fire re-sizes the stage,
+         * and the stage is a real viewport onto the owner's real website, so each one is a FULL
+         * RE-LAYOUT of his page: text re-wrapping, images resizing, columns collapsing and
+         * reopening.
+         *
+         * ADRIAN, 2026-09-21: "why is the screen changing width so much?" MEASURED on his own
+         * shell, one Home -> Website click, the widths the preview was laid out at:
+         *
+         *     1 -> 299 -> 668 -> 734 -> 884 -> 1006 -> 1071 -> 1101 -> 1106
+         *
+         * Eight re-layouts of a customer-facing page in half a second, every single time he
+         * opens Website. The Phase 0.5 fix that made the final size CORRECT is what made the
+         * journey there visible: before it, the observer was latched to a dead node and the
+         * preview simply sat at one wrong size. Right-size-eight-times is not an improvement on
+         * wrong-size-once; the answer is right-size-once.
+         *
+         * TRAILING edge: every resize pushes the timer out, so a continuous animation produces
+         * exactly ONE fit, after the motion stops. 120ms is comfortably longer than a frame and
+         * far shorter than any transition here, so nothing waits on it that a person can feel. */
+        if(hcFitRO._t) clearTimeout(hcFitRO._t);
+        hcFitRO._t = setTimeout(function(){ hcFitRO._t = null; try{ hcApplyPreviewFit(); }catch(e){} }, 120);
       });
     }
     try{ hcFitRO.disconnect(); hcFitRO.observe(wrap); hcFitROTarget = wrap; }
