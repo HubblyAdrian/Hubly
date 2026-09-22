@@ -101,7 +101,15 @@ Deno.serve(async (req: Request) => {
       // Re-price the cart from the DB too (never trust snapshotted cart prices).
       const computed = await computeAuthoritativeOrder(
         admin, businessId,
-        cartItems.map((it: Record<string, unknown>) => ({ product_id: it.product_id as string, variant_id: (it.variant_id as string) || null, qty: Number(it.qty) || 1 })),
+        // The persisted cart stores CANONICAL OPTION IDS; the resolver re-reads the real rows and
+        // re-prices from them, exactly as it does for the guest path. A stored unit_price_cents is
+        // never carried into the order — that is what "re-price the cart from the DB" means.
+        cartItems.map((it: Record<string, unknown>) => ({
+          product_id: it.product_id as string,
+          variant_id: (it.variant_id as string) || null,
+          qty: Number(it.qty) || 1,
+          selected_modifiers: it.selected_modifiers,
+        })),
         { shippingMode: shipMode, shippingRateCents: Number(body.shipping_rate_cents) || 0 },
       );
       if (!computed.ok) return json({ error: computed.error, code: computed.error, detail: computed.detail || null }, 400);
@@ -146,6 +154,10 @@ Deno.serve(async (req: Request) => {
       qty: it.qty,
       unit_price_cents: it.unit_price_cents,
       total_cents: it.total_cents,
+      // The modifier half of the same snapshot: group/option NAMES and the price adjustment,
+      // frozen beside the ids. A later rename, reprice, archive or delete must not be able to
+      // rewrite what this customer bought.
+      selected_modifiers: it.selected_modifiers || [],
     })));
 
     const productName = itemsForOrder.length === 1

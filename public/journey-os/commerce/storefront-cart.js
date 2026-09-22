@@ -88,7 +88,60 @@
   function key() { return KEY_PREFIX + (state.businessId || 'x'); }
   function read() { try { return JSON.parse(global.localStorage.getItem(key()) || '[]') || []; } catch (e) { return []; } }
   function persist(items) { try { global.localStorage.setItem(key(), JSON.stringify(items)); } catch (e) {} }
-  function lineKey(pid, vid) { return String(pid) + '::' + (vid || ''); }
+  // ── CANONICAL MODIFIER SELECTION — THE SAME RECIPE AS THE SERVER ───────────
+  //
+  // `_shared/commerce_modifiers.ts canonicalModifierIds` does exactly this: dedupe, sort, join.
+  // {bacon, mushroom} and {mushroom, bacon} are ONE configuration and must be ONE cart line, so
+  // array order is never identity. A repeated id is the same choice twice and collapses to one.
+  // If this recipe and the server's ever diverge, the client and the server disagree about what
+  // "the same line" is — which is the Phase 1E defect wearing different clothes.
+  function canonMods(arr) {
+    if (!arr || !arr.length) return [];
+    var seen = {}, out = [];
+    for (var i = 0; i < arr.length; i++) {
+      var v = String(arr[i] == null ? '' : arr[i]).trim();
+      if (v && !seen[v]) { seen[v] = 1; out.push(v); }
+    }
+    return out.sort();
+  }
+  function lineKey(pid, vid, mods) {
+    return String(pid) + '::' + (vid || '') + '::' + canonMods(mods).join(',');
+  }
+
+  // ── READING A SELECTION OFF A SURFACE, AND REFUSING AN INCOMPLETE ONE ──────
+  //
+  // Exported because the /store product detail collects the same way from the same markup —
+  // one reader, as with the builder that draws it.
+  //
+  // The client checks min/max so the customer is told BEFORE the cart what a group requires. The
+  // server checks them again and is the authority; this is a courtesy, never the rule. What it
+  // must never do is add the line anyway with the choice dropped — a silently-discarded required
+  // choice is the customer being charged for something they did not configure.
+  function readModifiers(scopeEl) {
+    if (!scopeEl) return { ok: true, ids: [] };
+    var groups = scopeEl.querySelectorAll('[data-mod-group-id]');
+    if (!groups.length) return { ok: true, ids: [] };
+    var ids = [];
+    for (var g = 0; g < groups.length; g++) {
+      var fs = groups[g];
+      var min = Number(fs.getAttribute('data-mod-min')) || 0;
+      var max = Number(fs.getAttribute('data-mod-max')) || 1;
+      var name = fs.getAttribute('data-mod-name') || 'this choice';
+      var picked = [];
+      var inputs = fs.querySelectorAll('input[data-mod-option]');
+      for (var i = 0; i < inputs.length; i++) {
+        if (inputs[i].checked && inputs[i].value) picked.push(inputs[i].value);
+      }
+      if (picked.length < min) {
+        return { ok: false, message: name + ': choose ' + (min === max ? min : 'at least ' + min) + '.' };
+      }
+      if (picked.length > max) {
+        return { ok: false, message: name + ': choose at most ' + max + '.' };
+      }
+      ids = ids.concat(picked);
+    }
+    return { ok: true, ids: canonMods(ids) };
+  }
 
   function items() { return read(); }
   function count() { return read().reduce(function (s, i) { return s + (Number(i.qty) || 0); }, 0); }
@@ -97,11 +150,12 @@
   function add(item) {
     if (!item || !item.productId) return;
     var its = read();
-    var k = lineKey(item.productId, item.variantId);
-    var ex = its.filter(function (i) { return lineKey(i.productId, i.variantId) === k; })[0];
+    var k = lineKey(item.productId, item.variantId, item.modifiers);
+    var ex = its.filter(function (i) { return lineKey(i.productId, i.variantId, i.modifiers) === k; })[0];
     if (ex) ex.qty = (Number(ex.qty) || 0) + (Number(item.qty) || 1);
     else its.push({
       productId: item.productId, variantId: item.variantId || null,
+      modifiers: canonMods(item.modifiers),
       qty: Math.max(1, Number(item.qty) || 1),
       name: item.name || '', price: item.price != null ? Number(item.price) : null
     });
@@ -109,11 +163,11 @@
   }
   function setQty(k, qty) {
     var its = read();
-    var i = its.filter(function (x) { return lineKey(x.productId, x.variantId) === k; })[0];
+    var i = its.filter(function (x) { return lineKey(x.productId, x.variantId, x.modifiers) === k; })[0];
     if (i) i.qty = Math.max(1, Number(qty) || 1);
     persist(its); refresh();
   }
-  function removeLine(k) { persist(read().filter(function (i) { return lineKey(i.productId, i.variantId) !== k; })); refresh(); }
+  function removeLine(k) { persist(read().filter(function (i) { return lineKey(i.productId, i.variantId, i.modifiers) !== k; })); refresh(); }
   function clear() { persist([]); refresh(); }
 
   /** The exact payload sent to the server — IDs + quantities only, no prices. */
@@ -121,6 +175,9 @@
     return read().map(function (i) {
       var li = { product_id: i.productId, qty: Number(i.qty) || 1 };
       if (i.variantId) li.variant_id = i.variantId;
+      // IDS ONLY, canonical order. No name, no price, no total — the server reloads all three.
+      var m = canonMods(i.modifiers);
+      if (m.length) li.selected_modifiers = m;
       return li;
     });
   }
@@ -207,7 +264,7 @@
     else if (act === 'checkout') { submitCheckout(); }
   }
   function adjust(k, d) {
-    var i = read().filter(function (x) { return lineKey(x.productId, x.variantId) === k; })[0];
+    var i = read().filter(function (x) { return lineKey(x.productId, x.variantId, x.modifiers) === k; })[0];
     if (i) setQty(k, (Number(i.qty) || 1) + d);
   }
   function submitCheckout() {
@@ -226,7 +283,7 @@
   function drawerHtml() {
     var its = read();
     var lines = its.map(function (i) {
-      var k = lineKey(i.productId, i.variantId);
+      var k = lineKey(i.productId, i.variantId, i.modifiers);
       return '<li class="hub-commerce-cart-line">' +
         '<span>' + esc(i.name || 'Item') + '</span>' +
         '<span class="hub-commerce-cart-qty">' +
@@ -291,12 +348,29 @@
       var variantId = sel ? sel.value : null;
       var price = card.getAttribute('data-base-price');
       if (sel && sel.selectedOptions && sel.selectedOptions[0]) price = sel.selectedOptions[0].getAttribute('data-price');
+      // A required group that has not been answered stops the add HERE, with a sentence naming
+      // the group. It is never added with the choice missing and never quietly repriced.
+      var mods = readModifiers(card);
+      var msgEl = card.querySelector('[data-mod-msg]');
+      if (!mods.ok) {
+        if (msgEl) msgEl.textContent = mods.message;
+        return;
+      }
+      if (msgEl) msgEl.textContent = '';
+      var delta = 0;
+      for (var mi = 0; mi < mods.ids.length; mi++) {
+        var optEl = card.querySelector('[data-mod-option="' + mods.ids[mi] + '"]');
+        var lbl = optEl && optEl.parentNode ? optEl.parentNode.textContent : '';
+        var m = String(lbl).match(/([+\u2212])\$([0-9.,]+)/);
+        if (m) delta += (m[1] === '+' ? 1 : -1) * (parseFloat(m[2].replace(/,/g, '')) || 0);
+      }
       add({
         productId: card.getAttribute('data-product-id'),
         variantId: variantId || null,
+        modifiers: mods.ids,
         qty: 1,
         name: card.getAttribute('data-product-name') + (sel ? (' — ' + (sel.selectedOptions[0] ? sel.selectedOptions[0].textContent.split(' · ')[0] : '')) : ''),
-        price: Number(price) || 0
+        price: (Number(price) || 0) + delta
       });
       state.drawerOpen = true; refresh();
     });
@@ -317,6 +391,7 @@
     mount: mount, openDrawer: openDrawer,
     add: add, items: items, count: count, subtotal: subtotal,
     setQty: setQty, remove: removeLine, clear: clear,
-    buildLineItems: buildLineItems, checkout: checkout
+    buildLineItems: buildLineItems, checkout: checkout,
+    readModifiers: readModifiers, canonModifiers: canonMods
   };
 })(typeof window !== 'undefined' ? window : globalThis);

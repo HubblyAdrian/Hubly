@@ -14,11 +14,18 @@
 import { resolveOrCreateCrmCustomer } from "./crm_customer.ts";
 import { applyOrderInventoryDeduction } from "./hubly_commerce_inventory.ts";
 import { resolveShippingProvider } from "./hubly_provider_shipping.ts";
+import { resolveProductModifiers, type ModifierSnapshotEntry } from "./commerce_modifiers.ts";
 
 // deno-lint-ignore no-explicit-any
 type Admin = any;
 
-export type LineItemInput = { product_id: string; variant_id?: string | null; qty: number };
+export type LineItemInput = {
+  product_id: string;
+  variant_id?: string | null;
+  qty: number;
+  /** commerce_modifier_options ids ONLY. A name or a price here is refused by shape. */
+  selected_modifiers?: unknown;
+};
 
 export type ComputedOrderItem = {
   product_id: string;
@@ -29,6 +36,8 @@ export type ComputedOrderItem = {
   qty: number;
   unit_price_cents: number;
   total_cents: number;
+  /** Frozen for the order line: names and money, not just ids. Empty for a line with no choices. */
+  selected_modifiers: ModifierSnapshotEntry[];
 };
 
 export type ComputedOrder = {
@@ -113,9 +122,28 @@ export async function computeAuthoritativeOrder(
       }
     }
 
+    // ══ MODIFIERS — RESOLVED HERE, PRICED HERE, NEVER READ OFF THE REQUEST ══════════════════
+    //
+    // The client sent option IDS. `resolveProductModifiers` reloads the real rows, proves every
+    // one of them is attached to THIS product on THIS business and active, enforces each active
+    // group's min_select/max_select, and returns the authoritative adjustment. A selection this
+    // module cannot justify fails the whole order rather than being quietly dropped — a topping
+    // removed in silence is a customer charged for something they did not choose.
+    //
+    // The SAME function is called by commerce-api's cart writer. One rule, one implementation:
+    // Phase 1E cost a month because two writers of one line disagreed and the quiet one was wrong.
+    const mods = await resolveProductModifiers(admin, businessId, productId, raw?.selected_modifiers);
+    if (!mods.ok) return empty(mods.error, mods.detail);
+    unitPrice += mods.adjustment_cents;
+    // A negative adjustment must not be able to make a line owe the customer money.
+    if (unitPrice < 0) {
+      return empty("invalid_line_price", `${title} priced below zero after modifiers`);
+    }
+
     items.push({
       product_id: productId, variant_id: variantId, bundle_id: null,
       title, sku, qty, unit_price_cents: unitPrice, total_cents: unitPrice * qty,
+      selected_modifiers: mods.snapshot,
     });
   }
 

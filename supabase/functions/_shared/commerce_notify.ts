@@ -39,6 +39,7 @@
  * and adding a second channel here would be a second thing to get wrong before the
  * first one has ever run.
  */
+import { describeModifierSnapshot } from "./commerce_modifiers.ts";
 
 // deno-lint-ignore no-explicit-any
 type Admin = any;
@@ -74,13 +75,19 @@ function shell(opts: { accent: string; headline: string; subhead: string; bodyHt
 
 function itemsTable(items: Array<Record<string, unknown>>): string {
   if (!items.length) return `<p style="color:#71717a;margin:0;">No line items were recorded on this order.</p>`;
-  const rows = items.map((i) => `
+  const rows = items.map((i) => {
+    // The choices the customer made, on their own line under the item. Rendered from the FROZEN
+    // snapshot on the order row — never looked up in the live modifier tables, which may since
+    // have been renamed, repriced or archived.
+    const mods = describeModifierSnapshot(i.selected_modifiers);
+    return `
     <tr>
       <td style="padding:8px 0;border-bottom:1px solid #f4f4f5;color:#18181b;">${esc(i.title || "Item")}${
     Number(i.qty) > 1 ? ` <span style="color:#71717a;">× ${esc(i.qty)}</span>` : ""
-  }</td>
+  }${mods ? `<br><span style="color:#71717a;font-size:13px;">${esc(mods)}</span>` : ""}</td>
       <td style="padding:8px 0;border-bottom:1px solid #f4f4f5;text-align:right;color:#18181b;white-space:nowrap;">${money(i.total_cents)}</td>
-    </tr>`).join("");
+    </tr>`;
+  }).join("");
   return `<table style="width:100%;border-collapse:collapse;font-size:14px;">${rows}</table>`;
 }
 
@@ -236,7 +243,12 @@ export async function notifyCommerceSale(
 
   const { data: itemRows } = await admin
     .from("commerce_order_items")
-    .select("title,qty,unit_price_cents,total_cents")
+    // selected_modifiers IS ON THIS LIST BECAUSE THIS LIST IS HAND-MAINTAINED.
+    // A `select` naming its columns is exactly the shape CLAUDE.md warns about: the column was
+    // added to commerce_order_items and this notifier would have gone on describing the order
+    // without it — no error, just an email that omits what the customer chose and charges for.
+    // If another snapshot field is ever added to an order line, it is added here in the same edit.
+    .select("title,qty,unit_price_cents,total_cents,selected_modifiers")
     .eq("order_id", orderId);
   const items = Array.isArray(itemRows) ? itemRows : [];
 

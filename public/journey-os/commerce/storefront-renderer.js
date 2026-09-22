@@ -166,6 +166,21 @@
             price: v.price_cents != null ? Number(v.price_cents) / 100 : null,
             stock: v.inventory != null ? Number(v.inventory) : null
           };
+        }),
+        // Modifier groups — read-through, ids untouched. `required` is DERIVED here and stored
+        // nowhere: it is min >= 1, and a second field could disagree with the first.
+        modifierGroups: (p.modifier_groups || []).map(function (g) {
+          return {
+            id: g.id, name: g.name,
+            min: Number(g.min_select) || 0,
+            max: Number(g.max_select) || 1,
+            options: (g.options || []).map(function (o) {
+              return {
+                id: o.id, name: o.name,
+                priceDelta: (Number(o.price_adjustment_cents) || 0) / 100
+              };
+            })
+          };
         })
       };
     });

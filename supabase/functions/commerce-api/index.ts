@@ -25,6 +25,11 @@
  * GET        /products/:id/variants
  * POST       /products/:id/variants
  * PATCH/DELETE /variants/:variantId
+ * GET/POST   /modifier-groups
+ * PATCH/DELETE /modifier-groups/:id
+ * GET/POST   /modifier-groups/:id/options
+ * PATCH/DELETE /modifier-options/:optionId
+ * GET/POST   /products/:id/modifier-groups   (attach; POST body.modifier_group_ids replaces the set)
  * GET/PATCH  /settings  (commerce_store_settings; auto-creates default row on first GET)
  */
 
@@ -32,6 +37,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { applyOrderInventoryDeduction } from "../_shared/hubly_commerce_inventory.ts";
 import { resolveShippingProvider } from "../_shared/hubly_provider_shipping.ts";
 import { planProductImport } from "../_shared/commerce_import.ts";
+import { resolveProductModifiers } from "../_shared/commerce_modifiers.ts";
 // Key resolution goes through _shared/supabase_admin.ts: it THROWS on a missing
 // key instead of continuing with "", reads the plural SUPABASE_PUBLISHABLE_KEYS
 // the platform actually injects, and never sends a non-JWT sb_secret_ key as a
@@ -153,6 +159,42 @@ Deno.serve(async (req: Request) => {
       for (const im of (imgs || [])) (imagesByProduct[im.product_id] ||= []).push(im);
       for (const vr of (vars || [])) (variantsByProduct[vr.product_id] ||= []).push(vr);
     }
+    // ── Modifier groups, public side ─────────────────────────────────────────────────────
+    // ACTIVE groups and ACTIVE options only, in the owner's order. The page must never paint a
+    // choice the checkout would then refuse, so the two gates are the same word: `status`.
+    // min_select/max_select ride along because the page enforces them for the customer's benefit
+    // and the server enforces them for the order's — one rule, stated twice, never two rules.
+    const modifierGroupsByProduct: Record<string, Record<string, unknown>[]> = {};
+    if (pids.length) {
+      const { data: attach } = await admin.from("commerce_product_modifier_groups")
+        .select("product_id,modifier_group_id,sort_order")
+        .eq("business_id", businessId).in("product_id", pids).order("sort_order");
+      const attachRows = attach || [];
+      const gids = [...new Set(attachRows.map((a: Record<string, unknown>) => a.modifier_group_id as string))];
+      if (gids.length) {
+        const { data: grps } = await admin.from("commerce_modifier_groups")
+          .select("id,name,min_select,max_select,status")
+          .eq("business_id", businessId).in("id", gids).eq("status", "active");
+        const { data: opts } = await admin.from("commerce_modifier_options")
+          .select("id,modifier_group_id,name,price_adjustment_cents,status,sort_order")
+          .eq("business_id", businessId).in("modifier_group_id", gids).eq("status", "active")
+          .order("sort_order");
+        const groupById: Record<string, Record<string, unknown>> = {};
+        for (const g of (grps || [])) groupById[g.id as string] = g;
+        const optionsByGroup: Record<string, Record<string, unknown>[]> = {};
+        for (const o of (opts || [])) (optionsByGroup[o.modifier_group_id as string] ||= []).push(o);
+        for (const a of attachRows) {
+          const g = groupById[a.modifier_group_id as string];
+          if (!g) continue; // archived group: attached, but not offered
+          (modifierGroupsByProduct[a.product_id as string] ||= []).push({
+            id: g.id, name: g.name, min_select: g.min_select, max_select: g.max_select,
+            options: (optionsByGroup[g.id as string] || []).map((o) => ({
+              id: o.id, name: o.name, price_adjustment_cents: o.price_adjustment_cents,
+            })),
+          });
+        }
+      }
+    }
     const products = visible.map((p: Record<string, unknown>) => ({
       id: p.id, name: p.name, slug: p.slug, description: p.description, short_description: p.short_description,
       price_cents: p.price_cents, compare_at_cents: p.compare_at_cents, product_type: p.product_type,
@@ -164,6 +206,7 @@ Deno.serve(async (req: Request) => {
         .map((im) => ({ url: im.url, alt: im.alt, sort_order: im.sort_order })),
       variants: (variantsByProduct[p.id as string] || [])
         .map((v) => ({ id: v.id, name: v.name, sku: v.sku, price_cents: v.price_cents, inventory: v.inventory, options: v.options })),
+      modifier_groups: modifierGroupsByProduct[p.id as string] || [],
     }));
     const { data: colls } = await admin.from("commerce_collections")
       .select("id,name,slug,description,published,sort_order")
@@ -234,6 +277,48 @@ Deno.serve(async (req: Request) => {
           }).select("*").single();
           if (error) return json({ error: error.message }, 400);
           return json({ image: data }, 201);
+        }
+      }
+      // Product ↔ modifier groups: GET/POST /products/:id/modifier-groups
+      //
+      // POST REPLACES THE SET, the way /collections/:id/products does — an owner saying "this
+      // product offers Extras and Required Choice" is stating the whole list, and a route that
+      // only ever added would make detaching impossible without a second verb nobody built.
+      if (id && sub === "modifier-groups") {
+        if (req.method === "GET") {
+          const { data, error } = await admin.from("commerce_product_modifier_groups")
+            .select("modifier_group_id,sort_order")
+            .eq("product_id", id).eq("business_id", businessId).order("sort_order");
+          if (error) return json({ error: error.message }, 400);
+          return json({ modifier_group_ids: (data || []).map((r: Record<string, unknown>) => r.modifier_group_id) });
+        }
+        if (req.method === "POST") {
+          const { data: prod } = await admin.from("commerce_products").select("id")
+            .eq("id", id).eq("business_id", businessId).maybeSingle();
+          if (!prod) return json({ error: "product_not_found", detail: id }, 404);
+          const rawIds = Array.isArray(body.modifier_group_ids) ? body.modifier_group_ids : [];
+          const groupIds = [...new Set(rawIds.map((x: unknown) => String(x || "").trim()).filter(Boolean))];
+          // EVERY id is proved to be this business's before ANY row is written. A partial
+          // attachment that half-succeeded would leave the product offering a choice its owner
+          // never made and no error to explain it.
+          if (groupIds.length) {
+            const { data: owned } = await admin.from("commerce_modifier_groups").select("id")
+              .eq("business_id", businessId).in("id", groupIds);
+            const ownedIds = new Set((owned || []).map((g: Record<string, unknown>) => String(g.id)));
+            const stranger = groupIds.find((g: string) => !ownedIds.has(g));
+            if (stranger) return json({ error: "modifier_group_not_found", detail: stranger }, 404);
+          }
+          await admin.from("commerce_product_modifier_groups").delete()
+            .eq("product_id", id).eq("business_id", businessId);
+          if (groupIds.length) {
+            const { error } = await admin.from("commerce_product_modifier_groups").insert(
+              groupIds.map((gid: string, i: number) => ({
+                product_id: id, modifier_group_id: gid, business_id: businessId, sort_order: i,
+              })),
+            );
+            if (error) return json({ error: error.message }, 400);
+          }
+          return json({ ok: true, count: groupIds.length });
         }
       }
       // Product variants: GET/POST /products/:id/variants
@@ -616,11 +701,28 @@ Deno.serve(async (req: Request) => {
           if (variant.price_cents != null) unitPriceCents = Number(variant.price_cents) || 0;
           if (variant.name) title = `${title} — ${variant.name}`;
         }
+        // ══ MODIFIERS — THE SAME RESOLVER THE CHECKOUT USES ═══════════════════════════════
+        //
+        // Not a second implementation of the rules. `resolveProductModifiers` is the one place
+        // that decides whether a selection is legal and what it costs, and both writers of a cart
+        // line call it — because Phase 1E's defect was two writers of one line disagreeing, and
+        // the half that nobody was looking at is the half that was wrong.
+        //
+        // What is STORED here is the canonical id array, never the names or the money: the server
+        // re-resolves those on every read, and a second copy is a second thing that can be stale.
+        const mods = await resolveProductModifiers(admin, businessId, productId, body.selected_modifiers);
+        if (!mods.ok) return json({ error: mods.error, detail: mods.detail || null }, 400);
+        unitPriceCents += mods.adjustment_cents;
+        if (unitPriceCents < 0) {
+          return json({ error: "invalid_line_price", detail: `${title} priced below zero after modifiers` }, 400);
+        }
+
         const { data: item, error } = await admin.from("commerce_cart_items").insert({
           cart_id: cartId,
           business_id: businessId,
           product_id: productId,
           variant_id: variantId,
+          selected_modifiers: mods.option_ids,
           title,
           qty,
           unit_price_cents: unitPriceCents,
@@ -684,6 +786,123 @@ Deno.serve(async (req: Request) => {
           .eq("id", id).eq("business_id", businessId).select("*").single();
         if (error) return json({ error: error.message }, 400);
         return json({ image: data });
+      }
+    }
+
+
+    // ── Modifier groups & options (owner) ─────────────────────────────────
+    //
+    // A GROUP is a constrained choice; an OPTION is one thing inside it. There is deliberately no
+    // `required` column: required IS `min_select >= 1`, so the two can never disagree with each
+    // other. The database enforces min >= 0, 1 <= max <= 50 and max >= min; this layer refuses the
+    // same things earlier so the owner gets a sentence instead of a constraint-violation string.
+    //
+    // Nothing here is trade-specific. These routes do not know what a topping is.
+    if (resource === "modifier-groups") {
+      // GET/POST /modifier-groups/:id/options
+      if (id && sub === "options") {
+        if (req.method === "GET") {
+          const { data, error } = await admin.from("commerce_modifier_options").select("*")
+            .eq("modifier_group_id", id).eq("business_id", businessId).order("sort_order");
+          if (error) return json({ error: error.message }, 400);
+          return json({ options: data || [] });
+        }
+        if (req.method === "POST") {
+          // The group must be THIS business's before anything is hung off it. Without this a valid
+          // owner could attach an option to a group id belonging to someone else.
+          const { data: grp } = await admin.from("commerce_modifier_groups").select("id")
+            .eq("id", id).eq("business_id", businessId).maybeSingle();
+          if (!grp) return json({ error: "modifier_group_not_found", detail: id }, 404);
+          const name = String(body.name || "").trim();
+          if (!name) return json({ error: "name required" }, 400);
+          const { data, error } = await admin.from("commerce_modifier_options").insert({
+            business_id: businessId,
+            modifier_group_id: id,
+            name,
+            price_adjustment_cents: body.price_adjustment_cents != null
+              ? Math.round(Number(body.price_adjustment_cents))
+              : (body.price_adjustment != null ? Math.round(Number(body.price_adjustment) * 100) : 0),
+            status: body.status === "archived" ? "archived" : "active",
+            sort_order: Number(body.sort_order) || 0,
+          }).select("*").single();
+          if (error) return json({ error: error.message }, 400);
+          return json({ option: data }, 201);
+        }
+      }
+      if (req.method === "GET" && !id) {
+        const { data, error } = await admin.from("commerce_modifier_groups").select("*")
+          .eq("business_id", businessId).order("sort_order");
+        if (error) return json({ error: error.message }, 400);
+        return json({ modifier_groups: data || [] });
+      }
+      if (req.method === "POST" && !id) {
+        const name = String(body.name || "").trim();
+        if (!name) return json({ error: "name required" }, 400);
+        const min = body.min_select != null ? Math.round(Number(body.min_select)) : 0;
+        const max = body.max_select != null ? Math.round(Number(body.max_select)) : 1;
+        if (!Number.isFinite(min) || min < 0) return json({ error: "min_select must be 0 or more" }, 400);
+        if (!Number.isFinite(max) || max < 1 || max > 50) return json({ error: "max_select must be between 1 and 50" }, 400);
+        if (max < min) return json({ error: "max_select must be at least min_select" }, 400);
+        const { data, error } = await admin.from("commerce_modifier_groups").insert({
+          business_id: businessId,
+          name,
+          min_select: min,
+          max_select: max,
+          status: body.status === "archived" ? "archived" : "active",
+          sort_order: Number(body.sort_order) || 0,
+        }).select("*").single();
+        if (error) return json({ error: error.message }, 400);
+        return json({ modifier_group: data }, 201);
+      }
+      if ((req.method === "PATCH" || req.method === "DELETE") && id) {
+        if (req.method === "DELETE") {
+          const { error } = await admin.from("commerce_modifier_groups").delete()
+            .eq("id", id).eq("business_id", businessId);
+          if (error) return json({ error: error.message }, 400);
+          return json({ ok: true });
+        }
+        // min/max are validated TOGETHER against the row as it will be, not as it was — patching
+        // only max on a group whose min is 2 must not be able to leave 2..1 behind.
+        const { data: current } = await admin.from("commerce_modifier_groups").select("*")
+          .eq("id", id).eq("business_id", businessId).maybeSingle();
+        if (!current) return json({ error: "modifier_group_not_found", detail: id }, 404);
+        const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        if (body.name !== undefined) patch.name = String(body.name);
+        if (body.status !== undefined) patch.status = body.status === "archived" ? "archived" : "active";
+        if (body.sort_order !== undefined) patch.sort_order = Number(body.sort_order) || 0;
+        const nextMin = body.min_select != null ? Math.round(Number(body.min_select)) : Number(current.min_select);
+        const nextMax = body.max_select != null ? Math.round(Number(body.max_select)) : Number(current.max_select);
+        if (!Number.isFinite(nextMin) || nextMin < 0) return json({ error: "min_select must be 0 or more" }, 400);
+        if (!Number.isFinite(nextMax) || nextMax < 1 || nextMax > 50) return json({ error: "max_select must be between 1 and 50" }, 400);
+        if (nextMax < nextMin) return json({ error: "max_select must be at least min_select" }, 400);
+        patch.min_select = nextMin;
+        patch.max_select = nextMax;
+        const { data, error } = await admin.from("commerce_modifier_groups").update(patch)
+          .eq("id", id).eq("business_id", businessId).select("*").single();
+        if (error) return json({ error: error.message }, 400);
+        return json({ modifier_group: data });
+      }
+    }
+
+    // ── Modifier options: PATCH/DELETE /modifier-options/:optionId ────────
+    if (resource === "modifier-options" && id) {
+      if (req.method === "DELETE") {
+        const { error } = await admin.from("commerce_modifier_options").delete()
+          .eq("id", id).eq("business_id", businessId);
+        if (error) return json({ error: error.message }, 400);
+        return json({ ok: true });
+      }
+      if (req.method === "PATCH") {
+        const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+        if (body.name !== undefined) patch.name = String(body.name);
+        if (body.status !== undefined) patch.status = body.status === "archived" ? "archived" : "active";
+        if (body.sort_order !== undefined) patch.sort_order = Number(body.sort_order) || 0;
+        if (body.price_adjustment_cents != null) patch.price_adjustment_cents = Math.round(Number(body.price_adjustment_cents));
+        else if (body.price_adjustment != null) patch.price_adjustment_cents = Math.round(Number(body.price_adjustment) * 100);
+        const { data, error } = await admin.from("commerce_modifier_options").update(patch)
+          .eq("id", id).eq("business_id", businessId).select("*").single();
+        if (error) return json({ error: error.message }, 400);
+        return json({ option: data });
       }
     }
 

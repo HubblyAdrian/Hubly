@@ -15,7 +15,7 @@
   var STYLE_ID = 'hub-store-page-style';
   // state.ast = the saved Storefront AST (presentation config). null → render the deterministic
   // default (HublyStorefrontAst.buildDefault) so /store and the Builder preview always agree.
-  var state = { businessId: null, brand: {}, os: null, ast: null, view: 'grid', collectionId: null, productId: null, container: null };
+  var state = { businessId: null, brand: {}, os: null, ast: null, view: 'grid', collectionId: null, productId: null, selectedMods: [], container: null };
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -122,6 +122,17 @@
       '.hub-store-page .hub-commerce-product-card__row{display:flex;align-items:center;justify-content:space-between;margin-top:auto;}' +
       '.hub-store-page .hub-commerce-price{font-weight:700;}' +
       '.hub-store-page .hub-commerce-variant-select{width:100%;padding:6px;border:1px solid #E6E8EC;border-radius:8px;}' +
+      // Modifier controls. Owned here the way the cart drawer owns its own styles: this file
+      // writes the surface, so this file makes it readable. A fieldset with no styling renders
+      // with the browser's default border and legend and looks like a bug.
+      '.hub-commerce-mods{margin:10px 0 2px;display:flex;flex-direction:column;gap:10px;}' +
+      '.hub-commerce-mod-group{border:1px solid #E6E8EC;border-radius:10px;padding:8px 10px 6px;margin:0;min-width:0;}' +
+      '.hub-commerce-mod-group legend{font-size:13px;font-weight:700;padding:0 4px;color:#141B2B;}' +
+      '.hub-commerce-mod-rule{font-weight:500;color:#8a9099;}' +
+      '.hub-commerce-mod-opt{display:flex;align-items:center;gap:8px;padding:3px 0;font-size:14px;cursor:pointer;}' +
+      '.hub-commerce-mod-opt input{margin:0;flex:none;}' +
+      '.hub-commerce-mod-msg{margin:6px 0 0;font-size:13px;color:#991b1b;}' +
+      '.hub-commerce-mod-msg:empty{display:none;}' +
       '.hub-store-page .hub-commerce-inv{font-size:12px;color:#8a9099;}' +
       '.hub-store-page .hub-commerce-inv.low{color:#c0392b;}' +
       '.hub-store-page .hub-commerce-btn{background:var(--sp-brand);color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:600;cursor:pointer;}' +
@@ -321,6 +332,10 @@
       (p.description ? '<p>' + esc(p.description) + '</p>' : '') +
       (digital ? '<p class="hub-commerce-inv">Digital item</p>' : (soldOut ? '<p class="hub-commerce-inv low">Sold out</p>' : '')) +
       variantSel +
+      // The SAME builder the grid card uses (HublyCommerceComponents.ModifierGroups) — the detail
+      // view does not get its own copy, because a second copy is how two surfaces come to offer
+      // different choices for one product.
+      (C() && C().ModifierGroups ? C().ModifierGroups(p, state.selectedMods) : '') +
       (soldOut ? '' : '<label>Quantity</label><input type="number" min="1" max="' + maxQty + '" value="1" data-store-page="qty">') +
       '<div><button type="button" class="hub-commerce-btn add" data-store-page="add"' + (soldOut ? ' disabled' : '') + '>' + (soldOut ? 'Sold out' : 'Add to cart') + '</button></div>' +
       '</div></div></section>';
@@ -347,22 +362,32 @@
         var a = act.getAttribute('data-store-page');
         if (a === 'cart') { if (Cart()) Cart().openDrawer(); return; }
         if (a === 'col') { state.collectionId = act.getAttribute('data-col') || null; renderView(); return; }
-        if (a === 'back') { state.view = 'grid'; state.productId = null; state.selectedVariant = null; renderView(); return; }
+        if (a === 'back') { state.view = 'grid'; state.productId = null; state.selectedVariant = null; state.selectedMods = []; renderView(); return; }
         if (a === 'add') { detailAdd(); return; }
         if (a === 'cta-top') { var g = container.querySelector('.sp-prod-grid'); if (g && g.scrollIntoView) g.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
         return;
       }
       // Product card click → open detail (but not when clicking add-to-cart or the variant select).
       var card = e.target.closest('.hub-commerce-product-card');
-      if (card && !e.target.closest('[data-commerce-act="cart-add"]') && !e.target.closest('[data-variant-select]')) {
+      // …and not when the click is a modifier control. A checkbox inside the card is the customer
+      // configuring the item, not asking to leave the grid — before this, ticking a topping
+      // navigated away and lost the tick.
+      if (card && !e.target.closest('[data-commerce-act="cart-add"]') && !e.target.closest('[data-variant-select]')
+          && !e.target.closest('[data-mods]')) {
         state.productId = card.getAttribute('data-product-id');
         state.selectedVariant = null;
+        state.selectedMods = [];
         state.view = 'detail';
         renderView();
       }
     });
     container.addEventListener('change', function (e) {
       if (e.target && e.target.getAttribute && e.target.getAttribute('data-store-page') === 'variant') {
+        // Changing the size must not silently discard the toppings. Capture the selection off the
+        // screen before the re-render and hand it back to the builder afterwards.
+        var scope = state.container.querySelector('[data-mods]');
+        var cur = (Cart() && Cart().readModifiers) ? Cart().readModifiers(scope) : null;
+        state.selectedMods = (cur && cur.ok) ? cur.ids : (state.selectedMods || []);
         state.selectedVariant = e.target.value;
         renderView();
       }
@@ -378,7 +403,25 @@
     var price = chosen && chosen.price != null ? chosen.price : (p.price || 0);
     var qtyEl = state.container.querySelector('[data-store-page="qty"]');
     var qty = qtyEl ? Math.max(1, Number(qtyEl.value) || 1) : 1;
-    Cart().add({ productId: p.id, variantId: vsel || null, qty: qty, name: p.name + (chosen ? ' — ' + chosen.name : ''), price: price });
+    // Read the choices off the screen with the cart's own reader, and STOP if a required group is
+    // unanswered — with the group named, on the page, rather than a refusal at checkout.
+    var scope = state.container.querySelector('[data-mods]') || state.container;
+    var mods = Cart().readModifiers ? Cart().readModifiers(scope) : { ok: true, ids: [] };
+    var msgEl = state.container.querySelector('[data-mod-msg]');
+    if (!mods.ok) { if (msgEl) msgEl.textContent = mods.message; return; }
+    if (msgEl) msgEl.textContent = '';
+    // The displayed total is the base/variant price plus the chosen deltas. It is a DISPLAY
+    // figure: the server recomputes every penny of it from its own rows at checkout.
+    var delta = 0;
+    (p.modifierGroups || []).forEach(function (g) {
+      (g.options || []).forEach(function (o) {
+        if (mods.ids.indexOf(o.id) > -1) delta += Number(o.priceDelta) || 0;
+      });
+    });
+    Cart().add({
+      productId: p.id, variantId: vsel || null, modifiers: mods.ids, qty: qty,
+      name: p.name + (chosen ? ' — ' + chosen.name : ''), price: price + delta
+    });
     Cart().openDrawer();
   }
 

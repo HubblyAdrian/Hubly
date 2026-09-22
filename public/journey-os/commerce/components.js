@@ -27,6 +27,60 @@
     return M ? M.format(n) : ('$' + (Number(n) || 0).toFixed(2));
   }
 
+  // ── MODIFIER GROUPS — ONE BUILDER, EVERY SURFACE ───────────────────────────
+  //
+  // The grid card and the /store product detail both draw modifier controls, and there is exactly
+  // one function that draws them. Two builders is how the two carts came to disagree about
+  // variant_id; the same mistake with a required choice would let a customer pick a sauce on one
+  // surface and not the other.
+  //
+  // max === 1  → radios: exactly one of these. min 0 also gets a "None" radio, because a group you
+  //              may skip must have a way to say so — a radio set with no empty option is a trap.
+  // max  >  1  → checkboxes.
+  //
+  // `required` is NOT a field. It is min >= 1, derived here for the label, exactly as the server
+  // derives it for the rule. The label says what the rule is in words, so the customer is not left
+  // to discover a constraint by being refused at checkout.
+  function modifierGroupsHtml(p, selectedIds) {
+    var groups = p.modifierGroups || [];
+    // A surface that re-renders (the /store detail does, on every variant change) must not lose
+    // what the customer already picked. It hands back the ids it had; a surface that does not
+    // re-render passes nothing and this is empty.
+    var chosen = {};
+    (selectedIds || []).forEach(function (x) { chosen[String(x)] = 1; });
+    if (!groups.length) return '';
+    return '<div class="hub-commerce-mods" data-mods>' + groups.map(function (g) {
+      var single = Number(g.max) <= 1;
+      var required = Number(g.min) >= 1;
+      var rule = required
+        ? (single ? 'Choose 1' : (g.min === g.max ? 'Choose ' + g.min : 'Choose ' + g.min + '–' + g.max))
+        : (single ? 'Optional' : 'Choose up to ' + g.max);
+      var nm = 'mg-' + esc(g.id);
+      var opts = (g.options || []).map(function (o) {
+        var delta = Number(o.priceDelta) || 0;
+        var label = esc(o.name) + (delta ? ' ' + (delta > 0 ? '+' : '−') + esc(money(Math.abs(delta))) : '');
+        return '<label class="hub-commerce-mod-opt">' +
+          '<input type="' + (single ? 'radio' : 'checkbox') + '" name="' + nm + '"' +
+          ' data-mod-option="' + esc(o.id) + '" data-mod-group="' + esc(g.id) + '" value="' + esc(o.id) + '"' +
+          (chosen[String(o.id)] ? ' checked' : '') + '>' +
+          '<span>' + label + '</span></label>';
+      }).join('');
+      // The skip affordance for an optional single-choice group.
+      var none = (single && !required)
+        ? '<label class="hub-commerce-mod-opt"><input type="radio" name="' + nm + '"' +
+          ' data-mod-group="' + esc(g.id) + '" value=""' +
+          ((g.options || []).some(function (o) { return chosen[String(o.id)]; }) ? '' : ' checked') +
+          '><span>None</span></label>'
+        : '';
+      return '<fieldset class="hub-commerce-mod-group" data-mod-group-id="' + esc(g.id) + '"' +
+        ' data-mod-min="' + esc(g.min) + '" data-mod-max="' + esc(g.max) + '"' +
+        ' data-mod-name="' + esc(g.name) + '">' +
+        '<legend>' + esc(g.name) + ' <span class="hub-commerce-mod-rule">' + esc(rule) + '</span></legend>' +
+        none + opts +
+        '</fieldset>';
+    }).join('') + '<p class="hub-commerce-mod-msg" data-mod-msg></p></div>';
+  }
+
   function ProductCard(p, opts) {
     opts = opts || {};
     var variants = p.variants || [];
@@ -73,6 +127,7 @@
         ? '<p>' + esc((p.shortDescription || p.description || '').slice(0, 90)) + '</p>' : '') +
       (availLabel ? '<span class="hub-commerce-inv' + (soldOut ? ' low' : '') + '">' + esc(availLabel) + '</span>' : '') +
       variantSelect +
+      modifierGroupsHtml(p) +
       '<div class="hub-commerce-product-card__row">' +
       '<span class="hub-commerce-price">' + esc(priceLabel) + '</span>' +
       (opts.addLabel !== false
@@ -224,6 +279,7 @@
   }
 
   global.HublyCommerceComponents = {
+    ModifierGroups: modifierGroupsHtml,
     ProductCard: ProductCard,
     ProductGrid: ProductGrid,
     ProductEditor: ProductEditor,
