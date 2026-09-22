@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-21T22:54:35.575Z** · 142 run(s) recorded.
+**Last run: 2026-09-22T03:59:39.910Z** · 149 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 141 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 158 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -43,6 +43,23 @@ The first attempt coerced a null price to 0. That is a worse defect and it came 
 | `check-a-menu-is-read-not-written.mjs` | 3 a weak section is preserved as weak, so no collection can be built from it | **RED ALONE** | flatten every section confidence to high. A heading the model guessed at — here 'Specials' — then looks exactly like one it read cleanly, and the review screen would offer a Commerce collection the owner never wrote. | — |
 | `check-a-menu-is-read-not-written.mjs` | 4 a repeated item is kept, not silently merged away before anyone sees it | **RED ALONE** | de-duplicate during extraction. The menu's second Wings disappears before the review screen, so the owner never learns his menu prints it twice and the import never gets the chance to report it. | — |
 | `check-a-menu-is-read-not-written.mjs` | 4b an item priced only through its sizes is not treated as having no price | **RED ALONE** | treat a missing base price as missing even when every size is priced. The pizza arrives flagged 'No price printed' and unticked, and the owner has to resolve something his menu was never ambiguous about — which is what the first live run did. | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | a product with no modifier groups prices exactly as before | **RED ALONE** | every existing Commerce product takes this path and must be untouched by the feature | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | a required group refuses an empty selection | **RED ALONE** | min_select is the only thing standing between a customer and an unconfigured order | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | a selection that is not a list of ids is refused by shape | **RED ALONE** | this is the gate that stops a client sending {name, price} and having a field read off it | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | an archived REQUIRED group does not block the sale | **RED ALONE** | enforcing min on an archived group makes every product it touched unpurchasable | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | an archived group cannot be picked from | **RED ALONE** | a retired group's options must go with it, or the group's status is decorative | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | an archived option cannot be bought | **RED ALONE** | archiving is how an owner withdraws an option; if it still sells, archiving means nothing | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | an option belonging to another business is refused | **RED ALONE** | business isolation is the one boundary a multi-tenant catalog cannot get wrong | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | an option that is not attached to this product is refused | **RED ALONE** | without the product scope any option id prices any product | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | an optional group may be left empty | **RED ALONE** | min_select 0 must mean optional; enforcing min on every group would block a plain purchase | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | max_select refuses one selection too many | **RED ALONE** | without the ceiling a line can carry any number of paid extras the group never offered | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | no restaurant-specific table, renderer or cart exists | **RED ALONE** | the leg must fire on a restaurant entity anywhere in Commerce | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | the adjustment is added to the line's base | **RED ALONE** | if the sum stops coming off the real rows, the customer is charged for a choice they did not get | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | the base the adjustment applies to is the VARIANT's price | **RED ALONE** | adding the adjustment to the product price instead of the variant's is a different, wrong number | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | the cart sends ids only | **RED ALONE** | a price in the payload is a price the server could be tempted to trust | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | the order line freezes group and option NAMES and the adjustment | **RED ALONE** | an order that stores only ids becomes unreadable the moment a modifier is renamed or deleted | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | the page states each group's rule and carries option ids | **RED ALONE** | a control that does not say 'choose 1' lets a customer discover the rule by being refused | — |
+| `check-a-modifier-is-priced-by-the-server.mjs` | the same choices in a different order are ONE cart line | **RED ALONE** | array order as identity splits one configuration into two lines and charges twice | — |
 | `check-a-second-edit-still-works.mjs` | 2 a re-render really does strip the marks | **RED ALONE** | make the probe's re-render reuse the same children instead of replacing them. The leg then passes for the wrong reason — nothing was invalidated — and leg 3 would be asserting that a surface which never lost its marks still has them. This is the leg that keeps leg 3 honest. | — |
 | `check-a-second-edit-still-works.mjs` | 3 the SECOND wire marks the new elements — the second edit is still an edit | **RED ALONE** | put the guard back to a bare `return`, which is the shipped defect: data-hc-wired is set once and never cleared, so the second call returns before the per-element marking and the owner cannot get back into the field at all. This is the exact line Adrian's report was about. | — |
 | `check-a-variant-survives-from-shelf-to-order.mjs` | a draft product cannot be purchased | **RED ALONE** | an AI-imported draft the owner has not approved must not be sellable | — |
@@ -327,3 +344,10 @@ Two narrower-looking attempts were rejected by the ledger first. Pointing the ob
 - **2026-09-21T21:03:21.353Z** — 5 break(s) applied · 3 red alone · 2 compound · 0 not red · 0 skipped
 - **2026-09-21T21:03:45.270Z** — 5 break(s) applied · 5 red alone · 0 compound · 0 not red · 0 skipped
 - **2026-09-21T22:54:35.575Z** — 16 break(s) applied · 16 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-22T03:53:12.510Z** — 16 break(s) applied · 10 red alone · 6 compound · 0 not red · 1 skipped
+- **2026-09-22T03:56:10.181Z** — 18 break(s) applied · 15 red alone · 3 compound · 0 not red · 0 skipped
+- **2026-09-22T03:56:31.659Z** — 17 break(s) applied · 16 red alone · 1 compound · 0 not red · 0 skipped
+- **2026-09-22T03:57:07.459Z** — 17 break(s) applied · 17 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-22T03:59:17.528Z** — 14 break(s) applied · 14 red alone · 0 compound · 0 not red · 2 skipped
+- **2026-09-22T03:59:25.072Z** — 14 break(s) applied · 14 red alone · 0 compound · 0 not red · 2 skipped
+- **2026-09-22T03:59:39.910Z** — 16 break(s) applied · 16 red alone · 0 compound · 0 not red · 0 skipped

@@ -1696,6 +1696,111 @@
       "declaredTotal": 16,
       "recorded": 16,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-22T03:53:12.510Z",
+      "applied": 16,
+      "alone": 10,
+      "compound": 6,
+      "notRed": 0,
+      "skipped": 1,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 17,
+      "recorded": 17,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-22T03:56:10.181Z",
+      "applied": 18,
+      "alone": 15,
+      "compound": 3,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 18,
+      "recorded": 18,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-22T03:56:31.659Z",
+      "applied": 17,
+      "alone": 16,
+      "compound": 1,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 17,
+      "recorded": 17,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-22T03:57:07.459Z",
+      "applied": 17,
+      "alone": 17,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 17,
+      "recorded": 17,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-22T03:59:17.528Z",
+      "applied": 14,
+      "alone": 14,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 2,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 16,
+      "recorded": 16,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-22T03:59:25.072Z",
+      "applied": 14,
+      "alone": 14,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 2,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 16,
+      "recorded": 16,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-22T03:59:39.910Z",
+      "applied": 16,
+      "alone": 16,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 16,
+      "recorded": 16,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -2919,7 +3024,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "the selected variant's price is the line price",
       "why": "if a variant stops determining the charge, a Large is billed as a Small",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2928,7 +3033,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "quantity multiplies the line's own unit price",
       "why": "a line that ignores qty charges for one of everything",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2937,7 +3042,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "a variant that prices nothing inherits the product price",
       "why": "a variant may legitimately carry no price of its own; it must fall back, not go free",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2946,7 +3051,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "the order line carries the stable product id AND variant id",
       "why": "a line identified by name cannot survive a rename, and names are not unique",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2955,7 +3060,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "a variant that is not this product's is refused",
       "why": "without the product scope, any variant id prices any product — and silently",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2964,7 +3069,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "a draft product cannot be purchased",
       "why": "an AI-imported draft the owner has not approved must not be sellable",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2973,7 +3078,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "a product hidden from the website cannot be purchased",
       "why": "visibility is the second half of the same gate and has its own way of being lost",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2982,7 +3087,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "the public payload projects the product price and every variant id",
       "why": "the projection is read-through; a price it invents is a price the server will not charge",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -2991,7 +3096,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "a variant's own price survives the projection",
       "why": "cents → dollars is where a price has already been silently rounded once (money.js)",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -3000,7 +3105,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "collections project in Commerce order",
       "why": "the owner's collection order is the only ordering Commerce states; the client may not re-sort",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -3009,7 +3114,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "the variant selector's values are variant ids",
       "why": "a name in the option value is name-based identity arriving through the UI",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -3018,7 +3123,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "a product whose variants differ in price is labelled from its lowest",
       "why": "one number on a card that has three is a price the customer may not be able to get",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -3027,7 +3132,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "two variants of one product are two cart lines",
       "why": "a cart keyed by product alone collapses a Large onto a Medium and charges one of them",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -3036,7 +3141,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "checkout sends ids and quantities only",
       "why": "a price the client sends is a price the server could be tempted to trust",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -3045,7 +3150,7 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "the persisted cart writer reads, validates, prices and stores the variant",
       "why": "this is the writer that dropped variant_id, and it is the one Hubly cannot execute offline",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"
@@ -3054,7 +3159,160 @@
       "check": "check-a-variant-survives-from-shelf-to-order.mjs",
       "leg": "no restaurant-specific table, renderer or cart exists",
       "why": "the leg must fire on a restaurant entity anywhere in the storefront or the schema",
-      "at": "2026-09-21T22:54:35.575Z",
+      "at": "2026-09-22T03:59:39.910Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::a product with no modifier groups prices exactly as before": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "a product with no modifier groups prices exactly as before",
+      "why": "every existing Commerce product takes this path and must be untouched by the feature",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::an optional group may be left empty": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "an optional group may be left empty",
+      "why": "min_select 0 must mean optional; enforcing min on every group would block a plain purchase",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::a required group refuses an empty selection": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "a required group refuses an empty selection",
+      "why": "min_select is the only thing standing between a customer and an unconfigured order",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::max_select refuses one selection too many": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "max_select refuses one selection too many",
+      "why": "without the ceiling a line can carry any number of paid extras the group never offered",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::a selection that is not a list of ids is refused by shape": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "a selection that is not a list of ids is refused by shape",
+      "why": "this is the gate that stops a client sending {name, price} and having a field read off it",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::an option that is not attached to this product is refused": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "an option that is not attached to this product is refused",
+      "why": "without the product scope any option id prices any product",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::an option belonging to another business is refused": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "an option belonging to another business is refused",
+      "why": "business isolation is the one boundary a multi-tenant catalog cannot get wrong",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::an archived option cannot be bought": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "an archived option cannot be bought",
+      "why": "archiving is how an owner withdraws an option; if it still sells, archiving means nothing",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::an archived group cannot be picked from": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "an archived group cannot be picked from",
+      "why": "a retired group's options must go with it, or the group's status is decorative",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::an archived REQUIRED group does not block the sale": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "an archived REQUIRED group does not block the sale",
+      "why": "enforcing min on an archived group makes every product it touched unpurchasable",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::the order line freezes group and option NAMES and the adjustment": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "the order line freezes group and option NAMES and the adjustment",
+      "why": "an order that stores only ids becomes unreadable the moment a modifier is renamed or deleted",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::the same choices in a different order are ONE cart line": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "the same choices in a different order are ONE cart line",
+      "why": "array order as identity splits one configuration into two lines and charges twice",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::the page states each group's rule and carries option ids": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "the page states each group's rule and carries option ids",
+      "why": "a control that does not say 'choose 1' lets a customer discover the rule by being refused",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::no restaurant-specific table, renderer or cart exists": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "no restaurant-specific table, renderer or cart exists",
+      "why": "the leg must fire on a restaurant entity anywhere in Commerce",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::the adjustment is added to the line's base": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "the adjustment is added to the line's base",
+      "why": "if the sum stops coming off the real rows, the customer is charged for a choice they did not get",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::the base the adjustment applies to is the VARIANT's price": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "the base the adjustment applies to is the VARIANT's price",
+      "why": "adding the adjustment to the product price instead of the variant's is a different, wrong number",
+      "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-a-modifier-is-priced-by-the-server.mjs::the cart sends ids only": {
+      "check": "check-a-modifier-is-priced-by-the-server.mjs",
+      "leg": "the cart sends ids only",
+      "why": "a price in the payload is a price the server could be tempted to trust",
+      "at": "2026-09-22T03:57:07.459Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

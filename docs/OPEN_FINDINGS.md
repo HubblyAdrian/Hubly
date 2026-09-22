@@ -8539,3 +8539,39 @@ is store-only. It is a candidate until someone opens that page.
 business without Stripe Connect. Phase 1E hit the same 503 wall from the customer side — the
 refusal fires before any item is validated, so `cart → order` was proven against the real pricing
 module deterministically rather than live.
+
+---
+
+## Phase 1F — the inventory deduction drops the variant (found in discovery, deliberately not fixed)
+
+`commerce-api/index.ts`, the internal `POST /inventory/apply-order` route. It selects `*` from
+`commerce_order_items` — so `variant_id` is in hand — and then maps it away:
+
+```ts
+items: (items || []).map((i: { product_id?: string; qty: number; title?: string }) => ({
+  product_id: i.product_id, qty: i.qty, title: i.title,          // ← variant_id dropped
+})),
+```
+
+The other caller, `_shared/commerce_checkout.ts` `finalizePaidCommerceOrder`, selects
+`product_id,variant_id,qty,title` and passes the variant through. `applyOrderInventoryDeduction`
+is variant-aware. So through this route the stock for a sold **Large** is decremented from the
+**parent product** while the Large variant's own count never moves.
+
+**The class is the one Phase 1E was about:** one variant-aware function, two callers, one blind.
+Third sibling. It is NOT fixed because it is inventory, not modifiers, and Phase 1F was told to
+report rather than expand. Reproducing it needs an order that reaches the paid state, which needs
+Stripe Connect — the same wall as everything else on this path.
+
+**Also still open after Phase 1F:**
+
+- **`commerce_order_items.selected_modifiers` has never been written by a real order.** The column
+  exists and defaults correctly, the writer is exercised by
+  `scripts/check-a-modifier-is-priced-by-the-server.mjs`, and the live cart/pricing path is proven —
+  but `create-store-checkout` refuses at 503 before any order is computed, so no order row has ever
+  carried a modifier snapshot. Not claimed as passing. See `docs/PHASE1F_MODIFIER_PROOF.md` §H.
+- **No owner UI for modifier groups or options.** They are reachable only through the Commerce API.
+  `renderVariantsSection` in `store-commerce.js` is the template when that is wanted.
+- **Every priced line now issues one extra indexed SELECT** against
+  `commerce_product_modifier_groups`, including for products that have no modifiers — because a
+  required group has to be enforced even when the client sends nothing.

@@ -155,23 +155,40 @@ const VARIANTS = {
 /** The narrowest possible stand-in for the supabase client: whatever `.eq()` chain is built,
  *  the row is looked up by id and every other `.eq()` must also match, or nothing comes back. */
 function admin() {
-  const TABLES = { commerce_products: PRODUCTS, commerce_product_variants: VARIANTS };
+  const TABLES = {
+    commerce_products: Object.values(PRODUCTS),
+    commerce_product_variants: Object.values(VARIANTS),
+    // PHASE 1F ADDED A READER THIS FAKE COULD NOT ANSWER, and it did not fail quietly: the check
+    // threw `.order is not a function` the first time computeAuthoritativeOrder resolved modifiers.
+    // That is the fake being incomplete, not the product regressing — the fix belongs here. This
+    // product has no modifier groups, which is exactly the compatibility case these legs assert.
+    commerce_product_modifier_groups: [],
+    commerce_modifier_groups: [],
+    commerce_modifier_options: [],
+  };
   return {
     from(table) {
-      const rows = TABLES[table] || {};
-      const filters = {};
+      const rows = TABLES[table] || [];
+      const eq = {};
+      const ins = {};
       const q = {
         select() { return q; },
-        eq(col, val) { filters[col] = val; return q; },
-        async maybeSingle() {
-          const row = rows[filters.id];
-          if (!row) return { data: null };
-          for (const [c, v] of Object.entries(filters)) {
-            if (row[c] !== v) return { data: null };
-          }
-          return { data: row };
-        },
+        eq(c, v) { eq[c] = v; return q; },
+        in(c, vs) { ins[c] = new Set(vs); return q; },
+        order() { return q; },
+        then(res) { return Promise.resolve(run()).then(res); },
+        async maybeSingle() { return { data: run().data[0] || null }; },
       };
+      function run() {
+        return {
+          data: rows.filter((r) => {
+            for (const [c, v] of Object.entries(eq)) if (r[c] !== v) return false;
+            for (const [c, set] of Object.entries(ins)) if (!set.has(r[c])) return false;
+            return true;
+          }),
+          error: null,
+        };
+      }
       return q;
     },
   };
@@ -391,8 +408,8 @@ declareBreak({
   leg: "two variants of one product are two cart lines",
   why: "a cart keyed by product alone collapses a Large onto a Medium and charges one of them",
   file: "public/journey-os/commerce/storefront-cart.js",
-  find: "  function lineKey(pid, vid) { return String(pid) + '::' + (vid || ''); }",
-  with: "  function lineKey(pid, vid) { return String(pid); }",
+  find: "    return String(pid) + '::' + (vid || '') + '::' + canonMods(mods).join(',');",
+  with: "    return String(pid);",
 });
 {
   Cart.mount(BIZ, null);   // real mount: businessId scopes the storage key
@@ -434,8 +451,8 @@ declareBreak({
   leg: "the persisted cart writer reads, validates, prices and stores the variant",
   why: "this is the writer that dropped variant_id, and it is the one Hubly cannot execute offline",
   file: "supabase/functions/commerce-api/index.ts",
-  find: "          variant_id: variantId,\n          title,",
-  with: "          title,",
+  find: "          variant_id: variantId,\n          selected_modifiers: mods.option_ids,",
+  with: "          selected_modifiers: mods.option_ids,",
 });
 {
   const src = readFileSync(join(ROOT, "supabase/functions/commerce-api/index.ts"), "utf8");
