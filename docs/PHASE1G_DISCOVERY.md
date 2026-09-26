@@ -436,3 +436,72 @@ Carried forward, none fixed here:
 The order is deliberate: today the AI writes records the owner cannot see, and letting it also
 create modifier groups nobody can edit would make that worse in a way a customer eventually finds.
 Give the owner the room before handing the AI another key to it.
+
+---
+
+# 1G-A — CLOSED, 2026-09-26. The door, not a second room.
+
+The plan in §F.1G-A proposed a `products` thread view inside `platform-home.html`. **That was not
+built, deliberately.** The ruling for this phase was: *the owner should not have to learn two Hubly
+apps, and there must be exactly ONE Commerce management surface.* A catalog list in the shell is a
+second reader of the same rows and the beginning of a second editor. So the canonical Store in
+`public/journey-os/store-commerce.js` stayed canonical and the work went into reaching it.
+
+## What was actually wrong — and the part discovery had not found
+
+Discovery found the missing door (§I.5). It did not find that **the room was locked**:
+`openOperateHome()` (`public/hubly.html`) redirects *any* arriving owner to `/`, so even a
+hand-typed `/app#store` bounced back to the conversation. A door into that would have been worse
+than no door — the link works, the page loads, and the owner ends up where they started with
+nothing said. That is prohibition 3's neutral screen.
+
+The gate was aimed at the retired **dashboard** and at booking emails that still point at `/app`.
+`scripts/check-explicit-vs-restored.mjs` had already written down the policy that makes it safe —
+*"a URL that NAMES a view is an act of intent — honour it; a default or persisted arrival is not"* —
+and the behaviour half had never been wired. 1G-A wires it: an explicit hash naming a view is
+honoured, the sessionStorage value is deliberately not consulted, so bare `/app`, `/app#home` and
+`/app#dashboard` still go to the front door and the exception cannot become sticky.
+
+## The bridge
+
+| where | what |
+|---|---|
+| `hubly.html` | explicit-view exception in the arriver gate · `#store/<tab>` in `parseOwnerAppViewHash` · `restoreOwnerAppView` opens the named shelf |
+| `journey-os/store-commerce.js` | `HublyStoreCommerce.openTab(tab)` (refuses an unknown shelf) · **← Back to Hubly** in the Store header |
+| `platform-home.html` | `hcStoreDoorNode` / `hcAppendStoreDoor` — one definition · the menu card ends at **Review your products** · the same door after any `storefront` capability WRITE · a **Store** section in Settings, gated on the catalog's content |
+
+`/app#store/products` is the whole address: the shelf travels in the URL, is consumed once, and is
+never written back, so tapping around inside the Store does not rewrite it.
+
+**No new API, no schema change, no second editor.** `status='draft'` is untouched: the import still
+creates drafts, and the owner publishes in the editor's Status select or by telling Hubly
+(`setProductVisibility`).
+
+## The sibling, fixed with it
+
+The menu card is one of TWO ways Commerce records get written from the shell. The other is the model
+calling a `storefront` capability in conversation, and it ended in the same place — a sentence about
+products with no way to reach them. Both now raise the same door. The set of actions that raise it is
+enumerated from the **harmless** side (`listCatalog` is the only read), so the modifier writes 1G-C
+adds get the door with no edit here.
+
+## Held by
+
+`scripts/check-the-owner-can-reach-what-hubly-made.mjs` — 8 legs, all `[RULE]`, all **RED ALONE** in
+`docs/RED_PROOF_LEDGER.md`. Simulated session and network; every function and line of markup it
+exercises is the shipping one.
+
+## Still open after 1G-A
+
+1. **No real owner walked this.** There is no session or service key in this environment: the
+   arrival, the approval and the editor round-trip are exercised against stubs. A real menu, on a
+   real claimed business, signed in, is still owed.
+2. **Mobile is unverified** — the Store was read at a 390px viewport, which is not a phone. Note
+   what that viewport did show: `.app-nav` is pushed off-screen in store mode, so **← Back to Hubly
+   is the only navigation on the page** on a phone. It is first in the header and never hidden.
+3. **NEW: the Products list calls an AI-imported item "Digital".** `store-commerce.js:385` reads
+   `p.stock == null` as digital, and `commerce_import.ts` leaves `inventory` null when the caller
+   sends none — which the menu import never does. So every imported pizza is labelled Digital on the
+   first screen this bridge sends owners to. Real, reproducible, pre-existing; not fixed here because
+   the right label ("not tracked", "—") is a judgement call, not a bug fix.
+4. Everything in §I is carried forward unchanged.

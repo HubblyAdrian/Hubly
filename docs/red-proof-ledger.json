@@ -1801,6 +1801,66 @@
       "declaredTotal": 16,
       "recorded": 16,
       "reconciled": true
+    },
+    {
+      "at": "2026-09-26T19:13:32.875Z",
+      "applied": 4,
+      "alone": 3,
+      "compound": 0,
+      "notRed": 1,
+      "skipped": 3,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 7,
+      "recorded": 7,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-26T19:14:16.158Z",
+      "applied": 7,
+      "alone": 7,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 7,
+      "recorded": 7,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-26T19:16:30.979Z",
+      "applied": 7,
+      "alone": 7,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 7,
+      "recorded": 7,
+      "reconciled": true
+    },
+    {
+      "at": "2026-09-26T19:20:15.598Z",
+      "applied": 8,
+      "alone": 8,
+      "compound": 0,
+      "notRed": 0,
+      "skipped": 0,
+      "provenByHand": 0,
+      "errored": 0,
+      "unparseable": 0,
+      "brokeCheck": 0,
+      "declaredTotal": 8,
+      "recorded": 8,
+      "reconciled": true
     }
   ],
   "legs": {
@@ -3313,6 +3373,78 @@
       "leg": "the cart sends ids only",
       "why": "a price in the payload is a price the server could be tempted to trust",
       "at": "2026-09-22T03:57:07.459Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-owner-can-reach-what-hubly-made.mjs::2 [RULE] a bare or dashboard arrival": {
+      "check": "check-the-owner-can-reach-what-hubly-made.mjs",
+      "leg": "2 [RULE] a bare or dashboard arrival",
+      "why": "disable the arriver gate entirely, so the retired front door opens for everyone again — the exception stops being narrow and becomes the rule",
+      "at": "2026-09-26T19:20:15.598Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-owner-can-reach-what-hubly-made.mjs::4 [RULE] the Store carries a marked way back": {
+      "check": "check-the-owner-can-reach-what-hubly-made.mjs",
+      "leg": "4 [RULE] the Store carries a marked way back",
+      "why": "delete the way back out of the Store header. On a phone the store-mode rule pushes .app-nav off-screen, so this link is the ONLY navigation on the page and removing it is a dead end with no marked exit",
+      "at": "2026-09-26T19:20:15.598Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-owner-can-reach-what-hubly-made.mjs::6 [RULE] a capability that CHANGED": {
+      "check": "check-the-owner-can-reach-what-hubly-made.mjs",
+      "leg": "6 [RULE] a capability that CHANGED",
+      "why": "raise the door on any storefront action at all, reading included, so merely asking what is in the catalog produces a door as if something had been written",
+      "at": "2026-09-26T19:20:15.598Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-owner-can-reach-what-hubly-made.mjs::7 [RULE] the standing door": {
+      "check": "check-the-owner-can-reach-what-hubly-made.mjs",
+      "leg": "7 [RULE] the standing door",
+      "why": "let a FAILED catalog read leave the section hidden, exactly as an empty catalog does, so a business whose store could not be reached is silently told it has no store — our bookkeeping reported as his data (Lesson 86)",
+      "at": "2026-09-26T19:20:15.598Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-owner-can-reach-what-hubly-made.mjs::1 [RULE] an owner who names the Store": {
+      "check": "check-the-owner-can-reach-what-hubly-made.mjs",
+      "leg": "1 [RULE] an owner who names the Store",
+      "why": "remove the explicit-view exception from the arriver gate, so an owner who typed /app#store/products is bounced to the front door — the link works, the page loads, and he ends up back where he started with nothing said",
+      "at": "2026-09-26T19:20:15.598Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-owner-can-reach-what-hubly-made.mjs::3 [RULE] the Store opens a shelf it knows": {
+      "check": "check-the-owner-can-reach-what-hubly-made.mjs",
+      "leg": "3 [RULE] the Store opens a shelf it knows",
+      "why": "drop the tab-name guard from openTab, so an unrecognised shelf falls through renderPage's chain and silently renders SETTINGS — a deep link quietly landing somewhere else",
+      "at": "2026-09-26T19:20:15.598Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-owner-can-reach-what-hubly-made.mjs::5 [RULE] the card ends at a door": {
+      "check": "check-the-owner-can-reach-what-hubly-made.mjs",
+      "leg": "5 [RULE] the card ends at a door",
+      "why": "hand out the door even when the import created NOTHING — a way into a catalog to review products that were all refused, which is the unearned checkmark wearing a helpful face",
+      "at": "2026-09-26T19:20:15.598Z",
+      "also": [],
+      "newlyRed": 1,
+      "status": "RED ALONE"
+    },
+    "check-the-owner-can-reach-what-hubly-made.mjs::8 [RULE] the draft the AI made opens": {
+      "check": "check-the-owner-can-reach-what-hubly-made.mjs",
+      "leg": "8 [RULE] the draft the AI made opens",
+      "why": "save an EDIT as a create, so correcting the price on an AI-made draft leaves the original behind and puts a second copy of the same product in the catalog — the duplicate this phase exists to not introduce",
+      "at": "2026-09-26T19:20:15.598Z",
       "also": [],
       "newlyRed": 1,
       "status": "RED ALONE"

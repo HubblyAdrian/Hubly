@@ -595,6 +595,12 @@
       '<header class="jos-store-header hub-page-header">' +
       '<div><h1 class="hub-page-title">Store</h1><p class="hub-page-sub">Sell products, kits, gift cards, and add-ons — alongside your services.</p></div>' +
       '<div class="jos-store-header-actions hub-page-actions">' +
+      // THE WAY BACK. The owner reaches this page from the conversation at / — the claimed
+      // shell hands out /app#store/products after an AI menu import — and until this link the
+      // Store was a room with no marked exit: back to the conversation meant editing the URL.
+      // A plain anchor on purpose: it works with the keyboard, it opens in a new tab on a
+      // middle-click, and it still works if this script throws.
+      '<a class="jos-btn jos-store-back" href="/">\u2190 Back to Hubly</a>' +
       '<button type="button" class="jos-btn jos-store-export" data-jos-act="store-export">Export</button>' +
       '<button type="button" class="jos-btn jos-btn-brand jos-store-new" data-jos-act="' + primaryAct + '">' + esc(primaryLabel) + '</button>' +
       '</div></header>' +
@@ -1011,6 +1017,20 @@
 
   var api = {
     render: render,
+    /** Open the Store on a NAMED tab. The one entry point a deep link may use: a caller
+     *  outside this file states which shelf it meant, and an unknown name is REFUSED rather
+     *  than guessed at — an unrecognised tab would otherwise fall through renderPage()'s
+     *  chain and silently render Settings. Returns whether the tab was actually opened, so
+     *  the caller can tell "shown" from "asked for". */
+    openTab: function (tab) {
+      var name = String(tab || '').trim();
+      if (!STORE_TABS.some(function (t) { return t[0] === name; })) return false;
+      var root = ownRoot();
+      if (!root) return false;
+      root._josStoreTab = name;
+      render();
+      return true;
+    },
     setMode: setStoreMode,
     ensureState: ensureStoreOsState,
     reload: function () { return loadStore(true).then(render); },

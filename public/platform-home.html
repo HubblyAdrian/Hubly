@@ -1000,6 +1000,10 @@ body.hc-shell-claimed .hc-canvas-bar{position:relative;z-index:61}
   transition:border-color .15s,box-shadow .15s}
 .hc-arrival-act:hover{border-color:var(--brand-600,#D9632D);box-shadow:0 5px 16px -8px rgba(217,99,45,.35)}
 .hc-arrival-act:active{transform:translateY(1px)}
+/* An action that is a real DESTINATION is an <a>, not a button that calls location.href — so
+   it opens in a new tab on a middle-click and works if script fails. These two lines are what
+   an anchor needs to sit in the row like its button neighbours. */
+a.hc-arrival-act{text-decoration:none;display:inline-flex;align-items:center}
 /* THE DECISION, not one more thing to read. Accept is the only primary on a booking card;
    everything beside it (details, a phone call) is what he does instead of deciding. */
 .hc-arrival-act.is-primary{background:var(--brand-600,#D9632D);border-color:var(--brand-600,#D9632D);color:#fff}
@@ -5201,6 +5205,14 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
           // is the mechanism — not the model — that says whether the target was there.
           // A JOB WAS CREATED THIS TURN — put it in the thread as the thing itself.
           try{ if(data.job && data.job.id) hcAppendJobCard(data.job); }catch(e){}
+          // THE CATALOG CHANGED THIS TURN — the same door the menu card hands out.
+          //
+          // THE SAME CLASS, NOT A SECOND FEATURE. The menu card is one of two ways Commerce
+          // records get written from this shell; the other is the model calling a `storefront`
+          // capability in ordinary conversation ("add a $40 wash kit"), and that path ended
+          // where the card used to: a sentence about products the owner had no way to reach.
+          // Fixing only the reported copy is how the booking exit stayed broken in its sibling.
+          try{ if(hcStorefrontWroteThisTurn(data.actions)) hcAppendStoreDoor('Open your store'); }catch(e){}
           // The server plucks ONE field (`showMeWhere`) the way it plucks bookingConfirmation
           // and draftGrant — the actions log carries no `raw`, and reading a field that is
           // never sent is how a wired feature is dark on arrival.
@@ -7239,6 +7251,70 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
     foot.querySelector('.hc-menu-add').addEventListener('click', function(){ hcMenuApprove(card); });
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════════════════════
+   *  THE DOOR INTO THE STORE — one definition, every caller.
+   *
+   *  Hubly writes Commerce records from THIS shell (the menu card below, and the `storefront`
+   *  capabilities the model can call), and the catalog those records land in lives in the OTHER
+   *  shell, at /app. Until this, the product said "tell me when you have checked them" and there
+   *  was nowhere to check them: platform-home.html has no catalog surface, and nothing here
+   *  linked to the one that exists.
+   *
+   *  WE LINK TO THE ROOM, WE DO NOT BUILD A SECOND ONE. public/journey-os/store-commerce.js is
+   *  the canonical product editor — name, price, status, images, variants — and a second catalog
+   *  in this file would be the two-stores disease with a new face. The address carries the shelf
+   *  (#store/products) so the owner lands on the list, not on Overview.
+   *
+   *  ONE FUNCTION so the two callers cannot drift. The booking exit was fixed in one of its two
+   *  copies once and the other kept the bug; a door is exactly the kind of three-line thing that
+   *  gets written twice.
+   * ══════════════════════════════════════════════════════════════════════════════════════════ */
+  var HC_STORE_HREF = '/app#store/products';
+  /** The door as a node. An <a>, never a button that sets location: middle-click opens a tab,
+   *  the keyboard reaches it, and it survives a script error on this page. */
+  function hcStoreDoorNode(label){
+    var a = document.createElement('a');
+    a.className = 'hc-arrival-act is-primary';
+    a.href = HC_STORE_HREF;
+    a.textContent = label || 'Open your store';
+    return a;
+  }
+  /** The door in the transcript, as its own row under the last thing said. At most ONE exists at
+   *  a time — an older one is removed rather than left to stack up beside a newer confirmation
+   *  it is no longer about. Same lifecycle as .hc-arrival-actions, which this reuses. */
+  function hcAppendStoreDoor(label){
+    var thread = hcThreadBody(); if(!thread) return null;
+    try{
+      var old = thread.querySelectorAll('[data-hc-store-door]');
+      for(var i = 0; i < old.length; i++) old[i].remove();
+    }catch(e){}
+    var row = document.createElement('div');
+    row.className = 'hc-msg hubly hc-arrival-actions';
+    row.setAttribute('data-hc-store-door', '1');
+    row.appendChild(hcStoreDoorNode(label));
+    thread.appendChild(row);
+    hcThreadScrollToEnd();
+    return row;
+  }
+  /** WHICH STOREFRONT ACTIONS MEAN "SOMETHING IS IN THE CATALOG NOW".
+   *
+   *  Enumerated from the HARMLESS side on purpose. A list of the actions that WRITE is a
+   *  hand-maintained set that goes stale the day 1G-C adds modifier writes — and its failure
+   *  mode is the silent one: the owner's products land and no door appears. The set that cannot
+   *  have changed the catalog is small, closed and stable: reading it. Everything else gets the
+   *  door, including actions nobody has written yet.
+   *
+   *  `ok && real` is the same receipt the rest of this handler trusts: a capability that ran and
+   *  actually changed something, not one the model merely called. */
+  var HC_STOREFRONT_READS = { listCatalog: true };
+  function hcStorefrontWroteThisTurn(actions){
+    if(!Array.isArray(actions)) return false;
+    return actions.some(function(a){
+      return a && a.capability === 'storefront' && a.ok && a.real
+        && !HC_STOREFRONT_READS[a.capabilityAction];
+    });
+  }
+
   /** APPROVAL. Reads what is on screen (so edits count), then uses the existing Commerce API. */
   async function hcMenuApprove(card){
     var d = hc.menuDraft; if(!d) return;
@@ -7320,16 +7396,40 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
     }
 
     card.querySelector('.hc-menu-body').hidden = true;
-    card.querySelector('.hc-menu-foot').innerHTML =
-      '<span class="hc-menu-done">Added ' + made.length + ' product' + (made.length === 1 ? '' : 's') +
-      ' as hidden drafts' + (variantCount ? ', with ' + variantCount + ' size' + (variantCount === 1 ? '' : 's') : '') +
-      (collCount ? ' in ' + collCount + ' collection' + (collCount === 1 ? '' : 's') : '') + '.</span>';
+    var foot = card.querySelector('.hc-menu-foot');
+    // NOTHING CREATED IS NOT A SMALL SUCCESS. "Added 0 products as hidden drafts" is a green
+    // checkmark with a zero in it — the import ran, every row was refused, and the card
+    // reported it in the grammar of a success.
+    foot.innerHTML = made.length
+      ? '<span class="hc-menu-done">Added ' + made.length + ' product' + (made.length === 1 ? '' : 's') +
+        ' as hidden drafts' + (variantCount ? ', with ' + variantCount + ' size' + (variantCount === 1 ? '' : 's') : '') +
+        (collCount ? ' in ' + collCount + ' collection' + (collCount === 1 ? '' : 's') : '') + '.</span>'
+      : '<span class="hc-menu-done">Nothing went in — your store is unchanged.</span>';
+    // AND THE WAY TO GO AND LOOK AT THEM. The card used to end here, at a sentence telling the
+    // owner to check something with nowhere to check it. Only when a product actually came back:
+    // a door to an empty catalog is the same unearned green as any other.
+    if(made.length) foot.appendChild(hcStoreDoorNode('Review your products'));
     // PROHIBITION 6: the state change is announced, and so is every row that did not make it.
-    var msg = 'Added ' + made.length + ' product' + (made.length === 1 ? '' : 's') +
-      ' to your store as hidden drafts — customers cannot see them yet.' +
-      (rejected.length ? ' ' + rejected.length + " didn't go in: " +
-        rejected.map(function(x){ return (x.name ? '"' + x.name + '"' : 'one row') + ' — ' + (x.detail || x.reason); }).join(' ') : '') +
-      ' Tell me when you have checked them and I will publish them.';
+    //
+    // THE SENTENCE DOES NOT POINT AT THE BUTTON. The card above can name a control because the
+    // card drew it; this line is a transcript entry that outlives the card — it is still there
+    // after a reload, when the button is not — so it says what is true and what he can do, and
+    // never "press the thing below". (Hubly never points at a control it cannot see.)
+    var refusals = rejected.map(function(x){
+      return (x.name ? '"' + x.name + '"' : 'one row') + ' — ' + (x.detail || x.reason);
+    }).join('; ');
+    var msg = made.length
+      ? 'Added ' + made.length + ' product' + (made.length === 1 ? '' : 's') +
+        ' to your store as hidden drafts — customers cannot see them yet.' +
+        (rejected.length ? ' ' + rejected.length + " didn't go in: " + refusals : '') +
+        ' You can open your store to check the prices and sizes and edit anything that came out' +
+        ' wrong, or tell me when you want them published.'
+      // AND THE SENTENCE AFTER IT DOES NOT OFFER A ROOM TO GO AND CHECK PRODUCTS THAT DO NOT
+      // EXIST, or a publish to ask for. An offer whose subject was never created is the same
+      // defect as the count that reported the refusal as an addition.
+      : 'Nothing went into your store, so it is unchanged.' +
+        (rejected.length ? ' ' + rejected.length + ' row' + (rejected.length === 1 ? '' : 's') +
+          " didn't go in: " + refusals + '.' : '');
     hcAppendMessage('hubly', msg); hcPersist('assistant', msg);
     hc.menuDraft = null;
     hcThreadScrollToEnd();
@@ -13646,6 +13746,12 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
           '<div class="hc-set-row"><span class="hc-set-k">Address</span><span class="hc-set-v">' + (host ? ('<a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(host) + '</a>') : '—') + '</span></div>' +
           '<div class="hc-set-note">Connect your own domain is coming. Your myhubly.app address keeps working either way.</div>' +
         '</div>' +
+        // STORE — hidden until the read says there is one. See hcSettingsRenderStore().
+        '<div class="hc-set-sec" id="hcSetStoreSec" hidden><h3>Store</h3>' +
+          '<div class="hc-set-row"><span class="hc-set-k">Products</span><span class="hc-set-v" id="hcSetStoreCount">…</span></div>' +
+          '<div class="hc-set-row"><span class="hc-set-k">Catalog</span><span class="hc-set-v"><a href="/app#store/products">Manage products</a></span></div>' +
+          '<div class="hc-set-note">Prices, sizes, descriptions and photos live in your store. A hidden draft is not on your page until you publish it — tell me when you want one live, or change it there.</div>' +
+        '</div>' +
         // INTEGRATIONS
         '<div class="hc-set-sec"><h3>Integrations</h3>' +
           '<div class="hc-set-row"><span class="hc-set-k">Stripe <span class="hc-set-pill off" id="hcSetStripePill">…</span></span><span class="hc-set-v" id="hcSetStripeAction"></span></div>' +
@@ -13663,6 +13769,50 @@ textarea.hc-ctx-in{resize:vertical;min-height:38px;line-height:1.35}
     })();
     // Stripe status + the door.
     hcSettingsRenderStripe(biz.id);
+    // Store status + the door that outlives the transcript.
+    hcSettingsRenderStore(biz.id);
+  }
+  /* THE DOOR THAT SURVIVES A RELOAD.
+   *
+   *  The menu card's button is in the DOM and nowhere else — refresh the page and the only way
+   *  back to the products Hubly just created is to know the URL. The gear is the one surface in
+   *  this shell that is always there and is not a rail place, so the standing door lives here.
+   *
+   *  GATED ON THE CONTENT, NEVER ON OUR BOOKKEEPING (Lesson 86). The question asked is "does
+   *  this business's catalog hold anything", answered by the catalog itself through the same
+   *  commerce-api the Store screen reads — not "is there a store settings row", which can be
+   *  false about a business that has products.
+   *
+   *  AND AN EMPTY READER MUST NOT SPEAK FOR HIM. Three outcomes, three behaviours:
+   *    · products came back      -> the section appears, with the count and the door
+   *    · zero products came back -> the section stays hidden. Nothing has been earned, and a
+   *                                 door into an empty catalog is a room with nothing in it.
+   *    · the read FAILED         -> the section appears, the door works, and the count says we
+   *                                 could not read it. A failure is never dressed as a zero.  */
+  async function hcSettingsRenderStore(businessId){
+    var sec = document.getElementById('hcSetStoreSec');
+    var out = document.getElementById('hcSetStoreCount');
+    if(!sec || !out || !businessId) return;
+    var res = null;
+    try{
+      var token = await hcFreshToken();
+      if(token){
+        var r = await fetch(SUPA_URL + '/functions/v1/commerce-api/products?business_id=' + encodeURIComponent(businessId), {
+          headers: { authorization: 'Bearer ' + token, apikey: SUPA_ANON_KEY }
+        });
+        if(r.ok) res = await r.json().catch(function(){ return null; });
+      }
+    }catch(e){ res = null; }
+    var list = res && Array.isArray(res.products) ? res.products : null;
+    if(!list){
+      out.textContent = 'couldn\u2019t read just now';
+      sec.hidden = false;
+      return;
+    }
+    if(!list.length) return;                       // nothing sold yet — no section, no door
+    var drafts = list.filter(function(p){ return p && p.status === 'draft'; }).length;
+    out.textContent = String(list.length) + (drafts ? (' \u00b7 ' + drafts + ' hidden draft' + (drafts === 1 ? '' : 's')) : '');
+    sec.hidden = false;
   }
   // Show a Stripe Connect failure as a sentence, always. This exists because both
   // handlers below used to be `catch(e){}` — the owner clicked, the button said

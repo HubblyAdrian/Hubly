@@ -32,6 +32,15 @@
   min-width:110px;height:44px;background:#fff;border:1px solid var(--jos-border,#E5E7EB);border-radius:12px;font-weight:750;
 }
 .jos-store-new{min-width:140px;height:44px;border-radius:12px}
+/* THE WAY BACK to the conversation at /. It is an <a>, so it needs the underline removed and
+   the button box restored — the same two lines .jos-sched-acts a.jos-btn needs, for the same
+   reason. It is FIRST in the header actions and it is never hidden at any width: the mobile
+   rule below pushes .app-nav off-screen in store mode, so on a phone this link is the only
+   navigation on the page. Hiding it to save space would recreate the dead end it exists for. */
+.jos-store-back{
+  text-decoration:none;height:44px;border-radius:12px;background:#fff;
+  border:1px solid var(--jos-border,#E5E7EB);font-weight:750;
+}
 
 .jos-store-meta{
   display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;

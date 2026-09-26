@@ -44,7 +44,7 @@
 <link rel="stylesheet" href="/journey-os/journey.css">
 <link rel="stylesheet" href="/journey-os/operate-pixel.css?v=20260808025356">
 <link rel="stylesheet" href="/journey-os/hubly-layout.css?v=20260808025356">
-<link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-3">
+<link rel="stylesheet" href="/journey-os/store-commerce.css?v=store-4">
 <link rel="stylesheet" href="/journey-os/hubly-studio.css?v=studio-15">
 <link rel="stylesheet" href="/journey-os/photography-projects.css?v=projects-16">
 <link rel="stylesheet" href="/journey-os/app-marketplace.css?v=projects-16">
@@ -13246,7 +13246,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <script defer src="/journey-os/commerce/storefront-ast.js?v=commerce-3"></script>
 <script defer src="/journey-os/commerce/store-page.js?v=commerce-8"></script>
 <script defer src="/journey-os/journey.js?v=20260808025356"></script>
-<script defer src="/journey-os/store-commerce.js?v=store-4"></script>
+<script defer src="/journey-os/store-commerce.js?v=store-5"></script>
 <script defer src="/journey-os/studio/api.js?v=studio-15"></script>
 <script defer src="/journey-os/media-studio-bridge.js?v=studio-15"></script>
 <script defer src="/journey-os/hubly-studio.js?v=studio-15"></script>
@@ -13910,7 +13910,32 @@ function openOperateHome(opts){
       _ownerArriving = !!(window.currentUser
         || (window.HublySupabase && HublySupabase.session && HublySupabase.session.user));
     }catch(eSess){}
-    if(_ownerArriving){
+    // ══ EXPLICIT BEATS RESTORED — A ROOM THE OWNER NAMED STAYS OPEN (2026-09-26) ════════════
+    //
+    // The redirect below was aimed at the RETIRED DASHBOARD and at the booking emails already
+    // in owners' inboxes that still point at /app. It was never aimed at an owner who asked for
+    // a specific room BY NAME. /app#store is the door the claimed shell hands out the moment an
+    // AI menu import creates draft products, and until this line the door opened onto a bounce:
+    // the link worked, hubly.html booted, loadBusiness() finished, and the redirect below put
+    // the owner back on Home with nothing said. That is prohibition 3's neutral screen — a step
+    // that fails by looking like it never happened.
+    //
+    // (And the sentence above deliberately does not spell the redirect call out: this block is
+    // read by scripts/check-retired-shell-exit.mjs, which windows from the banner to the FIRST
+    // occurrence of that call — a comment containing it truncates the window and the check then
+    // reports a clearing that is right there. A grep window cannot see the surface around it.)
+    //
+    // ONLY THE URL COUNTS. parseOwnerAppViewHash() reads the hash and nothing else; the
+    // sessionStorage value readPersistedOwnerAppView() would restore is deliberately NOT
+    // consulted here. So a bare /app, /app#home and /app#dashboard all still go to the front
+    // door, and this exception cannot become sticky the way the old `_target !== 'dashboard'`
+    // test did — that bug was exactly "restored" being mistaken for "asked for".
+    var _explicitView = '';
+    try{
+      var _explicitHash = parseOwnerAppViewHash();
+      if(_explicitHash && _explicitHash.view && _explicitHash.view !== 'dashboard') _explicitView = _explicitHash.view;
+    }catch(eHash){}
+    if(_ownerArriving && !_explicitView){
       try{ clearPersistedOwnerAppView(); }catch(eClr){}
       // replace, not assign: an owner pressing Back should not bounce into the retired view.
       location.replace('/');
@@ -13967,6 +13992,11 @@ function parseOwnerAppViewHash(){
   if(view==='editor'){
     return {view:'editor',hub:parts[1]||'site',settingsNav:parts[2]||''};
   }
+  // #store/products — the SHELF is part of the address, so a door into the Store can say which
+  // one it meant. Read once by restoreOwnerAppView() and never written back: ownerAppViewHash()
+  // emits a bare '#store', persistOwnerAppView() stores no tab, so tapping around inside the
+  // Store does not rewrite the address and a later bare /app cannot resurrect a stale shelf.
+  if(view==='store')return {view:'store',hub:'',settingsNav:'',storeTab:parts[1]||''};
   if(HUBLY_OWNER_APP_VIEWS.has(view))return {view,hub:'',settingsNav:''};
   return null;
 }
@@ -14059,6 +14089,24 @@ function restoreOwnerAppView(opts){
         if(typeof goEdSettingsNav==='function')goEdSettingsNav(saved.settingsNav);
       }catch(e){}
     },140);
+  }
+  if(view==='store'&&saved.storeTab){
+    // ASSERT THE POSTCONDITION, DON'T ASSUME THE TAB LANDED. store-commerce.js is a deferred
+    // script, so on a cold load of /app#store/products it may not have defined openTab yet when
+    // switchV() returns. This retries for ~2s and then stops: the Store is already rendered on
+    // its own default tab either way, so the failure mode is a wrong SHELF, never a blank room.
+    (function(tab){
+      let tries=0;
+      (function attempt(){
+        try{
+          if(window.HublyStoreCommerce&&typeof HublyStoreCommerce.openTab==='function'){
+            HublyStoreCommerce.openTab(tab);
+            return;
+          }
+        }catch(e){}
+        if(++tries<25)setTimeout(attempt,80);
+      })();
+    })(saved.storeTab);
   }
   return view;
 }

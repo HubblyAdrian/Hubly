@@ -13,11 +13,11 @@ that date MUST declare a break, and `check-negative-legs-declare-a-break.mjs` fa
 Legs older than that date are grandfathered — there were 78 of them and failing all at once would
 have made the rule the first thing anyone switched off.
 
-**Last run: 2026-09-22T03:59:39.910Z** · 149 run(s) recorded.
+**Last run: 2026-09-26T19:20:15.598Z** · 153 run(s) recorded.
 
 | status | n | what it means |
 | --- | --- | --- |
-| **RED ALONE** | 158 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
+| **RED ALONE** | 166 | the break fired exactly this leg and nothing else. **This is a red-proof.** |
 | COMPOUND | 0 | the break turned this leg red along with others. **Proves nothing about this leg** (L98) — it needs a narrower break |
 | NOT RED | 0 | the break was applied and this leg stayed green. **The leg is vacuous, or the break misses it** |
 | SKIPPED | 0 | the break could not be applied (text not found, or a db break without `--allow-db`). **Not evidence of anything** |
@@ -151,6 +151,14 @@ A first attempt auto-suffixed the slug and BROKE THE CHECK instead of failing a 
 | `check-the-import-never-drops-a-row.mjs` | 4 an imported product is a draft unless the caller says otherwise | **RED ALONE** | publish on import. Anything imported — including anything a model produced — reaches customers with nobody having looked at it. | — |
 | `check-the-import-never-drops-a-row.mjs` | 5 a price that cannot be read is refused, not silently turned into free | **RED ALONE** | coerce an unreadable price to 0 the way `Number(raw.price) || 0` did. A product whose price nobody could read is created at $0.00 and is one publish away from being sold for nothing. | — |
 | `check-the-landing-never-paints-for-an-owner.mjs` | the account chip is visible once the business is open | **RED ALONE** | make the pre-paint hide unconditional again — `hc-boot-owner` is never removed on a successful owner load, so the sign-out door stays invisible for the life of the page | — |
+| `check-the-owner-can-reach-what-hubly-made.mjs` | 1 [RULE] an owner who names the Store | **RED ALONE** | remove the explicit-view exception from the arriver gate, so an owner who typed /app#store/products is bounced to the front door — the link works, the page loads, and he ends up back where he started with nothing said | — |
+| `check-the-owner-can-reach-what-hubly-made.mjs` | 2 [RULE] a bare or dashboard arrival | **RED ALONE** | disable the arriver gate entirely, so the retired front door opens for everyone again — the exception stops being narrow and becomes the rule | — |
+| `check-the-owner-can-reach-what-hubly-made.mjs` | 3 [RULE] the Store opens a shelf it knows | **RED ALONE** | drop the tab-name guard from openTab, so an unrecognised shelf falls through renderPage's chain and silently renders SETTINGS — a deep link quietly landing somewhere else | — |
+| `check-the-owner-can-reach-what-hubly-made.mjs` | 4 [RULE] the Store carries a marked way back | **RED ALONE** | delete the way back out of the Store header. On a phone the store-mode rule pushes .app-nav off-screen, so this link is the ONLY navigation on the page and removing it is a dead end with no marked exit | — |
+| `check-the-owner-can-reach-what-hubly-made.mjs` | 5 [RULE] the card ends at a door | **RED ALONE** | hand out the door even when the import created NOTHING — a way into a catalog to review products that were all refused, which is the unearned checkmark wearing a helpful face | — |
+| `check-the-owner-can-reach-what-hubly-made.mjs` | 6 [RULE] a capability that CHANGED | **RED ALONE** | raise the door on any storefront action at all, reading included, so merely asking what is in the catalog produces a door as if something had been written | — |
+| `check-the-owner-can-reach-what-hubly-made.mjs` | 7 [RULE] the standing door | **RED ALONE** | let a FAILED catalog read leave the section hidden, exactly as an empty catalog does, so a business whose store could not be reached is silently told it has no store — our bookkeeping reported as his data (Lesson 86) | — |
+| `check-the-owner-can-reach-what-hubly-made.mjs` | 8 [RULE] the draft the AI made opens | **RED ALONE** | save an EDIT as a create, so correcting the price on an AI-made draft leaves the original behind and puts a second copy of the same product in the catalog — the duplicate this phase exists to not introduce | — |
 | `check-the-preview-refits-its-pane.mjs` | 1 the preview fills the pane on a RETURN visit, after the canvas has been rebuilt | **RED ALONE** | restore the install-once guard on the ResizeObserver. The wrap is rebuilt by the canvas innerHTML on every render, so the observer stays bound to a node that has left the document and the live pane is watched by nobody. This is the live defect exactly. | — |
 | `check-the-preview-refits-its-pane.mjs` | 2 the preview tracks the pane when the pane changes width | **RED ALONE** | stop observing once the pane has settled. Navigation still lands correctly (one fit, at the end of the transition) so legs 1 and 3 are untouched, but nothing follows a pane that changes size afterwards — the panel opening, the window, a chip row appearing.
 Two narrower-looking attempts were rejected by the ledger first. Pointing the observer at the STAGE came back COMPOUND: the stage is what the fit writes, so it feeds itself and the preview churns, reddening leg 3 too. Freezing the pane width the fit READS came back NOT RED, and that one taught something real — the stage is sized `dev.w` and then SCALED to the pane, so its rendered width tracks the pane through the scale even when dev.w is frozen. Leg 2 is about what the owner sees, and what he sees still followed. | — |
@@ -351,3 +359,7 @@ Two narrower-looking attempts were rejected by the ledger first. Pointing the ob
 - **2026-09-22T03:59:17.528Z** — 14 break(s) applied · 14 red alone · 0 compound · 0 not red · 2 skipped
 - **2026-09-22T03:59:25.072Z** — 14 break(s) applied · 14 red alone · 0 compound · 0 not red · 2 skipped
 - **2026-09-22T03:59:39.910Z** — 16 break(s) applied · 16 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-26T19:13:32.875Z** — 4 break(s) applied · 3 red alone · 0 compound · 1 not red · 3 skipped
+- **2026-09-26T19:14:16.158Z** — 7 break(s) applied · 7 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-26T19:16:30.979Z** — 7 break(s) applied · 7 red alone · 0 compound · 0 not red · 0 skipped
+- **2026-09-26T19:20:15.598Z** — 8 break(s) applied · 8 red alone · 0 compound · 0 not red · 0 skipped
